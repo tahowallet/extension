@@ -37,9 +37,8 @@ export default class NFTsService extends BaseService<Events> {
     Events,
     NFTsService,
     [Promise<ChainService>]
-  > = async (chainService) => {
-    return new this(await getOrCreateDB(), await chainService)
-  }
+  > = async (chainService) =>
+    new this(await getOrCreateDB(), await chainService)
 
   private constructor(
     private db: NFTsDatabase,

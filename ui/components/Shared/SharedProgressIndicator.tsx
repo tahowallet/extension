@@ -14,24 +14,22 @@ export default function SharedProgressIndicator(props: {
     <div className="indicator_wrap">
       {Array(numberOfSteps)
         .fill(undefined)
-        .map((_, index) => {
-          return (
-            <button
-              aria-label="step"
-              type="button"
-              // The nature of this is that the key and index are the same.
-              // eslint-disable-next-line react/no-array-index-key
-              key={index}
-              className={classNames("step", {
-                active: index === activeStep - 1,
-                static: noInteraction,
-              })}
-              onClick={() => {
-                onProgressStepClicked(index + 1)
-              }}
-            />
-          )
-        })}
+        .map((_, index) => (
+          <button
+            aria-label="step"
+            type="button"
+            // The nature of this is that the key and index are the same.
+            // eslint-disable-next-line react/no-array-index-key
+            key={index}
+            className={classNames("step", {
+              active: index === activeStep - 1,
+              static: noInteraction,
+            })}
+            onClick={() => {
+              onProgressStepClicked(index + 1)
+            }}
+          />
+        ))}
 
       <style jsx>
         {`

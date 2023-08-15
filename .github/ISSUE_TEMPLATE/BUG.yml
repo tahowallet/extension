@@ -51,6 +51,8 @@ body:
       label: Version
       description: What version of the extension are you running?
       options:
+        - v0.46.1
+        - v0.46.0
         - v0.45.0
         - v0.44.0
         - v0.43.3

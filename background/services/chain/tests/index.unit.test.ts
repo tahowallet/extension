@@ -147,9 +147,9 @@ describe("Chain Service", () => {
 
     it("should get block prices if the NETWORK_POLLING_TIMEOUT has been exceeded", async () => {
       // Set last activity time to 10 minutes ago
-      ;(
-        chainService as unknown as ChainServiceExternalized
-      ).lastUserActivityOnNetwork[ETHEREUM.chainID] = Date.now() - 10 * MINUTE
+      const externalized = chainService as unknown as ChainServiceExternalized
+      externalized.lastUserActivityOnNetwork[ETHEREUM.chainID] =
+        Date.now() - 10 * MINUTE
       const getBlockPricesStub = sandbox
         .stub(gas, "default")
         .callsFake(async () => createBlockPrices())

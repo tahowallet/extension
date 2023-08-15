@@ -20,9 +20,7 @@ function DetailRowItem(props: ActivityDetail): ReactElement {
   return (
     <li>
       <div className="label">
-        {assetIconUrl === undefined ? (
-          <></>
-        ) : (
+        {assetIconUrl !== undefined && (
           <SharedAssetIcon symbol={label} logoURL={assetIconUrl} size={24} />
         )}
         {label}
@@ -177,26 +175,21 @@ export default function WalletActivityDetails(
         />
       </div>
       <ul>
-        {details.length ? (
-          <></>
-        ) : (
+        {details.length <= 0 &&
           Array.from({ length: 7 }).map(() => (
             <SharedSkeletonLoader
               height={24}
               customStyles="margin: 10px 0 15px;"
             />
-          ))
-        )}
-        {details.map(({ assetIconUrl, label, value }) => {
-          return (
-            <DetailRowItem
-              key={label}
-              assetIconUrl={assetIconUrl}
-              label={label}
-              value={value}
-            />
-          )
-        })}
+          ))}
+        {details.map(({ assetIconUrl, label, value }) => (
+          <DetailRowItem
+            key={label}
+            assetIconUrl={assetIconUrl}
+            label={label}
+            value={value}
+          />
+        ))}
       </ul>
       <style jsx>
         {`

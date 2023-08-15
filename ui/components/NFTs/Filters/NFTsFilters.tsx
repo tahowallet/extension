@@ -71,13 +71,14 @@ export default function NFTsFilters(): ReactElement {
     }
   }, [collectionsRef?.current?.offsetHeight])
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current)
       }
-    }
-  }, [])
+    },
+    []
+  )
 
   const handleUpdateSortType = useCallback(
     (type: SortType) => {

@@ -1,5 +1,5 @@
 export default class IntersectionObserverMock {
-  callbackMap: Map<HTMLElement, (...args: unknown[]) => void> = new Map()
+  callbackMap: Map<HTMLElement, (..._: unknown[]) => void> = new Map()
 
   constructor(
     protected callback: (entry: [Partial<IntersectionObserverEntry>]) => void

@@ -15,7 +15,7 @@ setTimeout(() => {
     "navigation"
   )[0] as PerformanceNavigationTiming
 
-  if ((navigationItem?.type).toString() === "reload") {
+  if (navigationItem?.type?.toString() === "reload") {
     reloadCount += 1
     state.reloadCount = reloadCount
     window.history.replaceState(state, "", document.URL)

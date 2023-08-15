@@ -13,7 +13,7 @@ export default function ClaimReferralByUser({
   claimAmount,
 }: {
   claimAmount: number
-}): ReactElement {
+}): ReactElement | null {
   const dispatch = useBackgroundDispatch()
   const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
   const amountWithBonus = formatCurrencyAmount(
@@ -27,7 +27,7 @@ export default function ClaimReferralByUser({
   const discardReferrer = () => dispatch(resetReferrer())
 
   if (referrer === null) {
-    return <></>
+    return null
   }
   return (
     <div className="wrap standard_width">

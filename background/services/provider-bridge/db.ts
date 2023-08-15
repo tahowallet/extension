@@ -29,12 +29,12 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         migrations: null,
         [tempTable]: "&[origin+accountAddress],origin,accountAddress",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table(mainTable)
           .toArray()
           .then((permissions) => tx.table(tempTable).bulkAdd(permissions))
-      })
+      )
 
     this.version(3).stores({
       [mainTable]: null,
@@ -44,12 +44,12 @@ export class ProviderBridgeServiceDatabase extends Dexie {
       .stores({
         [mainTable]: "&[origin+accountAddress],origin,accountAddress",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table(tempTable)
           .toArray()
           .then((permissions) => tx.table(mainTable).bulkAdd(permissions))
-      })
+      )
 
     this.version(5).stores({
       [tempTable]: null,
@@ -75,12 +75,12 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         migrations: null,
         [tempTable]: "&[origin+accountAddress],origin,accountAddress,chainID",
       })
-      .upgrade((tx) => {
-        return tx
+      .upgrade((tx) =>
+        tx
           .table(mainTable)
           .toArray()
           .then((rows) => tx.table(tempTable).bulkAdd(rows))
-      })
+      )
 
     this.version(8).stores({
       [mainTable]: null,

@@ -136,9 +136,9 @@ export default function FeeSettingsText({
   let networkSettings = useBackgroundSelector(selectDefaultNetworkFeeSettings)
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
-    useBackgroundSelector((state) => {
-      return state.networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas
-    }) ??
+    useBackgroundSelector(
+      (state) => state.networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas
+    ) ??
     networkSettings.values?.baseFeePerGas ??
     0n
 

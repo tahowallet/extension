@@ -24,9 +24,7 @@ const getPrivateMethodSpy = <T extends (...args: any[]) => unknown>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   object: any,
   property: string
-) => {
-  return jest.spyOn(object, property) as MethodSpy<T>
-}
+) => jest.spyOn(object, property) as MethodSpy<T>
 
 const fetchJsonStub: SinonStub<
   Parameters<typeof fetchJson>,

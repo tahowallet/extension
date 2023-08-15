@@ -174,25 +174,23 @@ export default function NetworkSettingsSelectArbitrum({
     <div className="fees standard_width">
       <div className="title">Network Fees</div>
 
-      {gasOptions.map((option, i) => {
-        return (
-          <button
-            key={option.confidence}
-            className={`option ${i === activeFeeIndex ? "active" : ""}`}
-            onClick={() => handleSelectGasOption(i)}
-            type="button"
-          >
-            <div className="option_left">
-              <div className="name">{capitalize(option.type)}</div>
-              <div className="subtext">Probability: {option.confidence}%</div>
-            </div>
-            <div className="option_right">
-              <div className="price ellipsis">{`${option.estimatedGwei} Gwei`}</div>
-              <div className="subtext">{option.dollarValue}</div>
-            </div>
-          </button>
-        )
-      })}
+      {gasOptions.map((option, i) => (
+        <button
+          key={option.confidence}
+          className={`option ${i === activeFeeIndex ? "active" : ""}`}
+          onClick={() => handleSelectGasOption(i)}
+          type="button"
+        >
+          <div className="option_left">
+            <div className="name">{capitalize(option.type)}</div>
+            <div className="subtext">Probability: {option.confidence}%</div>
+          </div>
+          <div className="option_right">
+            <div className="price ellipsis">{`${option.estimatedGwei} Gwei`}</div>
+            <div className="subtext">{option.dollarValue}</div>
+          </div>
+        </button>
+      ))}
       <div className="info">
         <div className="limit">
           <SharedTypedInput

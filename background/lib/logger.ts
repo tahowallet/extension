@@ -309,11 +309,9 @@ class Logger {
 
     const entriesByDateAsc = logEntries
       // Sort by date.
-      .sort((a, b) => {
-        return a
-          .substr(1, iso8601Length)
-          .localeCompare(b.substr(1, iso8601Length))
-      })
+      .sort((a, b) =>
+        a.substr(1, iso8601Length).localeCompare(b.substr(1, iso8601Length))
+      )
 
     const lastEntry = entriesByDateAsc[entriesByDateAsc.length - 1]
     const lastEntryDate = dateFromLogEntry(lastEntry)

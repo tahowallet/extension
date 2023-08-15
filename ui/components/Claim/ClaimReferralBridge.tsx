@@ -9,12 +9,12 @@ import { useEffect } from "react"
 export default function ClaimReferralBridge(): null {
   useEffect(() => {
     if (WEBSITE_ORIGIN === null) {
-      throw new Error(`Missing env variable 'WEBSITE_ORIGIN'`)
+      throw new Error("Missing env variable 'WEBSITE_ORIGIN'")
     }
 
     const iframe = document.createElement("iframe")
     iframe.src = `${WEBSITE_ORIGIN}/_referral-bridge.html`
-    iframe.style.display = `none`
+    iframe.style.display = "none"
 
     document.body.append(iframe)
 

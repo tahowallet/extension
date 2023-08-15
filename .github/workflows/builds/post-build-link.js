@@ -17,7 +17,7 @@ module.exports = async function postBuildLink({ github, context }) {
   )
 
   if (Number.isNaN(workflowRunId)) {
-    throw new Error(`Failed to get workflow run id`)
+    throw new Error("Failed to get workflow run id")
   }
 
   const {
@@ -50,9 +50,9 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
-  const matchArtifact = allArtifacts.filter((artifact) => {
-    return artifact.name.startsWith("extension-builds-")
-  })[0]
+  const matchArtifact = allArtifacts.filter((artifact) =>
+    artifact.name.startsWith("extension-builds-")
+  )[0]
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(

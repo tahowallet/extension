@@ -13,7 +13,7 @@ const getRequirementLabel = (ability: Ability): string => {
   }
 
   if (ability.requirement.type === "allowList") {
-    return `Whitelisted`
+    return "Whitelisted"
   }
   return ""
 }

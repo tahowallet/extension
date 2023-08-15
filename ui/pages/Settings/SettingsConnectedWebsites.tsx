@@ -24,7 +24,7 @@ export default function SettingsConnectedWebsites(): ReactElement {
   return (
     <div className="standard_width_padded wrapper">
       <SharedPageHeader withoutBackText backPath="/settings">
-        {t(`connectedWebsitesSettings.title`)}
+        {t("connectedWebsitesSettings.title")}
       </SharedPageHeader>
       <section>
         {dappsByOrigin.length === 0 ? (

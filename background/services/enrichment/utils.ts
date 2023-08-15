@@ -40,7 +40,7 @@ export async function enrichEIP2612SignTypedDataRequest(
   // If we have a corresponding asset - use known decimals to display a human-friendly
   // amount e.g. 10 USDC.  Otherwise just display the value e.g. 10000000
   const formattedValue = asset
-    ? `${Number(value) / 10 ** asset?.decimals} ${asset.symbol}`
+    ? `${Number(value) / 10 ** (asset?.decimals ?? 0)} ${asset.symbol}`
     : `${value}`
 
   // We only need to add the token if we're not able to properly format the value above

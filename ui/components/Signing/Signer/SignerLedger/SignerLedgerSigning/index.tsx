@@ -113,13 +113,11 @@ function SignerLedgerSigningTransaction({
           name="Review transaction" /* intentionally not i18ned, see above */
           value=""
         />
-        {isArbitraryDataSigningRequired ? (
+        {isArbitraryDataSigningRequired && (
           <TransactionDetailItem
             name="Blind signing" /* intentionally not i18ned, see above */
             value=""
           />
-        ) : (
-          <></>
         )}
         <TransactionDetailItem
           name="Amount" /* intentionally not i18ned, see above */

@@ -18,14 +18,14 @@ export const getDisplayAPR = (
     }
     return `${data.low} - ${data.high}`
   }
-  return data.totalAPR
+  return data.totalAPR ?? ""
 }
 
 export default function EarnDepositedCard({
   vault,
 }: {
   vault: AvailableVault
-}): ReactElement {
+}): ReactElement | null {
   const { vaultAddress, icons, userDeposited, asset } = vault
   const userDepositedAmount = fromFixedPointNumber(
     {

@@ -105,9 +105,8 @@ export default class NameService extends BaseService<Events> {
     Events,
     NameService,
     [Promise<ChainService>, Promise<PreferenceService>]
-  > = async (chainService, preferenceService) => {
-    return new this(await chainService, await preferenceService)
-  }
+  > = async (chainService, preferenceService) =>
+    new this(await chainService, await preferenceService)
 
   private constructor(
     private chainService: ChainService,

@@ -175,12 +175,13 @@ function updateCombinedData(immerState: AccountState) {
   // each other.
   const filteredEvm = Object.keys(immerState.accountsData.evm)
     .filter((key) => !TEST_NETWORK_BY_CHAIN_ID.has(key))
-    .reduce<AccountsByChainID>((evm, key) => {
-      return {
+    .reduce<AccountsByChainID>(
+      (evm, key) => ({
         ...evm,
         [key]: immerState.accountsData.evm[key],
-      }
-    }, {})
+      }),
+      {}
+    )
 
   const combinedAccountBalances = Object.values(filteredEvm)
     .flatMap((accountDataByChain) => Object.values(accountDataByChain))
@@ -487,9 +488,8 @@ export default accountSlice.reducer
  */
 export const resolveNameOnNetwork = createBackgroundAsyncThunk(
   "account/resolveNameOnNetwork",
-  async (nameOnNetwork: NameOnNetwork, { extra: { main } }) => {
-    return main.resolveNameOnNetwork(nameOnNetwork)
-  }
+  async (nameOnNetwork: NameOnNetwork, { extra: { main } }) =>
+    main.resolveNameOnNetwork(nameOnNetwork)
 )
 
 /**
