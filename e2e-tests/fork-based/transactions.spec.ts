@@ -1,5 +1,5 @@
 import { test, expect } from "../utils"
-import { account2Name } from "../utils/onboarding"
+import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset", async ({
@@ -13,7 +13,7 @@ test.describe("Transactions", () => {
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.onboardWithJSON(account2)
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 
@@ -24,7 +24,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2Name
+        account2.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -52,7 +52,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        account2Name,
+        account2.name,
         "ETH",
         "0\\.1021",
         true
@@ -121,7 +121,7 @@ test.describe("Transactions", () => {
          */
         await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          account2Name,
+          account2.name,
           /^ETH$/,
           /^0\.0914$/,
           "base"
@@ -171,7 +171,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          account2Name
+          account2.name
         )
         await walletPageHelper.assertAnalyticsBanner()
       }
@@ -189,7 +189,7 @@ test.describe("Transactions", () => {
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.onboardWithJSON(account2)
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 
@@ -200,7 +200,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2Name
+        account2.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -233,7 +233,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        account2Name,
+        account2.name,
         "KEEP",
         "65\\.88",
         false
@@ -300,7 +300,7 @@ test.describe("Transactions", () => {
        */
       await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        account2Name,
+        account2.name,
         /^KEEP$/,
         /^65\.88$/,
         "knownERC20",
@@ -330,7 +330,7 @@ test.describe("Transactions", () => {
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.onboardWithJSON(account2)
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 
@@ -341,7 +341,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2Name
+        account2.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -374,7 +374,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        account2Name,
+        account2.name,
         "ETH",
         "\\d+\\.\\d{4}",
         true
@@ -432,7 +432,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        account2Name,
+        account2.name,
         "KEEP",
         "65\\.88",
         false
@@ -501,7 +501,7 @@ test.describe("Transactions", () => {
          */
         await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          account2Name,
+          account2.name,
           /^KEEP$/,
           /^53\.54$/,
           "knownERC20",
@@ -552,7 +552,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          account2Name
+          account2.name
         )
         await walletPageHelper.assertAnalyticsBanner()
       }

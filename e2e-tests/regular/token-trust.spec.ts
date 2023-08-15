@@ -1,5 +1,5 @@
 import { test, expect } from "../utils"
-import { account1Name } from "../utils/onboarding"
+import { account1 } from "../utils/onboarding"
 
 // This test verifies functionalites of verified/unverified tokens using a
 // wallet address that control: `e2e.testertesting.eth`
@@ -23,7 +23,7 @@ test.describe("Token Trust", () => {
        * Import the `e2e.testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON("account1")
+      await walletPageHelper.onboardWithJSON(account1)
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 
@@ -34,7 +34,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account1Name
+        account1.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -70,7 +70,7 @@ test.describe("Token Trust", () => {
       await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^MATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "base"
@@ -103,7 +103,7 @@ test.describe("Token Trust", () => {
         .click()
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
@@ -176,7 +176,7 @@ test.describe("Token Trust", () => {
       await popup.getByTestId("asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^MATIC$/,
         /^(\d|,)+(\.\d{2,4)*$/,
         "base"
@@ -209,7 +209,7 @@ test.describe("Token Trust", () => {
         .click()
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
@@ -237,7 +237,7 @@ test.describe("Token Trust", () => {
         .click()
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^BANANA$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "unverified",
@@ -316,7 +316,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
-        account1Name
+        account1.name
       )
       await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
@@ -395,7 +395,7 @@ test.describe("Token Trust", () => {
        */
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
-        account1Name,
+        account1.name,
         /^BANANA$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "trusted",
@@ -471,7 +471,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
-        account1Name
+        account1.name
       )
       await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")

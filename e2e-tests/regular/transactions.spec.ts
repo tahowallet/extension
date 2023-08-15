@@ -1,5 +1,5 @@
 import { test, expect } from "../utils"
-import { account2Address, account2Name } from "../utils/onboarding"
+import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset (on Goerli testnet) @expensive", async ({
@@ -13,7 +13,7 @@ test.describe("Transactions", () => {
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.onboardWithJSON(account2)
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 
@@ -23,7 +23,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2Name
+        account2.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -55,7 +55,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Goerli$/,
         true,
-        account2Name
+        account2.name
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -83,7 +83,7 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Goerli$/,
-        account2Name,
+        account2.name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
         true
@@ -153,7 +153,7 @@ test.describe("Transactions", () => {
         await expect(popup.getByTestId("activity_list")).toHaveCount(1)
         await assetsHelper.assertAssetDetailsPage(
           /^Goerli$/,
-          account2Name,
+          account2.name,
           /^ETH$/,
           /^(\d|,)+(\.\d{0,4})*$/,
           "base"
@@ -188,7 +188,7 @@ test.describe("Transactions", () => {
         await latestSentTx.click()
 
         await transactionsHelper.assertActivityItemProperties(
-          account2Address,
+          account2.address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",
@@ -214,7 +214,7 @@ test.describe("Transactions", () => {
         await walletPageHelper.assertCommonElements(
           /^Goerli$/,
           true,
-          account2Name
+          account2.name
         )
         await walletPageHelper.assertAnalyticsBanner()
 
@@ -240,7 +240,7 @@ test.describe("Transactions", () => {
         await latestSentTx.click()
 
         await transactionsHelper.assertActivityItemProperties(
-          account2Address,
+          account2.address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",

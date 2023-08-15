@@ -1,12 +1,6 @@
 import fs from "fs"
 import { Page, BrowserContext, expect } from "@playwright/test"
-import OnboardingHelper, {
-  account1JsonBody,
-  account1JsonPassword,
-  account2JsonBody,
-  account2JsonPassword,
-  getOnboardingPage,
-} from "./onboarding"
+import OnboardingHelper, { Account, getOnboardingPage } from "./onboarding"
 
 export default class WalletPageHelper {
   readonly url: string
@@ -61,23 +55,21 @@ export default class WalletPageHelper {
    * Onboard using JSON with password-encrypted private key
    */
   async onboardWithJSON(
-    account: "account1" | "account2" | "custom",
+    account: Account | "custom",
     customJsonBody?: string,
     customFilePassword?: string
   ): Promise<void> {
+    /**
+     * Set variables storing JSON file content and password.
+     */
     let jsonBody: string | undefined
     let jsonPassword: string | undefined
-    if (account === "account1") {
-      jsonBody = account1JsonBody
-      jsonPassword = account1JsonPassword
-    } else if (account === "account2") {
-      jsonBody = account2JsonBody
-      jsonPassword = account2JsonPassword
-    } else if (account === "custom") {
+    if (account !== "custom") {
+      jsonBody = account.jsonBody
+      jsonPassword = account.jsonPassword
+    } else {
       jsonBody = customJsonBody
       jsonPassword = customFilePassword
-    } else {
-      throw new Error(`Invalid account: ${account}`)
     }
 
     /**
