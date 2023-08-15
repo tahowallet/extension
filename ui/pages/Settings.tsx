@@ -2,8 +2,6 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Trans, useTranslation } from "react-i18next"
 import {
-  setNewDefaultWalletValue,
-  selectDefaultWallet,
   selectHideDust,
   toggleHideDust,
   selectShowTestNetworks,
@@ -26,7 +24,6 @@ import {
 import {
   FeatureFlags,
   isEnabled,
-  wrapIfDisabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
@@ -166,7 +163,6 @@ export default function Settings(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const hideBanners = useSelector(selectHideBanners)
-  const defaultWallet = useSelector(selectDefaultWallet)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const useFlashbots = useSelector(selectUseFlashbots)
@@ -174,9 +170,6 @@ export default function Settings(): ReactElement {
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
-  }
-  const toggleDefaultWallet = (defaultWalletValue: boolean) => {
-    dispatch(setNewDefaultWalletValue(defaultWalletValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -218,16 +211,6 @@ export default function Settings(): ReactElement {
       <SharedToggleButton
         onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
         value={showUnverifiedAssets}
-      />
-    ),
-  }
-
-  const setAsDefault = {
-    title: t("settings.setAsDefault"),
-    component: () => (
-      <SharedToggleButton
-        onChange={(toggleValue) => toggleDefaultWallet(toggleValue)}
-        value={defaultWallet}
       />
     ),
   }
@@ -405,11 +388,6 @@ export default function Settings(): ReactElement {
     general: {
       title: t("settings.group.general"),
       items: [
-        // setAsDefault is removed from settings in the new dApp Connections flow.
-        ...wrapIfDisabled(
-          FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS,
-          setAsDefault
-        ),
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),

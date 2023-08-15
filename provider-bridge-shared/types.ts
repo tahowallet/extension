@@ -57,12 +57,12 @@ export type PortTransport = {
 
 export type EthersSendCallback = (error: unknown, response: unknown) => void
 
-export type TallyInternalCommunication = {
+export type TahoInternalCommunication = {
   id: "tallyHo"
-  result: TallyConfigPayload | TallyAccountPayload
+  result: TahoConfigPayload | TahoAccountPayload
 }
 
-export type TallyConfigPayload = {
+export type TahoConfigPayload = {
   method: "tally_getConfig"
   defaultWallet: boolean
   chainId?: string
@@ -70,7 +70,7 @@ export type TallyConfigPayload = {
   [prop: string]: unknown
 }
 
-export type TallyAccountPayload = {
+export type TahoAccountPayload = {
   method: "tally_accountChanged"
   address: Array<string>
 }

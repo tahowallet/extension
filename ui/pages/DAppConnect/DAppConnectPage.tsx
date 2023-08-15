@@ -2,16 +2,10 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
-import {
-  FeatureFlags,
-  isDisabled,
-  isEnabled,
-} from "@tallyho/tally-background/features"
 import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
 import RequestingDAppBlock from "./RequestingDApp"
-import SwitchWallet from "./SwitchWallet"
 import { useBackgroundSelector } from "../../hooks"
 import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
 
@@ -20,7 +14,6 @@ type DAppConnectPageProps = {
   currentAccountTotal: AccountTotal
   denyPermission: () => Promise<void>
   grantPermission: () => Promise<void>
-  switchWallet: () => void
 }
 
 export default function DAppConnectPage({
@@ -28,7 +21,6 @@ export default function DAppConnectPage({
   currentAccountTotal,
   denyPermission,
   grantPermission,
-  switchWallet,
 }: DAppConnectPageProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "dappConnection" })
   const { title, origin, faviconUrl, accountAddress } = permission
@@ -37,11 +29,7 @@ export default function DAppConnectPage({
   const [wasDefaultWallet, setWasDefaultWallet] = useState(isDefaultWallet)
 
   useEffect(() => {
-    if (
-      isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
-      wasDefaultWallet &&
-      !isDefaultWallet
-    ) {
+    if (wasDefaultWallet && !isDefaultWallet) {
       // When default wallet is toggled off, wait for the toggle animation to
       // complete and close the window out.
       setTimeout(() => window.close(), 300)
@@ -49,11 +37,7 @@ export default function DAppConnectPage({
   }, [wasDefaultWallet, isDefaultWallet])
 
   useEffect(() => {
-    if (
-      isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) &&
-      !wasDefaultWallet &&
-      isDefaultWallet
-    ) {
+    if (!wasDefaultWallet && isDefaultWallet) {
       // When default wallet is toggled on, make sure wasDefaultWallet is
       // updated. This handles the situation where the wallet is not default,
       // then a connection popup appears, then the user toggles it to default,
@@ -66,9 +50,7 @@ export default function DAppConnectPage({
 
   return (
     <>
-      {isEnabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
-        <DAppConnectionInfoBar />
-      )}
+      <DAppConnectionInfoBar />
       <section className="standard_width">
         <h1 className="serif_header">{t("connectToDapp")}</h1>
         <div className="connection_destination">
@@ -96,9 +78,6 @@ export default function DAppConnectPage({
             </ul>
           </li>
         </ul>
-        {isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
-          <SwitchWallet switchWallet={switchWallet} />
-        )}
       </section>
       <div className="footer_actions">
         <SharedButton size="large" type="secondary" onClick={denyPermission}>

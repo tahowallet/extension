@@ -6,18 +6,11 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
-import {
-  FeatureFlags,
-  isDisabled,
-  isEnabled,
-} from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import {
-  selectShowAnalyticsNotification,
-  selectShowUnverifiedAssets,
-} from "@tallyho/tally-background/redux-slices/ui"
+import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import { useHistory } from "react-router-dom"
@@ -27,7 +20,6 @@ import WalletAssetList from "../components/Wallet/WalletAssetList"
 import WalletActivityList from "../components/Wallet/WalletActivityList"
 import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalanceControl"
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
-import WalletToggleDefaultBanner from "../components/Wallet/WalletToggleDefaultBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
 import NFTListCurrentWallet from "../components/NFTs/NFTListCurrentWallet"
@@ -92,10 +84,6 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired
   )
 
-  const showAnalyticsNotification = useBackgroundSelector(
-    selectShowAnalyticsNotification
-  )
-
   const showHiddenAssets = useMemo(
     () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
     [showUnverifiedAssets, unverifiedAssetAmounts.length]
@@ -112,10 +100,6 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        {!showAnalyticsNotification &&
-          isDisabled(FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS) && (
-            <WalletToggleDefaultBanner />
-          )}
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl

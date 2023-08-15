@@ -8,7 +8,7 @@ import {
   EIP1193Error,
   RPCRequest,
   EIP1193_ERROR_CODES,
-  isTallyConfigPayload,
+  isTahoConfigPayload,
 } from "@tallyho/provider-bridge-shared"
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import BaseService from "../base"
@@ -35,7 +35,7 @@ import {
   parseRPCRequestParams,
 } from "./utils"
 import { toHexChainID } from "../../networks"
-import { TALLY_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -159,13 +159,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
       )
 
     const originPermission = await this.checkPermission(origin, network.chainID)
-    if (origin === TALLY_INTERNAL_ORIGIN) {
+    if (origin === TAHO_INTERNAL_ORIGIN) {
       // Explicitly disallow anyone who has managed to pretend to be the
       // internal provider.
       response.result = new EIP1193Error(
         EIP1193_ERROR_CODES.unauthorized
       ).toJSON()
-    } else if (isTallyConfigPayload(event.request)) {
+    } else if (isTahoConfigPayload(event.request)) {
       // let's start with the internal communication
       response.id = "tallyHo"
       response.result = {

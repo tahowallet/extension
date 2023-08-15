@@ -42,6 +42,7 @@ type WalletProvider = BaseWalletProvider & {
 
 type TahoProvider = BaseWalletProvider & {
   isTally: true
+  isTaho: true
   tahoSetAsDefault: boolean
   send: (method: string, params: unknown[]) => void | Promise<unknown>
 }
@@ -49,7 +50,9 @@ type TahoProvider = BaseWalletProvider & {
 type WindowEthereum = WalletProvider & {
   isMetaMask?: boolean
   tallySetAsDefault?: boolean
+  tahoSetAsDefault?: boolean
   isTally?: boolean
+  isTaho?: boolean
   autoRefreshOnNetworkChange?: boolean
 }
 interface Window {
@@ -57,7 +60,11 @@ interface Window {
     currentProvider: WalletProvider
     providers: WalletProvider[]
     shouldSetTallyForCurrentProvider: (
-      shouldSetTally: boolean,
+      shouldSetTaho: boolean,
+      shouldReload?: boolean
+    ) => void
+    shouldSetTahoForCurrentProvider: (
+      shouldSetTaho: boolean,
       shouldReload?: boolean
     ) => void
     routeToNewNonTahoDefault: (request: unknown) => Promise<unknown>
@@ -68,6 +75,7 @@ interface Window {
     addProvider: (newProvider: WalletProvider) => void
   }
   tally?: TahoProvider
+  taho?: TahoProvider
   ethereum?: WindowEthereum
   oldEthereum?: WindowEthereum
 }

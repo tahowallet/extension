@@ -7,62 +7,15 @@ import {
   isPortResponseEvent,
   RequestArgument,
   EthersSendCallback,
-  isTallyConfigPayload,
-  TallyConfigPayload,
+  isTahoConfigPayload,
+  TahoConfigPayload,
   isEIP1193Error,
-  isTallyInternalCommunication,
-  TallyAccountPayload,
-  isTallyAccountPayload,
+  isTahoInternalCommunication,
+  TahoAccountPayload,
+  isTahoAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
-
-// TODO: we don't want to impersonate MetaMask everywhere to not break existing integrations,
-//       so let's do this only on the websites that need this feature
-const impersonateMetamaskWhitelist = [
-  "traderjoexyz.com",
-  "transferto.xyz",
-  "opensea.io",
-  "polygon.technology",
-  "gmx.io",
-  "app.lyra.finance",
-  "matcha.xyz",
-  "bridge.umbria.network",
-  "galaxy.eco",
-  "galxe.com",
-  "dydx.exchange",
-  "app.euler.finance",
-  "kwenta.io",
-  "stargate.finance",
-  "etherscan.io",
-  "swapr.eth.link",
-  "apex.exchange",
-  "app.yieldprotocol.com",
-  "tofunft.com",
-  "aboard.exchange",
-  "portal.zksync.io",
-  "blur.io",
-  "app.benqi.fi",
-  "snowtrace.io",
-  "core.app",
-  "cbridge.celer.network",
-  "stargate.finance",
-  "app.multchain.cn",
-  "app.venus.io",
-  "app.alpacafinance.org",
-  "pancakeswap.finance",
-  "liquidifty.io",
-  "ankr.com",
-  "mint.xencrypto.io",
-  "bscscan.com",
-  "alchemy.com",
-  "cow.fi",
-  "tally.xyz",
-  "kyberswap.com",
-  "space.id",
-  "app.0xsplits.xyz",
-  "altlayer.io",
-]
 
 const METAMASK_STATE_MOCK = {
   accounts: null,
@@ -82,6 +35,8 @@ export default class TahoWindowProvider extends EventEmitter {
   connected = false
 
   isTally: true = true
+
+  isTaho: true = true
 
   isMetaMask = false
 
@@ -112,17 +67,17 @@ export default class TahoWindowProvider extends EventEmitter {
     iconURL: "TODO",
     identityFlag: "isTally",
     checkIdentity: (provider: WalletProvider) =>
-      !!provider && !!provider.isTally,
+      !!provider && !!provider.isTaho,
   } as const
 
   constructor(public transport: ProviderTransport) {
     super()
 
     const internalListener = (event: unknown) => {
-      let result: TallyConfigPayload | TallyAccountPayload
+      let result: TahoConfigPayload | TahoAccountPayload
       if (
         isWindowResponseEvent(event) &&
-        isTallyInternalCommunication(event.data)
+        isTahoInternalCommunication(event.data)
       ) {
         if (
           event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
@@ -135,38 +90,25 @@ export default class TahoWindowProvider extends EventEmitter {
         result = event.data.result
       } else if (
         isPortResponseEvent(event) &&
-        isTallyInternalCommunication(event)
+        isTahoInternalCommunication(event)
       ) {
         result = event.result
       } else {
         return
       }
 
-      if (isTallyConfigPayload(result)) {
-        const wasTallySetAsDefault = this.tahoSetAsDefault
+      if (isTahoConfigPayload(result)) {
+        const wasTahoSetAsDefault = this.tahoSetAsDefault
 
-        window.walletRouter?.shouldSetTallyForCurrentProvider(
+        window.walletRouter?.shouldSetTahoForCurrentProvider(
           result.defaultWallet,
-          result.shouldReload &&
-            process.env.ENABLE_UPDATED_DAPP_CONNECTIONS !== "true"
+          false
         )
-        const currentHost = window.location.host
-        if (
-          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" ||
-          impersonateMetamaskWhitelist.some((host) =>
-            currentHost.includes(host)
-          )
-        ) {
-          this.tahoSetAsDefault = result.defaultWallet
-        }
+        this.tahoSetAsDefault = result.defaultWallet
 
         // When the default state flips, reroute any unresolved requests to the
         // new default provider.
-        if (
-          process.env.ENABLE_UPDATED_DAPP_CONNECTIONS === "true" &&
-          wasTallySetAsDefault &&
-          !this.tahoSetAsDefault
-        ) {
+        if (wasTahoSetAsDefault && !this.tahoSetAsDefault) {
           const existingRequests = [...this.requestResolvers.entries()]
           this.requestResolvers.clear()
 
@@ -188,7 +130,7 @@ export default class TahoWindowProvider extends EventEmitter {
         if (result.chainId && result.chainId !== this.chainId) {
           this.handleChainIdChange(result.chainId)
         }
-      } else if (isTallyAccountPayload(result)) {
+      } else if (isTahoAccountPayload(result)) {
         this.handleAddressChange(result.address)
       }
     }
