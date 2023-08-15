@@ -1,26 +1,7 @@
-import fs from "fs"
 import { test, expect } from "../utils"
 import { account2Name } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
-  test.beforeAll(async () => {
-    /**
-     * Create a JSON file with an encoded private key based on the file
-     * content passed from an environment variable. The further steps of
-     * the tests assume that the file encodes the pk of the `testertesting.eth`
-     * account. The JSON file can be generated using a script
-     * `scripts/key-generation/export-key-as-json.js`.
-     */
-    const jsonBody = process.env.TEST_WALLET_JSON_BODY
-    if (jsonBody) {
-      fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
-    } else {
-      throw new Error(
-        "TEST_WALLET_JSON_BODY environment variable is not defined."
-      )
-    }
-  })
-
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
@@ -29,19 +10,12 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
@@ -212,19 +186,12 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
@@ -360,19 +327,12 @@ test.describe("Transactions", () => {
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON("account2")
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main

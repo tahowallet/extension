@@ -1,4 +1,3 @@
-import fs from "fs"
 import { test, expect } from "../utils"
 import { account1Name } from "../utils/onboarding"
 
@@ -21,36 +20,10 @@ test.describe("Token Trust", () => {
   }) => {
     await test.step("Import account and add addresses", async () => {
       /**
-       * Create a JSON file with an encoded private key based on the file
-       * content passed from an environment variable. The further steps of
-       * the test assume that the file encodes the pk of the
-       * `e2e.testertesting.eth` account. The JSON file can be generated using
-       * the script `scripts/key-generation/export-key-as-json.js`.
+       * Import the `e2e.testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonBody = process.env.E2E_TEST_ONLY_WALLET_JSON_BODY
-      if (jsonBody) {
-        fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
-      } else {
-        throw new Error(
-          "E2E_TEST_ONLY_WALLET_JSON_BODY environment variable is not defined."
-        )
-      }
-
-      /**
-       * Onboard using JSON file.
-       */
-      const jsonPassword = process.env.E2E_TEST_ONLY_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "E2E_TEST_ONLY_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
-
+      await walletPageHelper.onboardWithJSON("account1")
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
 

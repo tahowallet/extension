@@ -1,5 +1,12 @@
+import fs from "fs"
 import { Page, BrowserContext, expect } from "@playwright/test"
-import OnboardingHelper, { getOnboardingPage } from "./onboarding"
+import OnboardingHelper, {
+  account1JsonBody,
+  account1JsonPassword,
+  account2JsonBody,
+  account2JsonPassword,
+  getOnboardingPage,
+} from "./onboarding"
 
 export default class WalletPageHelper {
   readonly url: string
@@ -53,15 +60,54 @@ export default class WalletPageHelper {
   /**
    * Onboard using JSON with password-encrypted private key
    */
-  async onboardWithJSON(file: string, filePassword: string): Promise<void> {
+  async onboardWithJSON(
+    account: "account1" | "account2" | "custom",
+    customJsonBody?: string,
+    customFilePassword?: string
+  ): Promise<void> {
+    let jsonBody: string | undefined
+    let jsonPassword: string | undefined
+    if (account === "account1") {
+      jsonBody = account1JsonBody
+      jsonPassword = account1JsonPassword
+    } else if (account === "account2") {
+      jsonBody = account2JsonBody
+      jsonPassword = account2JsonPassword
+    } else if (account === "custom") {
+      jsonBody = customJsonBody
+      jsonPassword = customFilePassword
+    } else {
+      throw new Error(`Invalid account: ${account}`)
+    }
+
+    /**
+     * Create JSON file.
+     */
+    const filePath = "./e2e-tests/utils/JSON-tmp.json"
+    if (jsonBody) {
+      fs.writeFileSync(filePath, jsonBody)
+    } else {
+      throw new Error("`jsonBody` not defined.")
+    }
+
+    /**
+     * Onboard using JSON file.
+     */
     const onboardingPage = await getOnboardingPage(this.context)
-    await this.onboarding.addAccountFromJSON({
-      file,
-      filePassword,
-      onboardingPage,
-    })
-    await this.setViewportSize()
-    await this.goToStartPage()
+    if (jsonPassword) {
+      await this.onboarding.addAccountFromJSON({
+        file: filePath,
+        filePassword: jsonPassword,
+        onboardingPage,
+      })
+    } else {
+      throw new Error("`jsonPassword` not defined.")
+    }
+
+    /**
+     * Remove the previously created JSON file.
+     */
+    fs.unlinkSync(filePath)
   }
 
   async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
