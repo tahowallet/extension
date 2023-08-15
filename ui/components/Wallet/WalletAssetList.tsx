@@ -5,6 +5,7 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import { getFullAssetID } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import WalletAssetListItem from "./WalletAssetListItem"
 import AssetWarningWrapper from "./UnverifiedAsset/AssetWarningWrapper"
 
@@ -40,7 +41,7 @@ export default function WalletAssetList(
         {assetAmounts.map((assetAmount) => (
           <WalletAssetListItem
             assetAmount={assetAmount}
-            key={assetAmount.asset.symbol}
+            key={getFullAssetID(assetAmount.asset)}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
             onUnverifiedAssetWarningClick={(asset) => setWarnedAsset(asset)}
           />
