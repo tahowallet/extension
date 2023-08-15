@@ -217,7 +217,7 @@ This release checklist should be performed before release is published.
 - [ ] connect to [SpookySwap](https://spooky.fi/#/)
 - [ ] connect to [Velodrome](https://app.velodrome.finance/swap)
 - [ ] connect to [GMX](https://app.gmx.io/#/trade)
-- [ ] connect to [Mintkudos](https://mintkudos.xyz/)
+- [ ] connect to [MetaMask Test dApp](https://metamask.github.io/test-dapp/) & verify Personal Sign
 
 ### 🎭 Sign in with Ethereum
 
