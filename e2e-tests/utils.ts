@@ -60,8 +60,8 @@ export const test = base.extend<WalletTestFixtures>({
     const helper = new WalletPageHelper(page, context, extensionId)
     await use(helper)
   },
-  assetsHelper: async ({ page, walletPageHelper }, use) => {
-    const helper = new AssetsHelper(page, walletPageHelper)
+  assetsHelper: async ({ page, walletPageHelper, context }, use) => {
+    const helper = new AssetsHelper(page, walletPageHelper, context)
     await use(helper)
   },
   transactionsHelper: async ({ page, walletPageHelper }, use) => {
