@@ -33,7 +33,7 @@ import {
   parseSigningData,
 } from "../../utils/signing"
 import { getOrCreateDB, InternalEthereumProviderDatabase } from "./db"
-import { TALLY_INTERNAL_ORIGIN } from "./constants"
+import { TAHO_INTERNAL_ORIGIN } from "./constants"
 import { ROOTSTOCK } from "../../constants"
 import {
   EnrichedEVMTransactionRequest,
@@ -145,7 +145,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           result: await this.routeSafeRPCRequest(
             event.request.method,
             event.request.params,
-            TALLY_INTERNAL_ORIGIN
+            TAHO_INTERNAL_ORIGIN
           ),
         }
         logger.debug("internal response:", response)
@@ -372,7 +372,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
 
   private async getCurrentInternalNetwork(): Promise<EVMNetwork> {
     return this.db.getCurrentNetworkForOrigin(
-      TALLY_INTERNAL_ORIGIN
+      TAHO_INTERNAL_ORIGIN
     ) as Promise<EVMNetwork>
   }
 
@@ -398,7 +398,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     origin: string
   ): Promise<SignedTransaction> {
     const annotation =
-      origin === TALLY_INTERNAL_ORIGIN &&
+      origin === TAHO_INTERNAL_ORIGIN &&
       "annotation" in transactionRequest &&
       transactionRequest.annotation !== undefined
         ? // We use  `as` here as we know it's from a trusted source.

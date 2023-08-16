@@ -797,15 +797,6 @@
     },
     "reviewSwap": "Review swap"
   },
-  "switchWallet": {
-    "title": "Want to use another wallet instead?",
-    "tooltip": "You are seeing this because Taho is set as default wallet, you can change this option in the main menu.",
-    "confirmSwitchWallet": "Yes, switch wallet",
-    "notDefaultWalletMessage": "Taho not Default",
-    "disableWalletExplainer": "We disabled Taho as the default wallet for you. You can always re-enable it from Menu ☰ at any time.",
-    "useTahoAsDefaultPrompt": "Use Taho as default wallet",
-    "closeButton": "Close window"
-  },
   "toggle": {
     "collapse": "Collapse",
     "viewAll": "View all"
@@ -921,12 +912,6 @@
     }
   },
   "dAppConnect": {
-    "switchWallet": {
-      "title": "Taho not Default",
-      "descFirstPart": "We disabled Taho as default wallet for you. You can always enable it back from Settings",
-      "descSecondPart": "at any time.",
-      "toggleTitle": "Use Taho as default wallet"
-    },
     "defaultConnectionPopover": {
       "title": "Connecting with Taho",
       "activeWallet": "Your active wallet is Taho.",

@@ -141,7 +141,7 @@ import {
   REDUX_STATE_VERSION,
 } from "./redux-slices/migrations"
 import { PermissionMap } from "./services/provider-bridge/utils"
-import { TALLY_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+import { TAHO_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
 import {
   ActivityDetail,
   addActivity,
@@ -508,27 +508,74 @@ export default class Main extends BaseService<never> {
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(this, savedReduxState)
 
+    /**
+     * Tracks pending updates to the redux store. This is used to delay responding
+     * to dispatched thunks until the store has been updated in the UI. This is
+     * necessary to prevent race conditions where the UI expects the store to be
+     * updated before the thunk has finished dispatching.
+     */
+    let storeUpdateLock: Promise<void> | null
+    let releaseLock: () => void
+
+    const queueUpdate = debounce(
+      (lastState, newState, updateFn) => {
+        if (lastState !== newState) {
+          const diff = deepDiff(lastState, newState)
+
+          if (diff !== undefined) {
+            updateFn(newState, [diff])
+          }
+        }
+        releaseLock()
+      },
+      30,
+      { maxWait: 30, trailing: true }
+    )
+
     wrapStore(this.store, {
       serializer: encodeJSON,
       deserializer: decodeJSON,
-      diffStrategy: (oldObj, newObj) => {
-        const diffWrapper = deepDiff(oldObj, newObj)
-        return diffWrapper === undefined ? [] : [diffWrapper]
+      diffStrategy: (oldObj, newObj, forceUpdate) => {
+        if (!storeUpdateLock) {
+          storeUpdateLock = new Promise((resolve) => {
+            releaseLock = () => {
+              resolve()
+              storeUpdateLock = null
+            }
+          })
+        }
+
+        queueUpdate(oldObj, newObj, forceUpdate)
+
+        // Return no diffs as we're manually handling these inside `queueUpdate`
+        return []
       },
       dispatchResponder: async (
-        dispatchResult: Promise<unknown>,
+        dispatchResult: Promise<unknown> | unknown,
         send: (param: { error: string | null; value: unknown | null }) => void
       ) => {
         try {
+          // if dispatch is a thunk, wait for the result
+          const result = await dispatchResult
+
+          // By this time, all pending updates should've been tracked.
+          // since we're dealing with a thunk, we need to wait for
+          // the store to be updated
+          await storeUpdateLock
+
           send({
             error: null,
-            value: encodeJSON(await dispatchResult),
+            value: encodeJSON(result),
           })
         } catch (error) {
           logger.error(
             "Error awaiting and dispatching redux store result: ",
             error
           )
+
+          // Store could still have been updated if there was an error
+          await storeUpdateLock
+
           send({
             error: encodeJSON(error),
             value: null,
@@ -703,7 +750,7 @@ export default class Main extends BaseService<never> {
         address: accounts[0].address,
         network:
           await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
-            TALLY_INTERNAL_ORIGIN
+            TAHO_INTERNAL_ORIGIN
           ),
       })
     )
@@ -1363,7 +1410,7 @@ export default class Main extends BaseService<never> {
       this.internalEthereumProviderService.routeSafeRPCRequest(
         "wallet_switchEthereumChain",
         [{ chainId: network.chainID }],
-        TALLY_INTERNAL_ORIGIN
+        TAHO_INTERNAL_ORIGIN
       )
       this.chainService.pollBlockPricesForNetwork(network.chainID)
       this.store.dispatch(clearCustomGas())

@@ -181,6 +181,11 @@ Object.defineProperty(window, "tally", {
   writable: false,
   configurable: false,
 })
+Object.defineProperty(window, "taho", {
+  value: tahoWindowProvider,
+  writable: false,
+  configurable: false,
+})
 
 if (!window.walletRouter) {
   const existingProviders =
@@ -202,21 +207,28 @@ if (!window.walletRouter) {
 
   Object.defineProperty(window, "walletRouter", {
     value: {
-      currentProvider: window.tally,
+      currentProvider: window.taho,
       lastInjectedProvider: wrappedLastInjectedProvider,
-      tallyProvider: window.tally,
+      tallyProvider: window.taho,
+      tahoProvider: window.taho,
       providers: dedupedProviders,
       shouldSetTallyForCurrentProvider(
         shouldSetTally: boolean,
         shouldReload = false
       ) {
-        if (shouldSetTally && this.currentProvider !== this.tallyProvider) {
-          this.currentProvider = this.tallyProvider
+        this.shouldSetTahoForCurrentProvider(shouldSetTally, shouldReload)
+      },
+      shouldSetTahoForCurrentProvider(
+        shouldSetTaho: boolean,
+        shouldReload = false
+      ) {
+        if (shouldSetTaho && this.currentProvider !== this.tahoProvider) {
+          this.currentProvider = this.tahoProvider
         } else if (
-          !shouldSetTally &&
-          this.currentProvider === this.tallyProvider
+          !shouldSetTaho &&
+          this.currentProvider === this.tahoProvider
         ) {
-          this.currentProvider = this.lastInjectedProvider ?? this.tallyProvider
+          this.currentProvider = this.lastInjectedProvider ?? this.tahoProvider
         }
 
         // Make the new "current provider" first in the provider list. This
@@ -249,7 +261,7 @@ if (!window.walletRouter) {
         // where Taho is default, then default is turned off, but no other
         // provider is installed, so that we don't try to reroute back to Taho
         // as the only other provider.
-        if (this.currentProvider === this.tallyProvider) {
+        if (this.currentProvider === this.tahoProvider) {
           return Promise.reject(
             new Error("Only the Taho provider is installed.")
           )
@@ -267,7 +279,7 @@ if (!window.walletRouter) {
       },
       reemitTahoEvent(event: string | symbol, ...args: unknown[]): boolean {
         if (
-          this.currentProvider !== this.tallyProvider ||
+          this.currentProvider !== this.tahoProvider ||
           this.lastInjectedProvider === undefined ||
           this.currentProvider === this.lastInjectedProvider
         ) {

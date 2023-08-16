@@ -6,7 +6,6 @@ import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefault
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
-import { WalletDefaultToggle } from "../Wallet/WalletToggleDefaultBanner"
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -81,13 +80,7 @@ function ConnectionDAppGuideline({
                     <li>
                       <span className="wallet_toggle_wrap">
                         {t("guideline.step1")}
-                        {isEnabled(
-                          FeatureFlags.ENABLE_UPDATED_DAPP_CONNECTIONS
-                        ) ? (
-                          <DAppConnectionDefaultToggle alwaysForceSelection="taho" />
-                        ) : (
-                          <WalletDefaultToggle />
-                        )}
+                        <DAppConnectionDefaultToggle alwaysForceSelection="taho" />
                       </span>
                     </li>
                     <li>{t("guideline.step2")}</li>
