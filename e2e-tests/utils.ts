@@ -3,6 +3,7 @@ import { test as base, chromium, Page } from "@playwright/test"
 import { FeatureFlagType, isEnabled } from "@tallyho/tally-background/features"
 import path from "path"
 import WalletPageHelper from "./utils/walletPageHelper"
+import AssetsHelper from "./utils/assets"
 import TransactionsHelper from "./utils/transactions"
 
 // Re-exporting so we don't mix imports
@@ -11,6 +12,7 @@ export { expect } from "@playwright/test"
 type WalletTestFixtures = {
   extensionId: string
   walletPageHelper: WalletPageHelper
+  assetsHelper: AssetsHelper
   transactionsHelper: TransactionsHelper
   backgroundPage: Page
 }
@@ -56,6 +58,10 @@ export const test = base.extend<WalletTestFixtures>({
   },
   walletPageHelper: async ({ page, context, extensionId }, use) => {
     const helper = new WalletPageHelper(page, context, extensionId)
+    await use(helper)
+  },
+  assetsHelper: async ({ page, walletPageHelper }, use) => {
+    const helper = new AssetsHelper(page, walletPageHelper)
     await use(helper)
   },
   transactionsHelper: async ({ page, walletPageHelper }, use) => {

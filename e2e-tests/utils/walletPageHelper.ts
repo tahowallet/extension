@@ -1,5 +1,6 @@
+import fs from "fs"
 import { Page, BrowserContext, expect } from "@playwright/test"
-import OnboardingHelper, { getOnboardingPage } from "./onboarding"
+import OnboardingHelper, { Account, getOnboardingPage } from "./onboarding"
 
 export default class WalletPageHelper {
   readonly url: string
@@ -53,18 +54,55 @@ export default class WalletPageHelper {
   /**
    * Onboard using JSON with password-encrypted private key
    */
-  async onboardWithJSON(file: string, filePassword: string): Promise<void> {
+  async onboardWithJSON(
+    account: Account | "custom",
+    customJsonBody?: string,
+    customFilePassword?: string
+  ): Promise<void> {
+    /**
+     * Set variables storing JSON file content and password.
+     */
+    let jsonBody: string | undefined
+    let jsonPassword: string | undefined
+    if (account !== "custom") {
+      jsonBody = account.jsonBody
+      jsonPassword = account.jsonPassword
+    } else {
+      jsonBody = customJsonBody
+      jsonPassword = customFilePassword
+    }
+
+    /**
+     * Create JSON file.
+     */
+    const filePath = "./e2e-tests/utils/JSON-tmp.json"
+    if (jsonBody) {
+      fs.writeFileSync(filePath, jsonBody)
+    } else {
+      throw new Error("`jsonBody` not defined.")
+    }
+
+    /**
+     * Onboard using JSON file.
+     */
     const onboardingPage = await getOnboardingPage(this.context)
-    await this.onboarding.addAccountFromJSON({
-      file,
-      filePassword,
-      onboardingPage,
-    })
-    await this.setViewportSize()
-    await this.goToStartPage()
+    if (jsonPassword) {
+      await this.onboarding.addAccountFromJSON({
+        file: filePath,
+        filePassword: jsonPassword,
+        onboardingPage,
+      })
+    } else {
+      throw new Error("`jsonPassword` not defined.")
+    }
+
+    /**
+     * Remove the previously created JSON file.
+     */
+    fs.unlinkSync(filePath)
   }
 
-  async verifyTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
+  async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
     await expect(
@@ -75,7 +113,10 @@ export default class WalletPageHelper {
       .last()
       .click({ trial: true })
 
-    await this.popup.locator(".connection_button").last().click({ trial: true })
+    await expect(this.popup.getByText("Connect to website using:")).toHaveCount(
+      1
+    )
+    await this.popup.locator(".bulb").last().click({ trial: true })
 
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last()
@@ -87,7 +128,7 @@ export default class WalletPageHelper {
     // TODO: verify 'Copy address'
   }
 
-  async verifyBottomWrap(): Promise<void> {
+  async assertBottomWrap(): Promise<void> {
     await this.popup
       .getByLabel("Main")
       .getByText("Wallet", { exact: true })
@@ -109,7 +150,7 @@ export default class WalletPageHelper {
   /**
    *  The function checks elements of the main page that should always be present.
    */
-  async verifyCommonElements(
+  async assertCommonElements(
     network: RegExp,
     testnet: boolean,
     accountLabel: RegExp
@@ -121,7 +162,7 @@ export default class WalletPageHelper {
       /^\$(\d|,)+(\.\d{1,2})*$/
     )
 
-    await this.verifyTopWrap(network, accountLabel)
+    await this.assertTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Send", exact: true })
@@ -146,10 +187,10 @@ export default class WalletPageHelper {
       .getByTestId("panel_switcher")
       .getByText("Activity", { exact: true })
       .click({ trial: true })
-    await this.verifyBottomWrap()
+    await this.assertBottomWrap()
   }
 
-  async verifyAnalyticsBanner(): Promise<void> {
+  async assertAnalyticsBanner(): Promise<void> {
     const analyticsBanner = this.popup.locator("div").filter({
       has: this.popup.getByRole("heading", {
         name: "Analytics are enabled",
@@ -167,7 +208,16 @@ export default class WalletPageHelper {
       .click({ trial: true })
   }
 
-  async verifyDefaultWalletBanner(): Promise<void> {
+  async waitForAssetsToLoad(timeout?: number): Promise<void> {
+    await expect(this.popup.getByText("Digging deeper")).toHaveCount(0, {
+      timeout: timeout ?? 120000,
+    })
+    await expect(this.popup.locator(".spinner")).toHaveCount(0, {
+      timeout: timeout ?? 120000,
+    })
+  }
+
+  async assertDefaultWalletBanner(): Promise<void> {
     await expect(
       this.popup.getByText("Taho is not your default wallet")
     ).toBeVisible()
@@ -183,6 +233,71 @@ export default class WalletPageHelper {
     await expect(
       this.popup.getByTestId("top_menu_network_switcher").last()
     ).toHaveText(network)
+  }
+
+  /**
+   * Function adding new address to an already imported account.
+   */
+  async addAddressToAccount(accountLabel: string): Promise<void> {
+    /**
+     * Open the Accounts slide up.
+     */
+    await this.popup.getByTestId("top_menu_profile_button").last().click()
+
+    /**
+     * Add new address.
+     */
+    const numberOfAccounts = await this.popup
+      .getByTestId("wallet_address_item")
+      .count()
+    const accountLabelButton = this.popup
+      .getByTestId("wallet_title")
+      .filter({
+        hasText: accountLabel,
+      })
+      .getByRole("button")
+    await accountLabelButton.click()
+    await this.popup.getByText(/^Add address$/).click()
+    await expect(this.popup.getByTestId("wallet_address_item")).toHaveCount(
+      numberOfAccounts + 1
+    )
+    await expect(
+      this.popup.getByTestId("slide_up_menu").locator(".spinner")
+    ).toHaveCount(0)
+
+    /**
+     * Close the Accounts slide up.
+     */
+    const accountsSlideUp = await this.popup
+      .getByTestId("slide_up_menu")
+      .filter({ hasText: "Accounts" })
+    await expect(accountsSlideUp).toBeVisible()
+    await accountsSlideUp
+      .getByRole("button", { name: "Close menu" })
+      .first()
+      .click()
+  }
+
+  /**
+   * Function switchning to an another account.
+   */
+  async switchToAddress(
+    accountLabel: string,
+    addressNo: number, // 1 for the 1st address under the `accountLabel` label, 2 for the 2nd, etc.
+    accountName: RegExp // the name displayed in the top menu after account switching
+  ): Promise<void> {
+    await this.popup.getByTestId("top_menu_profile_button").last().click()
+    await this.popup
+      .locator("section")
+      .filter({
+        hasText: accountLabel,
+      })
+      .getByTestId("wallet_address_item")
+      .nth(addressNo - 1)
+      .click()
+    await expect(
+      this.popup.getByTestId("top_menu_profile_button").last()
+    ).toHaveText(accountName)
   }
 
   /**

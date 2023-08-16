@@ -12,7 +12,7 @@ export default class TransactionsHelper {
    * This function verifies elements on the unfilled Send Assets form.
    * Makes sure `Continue` button isn't active.
    */
-  async verifyUnfilledSendAssetScreen(
+  async assertUnfilledSendAssetScreen(
     network: RegExp,
     accountLabel: RegExp,
     assetSymbol: string,
@@ -23,7 +23,7 @@ export default class TransactionsHelper {
       this.popup.getByRole("heading", { name: "Send Asset", exact: true })
     ).toBeVisible()
 
-    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
+    await this.walletPageHelper.assertTopWrap(network, accountLabel)
 
     await this.popup
       .getByRole("button", { name: "Back", exact: true })
@@ -62,13 +62,13 @@ export default class TransactionsHelper {
       .getByRole("button", { name: "Continue", exact: true })
       .click({ force: true })
 
-    await this.walletPageHelper.verifyBottomWrap()
+    await this.walletPageHelper.assertBottomWrap()
   }
 
   /**
    * This function verifies elements on the Transfer screen.
    */
-  async verifyTransferScreen(
+  async assertTransferScreen(
     regexNetwork: string, // a network in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     regexAccountLabel: string, // an account label in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     sendToAddressFull: string,
@@ -159,66 +159,9 @@ export default class TransactionsHelper {
   }
 
   /**
-   * This function verifies elements on the asset activity screen.
-   */
-  async verifyAssetActivityScreen(
-    network: RegExp,
-    accountLabel: RegExp,
-    assetSymbol: RegExp,
-    expectedBalance: RegExp,
-    baseAsset: boolean,
-    tokenLink?: string
-  ): Promise<void> {
-    await this.walletPageHelper.verifyTopWrap(network, accountLabel)
-
-    await this.popup
-      .getByRole("button", { name: "Back", exact: true })
-      .first()
-      .click({ trial: true })
-
-    await this.popup
-      .getByRole("button", { name: "Send", exact: true })
-      .click({ trial: true })
-    await this.popup
-      .getByRole("button", { name: "Swap", exact: true })
-      .click({ trial: true })
-
-    await this.walletPageHelper.verifyBottomWrap()
-
-    /**
-     * Verify the token balance gets updated to the right value
-     */
-    const activityLeftContainer = this.popup.getByTestId("left_wrap")
-    await expect(activityLeftContainer.getByText(assetSymbol)).toBeVisible()
-    await expect(async () => {
-      const balance = await activityLeftContainer
-        .getByText(/^(\d|,)+(\.\d{0,4})*$/)
-        .textContent()
-      expect(balance).toMatch(expectedBalance)
-    }).toPass({
-      timeout: 120000,
-    })
-    await expect(
-      activityLeftContainer.getByText(/^(\d|,)+(\.\d{0,4})*$/)
-    ).toBeVisible()
-
-    if (baseAsset === false) {
-      const tokenLinkIcon = activityLeftContainer
-        .getByRole("link")
-        .filter({ has: this.popup.locator(".icon_new_tab") })
-      if (tokenLink !== undefined) {
-        await expect(tokenLinkIcon).toHaveAttribute("href", tokenLink)
-      } else {
-        throw new Error("`tokenLink` not defined.")
-      }
-      await tokenLinkIcon.click({ trial: true })
-    }
-  }
-
-  /**
    * This function verifies asset activity item's details.
    */
-  async verifyActivityItemProperties(
+  async assertActivityItemProperties(
     sendFromAddressFull: string,
     sendFromAddressShortened: string,
     sendToAddressFull: string,

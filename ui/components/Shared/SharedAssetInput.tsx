@@ -195,7 +195,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
             </div>
           </div>
           <div className="divider" />
-          <ul className="assets_list">
+          <ul className="assets_list" data-testid="assets_list">
             {sortedFilteredAssets.map((assetWithOptionalAmount) => {
               const { asset } = assetWithOptionalAmount
               return (

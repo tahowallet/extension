@@ -22,10 +22,30 @@ export const getOnboardingPage = async (
 }
 
 const DEFAULT_PASSWORD = "12345678"
+
+export interface Account {
+  address: string
+  name: RegExp
+  jsonBody?: string
+  jsonPassword?: string
+}
 // The account1 is a 3rd address associated with the testertesting.eth account.
 // It owns some NFTs/badges.
-export const account1Address = "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6"
-export const account1Name = /^e2e\.testertesting\.eth$/
+export const account1: Account = {
+  address: "0x6f1b1f1feb01235e15a7962f16c389c7f8218ed6",
+  name: /^e2e\.testertesting\.eth$/,
+  jsonBody: process.env.E2E_TEST_ONLY_WALLET_JSON_BODY,
+  jsonPassword: process.env.E2E_TEST_ONLY_WALLET_JSON_PASSWORD,
+}
+// The account2 is the he testertesting.eth account. It's used for manual
+// testing, so it's balance may fluctuate. It can be used to test features that
+// don't depend on the constant balance or state of the assets.
+export const account2 = {
+  address: "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+  name: /^testertesting\.eth$/,
+  jsonBody: process.env.TEST_WALLET_JSON_BODY,
+  jsonPassword: process.env.TEST_WALLET_JSON_PASSWORD,
+}
 
 export default class OnboardingHelper {
   constructor(

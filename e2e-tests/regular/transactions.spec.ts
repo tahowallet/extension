@@ -1,53 +1,31 @@
-import fs from "fs"
 import { test, expect } from "../utils"
+import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
   test("User can send base asset (on Goerli testnet) @expensive", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Create a JSON file with an encoded private key based on the file
-       * content passed from an environment variable. The further steps of
-       * the test assume that the file encodes the pk of the `testertesting.eth`
-       * account. The JSON file can be generated using a script
-       * `scripts/key-generation/export-key-as-json.js`.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonBody = process.env.TEST_WALLET_JSON_BODY
-      if (jsonBody) {
-        fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_BODY environment variable is not defined."
-        )
-      }
-
-      /**
-       * Onboard using JSON file.
-       */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2.name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Enable test networks
@@ -74,12 +52,12 @@ test.describe("Transactions", () => {
         .getByText(/^Goerli$/)
         .last()
         .click()
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Goerli$/,
         true,
-        /^testertesting\.eth$/
+        account2.name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify ETH is visible on the asset list.
@@ -103,9 +81,9 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Goerli$/,
-        /^testertesting\.eth$/,
+        account2.name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
         true
@@ -139,7 +117,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Goerli",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -173,12 +151,12 @@ test.describe("Transactions", () => {
          * Verify elements on the asset activity screen
          */
         await expect(popup.getByTestId("activity_list")).toHaveCount(1)
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Goerli$/,
-          /^testertesting\.eth$/,
+          account2.name,
           /^ETH$/,
           /^(\d|,)+(\.\d{0,4})*$/,
-          true
+          "base"
         )
 
         /**
@@ -209,8 +187,8 @@ test.describe("Transactions", () => {
          */
         await latestSentTx.click()
 
-        await transactionsHelper.verifyActivityItemProperties(
-          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+        await transactionsHelper.assertActivityItemProperties(
+          account2.address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",
@@ -233,12 +211,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the activity screen
          */
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Goerli$/,
           true,
-          /^testertesting\.eth$/
+          account2.name
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
 
         /**
          * Open latest transaction and verify it's deatils
@@ -261,8 +239,8 @@ test.describe("Transactions", () => {
 
         await latestSentTx.click()
 
-        await transactionsHelper.verifyActivityItemProperties(
-          "0x0581470a8b62bd35dbf121a6329d43e7edd20fc7",
+        await transactionsHelper.assertActivityItemProperties(
+          account2.address,
           "0x0581…20fc7",
           "0x47745A7252e119431CCF973c0eBD4279638875a6",
           "0x4774…875a6",
