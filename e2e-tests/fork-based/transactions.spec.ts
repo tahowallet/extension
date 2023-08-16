@@ -1,56 +1,32 @@
-import fs from "fs"
 import { test, expect } from "../utils"
+import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
-  test.beforeAll(async () => {
-    /**
-     * Create a JSON file with an encoded private key based on the file
-     * content passed from an environment variable. The further steps of
-     * the tests assume that the file encodes the pk of the `testertesting.eth`
-     * account. The JSON file can be generated using a script
-     * `scripts/key-generation/export-key-as-json.js`.
-     */
-    const jsonBody = process.env.TEST_WALLET_JSON_BODY
-    if (jsonBody) {
-      fs.writeFileSync("./e2e-tests/utils/JSON.json", jsonBody)
-    } else {
-      throw new Error(
-        "TEST_WALLET_JSON_BODY environment variable is not defined."
-      )
-    }
-  })
-
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2.name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify ETH is visible on the asset list and has the correct balance
@@ -74,9 +50,9 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2.name,
         "ETH",
         "0\\.1021",
         true
@@ -110,7 +86,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -143,12 +119,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the asset activity screen
          */
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          /^testertesting\.eth$/,
+          account2.name,
           /^ETH$/,
           /^0\.0914$/,
-          true
+          "base"
         )
         // This is what we expect currently on forked network. If ve ever fix
         // displaying activity on fork, we should perform following checks
@@ -192,12 +168,12 @@ test.describe("Transactions", () => {
             .first()
         ).toBeVisible()
 
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          /^testertesting\.eth$/
+          account2.name
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
       }
     )
   })
@@ -206,33 +182,27 @@ test.describe("Transactions", () => {
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2.name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify KEEP is visible on the asset list and has the correct balance
@@ -261,9 +231,9 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2.name,
         "KEEP",
         "65\\.88",
         false
@@ -297,7 +267,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -328,12 +298,12 @@ test.describe("Transactions", () => {
       /**
        * Verify elements on the asset activity screen
        */
-      await transactionsHelper.verifyAssetActivityScreen(
+      await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2.name,
         /^KEEP$/,
         /^65\.88$/,
-        false,
+        "knownERC20",
         "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
       )
       // This is what we expect currently on a forked network.
@@ -353,33 +323,27 @@ test.describe("Transactions", () => {
     page: popup,
     walletPageHelper,
     transactionsHelper,
+    assetsHelper,
   }) => {
     await test.step("Import account", async () => {
       /**
-       * Onboard using JSON file.
+       * Import the `testertesting.eth` account using onboarding with a JSON
+       * file.
        */
-      const jsonPassword = process.env.TEST_WALLET_JSON_PASSWORD
-      if (jsonPassword) {
-        await walletPageHelper.onboardWithJSON(
-          "./e2e-tests/utils/JSON.json",
-          jsonPassword
-        )
-      } else {
-        throw new Error(
-          "TEST_WALLET_JSON_PASSWORD environment variable is not defined."
-        )
-      }
+      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.goToStartPage()
+      await walletPageHelper.setViewportSize()
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.verifyCommonElements(
+      await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        /^testertesting\.eth$/
+        account2.name
       )
-      await walletPageHelper.verifyAnalyticsBanner()
+      await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify KEEP is visible on the asset list and has the correct balance
@@ -408,9 +372,9 @@ test.describe("Transactions", () => {
        * already selected. Verify elements on the page. Make sure `Continue`
        * isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2.name,
         "ETH",
         "\\d+\\.\\d{4}",
         true
@@ -466,9 +430,9 @@ test.describe("Transactions", () => {
        *  Verify elements on the page after selecting token. Make sure
        * `Continue` isn't active.
        */
-      await transactionsHelper.verifyUnfilledSendAssetScreen(
+      await transactionsHelper.assertUnfilledSendAssetScreen(
         /^Ethereum$/,
-        /^testertesting\.eth$/,
+        account2.name,
         "KEEP",
         "65\\.88",
         false
@@ -502,7 +466,7 @@ test.describe("Transactions", () => {
       /**
        * Check if "Transfer" has opened and verify elements on the page.
        */
-      await transactionsHelper.verifyTransferScreen(
+      await transactionsHelper.assertTransferScreen(
         "Ethereum",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
@@ -535,12 +499,12 @@ test.describe("Transactions", () => {
         /**
          * Verify elements on the asset activity screen
          */
-        await transactionsHelper.verifyAssetActivityScreen(
+        await assetsHelper.assertAssetDetailsPage(
           /^Ethereum$/,
-          /^testertesting\.eth$/,
+          account2.name,
           /^KEEP$/,
           /^53\.54$/,
-          false,
+          "knownERC20",
           "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
         )
         // This is what we expect currently on forked network. If ve ever fix
@@ -585,12 +549,12 @@ test.describe("Transactions", () => {
             .first()
         ).toBeVisible()
 
-        await walletPageHelper.verifyCommonElements(
+        await walletPageHelper.assertCommonElements(
           /^Ethereum$/,
           false,
-          /^testertesting\.eth$/
+          account2.name
         )
-        await walletPageHelper.verifyAnalyticsBanner()
+        await walletPageHelper.assertAnalyticsBanner()
       }
     )
   })

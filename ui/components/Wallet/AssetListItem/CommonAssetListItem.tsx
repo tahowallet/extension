@@ -72,7 +72,7 @@ export default function CommonAssetListItem(
         state: assetAmount.asset,
       }}
     >
-      <div className="asset_list_item">
+      <div className="asset_list_item" data-testid="asset_list_item">
         <div className="asset_left">
           <SharedAssetIcon
             logoURL={assetAmount?.asset?.metadata?.logoURL}
@@ -83,7 +83,7 @@ export default function CommonAssetListItem(
               <span className="bold_amount_count">
                 {assetAmount.localizedDecimalAmount}
               </span>
-              <span title={assetAmount.asset.symbol}>
+              <span title={assetAmount.asset.symbol} data-testid="asset_symbol">
                 {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
               </span>
             </div>

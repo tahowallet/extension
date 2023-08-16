@@ -72,6 +72,7 @@ export default function WalletHiddenAssets({
           hidden_assets: mountedRef.current,
           visible: mountedRef.current && isOpen,
         })}
+        data-testid="hidden_assets_container"
       >
         <UnverifiedAssetBanner
           id="unverified_asset_banner"
