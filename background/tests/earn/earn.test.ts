@@ -123,7 +123,7 @@ describe("Earn", () => {
     it("should return APR value if rewards value is bigger than 0 and staked value is bigger than 0", async () => {
       jest.spyOn(getTokenPrice, "default").mockImplementationOnce(() =>
         // @ts-ignore
-        Promise.resolve({ singleTokenPrice: 10000000000n })
+        Promise.resolve({ singleTokenPrice: 10000000000n }),
       )
 
       jest

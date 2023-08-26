@@ -48,7 +48,7 @@ type EIP4361SigningData = {
 export type MessageSigningData = EIP191SigningData | EIP4361SigningData
 
 export type MessageSigningRequest<
-  T extends MessageSigningData = MessageSigningData
+  T extends MessageSigningData = MessageSigningData,
 > = T & {
   account: AddressOnNetwork
   rawSigningData: string
@@ -73,7 +73,7 @@ export type EIP2612TypedData = {
 }
 
 const checkEIP4361: (message: string) => EIP4361Data | undefined = (
-  message
+  message,
 ) => {
   try {
     const siweMessage = new SiweMessage(message)
@@ -141,7 +141,7 @@ export function parseSigningData(signingData: string): MessageSigningData {
 
 export const isSameAccountSignerWithId = (
   signerA: AccountSignerWithId,
-  signerB: AccountSignerWithId
+  signerB: AccountSignerWithId,
 ): boolean => {
   if (signerA.type !== signerB.type) return false
 

@@ -49,8 +49,8 @@ describe("Asset utils", () => {
       expect(isVerifiedAsset(createSmartContractAsset())).toBe(false)
       expect(
         isVerifiedAsset(
-          createSmartContractAsset({ metadata: { verified: false } })
-        )
+          createSmartContractAsset({ metadata: { verified: false } }),
+        ),
       ).toBe(false)
     })
   })
@@ -103,14 +103,14 @@ describe("Asset utils", () => {
         isSameAsset(smartContractAsset, {
           ...smartContractAsset,
           homeNetwork: { ...smartContractAsset.homeNetwork, chainID: "222" },
-        })
+        }),
       ).toBe(false)
 
       expect(
         isSameAsset(smartContractAsset, {
           ...smartContractAsset,
           contractAddress: "0x",
-        })
+        }),
       ).toBe(false)
     })
 
@@ -135,7 +135,7 @@ describe("Asset utils", () => {
       expect(isSameAsset(ETH, ETH)).toBe(true)
       expect(isSameAsset(baseAsset, ETH)).toBe(false)
       expect(isSameAsset(baseAsset, { ...baseAsset, chainID: "999" })).toBe(
-        false
+        false,
       )
     })
   })

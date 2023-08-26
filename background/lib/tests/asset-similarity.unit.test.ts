@@ -9,7 +9,7 @@ describe("Asset Similarity", () => {
     it("Should preserve coinType when merging assets", () => {
       const mergedAsset = mergeAssets(
         createSmartContractAsset(),
-        createNetworkBaseAsset()
+        createNetworkBaseAsset(),
       )
 
       expect("coinType" in mergedAsset).toBe(true)

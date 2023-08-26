@@ -7,7 +7,7 @@ import getUniswapPairTokenPrice from "./getUniswapPairTokenPrice"
 
 const getTokenPrice = async (
   asset: AnyAsset & { decimals: number; contractAddress: HexString },
-  prices: PricesState
+  prices: PricesState,
 ): Promise<{ singleTokenPrice: bigint; pricePoint: PricePoint }> => {
   const mainCurrencySymbol = "USD"
   let tokenPrice
@@ -17,14 +17,14 @@ const getTokenPrice = async (
     tokenPrice = await getUniswapPairTokenPrice(
       asset.contractAddress,
       prices,
-      mainCurrencySymbol
+      mainCurrencySymbol,
     ) // in USD bigint with 10 decimals
   } else {
     // assetPricePoint.amounts[1] returns USD value with 10 decimals
     const assetPricePoint = selectAssetPricePoint(
       prices,
       asset,
-      mainCurrencySymbol
+      mainCurrencySymbol,
     )
     tokenPrice = assetPricePoint?.amounts[1]
 

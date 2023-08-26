@@ -7,11 +7,11 @@ import { PricesState } from "../prices"
 const getUniswapPairTokenPrice = async (
   tokenAddress: HexString,
   prices: PricesState,
-  mainCurrencySymbol: string
+  mainCurrencySymbol: string,
 ): Promise<bigint> => {
   const UniswapV2PairContract = await getContract(
     tokenAddress,
-    UNISWAP_V2_PAIR.abi
+    UNISWAP_V2_PAIR.abi,
   )
 
   const totalLPSupply = await UniswapV2PairContract.totalSupply()
@@ -28,7 +28,7 @@ const getUniswapPairTokenPrice = async (
     token0,
     reserve0,
     LPDecimals,
-    totalLPSupply
+    totalLPSupply,
   )
 
   if (typeof priceFromToken0 !== "undefined") return priceFromToken0
@@ -41,7 +41,7 @@ const getUniswapPairTokenPrice = async (
     token1,
     reserve1,
     LPDecimals,
-    totalLPSupply
+    totalLPSupply,
   )
 
   if (typeof priceFromToken1 !== "undefined") return priceFromToken1

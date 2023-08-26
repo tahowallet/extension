@@ -43,11 +43,11 @@ export default function SpendApprovalSummary({
   } = annotation
 
   const [approvalLimitString, setApprovalLimitString] = useState<string | null>(
-    null
+    null,
   )
 
   const [approvalLimitInput, setApprovalLimitInput] = useState<string | null>(
-    null
+    null,
   )
   const [isLoading, setIsLoading] = useState(false)
 
@@ -96,13 +96,13 @@ export default function SpendApprovalSummary({
 
     const updatedInput = ERC20_INTERFACE.encodeFunctionData(
       ERC20_FUNCTIONS.approve,
-      [spenderAddress, hexlify(bigintAmount)]
+      [spenderAddress, hexlify(bigintAmount)],
     )
     dispatch(
       updateTransactionData({
         ...transactionRequest,
         input: updatedInput,
-      })
+      }),
     )
   }
 
@@ -113,7 +113,7 @@ export default function SpendApprovalSummary({
         : fixedPointNumberToString({
             amount: approvalLimit,
             decimals: asset.decimals,
-          })
+          }),
     )
     setIsLoading(false)
   }, [approvalLimit, asset.decimals])
@@ -121,8 +121,8 @@ export default function SpendApprovalSummary({
   useEffect(() => {
     dispatch(
       updateAdditionalSigningStatus(
-        approvalLimitInput !== null ? "editing" : undefined
-      )
+        approvalLimitInput !== null ? "editing" : undefined,
+      ),
     )
   }, [approvalLimitInput, dispatch])
 

@@ -9,7 +9,7 @@ describe("SharedAssetIcon", () => {
         size="small"
         symbol="USDC"
         logoURL="http://localhost:8097/supercoolassetlogo.jpg"
-      />
+      />,
     )
 
     expect(ui.getByRole("img")).toBeInTheDocument()
@@ -22,7 +22,7 @@ describe("SharedAssetIcon", () => {
         size="small"
         symbol=""
         logoURL="http://localhost:8097/supercoolassetlogo.jpg"
-      />
+      />,
     )
 
     expect(ui.getByRole("img")).toBeInTheDocument()

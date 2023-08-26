@@ -15,7 +15,7 @@ type DismissableProps =
 type WarningProps = { message: string } & DismissableProps
 
 export default function TransactionSignatureDetailsWarning(
-  props: WarningProps
+  props: WarningProps,
 ): ReactElement {
   const { message, dismissable = false, onDismiss } = props
 

@@ -36,7 +36,7 @@ export default function ViewOnlyWallet(): ReactElement {
         })
       }
     },
-    [network]
+    [network],
   )
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {

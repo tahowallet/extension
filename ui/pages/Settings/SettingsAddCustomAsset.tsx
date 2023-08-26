@@ -105,7 +105,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const networks = allNetworks.filter(
     (network) =>
       !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID) ||
-      (showTestNetworks && TEST_NETWORK_BY_CHAIN_ID.has(network.chainID))
+      (showTestNetworks && TEST_NETWORK_BY_CHAIN_ID.has(network.chainID)),
   )
 
   const [chosenNetwork, setChosenNetwork] = useState<EVMNetwork>(currentNetwork)
@@ -116,7 +116,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
 
   const handleTokenInfoChange = async (
     addressLike: HexString,
-    network: EVMNetwork
+    network: EVMNetwork,
   ) => {
     requestIdRef.current += 1
     const callId = requestIdRef.current
@@ -145,7 +145,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
       checkTokenContractDetails({
         contractAddress: normalizeEVMAddress(contractAddress),
         network,
-      })
+      }),
     )) as unknown as AssetData
 
     // async setState safeguard
@@ -168,7 +168,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
     setIsImportingToken(true)
 
     const { success } = await dispatch(
-      importCustomToken({ asset: assetData.asset })
+      importCustomToken({ asset: assetData.asset }),
     )
     if (success) {
       await dispatch(setSnackbarMessage(t("snackbar.success")))
@@ -363,7 +363,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                   {assetData?.asset?.symbol
                     ? trimWithEllipsis(
                         assetData.asset.symbol,
-                        MAX_SYMBOL_LENGTH
+                        MAX_SYMBOL_LENGTH,
                       )
                     : t("asset.label.symbol")}
                 </span>

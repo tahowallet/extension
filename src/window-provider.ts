@@ -15,21 +15,19 @@ const tahoWindowProvider: TahoProvider = new TahoWindowProvider({
   origin: window.location.origin,
 })
 
-const tahoRoutedProperties = new Set(
-  [
-    "request",
-    "isConnected",
-    "enable",
-    "send",
-    "sendAsync",
-    "on",
-    "addListener",
-    "removeListener",
-    "removeAllListeners",
-    "listeners",
-    "listenerCount",
-  ] /* satisfies (keyof TahoWindowProvider)[] FIXME TypeScript 4.9 */
-)
+const tahoRoutedProperties = new Set<string>([
+  "request",
+  "isConnected",
+  "enable",
+  "send",
+  "sendAsync",
+  "on",
+  "addListener",
+  "removeListener",
+  "removeAllListeners",
+  "listeners",
+  "listenerCount",
+] satisfies (keyof TahoWindowProvider)[])
 
 // Used exclusively if Taho is set to replace MetaMask AND MetaMask is not seen
 // to be installed. In this case, we drop a MetaMask mock so that sites that
@@ -99,7 +97,7 @@ function wrapMetaMaskProvider(provider: WalletProvider): {
             // attempt at connecting.
             tahoWindowProvider,
             prop,
-            tahoWindowProvider
+            tahoWindowProvider,
           )
         }
 
@@ -130,7 +128,7 @@ function wrapMetaMaskProvider(provider: WalletProvider): {
  * Taho when it is set as default.
  */
 function metaMaskWrappedProviders(
-  providers: (WalletProvider | undefined)[]
+  providers: (WalletProvider | undefined)[],
 ): WalletProvider[] {
   const tahoIsDefault =
     window.walletRouter !== undefined &&
@@ -161,7 +159,7 @@ function metaMaskWrappedProviders(
         metaMaskDetected: metaMaskDetected || wasMetaMaskLike,
       }
     },
-    { defaultManagedProviders: [], metaMaskDetected: false }
+    { defaultManagedProviders: [], metaMaskDetected: false },
   )
 
   if (!metaMaskDetected && tahoIsDefault) {
@@ -214,13 +212,13 @@ if (!window.walletRouter) {
       providers: dedupedProviders,
       shouldSetTallyForCurrentProvider(
         shouldSetTally: boolean,
-        shouldReload = false
+        shouldReload = false,
       ) {
         this.shouldSetTahoForCurrentProvider(shouldSetTally, shouldReload)
       },
       shouldSetTahoForCurrentProvider(
         shouldSetTaho: boolean,
-        shouldReload = false
+        shouldReload = false,
       ) {
         if (shouldSetTaho && this.currentProvider !== this.tahoProvider) {
           this.currentProvider = this.tahoProvider
@@ -239,8 +237,8 @@ if (!window.walletRouter) {
           this.currentProvider,
           ...metaMaskWrappedProviders(
             this.providers.filter(
-              (provider: WalletProvider) => provider !== this.currentProvider
-            )
+              (provider: WalletProvider) => provider !== this.currentProvider,
+            ),
           ),
         ]
 
@@ -255,7 +253,7 @@ if (!window.walletRouter) {
         }
       },
       routeToNewNonTahoDefault(
-        request: Required<RequestArgument>
+        request: Required<RequestArgument>,
       ): Promise<unknown> {
         // Don't route to a new default if it's Taho. This avoids situations
         // where Taho is default, then default is turned off, but no other
@@ -263,7 +261,7 @@ if (!window.walletRouter) {
         // as the only other provider.
         if (this.currentProvider === this.tahoProvider) {
           return Promise.reject(
-            new Error("Only the Taho provider is installed.")
+            new Error("Only the Taho provider is installed."),
           )
         }
         return this.currentProvider.request(request)
@@ -320,7 +318,7 @@ Object.defineProperty(window, "ethereum", {
   get() {
     if (!window.walletRouter) {
       throw new Error(
-        "window.walletRouter is expected to be set to change the injected provider on window.ethereum."
+        "window.walletRouter is expected to be set to change the injected provider on window.ethereum.",
       )
     }
     if (
@@ -371,7 +369,7 @@ Object.defineProperty(window, "ethereum", {
           // attempt at connecting.
           window.walletRouter?.currentProvider ?? target,
           prop,
-          target
+          target,
         )
       },
     })

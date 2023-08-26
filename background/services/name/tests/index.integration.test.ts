@@ -26,7 +26,7 @@ describe("NameService", () => {
     expect(nameRecord).toBeDefined()
     if (nameRecord !== undefined) {
       expect(nameRecord.resolved.nameOnNetwork.name).toContain(
-        "Optimism Teleportr"
+        "Optimism Teleportr",
       )
       expect(nameRecord.system).toEqual("tally-known-contracts")
     }

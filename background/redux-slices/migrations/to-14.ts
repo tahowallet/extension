@@ -3,7 +3,7 @@
 // the IndexingService.
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const { assets: _, ...newState } = prevState
 

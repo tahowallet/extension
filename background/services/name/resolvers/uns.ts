@@ -15,7 +15,7 @@ const RESPONSE_TTL = 2 * MINUTE
 const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
   ttl: number,
   fn: F,
-  getCacheKey: (args: Parameters<F>) => string
+  getCacheKey: (args: Parameters<F>) => string,
 ) => {
   const cache: Record<
     string,
@@ -98,7 +98,7 @@ const reverseLookupAddress = cacheAsyncResults(
 
     return response
   },
-  ([address]) => address
+  ([address]) => address,
 )
 
 /**
@@ -143,7 +143,7 @@ export default function unsResolver(): NameResolver<"UNS"> {
       return (
         isValidUNSDomainName(name) &&
         UNS_SUPPORTED_NETWORKS.some((supportedNetwork) =>
-          sameNetwork(network, supportedNetwork)
+          sameNetwork(network, supportedNetwork),
         )
       )
     },
@@ -165,7 +165,7 @@ export default function unsResolver(): NameResolver<"UNS"> {
       }
     },
     async lookUpAvatar(
-      addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork
+      addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork,
     ) {
       const { network } = addressOrNameOnNetwork
       const { address } =
@@ -187,7 +187,7 @@ export default function unsResolver(): NameResolver<"UNS"> {
         .map(
           (record: {
             attributes: { records: { [x: string]: string | undefined } }
-          }) => record.attributes.records["social.picture.value"]
+          }) => record.attributes.records["social.picture.value"],
         )
         .find(isDefined)
 
@@ -212,7 +212,7 @@ export default function unsResolver(): NameResolver<"UNS"> {
       const name = data
         .map(
           (record: { attributes: { meta: { domain: string | undefined } } }) =>
-            record.attributes.meta.domain
+            record.attributes.meta.domain,
         )
         .find(isDefined)
 

@@ -40,7 +40,7 @@ export default function SigningButton({
         {t(
           `accounts.notificationPanel.signing.${
             areInternalSignersUnlocked ? "lock" : "unlock"
-          }`
+          }`,
         )}
         <SharedIcon
           icon={`icons/m/${buttonData.icon}.svg`}

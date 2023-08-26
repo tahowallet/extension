@@ -38,7 +38,7 @@ export default class DoggoService extends BaseService<Events> {
   private constructor(
     private db: DoggoDatabase,
     private chainService: ChainService,
-    private indexingService: IndexingService
+    private indexingService: IndexingService,
   ) {
     super()
   }
@@ -51,7 +51,7 @@ export default class DoggoService extends BaseService<Events> {
     const ethereumProvider = this.chainService.providerForNetwork(ETHEREUM)
     if (ethereumProvider === undefined) {
       logger.error(
-        "No Ethereum provider available, not setting up DOGGO monitoring..."
+        "No Ethereum provider available, not setting up DOGGO monitoring...",
       )
     }
 
@@ -81,7 +81,7 @@ export default class DoggoService extends BaseService<Events> {
       ;(await this.chainService.getAccountsToTrack()).forEach(
         (addressOnNetwork) => {
           this.trackReferrals(addressOnNetwork)
-        }
+        },
       )
     }
   }
@@ -94,7 +94,7 @@ export default class DoggoService extends BaseService<Events> {
     const fileHash = await getFileHashProspect(address)
     const { account, amount, index, proof } = await getClaimFromFileHash(
       address,
-      fileHash
+      fileHash,
     )
 
     const claim = {
@@ -130,23 +130,23 @@ export default class DoggoService extends BaseService<Events> {
       const providedClaimWithFriends = ClaimWithFriends.connect(provider)
       const referralFilter = ClaimWithFriends.filters.ClaimedWithCommunityCode(
         null,
-        address
+        address,
       )
 
       const referralHandler: Parameters<
-        typeof providedClaimWithFriends["on"]
+        (typeof providedClaimWithFriends)["on"]
       >[1] = (...args) => {
         if (args.length !== 6) {
           logger.error(
             "Malformed event, got an unexpected number of ClaimedWithCommunityCode parameters:",
-            args
+            args,
           )
           return
         }
 
         this.registerReferral(
           { address: normalizeEVMAddress(address), network },
-          [args[0], args[1], args[2], args[3], args[4], args[5]]
+          [args[0], args[1], args[2], args[3], args[4], args[5]],
         )
       }
 
@@ -156,7 +156,7 @@ export default class DoggoService extends BaseService<Events> {
           if (event.args === undefined) {
             logger.error(
               "Malformed event lookup, got no decoded ClaimedWithCommunityCode parameters:",
-              event
+              event,
             )
             return
           }
@@ -167,9 +167,9 @@ export default class DoggoService extends BaseService<Events> {
             event.args.amountClaimed,
             event.args.claimedBonus,
             event.args.communityRef,
-            event.args.communityBonus
+            event.args.communityBonus,
           )
-        }
+        },
       )
     }
   }
@@ -182,8 +182,8 @@ export default class DoggoService extends BaseService<Events> {
       BigNumber,
       BigNumber,
       HexString,
-      BigNumber
-    ]
+      BigNumber,
+    ],
   ): Promise<void> {
     const referrer = {
       address: normalizeEVMAddress(communityRef),
@@ -192,7 +192,7 @@ export default class DoggoService extends BaseService<Events> {
     await this.db.addReferralBonus(
       claimant,
       referrer,
-      communityBonus.toBigInt()
+      communityBonus.toBigInt(),
     )
 
     // emit event to inform referrer that their referral link was used

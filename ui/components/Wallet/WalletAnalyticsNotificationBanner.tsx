@@ -17,7 +17,7 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
   const dispatch = useDispatch()
 
   const showNotification = useBackgroundSelector(
-    selectShowAnalyticsNotification
+    selectShowAnalyticsNotification,
   )
 
   return (

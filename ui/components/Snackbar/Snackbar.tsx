@@ -42,7 +42,7 @@ export default function Snackbar({
   const displayMessage = useDelayContentChange(
     snackbarMessage,
     shouldHide,
-    DISMISS_ANIMATION_MS
+    DISMISS_ANIMATION_MS,
   )
 
   const snackbarTimeout = useRef<number | undefined>()
@@ -100,7 +100,8 @@ export default function Snackbar({
             font-weight: 500;
             background: var(--green-120);
             color: var(--green-20);
-            box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.14),
+            box-shadow:
+              0px 24px 24px rgba(0, 20, 19, 0.14),
               0px 14px 16px rgba(0, 20, 19, 0.24),
               0px 10px 12px rgba(0, 20, 19, 0.34);
             border-radius: 8px;

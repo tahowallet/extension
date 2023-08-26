@@ -12,16 +12,16 @@ describe.each([VaultVersion.PBKDF2, VaultVersion.Argon2])(
       /* eslint-disable no-await-in-loop */
       for (let i = 0; i < 5; i += 1) {
         const password = Buffer.from(
-          global.crypto.getRandomValues(new Uint8Array(16))
+          global.crypto.getRandomValues(new Uint8Array(16)),
         ).toString("base64")
         const newSalt = Buffer.from(
-          global.crypto.getRandomValues(new Uint8Array(16))
+          global.crypto.getRandomValues(new Uint8Array(16)),
         ).toString("base64")
 
         const { key, salt } = await deriveSymmetricKeyFromPassword(
           vaultVersion,
           password,
-          newSalt
+          newSalt,
         )
         expect(salt).toEqual(newSalt)
 
@@ -111,12 +111,12 @@ describe.each([VaultVersion.PBKDF2, VaultVersion.Argon2])(
         d: 123,
       }
       const password = Buffer.from(
-        global.crypto.getRandomValues(new Uint8Array(16))
+        global.crypto.getRandomValues(new Uint8Array(16)),
       ).toString("base64")
 
       const saltedKey = await deriveSymmetricKeyFromPassword(
         vaultVersion,
-        password
+        password,
       )
 
       const encryptedVault = await encryptVault({
@@ -133,5 +133,5 @@ describe.each([VaultVersion.PBKDF2, VaultVersion.Argon2])(
 
       expect(newVault).toEqual(vault)
     })
-  }
+  },
 )

@@ -110,7 +110,7 @@ export default class NameService extends BaseService<Events> {
 
   private constructor(
     private chainService: ChainService,
-    preferenceService: PreferenceService
+    preferenceService: PreferenceService,
   ) {
     super({})
 
@@ -130,7 +130,7 @@ export default class NameService extends BaseService<Events> {
       async ({ network, address }) => {
         this.clearNameCacheEntry(network.chainID, address)
         await this.lookUpName({ network, address })
-      }
+      },
     )
 
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
@@ -151,17 +151,17 @@ export default class NameService extends BaseService<Events> {
         logger.error(
           "Error fetching avatar for address",
           addressOnNetwork,
-          error
+          error,
         )
       }
     })
   }
 
   async lookUpEthereumAddress(
-    nameOnNetwork: NameOnNetwork
+    nameOnNetwork: NameOnNetwork,
   ): Promise<ResolvedAddressRecord | undefined> {
     const workingResolvers = this.resolvers.filter((resolver) =>
-      resolver.canAttemptAddressResolution(nameOnNetwork)
+      resolver.canAttemptAddressResolution(nameOnNetwork),
     )
 
     const firstMatchingResolution = (
@@ -169,7 +169,7 @@ export default class NameService extends BaseService<Events> {
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpAddressForName(nameOnNetwork),
-        }))
+        })),
       )
     )
       .filter(isFulfilledPromise)
@@ -201,7 +201,7 @@ export default class NameService extends BaseService<Events> {
 
   async lookUpName(
     addressOnNetwork: AddressOnNetwork,
-    checkCache = true
+    checkCache = true,
   ): Promise<ResolvedNameRecord | undefined> {
     const { address, network } = normalizeAddressOnNetwork(addressOnNetwork)
 
@@ -223,18 +223,18 @@ export default class NameService extends BaseService<Events> {
     }
 
     const workingResolvers = this.resolvers.filter((resolver) =>
-      resolver.canAttemptNameResolution({ address, network })
+      resolver.canAttemptNameResolution({ address, network }),
     )
 
     const localResolvers = [...workingResolvers].filter(
       (resolver) =>
         resolver.type === "tally-address-book" ||
-        resolver.type === "tally-known-contracts"
+        resolver.type === "tally-known-contracts",
     )
     const remoteResolvers = [...workingResolvers].filter(
       (resolver) =>
         resolver.type !== "tally-address-book" &&
-        resolver.type !== "tally-known-contracts"
+        resolver.type !== "tally-known-contracts",
     )
 
     let firstMatchingResolution = (
@@ -242,7 +242,7 @@ export default class NameService extends BaseService<Events> {
         localResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpNameForAddress({ address, network }),
-        }))
+        })),
       )
     )
       .filter(isFulfilledPromise)
@@ -254,7 +254,7 @@ export default class NameService extends BaseService<Events> {
           remoteResolvers.map(async (resolver) => ({
             type: resolver.type,
             resolved: await resolver.lookUpNameForAddress({ address, network }),
-          }))
+          })),
         )
       )
         .filter(isFulfilledPromise)
@@ -310,10 +310,10 @@ export default class NameService extends BaseService<Events> {
   }
 
   async lookUpAvatar(
-    addressOnNetwork: AddressOnNetwork
+    addressOnNetwork: AddressOnNetwork,
   ): Promise<ResolvedAvatarRecord | undefined> {
     const workingResolvers = this.resolvers.filter((resolver) =>
-      resolver.canAttemptAvatarResolution(addressOnNetwork)
+      resolver.canAttemptAvatarResolution(addressOnNetwork),
     )
 
     const firstMatchingResolution = (
@@ -321,7 +321,7 @@ export default class NameService extends BaseService<Events> {
         workingResolvers.map(async (resolver) => ({
           type: resolver.type,
           resolved: await resolver.lookUpAvatar(addressOnNetwork),
-        }))
+        })),
       )
     )
       .filter(isFulfilledPromise)
@@ -360,7 +360,7 @@ export default class NameService extends BaseService<Events> {
       }
 
       const provider = this.chainService.providerForNetwork(
-        addressOnNetwork.network
+        addressOnNetwork.network,
       )
 
       // these URIs look like eip155:1/erc721:0xb7F7F6C52F2e2fdb1963Eab30438024864c313F6/2430
@@ -374,7 +374,7 @@ export default class NameService extends BaseService<Events> {
         const metadata = await getTokenMetadata(
           provider,
           erc721Address,
-          BigInt(nftID)
+          BigInt(nftID),
         )
 
         if (metadata !== undefined && metadata.image !== undefined) {

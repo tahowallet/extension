@@ -24,7 +24,7 @@ describe("SigningButton", () => {
       <Router history={history}>
         <SigningButton onCurrentAddressChange={onChange} />
       </Router>,
-      { preloadedState: getPreloadedState("locked") }
+      { preloadedState: getPreloadedState("locked") },
     )
 
     const buttonElement = ui.getByRole("button")
@@ -40,7 +40,7 @@ describe("SigningButton", () => {
       <Router history={history}>
         <SigningButton onCurrentAddressChange={onChange} />
       </Router>,
-      { preloadedState: getPreloadedState("unlocked") }
+      { preloadedState: getPreloadedState("unlocked") },
     )
 
     const buttonElement = ui.getByRole("button")

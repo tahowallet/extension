@@ -44,7 +44,7 @@ const addActivityToState =
   (
     address: string,
     chainID: string,
-    transaction: Transaction | EnrichedEVMTransaction
+    transaction: Transaction | EnrichedEVMTransaction,
   ) => {
     const activity = getActivity(transaction)
     const normalizedAddress = normalizeEVMAddress(address)
@@ -53,7 +53,7 @@ const addActivityToState =
     activities[normalizedAddress][chainID] ??= []
 
     const exisistingIndex = activities[normalizedAddress][chainID].findIndex(
-      (tx) => tx.hash === transaction.hash
+      (tx) => tx.hash === transaction.hash,
     )
 
     if (exisistingIndex !== -1) {
@@ -79,7 +79,7 @@ const initializeActivitiesFromTransactions = ({
   const addActivity = addActivityToState(activities)
 
   const normalizedAccounts = accounts.map((account) =>
-    normalizeAddressOnNetwork(account)
+    normalizeAddressOnNetwork(account),
   )
 
   // Add transactions
@@ -87,12 +87,13 @@ const initializeActivitiesFromTransactions = ({
     const { to, from, network } = transaction
     const isTrackedTo = normalizedAccounts.some(
       ({ address, network: activeNetwork }) =>
-        network.chainID === activeNetwork.chainID && sameEVMAddress(to, address)
+        network.chainID === activeNetwork.chainID &&
+        sameEVMAddress(to, address),
     )
     const isTrackedFrom = normalizedAccounts.some(
       ({ address, network: activeNetwork }) =>
         network.chainID === activeNetwork.chainID &&
-        sameEVMAddress(from, address)
+        sameEVMAddress(from, address),
     )
 
     if (to && isTrackedTo) {
@@ -105,7 +106,7 @@ const initializeActivitiesFromTransactions = ({
 
   // Sort and reduce # of transactions
   normalizedAccounts.forEach(({ address, network }) =>
-    cleanActivitiesArray(activities[address]?.[network.chainID])
+    cleanActivitiesArray(activities[address]?.[network.chainID]),
   )
 
   return activities
@@ -125,7 +126,7 @@ const activitiesSlice = createSlice({
         payload,
       }: {
         payload: { transactions: Transaction[]; accounts: AddressOnNetwork[] }
-      }
+      },
     ) => ({
       activities: initializeActivitiesFromTransactions(payload),
     }),
@@ -133,22 +134,28 @@ const activitiesSlice = createSlice({
       immerState,
       {
         payload: { transactions, account },
-      }: { payload: { transactions: Transaction[]; account: AddressOnNetwork } }
+      }: {
+        payload: { transactions: Transaction[]; account: AddressOnNetwork }
+      },
     ) => {
       const {
         address,
         network: { chainID },
       } = account
       transactions.forEach((transaction) =>
-        addActivityToState(immerState.activities)(address, chainID, transaction)
+        addActivityToState(immerState.activities)(
+          address,
+          chainID,
+          transaction,
+        ),
       )
       cleanActivitiesArray(
-        immerState.activities[normalizeEVMAddress(address)]?.[chainID]
+        immerState.activities[normalizeEVMAddress(address)]?.[chainID],
       )
     },
     removeActivities: (
       immerState,
-      { payload: address }: { payload: HexString }
+      { payload: address }: { payload: HexString },
     ) => {
       immerState.activities[address] = {}
     },
@@ -161,13 +168,13 @@ const activitiesSlice = createSlice({
           transaction: EnrichedEVMTransaction
           forAccounts: string[]
         }
-      }
+      },
     ) => {
       const { chainID } = transaction.network
       forAccounts.forEach((address) => {
         addActivityToState(immerState.activities)(address, chainID, transaction)
         cleanActivitiesArray(
-          immerState.activities[normalizeEVMAddress(address)]?.[chainID]
+          immerState.activities[normalizeEVMAddress(address)]?.[chainID],
         )
       })
     },
@@ -186,5 +193,5 @@ export default activitiesSlice.reducer
 export const fetchSelectedActivityDetails = createBackgroundAsyncThunk(
   "activities/fetchSelectedActivityDetails",
   async (activityHash: string, { extra: { main } }) =>
-    main.getActivityDetails(activityHash)
+    main.getActivityDetails(activityHash),
 )

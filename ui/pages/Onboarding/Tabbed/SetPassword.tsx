@@ -73,7 +73,7 @@ export default function SetPassword(): JSX.Element {
   // Unlock Wallet
   if (!isOnboarding && lockStatus === "locked") {
     const handleAttemptUnlock: React.FormEventHandler<HTMLFormElement> = async (
-      event
+      event,
     ) => {
       const { currentTarget: form } = event
       event.preventDefault()

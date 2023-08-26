@@ -7,7 +7,7 @@ import { AddressOnNetwork } from "../../accounts"
 
 export function isValidChecksumAddress(
   address: string,
-  chainId?: number
+  chainId?: number,
 ): boolean {
   return toChecksumAddress(address, chainId) === address
 }
@@ -26,7 +26,7 @@ export function isMixedCaseAddress(address: string): boolean {
 }
 
 export function normalizeEVMAddress(
-  address: string | Buffer
+  address: string | Buffer,
 ): NormalizedEVMAddress {
   return normalizeHexAddress(address) as NormalizedEVMAddress
 }
@@ -54,7 +54,7 @@ export function normalizeAddressOnNetwork({
 export function truncateDecimalAmount(
   value: number | string,
   decimalLength: number,
-  maxDecimalLength = decimalLength
+  maxDecimalLength = decimalLength,
 ): string {
   const valueString = value.toString()
 
@@ -75,7 +75,7 @@ export function truncateDecimalAmount(
         // significant decimal digit, up to maxDecimalLength.
         Math.min(
           Math.max(decimalLength, firstSignificantDecimalDigit),
-          maxDecimalLength
+          maxDecimalLength,
         )
 
   // If the truncation point includes no significant decimals, don't include
@@ -91,7 +91,7 @@ export function truncateDecimalAmount(
 
 export function sameEVMAddress(
   address1: string | Buffer | undefined | null,
-  address2: string | Buffer | undefined | null
+  address2: string | Buffer | undefined | null,
 ): boolean {
   if (
     typeof address1 === "undefined" ||
@@ -147,7 +147,7 @@ export function decodeJSON(input: string): unknown {
   return JSON.parse(input, (_, value) =>
     value !== null && typeof value === "object" && "B_I_G_I_N_T" in value
       ? BigInt(value.B_I_G_I_N_T)
-      : value
+      : value,
   )
 }
 
@@ -178,7 +178,7 @@ export function truncateAddress(address: string): string {
 
 export const getNumericStringValueFromBigNumber = (
   value: BigNumber,
-  tokenDecimals: number
+  tokenDecimals: number,
 ): string => Number(value.toBigInt() / 10n ** BigInt(tokenDecimals)).toString()
 
 export const numberTo32BytesHex = (value: string, decimals: number): string => {

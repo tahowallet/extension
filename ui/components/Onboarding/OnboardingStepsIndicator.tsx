@@ -57,7 +57,7 @@ interface OnboardingStepsIndicatorProps {
 }
 
 export default function OnboardingStepsIndicator(
-  props: OnboardingStepsIndicatorProps
+  props: OnboardingStepsIndicatorProps,
 ): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "onboarding.steps" })
   const { activeStep } = props

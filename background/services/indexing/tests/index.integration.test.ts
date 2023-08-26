@@ -23,7 +23,7 @@ type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
 const getPrivateMethodSpy = <T extends (...args: any[]) => unknown>(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   object: any,
-  property: string
+  property: string,
 ) => jest.spyOn(object, property) as MethodSpy<T>
 
 const fetchJsonStub: SinonStub<
@@ -67,7 +67,7 @@ describe("IndexingService", () => {
   beforeEach(async () => {
     fetchJsonStub
       .withArgs(
-        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,matic-network,rootstock,avalanche-2,binancecoin&include_last_updated_at=true&vs_currencies=usd"
+        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,matic-network,rootstock,avalanche-2,binancecoin&include_last_updated_at=true&vs_currencies=usd",
       )
       .resolves({
         "matic-network": { usd: 1.088, last_updated_at: 1675123143 },
@@ -130,7 +130,7 @@ describe("IndexingService", () => {
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
-        tokenList
+        tokenList,
       )
 
       const delay = sinon.promise<void>()
@@ -153,7 +153,7 @@ describe("IndexingService", () => {
                 tags: ["earn"],
               },
             ],
-          }))
+          })),
         )
 
       await Promise.all([
@@ -167,7 +167,7 @@ describe("IndexingService", () => {
         expect(
           indexingService
             .getCachedAssets(ETHEREUM)
-            .map((assets) => assets.symbol)
+            .map((assets) => assets.symbol),
         ).toEqual(["ETH", customAsset.symbol, "TEST"])
       })
 
@@ -207,11 +207,13 @@ describe("IndexingService", () => {
          * for every supported network after tokenlist load
          */
         expect(cacheSpy).toHaveBeenCalledTimes(
-          chainService.supportedNetworks.length + trackedNetworks.length
+          chainService.supportedNetworks.length + trackedNetworks.length,
         )
 
         expect(
-          indexingService.getCachedAssets(ETHEREUM).map((asset) => asset.symbol)
+          indexingService
+            .getCachedAssets(ETHEREUM)
+            .map((asset) => asset.symbol),
         ).toEqual(["ETH", "TEST"])
       })
     })
@@ -235,7 +237,7 @@ describe("IndexingService", () => {
         expect(
           indexingService
             .getCachedAssets(ETHEREUM)
-            .map((assets) => assets.symbol)
+            .map((assets) => assets.symbol),
         ).toEqual(["ETH", "TEST"])
       })
 
@@ -244,7 +246,9 @@ describe("IndexingService", () => {
       expect(cacheSpy).toHaveBeenCalled()
 
       expect(
-        indexingService.getCachedAssets(ETHEREUM).map((assets) => assets.symbol)
+        indexingService
+          .getCachedAssets(ETHEREUM)
+          .map((assets) => assets.symbol),
       ).toEqual(["ETH", customAsset.symbol, "TEST"])
     })
 
@@ -257,14 +261,14 @@ describe("IndexingService", () => {
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
-        tokenList
+        tokenList,
       )
 
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       const spy = getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
         indexingService,
-        "handlePriceAlarm"
+        "handlePriceAlarm",
       )
 
       await Promise.all([
@@ -282,7 +286,7 @@ describe("IndexingService", () => {
         fetchJsonStub
           .getCalls()
           .toString()
-          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i)
+          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i),
       ).toBeTruthy()
     })
   })
@@ -295,7 +299,7 @@ describe("IndexingService", () => {
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
-        tokenList
+        tokenList,
       )
 
       await indexingService.addOrUpdateCustomAsset(smartContractAsset)
@@ -304,7 +308,7 @@ describe("IndexingService", () => {
       // Skip loading prices at service init
       getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
         indexingService,
-        "handlePriceAlarm"
+        "handlePriceAlarm",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([
@@ -331,7 +335,7 @@ describe("IndexingService", () => {
         IndexingService["retrieveTokenBalances"]
       >(indexingService, "retrieveTokenBalances").mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => Promise.resolve({}) as any
+        () => Promise.resolve({}) as any,
       )
 
       // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -348,7 +352,7 @@ describe("IndexingService", () => {
 
       await indexingDb.saveTokenList(
         "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
-        tokenList
+        tokenList,
       )
 
       await indexingService.addOrUpdateCustomAsset(smartContractAsset)
@@ -357,7 +361,7 @@ describe("IndexingService", () => {
       // Skip loading prices at service init
       getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
         indexingService,
-        "handlePriceAlarm"
+        "handlePriceAlarm",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([
@@ -384,7 +388,7 @@ describe("IndexingService", () => {
         IndexingService["retrieveTokenBalances"]
       >(indexingService, "retrieveTokenBalances").mockImplementation(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => Promise.resolve({}) as any
+        () => Promise.resolve({}) as any,
       )
 
       await indexingService.cacheAssetsForNetwork(ETHEREUM)
@@ -398,7 +402,7 @@ describe("IndexingService", () => {
         expect.arrayContaining([
           expect.objectContaining({ symbol: "TEST" }),
           expect.objectContaining({ symbol: smartContractAsset.symbol }),
-        ])
+        ]),
       )
     })
   })

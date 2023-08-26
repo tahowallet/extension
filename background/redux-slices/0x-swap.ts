@@ -67,7 +67,7 @@ const swapSlice = createSlice({
   reducers: {
     setFinalSwapQuote: (
       state,
-      { payload: finalQuote }: { payload: ZrxQuote }
+      { payload: finalQuote }: { payload: ZrxQuote },
     ) => ({
       ...state,
       finalQuote,
@@ -75,7 +75,7 @@ const swapSlice = createSlice({
 
     setLatestQuoteRequest: (
       state,
-      { payload: quoteRequest }: { payload: SwapQuoteRequest }
+      { payload: quoteRequest }: { payload: SwapQuoteRequest },
     ) => ({
       ...state,
       latestQuoteRequest: quoteRequest,
@@ -83,7 +83,7 @@ const swapSlice = createSlice({
 
     setInProgressApprovalContract: (
       state,
-      { payload: approvingContractAddress }: { payload: string }
+      { payload: approvingContractAddress }: { payload: string },
     ) => ({
       ...state,
       inProgressApprovalContract: approvingContractAddress,
@@ -185,14 +185,16 @@ function build0xUrlFromSwapRequest(
     gasPrice,
     network: selectedNetwork,
   }: SwapQuoteRequest,
-  additionalParameters: Record<string, string>
+  additionalParameters: Record<string, string>,
 ): URL {
   const requestUrl = new URL(
-    `https://${get0xApiBase(selectedNetwork)}/swap/v1${requestPath}`
+    `https://${get0xApiBase(selectedNetwork)}/swap/v1${requestPath}`,
   )
   const tradeAmount = utils.parseUnits(
     "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount ? assets.buyAsset.decimals : assets.sellAsset.decimals
+    "buyAmount" in amount
+      ? assets.buyAsset.decimals
+      : assets.sellAsset.decimals,
   )
 
   // When available, use smart contract addresses.
@@ -258,7 +260,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
       logger.warn(
         "Swap quote API call didn't validate, did the 0x API change?",
         apiData,
-        isValidSwapQuoteResponse.errors
+        isValidSwapQuoteResponse.errors,
       )
 
       return null
@@ -267,22 +269,22 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     dispatch(setFinalSwapQuote(apiData))
 
     return apiData
-  }
+  },
 )
 
 const parseAndNotifyOnZeroExApiError = (
   error: unknown,
-  dispatch: ThunkDispatch<unknown, unknown, AnyAction>
+  dispatch: ThunkDispatch<unknown, unknown, AnyAction>,
 ) => {
   try {
     if (typeof error === "object" && error !== null && "body" in error) {
       const parsedBody = JSON.parse(
-        (error as { body: string }).body
+        (error as { body: string }).body,
       ) as ZeroExErrorResponse
       if (
         // @TODO Extend this to handle more errors
         parsedBody.validationErrors.find(
-          (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY"
+          (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY",
         )
       ) {
         dispatch(setSnackbarMessage("Insufficient liquidity for this trade."))
@@ -309,7 +311,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     }: {
       quoteRequest: SwapQuoteRequest
     },
-    { dispatch, getState }
+    { dispatch, getState },
   ): Promise<
     | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
     | undefined
@@ -336,7 +338,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         logger.warn(
           "Swap price API call didn't validate, did the 0x API change?",
           apiData,
-          isValidSwapQuoteResponse.errors
+          isValidSwapQuoteResponse.errors,
         )
 
         return undefined
@@ -351,13 +353,13 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         const assetContract = new ethers.Contract(
           quote.sellTokenAddress,
           ERC20_ABI,
-          signer
+          signer,
         )
 
         const existingAllowance: BigNumber =
           await assetContract.callStatic.allowance(
             await signer.getAddress(),
-            quote.allowanceTarget
+            quote.allowanceTarget,
           )
 
         needsApproval = existingAllowance.lt(quote.sellAmount)
@@ -375,7 +377,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           assets,
           prices,
           quote.buyAmount,
-          quoteRequest.network
+          quoteRequest.network,
         ),
         sellCurrencyAmount: await checkCurrencyAmount(
           Number(quote.sellTokenToEthRate),
@@ -383,7 +385,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           assets,
           prices,
           quote.sellAmount,
-          quoteRequest.network
+          quoteRequest.network,
         ),
       }
 
@@ -393,7 +395,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       parseAndNotifyOnZeroExApiError(error, dispatch)
       return undefined
     }
-  }
+  },
 )
 
 /**
@@ -412,7 +414,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
       assetContractAddress: string
       approvalTarget: string
     },
-    { dispatch }
+    { dispatch },
   ) => {
     dispatch(setApprovalInProgress(assetContractAddress))
 
@@ -423,17 +425,17 @@ export const approveTransfer = createBackgroundAsyncThunk(
       const assetContract = new ethers.Contract(
         assetContractAddress,
         ERC20_ABI,
-        signer
+        signer,
       )
       const approvalTransactionData =
         await assetContract.populateTransaction.approve(
           approvalTarget,
-          ethers.constants.MaxUint256 // infinite approval :(
+          ethers.constants.MaxUint256, // infinite approval :(
         )
 
       logger.debug("Issuing approval transaction", approvalTransactionData)
       const transactionHash = await signer.sendUncheckedTransaction(
-        approvalTransactionData
+        approvalTransactionData,
       )
 
       // Wait for transaction to mine before indicating approval is complete.
@@ -444,7 +446,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
     } finally {
       dispatch(clearApprovalInProgress())
     }
-  }
+  },
 )
 
 /**
@@ -455,7 +457,7 @@ export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
     quote: ZrxQuote & { sellAsset: SwappableAsset; buyAsset: SwappableAsset },
-    { dispatch }
+    { dispatch },
   ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
@@ -465,14 +467,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         asset: quote.sellAsset,
         amount: BigInt(quote.sellAmount),
       },
-      2
+      2,
     )
     const buyAssetAmount = enrichAssetAmountWithDecimalValues(
       {
         asset: quote.buyAsset,
         amount: BigInt(quote.buyAmount),
       },
-      2
+      2,
     )
 
     // Clear the swap quote, then request signature + broadcast.
@@ -503,5 +505,5 @@ export const executeSwap = createBackgroundAsyncThunk(
         blockTimestamp: undefined,
       },
     })
-  }
+  },
 )

@@ -24,7 +24,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name
+        account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -55,7 +55,7 @@ test.describe("Transactions", () => {
         account2.name,
         "ETH",
         "0\\.1021",
-        true
+        true,
       )
 
       /**
@@ -63,11 +63,11 @@ test.describe("Transactions", () => {
        */
       await popup.locator("input.input_amount").fill("0.01")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/)
+        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
       ).toBeVisible()
 
       await expect(
-        popup.getByRole("button", { name: "Continue", exact: true })
+        popup.getByRole("button", { name: "Continue", exact: true }),
       ).toHaveClass(/disabled/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
       await popup
         .getByRole("button", { name: "Continue", exact: true })
@@ -93,7 +93,7 @@ test.describe("Transactions", () => {
         "0x4774…875a6",
         "0\\.01",
         "ETH",
-        true
+        true,
       )
 
       /**
@@ -106,76 +106,73 @@ test.describe("Transactions", () => {
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
       await expect(
-        popup.getByText("Transaction signed, broadcasting...").first()
+        popup.getByText("Transaction signed, broadcasting...").first(),
       ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
       await expect(
-        popup.getByText("Transaction failed to broadcast.")
+        popup.getByText("Transaction failed to broadcast."),
       ).toHaveCount(0)
     })
 
-    await test.step(
-      "Verify asset activity screen and transaction status",
-      async () => {
-        /**
-         * Verify elements on the asset activity screen
-         */
-        await assetsHelper.assertAssetDetailsPage(
-          /^Ethereum$/,
-          account2.name,
-          /^ETH$/,
-          /^0\.0914$/,
-          "base"
-        )
-        // This is what we expect currently on forked network. If ve ever fix
-        // displaying activity on fork, we should perform following checks
-        // instead:
-        // Find latest transaction item, check if there is a "Send" status and
-        // click on the item.
-        // Wait for panel to load.
-        // Check if block height is defined.
-        // Check if amount is the same as you sent.
-        // Check (maybe?) nonce value timestamp and gas (21k).
-        // Open scan website from the link in the header. (optional)
-        // Compare values from the scan website and extension. (optional)
-        await expect(
-          popup
-            .getByText(
-              `Taho will populate your historical activity over time; this may
+    await test.step("Verify asset activity screen and transaction status", async () => {
+      /**
+       * Verify elements on the asset activity screen
+       */
+      await assetsHelper.assertAssetDetailsPage(
+        /^Ethereum$/,
+        account2.name,
+        /^ETH$/,
+        /^0\.0914$/,
+        "base",
+      )
+      // This is what we expect currently on forked network. If ve ever fix
+      // displaying activity on fork, we should perform following checks
+      // instead:
+      // Find latest transaction item, check if there is a "Send" status and
+      // click on the item.
+      // Wait for panel to load.
+      // Check if block height is defined.
+      // Check if amount is the same as you sent.
+      // Check (maybe?) nonce value timestamp and gas (21k).
+      // Open scan website from the link in the header. (optional)
+      // Compare values from the scan website and extension. (optional)
+      await expect(
+        popup
+          .getByText(
+            `Taho will populate your historical activity over time; this may
               take an hour or more for accounts that have been active for a long
-              time. For new accounts, new activity will show up here.`
-            )
-            .first()
-        ).toBeVisible()
+              time. For new accounts, new activity will show up here.`,
+          )
+          .first(),
+      ).toBeVisible()
 
-        /**
-         * Navifgate to `Wallet` -> `Activity`
-         */
-        await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
-        await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
+      /**
+       * Navifgate to `Wallet` -> `Activity`
+       */
+      await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
+      await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
 
-        /**
-         * Verify elements on the activity screen
-         */
-        // TODO: If we ever fix displaying asset activity on fork, we should
-        // repeat the checks of tx details here.
-        await expect(
-          popup
-            .getByText(
-              `Taho will populate your historical activity over time; this may
+      /**
+       * Verify elements on the activity screen
+       */
+      // TODO: If we ever fix displaying asset activity on fork, we should
+      // repeat the checks of tx details here.
+      await expect(
+        popup
+          .getByText(
+            `Taho will populate your historical activity over time; this may
             take an hour or more for accounts that have been active for a long
-            time. For new accounts, new activity will show up here.`
-            )
-            .first()
-        ).toBeVisible()
+            time. For new accounts, new activity will show up here.`,
+          )
+          .first(),
+      ).toBeVisible()
 
-        await walletPageHelper.assertCommonElements(
-          /^Ethereum$/,
-          false,
-          account2.name
-        )
-        await walletPageHelper.assertAnalyticsBanner()
-      }
-    )
+      await walletPageHelper.assertCommonElements(
+        /^Ethereum$/,
+        false,
+        account2.name,
+      )
+      await walletPageHelper.assertAnalyticsBanner()
+    })
   })
 
   test("User can open ERC-20 transfer from asset list and can reject the transfer", async ({
@@ -200,7 +197,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name
+        account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -236,7 +233,7 @@ test.describe("Transactions", () => {
         account2.name,
         "KEEP",
         "65\\.88",
-        false
+        false,
       )
 
       /**
@@ -244,11 +241,11 @@ test.describe("Transactions", () => {
        */
       await popup.getByPlaceholder(/^0\.0$/).fill("1.257")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/)
+        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
       ).toBeVisible()
 
       await expect(
-        popup.getByRole("button", { name: "Continue", exact: true })
+        popup.getByRole("button", { name: "Continue", exact: true }),
       ).toHaveClass(/disabled/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
       await popup
         .getByRole("button", { name: "Continue", exact: true })
@@ -274,7 +271,7 @@ test.describe("Transactions", () => {
         "0x4774…875a6",
         "1\\.25",
         "KEEP",
-        false
+        false,
       )
 
       /**
@@ -287,10 +284,10 @@ test.describe("Transactions", () => {
        * "Transaction failed to broadcast" snackbar visible.
        */
       await expect(
-        popup.getByText("Transaction signed, broadcasting...")
+        popup.getByText("Transaction signed, broadcasting..."),
       ).toHaveCount(0)
       await expect(
-        popup.getByText("Transaction failed to broadcast.")
+        popup.getByText("Transaction failed to broadcast."),
       ).toHaveCount(0)
     })
 
@@ -304,7 +301,7 @@ test.describe("Transactions", () => {
         /^KEEP$/,
         /^65\.88$/,
         "knownERC20",
-        "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
+        "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
       )
       // This is what we expect currently on a forked network.
       await expect(
@@ -312,9 +309,9 @@ test.describe("Transactions", () => {
           .getByText(
             `Taho will populate your historical activity over time; this may
           take an hour or more for accounts that have been active for a long
-          time. For new accounts, new activity will show up here.`
+          time. For new accounts, new activity will show up here.`,
           )
-          .first()
+          .first(),
       ).toBeVisible()
     })
   })
@@ -341,7 +338,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name
+        account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -377,7 +374,7 @@ test.describe("Transactions", () => {
         account2.name,
         "ETH",
         "\\d+\\.\\d{4}",
-        true
+        true,
       )
 
       /**
@@ -403,7 +400,7 @@ test.describe("Transactions", () => {
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^KEEP$/ }) })
       await expect(
-        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/)
+        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/),
       ).toBeVisible()
       await expect(keepToken.getByText(/^65\.88$/)).toBeVisible()
       await expect(keepToken.locator(".icon")).toBeVisible()
@@ -414,7 +411,7 @@ test.describe("Transactions", () => {
        */
       await popup.getByPlaceholder("Search by name or address").fill("keep")
       await expect(
-        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/)
+        keepToken.getByText(/^(KeepToken|Keep Network( Token)?)$/),
       ).toBeVisible()
       await expect(keepToken.getByText(/^65\.88$/)).toBeVisible()
       await expect(keepToken.locator(".icon")).toBeVisible()
@@ -435,7 +432,7 @@ test.describe("Transactions", () => {
         account2.name,
         "KEEP",
         "65\\.88",
-        false
+        false,
       )
 
       /**
@@ -443,11 +440,11 @@ test.describe("Transactions", () => {
        */
       await popup.getByPlaceholder(/^0\.0$/).fill("12.3456")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/)
+        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
       ).toBeVisible()
 
       await expect(
-        popup.getByRole("button", { name: "Continue", exact: true })
+        popup.getByRole("button", { name: "Continue", exact: true }),
       ).toHaveClass(/disabled/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
       await popup
         .getByRole("button", { name: "Continue", exact: true })
@@ -473,7 +470,7 @@ test.describe("Transactions", () => {
         "0x4774…875a6",
         "12\\.34",
         "KEEP",
-        false
+        false,
       )
 
       /**
@@ -486,76 +483,73 @@ test.describe("Transactions", () => {
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
       await expect(
-        popup.getByText("Transaction signed, broadcasting...").first()
+        popup.getByText("Transaction signed, broadcasting...").first(),
       ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
       await expect(
-        popup.getByText("Transaction failed to broadcast.")
+        popup.getByText("Transaction failed to broadcast."),
       ).toHaveCount(0)
     })
 
-    await test.step(
-      "Verify asset activity screen and transaction status",
-      async () => {
-        /**
-         * Verify elements on the asset activity screen
-         */
-        await assetsHelper.assertAssetDetailsPage(
-          /^Ethereum$/,
-          account2.name,
-          /^KEEP$/,
-          /^53\.54$/,
-          "knownERC20",
-          "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec"
-        )
-        // This is what we expect currently on forked network. If ve ever fix
-        // displaying activity on fork, we should perform following checks
-        // instead:
-        // Find latest transaction item, check if there is a "Send" status and
-        // click on the item.
-        // Wait for panel to load.
-        // Check if block height is defined.
-        // Check if amount is the same as you sent.
-        // Check (maybe?) nonce value timestamp and gas (21k).
-        // Open scan website from the link in the header. (optional)
-        // Compare values from the scan website and extension. (optional)
-        await expect(
-          popup
-            .getByText(
-              `Taho will populate your historical activity over time; this may
+    await test.step("Verify asset activity screen and transaction status", async () => {
+      /**
+       * Verify elements on the asset activity screen
+       */
+      await assetsHelper.assertAssetDetailsPage(
+        /^Ethereum$/,
+        account2.name,
+        /^KEEP$/,
+        /^53\.54$/,
+        "knownERC20",
+        "https://etherscan.io/token/0x85eee30c52b0b379b046fb0f85f4f3dc3009afec",
+      )
+      // This is what we expect currently on forked network. If ve ever fix
+      // displaying activity on fork, we should perform following checks
+      // instead:
+      // Find latest transaction item, check if there is a "Send" status and
+      // click on the item.
+      // Wait for panel to load.
+      // Check if block height is defined.
+      // Check if amount is the same as you sent.
+      // Check (maybe?) nonce value timestamp and gas (21k).
+      // Open scan website from the link in the header. (optional)
+      // Compare values from the scan website and extension. (optional)
+      await expect(
+        popup
+          .getByText(
+            `Taho will populate your historical activity over time; this may
             take an hour or more for accounts that have been active for a long
-            time. For new accounts, new activity will show up here.`
-            )
-            .first()
-        ).toBeVisible()
+            time. For new accounts, new activity will show up here.`,
+          )
+          .first(),
+      ).toBeVisible()
 
-        /**
-         * Navifgate to `Wallet` -> `Activity`
-         */
-        await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
-        await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
+      /**
+       * Navifgate to `Wallet` -> `Activity`
+       */
+      await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
+      await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
 
-        /**
-         * Verify elements on the activity screen
-         */
-        // TODO: If we ever fix displaying asset activity on fork, we should
-        // repeat the checks of tx details here.
-        await expect(
-          popup
-            .getByText(
-              `Taho will populate your historical activity over time; this may
+      /**
+       * Verify elements on the activity screen
+       */
+      // TODO: If we ever fix displaying asset activity on fork, we should
+      // repeat the checks of tx details here.
+      await expect(
+        popup
+          .getByText(
+            `Taho will populate your historical activity over time; this may
               take an hour or more for accounts that have been active for a long
-              time. For new accounts, new activity will show up here.`
-            )
-            .first()
-        ).toBeVisible()
+              time. For new accounts, new activity will show up here.`,
+          )
+          .first(),
+      ).toBeVisible()
 
-        await walletPageHelper.assertCommonElements(
-          /^Ethereum$/,
-          false,
-          account2.name
-        )
-        await walletPageHelper.assertAnalyticsBanner()
-      }
-    )
+      await walletPageHelper.assertCommonElements(
+        /^Ethereum$/,
+        false,
+        account2.name,
+      )
+      await walletPageHelper.assertAnalyticsBanner()
+    })
   })
 })

@@ -220,7 +220,7 @@ export function isFungibleAsset(asset: AnyAsset): asset is FungibleAsset {
  * Type guard to check if an AnyAsset is actually a SmartContractFungibleAsset.
  */
 export function isSmartContractFungibleAsset<T extends AnyAsset>(
-  asset: T
+  asset: T,
 ): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
 }
@@ -232,7 +232,7 @@ export function isSmartContractFungibleAsset<T extends AnyAsset>(
  * FungibleAsset nature of the internal asset!
  */
 export function isFungibleAssetAmount(
-  assetAmount: AnyAssetAmount
+  assetAmount: AnyAssetAmount,
 ): assetAmount is FungibleAssetAmount {
   return isFungibleAsset(assetAmount.asset)
 }
@@ -279,7 +279,7 @@ export function flipPricePoint(pricePoint: PricePoint): PricePoint {
  */
 export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
   sourceAssetAmount: T,
-  assetPricePoint: PricePoint | undefined
+  assetPricePoint: PricePoint | undefined,
 ): FungibleAssetAmount | undefined {
   if (typeof assetPricePoint === "undefined") {
     return undefined
@@ -350,7 +350,7 @@ export function convertAssetAmountViaPricePoint<T extends AnyAssetAmount>(
  * is undefined.
  */
 export function unitPricePointForPricePoint(
-  assetPricePoint: PricePoint | undefined
+  assetPricePoint: PricePoint | undefined,
 ): UnitPricePoint<FungibleAsset> | undefined {
   if (typeof assetPricePoint === "undefined") {
     return undefined
@@ -366,7 +366,7 @@ export function unitPricePointForPricePoint(
           : 1n,
       asset: sourceAsset,
     },
-    assetPricePoint
+    assetPricePoint,
   )
 
   if (typeof unitPrice !== "undefined") {
@@ -394,7 +394,7 @@ export function unitPricePointForPricePoint(
  */
 export function assetAmountToDesiredDecimals(
   assetAmount: FungibleAssetAmount,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): number {
   const {
     amount,

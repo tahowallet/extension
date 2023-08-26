@@ -4,7 +4,7 @@ import WalletPageHelper from "./walletPageHelper"
 export default class AssetsHelper {
   constructor(
     public readonly popup: Page,
-    public readonly walletPageHelper: WalletPageHelper
+    public readonly walletPageHelper: WalletPageHelper,
   ) {}
 
   /**
@@ -18,7 +18,7 @@ export default class AssetsHelper {
    */
   async assertVerifiedAssetOnWalletPage(
     assetSymbol: RegExp,
-    assetType: "base" | "knownERC20" | "trusted"
+    assetType: "base" | "knownERC20" | "trusted",
   ): Promise<void> {
     const allSpecifiedAssets = this.popup
       .getByTestId("asset_list_item")
@@ -45,7 +45,7 @@ export default class AssetsHelper {
      */
     if (assetType === "base") {
       expect(
-        allSpecifiedAssets.first().getByTestId("asset_symbol")
+        allSpecifiedAssets.first().getByTestId("asset_symbol"),
       ).toBeVisible()
     }
 
@@ -73,7 +73,7 @@ export default class AssetsHelper {
     expectedBalance: RegExp,
     assetType: "base" | "knownERC20" | "unverified" | "trusted",
     tokenLink?: string, // needed only when `assetType` is not `base`
-    tokenAddressShortened?: string // needed only when `assetType` is `unverified` or `trusted`
+    tokenAddressShortened?: string, // needed only when `assetType` is `unverified` or `trusted`
   ): Promise<void> {
     /**
      * Assert the top wrap.
@@ -95,7 +95,7 @@ export default class AssetsHelper {
       has: this.popup.locator("span").filter({ hasText: assetSymbol }),
     })
     const balance = await activityLeftContainer.getByText(
-      /^(\d|,)+(\.\d{2,4})*$/
+      /^(\d|,)+(\.\d{2,4})*$/,
     )
     await expect(balance.getByText(expectedBalance)).toHaveCount(1, {
       timeout: 120000,
@@ -103,11 +103,11 @@ export default class AssetsHelper {
 
     if (assetType === "base" || assetType === "knownERC20") {
       await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/)
+        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
       ).toBeVisible()
     } else {
       await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/)
+        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
       ).not.toBeVisible()
     }
 
@@ -138,14 +138,14 @@ export default class AssetsHelper {
       await this.assertVerifyAssetPopup(
         assetSymbol,
         assetType,
-        tokenAddressShortened
+        tokenAddressShortened,
       )
       this.closeVerifyAssetPopup()
       await this.popup.getByRole("button", { name: "Verify asset" }).click()
       await this.assertVerifyAssetPopup(
         assetSymbol,
         assetType,
-        tokenAddressShortened
+        tokenAddressShortened,
       )
       this.closeVerifyAssetPopup()
     } else {
@@ -158,12 +158,12 @@ export default class AssetsHelper {
       await this.assertVerifyAssetPopup(
         assetSymbol,
         assetType,
-        tokenAddressShortened
+        tokenAddressShortened,
       )
       this.closeVerifyAssetPopup()
     } else {
       await expect(
-        this.popup.getByRole("button", { name: "Verified by you" })
+        this.popup.getByRole("button", { name: "Verified by you" }),
       ).not.toBeVisible()
     }
 
@@ -179,10 +179,10 @@ export default class AssetsHelper {
         .click({ trial: true })
     } else {
       await expect(
-        this.popup.getByRole("button", { name: "Send", exact: true })
+        this.popup.getByRole("button", { name: "Send", exact: true }),
       ).not.toBeVisible()
       await expect(
-        this.popup.getByRole("button", { name: "Swap", exact: true })
+        this.popup.getByRole("button", { name: "Swap", exact: true }),
       ).not.toBeVisible()
     }
 
@@ -208,10 +208,10 @@ export default class AssetsHelper {
   async assertVerifyAssetPopup(
     assetSymbol: RegExp,
     assetType: "unverified" | "trusted",
-    tokenAddressShortened: string | undefined
+    tokenAddressShortened: string | undefined,
   ): Promise<void> {
     await expect(
-      this.popup.getByText("Asset automatically imported")
+      this.popup.getByText("Asset automatically imported"),
     ).toBeVisible()
 
     const verifyAssetPopup = this.popup
@@ -220,24 +220,24 @@ export default class AssetsHelper {
 
     if (assetType === "trusted") {
       await expect(
-        verifyAssetPopup.getByText("Asset verified by you")
+        verifyAssetPopup.getByText("Asset verified by you"),
       ).toBeVisible()
       await expect(
-        verifyAssetPopup.getByText("Asset not verified")
+        verifyAssetPopup.getByText("Asset not verified"),
       ).not.toBeVisible()
     } else {
       await expect(
-        verifyAssetPopup.getByText("Asset not verified")
+        verifyAssetPopup.getByText("Asset not verified"),
       ).toBeVisible()
       await expect(
-        verifyAssetPopup.getByText("Asset verified by you")
+        verifyAssetPopup.getByText("Asset verified by you"),
       ).not.toBeVisible()
     }
 
     await expect(
       verifyAssetPopup.getByText(
-        "Be aware of scam and spam assets, only interact with assets you trust."
-      )
+        "Be aware of scam and spam assets, only interact with assets you trust.",
+      ),
     ).toBeVisible()
 
     await expect(
@@ -246,7 +246,7 @@ export default class AssetsHelper {
         .filter({
           hasText: "Symbol",
         })
-        .locator(".right")
+        .locator(".right"),
     ).toHaveText(assetSymbol)
 
     if (tokenAddressShortened !== undefined) {
@@ -256,7 +256,7 @@ export default class AssetsHelper {
           .filter({
             hasText: "Contract address",
           })
-          .locator(".right")
+          .locator(".right"),
       ).toHaveText(tokenAddressShortened)
     } else {
       throw new Error("`tokenAddressShortened` not defined.")
@@ -284,7 +284,7 @@ export default class AssetsHelper {
         verifyAssetPopup.getByRole("button", {
           name: "Add to asset list",
           exact: true,
-        })
+        }),
       ).not.toBeVisible()
     }
   }
@@ -295,14 +295,14 @@ export default class AssetsHelper {
    */
   async assertNoUnverifiedAssetsOnWalletPage(): Promise<void> {
     await expect(
-      this.popup.getByRole("button", { name: "See unverified assets" })
+      this.popup.getByRole("button", { name: "See unverified assets" }),
     ).not.toBeVisible()
     await expect(this.popup.getByText("Asset not verified")).not.toBeVisible()
     await expect(
-      this.popup.getByRole("button", { name: "Verify asset" })
+      this.popup.getByRole("button", { name: "Verify asset" }),
     ).not.toBeVisible()
     await expect(
-      this.popup.getByTestId("hidden_assets_container")
+      this.popup.getByTestId("hidden_assets_container"),
     ).not.toBeVisible()
   }
 
@@ -317,16 +317,16 @@ export default class AssetsHelper {
     await expect(
       this.popup.getByRole("button", {
         name: /^See unverified assets \(\d+\)$/,
-      })
+      }),
     ).toBeVisible()
     await expect(
       this.popup.getByRole("button", {
         name: /^Hide unverified assets \(\d+\)$/,
-      })
+      }),
     ).not.toBeVisible()
 
     await expect(
-      this.popup.getByTestId("hidden_assets_container")
+      this.popup.getByTestId("hidden_assets_container"),
     ).not.toBeVisible()
     // Below assertions fail, as `Verify asset` and `Asset not verified`
     // elements are present in DOM even when unverified assets are collapsed.
@@ -352,25 +352,25 @@ export default class AssetsHelper {
     await expect(
       this.popup.getByRole("button", {
         name: /^Hide unverified assets \(\d+\)$/,
-      })
+      }),
     ).toBeVisible()
     await expect(
-      this.popup.getByRole("button", { name: "See unverified assets" })
+      this.popup.getByRole("button", { name: "See unverified assets" }),
     ).not.toBeVisible()
 
     await expect(
-      this.popup.getByTestId("hidden_assets_container")
+      this.popup.getByTestId("hidden_assets_container"),
     ).toBeVisible()
     // Similarly as commented above, below assertions are not perfect. The
     // assertions can pass even when the list of unverified assets is collapsed.
     await expect(this.popup.getByText("Asset not verified")).toBeVisible()
     await expect(
       this.popup.getByText(
-        "Be aware of scam and spam assets, only interact with assets you trust."
-      )
+        "Be aware of scam and spam assets, only interact with assets you trust.",
+      ),
     ).toBeVisible()
     await expect(
-      this.popup.getByRole("button", { name: "Verify asset" }).first()
+      this.popup.getByRole("button", { name: "Verify asset" }).first(),
     ).toBeVisible()
 
     /**
@@ -385,15 +385,15 @@ export default class AssetsHelper {
     await expect(
       this.popup.getByRole("button", {
         name: /^See unverified assets \(\d+\)$/,
-      })
+      }),
     ).toBeVisible()
     await expect(
       this.popup.getByRole("button", {
         name: /^Hide unverified assets \(\d+\)$/,
-      })
+      }),
     ).not.toBeVisible()
     await expect(
-      this.popup.getByTestId("hidden_assets_container")
+      this.popup.getByTestId("hidden_assets_container"),
     ).not.toBeVisible()
   }
 
@@ -402,15 +402,15 @@ export default class AssetsHelper {
    * available on the Transaction/Swap form.
    */
   async assertAssetsNotPresentOnAssetsList(
-    tokens: Array<unknown>
+    tokens: Array<unknown>,
   ): Promise<void> {
     await expect(this.popup.getByTestId("assets_list")).toHaveCount(1)
     await Promise.all(
       tokens.map(async (token) => {
         await expect(
-          this.popup.getByTitle(token as string, { exact: true })
+          this.popup.getByTitle(token as string, { exact: true }),
         ).toHaveCount(0)
-      })
+      }),
     )
   }
 
@@ -423,9 +423,9 @@ export default class AssetsHelper {
     await Promise.all(
       tokens.map(async (token) => {
         await expect(
-          this.popup.getByTitle(token as string, { exact: true })
+          this.popup.getByTitle(token as string, { exact: true }),
         ).toHaveCount(1)
-      })
+      }),
     )
   }
 
@@ -452,7 +452,7 @@ export default class AssetsHelper {
       .getByTestId("toggle")
       .click({ trial: true })
     await expect(
-      showUnverifiedAssetsSetting.getByTestId("toggle")
+      showUnverifiedAssetsSetting.getByTestId("toggle"),
     ).toHaveAttribute("aria-checked", enabled.toString())
     await showUnverifiedAssetsSetting
       .getByTestId("tooltip_wrap")
@@ -460,14 +460,14 @@ export default class AssetsHelper {
     await expect(
       this.popup.getByText(
         `Discover assets that you own but are not on our asset list. Some
-          spam/scam assets may show up, so treat them with caution.`
-      )
+          spam/scam assets may show up, so treat them with caution.`,
+      ),
     ).toBeVisible()
     await expect(
       this.popup.getByText(
         `They will show up on the bottom of the asset page until you verify
-          them.`
-      )
+          them.`,
+      ),
     ).toBeVisible()
   }
 

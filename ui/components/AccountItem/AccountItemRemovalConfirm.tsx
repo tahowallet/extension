@@ -41,7 +41,7 @@ export default function AccountItemRemovalConfirm({
   const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
   const history = useHistory()
   const keyring = useBackgroundSelector((state) =>
-    selectKeyringByAddress(state, address)
+    selectKeyringByAddress(state, address),
   )
   const { selectedAddress, accountsData } = useBackgroundSelector((state) => ({
     selectedAddress: state.ui.selectedAccount.address,
@@ -52,7 +52,7 @@ export default function AccountItemRemovalConfirm({
   const lastAddressInKeyring = keyring?.addresses.length === 1
 
   const ledgerDeviceByAddress = useBackgroundSelector(
-    selectLedgerDeviceByAddresses
+    selectLedgerDeviceByAddresses,
   )
 
   const allAddresses = useBackgroundSelector(getAllAddresses)
@@ -65,7 +65,7 @@ export default function AccountItemRemovalConfirm({
     !allAddresses.some(
       (otherAddress: string) =>
         address !== otherAddress &&
-        ledgerDeviceByAddress[otherAddress]?.id === signer.deviceID
+        ledgerDeviceByAddress[otherAddress]?.id === signer.deviceID,
     )
 
   const lastAccountInTallyWallet = Object.keys(allAddresses).length === 1
@@ -121,7 +121,7 @@ export default function AccountItemRemovalConfirm({
                   addressOnNetwork: { address, network },
                   signer: accountSigners[address],
                   lastAddressInAccount,
-                })
+                }),
               )
 
               if (lastAccountInTallyWallet) {
@@ -132,14 +132,14 @@ export default function AccountItemRemovalConfirm({
 
               if (sameEVMAddress(selectedAddress, address)) {
                 const newAddress = Object.keys(
-                  accountsData.evm[network.chainID]
+                  accountsData.evm[network.chainID],
                 ).find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
                   dispatch(
                     setNewSelectedAccount({
                       address: newAddress,
                       network,
-                    })
+                    }),
                   )
                 }
               }

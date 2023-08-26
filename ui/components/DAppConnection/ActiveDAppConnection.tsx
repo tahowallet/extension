@@ -31,11 +31,11 @@ export default function ActiveDAppConnection({
         allowedPages.map(async (permission) => {
           if (permission.origin === currentPermission.origin) {
             return dispatch(
-              denyOrRevokePermission({ ...permission, state: "deny" })
+              denyOrRevokePermission({ ...permission, state: "deny" }),
             )
           }
           return undefined
-        })
+        }),
       )
     }
   }, [dispatch, currentPermission, allowedPages])

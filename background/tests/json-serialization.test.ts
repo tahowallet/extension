@@ -37,6 +37,6 @@ test("round-trips mixed values with bigints correctly", () => {
 
   expect(decodeJSON(encodeJSON(mixedArray))).toStrictEqual(mixedArray)
   expect(decodeJSON(encodeJSON(mixedObjectWithUndefined))).toStrictEqual(
-    mixedObject
+    mixedObject,
   )
 })

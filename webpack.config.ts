@@ -136,7 +136,7 @@ const modeConfigs: {
                   .toString("utf8")
                   .replace(
                     "<!-- INSERT_REACT_DEV_TOOLS_HERE -->",
-                    `<script src="http://localhost:${port}"></script>`
+                    `<script src="http://localhost:${port}"></script>`,
                   )
               }
 
@@ -205,7 +205,7 @@ const modeConfigs: {
 // One config per supported browser, adjusted by mode.
 export default (
   _: unknown,
-  { mode }: WebpackOptionsNormalized
+  { mode }: WebpackOptionsNormalized,
 ): webpack.Configuration[] =>
   supportedBrowsers.map((browser) => {
     const distPath = path.join(__dirname, "dist", browser)
@@ -244,7 +244,7 @@ export default (
               from: `manifest/manifest(|.${mode}|.${browser}|.${browser}.${mode}).json`,
               to: "manifest.json",
               transformAll: (
-                assets: { data: Buffer; sourceFilename: string }[]
+                assets: { data: Buffer; sourceFilename: string }[],
               ) => {
                 const getPriority = (filename: string) => {
                   switch (true) {
@@ -267,12 +267,12 @@ export default (
                     .sort(
                       (a, b) =>
                         getPriority(a.sourceFilename) -
-                        getPriority(b.sourceFilename)
+                        getPriority(b.sourceFilename),
                     )
                     .map((asset) => asset.data.toString("utf8"))
                     // JSON.parse chokes on empty strings
                     .filter((assetData) => assetData.trim().length > 0)
-                    .map((assetData) => JSON.parse(assetData))
+                    .map((assetData) => JSON.parse(assetData)),
                 )
 
                 return JSON.stringify(combinedManifest, null, 2)

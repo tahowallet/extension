@@ -29,7 +29,7 @@ export default function CopyToClipboard({
 
   const dispatch = useBackgroundDispatch()
   const shouldShowCopyWarning = useBackgroundSelector(
-    selectShouldShowDismissableItem("copy-sensitive-material-warning")
+    selectShouldShowDismissableItem("copy-sensitive-material-warning"),
   )
 
   const [isOpen, setIsOpen] = useState(false)

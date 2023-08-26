@@ -64,8 +64,8 @@ export default function EarnDeposit(): ReactElement | null {
   }
   const vault = useBackgroundSelector((state) =>
     state.earn.availableVaults.find(
-      (availableVault) => availableVault.vaultAddress === vaultAddress
-    )
+      (availableVault) => availableVault.vaultAddress === vaultAddress,
+    ),
   )
   const [vaultData, setVaultData] = useState<AvailableVault | undefined>(vault)
   const dispatch = useBackgroundDispatch()
@@ -82,7 +82,7 @@ export default function EarnDeposit(): ReactElement | null {
       const checkApproval = async () => {
         const getApprovalAmount = async () => {
           const approvedAmount = (await dispatch(
-            checkApprovalTargetApproval(vault.asset.contractAddress)
+            checkApprovalTargetApproval(vault.asset.contractAddress),
           )) as unknown as ApprovalTargetAllowance
           return approvedAmount.allowance
         }
@@ -103,7 +103,7 @@ export default function EarnDeposit(): ReactElement | null {
   const updateCurrentVault = useCallback(async () => {
     if (typeof vault !== "undefined") {
       const updatedVault = (await dispatch(
-        updateVaults([vault])
+        updateVaults([vault]),
       )) as unknown as AvailableVault[]
       setVaultData(updatedVault[0])
     }
@@ -133,7 +133,7 @@ export default function EarnDeposit(): ReactElement | null {
           vault,
           amount,
           tokenAddress: vault.asset.contractAddress,
-        })
+        }),
       )
     }
   }, [amount, dispatch, history, inDepositProcess, vault])
@@ -147,7 +147,7 @@ export default function EarnDeposit(): ReactElement | null {
       amount: vaultData?.pendingRewards || 0n,
       decimals: DOGGO.decimals,
     },
-    2
+    2,
   )
 
   const userDeposited = fromFixedPointNumber(
@@ -155,7 +155,7 @@ export default function EarnDeposit(): ReactElement | null {
       amount: vaultData?.userDeposited || 0n,
       decimals: vault.asset.decimals,
     },
-    4
+    4,
   )
 
   if (
@@ -186,7 +186,7 @@ export default function EarnDeposit(): ReactElement | null {
         vault,
         tokenAddress: vault.asset.contractAddress,
         amount,
-      })
+      }),
     )
     history.push("/sign-data")
   }
@@ -195,7 +195,7 @@ export default function EarnDeposit(): ReactElement | null {
     dispatch(
       vaultWithdraw({
         vault,
-      })
+      }),
     )
     setDeposited(false)
     setWithdrawalSlideupVisible(false)
@@ -207,7 +207,7 @@ export default function EarnDeposit(): ReactElement | null {
 
   const handleAmountChange = (
     value: string,
-    errorMessage: string | undefined
+    errorMessage: string | undefined,
   ) => {
     setAmount(value)
     dispatch(inputAmount(value))

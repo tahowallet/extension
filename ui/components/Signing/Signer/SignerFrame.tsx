@@ -17,7 +17,7 @@ import { SignerFrameProps } from "."
  * the signing flow based on the signer specified in the passed props.
  */
 export default function SignerFrame<T extends SignOperationType>(
-  props: SignerFrameProps<T>
+  props: SignerFrameProps<T>,
 ): ReactElement {
   const { signer } = props
 

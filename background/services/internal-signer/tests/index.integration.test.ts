@@ -47,7 +47,7 @@ const startInternalSignerService = async () => {
   const analyticsService = createAnalyticsService()
   const service = await InternalSignerService.create(
     preferencesService,
-    analyticsService
+    analyticsService,
   )
 
   await service.startService()
@@ -59,10 +59,10 @@ function expectBase64String(
   {
     minLength: min,
     maxLength: max,
-  }: { minLength: number; maxLength?: number } = { minLength: 1 }
+  }: { minLength: number; maxLength?: number } = { minLength: 1 },
 ) {
   return expect.stringMatching(
-    new RegExp(`^[0-9a-zA-Z=+/]{${min},${max ?? ""}}`)
+    new RegExp(`^[0-9a-zA-Z=+/]{${min},${max ?? ""}}`),
   )
 }
 
@@ -88,22 +88,22 @@ describe("InternalSignerService when uninitialized", () => {
           type: SignerSourceTypes.keyring,
           mnemonic: validMnemonics.metamask[0],
           source: SignerImportSource.import,
-        })
+        }),
       ).rejects.toThrow("InternalSignerService must be unlocked.")
 
       await Promise.all(
         Object.keys(SignerInternalTypes).map(async (signerType) =>
           expect(
-            service.generateNewKeyring(signerType as SignerInternalTypes)
-          ).rejects.toThrow("InternalSignerService must be unlocked.")
-        )
+            service.generateNewKeyring(signerType as SignerInternalTypes),
+          ).rejects.toThrow("InternalSignerService must be unlocked."),
+        ),
       )
 
       await expect(
         service.importSigner({
           type: SignerSourceTypes.privateKey,
           privateKey: validPrivateKey[0],
-        })
+        }),
       ).rejects.toThrow("InternalSignerService must be unlocked.")
     })
 
@@ -111,8 +111,8 @@ describe("InternalSignerService when uninitialized", () => {
       await expect(
         service.signTransaction(
           { address: "0x0", network: ETHEREUM },
-          createTransactionRequest({ from: "0x0" })
-        )
+          createTransactionRequest({ from: "0x0" }),
+        ),
       ).rejects.toThrow("InternalSignerService must be unlocked.")
     })
   })
@@ -130,20 +130,20 @@ describe("InternalSignerService when uninitialized", () => {
             type: SignerSourceTypes.keyring,
             mnemonic,
             source: SignerImportSource.import,
-          })
-        ).resolves
+          }),
+        ).resolves,
     )
 
     it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {
       const keyringOne = service.generateNewKeyring(
-        SignerInternalTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256,
       )
       await expect(keyringOne).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
       })
 
       const keyringTwo = service.generateNewKeyring(
-        SignerInternalTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256,
       )
       await expect(keyringTwo).resolves.toMatchObject({
         id: expect.stringMatching(/.+/),
@@ -174,7 +174,7 @@ describe("InternalSignerService when initialized", () => {
       address = emittedAddress
     })
     const { mnemonic } = await service.generateNewKeyring(
-      SignerInternalTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256,
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -207,7 +207,7 @@ describe("InternalSignerService when initialized", () => {
       ? await service.deriveAddress({ type: "keyring", keyringID: id })
       : ""
     expect(newAddress).toEqual(
-      expect.not.stringMatching(new RegExp(originalAddress, "i"))
+      expect.not.stringMatching(new RegExp(originalAddress, "i")),
     )
 
     const keyrings = service.getKeyrings()
@@ -235,8 +235,8 @@ describe("InternalSignerService when initialized", () => {
     await expect(
       service.signTransaction(
         { address, network: ETHEREUM },
-        transactionWithFrom
-      )
+        transactionWithFrom,
+      ),
     ).resolves.toBeDefined()
   })
 
@@ -282,7 +282,7 @@ describe("InternalSignerService when saving keyrings", () => {
     })
 
     const { mnemonic } = await service.generateNewKeyring(
-      SignerInternalTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256,
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -346,7 +346,7 @@ describe("InternalSignerService when saving keyrings", () => {
       // Wait for the emitter to emit the keyrings event.
       new Promise((resolve) => {
         resolve(storedKeyrings)
-      })
+      }),
     ).resolves.toHaveLength(1)
 
     expect(storedKeyrings[0]).toMatchObject({
@@ -387,7 +387,7 @@ describe("InternalSignerService when autolocking", () => {
       address = emittedAddress
     })
     const { mnemonic } = await service.generateNewKeyring(
-      SignerInternalTypes.mnemonicBIP39S256
+      SignerInternalTypes.mnemonicBIP39S256,
     )
     await service.importSigner({
       type: SignerSourceTypes.keyring,
@@ -431,7 +431,7 @@ describe("InternalSignerService when autolocking", () => {
 
         await service.signTransaction(
           { address, network: ETHEREUM },
-          transactionWithFrom
+          transactionWithFrom,
         )
       },
     },

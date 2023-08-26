@@ -9,7 +9,7 @@ type PasswordBarProps = {
 }
 
 export default function PasswordStrengthBar(
-  props: PasswordBarProps
+  props: PasswordBarProps,
 ): ReactElement {
   const { password } = props
 
@@ -67,7 +67,9 @@ export default function PasswordStrengthBar(
         .bar_fill {
           width: 0%;
           background-color: var(--green-60);
-          transition: width 300ms, background-color 300ms;
+          transition:
+            width 300ms,
+            background-color 300ms;
         }
 
         .bar_weak.bar_wrap {

@@ -34,11 +34,11 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
 const getNewUrlsForTokenList = (
   storedPreferences: Preferences,
   oldPath: string,
-  newPath: string
+  newPath: string,
 ): string[] => {
   // Get rid of old Taho URL
   const newURLs = storedPreferences.tokenLists.urls.filter(
-    (url) => !url.includes(oldPath)
+    (url) => !url.includes(oldPath),
   )
   newURLs.push(`https://ipfs.io/ipfs/${newPath}`)
 
@@ -125,7 +125,7 @@ export class PreferenceDatabase extends Dexie {
               storedPreferences.defaultWallet =
                 DEFAULT_PREFERENCES.defaultWallet
             }
-          })
+          }),
       )
 
     this.version(3).stores({
@@ -154,7 +154,7 @@ export class PreferenceDatabase extends Dexie {
               storedPreferences.selectedAccount =
                 DEFAULT_PREFERENCES.selectedAccount
             }
-          })
+          }),
       )
 
     // Add the new default token list
@@ -175,7 +175,7 @@ export class PreferenceDatabase extends Dexie {
                 ...storedPreferences.tokenLists.urls,
               ],
             }
-          })
+          }),
       )
 
     // Add the new default token list
@@ -193,7 +193,7 @@ export class PreferenceDatabase extends Dexie {
               // Old path
               "bafybeicovpqvb533alo5scf7vg34z6fjspdytbzsa2es2lz35sw3ksh2la",
               // New path
-              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife"
+              "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife",
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -201,7 +201,7 @@ export class PreferenceDatabase extends Dexie {
               ...storedPreferences.tokenLists,
               urls: newURLs,
             }
-          })
+          }),
       )
 
     // Add the Polygon, Optimism, and Arbitrum token lists
@@ -224,7 +224,7 @@ export class PreferenceDatabase extends Dexie {
                 ...storedPreferences.tokenLists.urls,
               ],
             }
-          })
+          }),
       )
 
     // Update .eth.link token lists urls to .eth.limo fallback
@@ -238,14 +238,14 @@ export class PreferenceDatabase extends Dexie {
           .toCollection()
           .modify((storedPreferences: Preferences) => {
             const updatedURLs = storedPreferences.tokenLists.urls.map((url) =>
-              url.endsWith(".eth.link") ? `${url.slice(0, -9)}.eth.limo` : url
+              url.endsWith(".eth.link") ? `${url.slice(0, -9)}.eth.limo` : url,
             )
             // eslint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: updatedURLs,
             }
-          })
+          }),
       )
 
     // Update Taho token list reference.
@@ -263,7 +263,7 @@ export class PreferenceDatabase extends Dexie {
               // Old path
               "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife",
               // New path
-              "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm"
+              "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm",
             )
 
             // eslint-disable-next-line no-param-reassign
@@ -271,7 +271,7 @@ export class PreferenceDatabase extends Dexie {
               ...storedPreferences.tokenLists,
               urls: newURLs,
             }
-          })
+          }),
       )
 
     this.version(10).stores({
@@ -286,7 +286,7 @@ export class PreferenceDatabase extends Dexie {
         .modify((storedPreferences: Preferences) => {
           // eslint-disable-next-line no-param-reassign
           storedPreferences.analytics = DEFAULT_PREFERENCES.analytics
-        })
+        }),
     )
 
     this.version(12).upgrade((tx) =>
@@ -295,9 +295,9 @@ export class PreferenceDatabase extends Dexie {
         .toCollection()
         .modify((storedPreferences: Preferences) => {
           storedPreferences.tokenLists.urls.push(
-            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json",
           )
-        })
+        }),
     )
 
     this.version(13).upgrade((tx) =>
@@ -306,9 +306,9 @@ export class PreferenceDatabase extends Dexie {
         .toCollection()
         .modify((storedPreferences: Preferences) => {
           storedPreferences.tokenLists.urls.push(
-            "https://tokens.pancakeswap.finance/pancakeswap-default.json"
+            "https://tokens.pancakeswap.finance/pancakeswap-default.json",
           )
-        })
+        }),
     )
 
     this.version(14).upgrade((tx) =>
@@ -319,15 +319,15 @@ export class PreferenceDatabase extends Dexie {
           const urls = storedPreferences.tokenLists.urls.filter(
             (url) =>
               url !==
-              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json"
+              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/src/joe.tokenlist-v2.json",
           )
 
           urls.push(
-            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json"
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json",
           )
 
           Object.assign(storedPreferences.tokenLists, { urls })
-        })
+        }),
     )
 
     this.version(15).upgrade((tx) =>
@@ -338,15 +338,15 @@ export class PreferenceDatabase extends Dexie {
           const urls = storedPreferences.tokenLists.urls.filter(
             (url) =>
               url !==
-              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json"
+              "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/avalanche.tokenlist.json",
           )
 
           urls.push(
-            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/1722d8c47a728a64c8dca8ac160b32cf39c5e671/mc.tokenlist.json"
+            "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/1722d8c47a728a64c8dca8ac160b32cf39c5e671/mc.tokenlist.json",
           )
 
           Object.assign(storedPreferences.tokenLists, { urls })
-        })
+        }),
     )
 
     // Updates saved accounts stored networks for old installs
@@ -358,7 +358,7 @@ export class PreferenceDatabase extends Dexie {
           const { selectedAccount } = storedPreferences
           selectedAccount.network =
             NETWORK_BY_CHAIN_ID[selectedAccount.network.chainID]
-        })
+        }),
     )
 
     this.version(17).stores({
@@ -377,7 +377,7 @@ export class PreferenceDatabase extends Dexie {
             // Old path
             "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm",
             // New path
-            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka"
+            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka",
           )
 
           // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
@@ -386,7 +386,7 @@ export class PreferenceDatabase extends Dexie {
             ...storedPreferences.tokenLists,
             urls: newURLs,
           }
-        })
+        }),
     )
 
     // Updates preferences to allow custom auto lock timers
@@ -400,7 +400,7 @@ export class PreferenceDatabase extends Dexie {
           }
 
           Object.assign(storedPreferences, update)
-        })
+        }),
     )
 
     // Remove broken yearn's token list
@@ -410,11 +410,11 @@ export class PreferenceDatabase extends Dexie {
         .toCollection()
         .modify((storedPreferences: Preferences) => {
           const urls = storedPreferences.tokenLists.urls.filter(
-            (url) => !url.includes("meta.yearn.finance")
+            (url) => !url.includes("meta.yearn.finance"),
           )
 
           Object.assign(storedPreferences.tokenLists, { urls })
-        })
+        }),
     )
 
     // This is the old version for populate
@@ -444,7 +444,7 @@ export class PreferenceDatabase extends Dexie {
   }
 
   async upsertAnalyticsPreferences(
-    analyticsPreferences: Partial<AnalyticsPreferences>
+    analyticsPreferences: Partial<AnalyticsPreferences>,
   ): Promise<void> {
     const preferences = await this.getPreferences()
 
@@ -472,7 +472,7 @@ export class PreferenceDatabase extends Dexie {
 
   async updateSignerTitle(
     signer: AccountSignerWithId,
-    title: string
+    title: string,
   ): Promise<AccountSignerSettings[]> {
     await this.signersSettings.put({
       id: getSignerRecordId(signer),
@@ -483,7 +483,7 @@ export class PreferenceDatabase extends Dexie {
   }
 
   async deleteAccountSignerSettings(
-    signer: AccountSignerWithId
+    signer: AccountSignerWithId,
   ): Promise<AccountSignerSettings[]> {
     await this.signersSettings.delete(getSignerRecordId(signer))
     return this.signersSettings.toArray()
@@ -498,7 +498,7 @@ export class PreferenceDatabase extends Dexie {
   }
 
   async wasDismissableItemAlreadyShown(
-    item: DismissableItem
+    item: DismissableItem,
   ): Promise<boolean> {
     return (await this.shownDismissableItems.get(item))?.shown ?? false
   }

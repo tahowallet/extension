@@ -19,7 +19,7 @@ export function renderWithProviders(
     // Automatically create a store instance if no store was passed in
     store = initializeStoreForTest(preloadedState),
     ...renderOptions
-  }: ExtendedRenderOptions = {}
+  }: ExtendedRenderOptions = {},
 ) {
   // eslint-disable-next-line @typescript-eslint/ban-types
   function Wrapper({ children }: PropsWithChildren<{}>): JSX.Element {

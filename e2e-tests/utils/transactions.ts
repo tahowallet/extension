@@ -5,7 +5,7 @@ import WalletPageHelper from "./walletPageHelper"
 export default class TransactionsHelper {
   constructor(
     public readonly popup: Page,
-    public readonly walletPageHelper: WalletPageHelper
+    public readonly walletPageHelper: WalletPageHelper,
   ) {}
 
   /**
@@ -17,10 +17,10 @@ export default class TransactionsHelper {
     accountLabel: RegExp,
     assetSymbol: string,
     regexAssetBalance: string, // a balance of the asset in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    baseAsset: boolean
+    baseAsset: boolean,
   ): Promise<void> {
     await expect(
-      this.popup.getByRole("heading", { name: "Send Asset", exact: true })
+      this.popup.getByRole("heading", { name: "Send Asset", exact: true }),
     ).toBeVisible()
 
     await this.walletPageHelper.assertTopWrap(network, accountLabel)
@@ -31,7 +31,7 @@ export default class TransactionsHelper {
 
     await expect(this.popup.getByText(/^Asset \/ Amount$/)).toBeVisible()
     await expect(this.popup.getByTestId("selected_asset_button")).toHaveText(
-      assetSymbol
+      assetSymbol,
     )
 
     const assetBalance = await this.popup.locator(".available")
@@ -39,11 +39,11 @@ export default class TransactionsHelper {
     expect(assetBalance).toHaveText(balanceRegEx)
     if (baseAsset) {
       expect(
-        await this.popup.getByRole("button", { name: "Max" }).count()
+        await this.popup.getByRole("button", { name: "Max" }).count(),
       ).toEqual(0)
     } else {
       await expect(
-        this.popup.getByRole("button", { name: "Max" })
+        this.popup.getByRole("button", { name: "Max" }),
       ).toBeVisible()
       await this.popup
         .getByRole("button", { name: "Max" })
@@ -56,7 +56,7 @@ export default class TransactionsHelper {
     await expect(this.popup.getByPlaceholder(/^0x\.\.\.$/)).toBeVisible()
 
     await expect(
-      this.popup.getByRole("button", { name: "Continue", exact: true })
+      this.popup.getByRole("button", { name: "Continue", exact: true }),
     ).toHaveClass(/disabled/)
     await this.popup
       .getByRole("button", { name: "Continue", exact: true })
@@ -75,19 +75,19 @@ export default class TransactionsHelper {
     sendToAddressShortened: string,
     regexSpendAmount: string, // a spend amount in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
     regexAssetSymbol: string, // an asset symbol in RegEx syntax, with special chars double escaped (e.g. `\\d+`) and without leading `/^` and ending `$/`
-    baseAsset: boolean
+    baseAsset: boolean,
   ): Promise<void> {
     await expect(
-      this.popup.getByRole("heading", { name: "Transfer", exact: true })
+      this.popup.getByRole("heading", { name: "Transfer", exact: true }),
     ).toBeVisible()
 
     const networkRegEx = new RegExp(`^${regexNetwork}$`)
     await expect(
-      this.popup.locator(".top_bar_wrap").getByText(networkRegEx)
+      this.popup.locator(".top_bar_wrap").getByText(networkRegEx),
     ).toBeVisible()
     const accountLabelRegEx = new RegExp(`^${regexAccountLabel}$`)
     await expect(
-      this.popup.locator(".top_bar_wrap").getByText(accountLabelRegEx)
+      this.popup.locator(".top_bar_wrap").getByText(accountLabelRegEx),
     ).toBeVisible()
     // TODO: We could also add verification that checks we can't change the
     // network and the wallet address at this stage. One way to do it would be
@@ -96,27 +96,27 @@ export default class TransactionsHelper {
 
     await expect(this.popup.getByText(/^Send to$/)).toBeVisible()
     await expect(
-      await this.popup.getByRole("button", { name: sendToAddressShortened })
+      await this.popup.getByRole("button", { name: sendToAddressShortened }),
     ).toBeEnabled()
     await this.popup
       .getByRole("button", { name: sendToAddressShortened })
       .click()
     const clipboardReceipientAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText()
+      navigator.clipboard.readText(),
     )
     expect(clipboardReceipientAddress.toLowerCase()).toBe(
-      sendToAddressFull.toLowerCase()
+      sendToAddressFull.toLowerCase(),
     ) // We need `toLowerCase()`, because for non-base assets the capitalization of the address may differ from the entered one.
 
     const spendAmountContainer = this.popup
       .locator(".container")
       .filter({ hasText: "Spend Amount" })
     const spendAmountRegEx = new RegExp(
-      `^${regexSpendAmount} ${regexAssetSymbol}$`
+      `^${regexSpendAmount} ${regexAssetSymbol}$`,
     )
     await expect(spendAmountContainer.getByText(spendAmountRegEx)).toBeVisible()
     await expect(
-      spendAmountContainer.getByText(/^\$(\d|,)+(\.\d{1,2})*$/)
+      spendAmountContainer.getByText(/^\$(\d|,)+(\.\d{1,2})*$/),
     ).toBeVisible()
 
     await this.popup
@@ -126,10 +126,10 @@ export default class TransactionsHelper {
       .locator("span")
       .filter({ hasText: "Estimated network fee" })
     await expect(
-      estimatedFeeContainer.getByText(/^~\$\d+(\.\d{1,2})*$/)
+      estimatedFeeContainer.getByText(/^~\$\d+(\.\d{1,2})*$/),
     ).toBeVisible()
     await expect(
-      estimatedFeeContainer.getByText(/^\(\d+(\.\d{1,2})* Gwei\)$/)
+      estimatedFeeContainer.getByText(/^\(\d+(\.\d{1,2})* Gwei\)$/),
     ).toBeVisible()
     await estimatedFeeContainer.getByRole("button").click({ trial: true })
     // TODO: Add network fees verification
@@ -140,7 +140,7 @@ export default class TransactionsHelper {
       .locator(".raw_data_wrap")
       .filter({ hasText: "Copy hex" })
     const clipboardHex = await this.popup.evaluate(() =>
-      navigator.clipboard.readText()
+      navigator.clipboard.readText(),
     )
     if (baseAsset) {
       expect(clipboardHex).toBe("")
@@ -167,7 +167,7 @@ export default class TransactionsHelper {
     sendToAddressFull: string,
     sendToAddressShortened: string,
     amount: RegExp,
-    gas: RegExp
+    gas: RegExp,
   ): Promise<void> {
     /**
      * Assert header.
@@ -196,11 +196,11 @@ export default class TransactionsHelper {
       dedent(`
         Copy to clipboard:
         ${sendFromAddressFull}
-      `)
+      `),
     )
     await senderButton.click()
     const clipboardSendFromAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText()
+      navigator.clipboard.readText(),
     )
     expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
 
@@ -217,11 +217,11 @@ export default class TransactionsHelper {
       dedent(`
         Copy to clipboard:
         ${sendToAddressFull}
-      `)
+      `),
     )
     await receipientButton.click()
     const clipboardSendToAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText()
+      navigator.clipboard.readText(),
     )
     expect(clipboardSendToAddress).toBe(sendToAddressFull)
 
@@ -232,7 +232,7 @@ export default class TransactionsHelper {
       has: this.popup.locator(".label").filter({ hasText: /^Block Height$/ }),
     })
     await expect(
-      blockHeightRow.locator(".right").getByText(/^\d+$/)
+      blockHeightRow.locator(".right").getByText(/^\d+$/),
     ).toBeVisible()
 
     const amountRow = this.popup.locator("li").filter({
@@ -244,14 +244,14 @@ export default class TransactionsHelper {
       has: this.popup.locator(".label").filter({ hasText: /^Max Fee\/Gas$/ }),
     })
     await expect(
-      maxFeeRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/)
+      maxFeeRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/),
     ).toBeVisible()
 
     const gasPriceRow = this.popup.locator("li").filter({
       has: this.popup.locator(".label").filter({ hasText: /^Gas Price$/ }),
     })
     await expect(
-      gasPriceRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/)
+      gasPriceRow.locator(".right").getByText(/^\d+\.\d{2} Gwei$/),
     ).toBeVisible()
 
     const gasRow = this.popup.locator("li").filter({
@@ -271,7 +271,7 @@ export default class TransactionsHelper {
       timestampRow
         .locator(".right")
         // eslint-disable-next-line no-irregular-whitespace
-        .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/)
+        .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/),
     ).toBeVisible()
   }
 

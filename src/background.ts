@@ -20,7 +20,7 @@ browser.runtime.onInstalled.addListener((obj) => {
     !isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS)
   ) {
     Object.keys(RuntimeFlag).forEach((flagName) =>
-      localStorage.removeItem(flagName)
+      localStorage.removeItem(flagName),
     )
   }
 })

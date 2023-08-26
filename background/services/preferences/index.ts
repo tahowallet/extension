@@ -136,15 +136,15 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("initializeDefaultWallet", await this.getDefaultWallet())
     this.emitter.emit(
       "initializeSelectedAccount",
-      await this.getSelectedAccount()
+      await this.getSelectedAccount(),
     )
     this.emitter.emit(
       "updateAnalyticsPreferences",
-      await this.getAnalyticsPreferences()
+      await this.getAnalyticsPreferences(),
     )
     this.emitter.emit(
       "initializeShownDismissableItems",
-      await this.getShownDismissableItems()
+      await this.getShownDismissableItems(),
     )
   }
 
@@ -159,7 +159,7 @@ export default class PreferenceService extends BaseService<Events> {
 
   addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
     const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
-      sameAddressBookEntry(newEntry, entry)
+      sameAddressBookEntry(newEntry, entry),
     )
     if (correspondingEntryIndex !== -1) {
       this.addressBook[correspondingEntryIndex] = newEntry
@@ -179,15 +179,15 @@ export default class PreferenceService extends BaseService<Events> {
   }: NameOnNetwork): AddressOnNetwork | undefined {
     return this.addressBook.find(
       ({ name: entryName, network: entryNetwork }) =>
-        sameNetwork(network, entryNetwork) && name === entryName
+        sameNetwork(network, entryNetwork) && name === entryName,
     )
   }
 
   lookUpNameForAddress(
-    addressOnNetwork: AddressOnNetwork
+    addressOnNetwork: AddressOnNetwork,
   ): NameOnNetwork | undefined {
     return this.addressBook.find((addressBookEntry) =>
-      sameAddressBookEntry(addressBookEntry, addressOnNetwork)
+      sameAddressBookEntry(addressBookEntry, addressOnNetwork),
     )
   }
 
@@ -197,7 +197,7 @@ export default class PreferenceService extends BaseService<Events> {
   }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
     return this.knownContracts.find(
       ({ name: entryName, network: entryNetwork }) =>
-        sameNetwork(network, entryNetwork) && name === entryName
+        sameNetwork(network, entryNetwork) && name === entryName,
     )
   }
 
@@ -208,25 +208,24 @@ export default class PreferenceService extends BaseService<Events> {
     return this.knownContracts.find(
       ({ address: entryAddress, network: entryNetwork }) =>
         sameNetwork(network, entryNetwork) &&
-        normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress)
+        normalizeEVMAddress(address) === normalizeEVMAddress(entryAddress),
     )
   }
 
   // FIXME This should not be publicly accessible, but triggered by observing
   // FIXME an event on the signer service.
   async deleteAccountSignerSettings(
-    signer: AccountSignerWithId
+    signer: AccountSignerWithId,
   ): Promise<void> {
-    const updatedSignerSettings = await this.db.deleteAccountSignerSettings(
-      signer
-    )
+    const updatedSignerSettings =
+      await this.db.deleteAccountSignerSettings(signer)
 
     this.emitter.emit("updatedSignerSettings", updatedSignerSettings)
   }
 
   async updateAccountSignerTitle(
     signer: AccountSignerWithId,
-    title: string
+    title: string,
   ): Promise<void> {
     const updatedSignerSettings = this.db.updateSignerTitle(signer, title)
 
@@ -248,7 +247,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async updateAnalyticsPreferences(
-    analyticsPreferences: Partial<AnalyticsPreferences>
+    analyticsPreferences: Partial<AnalyticsPreferences>,
   ): Promise<void> {
     await this.db.upsertAnalyticsPreferences(analyticsPreferences)
     const { analytics } = await this.db.getPreferences()

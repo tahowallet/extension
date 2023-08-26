@@ -18,7 +18,7 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   db: ChainDatabase
   handlePendingTransaction: (transaction: AnyEVMTransaction) => void
   populateEVMTransactionNonce: (
-    transactionRequest: TransactionRequest
+    transactionRequest: TransactionRequest,
   ) => Promise<TransactionRequestWithNonce>
   evmChainLastSeenNoncesByNormalizedAddress: {
     [chainID: string]: { [normalizedAddress: string]: number }
@@ -44,8 +44,8 @@ describe("ChainService", () => {
       // Startup is simulated in the `beforeEach`
       expect(
         chainService.subscribedNetworks.filter(
-          ({ network }) => network.chainID === ETHEREUM.chainID
-        )
+          ({ network }) => network.chainID === ETHEREUM.chainID,
+        ),
       ).toHaveLength(1)
     })
 
@@ -57,20 +57,20 @@ describe("ChainService", () => {
 
       const initializeBaseAssets = sandbox.spy(
         chainServiceInstance.db,
-        "initializeBaseAssets" as keyof ChainDatabase
+        "initializeBaseAssets" as keyof ChainDatabase,
       )
       const initializeRPCs = sandbox.spy(
         chainServiceInstance.db,
-        "initializeRPCs" as keyof ChainDatabase
+        "initializeRPCs" as keyof ChainDatabase,
       )
       const initializeEVMNetworks = sandbox.spy(
         chainServiceInstance.db,
-        "initializeEVMNetworks" as keyof ChainDatabase
+        "initializeEVMNetworks" as keyof ChainDatabase,
       )
 
       const initializeNetworks = sandbox.spy(
         chainServiceInstance,
-        "initializeNetworks"
+        "initializeNetworks",
       )
 
       await chainServiceInstance.internalStartService()
@@ -96,7 +96,7 @@ describe("ChainService", () => {
           ({
             getTransactionCount: async () => CHAIN_NONCE,
             once: onceSpy,
-          } as unknown as SerialFallbackProvider)
+          }) as unknown as SerialFallbackProvider,
       )
 
     const transactionRequestWithoutNonce = createLegacyTransactionRequest({
@@ -107,7 +107,7 @@ describe("ChainService", () => {
 
     // Populate EVM Transaction Nonce
     await chainServiceExternalized.populateEVMTransactionNonce(
-      transactionRequestWithoutNonce
+      transactionRequestWithoutNonce,
     )
 
     const { from, network } = transactionRequestWithoutNonce
@@ -120,7 +120,7 @@ describe("ChainService", () => {
     })
 
     await chainServiceExternalized.handlePendingTransaction(
-      validOptimismEVMTransaction
+      validOptimismEVMTransaction,
     )
 
     // provider.once should be called inside of subscribeToTransactionConfirmation
@@ -140,7 +140,7 @@ describe("ChainService", () => {
           ({
             getTransactionCount: async () => CHAIN_NONCE,
             once: onceSpy,
-          } as unknown as SerialFallbackProvider)
+          }) as unknown as SerialFallbackProvider,
       )
 
     const transactionRequestWithoutNonce = createLegacyTransactionRequest({
@@ -151,7 +151,7 @@ describe("ChainService", () => {
 
     // Populate EVM Transaction Nonce
     await chainServiceExternalized.populateEVMTransactionNonce(
-      transactionRequestWithoutNonce
+      transactionRequestWithoutNonce,
     )
 
     const { chainID, from, network } = transactionRequestWithoutNonce
@@ -164,7 +164,7 @@ describe("ChainService", () => {
     })
 
     await chainServiceExternalized.handlePendingTransaction(
-      validOptimismEVMTransaction
+      validOptimismEVMTransaction,
     )
 
     // provider.once should be called inside of subscribeToTransactionConfirmation
@@ -174,22 +174,22 @@ describe("ChainService", () => {
     expect(
       chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
         chainID
-      ][from]
+      ][from],
     ).toBe(CHAIN_NONCE + 1)
 
     // Handling a pending transaction should update the last seem EVM transaction nonce
     expect(
       chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
         chainID
-      ][validOptimismEVMTransaction.from]
+      ][validOptimismEVMTransaction.from],
     ).toBe(validOptimismEVMTransaction.nonce)
 
     // Transaction should be persisted to the db
     expect(
       await chainServiceExternalized.getTransaction(
         POLYGON,
-        validOptimismEVMTransaction.hash
-      )
+        validOptimismEVMTransaction.hash,
+      ),
     ).toBeTruthy()
   })
 
@@ -214,7 +214,7 @@ describe("ChainService", () => {
       expect(chainService.providers.evm["250"]).toBe(undefined)
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
       expect(chainService.providers.evm["250"]).toBeInstanceOf(
-        SerialFallbackProvider
+        SerialFallbackProvider,
       )
     })
 
@@ -236,7 +236,7 @@ describe("ChainService", () => {
         () =>
           ({
             getTransactionCount: async () => TRANSACTION_COUNT,
-          } as unknown as SerialFallbackProvider)
+          }) as unknown as SerialFallbackProvider,
       )
     })
 
@@ -255,7 +255,7 @@ describe("ChainService", () => {
 
       const transactionWithNonce =
         await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
+          transactionRequest,
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
@@ -272,7 +272,7 @@ describe("ChainService", () => {
 
       const transactionWithNonce =
         await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
+          transactionRequest,
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
@@ -288,13 +288,13 @@ describe("ChainService", () => {
       })
 
       await chainServiceExternalized.populateEVMTransactionNonce(
-        transactionRequest
+        transactionRequest,
       )
 
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
-        ]
+        ],
       ).toBe(undefined)
     })
 
@@ -309,7 +309,7 @@ describe("ChainService", () => {
 
       const transactionWithNonce =
         await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
+          transactionRequest,
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
@@ -326,7 +326,7 @@ describe("ChainService", () => {
 
       const transactionWithNonce =
         await chainServiceExternalized.populateEVMTransactionNonce(
-          transactionRequest
+          transactionRequest,
         )
 
       expect(transactionWithNonce.nonce).toBe(CHAIN_NONCE)
@@ -342,13 +342,13 @@ describe("ChainService", () => {
       })
 
       await chainServiceExternalized.populateEVMTransactionNonce(
-        transactionRequest
+        transactionRequest,
       )
 
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
-        ][transactionRequest.from]
+        ][transactionRequest.from],
       ).toBe(CHAIN_NONCE)
     })
 
@@ -362,13 +362,13 @@ describe("ChainService", () => {
       })
 
       await chainServiceExternalized.populateEVMTransactionNonce(
-        transactionRequest
+        transactionRequest,
       )
 
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
-        ]
+        ],
       ).toBe(undefined)
     })
   })
@@ -404,13 +404,13 @@ describe("ChainService", () => {
       ][from] = LAST_SEEN_NONCE
 
       await chainServiceExternalized.releaseEVMTransactionNonce(
-        transactionRequest
+        transactionRequest,
       )
 
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           chainID
-        ][from]
+        ][from],
       ).toBe(CHAIN_NONCE)
     })
 
@@ -436,13 +436,13 @@ describe("ChainService", () => {
       ][from] = LAST_SEEN_NONCE
 
       await chainServiceExternalized.releaseEVMTransactionNonce(
-        transactionRequest
+        transactionRequest,
       )
 
       expect(
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           chainID
-        ][from]
+        ][from],
       ).toBe(CHAIN_NONCE)
     })
   })
@@ -483,7 +483,7 @@ describe("ChainService", () => {
       const networksToTrack = await chainService.getNetworksToTrack()
 
       expect(
-        networksToTrack.find((network) => network.chainID === "12345")
+        networksToTrack.find((network) => network.chainID === "12345"),
       ).toBeTruthy()
     })
   })

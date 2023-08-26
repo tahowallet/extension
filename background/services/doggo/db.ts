@@ -25,7 +25,7 @@ export class DoggoDatabase extends Dexie {
   async addReferralBonus(
     claimant: AddressOnNetwork,
     referredBy: AddressOnNetwork,
-    bonus: bigint
+    bonus: bigint,
   ): Promise<void> {
     this.referralBonuses.put({ ...claimant, referredBy, referralBonus: bonus })
   }
@@ -40,7 +40,7 @@ export class DoggoDatabase extends Dexie {
       .filter(
         ({ network: claimantNetwork }) =>
           claimantNetwork.name === network.name &&
-          claimantNetwork.chainID === network.chainID
+          claimantNetwork.chainID === network.chainID,
       )
       .toArray()
 
@@ -48,7 +48,7 @@ export class DoggoDatabase extends Dexie {
       referredUsers: allReferrals.length,
       bonusTotal: allReferrals.reduce(
         (bonusTotal, { referralBonus }) => bonusTotal + referralBonus,
-        0n
+        0n,
       ),
     }
   }

@@ -12,7 +12,7 @@ export function getType(arg: unknown): string {
 }
 
 export function isObject(
-  arg: unknown
+  arg: unknown,
 ): arg is Record<string | number | symbol, unknown> {
   return getType(arg) === "Object"
 }
@@ -38,13 +38,13 @@ export function isMessageEvent(arg: unknown): arg is MessageEvent {
 }
 
 export function isRPCRequestParamsType(
-  arg: unknown
+  arg: unknown,
 ): arg is RPCRequest["params"] {
   return isObject(arg) || isArray(arg)
 }
 
 export function isWindowResponseEvent(
-  arg: unknown
+  arg: unknown,
 ): arg is WindowResponseEvent {
   return (
     isMessageEvent(arg) &&
@@ -70,10 +70,10 @@ export const AllowedQueryParamPage = {
 } as const
 
 export type AllowedQueryParamPageType =
-  typeof AllowedQueryParamPage[keyof typeof AllowedQueryParamPage]
+  (typeof AllowedQueryParamPage)[keyof typeof AllowedQueryParamPage]
 
 export function isAllowedQueryParamPage(
-  url: unknown
+  url: unknown,
 ): url is AllowedQueryParamPageType {
   // The typing for Array.includes in `lib.es.2016.array.include.ts` does not make any sense here -> Object.values<string>
   // interface Array<T> { ... includes(searchElement: T, fromIndex?: number): boolean; ...
@@ -81,7 +81,7 @@ export function isAllowedQueryParamPage(
 }
 
 export function isTahoInternalCommunication(
-  arg: unknown
+  arg: unknown,
 ): arg is TahoInternalCommunication {
   return isObject(arg) && arg.id === "tallyHo"
 }

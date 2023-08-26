@@ -48,7 +48,7 @@ function EditSectionForm({
 
       callbackRef.current(newName)
     },
-    [error, newName, t]
+    [error, newName, t],
   )
 
   return (

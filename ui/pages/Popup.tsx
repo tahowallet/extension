@@ -39,13 +39,13 @@ const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
     path,
     { hasTabBar, hasTopBar, persistOnClose },
-  ])
+  ]),
 )
 
 function transformLocation(
   inputLocation: Location,
   isTransactionPendingSignature: boolean,
-  hasAccounts: boolean
+  hasAccounts: boolean,
 ): Location {
   // The inputLocation is not populated with the actual query string — even though it should be
   // so I need to grab it from the window
@@ -101,7 +101,7 @@ export function Main(): ReactElement {
   const [isDirectionRight, setIsDirectionRight] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
-    (state) => state.ui.routeHistoryEntries
+    (state) => state.ui.routeHistoryEntries,
   )
 
   // See comment above call of saveHistoryEntries
@@ -122,10 +122,10 @@ export function Main(): ReactElement {
   }
 
   const isTransactionPendingSignature = useBackgroundSelector(
-    selectIsTransactionPendingSignature
+    selectIsTransactionPendingSignature,
   )
   const hasAccounts = useBackgroundSelector(
-    (state) => getAddressCount(state) > 0
+    (state) => getAddressCount(state) > 0,
   )
 
   useConnectPopupMonitor()
@@ -139,7 +139,7 @@ export function Main(): ReactElement {
             const transformedLocation = transformLocation(
               routeProps.location,
               isTransactionPendingSignature,
-              hasAccounts
+              hasAccounts,
             )
 
             const normalizedPathname = pagePreferences[
@@ -190,7 +190,7 @@ export function Main(): ReactElement {
                               </ErrorBoundary>
                             </CorePage>
                           </Route>
-                        )
+                        ),
                       )}
                     </Switch>
                   </div>

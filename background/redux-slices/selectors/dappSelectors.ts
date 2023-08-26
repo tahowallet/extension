@@ -9,19 +9,19 @@ export const getProviderBridgeState = (state: RootState): DAppPermissionState =>
 
 export const selectPermissionRequests = createSelector(
   getProviderBridgeState,
-  (slice: DAppPermissionState) => Object.values(slice.permissionRequests)
+  (slice: DAppPermissionState) => Object.values(slice.permissionRequests),
 )
 
 export const selectPendingPermissionRequests = createSelector(
   selectPermissionRequests,
   (permissionRequests) =>
-    permissionRequests.filter((p) => p.state === "request")
+    permissionRequests.filter((p) => p.state === "request"),
 )
 
 export const selectCurrentPendingPermission = createSelector(
   selectPendingPermissionRequests,
   (permissionRequests) =>
-    permissionRequests.length > 0 ? permissionRequests[0] : undefined
+    permissionRequests.length > 0 ? permissionRequests[0] : undefined,
 )
 
 export const selectAllowedPages = createSelector(
@@ -42,5 +42,5 @@ export const selectAllowedPages = createSelector(
       })
     })
     return permissions
-  }
+  },
 )

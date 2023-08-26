@@ -30,7 +30,7 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
 
 export function getNFTs(
   accounts: AddressOnNetwork[],
-  collections: string[]
+  collections: string[],
 ): Promise<{
   nfts: NFT[]
   nextPageURLs: { [collectionID: string]: { [address: string]: string } }
@@ -45,7 +45,7 @@ export function getNFTs(
       } = {}
 
       const poapChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID),
       )
 
       if (poapChains.length && collections.includes(POAP_COLLECTION_ID)) {
@@ -54,7 +54,7 @@ export function getNFTs(
       }
 
       const simpleHashChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID)
+        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID),
       )
 
       if (simpleHashChains.length) {
@@ -71,7 +71,7 @@ export function getNFTs(
               nextPageURLs[collectionID] ??= {}
               nextPageURLs[collectionID][address] = nextPageURL
             }
-          })
+          }),
         )
       }
 
@@ -79,12 +79,12 @@ export function getNFTs(
         nfts,
         nextPageURLs,
       }
-    }
+    },
   )
 }
 
 export function getNFTCollections(
-  accounts: AddressOnNetwork[]
+  accounts: AddressOnNetwork[],
 ): Promise<NFTCollection[]>[] {
   const chainIDsByAddress = groupChainsByAddress(accounts)
 
@@ -93,7 +93,7 @@ export function getNFTCollections(
       const collections: NFTCollection[] = []
 
       const poapChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID)
+        NFT_PROVIDER_TO_CHAIN.poap.includes(chainID),
       )
 
       if (poapChains.length) {
@@ -101,7 +101,7 @@ export function getNFTCollections(
       }
 
       const simpleHashChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID)
+        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID),
       )
 
       if (simpleHashChains.length) {
@@ -109,13 +109,13 @@ export function getNFTCollections(
       }
 
       return collections
-    }
+    },
   )
 }
 
 export async function getNFTsTransfers(
   accounts: AddressOnNetwork[],
-  timestamp: UNIXTime
+  timestamp: UNIXTime,
 ): Promise<TransferredNFT[]> {
   const { addresses, chains } = accounts.reduce<{
     addresses: Set<string>
@@ -127,13 +127,13 @@ export async function getNFTsTransfers(
 
       return acc
     },
-    { addresses: new Set(), chains: new Set() }
+    { addresses: new Set(), chains: new Set() },
   )
 
   const transfers = await getSimpleHashNFTsTransfers(
     [...addresses],
     [...chains],
-    timestamp
+    timestamp,
   )
 
   return transfers

@@ -4,7 +4,7 @@ import sinon from "sinon"
 
 const mock =
   jest.createMockFromModule<typeof import("@ethersproject/web")>(
-    "@ethersproject/web"
+    "@ethersproject/web",
   )
 
 const actual =

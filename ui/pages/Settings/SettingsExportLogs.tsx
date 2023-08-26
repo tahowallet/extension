@@ -10,12 +10,12 @@ export default function SettingsExportLogs(): ReactElement {
 
   const serializedLogs = serializeLogs()
   const base64LogData = Buffer.from(
-    `${window.navigator.userAgent}\n\n\n${serializedLogs}` || ""
+    `${window.navigator.userAgent}\n\n\n${serializedLogs}` || "",
   ).toString("base64")
 
   const logFileName = `logs_v${(process.env.VERSION || "").replace(
     /\./g,
-    "_"
+    "_",
   )}__${dayjs().format()}.txt`
 
   return (

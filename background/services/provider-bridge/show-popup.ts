@@ -3,7 +3,7 @@ import { AllowedQueryParamPageType } from "@tallyho/provider-bridge-shared"
 
 export default async function showExtensionPopup(
   url: AllowedQueryParamPageType,
-  additionalOptions: { [key: string]: string } = {}
+  additionalOptions: { [key: string]: string } = {},
 ): Promise<browser.Windows.Window> {
   const { left = 0, top, width = 1920 } = await browser.windows.getCurrent()
   const popupWidth = 384

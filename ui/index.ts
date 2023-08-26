@@ -13,13 +13,13 @@ logger.contextId = "UI"
 
 export async function attachUIToRootElement(
   component: ComponentType<{ store: Store }>,
-  store?: Store
+  store?: Store,
 ): Promise<void> {
   const rootElement = document.getElementById("tally-root")
 
   if (!rootElement) {
     throw new Error(
-      "Failed to find #tally-root element; page structure changed?"
+      "Failed to find #tally-root element; page structure changed?",
     )
   }
 
@@ -43,7 +43,7 @@ export async function attachPopupUIToRootElement(): Promise<void> {
     // rather than rendering the popup
     const baseURL = browser.runtime.getURL("tab.html")
     const tabs = (await browser.tabs.query({ url: baseURL })).filter(
-      (tab) => tab?.url && tab.url.includes("onboarding")
+      (tab) => tab?.url && tab.url.includes("onboarding"),
     )
     if (tabs.length > 0 && tabs[0]?.id) {
       await browser.tabs.update(tabs[0].id, { active: true })

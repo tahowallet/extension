@@ -13,12 +13,12 @@ import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
 
 const selectNFTs = createSelector(
   (state: RootState) => state.nfts,
-  (nftsSlice) => nftsSlice.nfts
+  (nftsSlice) => nftsSlice.nfts,
 )
 
 export const selectIsReloadingNFTs = createSelector(
   (state: RootState) => state.nfts,
-  (nftsSlice) => nftsSlice.isReloading
+  (nftsSlice) => nftsSlice.isReloading,
 )
 
 export const selectCurrentAccountNFTs = createSelector(
@@ -27,14 +27,14 @@ export const selectCurrentAccountNFTs = createSelector(
   (nfts, account) =>
     Object.values(
       nfts[account.network.chainID]?.[normalizeEVMAddress(account.address)] ??
-        {}
-    )
+        {},
+    ),
 )
 
 /* Filtering selectors */
 const selectNFTFilters = createSelector(
   (state: RootState) => state.nfts,
-  (nftsSlice) => nftsSlice.filters
+  (nftsSlice) => nftsSlice.filters,
 )
 
 export const selectEnrichedNFTFilters = createSelector(
@@ -44,7 +44,7 @@ export const selectEnrichedNFTFilters = createSelector(
     const accounts = filters.accounts.reduce<Filter[]>((acc, filter) => {
       const additionalData = getAdditionalDataForFilter(
         filter.id,
-        accountTotals
+        accountTotals,
       )
       if (Object.keys(additionalData).length > 0) {
         return [
@@ -61,34 +61,34 @@ export const selectEnrichedNFTFilters = createSelector(
     const collections = filters.collections
       .filter(({ owners }) => {
         const enablingAccount = (owners ?? []).find((owner) =>
-          accounts.find((account) => account.id === owner && account.isEnabled)
+          accounts.find((account) => account.id === owner && account.isEnabled),
         )
         return !!enablingAccount
       })
       .sort((collection1, collection2) =>
-        collection1.name.localeCompare(collection2.name)
+        collection1.name.localeCompare(collection2.name),
       )
     return { ...filters, collections, accounts }
-  }
+  },
 )
 
 /* Items selectors */
 const selectAllCollections = createSelector(selectNFTs, (nfts) =>
   Object.values(nfts).flatMap((byAddress) =>
     Object.values(byAddress).flatMap((byCollection) =>
-      Object.values(byCollection)
-    )
-  )
+      Object.values(byCollection),
+    ),
+  ),
 )
 
 const selectAllNFTCollections = createSelector(
   selectAllCollections,
-  (collections) => collections.filter((collection) => !collection.hasBadges)
+  (collections) => collections.filter((collection) => !collection.hasBadges),
 )
 
 const selectAllNFTBadgesCollections = createSelector(
   selectAllCollections,
-  (collections) => collections.filter((collection) => collection.hasBadges)
+  (collections) => collections.filter((collection) => collection.hasBadges),
 )
 
 export const selectFilteredNFTCollections = createSelector(
@@ -97,7 +97,7 @@ export const selectFilteredNFTCollections = createSelector(
   getPricesState,
   selectMainCurrencySymbol,
   (collections, filters, prices, mainCurrencySymbol) =>
-    getFilteredCollections(collections, filters, prices, mainCurrencySymbol)
+    getFilteredCollections(collections, filters, prices, mainCurrencySymbol),
 )
 
 export const selectFilteredNFTBadgesCollections = createSelector(
@@ -106,42 +106,42 @@ export const selectFilteredNFTBadgesCollections = createSelector(
   getPricesState,
   selectMainCurrencySymbol,
   (collections, filters, prices, mainCurrencySymbol) =>
-    getFilteredCollections(collections, filters, prices, mainCurrencySymbol)
+    getFilteredCollections(collections, filters, prices, mainCurrencySymbol),
 )
 
 /* Counting selectors  */
 export const selectCurrentAccountNFTsCount = createSelector(
   selectCurrentAccountNFTs,
-  (collections) => getNFTsCount(collections)
+  (collections) => getNFTsCount(collections),
 )
 
 export const selectAllNFTsCount = createSelector(
   selectAllNFTCollections,
-  (collections) => getNFTsCount(collections)
+  (collections) => getNFTsCount(collections),
 )
 
 export const selectAllNFTBadgesCount = createSelector(
   selectAllNFTBadgesCollections,
-  (collections) => getNFTsCount(collections)
+  (collections) => getNFTsCount(collections),
 )
 
 export const selectFilteredNFTsCount = createSelector(
   selectFilteredNFTCollections,
-  (collections) => getNFTsCount(collections)
+  (collections) => getNFTsCount(collections),
 )
 
 export const selectFilteredNFTBadgesCount = createSelector(
   selectFilteredNFTBadgesCollections,
-  (collections) => getNFTsCount(collections)
+  (collections) => getNFTsCount(collections),
 )
 
 export const selectFilteredNFTCollectionsCount = createSelector(
   selectFilteredNFTCollections,
-  (collections) => collections.length
+  (collections) => collections.length,
 )
 
 /* Total Floor Price selectors  */
 export const selectFilteredTotalFloorPrice = createSelector(
   selectFilteredNFTCollections,
-  (collections) => getTotalFloorPrice(collections)
+  (collections) => getTotalFloorPrice(collections),
 )

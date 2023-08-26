@@ -23,7 +23,7 @@ type ArchiveOptions = {
  */
 function webextArchiveCreator(
   webpackCompiler: Compiler,
-  { filename, outputDirectory }: ArchiveOptions
+  { filename, outputDirectory }: ArchiveOptions,
 ): (stats: Stats, pluginCompleted: (err: Error | null) => void) => void {
   const logger = webpackCompiler.getInfrastructureLogger(PLUGIN_NAME)
   return (_: Stats, pluginCompleted: (err: Error | null) => void) => {
@@ -32,7 +32,7 @@ function webextArchiveCreator(
       outputDirectory || path.join(webpackCompiler.outputPath, "..")
 
     const outputStream = fs.createWriteStream(
-      path.join(outputPath, `${filename}.zip`)
+      path.join(outputPath, `${filename}.zip`),
     )
     outputStream.on("close", () => {
       pluginCompleted(null)
@@ -60,7 +60,7 @@ export default class WebextArchive {
   apply(compiler: Compiler): void {
     compiler.hooks.done.tapAsync(
       PLUGIN_NAME,
-      webextArchiveCreator(compiler, this.options)
+      webextArchiveCreator(compiler, this.options),
     )
   }
 }

@@ -154,8 +154,8 @@ export class ChainDatabase extends Dexie {
 
         const filteredModifications = Object.fromEntries(
           Object.entries(modifications).filter(([k]) =>
-            allowedVariants.includes(k)
-          )
+            allowedVariants.includes(k),
+          ),
         )
 
         // If there is an attempt to modify `firstSeen`, prefer the earliest
@@ -165,13 +165,13 @@ export class ChainDatabase extends Dexie {
             ...filteredModifications,
             firstSeen: Math.min(
               chainTransaction.firstSeen,
-              filteredModifications.firstSeen
+              filteredModifications.firstSeen,
             ),
           }
         }
 
         return filteredModifications
-      }
+      },
     )
 
     this.version(5).stores({
@@ -235,7 +235,7 @@ export class ChainDatabase extends Dexie {
 
   async getTransaction(
     network: Network,
-    txHash: string
+    txHash: string,
   ): Promise<AnyEVMTransaction | null> {
     return (
       (
@@ -306,7 +306,7 @@ export class ChainDatabase extends Dexie {
           .toCollection()
           .filter((account) => account.network.chainID === chainID)
         return accountsToTrack.delete()
-      }
+      },
     )
   }
 
@@ -315,10 +315,10 @@ export class ChainDatabase extends Dexie {
   }
 
   async getEVMNetworkByChainID(
-    chainID: string
+    chainID: string,
   ): Promise<EVMNetwork | undefined> {
     return (await this.networks.where("family").equals("EVM").toArray()).find(
-      (network) => network.chainID === chainID
+      (network) => network.chainID === chainID,
     )
   }
 
@@ -326,7 +326,7 @@ export class ChainDatabase extends Dexie {
     name: string,
     symbol: string,
     chainID: string,
-    decimals: number
+    decimals: number,
   ) {
     await this.baseAssets.put({
       decimals,
@@ -358,8 +358,8 @@ export class ChainDatabase extends Dexie {
           if (rpcUrls) {
             await this.addRpcUrls(chainId, rpcUrls)
           }
-        }
-      )
+        },
+      ),
     )
   }
 
@@ -374,13 +374,13 @@ export class ChainDatabase extends Dexie {
         async (defaultNetwork) => {
           if (
             !existingNetworks.some((network) =>
-              sameNetwork(network, defaultNetwork)
+              sameNetwork(network, defaultNetwork),
             )
           ) {
             await this.networks.put(defaultNetwork)
           }
-        }
-      )
+        },
+      ),
     )
   }
 
@@ -408,7 +408,7 @@ export class ChainDatabase extends Dexie {
   async addCustomRpcUrl(
     chainID: string,
     rpcUrl: string,
-    supportedMethods: string[] = []
+    supportedMethods: string[] = [],
   ): Promise<string> {
     return this.customRpcConfig.put({
       chainID,
@@ -438,7 +438,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getTransactionsForNetworkQuery(
-    network: Network
+    network: Network,
   ): Promise<Collection<Transaction, [string, string]>> {
     return this.chainTransactions.where("network.name").equals(network.name)
   }
@@ -451,21 +451,21 @@ export class ChainDatabase extends Dexie {
    * Looks up and returns all pending transactions for the given network.
    */
   async getNetworkPendingTransactions(
-    network: Network
+    network: Network,
   ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
     const transactions = await this.getTransactionsForNetworkQuery(network)
     return transactions
       .filter(
         (transaction) =>
           !("status" in transaction) &&
-          (transaction.blockHash === null || transaction.blockHeight === null)
+          (transaction.blockHash === null || transaction.blockHeight === null),
       )
       .toArray()
   }
 
   async getBlock(
     network: Network,
-    blockHash: string
+    blockHash: string,
   ): Promise<AnyEVMBlock | null> {
     return (
       (
@@ -479,21 +479,21 @@ export class ChainDatabase extends Dexie {
 
   async addOrUpdateTransaction(
     tx: AnyEVMTransaction,
-    dataSource: Transaction["dataSource"]
+    dataSource: Transaction["dataSource"],
   ): Promise<void> {
     await this.transaction("rw", this.chainTransactions, () =>
       this.chainTransactions.put({
         ...tx,
         firstSeen: Date.now(),
         dataSource,
-      })
+      }),
     )
   }
 
   async getLatestAccountBalance(
     address: string,
     network: Network,
-    asset: FungibleAsset
+    asset: FungibleAsset,
   ): Promise<AccountBalance | null> {
     // TODO this needs to be tightened up, both for performance and specificity
     const balanceCandidates = await this.balances
@@ -503,7 +503,7 @@ export class ChainDatabase extends Dexie {
         (balance) =>
           balance.address === address &&
           balance.assetAmount.asset.symbol === asset.symbol &&
-          balance.network.name === network.name
+          balance.network.name === network.name,
       )
       .reverse()
       .sortBy("retrievedAt")
@@ -520,7 +520,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getOldestAccountAssetTransferLookup(
-    addressNetwork: AddressOnNetwork
+    addressNetwork: AddressOnNetwork,
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
@@ -532,12 +532,12 @@ export class ChainDatabase extends Dexie {
         oldestBlock === null || lookup.startBlock < oldestBlock
           ? lookup.startBlock
           : oldestBlock,
-      null
+      null,
     )
   }
 
   async getNewestAccountAssetTransferLookup(
-    addressNetwork: AddressOnNetwork
+    addressNetwork: AddressOnNetwork,
   ): Promise<bigint | null> {
     // TODO this is inefficient, make proper use of indexing
     const lookups = await this.accountAssetTransferLookups
@@ -550,14 +550,14 @@ export class ChainDatabase extends Dexie {
         newestBlock === null || lookup.endBlock > newestBlock
           ? lookup.endBlock
           : newestBlock,
-      null
+      null,
     )
   }
 
   async recordAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork,
     startBlock: bigint,
-    endBlock: bigint
+    endBlock: bigint,
   ): Promise<void> {
     await this.accountAssetTransferLookups.add({
       addressNetwork,
@@ -586,7 +586,7 @@ export class ChainDatabase extends Dexie {
   }
 
   async getTrackedAddressesOnNetwork(
-    network: EVMNetwork
+    network: EVMNetwork,
   ): Promise<AddressOnNetwork[]> {
     return this.accountsToTrack
       .where("network.name")
@@ -614,8 +614,8 @@ export class ChainDatabase extends Dexie {
       .keys()
     return new Set(
       chainIDs.filter(
-        (chainID): chainID is string => typeof chainID === "string"
-      )
+        (chainID): chainID is string => typeof chainID === "string",
+      ),
     )
   }
 }

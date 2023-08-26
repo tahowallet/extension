@@ -42,7 +42,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate
+  { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate,
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -61,7 +61,7 @@ const gasOptionFromEstimate = (
             amount: maxFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
-          2
+          2,
         )
       : undefined
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
@@ -73,7 +73,7 @@ const gasOptionFromEstimate = (
       ],
     type: feeOptionData[confidence],
     estimatedGwei: weiToGwei(
-      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n
+      (baseFeePerGas * ESTIMATED_FEE_MULTIPLIERS[confidence]) / 10n,
     ).split(".")[0],
     maxPriorityGwei: weiToGwei(maxPriorityFeePerGas),
     maxGwei: weiToGwei(maxFeePerGas).split(".")[0],
@@ -100,18 +100,18 @@ export default function NetworkSettingsSelect({
 
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const customGas = useBackgroundSelector(
-    (state) => state.transactionConstruction.customFeesPerGas
+    (state) => state.transactionConstruction.customFeesPerGas,
   )
 
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
-    networkSettings.feeType
+    networkSettings.feeType,
   )
 
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint,
   )
 
   // Select activeFeeIndex to regular option once gasOptions load
@@ -167,8 +167,8 @@ export default function NetworkSettingsSelect({
                 mainCurrencyPricePoint,
                 estimatedFeesPerGas.baseFeePerGas ?? 0n,
                 gasLimit,
-                option
-              )
+                option,
+              ),
             )
           }
         })
@@ -179,13 +179,13 @@ export default function NetworkSettingsSelect({
               mainCurrencyPricePoint,
               estimatedFeesPerGas.baseFeePerGas ?? 0n,
               gasLimit,
-              customGas
-            )
+              customGas,
+            ),
           )
         }
 
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
-          (el) => el.type === currentlySelectedType
+          (el) => el.type === currentlySelectedType,
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
@@ -214,14 +214,14 @@ export default function NetworkSettingsSelect({
 
   function updateCustomGas(
     customMaxBaseFee: bigint,
-    customMaxPriorityFeePerGas: bigint
+    customMaxPriorityFeePerGas: bigint,
   ) {
     dispatch(
       setCustomGas({
         maxPriorityFeePerGas: customMaxPriorityFeePerGas,
         maxFeePerGas:
           BigInt(customMaxBaseFee) + BigInt(customMaxPriorityFeePerGas),
-      })
+      }),
     )
   }
 
@@ -238,7 +238,7 @@ export default function NetworkSettingsSelect({
             handleSelectGasOption={() => handleSelectGasOption(i)}
             updateCustomGas={(
               customMaxBaseFee: bigint,
-              customMaxPriorityFeePerGas: bigint
+              customMaxPriorityFeePerGas: bigint,
             ) => updateCustomGas(customMaxBaseFee, customMaxPriorityFeePerGas)}
           />
         ) : (
@@ -247,11 +247,11 @@ export default function NetworkSettingsSelect({
             isActive={i === activeFeeIndex}
             handleSelectGasOption={() => handleSelectGasOption(i)}
           />
-        )
+        ),
       )}
       <footer>
         {transactionDetails?.annotation?.warnings?.includes(
-          "insufficient-funds"
+          "insufficient-funds",
         ) && (
           <SharedBanner icon="notif-attention" iconColor="var(--attention)">
             <span className="warning_text">

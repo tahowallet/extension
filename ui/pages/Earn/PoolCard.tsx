@@ -128,7 +128,8 @@ export default function EarnCard({ vault }: EarnCardProps): ReactElement {
         }
         .card:hover {
           background: linear-gradient(180deg, #034f4b 0%, #033633 100%);
-          box-shadow: 0px 24px 24px rgba(0, 20, 19, 0.04),
+          box-shadow:
+            0px 24px 24px rgba(0, 20, 19, 0.04),
             0px 14px 16px rgba(0, 20, 19, 0.14),
             0px 10px 12px rgba(0, 20, 19, 0.54);
         }

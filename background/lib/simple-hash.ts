@@ -136,14 +136,14 @@ function getChainIDsNames(chainIDs: string[]) {
       (chainID) =>
         CHAIN_ID_TO_NAME[
           parseInt(chainID, 10) as keyof typeof CHAIN_ID_TO_NAME
-        ] ?? []
+        ] ?? [],
     )
     .join(",")
 }
 
 function simpleHashCollectionModelToCollection(
   original: SimpleHashCollectionModel,
-  owner: HexString
+  owner: HexString,
 ): NFTCollection {
   const { id, chain, floor_prices: collectionPrices } = original
   const floorPrice = collectionPrices
@@ -173,7 +173,7 @@ function simpleHashCollectionModelToCollection(
 
 function simpleHashNFTModelToNFT(
   original: SimpleHashNFTModel,
-  owner: HexString
+  owner: HexString,
 ): NFT {
   const {
     nft_id: nftID,
@@ -202,7 +202,7 @@ function simpleHashNFTModelToNFT(
   const chainID = SIMPLE_HASH_CHAIN_TO_ID[chain]
 
   const transferDate = owners.find(({ owner_address }) =>
-    sameEVMAddress(owner_address, owner)
+    sameEVMAddress(owner_address, owner),
   )?.last_acquired_date
 
   const attributes = Array.isArray(metadata?.attributes)
@@ -212,7 +212,7 @@ function simpleHashNFTModelToNFT(
               value,
               trait: trait_type,
             }
-          : []
+          : [],
       )
     : []
 
@@ -252,7 +252,7 @@ export async function getSimpleHashNFTs(
   address: string,
   collectionID: string,
   chainIDs: string[],
-  nextPageURL?: string
+  nextPageURL?: string,
 ): Promise<NFTsWithPagesResponse> {
   let requestURL: URL
 
@@ -298,7 +298,7 @@ export async function getSimpleHashNFTs(
  */
 export async function getSimpleHashCollections(
   address: string,
-  chainIDs: string[]
+  chainIDs: string[],
 ): Promise<NFTCollection[]> {
   const requestURL = new URL(`${SIMPLE_HASH_BASE_URL}/collections_by_wallets`)
   requestURL.searchParams.set("chains", getChainIDsNames(chainIDs))
@@ -315,7 +315,7 @@ export async function getSimpleHashCollections(
     return result.collections
       .filter((collection) => collection.id)
       .map((collection) =>
-        simpleHashCollectionModelToCollection(collection, address)
+        simpleHashCollectionModelToCollection(collection, address),
       )
   } catch (err) {
     logger.error("Error retrieving NFTs ", err)
@@ -328,7 +328,7 @@ export async function getSimpleHashNFTsTransfers(
   addresses: string[],
   chainIDs: string[],
   fromTimestamp: number,
-  nextPageURL?: string
+  nextPageURL?: string,
 ): Promise<TransferredNFT[]> {
   let requestURL: URL
 
@@ -377,7 +377,7 @@ export async function getSimpleHashNFTsTransfers(
         addresses,
         chainIDs,
         fromTimestamp,
-        next
+        next,
       )
 
       return [...transferDetails, ...nextPageTransferDetails]

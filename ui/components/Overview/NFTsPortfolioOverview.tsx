@@ -13,7 +13,7 @@ export default function NFTsPortfolioOverview(): ReactElement {
 
   const nftCount = useBackgroundSelector(selectFilteredNFTsCount)
   const collectionCount = useBackgroundSelector(
-    selectFilteredNFTCollectionsCount
+    selectFilteredNFTCollectionsCount,
   )
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
 

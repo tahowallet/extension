@@ -19,7 +19,7 @@ interface Props<T> {
   autoFocus?: boolean
   autoSelect?: boolean
   parseAndValidate: (
-    value: string
+    value: string,
   ) => { parsed: T | undefined } | { error: string }
   step?: number
   isEmpty?: boolean
@@ -66,7 +66,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     handleInputChange,
   } = useParsedValidation<T | undefined>(
     onChange ?? (() => {}),
-    parseAndValidate
+    parseAndValidate,
   )
 
   useRunOnFirstRender(() => {
@@ -156,8 +156,11 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             border-radius: 5px;
             box-sizing: border-box;
             color: var(--green-40);
-            transition: font-size 0.2s ease, transform 0.2s ease,
-              font-weight 0.2s ease, padding 0.2s ease;
+            transition:
+              font-size 0.2s ease,
+              transform 0.2s ease,
+              font-weight 0.2s ease,
+              padding 0.2s ease;
           }
           input:disabled {
             color: var(--green-40);
@@ -213,7 +216,7 @@ SharedTypedInput.defaultProps = {
 export default function SharedInput(
   props: Omit<Props<string>, "onChange"> & {
     onChange?: (_: string) => void
-  }
+  },
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
     props.onChange?.(newValue ?? "")

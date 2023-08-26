@@ -81,11 +81,11 @@ type CreateInternalSignerServiceOverrides = {
 }
 
 export const createInternalSignerService = async (
-  overrides: CreateInternalSignerServiceOverrides = {}
+  overrides: CreateInternalSignerServiceOverrides = {},
 ): Promise<InternalSignerService> =>
   InternalSignerService.create(
     overrides.preferenceService ?? createPreferenceService(),
-    overrides.analyticsService ?? createAnalyticsService()
+    overrides.analyticsService ?? createAnalyticsService(),
   )
 
 type CreateChainServiceOverrides = {
@@ -94,11 +94,11 @@ type CreateChainServiceOverrides = {
 }
 
 export const createChainService = async (
-  overrides: CreateChainServiceOverrides = {}
+  overrides: CreateChainServiceOverrides = {},
 ): Promise<ChainService> =>
   ChainService.create(
     overrides.preferenceService ?? createPreferenceService(),
-    overrides.internalSignerService ?? createInternalSignerService()
+    overrides.internalSignerService ?? createInternalSignerService(),
   )
 
 export async function createNameService(overrides?: {
@@ -109,7 +109,7 @@ export async function createNameService(overrides?: {
     overrides?.preferenceService ?? createPreferenceService()
   return NameService.create(
     overrides?.chainService ?? createChainService({ preferenceService }),
-    preferenceService
+    preferenceService,
   )
 }
 
@@ -124,7 +124,7 @@ export async function createIndexingService(overrides?: {
   return IndexingService.create(
     preferenceService,
     overrides?.chainService ?? createChainService({ preferenceService }),
-    overrides?.dexieOptions
+    overrides?.dexieOptions,
   )
 }
 
@@ -153,44 +153,44 @@ type CreateInternalEthereumProviderServiceOverrides = {
 }
 
 export const createSigningService = async (
-  overrides: CreateSigningServiceOverrides = {}
+  overrides: CreateSigningServiceOverrides = {},
 ): Promise<SigningService> =>
   SigningService.create(
     overrides.internalSignerService ?? createInternalSignerService(),
     overrides.ledgerService ?? createLedgerService(),
-    overrides.chainService ?? createChainService()
+    overrides.chainService ?? createChainService(),
   )
 
 export const createAbilitiesService = async (
-  overrides: CreateAbilitiesServiceOverrides = {}
+  overrides: CreateAbilitiesServiceOverrides = {},
 ): Promise<AbilitiesService> =>
   AbilitiesService.create(
     overrides.chainService ?? createChainService(),
-    overrides.ledgerService ?? createLedgerService()
+    overrides.ledgerService ?? createLedgerService(),
   )
 
 export const createInternalEthereumProviderService = async (
-  overrides: CreateInternalEthereumProviderServiceOverrides = {}
+  overrides: CreateInternalEthereumProviderServiceOverrides = {},
 ): Promise<InternalEthereumProviderService> =>
   InternalEthereumProviderService.create(
     overrides.chainService ?? createChainService(),
-    overrides.preferenceService ?? createPreferenceService()
+    overrides.preferenceService ?? createPreferenceService(),
   )
 
 export const createProviderBridgeService = async (
-  overrides: CreateProviderBridgeServiceOverrides = {}
+  overrides: CreateProviderBridgeServiceOverrides = {},
 ): Promise<ProviderBridgeService> => {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
   return ProviderBridgeService.create(
     overrides.internalEthereumProviderService ??
       createInternalEthereumProviderService({ preferenceService }),
-    preferenceService
+    preferenceService,
   )
 }
 
 export const createTypedData = (
-  overrides: Partial<EIP712TypedData> = {}
+  overrides: Partial<EIP712TypedData> = {},
 ): EIP712TypedData =>
   // Example values from ethers docs
   ({
@@ -227,7 +227,7 @@ export const createTypedData = (
   })
 
 export const createTransactionRequest = (
-  overrides: Partial<EIP1559TransactionRequest & { nonce: number }> = {}
+  overrides: Partial<EIP1559TransactionRequest & { nonce: number }> = {},
 ): TransactionRequestWithNonce => ({
   nonce: 0,
   from: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
@@ -244,7 +244,7 @@ export const createTransactionRequest = (
 
 // Copied from a legacy Optimism transaction generated with our test wallet.
 export const createLegacyTransactionRequest = (
-  overrides: Partial<LegacyEVMTransactionRequest> = {}
+  overrides: Partial<LegacyEVMTransactionRequest> = {},
 ): LegacyEVMTransactionRequest => ({
   chainID: OPTIMISM.chainID,
   estimatedRollupFee: 0n,
@@ -262,7 +262,7 @@ export const createLegacyTransactionRequest = (
 })
 
 export const createAnyEVMTransaction = (
-  overrides: Partial<AnyEVMTransaction> = {}
+  overrides: Partial<AnyEVMTransaction> = {},
 ): AnyEVMTransaction => ({
   asset: ETH,
   blockHash: createRandom0xHash(),
@@ -287,7 +287,7 @@ export const createAnyEVMTransaction = (
 })
 
 export const createAnyEVMBlock = (
-  overrides: Partial<AnyEVMBlock> = {}
+  overrides: Partial<AnyEVMBlock> = {},
 ): AnyEVMBlock => ({
   hash: createRandom0xHash(),
   parentHash: createRandom0xHash(),
@@ -299,7 +299,7 @@ export const createAnyEVMBlock = (
 })
 
 export const createAccountBalance = (
-  overrides: Partial<AccountBalance> = {}
+  overrides: Partial<AccountBalance> = {},
 ): AccountBalance => ({
   address: createRandom0xHash(),
   assetAmount: {
@@ -323,7 +323,7 @@ export const createAccountBalance = (
 })
 
 export const createAddressOnNetwork = (
-  overrides: Partial<AddressOnNetwork> = {}
+  overrides: Partial<AddressOnNetwork> = {},
 ): AddressOnNetwork => ({
   address: normalizeEVMAddress(createRandom0xHash()),
   network: ETHEREUM,
@@ -331,7 +331,7 @@ export const createAddressOnNetwork = (
 })
 
 export const createBlockPrices = (
-  overrides: Partial<BlockPrices> = {}
+  overrides: Partial<BlockPrices> = {},
 ): BlockPrices => ({
   baseFeePerGas: 0n,
   blockNumber: 25639147,
@@ -349,7 +349,7 @@ export const createBlockPrices = (
 })
 
 export const createQueuedTransaction = (
-  overrides: Partial<QueuedTxToRetrieve> = {}
+  overrides: Partial<QueuedTxToRetrieve> = {},
 ): QueuedTxToRetrieve => ({
   network: OPTIMISM,
   hash: createRandom0xHash(),
@@ -358,7 +358,7 @@ export const createQueuedTransaction = (
 })
 
 export const createTransactionsToRetrieve = (
-  numberOfTx = 100
+  numberOfTx = 100,
 ): PriorityQueuedTxToRetrieve[] => {
   const NETWORKS = [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE, OPTIMISM]
 
@@ -371,7 +371,7 @@ export const createTransactionsToRetrieve = (
 }
 
 export const createAccountData = (
-  overrides: Partial<AccountData> = {}
+  overrides: Partial<AccountData> = {},
 ): AccountData => ({
   address: createAddressOnNetwork().address,
   network: ETHEREUM,
@@ -385,7 +385,7 @@ export const createAccountData = (
 })
 
 export const createTransactionResponse = (
-  overrides: Partial<TransactionResponse> = {}
+  overrides: Partial<TransactionResponse> = {},
 ): TransactionResponse => ({
   hash: createRandom0xHash(),
   blockNumber: 25639147,
@@ -441,7 +441,7 @@ const getRandomStr = (length: number) => {
 }
 
 export const createSmartContractAsset = (
-  overrides: Partial<SmartContractFungibleAsset> = {}
+  overrides: Partial<SmartContractFungibleAsset> = {},
 ): SmartContractFungibleAsset => {
   const symbol = overrides.symbol ?? getRandomStr(3)
   const asset = {
@@ -470,7 +470,7 @@ export const createSmartContractAsset = (
 }
 
 export const createNetworkBaseAsset = (
-  overrides: Partial<NetworkBaseAsset> = {}
+  overrides: Partial<NetworkBaseAsset> = {},
 ): NetworkBaseAsset => {
   const symbol = getRandomStr(3)
   const asset: NetworkBaseAsset = {
@@ -495,7 +495,7 @@ export const createNetworkBaseAsset = (
 
 export const createAssetAmount = (
   asset: AnyAsset = ETH,
-  amount = 1
+  amount = 1,
 ): AnyAssetAmount => ({
   asset,
   amount: BigInt(Math.trunc(1e10 * amount)) * 10n ** 8n,
@@ -504,7 +504,7 @@ export const createAssetAmount = (
 export const createCompleteAssetAmount = (
   asset: AnyAsset = ETH,
   amount = 1,
-  overrides: Partial<CompleteAssetAmount<AnyAsset>> = {}
+  overrides: Partial<CompleteAssetAmount<AnyAsset>> = {},
 ): CompleteAssetAmount<AnyAsset> => {
   const assetAmount = createAssetAmount(asset, amount)
   return {
@@ -516,7 +516,7 @@ export const createCompleteAssetAmount = (
 }
 
 export const createDaylightAbility = (
-  overrides: Partial<DaylightAbility> = {}
+  overrides: Partial<DaylightAbility> = {},
 ): DaylightAbility => ({
   type: "mint",
   title: "Test ability!",
@@ -553,7 +553,7 @@ export const createDaylightAbility = (
 export const createPricePoint = (
   asset: AnyAsset,
   price = 1,
-  flip = false
+  flip = false,
 ): PricePoint => {
   const decimals = isFungibleAsset(asset) ? asset.decimals : 18
 

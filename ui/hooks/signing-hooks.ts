@@ -23,7 +23,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
  * status is returned and no further action is taken.
  */
 export const useAreInternalSignersUnlocked = (
-  redirectIfNot: boolean
+  redirectIfNot: boolean,
 ): boolean => {
   const lockStatus = useBackgroundSelector(selectInternalSignerStatus)
   const history = useHistory()
@@ -77,13 +77,13 @@ export type SigningLedgerState =
 
 export function useSigningLedgerState(
   signingAddress: HexString,
-  accountSigner: LedgerAccountSigner
+  accountSigner: LedgerAccountSigner,
 ): SigningLedgerState {
   return useBackgroundSelector((state) => {
     const { deviceID } = accountSigner
 
     const connectedDevices = Object.values(state.ledger.devices).filter(
-      (device) => device.status !== "disconnected"
+      (device) => device.status !== "disconnected",
     )
     if (connectedDevices.length === 0) return { state: "no-ledger-connected" }
     if (state.ledger.usbDeviceCount > 1)

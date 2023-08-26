@@ -43,7 +43,7 @@ function SignerLedgerSigningMessage({
         name="Message" /* intentionally not i18ned, see above */
         value={`${message.substring(
           0,
-          ledgerDisplayDetails.messageSigningDisplayLength - 3
+          ledgerDisplayDetails.messageSigningDisplayLength - 3,
         )}…`}
       />
     </TransactionDetailContainer>
@@ -102,8 +102,8 @@ function SignerLedgerSigningTransaction({
             : transactionRequest.gasPrice,
         decimals: transactionRequest.network.baseAsset.decimals,
       },
-      { amount: transactionRequest.gasLimit, decimals: 0 }
-    )
+      { amount: transactionRequest.gasLimit, decimals: 0 },
+    ),
   )
 
   return (

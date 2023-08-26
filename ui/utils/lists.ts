@@ -1,6 +1,6 @@
 export const intersperseWith = <T, K>(
   items: T[],
-  getItem: (index: number) => K
+  getItem: (index: number) => K,
 ): (T | K)[] => {
   const result: (T | K)[] = []
 

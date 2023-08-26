@@ -21,44 +21,44 @@ import logger from "./logger"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
-    "allowance(address owner, address spender) view returns (uint256)"
+    "allowance(address owner, address spender) view returns (uint256)",
   ),
   approve: FunctionFragment.from(
-    "approve(address spender, uint256 value) returns (bool)"
+    "approve(address spender, uint256 value) returns (bool)",
   ),
   balanceOf: FunctionFragment.from(
-    "balanceOf(address owner) view returns (uint256)"
+    "balanceOf(address owner) view returns (uint256)",
   ),
   decimals: FunctionFragment.from("decimals() view returns (uint8)"),
   name: FunctionFragment.from("name() view returns (string)"),
   symbol: FunctionFragment.from("symbol() view returns (string)"),
   totalSupply: FunctionFragment.from("totalSupply() view returns (uint256)"),
   transfer: FunctionFragment.from(
-    "transfer(address to, uint amount) returns (bool)"
+    "transfer(address to, uint amount) returns (bool)",
   ),
   transferFrom: FunctionFragment.from(
-    "transferFrom(address from, address to, uint amount) returns (bool)"
+    "transferFrom(address from, address to, uint amount) returns (bool)",
   ),
 }
 
 const ERC20_EVENTS = {
   Transfer: EventFragment.from(
-    "Transfer(address indexed from, address indexed to, uint amount)"
+    "Transfer(address indexed from, address indexed to, uint amount)",
   ),
   Approval: EventFragment.from(
-    "Approval(address indexed owner, address indexed spender, uint amount)"
+    "Approval(address indexed owner, address indexed spender, uint amount)",
   ),
 }
 
 export const ERC20_ABI = Object.values<Fragment>(ERC20_FUNCTIONS).concat(
-  Object.values(ERC20_EVENTS)
+  Object.values(ERC20_EVENTS),
 )
 
 export const ERC20_INTERFACE = new ethers.utils.Interface(ERC20_ABI)
 
 export const ERC2612_FUNCTIONS = {
   permit: FunctionFragment.from(
-    "permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)"
+    "permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
   ),
   nonces: FunctionFragment.from("nonces(address owner) view returns (uint256)"),
   DOMAIN: FunctionFragment.from("DOMAIN_SEPARATOR() view returns (bytes32)"),
@@ -74,7 +74,7 @@ export const ERC2612_INTERFACE = new ethers.utils.Interface(ERC2612_ABI)
 export async function getBalance(
   provider: BaseProvider,
   tokenAddress: string,
-  account: string
+  account: string,
 ): Promise<bigint> {
   const token = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
 
@@ -87,12 +87,12 @@ export async function getBalance(
  */
 export async function getMetadata(
   provider: BaseProvider,
-  tokenSmartContract: SmartContract
+  tokenSmartContract: SmartContract,
 ): Promise<SmartContractFungibleAsset> {
   const token = new ethers.Contract(
     tokenSmartContract.contractAddress,
     ERC20_ABI,
-    provider
+    provider,
   )
 
   try {
@@ -101,7 +101,7 @@ export async function getMetadata(
         ERC20_FUNCTIONS.symbol,
         ERC20_FUNCTIONS.name,
         ERC20_FUNCTIONS.decimals,
-      ].map(({ name: functionName }) => token.callStatic[functionName]())
+      ].map(({ name: functionName }) => token.callStatic[functionName]()),
     )
 
     return {
@@ -121,7 +121,7 @@ export async function getMetadata(
  * Returns the parsed data if parsing succeeds, otherwise returns `undefined`.
  */
 export function parseERC20Tx(
-  input: string
+  input: string,
 ): TransactionDescription | undefined {
   try {
     return ERC20_INTERFACE.parseTransaction({
@@ -164,7 +164,7 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
         const decoded = ERC20_INTERFACE.decodeEventLog(
           ERC20_EVENTS.Transfer,
           data,
-          topics
+          topics,
         )
 
         if (
@@ -191,7 +191,7 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
 export const getTokenBalances = async (
   { address, network }: AddressOnNetwork,
   tokenAddresses: HexString[],
-  provider: Provider
+  provider: Provider,
 ): Promise<SmartContractAmount[]> => {
   const multicallAddress =
     CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
@@ -200,7 +200,7 @@ export const getTokenBalances = async (
   const contract = new ethers.Contract(
     multicallAddress,
     MULTICALL_ABI,
-    provider
+    provider,
   )
 
   const balanceOfCallData = ERC20_INTERFACE.encodeFunctionData("balanceOf", [
@@ -210,7 +210,7 @@ export const getTokenBalances = async (
   const response = (await contract.callStatic.tryBlockAndAggregate(
     // false === don't require all calls to succeed
     false,
-    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData])
+    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData]),
   )) as AggregateContractResponse
 
   return response.returnData.flatMap((data, i) => {

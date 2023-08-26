@@ -18,7 +18,7 @@ function ConnectionDAppGuideline({
   const showWalletConnectInfo = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
   const [currentPanel, setCurrentPanel] = useState(
-    showWalletConnectInfo ? 0 : 1
+    showWalletConnectInfo ? 0 : 1,
   )
 
   return (
@@ -275,8 +275,10 @@ export default function TopMenuConnectedDAppInfo(props: {
         .window {
           width: 352px;
           max-height: 90%;
-          box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
-            0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
+          box-shadow:
+            0 10px 12px rgba(0, 20, 19, 0.34),
+            0 14px 16px rgba(0, 20, 19, 0.24),
+            0 24px 24px rgba(0, 20, 19, 0.14);
           border-radius: 8px;
           background-color: var(--green-95);
           display: flex;

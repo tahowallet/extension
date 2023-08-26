@@ -5,7 +5,7 @@ const wallet = require("ethereumjs-wallet").default
 
 const pk = Buffer.from(
   process.env.PRIVATE_KEY, // should not contrain `0x` prefix
-  "hex"
+  "hex",
 )
 const account = wallet.fromPrivateKey(pk)
 const password = process.env.PASSWORD

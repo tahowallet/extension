@@ -12,12 +12,12 @@ export const selectLedgerDeviceByAddresses = createSelector(
           if (account.address === null) return []
 
           return [[account.address, device]]
-        }
-      )
+        },
+      ),
     )
 
     return Object.fromEntries(ledgerEntries)
-  }
+  },
 )
 
 export default {}

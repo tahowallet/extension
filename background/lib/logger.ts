@@ -84,7 +84,7 @@ function purgeSensitiveFailSafe(log: string): string {
 
   return log.replaceAll(
     /0x[0-9a-fA-F]+|(\b[a-zA-Z0-9]{64}\b)|(?:[a-z]+(?:\s|$)){12}/g,
-    "[REDACTED]"
+    "[REDACTED]",
   )
 }
 
@@ -94,7 +94,7 @@ const WEBKIT_MARKER = "@"
 const GECKO_MARKER = "/"
 
 function logLabelFromStackEntry(
-  stackEntry: string | undefined
+  stackEntry: string | undefined,
 ): string | undefined {
   // Blink-ish.
   if (stackEntry?.startsWith(BLINK_PREFIX)) {
@@ -137,7 +137,7 @@ const iso8601DateRegExpString =
 // when splitting.
 const logDateRegExp = new RegExp(
   `(?=^\\[${iso8601DateRegExpString}\\] \\[)`,
-  "m"
+  "m",
 )
 
 class Logger {
@@ -202,7 +202,7 @@ class Logger {
     console.group(
       `%c ${styles[level].icon} [${logTime}] ${logLabel} %c [${logDate}]`,
       styles[level].css.join(";"),
-      styles[level].dateCss ?? styles.debug.dateCss.join(";")
+      styles[level].dateCss ?? styles.debug.dateCss.join(";"),
     )
 
     console[level](...input)
@@ -223,7 +223,7 @@ class Logger {
     isoDateString: string,
     logLabel: string,
     input: unknown[],
-    stackTrace: string[] | undefined
+    stackTrace: string[] | undefined,
   ) {
     const formattedInput = input
       .map((loggedValue) => {
@@ -310,7 +310,7 @@ class Logger {
     const entriesByDateAsc = logEntries
       // Sort by date.
       .sort((a, b) =>
-        a.substr(1, iso8601Length).localeCompare(b.substr(1, iso8601Length))
+        a.substr(1, iso8601Length).localeCompare(b.substr(1, iso8601Length)),
       )
 
     const lastEntry = entriesByDateAsc[entriesByDateAsc.length - 1]
@@ -319,7 +319,7 @@ class Logger {
     return entriesByDateAsc // Only grab logs from the last available hour
       .filter(
         (logLine) =>
-          dateFromLogEntry(logLine).getTime() >= lastEntryDate.getTime() - HOUR
+          dateFromLogEntry(logLine).getTime() >= lastEntryDate.getTime() - HOUR,
       )
       .join("\n")
   }

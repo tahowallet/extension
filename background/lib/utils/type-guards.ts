@@ -6,7 +6,7 @@
  * `Promise.allSettled` result list.
  */
 export function isFulfilledPromise<T>(
-  settledResult: PromiseSettledResult<T>
+  settledResult: PromiseSettledResult<T>,
 ): settledResult is PromiseFulfilledResult<T> {
   return settledResult.status === "fulfilled"
 }

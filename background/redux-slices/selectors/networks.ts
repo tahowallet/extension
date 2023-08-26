@@ -10,21 +10,21 @@ import { EVMNetwork } from "../../networks"
 // eslint-disable-next-line import/prefer-default-export
 export const selectEVMNetworks = createSelector(
   (state: RootState) => state.networks.evmNetworks,
-  (evmNetworks): EVMNetwork[] => Object.values(evmNetworks)
+  (evmNetworks): EVMNetwork[] => Object.values(evmNetworks),
 )
 
 export const selectProductionEVMNetworks = createSelector(
   selectEVMNetworks,
   (evmNetworks) =>
     evmNetworks.filter(
-      (network) => !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID)
-    )
+      (network) => !TEST_NETWORK_BY_CHAIN_ID.has(network.chainID),
+    ),
 )
 
 export const selectCustomNetworks = createSelector(
   selectEVMNetworks,
   (evmNetworks) =>
     evmNetworks.filter(
-      (network) => !DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
-    )
+      (network) => !DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID),
+    ),
 )

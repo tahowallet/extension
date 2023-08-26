@@ -20,7 +20,7 @@ const getRequirementLabel = (ability: Ability): string => {
 
 const getAccountNameOrShortenedAddress = (
   accounts: AccountTotalList,
-  address: string
+  address: string,
 ): string => {
   const account = accounts[address]
   return account.ensName ?? account.shortenedAddress

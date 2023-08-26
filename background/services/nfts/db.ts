@@ -39,7 +39,7 @@ export class NFTsDatabase extends Dexie {
       .upgrade((tx) => tx.db.table("preferences").add(DEFAULT_PREFERENCES))
 
     this.on("populate", (tx) =>
-      tx.db.table("preferences").add(DEFAULT_PREFERENCES)
+      tx.db.table("preferences").add(DEFAULT_PREFERENCES),
     )
   }
 
@@ -54,7 +54,7 @@ export class NFTsDatabase extends Dexie {
   async updateCollectionData(
     collectionID: string,
     { address, network }: AddressOnNetwork,
-    data: Partial<NFTCollection>
+    data: Partial<NFTCollection>,
   ): Promise<NFTCollection | undefined> {
     const collection = await this.collections.get({
       id: collectionID,
@@ -81,14 +81,14 @@ export class NFTsDatabase extends Dexie {
 
   async getCollectionNFTsForAccount(
     collectionID: string,
-    { address, network }: AddressOnNetwork
+    { address, network }: AddressOnNetwork,
   ): Promise<NFT[]> {
     return this.nfts
       .filter(
         (nft) =>
           nft.collectionID === collectionID &&
           sameEVMAddress(nft.owner, address) &&
-          network.chainID === nft.network.chainID
+          network.chainID === nft.network.chainID,
       )
 
       .toArray()
@@ -103,7 +103,7 @@ export class NFTsDatabase extends Dexie {
 
   async removeNFTsByIDs(removedNFTsIDs: string[]): Promise<void> {
     const nftsToRemove = this.nfts.filter((nft) =>
-      removedNFTsIDs.some((removedID) => removedID === nft.id)
+      removedNFTsIDs.some((removedID) => removedID === nft.id),
     )
 
     // As we don't know if it was the last NFT in a given collection
@@ -114,7 +114,7 @@ export class NFTsDatabase extends Dexie {
         acc.add(nft.collectionID)
         return acc
       },
-      new Set<string>()
+      new Set<string>(),
     )
 
     await this.collections
@@ -125,13 +125,13 @@ export class NFTsDatabase extends Dexie {
   }
 
   async setTransfersLookupTimestamp(
-    transfersLookupTimestamp: number
+    transfersLookupTimestamp: number,
   ): Promise<void> {
     await this.preferences.toCollection().modify({ transfersLookupTimestamp })
   }
 
   async setFreshCollections(
-    freshCollections: FreshCollectionsMap
+    freshCollections: FreshCollectionsMap,
   ): Promise<void> {
     await this.preferences.toCollection().modify({ freshCollections })
   }

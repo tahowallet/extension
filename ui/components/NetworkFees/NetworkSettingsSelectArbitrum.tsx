@@ -36,7 +36,7 @@ const gasOptionFromEstimate = (
   mainCurrencyPricePoint: PricePoint | undefined,
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
-  { confidence, price }: BlockEstimate
+  { confidence, price }: BlockEstimate,
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -54,7 +54,7 @@ const gasOptionFromEstimate = (
             amount: baseFeePerGas * gasLimit,
           },
           mainCurrencyPricePoint,
-          2
+          2,
         )
       : undefined
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
@@ -79,11 +79,11 @@ export default function NetworkSettingsSelectArbitrum({
   const [gasOptions, setGasOptions] = useState<GasOption[]>([])
   const [activeFeeIndex, setActiveFeeIndex] = useState(0)
   const [currentlySelectedType, setCurrentlySelectedType] = useState(
-    networkSettings.feeType
+    networkSettings.feeType,
   )
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint,
   )
 
   // Select activeFeeIndex to regular option once gasOptions load
@@ -141,11 +141,11 @@ export default function NetworkSettingsSelectArbitrum({
             mainCurrencyPricePoint,
             option.price ?? 0n,
             gasLimit,
-            option
-          )
+            option,
+          ),
         )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
-          (el) => el.type === currentlySelectedType
+          (el) => el.type === currentlySelectedType,
         )
         const currentlySelectedFeeIndex =
           selectedGasFeeIndex === -1 ? 0 : selectedGasFeeIndex
@@ -253,7 +253,8 @@ export default function NetworkSettingsSelectArbitrum({
           }
           .option.active {
             border-color: var(--success);
-            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
+            box-shadow:
+              0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);
           }

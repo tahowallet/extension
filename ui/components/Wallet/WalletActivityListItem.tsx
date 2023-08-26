@@ -18,7 +18,7 @@ interface Props {
 
 function isSendActivity(
   activity: Activity,
-  activityInitiatorAddress: string
+  activityInitiatorAddress: string,
 ): boolean {
   return activity.type === "asset-transfer"
     ? sameEVMAddress(activity.sender?.address, activityInitiatorAddress)
@@ -49,7 +49,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
 
   const activityViewDetails = useActivityViewDetails(
     activity,
-    activityInitiatorAddress
+    activityInitiatorAddress,
   )
 
   return (

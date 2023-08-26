@@ -12,14 +12,14 @@ export const useAllEarnVaults = (): EnrichedAvailableVault[] => {
   const dispatch = useBackgroundDispatch()
   const availableVaults = useBackgroundSelector(selectAvailableVaults)
   const [vaults, setVaults] = useState(
-    availableVaults as EnrichedAvailableVault[]
+    availableVaults as EnrichedAvailableVault[],
   )
   const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
 
   const update = useCallback(async () => {
     if (isValutDataStale) {
       const updatedVaults = (await dispatch(
-        updateVaults(availableVaults)
+        updateVaults(availableVaults),
       )) as unknown as EnrichedAvailableVault[]
       setVaults(updatedVaults)
     }

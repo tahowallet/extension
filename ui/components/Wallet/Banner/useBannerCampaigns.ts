@@ -47,7 +47,7 @@ export default function useBannerCampaigns(chainID: string): Campaign | null {
       (campaign) =>
         campaign.startDate <= currentDate &&
         currentDate <= campaign.endDate &&
-        campaign.chains.includes(chainID)
+        campaign.chains.includes(chainID),
     )
 
     setCurrentCampaign(relevantCampaings.reverse()[0] ?? null)

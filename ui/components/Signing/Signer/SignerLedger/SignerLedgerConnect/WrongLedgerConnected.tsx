@@ -31,7 +31,7 @@ export default function WrongLedgerConnected({
                   window
                     .open(
                       `https://etherscan.io/address/${requiredAddress}`,
-                      "_blank"
+                      "_blank",
                     )
                     ?.focus()
                 }}

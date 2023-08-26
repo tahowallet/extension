@@ -23,7 +23,7 @@ export enum OneTimeAnalyticsEvent {
 }
 
 export const isOneTimeAnalyticsEvent = (
-  eventName: string
+  eventName: string,
 ): eventName is OneTimeAnalyticsEvent =>
   Object.values<string>(OneTimeAnalyticsEvent).includes(eventName)
 
@@ -45,7 +45,7 @@ export function shouldSendPosthogEvents(): boolean {
 export function createPosthogPayload(
   personUUID: string,
   eventName: string,
-  payload?: Record<string, unknown>
+  payload?: Record<string, unknown>,
 ): string {
   return JSON.stringify({
     // See posthog Data model: https://posthog.com/docs/how-posthog-works/data-model
@@ -77,7 +77,7 @@ export function createPosthogPayload(
 export function sendPosthogEvent(
   personUUID: string,
   eventName: string,
-  payload?: Record<string, unknown>
+  payload?: Record<string, unknown>,
 ): void {
   try {
     if (shouldSendPosthogEvents()) {

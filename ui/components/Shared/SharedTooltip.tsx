@@ -27,7 +27,7 @@ interface Props {
 function getHorizontalPosition(
   horizontal: HorizontalPosition,
   width: number,
-  horizontalShift: number
+  horizontalShift: number,
 ) {
   switch (horizontal) {
     case "center":
@@ -44,7 +44,7 @@ function getHorizontalPosition(
 function getVerticalPosition(
   vertical: VerticalPosition,
   height: number,
-  verticalShift: number
+  verticalShift: number,
 ) {
   switch (vertical) {
     case "bottom":
@@ -123,8 +123,10 @@ export default function SharedTooltip(props: Props): ReactElement {
           .tooltip {
             width: ${width !== undefined ? `${width}px` : "auto"};
             position: absolute;
-            box-shadow: 0 2px 4px rgba(0, 20, 19, 0.24),
-              0 6px 8px rgba(0, 20, 19, 0.14), 0 16px 16px rgba(0, 20, 19, 0.04);
+            box-shadow:
+              0 2px 4px rgba(0, 20, 19, 0.24),
+              0 6px 8px rgba(0, 20, 19, 0.14),
+              0 16px 16px rgba(0, 20, 19, 0.04);
             background-color: var(--green-20);
             color: var(--green-95);
             font-size: 14px;
@@ -138,7 +140,7 @@ export default function SharedTooltip(props: Props): ReactElement {
               ? getHorizontalPosition(
                   horizontalPosition,
                   width,
-                  horizontalShift
+                  horizontalShift,
                 )
               : ""}
           }

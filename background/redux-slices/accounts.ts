@@ -95,7 +95,7 @@ export type CombinedAccountData = {
 // Utility type, wrapped in CompleteAssetAmount<T>.
 type InternalCompleteAssetAmount<
   E extends AnyAsset = AnyAsset,
-  T extends AnyAssetAmount<E> = AnyAssetAmount<E>
+  T extends AnyAssetAmount<E> = AnyAssetAmount<E>,
 > = T & AssetMainCurrencyAmount & AssetDecimalAmount
 
 /**
@@ -119,19 +119,19 @@ export const initialState: AccountState = {
 function newAccountData(
   address: HexString,
   network: EVMNetwork,
-  accountsState: AccountState
+  accountsState: AccountState,
 ): AccountData {
   const existingAccountsCount = Object.keys(
-    accountsState.accountsData.evm[network.chainID]
+    accountsState.accountsData.evm[network.chainID],
   ).filter((key) => key !== address).length
 
   const sameAccountOnDifferentChain = Object.values(
-    accountsState.accountsData.evm
+    accountsState.accountsData.evm,
   )
     .flatMap((chain) => Object.values(chain))
     .find(
       (accountData): accountData is AccountData =>
-        accountData !== "loading" && accountData.address === address
+        accountData !== "loading" && accountData.address === address,
     )
   const defaultNameIndex =
     // Skip potentially-used names at the beginning of the array if relevant,
@@ -143,8 +143,8 @@ function newAccountData(
       BigInt(address) %
         BigInt(
           availableDefaultNames.length -
-            (existingAccountsCount % availableDefaultNames.length)
-        )
+            (existingAccountsCount % availableDefaultNames.length),
+        ),
     )
 
   let defaultAccountName = sameAccountOnDifferentChain?.defaultName
@@ -180,7 +180,7 @@ function updateCombinedData(immerState: AccountState) {
         ...evm,
         [key]: immerState.accountsData.evm[key],
       }),
-      {}
+      {},
     )
 
   const combinedAccountBalances = Object.values(filteredEvm)
@@ -188,7 +188,7 @@ function updateCombinedData(immerState: AccountState) {
     .flatMap((ad) =>
       ad === "loading"
         ? []
-        : Object.values(ad.balances).map((ab) => ab.assetAmount)
+        : Object.values(ad.balances).map((ab) => ab.assetAmount),
     )
 
   immerState.combinedData.assets = Object.values(
@@ -227,14 +227,14 @@ function updateCombinedData(immerState: AccountState) {
         }
 
         return acc
-      }, {})
+      }, {}),
   )
 }
 
 function getOrCreateAccountData(
   accountState: AccountState,
   account: HexString,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): AccountData {
   const accountData = accountState.accountsData.evm[network.chainID][account]
 
@@ -252,7 +252,7 @@ const accountSlice = createSlice({
   reducers: {
     loadAccount: (
       immerState,
-      { payload: { address, network } }: { payload: AddressOnNetwork }
+      { payload: { address, network } }: { payload: AddressOnNetwork },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
       if (
@@ -272,7 +272,7 @@ const accountSlice = createSlice({
     },
     deleteAccount: (
       immerState,
-      { payload: address }: { payload: HexString }
+      { payload: address }: { payload: HexString },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -283,8 +283,8 @@ const accountSlice = createSlice({
         !Object.keys(evm ?? {}).some((chainID) =>
           // has an address equal to the one we're trying to remove
           Object.keys(evm[chainID]).some(
-            (addressOnChain) => addressOnChain === normalizedAddress
-          )
+            (addressOnChain) => addressOnChain === normalizedAddress,
+          ),
         )
       ) {
         // If none of the chains we're tracking has a matching address - this is a noop.
@@ -309,7 +309,7 @@ const accountSlice = createSlice({
           balances: AccountBalance[]
           addressOnNetwork: AddressOnNetwork
         }
-      }
+      },
     ) => {
       balances.forEach((updatedAccountBalance) => {
         const {
@@ -355,7 +355,7 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: { address, network, name },
-      }: { payload: AddressOnNetwork & { name: DomainName } }
+      }: { payload: AddressOnNetwork & { name: DomainName } },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -375,7 +375,7 @@ const accountSlice = createSlice({
         // TODO across networks.
         immerState,
         normalizedAddress,
-        network
+        network,
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
@@ -387,7 +387,7 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: { address, network, avatar },
-      }: { payload: AddressOnNetwork & { avatar: URI } }
+      }: { payload: AddressOnNetwork & { avatar: URI } },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -407,7 +407,7 @@ const accountSlice = createSlice({
       const baseAccountData = getOrCreateAccountData(
         immerState,
         normalizedAddress,
-        network
+        network,
       )
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
@@ -420,7 +420,7 @@ const accountSlice = createSlice({
      */
     updateAssetReferences: (
       immerState,
-      { payload: asset }: { payload: SmartContractFungibleAsset }
+      { payload: asset }: { payload: SmartContractFungibleAsset },
     ) => {
       const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
       Object.keys(allAccounts).forEach((address) => {
@@ -431,7 +431,7 @@ const accountSlice = createSlice({
               isSmartContractFungibleAsset(assetAmount.asset) &&
               sameEVMAddress(
                 assetAmount.asset.contractAddress,
-                asset.contractAddress
+                asset.contractAddress,
               )
             ) {
               Object.assign(assetAmount.asset, asset)
@@ -444,7 +444,7 @@ const accountSlice = createSlice({
     },
     removeAssetReferences: (
       immerState,
-      { payload: asset }: { payload: SmartContractFungibleAsset }
+      { payload: asset }: { payload: SmartContractFungibleAsset },
     ) => {
       const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
       Object.keys(allAccounts).forEach((address) => {
@@ -462,7 +462,7 @@ const accountSlice = createSlice({
     },
     removeChainBalances: (
       immerState,
-      { payload: chainID }: { payload: string }
+      { payload: chainID }: { payload: string },
     ) => {
       delete immerState.accountsData.evm[chainID]
     },
@@ -489,7 +489,7 @@ export default accountSlice.reducer
 export const resolveNameOnNetwork = createBackgroundAsyncThunk(
   "account/resolveNameOnNetwork",
   async (nameOnNetwork: NameOnNetwork, { extra: { main } }) =>
-    main.resolveNameOnNetwork(nameOnNetwork)
+    main.resolveNameOnNetwork(nameOnNetwork),
 )
 
 /**
@@ -510,14 +510,14 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
 
     dispatch(loadAccount(normalizedAddressNetwork))
     await main.addAccount(normalizedAddressNetwork)
-  }
+  },
 )
 
 export const addOrEditAddressName = createBackgroundAsyncThunk(
   "account/addOrEditAddressName",
   async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) => {
     await main.addOrEditAddressName(payload)
-  }
+  },
 )
 
 export const removeAccount = createBackgroundAsyncThunk(
@@ -528,11 +528,11 @@ export const removeAccount = createBackgroundAsyncThunk(
       signer: AccountSigner
       lastAddressInAccount: boolean
     },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     const { addressOnNetwork, signer, lastAddressInAccount } = payload
     const normalizedAddress = normalizeEVMAddress(addressOnNetwork.address)
 
     await main.removeAccount(normalizedAddress, signer, lastAddressInAccount)
-  }
+  },
 )

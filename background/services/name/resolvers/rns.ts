@@ -30,7 +30,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
   const rnsRegistryContract = new Contract(
     RNS_REGISTRY_ADDRESS,
     RNS_REGISTRY_ABI,
-    rskNetworkProvider
+    rskNetworkProvider,
   )
 
   return {
@@ -60,7 +60,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       const addrResolverContract = new Contract(
         resolverAddress,
         RNS_ADDR_RESOLVER_ABI,
-        rskNetworkProvider
+        rskNetworkProvider,
       )
 
       const address = await addrResolverContract.addr(nameHash)
@@ -85,12 +85,11 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       network,
     }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
       const reverseRecordHash = utils.namehash(
-        `${stripHexPrefix(address)}.addr.reverse`
+        `${stripHexPrefix(address)}.addr.reverse`,
       )
 
-      const resolverAddress = await rnsRegistryContract.resolver(
-        reverseRecordHash
-      )
+      const resolverAddress =
+        await rnsRegistryContract.resolver(reverseRecordHash)
 
       if (resolverAddress === constants.AddressZero) {
         return undefined
@@ -99,7 +98,7 @@ export default function rnsResolver(): NameResolver<"RNS"> {
       const nameResolverContract = new Contract(
         resolverAddress,
         RNS_NAME_RESOLVER_ABI,
-        rskNetworkProvider
+        rskNetworkProvider,
       )
 
       const name = await nameResolverContract.name(reverseRecordHash)

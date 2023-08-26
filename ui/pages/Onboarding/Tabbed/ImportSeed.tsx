@@ -37,7 +37,7 @@ export default function ImportSeed(props: Props): ReactElement {
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [path, setPath] = useState<string>(
-    selectedNetwork.derivationPath ?? "m/44'/60'/0'/0"
+    selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
   )
   const [isImporting, setIsImporting] = useState(false)
 
@@ -73,7 +73,7 @@ export default function ImportSeed(props: Props): ReactElement {
           mnemonic: plainRecoveryPhrase,
           path,
           source: SignerImportSource.import,
-        })
+        }),
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
       if (success) {

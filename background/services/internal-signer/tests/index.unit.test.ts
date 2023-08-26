@@ -43,7 +43,7 @@ describe("InternalSignerService", () => {
   describe("generated HD wallet", () => {
     it("should generate new HD wallet", async () => {
       const keyring = await internalSignerService.generateNewKeyring(
-        SignerInternalTypes.mnemonicBIP39S256
+        SignerInternalTypes.mnemonicBIP39S256,
       )
 
       expect(keyring.id).toBeDefined()
@@ -60,8 +60,8 @@ describe("InternalSignerService", () => {
       expect(keyrings[0].id).toBe(keyring.id)
       expect(
         internalSignerService.getSignerSourceForAddress(
-          keyrings[0].addresses[0]
-        )
+          keyrings[0].addresses[0],
+        ),
       ).toBe("internal")
     })
   })
@@ -81,8 +81,8 @@ describe("InternalSignerService", () => {
     it("should classify HD wallet as imported", async () => {
       expect(
         internalSignerService.getSignerSourceForAddress(
-          HD_WALLET_MOCK.addresses[0]
-        )
+          HD_WALLET_MOCK.addresses[0],
+        ),
       ).toBe("import")
     })
     it("should be able to derive next address", async () => {
@@ -139,7 +139,7 @@ describe("InternalSignerService", () => {
       const address = HD_WALLET_MOCK.addresses[0]
       const signed = await internalSignerService.signTransaction(
         { address, network: ETHEREUM },
-        createTransactionRequest({ from: address })
+        createTransactionRequest({ from: address }),
       )
 
       expect(signed).toMatchObject({
@@ -184,7 +184,7 @@ describe("InternalSignerService", () => {
     })
     it("should classify pk wallet as imported", async () => {
       expect(
-        internalSignerService.getSignerSourceForAddress(PK_WALLET_MOCK.address)
+        internalSignerService.getSignerSourceForAddress(PK_WALLET_MOCK.address),
       ).toBe("import")
     })
     it("should be able to remove pk wallet and add it again", async () => {
@@ -201,7 +201,7 @@ describe("InternalSignerService", () => {
       const { address } = PK_WALLET_MOCK
       const signed = await internalSignerService.signTransaction(
         { address, network: ETHEREUM },
-        createTransactionRequest({ from: address })
+        createTransactionRequest({ from: address }),
       )
 
       expect(signed).toMatchObject({
@@ -247,21 +247,21 @@ describe("InternalSignerService", () => {
     })
     it("should be able to export private key", async () => {
       const privateKey = await internalSignerService.exportPrivateKey(
-        PK_WALLET_MOCK.address
+        PK_WALLET_MOCK.address,
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
     })
     it("should be able to export mnemonic", async () => {
       const mnemonic = await internalSignerService.exportMnemonic(
-        HD_WALLET_MOCK.addresses[0]
+        HD_WALLET_MOCK.addresses[0],
       )
 
       expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
     })
     it("should be able to export private key from HD wallet addresses", async () => {
       const privateKey = await internalSignerService.exportPrivateKey(
-        HD_WALLET_MOCK.addresses[0]
+        HD_WALLET_MOCK.addresses[0],
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same

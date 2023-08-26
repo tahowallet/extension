@@ -74,10 +74,10 @@ const SPOT_PRICE_ORACLE_CONSTANTS = {
 
 const PRICE_ORACLE_FUNCTIONS = {
   getRate: FunctionFragment.from(
-    "getRate(address srcToken, address dstToken, bool useWrappers) external view returns (uint256 weightedRate)"
+    "getRate(address srcToken, address dstToken, bool useWrappers) external view returns (uint256 weightedRate)",
   ),
   getRateToEth: FunctionFragment.from(
-    "getRateToEth(address srcToken, bool useSrcWrappers) external view returns (uint256 weightedRate)"
+    "getRateToEth(address srcToken, bool useSrcWrappers) external view returns (uint256 weightedRate)",
   ),
 }
 
@@ -87,7 +87,7 @@ const PRICE_ORACLE_INTERFACE = new ethers.utils.Interface(PRICE_ORACLE_ABI)
 
 export const toUSDPricePoint = (
   asset: AnyAsset,
-  coinPrice: number
+  coinPrice: number,
 ): PricePoint => {
   const assetPrecision = "decimals" in asset ? asset.decimals : 0
 
@@ -103,23 +103,23 @@ export const toUSDPricePoint = (
 
 const getRateForBaseAsset = async (
   network: EVMNetwork,
-  provider: SerialFallbackProvider
+  provider: SerialFallbackProvider,
 ): Promise<number> => {
   const offChainOracleContract = new ethers.Contract(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
     PRICE_ORACLE_ABI,
-    provider
+    provider,
   )
 
   return offChainOracleContract.callStatic.getRateToEth(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCAddress,
-    true
+    true,
   )
 }
 
 const getBaseAssetPriceFromRate = (rate: number, network: EVMNetwork) => {
   const numerator = ethers.BigNumber.from(10).pow(
-    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
+    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals,
   )
   const denominator = ethers.BigNumber.from(10).pow(network.baseAsset.decimals)
   const BaseAssetPerUSD = denominator
@@ -132,7 +132,7 @@ const getBaseAssetPriceFromRate = (rate: number, network: EVMNetwork) => {
 
 export async function getUSDPriceForBaseAsset(
   network: EVMNetwork,
-  provider: SerialFallbackProvider
+  provider: SerialFallbackProvider,
 ): Promise<PricePoint> {
   const rate = await getRateForBaseAsset(network, provider)
   const USDPriceOfBaseAsset = getBaseAssetPriceFromRate(rate, network)
@@ -142,7 +142,7 @@ export async function getUSDPriceForBaseAsset(
 const getRatesForTokens = async (
   assets: SmartContractFungibleAsset[],
   provider: SerialFallbackProvider,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): Promise<
   {
     asset: SmartContractFungibleAsset
@@ -159,7 +159,7 @@ const getRatesForTokens = async (
   const multicall = new ethers.Contract(
     MULTICALL_CONTRACT_ADDRESS,
     MULTICALL_ABI,
-    provider
+    provider,
   )
 
   const response = (await multicall.callStatic.tryBlockAndAggregate(
@@ -175,7 +175,7 @@ const getRatesForTokens = async (
         SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
         callData,
       ]
-    })
+    }),
   )) as AggregateContractResponse
 
   return response.returnData.map((data, i) => ({
@@ -187,10 +187,10 @@ const getRatesForTokens = async (
 const getTokenPriceFromRate = (
   rate: ethers.ethers.BigNumber,
   asset: SmartContractFungibleAsset,
-  network: EVMNetwork
+  network: EVMNetwork,
 ) => {
   const numerator = ethers.BigNumber.from(10).pow(
-    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals
+    SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].USDCDecimals,
   )
   // Tokens with no decimals will have a denominator of 0,
   // which will cause a divide by zero error, so we set it to 1
@@ -209,7 +209,7 @@ const getTokenPriceFromRate = (
 export async function getUSDPriceForTokens(
   assets: SmartContractFungibleAsset[],
   network: EVMNetwork,
-  provider: SerialFallbackProvider
+  provider: SerialFallbackProvider,
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
@@ -242,7 +242,7 @@ export async function getUSDPriceForTokens(
     const USDPriceOfToken = getTokenPriceFromRate(
       ethers.BigNumber.from(response.returnData),
       asset,
-      network
+      network,
     )
 
     pricePoints[asset.contractAddress] = {

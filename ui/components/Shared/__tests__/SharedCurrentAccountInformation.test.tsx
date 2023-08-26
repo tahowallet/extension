@@ -16,7 +16,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
-      />
+      />,
     )
 
     expect(ui.getByText(name)).toBeInTheDocument()
@@ -28,7 +28,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={undefined}
         shortenedAddress={shortenedAddress}
         avatarURL={undefined}
-      />
+      />,
     )
 
     expect(ui.getByText(shortenedAddress)).toBeInTheDocument()
@@ -41,7 +41,7 @@ describe("SharedCurrentAccountInformation", () => {
         shortenedAddress=""
         avatarURL={undefined}
         showLockStatus={false}
-      />
+      />,
     )
 
     const keyringElement = ui.queryByTestId(keyringId)
@@ -55,12 +55,12 @@ describe("SharedCurrentAccountInformation", () => {
         shortenedAddress=""
         avatarURL={undefined}
         showLockStatus
-      />
+      />,
     )
     const keyringElement = ui.getByTestId(keyringId)
     expect(keyringElement).toBeInTheDocument()
     expect(keyringElement.firstChild).toHaveStyle(
-      `mask-image: url("./images/icons/s/${lock}-bold.svg")`
+      `mask-image: url("./images/icons/s/${lock}-bold.svg")`,
     )
   })
 
@@ -79,12 +79,12 @@ describe("SharedCurrentAccountInformation", () => {
             status: "unlocked",
           },
         },
-      }
+      },
     )
     const keyringElement = ui.getByTestId(keyringId)
     expect(keyringElement).toBeInTheDocument()
     expect(keyringElement.firstChild).toHaveStyle(
-      `mask-image: url("./images/icons/s/${unlock}-bold.svg")`
+      `mask-image: url("./images/icons/s/${unlock}-bold.svg")`,
     )
   })
 })

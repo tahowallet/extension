@@ -278,5 +278,5 @@ export const CLAIM_WITH_FRIENDS_ABI = [
 
 export const ClaimWithFriends = new ethers.Contract(
   VOTE_WITH_FRIENDS_ADDRESS, // "** address from calling DoggoDeployer.VOTE_WITH_FRIENDS(), this should probably be a function **",
-  CLAIM_WITH_FRIENDS_ABI
+  CLAIM_WITH_FRIENDS_ABI,
 )

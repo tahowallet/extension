@@ -68,7 +68,7 @@ const FilterList = React.forwardRef<HTMLDivElement, FilterListProps>(
         `}</style>
       </div>
     )
-  }
+  },
 )
 
 export default FilterList

@@ -10,7 +10,7 @@ type Props = {
   value?: string
   label: string
   onAddressChange: (
-    value: { address: HexString; name?: string } | undefined
+    value: { address: HexString; name?: string } | undefined,
   ) => void
   onFocus?: () => void
   id?: string
@@ -31,7 +31,7 @@ export default function SharedAddressInput({
   const debouncedValue = useDelayContentChange(
     inputValue,
     !!inputValue.length,
-    500
+    500,
   )
 
   const { errorMessage, handleInputChange, isValidating } =
@@ -39,7 +39,7 @@ export default function SharedAddressInput({
 
   useEffect(
     () => handleInputChange(debouncedValue),
-    [debouncedValue, handleInputChange]
+    [debouncedValue, handleInputChange],
   )
 
   return (

@@ -12,7 +12,7 @@ type NewState = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const { networks, ...newState } = prevState as OldState
 

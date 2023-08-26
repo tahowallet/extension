@@ -77,7 +77,7 @@ export const signTypedData = createBackgroundAsyncThunk(
       account,
       accountSigner,
     })
-  }
+  },
 )
 
 export const signData = createBackgroundAsyncThunk(
@@ -88,7 +88,7 @@ export const signData = createBackgroundAsyncThunk(
       ...request,
       accountSigner,
     })
-  }
+  },
 )
 
 const signingSlice = createSlice({
@@ -102,14 +102,14 @@ const signingSlice = createSlice({
     }),
     typedDataRequest: (
       state,
-      { payload }: { payload: EnrichedSignTypedDataRequest }
+      { payload }: { payload: EnrichedSignTypedDataRequest },
     ) => ({
       ...state,
       typedDataRequest: payload,
     }),
     signDataRequest: (
       state,
-      { payload }: { payload: MessageSigningRequest }
+      { payload }: { payload: MessageSigningRequest },
     ) => ({
       ...state,
       signDataRequest: payload,
@@ -127,7 +127,7 @@ const signingSlice = createSlice({
     }),
     updateAdditionalSigningStatus: (
       state,
-      { payload }: { payload: "editing" | undefined }
+      { payload }: { payload: "editing" | undefined },
     ) => ({
       ...state,
       additionalSigningStatus: payload,
@@ -148,17 +148,17 @@ export default signingSlice.reducer
 
 export const selectTypedData = createSelector(
   (state: { signing: SigningState }) => state.signing.typedDataRequest,
-  (signTypes) => signTypes
+  (signTypes) => signTypes,
 )
 
 export const selectSigningData = createSelector(
   (state: { signing: SigningState }) => state.signing.signDataRequest,
-  (signTypes) => signTypes
+  (signTypes) => signTypes,
 )
 
 export const selectAdditionalSigningStatus = createSelector(
   (state: { signing: SigningState }) => state.signing.additionalSigningStatus,
-  (additionalSigningStatus) => additionalSigningStatus
+  (additionalSigningStatus) => additionalSigningStatus,
 )
 
 export const rejectDataSignature = createBackgroundAsyncThunk(
@@ -167,5 +167,5 @@ export const rejectDataSignature = createBackgroundAsyncThunk(
     await signingSliceEmitter.emit("signatureRejected")
     // Provide a clean slate for future transactions.
     dispatch(signingSlice.actions.clearSigningState())
-  }
+  },
 )

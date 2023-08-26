@@ -23,7 +23,7 @@ type BackgroundAsyncThunkDispatch<S, E, A extends Action> = {
   // script, thus only going through a simple browser port that is expected to
   // be reliable except in particularly unusual circumstances..
   <TypePrefix extends string, Returned>(
-    asyncAction: BackgroundAsyncThunkAction<TypePrefix, Returned>
+    asyncAction: BackgroundAsyncThunkAction<TypePrefix, Returned>,
   ): Promise<Returned>
   <T extends A>(action: T): Promise<T>
   <R>(asyncAction: ThunkAction<R, S, E, A>): R
@@ -70,7 +70,7 @@ export async function newProxyStore(): Promise<
       }
 
       const result = produce(oldObj, (draft) =>
-        patchDeepDiff(draft, patchesWrapper[0])
+        patchDeepDiff(draft, patchesWrapper[0]),
       )
 
       return result

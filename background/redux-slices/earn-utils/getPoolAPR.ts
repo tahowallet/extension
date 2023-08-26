@@ -16,7 +16,7 @@ async function getYearnVaultAPY(yearnVaultAddress: HexString) {
   ).json()
   const yearnVaultAPY =
     yearnVaultsAPIData.find((yearnVault: { address: HexString }) =>
-      sameEVMAddress(yearnVault.address, yearnVaultAddress)
+      sameEVMAddress(yearnVault.address, yearnVaultAddress),
     )?.apy?.net_apy ?? 0
   const yearnVaultAPYPercent = yearnVaultAPY * 100
   return yearnVaultAPYPercent
@@ -25,7 +25,7 @@ async function getYearnVaultAPY(yearnVaultAddress: HexString) {
 function getYearlyRewardsValue(
   rewardTokenPrice: bigint,
   huntingGroundRemainingRewards: BigNumber,
-  periodsPerYear: BigNumber
+  periodsPerYear: BigNumber,
 ) {
   const rewardsRemainingValue = huntingGroundRemainingRewards
     .div(BigNumber.from("10").pow(DOGGO.decimals))
@@ -127,7 +127,7 @@ const getPoolAPR = async ({
     const yearlyRewardsValue = getYearlyRewardsValue(
       estimate,
       huntingGroundRemainingRewards,
-      periodsPerYear
+      periodsPerYear,
     )
     const rewardRatio = yearlyRewardsValue.div(tokensStakedValue)
     // Multiply that ratio by 100 to receive percentage

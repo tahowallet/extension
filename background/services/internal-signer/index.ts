@@ -131,12 +131,12 @@ interface Events extends ServiceLifecycleEvents {
 }
 
 const isPrivateKey = (
-  signer: InternalSignerWithType
+  signer: InternalSignerWithType,
 ): signer is InternalSignerPrivateKey =>
   signer.type === SignerSourceTypes.privateKey
 
 const isKeyring = (
-  signer: InternalSignerWithType
+  signer: InternalSignerWithType,
 ): signer is InternalSignerHDKeyring =>
   signer.type === SignerSourceTypes.keyring
 
@@ -189,7 +189,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
   private constructor(
     private preferenceService: PreferenceService,
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
   ) {
     super({
       autolock: {
@@ -268,7 +268,7 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   async unlock(
     password: string,
-    ignoreExistingVaults = false
+    ignoreExistingVaults = false,
   ): Promise<boolean> {
     if (!this.locked()) {
       logger.warn("InternalSignerService is already unlocked!")
@@ -289,7 +289,7 @@ export default class InternalSignerService extends BaseService<Events> {
     } else if (migrationResults.errorMessage !== undefined) {
       this.analyticsService.sendAnalyticsEvent(
         AnalyticsEvent.VAULT_MIGRATION_FAILED,
-        { error: migrationResults.errorMessage }
+        { error: migrationResults.errorMessage },
       )
     }
 
@@ -300,7 +300,7 @@ export default class InternalSignerService extends BaseService<Events> {
         const saltedKey = await deriveSymmetricKeyFromPassword(
           version,
           password,
-          currentEncryptedVault.salt
+          currentEncryptedVault.salt,
         )
         let plainTextVault: SerializedKeyringData
         try {
@@ -323,7 +323,7 @@ export default class InternalSignerService extends BaseService<Events> {
         })
 
         plainTextVault.privateKeys?.forEach((pk) =>
-          this.#privateKeys.push(new Wallet(pk.privateKey))
+          this.#privateKeys.push(new Wallet(pk.privateKey)),
         )
 
         this.#signerMetadata = {
@@ -424,13 +424,13 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   async generateNewKeyring(
     type: SignerInternalTypes,
-    path?: string
+    path?: string,
   ): Promise<{ id: string; mnemonic: string[] }> {
     this.requireUnlocked()
 
     if (type !== SignerInternalTypes.mnemonicBIP39S256) {
       throw new Error(
-        "InternalSignerService only supports generating 256-bit HD key trees"
+        "InternalSignerService only supports generating 256-bit HD key trees",
       )
     }
 
@@ -454,7 +454,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @returns null | string - if new account was added or existing account was found then returns an address
    */
   async importSigner(
-    signerMetadata: SignerImportMetadata
+    signerMetadata: SignerImportMetadata,
   ): Promise<HexString | null> {
     this.requireUnlocked()
     try {
@@ -492,7 +492,7 @@ export default class InternalSignerService extends BaseService<Events> {
   #importKeyring(
     mnemonic: string,
     source: SignerImportSource,
-    path?: string
+    path?: string,
   ): string {
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
@@ -633,7 +633,7 @@ export default class InternalSignerService extends BaseService<Events> {
     // If There are any hidden addresses, show those first before adding new ones.
     const newAddress =
       keyringAddresses.find(
-        (address) => this.#hiddenAccounts[address] === true
+        (address) => this.#hiddenAccounts[address] === true,
       ) ?? keyring.addAddressesSync(1)[0]
 
     this.#hiddenAccounts[newAddress] = false
@@ -672,7 +672,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
       if (
         keyringAddresses.every(
-          (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true
+          (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true,
         )
       ) {
         keyringAddresses.forEach((keyringAddress) => {
@@ -692,12 +692,12 @@ export default class InternalSignerService extends BaseService<Events> {
 
   #removeKeyring(keyringId: string): HDKeyring[] {
     const filteredKeyrings = this.#keyrings.filter(
-      (keyring) => keyring.id !== keyringId
+      (keyring) => keyring.id !== keyringId,
     )
 
     if (filteredKeyrings.length === this.#keyrings.length) {
       throw new Error(
-        `Attempting to remove keyring that does not exist. id: (${keyringId})`
+        `Attempting to remove keyring that does not exist. id: (${keyringId})`,
       )
     }
     this.#keyrings = filteredKeyrings
@@ -708,12 +708,12 @@ export default class InternalSignerService extends BaseService<Events> {
 
   #removePrivateKey(address: HexString): Wallet[] {
     const filteredPrivateKeys = this.#privateKeys.filter(
-      (wallet) => !sameEVMAddress(wallet.address, address)
+      (wallet) => !sameEVMAddress(wallet.address, address),
     )
 
     if (filteredPrivateKeys.length === this.#privateKeys.length) {
       throw new Error(
-        `Attempting to remove wallet that does not exist. Address: (${address})`
+        `Attempting to remove wallet that does not exist. Address: (${address})`,
       )
     }
 
@@ -746,7 +746,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
     return signerWithType.signer.exportPrivateKey(
       address,
-      "I solemnly swear that I am treating this private key material with great care."
+      "I solemnly swear that I am treating this private key material with great care.",
     )
   }
 
@@ -778,7 +778,7 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   #findKeyring(account: HexString): HDKeyring | null {
     const keyring = this.#keyrings.find((kr) =>
-      kr.getAddressesSync().includes(normalizeEVMAddress(account))
+      kr.getAddressesSync().includes(normalizeEVMAddress(account)),
     )
 
     return keyring ?? null
@@ -792,7 +792,7 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   #findPrivateKey(account: HexString): Wallet | null {
     const privateKey = this.#privateKeys.find((item) =>
-      sameEVMAddress(item.address, account)
+      sameEVMAddress(item.address, account),
     )
 
     return privateKey ?? null
@@ -831,7 +831,7 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   async signTransaction(
     addressOnNetwork: AddressOnNetwork,
-    txRequest: TransactionRequestWithNonce
+    txRequest: TransactionRequestWithNonce,
   ): Promise<SignedTransaction> {
     this.requireUnlocked()
 
@@ -842,7 +842,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
     if (!signerWithType) {
       throw new Error(
-        `Signing transaction failed. Signer for address ${account} was not found.`
+        `Signing transaction failed. Signer for address ${account} was not found.`,
       )
     }
 
@@ -857,7 +857,7 @@ export default class InternalSignerService extends BaseService<Events> {
     } else {
       signedRawTx = await signerWithType.signer.signTransaction(
         account,
-        ethersTxRequest
+        ethersTxRequest,
       )
     }
 
@@ -958,7 +958,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
     if (!signerWithType) {
       throw new Error(
-        `Signing data failed. Signer for address ${account} was not found.`
+        `Signing data failed. Signer for address ${account} was not found.`,
       )
     }
 
@@ -971,14 +971,14 @@ export default class InternalSignerService extends BaseService<Events> {
         signature = await signerWithType.signer._signTypedData(
           domain,
           typesForSigning,
-          message
+          message,
         )
       } else {
         signature = await signerWithType.signer.signTypedData(
           account,
           domain,
           typesForSigning,
-          message
+          message,
         )
       }
 
@@ -1007,7 +1007,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
     if (!signerWithType) {
       throw new Error(
-        `Personal sign failed. Signer for address ${account} was not found.`
+        `Personal sign failed. Signer for address ${account} was not found.`,
       )
     }
 
@@ -1019,7 +1019,7 @@ export default class InternalSignerService extends BaseService<Events> {
       } else {
         signature = await signerWithType.signer.signMessageBytes(
           account,
-          messageBytes
+          messageBytes,
         )
       }
 
@@ -1057,7 +1057,7 @@ export default class InternalSignerService extends BaseService<Events> {
     // prove it to TypeScript.
     if (this.#cachedKey !== null) {
       const serializedKeyrings: SerializedHDKeyring[] = this.#keyrings.map(
-        (kr) => kr.serializeSync()
+        (kr) => kr.serializeSync(),
       )
       const serializedPrivateKeys: SerializedPrivateKey[] =
         this.#privateKeys.map((wallet) => ({

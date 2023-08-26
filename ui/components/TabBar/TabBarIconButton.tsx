@@ -10,7 +10,7 @@ type TabBarIconButtonProps = {
 }
 
 export default function TabBarIconButton(
-  props: TabBarIconButtonProps
+  props: TabBarIconButtonProps,
 ): ReactElement {
   const { icon, title, isActive, showNotifications = false, onClick } = props
 
@@ -56,7 +56,9 @@ export default function TabBarIconButton(
             font-size: 12px;
             font-weight: 600;
             text-transform: capitalize;
-            transition: opacity 0.3s ease, color 0.1s ease;
+            transition:
+              opacity 0.3s ease,
+              color 0.1s ease;
           }
           .active .icon {
             background-color: var(--trophy-gold);

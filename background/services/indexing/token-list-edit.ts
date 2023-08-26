@@ -12,7 +12,7 @@ export function fixPolygonWETHIssue(tokensParam: TokenInfo[]): TokenInfo[] {
   const wethToWethPOSAddress = "0xae740d42e4ff0c5086b2b5b5d149eb2f9e1a754f"
 
   let tokenToRenameIndex = tokens.findIndex(
-    (token) => token.address === wethToWethPOSAddress
+    (token) => token.address === wethToWethPOSAddress,
   )
 
   if (tokenToRenameIndex !== -1) {
@@ -26,7 +26,7 @@ export function fixPolygonWETHIssue(tokensParam: TokenInfo[]): TokenInfo[] {
   const ethPOSToWethAddress = "0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"
 
   tokenToRenameIndex = tokens.findIndex(
-    (token) => token.address === ethPOSToWethAddress
+    (token) => token.address === ethPOSToWethAddress,
   )
 
   if (tokenToRenameIndex !== -1) {

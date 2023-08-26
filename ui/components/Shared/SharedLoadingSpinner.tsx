@@ -8,7 +8,7 @@ type SharedLoadingSpinnerProps = {
 }
 
 function getVariantStyles(
-  variant: Exclude<SharedLoadingSpinnerProps["variant"], undefined>
+  variant: Exclude<SharedLoadingSpinnerProps["variant"], undefined>,
 ) {
   let styles: [string, string]
   switch (variant) {
@@ -33,7 +33,7 @@ function getVariantStyles(
 }
 
 export default function SharedLoadingSpinner(
-  props: SharedLoadingSpinnerProps
+  props: SharedLoadingSpinnerProps,
 ): ReactElement {
   const { size, variant = "dark-green" } = props
 

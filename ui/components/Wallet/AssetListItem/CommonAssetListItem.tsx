@@ -27,14 +27,14 @@ type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
   onUnverifiedAssetWarningClick?: (
-    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
+    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"],
   ) => void
 }
 
 const MAX_SYMBOL_LENGTH = 10
 
 export default function CommonAssetListItem(
-  props: CommonAssetListItemProps
+  props: CommonAssetListItemProps,
 ): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",

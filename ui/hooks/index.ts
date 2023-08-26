@@ -79,7 +79,7 @@ export function useSwitchablePanels(panels: PanelDescriptor[]): JSX.Element {
       panelNumber,
       panelNames: panels.map(({ name }) => name),
     }),
-    panels[panelNumber].panelElement()
+    panels[panelNumber].panelElement(),
   )
 }
 

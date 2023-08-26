@@ -11,7 +11,7 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
     ([address, { ensName, totals, shortenedAddress }]) => {
       const total = Object.values(totals).reduce(
         (sum, current) => sum + current,
-        0
+        0,
       )
 
       totalsSum += total
@@ -22,13 +22,13 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
         total,
         percent: 0,
       }
-    }
+    },
   )
 
   list.forEach((accountTotal) => {
     // eslint-disable-next-line no-param-reassign
     accountTotal.percent = Math.round(
-      totalsSum ? (accountTotal.total / totalsSum) * 100 : 0
+      totalsSum ? (accountTotal.total / totalsSum) * 100 : 0,
     )
   })
 
@@ -93,7 +93,7 @@ export default function AccountList({
                 total={total}
                 percent={percent}
               />
-            )
+            ),
           )}
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
 
 function formatJsonRpcResult<T = unknown>(
   id: number,
-  result: T
+  result: T,
 ): JsonRpcResult<T> {
   return {
     id,
@@ -24,7 +24,7 @@ function formatJsonRpcResult<T = unknown>(
 
 function formatJsonRpcError(
   id: number,
-  error?: string | ErrorResponse
+  error?: string | ErrorResponse,
 ): JsonRpcError {
   return {
     id,
@@ -35,7 +35,7 @@ function formatJsonRpcError(
 
 export function approveEIP155Request(
   request: TranslatedRequestParams,
-  signedMessage: string
+  signedMessage: string,
 ): JsonRpcResult<unknown> {
   const { id, method } = request
 
@@ -52,7 +52,7 @@ export function approveEIP155Request(
 }
 
 export function rejectEIP155Request(
-  request: TranslatedRequestParams
+  request: TranslatedRequestParams,
 ): JsonRpcError {
   const { id } = request
 
@@ -60,7 +60,7 @@ export function rejectEIP155Request(
 }
 
 export function processRequestParams(
-  event: SignClientTypes.EventArguments["session_request"]
+  event: SignClientTypes.EventArguments["session_request"],
 ): TranslatedRequestParams {
   // TODO: figure out if this method is needed
   const { id, params: eventParams, topic } = event

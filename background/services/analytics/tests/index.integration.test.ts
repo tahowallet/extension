@@ -64,11 +64,11 @@ describe("AnalyticsService", () => {
       expect(analyticsService.emitter.emit).toBeCalledTimes(2)
       expect(analyticsService.emitter.emit).toHaveBeenCalledWith(
         "enableDefaultOn",
-        undefined
+        undefined,
       )
       expect(analyticsService.emitter.emit).toHaveBeenCalledWith(
         "serviceStarted",
-        undefined
+        undefined,
       )
 
       expect(preferenceService.emitter.emit).toBeCalledTimes(1)
@@ -77,7 +77,7 @@ describe("AnalyticsService", () => {
         {
           isEnabled: true,
           hasDefaultOnBeenTurnedOn: true,
-        }
+        },
       )
       expect(preferenceService.updateAnalyticsPreferences).toBeCalledTimes(1)
     })
@@ -98,7 +98,7 @@ describe("AnalyticsService", () => {
       expect(posthog.sendPosthogEvent).toHaveBeenCalledWith(
         expect.anything(),
         "New install",
-        undefined
+        undefined,
       )
     })
   })
@@ -112,7 +112,7 @@ describe("AnalyticsService", () => {
           Promise.resolve({
             isEnabled: true,
             hasDefaultOnBeenTurnedOn: true,
-          })
+          }),
         )
 
       // Initialize analytics uuid
@@ -123,17 +123,17 @@ describe("AnalyticsService", () => {
     it("should not run the initialization flow", async () => {
       // uuid should be already present
       expect(await analyticsService["getOrCreateAnalyticsUUID"]()).toEqual(
-        expect.objectContaining({ isNew: false })
+        expect.objectContaining({ isNew: false }),
       )
 
       expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalledWith(
         expect.anything(),
         AnalyticsEvent.NEW_INSTALL,
-        undefined
+        undefined,
       )
 
       expect(
-        preferenceService.updateAnalyticsPreferences
+        preferenceService.updateAnalyticsPreferences,
       ).not.toHaveBeenCalled()
     })
 
@@ -151,7 +151,7 @@ describe("AnalyticsService", () => {
           Promise.resolve({
             isEnabled: false,
             hasDefaultOnBeenTurnedOn: true,
-          })
+          }),
         )
 
       // Initialize analytics uuid

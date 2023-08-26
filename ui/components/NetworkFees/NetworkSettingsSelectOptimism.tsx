@@ -20,7 +20,7 @@ export default function NetworkSettingsOptimism(): ReactElement {
     NETWORK_BY_CHAIN_ID[transactionData?.network.chainID ?? 1]
   if (chainID !== OPTIMISM.chainID && chainID !== ARBITRUM_ONE.chainID) {
     throw new Error(
-      "NetworkSettingsSelect mismatch - expected an Optimism or Arbitrum transaction"
+      "NetworkSettingsSelect mismatch - expected an Optimism or Arbitrum transaction",
     )
   }
 
@@ -69,7 +69,7 @@ export default function NetworkSettingsOptimism(): ReactElement {
               name === "Optimism"
                 ? "https://help.optimism.io/hc/en-us/articles/4411895794715-Transaction-fees"
                 : "https://developer.arbitrum.io/arbos/gas",
-              "_blank"
+              "_blank",
             )
             ?.focus()
         }}

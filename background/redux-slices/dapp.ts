@@ -49,7 +49,7 @@ export const grantPermission = createBackgroundAsyncThunk(
       ...permission,
     })
     return permission
-  }
+  },
 )
 
 // Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
@@ -58,7 +58,7 @@ export const denyOrRevokePermission = createBackgroundAsyncThunk(
   async (permission: PermissionRequest) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
-  }
+  },
 )
 
 const dappSlice = createSlice({
@@ -79,13 +79,13 @@ const dappSlice = createSlice({
             }
           }
         }
-      }
+      },
     ) => {
       immerState.allowed = allowed
     },
     requestPermission: (
       state,
-      { payload: request }: { payload: PermissionRequest }
+      { payload: request }: { payload: PermissionRequest },
     ) => {
       if (state.permissionRequests[request.origin]?.state !== "allow") {
         return {
@@ -103,7 +103,7 @@ const dappSlice = createSlice({
     },
     revokePermissionsForAddress: (
       immerState,
-      { payload: address }: { payload: string }
+      { payload: address }: { payload: string },
     ) => {
       Object.keys(immerState.allowed.evm).forEach((chainID) => {
         if (immerState.allowed.evm[chainID]?.[address]) {
@@ -121,7 +121,7 @@ const dappSlice = createSlice({
         grantPermission.fulfilled,
         (
           immerState,
-          { payload: permission }: { payload: PermissionRequest }
+          { payload: permission }: { payload: PermissionRequest },
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
@@ -143,17 +143,17 @@ const dappSlice = createSlice({
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
             permissions,
-            immerState.allowed
+            immerState.allowed,
           )
 
           immerState.allowed = allowedPermission
-        }
+        },
       )
       .addCase(
         denyOrRevokePermission.fulfilled,
         (
           immerState,
-          { payload: permission }: { payload: PermissionRequest }
+          { payload: permission }: { payload: PermissionRequest },
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
@@ -166,7 +166,7 @@ const dappSlice = createSlice({
                 withoutOriginToRemove
             }
           })
-        }
+        },
       )
   },
 })

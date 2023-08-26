@@ -121,7 +121,7 @@ export function resolveSignatureDetails<T extends SignOperationType>({
 }
 
 export function useResolvedSignatureDetails<T extends SignOperationType>(
-  signOperation: SignOperation<T> | undefined
+  signOperation: SignOperation<T> | undefined,
 ): ResolvedSignatureDetails | undefined {
   return signOperation === undefined
     ? undefined

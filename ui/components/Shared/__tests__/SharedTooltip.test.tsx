@@ -11,7 +11,7 @@ describe("SharedTooltip", () => {
     const ui = render(
       <SharedTooltip width={100}>
         <p>{text}</p>
-      </SharedTooltip>
+      </SharedTooltip>,
     )
     const tooltipElement = ui.getByTestId(id)
 

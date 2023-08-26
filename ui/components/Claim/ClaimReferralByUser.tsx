@@ -19,10 +19,10 @@ export default function ClaimReferralByUser({
   const amountWithBonus = formatCurrencyAmount(
     mainCurrency,
     claimAmount * 0.05,
-    2
+    2,
   )
   const referrer: Referrer | null = useBackgroundSelector(
-    (state) => state.claim.referrer
+    (state) => state.claim.referrer,
   )
   const discardReferrer = () => dispatch(resetReferrer())
 

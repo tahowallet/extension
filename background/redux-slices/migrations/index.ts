@@ -90,7 +90,7 @@ const allMigrations: { [targetVersion: string]: Migration } = {
  */
 export function migrateReduxState(
   previousState: Record<string, unknown>,
-  previousVersion?: number
+  previousVersion?: number,
 ): Record<string, unknown> {
   const resolvedVersion = previousVersion ?? 1
   let migratedState: Record<string, unknown> = previousState
@@ -103,7 +103,7 @@ export function migrateReduxState(
     migratedState = outstandingMigrations.reduce(
       (state: Record<string, unknown>, migration: Migration) =>
         migration(state),
-      migratedState
+      migratedState,
     )
   }
 

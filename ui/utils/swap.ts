@@ -62,7 +62,7 @@ export const fetchQuote = async ({
   }
   network: EVMNetwork
   getQuoteFn: (
-    quoteRequest: SwapQuoteRequest
+    quoteRequest: SwapQuoteRequest,
   ) => Promise<AsyncThunkFulfillmentType<typeof fetchSwapPrice>>
 }): Promise<QuoteUpdate> => {
   const quoteRequest: SwapQuoteRequest = {
@@ -151,7 +151,7 @@ export function useSwapQuote(useSwapConfig: {
 } {
   const dispatch = useBackgroundDispatch()
   const [initialTransactionSettings] = useState(
-    useSwapConfig.initialSwapSettings
+    useSwapConfig.initialSwapSettings,
   )
 
   // Quoted amounts
@@ -231,7 +231,7 @@ export function useSwapQuote(useSwapConfig: {
         })
       }
     },
-    [dispatch, requestContextRef, mountedRef, setQuoteRequestState]
+    [dispatch, requestContextRef, mountedRef, setQuoteRequestState],
   )
 
   const [debouncedRequest] = useState(() => {
@@ -241,7 +241,7 @@ export function useSwapQuote(useSwapConfig: {
       {
         leading: false,
         trailing: true,
-      }
+      },
     )
 
     return debouncedFn
@@ -261,7 +261,7 @@ export function useSwapQuote(useSwapConfig: {
 
 export function getOwnedSellAssetAmounts(
   assetAmounts: CompleteAssetAmount[] | undefined,
-  currentNetwork: EVMNetwork
+  currentNetwork: EVMNetwork,
 ): CompleteAssetAmount<SwappableAsset>[] {
   return (
     assetAmounts?.filter(
@@ -269,7 +269,7 @@ export function getOwnedSellAssetAmounts(
         (isSmartContractFungibleAsset(assetAmount.asset) ||
           assetAmount.asset.symbol === currentNetwork.baseAsset.symbol) &&
         assetAmount.decimalAmount > 0 &&
-        isTrustedAsset(assetAmount.asset)
+        isTrustedAsset(assetAmount.asset),
     ) ?? []
   )
 }
@@ -277,12 +277,12 @@ export function getOwnedSellAssetAmounts(
 export function getSellAssetAmounts(
   ownedSellAssetAmounts: CompleteAssetAmount<SwappableAsset>[],
   sellAsset?: SwappableAsset,
-  buyAsset?: SwappableAsset
+  buyAsset?: SwappableAsset,
 ): CompleteAssetAmount<SwappableAsset>[] {
   return (
     ownedSellAssetAmounts.some(
       ({ asset }) =>
-        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset)
+        typeof sellAsset !== "undefined" && isSameAsset(asset, sellAsset),
     )
       ? ownedSellAssetAmounts
       : ownedSellAssetAmounts.concat(
@@ -295,9 +295,9 @@ export function getSellAssetAmounts(
                   decimalAmount: 0,
                   localizedDecimalAmount: "0",
                 },
-              ]
+              ],
         )
   ).filter(
-    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol
+    (sellAssetAmount) => sellAssetAmount.asset.symbol !== buyAsset?.symbol,
   )
 }

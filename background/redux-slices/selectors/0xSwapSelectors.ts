@@ -7,12 +7,12 @@ import { RootState } from ".."
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
-  (latestQuoteRequest) => latestQuoteRequest
+  (latestQuoteRequest) => latestQuoteRequest,
 )
 
 export const selectInProgressApprovalContract = createSelector(
   (state: RootState) => state.swap.inProgressApprovalContract,
-  (approvalInProgress) => approvalInProgress
+  (approvalInProgress) => approvalInProgress,
 )
 
 export const selectSwapBuyAssets = createSelector(
@@ -27,5 +27,5 @@ export const selectSwapBuyAssets = createSelector(
           sameNetwork(asset.homeNetwork, currentNetwork))
 
       return isTrustedAsset(asset) && assetIsOnCurrentNetwork
-    })
+    }),
 )

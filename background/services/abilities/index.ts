@@ -15,7 +15,7 @@ import LedgerService from "../ledger"
 import { HOUR } from "../../constants"
 
 const normalizeDaylightRequirements = (
-  requirement: DaylightAbilityRequirement
+  requirement: DaylightAbilityRequirement,
 ): AbilityRequirement => {
   if (requirement.type === "hasTokenBalance") {
     return {
@@ -44,7 +44,7 @@ const normalizeDaylightRequirements = (
 
 export const normalizeDaylightAbilities = (
   daylightAbilities: DaylightAbility[],
-  address: NormalizedEVMAddress
+  address: NormalizedEVMAddress,
 ): Ability[] => {
   const normalizedAbilities: Ability[] = []
 
@@ -64,7 +64,7 @@ export const normalizeDaylightAbilities = (
       address,
       requirement: normalizeDaylightRequirements(
         // Just take the 1st requirement for now
-        daylightAbility.requirements[0]
+        daylightAbility.requirements[0],
       ),
       interestRank: idx,
     })
@@ -85,7 +85,7 @@ export default class AbilitiesService extends BaseService<Events> {
   constructor(
     private db: AbilitiesDatabase,
     private chainService: ChainService,
-    private ledgerService: LedgerService
+    private ledgerService: LedgerService,
   ) {
     super()
   }
@@ -121,7 +121,7 @@ export default class AbilitiesService extends BaseService<Events> {
   private async syncAbilities(latestAbilities: Ability[]): Promise<Ability[]> {
     const cachedAbilities = await this.db.getAbilities()
     const cachedAbilitiesById = Object.fromEntries(
-      cachedAbilities.map((ability) => [ability.abilityId, ability])
+      cachedAbilities.map((ability) => [ability.abilityId, ability]),
     )
 
     const syncedAbilities = latestAbilities.map((latestAbility) => {
@@ -153,7 +153,7 @@ export default class AbilitiesService extends BaseService<Events> {
     const latestDaylightAbilities = await getDaylightAbilities(address)
     const latestAbilities = normalizeDaylightAbilities(
       latestDaylightAbilities,
-      address
+      address,
     )
 
     const updatedAbilities = await this.syncAbilities(latestAbilities)
@@ -166,7 +166,7 @@ export default class AbilitiesService extends BaseService<Events> {
 
   async markAbilityAsCompleted(
     address: NormalizedEVMAddress,
-    abilityId: string
+    abilityId: string,
   ): Promise<void> {
     const ability = await this.db.markAsCompleted(address, abilityId)
 
@@ -177,7 +177,7 @@ export default class AbilitiesService extends BaseService<Events> {
 
   async markAbilityAsRemoved(
     address: NormalizedEVMAddress,
-    abilityId: string
+    abilityId: string,
   ): Promise<void> {
     const ability = await this.db.markAsRemoved(address, abilityId)
 
@@ -190,7 +190,7 @@ export default class AbilitiesService extends BaseService<Events> {
     localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(
-      accountsToTrack.map((account) => normalizeEVMAddress(account.address))
+      accountsToTrack.map((account) => normalizeEVMAddress(account.address)),
     )
 
     // 1-by-1 decreases likelihood of hitting rate limit
@@ -213,7 +213,7 @@ export default class AbilitiesService extends BaseService<Events> {
     address: NormalizedEVMAddress,
     abilitySlug: string,
     abilityId: string,
-    reason: string
+    reason: string,
   ): Promise<void> {
     await createSpamReport(address, abilitySlug, reason)
     this.markAbilityAsRemoved(address, abilityId)

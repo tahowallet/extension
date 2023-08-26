@@ -47,7 +47,7 @@ export const importSigner = createBackgroundAsyncThunk(
   "internalSigner/importSigner",
   async (
     signerRaw: SignerImportMetadata,
-    { getState, dispatch, extra: { main } }
+    { getState, dispatch, extra: { main } },
   ): Promise<{ success: boolean; errorMessage?: string }> => {
     const address = await main.importSigner(signerRaw)
 
@@ -66,11 +66,11 @@ export const importSigner = createBackgroundAsyncThunk(
       setNewSelectedAccount({
         address,
         network: ui.selectedAccount.network,
-      })
+      }),
     )
 
     return { success: true }
-  }
+  },
 )
 
 const internalSignerSlice = createSlice({
@@ -89,7 +89,7 @@ const internalSignerSlice = createSlice({
           keyrings: Keyring[]
           metadata: { [keyringId: string]: { source: SignerImportSource } }
         }
-      }
+      },
     ) => {
       // When the InternalSigner service is locked, we receive `updateInternalSigners` with
       // `privateKeys` and `keyrings` being empty lists as the InternalSigner service clears
@@ -128,45 +128,45 @@ export const generateNewKeyring = createBackgroundAsyncThunk(
   "internalSigner/generateNewKeyring",
   async (path?: string) => {
     await emitter.emit("generateNewKeyring", path)
-  }
+  },
 )
 
 export const deriveAddress = createBackgroundAsyncThunk(
   "internalSigner/deriveAddress",
   async (id: string) => {
     await emitter.emit("deriveAddress", id)
-  }
+  },
 )
 
 export const unlockInternalSigners = createBackgroundAsyncThunk(
   "internalSigner/unlockInternalSigners",
   async (password: string, { extra: { main } }) => ({
     success: await main.unlockInternalSigners(password),
-  })
+  }),
 )
 
 export const lockInternalSigners = createBackgroundAsyncThunk(
   "internalSigner/lockInternalSigners",
   async () => {
     await emitter.emit("lockInternalSigners")
-  }
+  },
 )
 
 export const createPassword = createBackgroundAsyncThunk(
   "internalSigner/createPassword",
   async (password: string) => {
     await emitter.emit("createPassword", password)
-  }
+  },
 )
 
 export const exportMnemonic = createBackgroundAsyncThunk(
   "internalSigner/exportMnemonic",
   async (address: HexString, { extra: { main } }) =>
-    main.exportMnemonic(address)
+    main.exportMnemonic(address),
 )
 
 export const exportPrivateKey = createBackgroundAsyncThunk(
   "internalSigner/exportPrivateKey",
   async (address: HexString, { extra: { main } }) =>
-    main.exportPrivateKey(address)
+    main.exportPrivateKey(address),
 )

@@ -78,7 +78,7 @@ declare const BackgroundAsyncThunkReturnTypeSymbol: unique symbol
  */
 export type BackgroundAsyncThunkAction<
   TypePrefix extends string,
-  Returned
+  Returned,
 > = Action<TypePrefix> & {
   readonly [BackgroundAsyncThunkReturnTypeSymbol]?: Returned
 }
@@ -87,9 +87,9 @@ export type BackgroundAsyncThunk<
   TypePrefix extends string,
   Returned,
   ThunkArg = void,
-  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } }
+  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } },
 > = ((
-  payload: ThunkArg
+  payload: ThunkArg,
 ) => BackgroundAsyncThunkAction<TypePrefix, Returned> & { payload: ThunkArg }) &
   Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>
 
@@ -143,11 +143,11 @@ export function createBackgroundAsyncThunk<
   TypePrefix extends string,
   Returned,
   ThunkArg = void,
-  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } }
+  ThunkApiConfig extends AsyncThunkConfig = { extra: { main: Main } },
 >(
   typePrefix: TypePrefix,
   payloadCreator: AsyncThunkPayloadCreator<Returned, ThunkArg, ThunkApiConfig>,
-  options?: AsyncThunkOptions<ThunkArg, ThunkApiConfig>
+  options?: AsyncThunkOptions<ThunkArg, ThunkApiConfig>,
 ): BackgroundAsyncThunk<TypePrefix, Returned, ThunkArg, ThunkApiConfig> {
   // Exit early if this type prefix is already aliased for handling in the
   // background script.
@@ -171,7 +171,7 @@ export function createBackgroundAsyncThunk<
         throw error
       }
     },
-    options
+    options,
   )
 
   // Wrap the top-level action creator to make it compatible with webext-redux.
@@ -182,8 +182,8 @@ export function createBackgroundAsyncThunk<
     }),
     // Copy the utility props on the redux-tools version to our version.
     Object.fromEntries(
-      asyncThunkProperties.map((prop) => [prop, baseThunkActionCreator[prop]])
-    ) as Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>
+      asyncThunkProperties.map((prop) => [prop, baseThunkActionCreator[prop]]),
+    ) as Pick<AsyncThunk<Returned, ThunkArg, ThunkApiConfig>, AsyncThunkProps>,
   )
 
   // Register the alias to ensure it will always get proxied back to the
