@@ -34,9 +34,9 @@ export default class TahoWindowProvider extends EventEmitter {
 
   connected = false
 
-  isTally: true = true
+  isTally = true as const
 
-  isTaho: true = true
+  isTaho = true as const
 
   isMetaMask = false
 

@@ -217,8 +217,6 @@ export function useSwapQuote(useSwapConfig: {
           network: requestContext.network,
           settings: transactionSettings,
         })
-
-        if (!mountedRef.current) return
       } catch (error) {
         logger.error("Error fetching quote!", error)
       } finally {
