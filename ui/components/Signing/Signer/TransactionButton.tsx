@@ -57,10 +57,9 @@ export default function TransactionButton({
     }
   }
 
-  useEffect(
-    () => setUnlockButtons(isTransactionDataReady),
-    [isTransactionDataReady, setUnlockButtons],
-  )
+  useEffect(() => {
+    setUnlockButtons(isTransactionDataReady)
+  }, [isTransactionDataReady, setUnlockButtons])
 
   useEffect(() => {
     const increaseFocusChangeNonce = () => {

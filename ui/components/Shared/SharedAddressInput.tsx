@@ -37,10 +37,9 @@ export default function SharedAddressInput({
   const { errorMessage, handleInputChange, isValidating } =
     useAddressOrNameValidation(onAddressChange)
 
-  useEffect(
-    () => handleInputChange(debouncedValue),
-    [debouncedValue, handleInputChange],
-  )
+  useEffect(() => {
+    handleInputChange(debouncedValue)
+  }, [debouncedValue, handleInputChange])
 
   return (
     <>

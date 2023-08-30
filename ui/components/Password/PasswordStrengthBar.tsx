@@ -16,7 +16,9 @@ export default function PasswordStrengthBar(
   const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState(0)
 
-  useEffect(() => setEvaluation(zxcvbn(password).score), [password])
+  useEffect(() => {
+    setEvaluation(zxcvbn(password).score)
+  }, [password])
 
   const getDescription = useCallback(() => {
     if (!password) return t("passwordStrength.strength")
