@@ -49,7 +49,7 @@ async function buildSubannotations(
   network: EVMNetwork,
   desiredDecimals: number,
   resolvedTime: number,
-  block: AnyEVMBlock | undefined
+  block: AnyEVMBlock | undefined,
 ) {
   const subannotations = (
     await Promise.allSettled(
@@ -64,7 +64,7 @@ async function buildSubannotations(
           const matchingFungibleAsset = assets.find(
             (asset): asset is SmartContractFungibleAsset =>
               isSmartContractFungibleAsset(asset) &&
-              sameEVMAddress(asset.contractAddress, contractAddress)
+              sameEVMAddress(asset.contractAddress, contractAddress),
           )
 
           if (!matchingFungibleAsset) {
@@ -94,15 +94,15 @@ async function buildSubannotations(
                 asset: matchingFungibleAsset,
                 amount,
               },
-              desiredDecimals
+              desiredDecimals,
             ),
             sender,
             recipient,
             timestamp: resolvedTime,
             blockTimestamp: block?.timestamp,
           }
-        }
-      )
+        },
+      ),
     )
   )
     .filter(isFulfilledPromise)
@@ -120,12 +120,12 @@ export async function annotationsFromLogs(
   network: EVMNetwork,
   desiredDecimals: number,
   resolvedTime: number,
-  block: AnyEVMBlock | undefined
+  block: AnyEVMBlock | undefined,
 ): Promise<TransactionAnnotation[]> {
   const assets = indexingService.getCachedAssets(network)
 
   const accountAddresses = (await chainService.getAccountsToTrack()).map(
-    (account) => account.address
+    (account) => account.address,
   )
 
   const tokenTransferLogs = [
@@ -135,12 +135,12 @@ export async function annotationsFromLogs(
 
   const relevantTransferLogs = getERC20LogsForAddresses(
     tokenTransferLogs,
-    accountAddresses
+    accountAddresses,
   )
 
   const relevantAddresses =
     getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
-      normalizeEVMAddress
+      normalizeEVMAddress,
     )
 
   // Look up transfer log names, then flatten to an address -> name map.
@@ -155,13 +155,13 @@ export async function annotationsFromLogs(
                 address,
                 network,
               }),
-            ] as const
-        )
+            ] as const,
+        ),
       )
     )
       .filter(isFulfilledPromise)
       .map(({ value }) => value)
-      .filter(([, annotation]) => isDefined(annotation))
+      .filter(([, annotation]) => isDefined(annotation)),
   )
 
   const subannotations = await buildSubannotations(
@@ -173,7 +173,7 @@ export async function annotationsFromLogs(
     network,
     desiredDecimals,
     resolvedTime,
-    block
+    block,
   )
 
   return subannotations
@@ -196,7 +196,7 @@ export default async function resolveTransactionAnnotation(
     | (EnrichedEVMTransactionRequest & {
         blockHash?: string
       }),
-  desiredDecimals: number
+  desiredDecimals: number,
 ): Promise<TransactionAnnotation> {
   const assets = await indexingService.getCachedAssets(network)
 
@@ -212,7 +212,7 @@ export default async function resolveTransactionAnnotation(
           transactionLogoURL: assets.find(
             (asset) =>
               asset.metadata?.logoURL &&
-              asset.symbol === transaction.network.baseAsset.symbol
+              asset.symbol === transaction.network.baseAsset.symbol,
           )?.metadata?.logoURL,
         }
 
@@ -231,7 +231,7 @@ export default async function resolveTransactionAnnotation(
     network.chainID === OPTIMISM.chainID
       ? await chainService.estimateL1RollupFeeForOptimism(
           network,
-          unsignedTransactionFromEVMTransaction(transaction)
+          unsignedTransactionFromEVMTransaction(transaction),
         )
       : 0n
 
@@ -250,7 +250,7 @@ export default async function resolveTransactionAnnotation(
     }
   } else {
     txAnnotation.warnings = txAnnotation.warnings.filter(
-      (warning) => warning !== "insufficient-funds"
+      (warning) => warning !== "insufficient-funds",
     )
   }
 
@@ -272,7 +272,7 @@ export default async function resolveTransactionAnnotation(
       {
         address: transaction.to,
         network,
-      }
+      },
     )
 
     txAnnotation =
@@ -286,7 +286,7 @@ export default async function resolveTransactionAnnotation(
               {
                 address: transaction.to,
                 network,
-              }
+              },
             ),
           }
         : // Don't replace prepopulated annotations.
@@ -348,7 +348,7 @@ export default async function resolveTransactionAnnotation(
               asset: network.baseAsset,
               amount: transaction.value,
             },
-            desiredDecimals
+            desiredDecimals,
           ),
         }
       }
@@ -359,7 +359,7 @@ export default async function resolveTransactionAnnotation(
       const matchingFungibleAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset =>
           isSmartContractFungibleAsset(asset) &&
-          sameEVMAddress(asset.contractAddress, transaction.to)
+          sameEVMAddress(asset.contractAddress, transaction.to),
       )
 
       const transactionLogoURL = matchingFungibleAsset?.metadata?.logoURL
@@ -393,7 +393,7 @@ export default async function resolveTransactionAnnotation(
               asset: matchingFungibleAsset,
               amount: BigInt(erc20Tx.args.amount),
             },
-            desiredDecimals
+            desiredDecimals,
           ),
         }
         // Warn if we're sending the token to its own contract
@@ -427,7 +427,7 @@ export default async function resolveTransactionAnnotation(
           {
             address: erc20Tx.args.spender,
             network,
-          }
+          },
         )
         // Warn if we're approving spending to a likely EOA. Note this will also
         // sweep up CREATE2 contracts that haven't yet been deployed
@@ -445,7 +445,7 @@ export default async function resolveTransactionAnnotation(
               asset: matchingFungibleAsset,
               amount: BigInt(erc20Tx.args.value),
             },
-            desiredDecimals
+            desiredDecimals,
           ),
         }
       }
@@ -462,7 +462,7 @@ export default async function resolveTransactionAnnotation(
       network,
       desiredDecimals,
       txAnnotation.timestamp,
-      block
+      block,
     )
 
     if (subannotations.length > 0) {

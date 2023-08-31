@@ -27,8 +27,8 @@ export class InternalEthereumProviderDatabase extends Dexie {
           .table("activeNetwork")
           .toArray()
           .then((networksForOrigins) =>
-            tx.table("currentNetwork").bulkAdd(networksForOrigins)
-          )
+            tx.table("currentNetwork").bulkAdd(networksForOrigins),
+          ),
       )
 
     this.version(3).stores({
@@ -42,19 +42,19 @@ export class InternalEthereumProviderDatabase extends Dexie {
     this.on("populate", (tx) =>
       tx.db
         .table("currentNetwork")
-        .add({ origin: TAHO_INTERNAL_ORIGIN, network: ETHEREUM })
+        .add({ origin: TAHO_INTERNAL_ORIGIN, network: ETHEREUM }),
     )
   }
 
   async setCurrentChainIdForOrigin(
     origin: string,
-    network: EVMNetwork
+    network: EVMNetwork,
   ): Promise<string | undefined> {
     return this.currentNetwork.put({ origin, network })
   }
 
   async getCurrentNetworkForOrigin(
-    origin: string
+    origin: string,
   ): Promise<EVMNetwork | undefined> {
     const currentNetwork = await this.currentNetwork.get({ origin })
     return currentNetwork?.network

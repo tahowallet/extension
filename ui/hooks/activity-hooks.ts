@@ -9,7 +9,7 @@ import { TransactionAnnotation } from "@tallyho/tally-background/services/enrich
 
 function isReceiveActivity(
   activity: Activity,
-  activityInitiatorAddress: string
+  activityInitiatorAddress: string,
 ): boolean {
   return (
     activity.type === "asset-transfer" &&
@@ -38,7 +38,7 @@ type ActivityViewDetails = {
 
 export default function useActivityViewDetails(
   activity: Activity,
-  activityInitiatorAddress: string
+  activityInitiatorAddress: string,
 ): ActivityViewDetails {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",

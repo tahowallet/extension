@@ -45,7 +45,7 @@ export type PriceDetails = {
 export async function getAssetPricePoint(
   asset: SwappableAsset,
   assets: AssetsState,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): Promise<PricePoint | undefined> {
   // FIXME: review
   const assetPricesNetworks = assets
@@ -53,7 +53,7 @@ export async function getAssetPricePoint(
       (assetItem) =>
         "contractAddress" in assetItem &&
         assetItem.contractAddress &&
-        assetItem.symbol === asset.symbol
+        assetItem.symbol === asset.symbol,
     )
     .map((assetItem) => {
       const { contractAddress } = assetItem as SingleAssetState & {
@@ -63,7 +63,7 @@ export async function getAssetPricePoint(
     })
 
   const [unitPricePoint] = Object.values(
-    await getTokenPrices(assetPricesNetworks, USD, network)
+    await getTokenPrices(assetPricesNetworks, USD, network),
   )
 
   return unitPricePoint === undefined
@@ -76,7 +76,7 @@ export async function getAssetAmount(
   prices: PricesState,
   asset: SwappableAsset,
   amount: string,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): Promise<
   | ({
       asset: SwappableAsset
@@ -90,13 +90,13 @@ export async function getAssetAmount(
   }
   const decimalMatched = convertFixedPointNumber(
     fixedPointAmount,
-    asset.decimals
+    asset.decimals,
   )
 
   const assetPricePoint = selectAssetPricePoint(
     prices,
     asset,
-    hardcodedMainCurrencySymbol
+    hardcodedMainCurrencySymbol,
   )
 
   return enrichAssetAmountWithMainCurrencyValues(
@@ -105,7 +105,7 @@ export async function getAssetAmount(
       amount: decimalMatched.amount,
     },
     assetPricePoint ?? (await getAssetPricePoint(asset, assets, network)),
-    2
+    2,
   )
 }
 
@@ -120,7 +120,7 @@ export async function checkCurrencyAmount(
   assets: AssetsState,
   prices: PricesState,
   amount: string,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): Promise<string | undefined> {
   const currencyAmount =
     tokenToEthRate >= 0.1
@@ -133,7 +133,7 @@ export async function checkCurrencyAmount(
               amount: BigInt(amount),
               decimals: asset.decimals,
             }),
-            network
+            network,
           )
         )?.localizedMainCurrencyAmount
       : undefined

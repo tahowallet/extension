@@ -1,5 +1,5 @@
 import React, { ComponentType } from "react"
-import ReactDOM from "react-dom"
+import ReactDOM from "react-dom/client"
 import { Store } from "webext-redux"
 import { browser, newProxyStore } from "@tallyho/tally-background"
 import "./_locales/i18n"
@@ -13,22 +13,20 @@ logger.contextId = "UI"
 
 export async function attachUIToRootElement(
   component: ComponentType<{ store: Store }>,
-  store?: Store
+  store?: Store,
 ): Promise<void> {
   const rootElement = document.getElementById("tally-root")
 
   if (!rootElement) {
     throw new Error(
-      "Failed to find #tally-root element; page structure changed?"
+      "Failed to find #tally-root element; page structure changed?",
     )
   }
 
   const backgroundStore = store ?? (await newProxyStore())
 
-  ReactDOM.render(
-    React.createElement(component, { store: backgroundStore }),
-    rootElement
-  )
+  const root = ReactDOM.createRoot(rootElement)
+  root.render(React.createElement(component, { store: backgroundStore }))
 }
 
 export async function attachTabUIToRootElement(): Promise<void> {
@@ -45,7 +43,7 @@ export async function attachPopupUIToRootElement(): Promise<void> {
     // rather than rendering the popup
     const baseURL = browser.runtime.getURL("tab.html")
     const tabs = (await browser.tabs.query({ url: baseURL })).filter(
-      (tab) => tab?.url && tab.url.includes("onboarding")
+      (tab) => tab?.url && tab.url.includes("onboarding"),
     )
     if (tabs.length > 0 && tabs[0]?.id) {
       await browser.tabs.update(tabs[0].id, { active: true })

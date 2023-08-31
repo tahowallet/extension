@@ -38,29 +38,29 @@ export default class AssetDataHelper {
 
   async getTokenBalance(
     addressOnNetwork: AddressOnNetwork,
-    smartContractAddress: HexString
+    smartContractAddress: HexString,
   ): Promise<SmartContractAmount> {
     const provider = this.providerTracker.providerForNetwork(
-      addressOnNetwork.network
+      addressOnNetwork.network,
     )
 
     if (!provider) {
       throw logger.buildError(
         "Could not find a provider for network",
-        addressOnNetwork.network
+        addressOnNetwork.network,
       )
     }
 
     const balances = await getTokenBalances(
       addressOnNetwork,
       [smartContractAddress],
-      provider
+      provider,
     )
 
     if (balances.length < 1) {
       throw logger.buildError(
         "Unable to retrieve balances for contract",
-        smartContractAddress
+        smartContractAddress,
       )
     }
 
@@ -69,10 +69,10 @@ export default class AssetDataHelper {
 
   async getTokenBalances(
     addressOnNetwork: AddressOnNetwork,
-    smartContractAddresses?: HexString[]
+    smartContractAddresses?: HexString[],
   ): Promise<SmartContractAmount[]> {
     const provider = this.providerTracker.providerForNetwork(
-      addressOnNetwork.network
+      addressOnNetwork.network,
     )
     if (typeof provider === "undefined") {
       return []
@@ -85,12 +85,12 @@ export default class AssetDataHelper {
       return await getTokenBalances(
         addressOnNetwork,
         smartContractAddresses || [],
-        provider
+        provider,
       )
     } catch (error) {
       logger.debug(
         "Problem resolving asset balances; network may not support it.",
-        error
+        error,
       )
     }
 
@@ -114,7 +114,7 @@ export default class AssetDataHelper {
         const balance = await getBalance(
           provider,
           token,
-          addressOnNetwork.address
+          addressOnNetwork.address,
         )
         return {
           smartContract: {
@@ -131,10 +131,10 @@ export default class AssetDataHelper {
   }
 
   async getTokenMetadata(
-    tokenSmartContract: SmartContract
+    tokenSmartContract: SmartContract,
   ): Promise<SmartContractFungibleAsset | undefined> {
     const provider = this.providerTracker.providerForNetwork(
-      tokenSmartContract.homeNetwork
+      tokenSmartContract.homeNetwork,
     )
     if (typeof provider === "undefined") {
       return undefined
@@ -155,10 +155,10 @@ export default class AssetDataHelper {
     addressOnNetwork: AddressOnNetwork,
     startBlock: number,
     endBlock?: number,
-    incomingOnly = false
+    incomingOnly = false,
   ): Promise<AssetTransfer[]> {
     const provider = this.providerTracker.providerForNetwork(
-      addressOnNetwork.network
+      addressOnNetwork.network,
     )
     if (typeof provider === "undefined") {
       return []
@@ -172,7 +172,7 @@ export default class AssetDataHelper {
             addressOnNetwork,
             "incoming",
             startBlock,
-            endBlock
+            endBlock,
           ),
         ]
         if (!incomingOnly) {
@@ -182,8 +182,8 @@ export default class AssetDataHelper {
               addressOnNetwork,
               "outgoing",
               startBlock,
-              endBlock
-            )
+              endBlock,
+            ),
           )
         }
         return (await Promise.all(promises)).flat()
@@ -192,7 +192,7 @@ export default class AssetDataHelper {
       logger.warn(
         "Problem resolving asset transfers via Alchemy helper; network may " +
           "not support it.",
-        error
+        error,
       )
 
       // Rethrow as consumers like ChainService need the exception to manage

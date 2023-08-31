@@ -36,13 +36,13 @@ export const useTotalNFTsFloorPrice = (): {
   const ETHPricePoint = selectAssetPricePoint(
     allPrices,
     ETH,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
 
   const mainCurrencyTotalPrice = Object.entries(totalFloorPrice).reduce(
     (acc, [symbol, price]) => {
       const baseAsset = BUILT_IN_NETWORK_BASE_ASSETS.find(
-        (asset) => asset.symbol === symbol
+        (asset) => asset.symbol === symbol,
       )
 
       if (!baseAsset) return acc
@@ -50,7 +50,7 @@ export const useTotalNFTsFloorPrice = (): {
       const pricePoint = selectAssetPricePoint(
         allPrices,
         baseAsset,
-        mainCurrencySymbol
+        mainCurrencySymbol,
       )
 
       const enrichedPrice = enrichAssetAmountWithMainCurrencyValues(
@@ -59,18 +59,18 @@ export const useTotalNFTsFloorPrice = (): {
           amount: BigInt(Math.round(price * 10 ** baseAsset.decimals)),
         },
         pricePoint,
-        2
+        2,
       )
 
       return acc + (enrichedPrice.mainCurrencyAmount ?? 0)
     },
-    0
+    0,
   )
 
   const totalFloorPriceInUSD = formatCurrencyAmount(
     mainCurrencySymbol,
     mainCurrencyTotalPrice,
-    2
+    2,
   )
 
   const floorPriceConvertedToETH =
@@ -80,7 +80,7 @@ export const useTotalNFTsFloorPrice = (): {
         asset: USD,
         amount: BigInt(Math.round(mainCurrencyTotalPrice * 10 ** USD.decimals)),
       },
-      flipPricePoint(ETHPricePoint)
+      flipPricePoint(ETHPricePoint),
     )
 
   const totalFloorPriceInETH =

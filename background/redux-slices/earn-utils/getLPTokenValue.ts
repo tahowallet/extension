@@ -10,7 +10,7 @@ const getLPTokenValue = async (
   token: HexString,
   reserve: BigNumber,
   LPDecimals: number,
-  totalLPSupply: BigNumber
+  totalLPSupply: BigNumber,
 ): Promise<bigint | undefined> => {
   const token0Contract = await getContract(token, ERC20_ABI)
   const token0Symbol = await token0Contract.symbol()
@@ -18,7 +18,7 @@ const getLPTokenValue = async (
   const assetPricePoint = selectAssetPricePoint(
     prices,
     token0Symbol,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
   if (typeof assetPricePoint?.amounts[1] !== "undefined") {
     const token0Decimals = await token0Contract.decimals()

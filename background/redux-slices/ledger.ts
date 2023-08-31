@@ -76,7 +76,7 @@ const ledgerSlice = createSlice({
     },
     addLedgerDevice: (
       immerState,
-      { payload: deviceID }: { payload: string }
+      { payload: deviceID }: { payload: string },
     ) => {
       /* FIXME: devices/accounts are kept in the state even if not tracked  */
       if (deviceID in immerState.devices) return
@@ -90,7 +90,7 @@ const ledgerSlice = createSlice({
     },
     setCurrentDevice: (
       immerState,
-      { payload: deviceID }: { payload: string }
+      { payload: deviceID }: { payload: string },
     ) => {
       if (!(deviceID in immerState.devices)) return
       immerState.currentDeviceID = deviceID
@@ -111,7 +111,7 @@ const ledgerSlice = createSlice({
           isArbitraryDataSigningEnabled: boolean
           displayDetails: DisplayDetails | undefined
         }
-      }
+      },
     ) => {
       if (
         immerState.currentDeviceID === deviceID &&
@@ -130,7 +130,7 @@ const ledgerSlice = createSlice({
       immerState,
       {
         payload: { deviceID, path },
-      }: { payload: { deviceID: string; path: string } }
+      }: { payload: { deviceID: string; path: string } },
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
@@ -149,7 +149,7 @@ const ledgerSlice = createSlice({
         payload: { deviceID, path },
       }: {
         payload: { deviceID: string; path: string }
-      }
+      },
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
@@ -161,7 +161,7 @@ const ledgerSlice = createSlice({
       immerState,
       {
         payload: { deviceID, path },
-      }: { payload: { deviceID: string; path: string } }
+      }: { payload: { deviceID: string; path: string } },
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
@@ -175,7 +175,7 @@ const ledgerSlice = createSlice({
         payload: { deviceID, path, address },
       }: {
         payload: { deviceID: string; path: string; address: string }
-      }
+      },
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
@@ -194,7 +194,7 @@ const ledgerSlice = createSlice({
           balance: string
           network: EVMNetwork
         }
-      }
+      },
     ) => {
       const device = immerState.devices[deviceID]
       if (!device) return
@@ -204,7 +204,7 @@ const ledgerSlice = createSlice({
     },
     setUsbDeviceCount: (
       immerState,
-      { payload: { usbDeviceCount } }: { payload: { usbDeviceCount: number } }
+      { payload: { usbDeviceCount } }: { payload: { usbDeviceCount: number } },
     ) => {
       immerState.usbDeviceCount = usbDeviceCount
     },
@@ -238,14 +238,14 @@ export const connectLedger = createBackgroundAsyncThunk(
 
     dispatch(ledgerSlice.actions.addLedgerDevice(deviceID))
     dispatch(ledgerSlice.actions.setCurrentDevice(deviceID))
-  }
+  },
 )
 
 export const fetchAddress = createBackgroundAsyncThunk(
   "ledger/fetchAddress",
   async (
     { deviceID, path }: { deviceID: string; path: string },
-    { dispatch, extra: { main } }
+    { dispatch, extra: { main } },
   ) => {
     try {
       dispatch(ledgerSlice.actions.setFetchingAddress({ deviceID, path }))
@@ -254,7 +254,7 @@ export const fetchAddress = createBackgroundAsyncThunk(
     } catch (err) {
       dispatch(ledgerSlice.actions.resetLedgerState())
     }
-  }
+  },
 )
 
 export const fetchBalance = createBackgroundAsyncThunk(
@@ -266,7 +266,7 @@ export const fetchBalance = createBackgroundAsyncThunk(
       address,
       network,
     }: { deviceID: string; path: string; address: string; network: EVMNetwork },
-    { dispatch, extra: { main } }
+    { dispatch, extra: { main } },
   ) => {
     dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
     const amount = await main.getAccountEthBalanceUncached({
@@ -276,12 +276,12 @@ export const fetchBalance = createBackgroundAsyncThunk(
     const decimalDigits = 3
     const balance = enrichAssetAmountWithDecimalValues(
       { amount, asset: network.baseAsset },
-      decimalDigits
+      decimalDigits,
     ).localizedDecimalAmount
     dispatch(
-      ledgerSlice.actions.resolveBalance({ deviceID, path, balance, network })
+      ledgerSlice.actions.resolveBalance({ deviceID, path, balance, network }),
     )
-  }
+  },
 )
 
 export const importLedgerAccounts = createBackgroundAsyncThunk(
@@ -292,8 +292,8 @@ export const importLedgerAccounts = createBackgroundAsyncThunk(
     }: {
       accounts: Array<{ path: string; address: string }>
     },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.importLedgerAccounts(accounts)
-  }
+  },
 )

@@ -59,8 +59,8 @@ describe("Internal Ethereum Provider Service", () => {
 
     expect(
       startedChainService.supportedNetworks.find(
-        (network: EVMNetwork) => network.name === "Fantom Opera"
-      )
+        (network: EVMNetwork) => network.name === "Fantom Opera",
+      ),
     ).toBeTruthy()
   })
 
@@ -128,8 +128,8 @@ describe("Internal Ethereum Provider Service", () => {
         "signTypedDataRequest",
         expect.objectContaining({
           payload: EIP712ObjectFiltered,
-        })
+        }),
       )
-    }
+    },
   )
 })

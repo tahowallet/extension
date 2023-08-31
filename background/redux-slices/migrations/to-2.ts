@@ -17,7 +17,7 @@ type OldState = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const newState = { ...prevState }
   const addressNetwork = (prevState as OldState)?.ui?.currentAccount

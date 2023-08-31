@@ -25,7 +25,7 @@ export function connectProviderBridge(): void {
         const faviconElements: NodeListOf<HTMLLinkElement> =
           window.document.querySelectorAll("link[rel*='icon']")
         const largestFavicon = [...faviconElements].sort((el) =>
-          parseInt(el.sizes?.toString().split("x")[0], 10)
+          parseInt(el.sizes?.toString().split("x")[0], 10),
         )[0]
         const faviconUrl = largestFavicon?.href ?? ""
         const { title } = window.document ?? ""
@@ -45,7 +45,7 @@ export function connectProviderBridge(): void {
       // eslint-disable-next-line no-console
       console.log(
         `%c content: inpage > background: ${JSON.stringify(event.data)}`,
-        "background: #bada55; color: #222"
+        "background: #bada55; color: #222",
       )
 
       port.postMessage(event.data)
@@ -57,14 +57,14 @@ export function connectProviderBridge(): void {
     // eslint-disable-next-line no-console
     console.log(
       `%c content: background > inpage: ${JSON.stringify(data)}`,
-      "background: #222; color: #bada55"
+      "background: #222; color: #bada55",
     )
     window.postMessage(
       {
         ...data,
         target: WINDOW_PROVIDER_TARGET,
       },
-      windowOriginAtLoadTime
+      windowOriginAtLoadTime,
     )
   })
 
@@ -93,7 +93,7 @@ export function injectTahoWindowProvider(): void {
     throw new Error(
       `Taho: oh nos the content-script failed to initilaize the Taho window provider.
         ${e}
-        It's time for a seppuku...🗡`
+        It's time for a seppuku...🗡`,
     )
   }
 }

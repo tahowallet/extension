@@ -11,7 +11,7 @@ type Word = {
 }
 
 function SeedWord(
-  props: Word & { onSubmit: (index: number, word?: string) => void }
+  props: Word & { onSubmit: (index: number, word?: string) => void },
 ): ReactElement {
   const { index, word, isActive = false, onSubmit } = props
   return (
@@ -107,7 +107,7 @@ function SeedVerification({
 
   function handleVerification() {
     const isValid = !selectedWords.some(
-      ({ index, word }) => mnemonic?.[index] !== word
+      ({ index, word }) => mnemonic?.[index] !== word,
     )
     setStep(isValid ? "success" : "error")
   }
@@ -118,7 +118,7 @@ function SeedVerification({
     if (!active) return
 
     setRemainingWords(
-      remainingWords.filter((word: string) => word !== selectedWord)
+      remainingWords.filter((word: string) => word !== selectedWord),
     )
     setSelectedWords((list) => {
       let updated = false
@@ -159,7 +159,7 @@ function SeedVerification({
         }
 
         return { ...item, isActive: false }
-      })
+      }),
     )
 
     if (word) setRemainingWords(() => [...remainingWords, word])

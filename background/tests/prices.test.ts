@@ -168,7 +168,7 @@ describe("lib/prices.ts", () => {
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
 
       await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual(
-        getPricesResponse
+        getPricesResponse,
       )
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
@@ -210,7 +210,7 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
       await expect(getPrices([ETH, FAKE_COIN], currencies)).resolves.toEqual(
-        getPricesResponse
+        getPricesResponse,
       )
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })

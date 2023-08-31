@@ -3,7 +3,7 @@ import PreferenceService from "../../preferences"
 import { NameResolver } from "../name-resolver"
 
 export default function addressBookResolverFor(
-  preferenceService: PreferenceService
+  preferenceService: PreferenceService,
 ): NameResolver<"tally-address-book"> {
   return {
     type: "tally-address-book",

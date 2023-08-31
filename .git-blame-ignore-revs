@@ -6,3 +6,5 @@
 4851e7989a3473c64b03adb4fbef16b3957ac2ab
 # Shift to @thesis-co/eslint-config.
 fd45e9ffe8405e00ed34ca500bbf8f88d06de20f
+# Bump to @thesis-co/eslint-config@0.6.0 with prettier 3.x.
+9c4488cebd14d578dcd2cf9d3d3b26934b5262df

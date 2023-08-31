@@ -41,7 +41,7 @@ export default function ClaimFooter({
 
   const buttonText = useMemo(
     () => ["Get started", "Continue", "I'm In", "Continue", lastStepButtonText],
-    [lastStepButtonText]
+    [lastStepButtonText],
   )
 
   if (isCurrentlyClaiming) {

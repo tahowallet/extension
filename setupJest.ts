@@ -42,7 +42,7 @@ Object.defineProperty(Dexie.dependencies, "indexedDB", {
 Object.defineProperty(window, "fetch", {
   writable: true,
   value: async (
-    url: string
+    url: string,
   ): Promise<{ status: number; body: string | Buffer } | undefined> => {
     if (url.endsWith(".wasm")) {
       const file = readFileSync(url)

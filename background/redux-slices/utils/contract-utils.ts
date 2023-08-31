@@ -39,7 +39,7 @@ export function getProvider(this: unknown): TallyWeb3Provider {
 
 export const getContract = async (
   address: string,
-  abi: ContractInterface
+  abi: ContractInterface,
 ): Promise<Contract> => {
   const provider = getProvider()
   const signer = provider.getSigner()

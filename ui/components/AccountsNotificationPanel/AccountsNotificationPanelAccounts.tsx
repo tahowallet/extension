@@ -90,7 +90,7 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
 
 const shouldAddHeader = (
   existingAccountTypes: AccountType[],
-  currentAccountType: AccountType
+  currentAccountType: AccountType,
 ): boolean => {
   // Ledger and read-only accounts have their own sections.
   // Internal accounts, imported with mnemonic or private key are in the same section so we
@@ -132,12 +132,12 @@ function WalletTypeHeader({
   const dispatch = useBackgroundDispatch()
 
   const settingsBySigner = useBackgroundSelector(
-    (state) => state.ui.accountSignerSettings
+    (state) => state.ui.accountSignerSettings,
   )
   const signerSettings =
     accountSigner.type !== "read-only"
       ? settingsBySigner.find(({ signer }) =>
-          isSameAccountSignerWithId(signer, accountSigner)
+          isSameAccountSignerWithId(signer, accountSigner),
         )
       : undefined
 
@@ -313,7 +313,7 @@ export default function AccountsNotificationPanelAccounts({
   const isMounted = useRef(false)
 
   const accountTotals = useBackgroundSelector(
-    selectCurrentNetworkAccountTotalsByCategory
+    selectCurrentNetworkAccountTotalsByCategory,
   )
 
   const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
@@ -328,7 +328,7 @@ export default function AccountsNotificationPanelAccounts({
       setNewSelectedAccount({
         address,
         network: selectedNetwork,
-      })
+      }),
     )
   }
 
@@ -352,7 +352,7 @@ export default function AccountsNotificationPanelAccounts({
   }, [history, areInternalSignersUnlocked, dispatch, t])
 
   const existingAccountTypes = accountTypes.filter(
-    (type) => (accountTotals[type]?.length ?? 0) > 0
+    (type) => (accountTotals[type]?.length ?? 0) > 0,
   )
 
   return (
@@ -376,7 +376,7 @@ export default function AccountsNotificationPanelAccounts({
             }
             return acc
           },
-          {} as { [signerId: string]: AccountTotal[] }
+          {} as { [signerId: string]: AccountTotal[] },
         )
 
         return (
@@ -408,8 +408,8 @@ export default function AccountsNotificationPanelAccounts({
                             if (accountTotalsBySignerId[0].signerId) {
                               dispatch(
                                 deriveAddress(
-                                  accountTotalsBySignerId[0].signerId
-                                )
+                                  accountTotalsBySignerId[0].signerId,
+                                ),
                               )
                             }
                           }
@@ -419,12 +419,12 @@ export default function AccountsNotificationPanelAccounts({
                   <ul>
                     {accountTotalsBySignerId.map((accountTotal) => {
                       const normalizedAddress = normalizeEVMAddress(
-                        accountTotal.address
+                        accountTotal.address,
                       )
 
                       const isSelected = sameEVMAddress(
                         normalizedAddress,
-                        selectedAccountAddress
+                        selectedAccountAddress,
                       )
 
                       return (
@@ -476,7 +476,7 @@ export default function AccountsNotificationPanelAccounts({
                     })}
                   </ul>
                 </section>
-              )
+              ),
             )}
           </>
         )

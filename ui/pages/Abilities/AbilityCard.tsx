@@ -130,7 +130,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement | null {
                       completeAbility({
                         address: ability.address,
                         abilityId: ability.abilityId,
-                      })
+                      }),
                     )
                     dispatch(setSnackbarMessage(t("snackbar")))
                   }}

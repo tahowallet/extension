@@ -58,7 +58,7 @@ export const FeatureFlags = Object.keys({
  */
 export function isEnabled(
   flagName: FeatureFlagType,
-  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
+  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS,
 ): boolean {
   // Guard to narrow flag type
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
@@ -82,7 +82,7 @@ export function isEnabled(
  */
 export function isDisabled(
   flagName: FeatureFlagType,
-  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS
+  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS,
 ): boolean {
   return !isEnabled(flagName, checkBrowserStorage)
 }
@@ -105,7 +105,7 @@ export function isDisabled(
  */
 export function wrapIfEnabled<T>(
   flag: FeatureFlagType,
-  valueToWrap: T
+  valueToWrap: T,
 ): [T] | [] {
   return isEnabled(flag) ? [valueToWrap] : []
 }
@@ -117,7 +117,7 @@ export function wrapIfEnabled<T>(
  */
 export function wrapIfDisabled<T>(
   flag: FeatureFlagType,
-  valueToWrap: T
+  valueToWrap: T,
 ): [T] | [] {
   return isDisabled(flag) ? [valueToWrap] : []
 }

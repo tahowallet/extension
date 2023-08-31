@@ -116,36 +116,36 @@ describe("Lib Utils", () => {
       "given integer should return integer",
       ({ value, decimalLength, maxDecimalLength, expected }) => {
         expect(
-          truncateDecimalAmount(value, decimalLength, maxDecimalLength)
+          truncateDecimalAmount(value, decimalLength, maxDecimalLength),
         ).toBe(expected)
-      }
+      },
     )
 
     it.each(noLeadingZeros)(
       "given number with no leading zeros in decimal part should truncate at desired length",
       ({ value, decimalLength, maxDecimalLength, expected }) => {
         expect(
-          truncateDecimalAmount(value, decimalLength, maxDecimalLength)
+          truncateDecimalAmount(value, decimalLength, maxDecimalLength),
         ).toBe(expected)
-      }
+      },
     )
 
     it.each(zeroWithLeadingZeros)(
       "given number <1 with leading zeros should increase precision",
       ({ value, decimalLength, maxDecimalLength, expected }) => {
         expect(
-          truncateDecimalAmount(value, decimalLength, maxDecimalLength)
+          truncateDecimalAmount(value, decimalLength, maxDecimalLength),
         ).toBe(expected)
-      }
+      },
     )
 
     it.each(nonZeroWithLeadingZeros)(
       "given number >=1 with leading zeros should should truncate at desired length",
       ({ value, decimalLength, maxDecimalLength, expected }) => {
         expect(
-          truncateDecimalAmount(value, decimalLength, maxDecimalLength)
+          truncateDecimalAmount(value, decimalLength, maxDecimalLength),
         ).toBe(expected)
-      }
+      },
     )
   })
 })

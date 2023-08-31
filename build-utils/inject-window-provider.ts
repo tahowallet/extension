@@ -26,7 +26,7 @@ export default class InjectWindowProvider {
 
             windowProviderSource = windowProviderSource.replace(
               "@@@SEGMENT_MEDIUM_BASE64@@@",
-              fontAsB64
+              fontAsB64,
             )
 
             // need to encode so it can be used as a string
@@ -41,17 +41,17 @@ export default class InjectWindowProvider {
               providerBridgeSource.replace(
                 // eslint-disable-next-line no-useless-escape
                 '"@@@WINDOW_PROVIDER@@@"',
-                windowProviderSource
-              )
+                windowProviderSource,
+              ),
             )
 
             // eslint-disable-next-line no-param-reassign
             delete assets[WINDOW_PROVIDER_FILENAME]
             // eslint-disable-next-line no-param-reassign
             delete assets[`${WINDOW_PROVIDER_FILENAME}.map`]
-          }
+          },
         )
-      }
+      },
     )
   }
 }

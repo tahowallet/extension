@@ -38,7 +38,7 @@ export function TransferSummaryBase({
   const assetPricePoint = selectAssetPricePoint(
     prices,
     assetAmount.asset,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
   const localizedMainCurrencyAmount =
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)

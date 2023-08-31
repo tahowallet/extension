@@ -17,7 +17,7 @@ const abi = [
 export async function getTokenURI(
   provider: BaseProvider,
   tokenAddress: HexString,
-  tokenID: bigint
+  tokenID: bigint,
 ): Promise<URI | undefined> {
   const tokenContract = new Contract(tokenAddress, abi).connect(provider)
   return tokenContract.tokenURI(tokenID)
@@ -36,7 +36,7 @@ export interface ERC721Metadata {
 export async function getTokenMetadata(
   provider: BaseProvider,
   tokenAddress: HexString,
-  tokenID: bigint
+  tokenID: bigint,
 ): Promise<ERC721Metadata | undefined> {
   const uri = await getTokenURI(provider, tokenAddress, tokenID)
   if (uri) {
@@ -55,7 +55,7 @@ export async function getTokenMetadata(
     logger.warn(
       "No token URI was found, perhaps this isn't an ERC-721 metadata-compliant NFT?",
       tokenAddress,
-      tokenID
+      tokenID,
     )
   }
   return undefined

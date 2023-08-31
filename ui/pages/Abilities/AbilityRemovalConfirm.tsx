@@ -67,14 +67,14 @@ export default function AbilityRemovalConfirm({
           abilitySlug: ability.slug,
           abilityId: ability.abilityId,
           reason: spamReason,
-        })
+        }),
       )
     } else {
       await dispatch(
         removeAbility({
           address: ability.address,
           abilityId: ability.abilityId,
-        })
+        }),
       )
     }
     dispatch(setSnackbarMessage(t(`${KEY_PREFIX}.snackbar`)))
@@ -134,7 +134,7 @@ export default function AbilityRemovalConfirm({
           }}
         >
           {t(
-            `${KEY_PREFIX}.${showSpamReasons ? "submitSpamBtn" : "submitBtn"}`
+            `${KEY_PREFIX}.${showSpamReasons ? "submitSpamBtn" : "submitBtn"}`,
           )}
         </SharedButton>
         <SharedButton

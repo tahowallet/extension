@@ -23,7 +23,7 @@ type NewAccountState = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const { accountsData: oldAccountsData, ...oldAccountState } =
     prevState.account as OldAccountState
@@ -36,7 +36,7 @@ export default (
           Object.entries(oldAccountsData).map(([address, data]) => [
             normalizeEVMAddress(address),
             data,
-          ])
+          ]),
         ),
       },
     },

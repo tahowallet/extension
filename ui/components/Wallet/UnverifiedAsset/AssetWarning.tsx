@@ -80,7 +80,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
     asset.metadata?.discoveryTxHash?.[activityInitiatorAddress]
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivities
+    selectCurrentAccountActivities,
   )
   const activityItem = discoveryTxHash
     ? currentAccountActivities.find(({ hash }) => hash === discoveryTxHash)
@@ -120,7 +120,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                       window
                         .open(
                           `${blockExplorerUrl}/token/${contractAddress}`,
-                          "_blank"
+                          "_blank",
                         )
                         ?.focus()
                     }
@@ -159,7 +159,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                           window
                             .open(
                               `${blockExplorerUrl}/tx/${discoveryTxHash}`,
-                              "_blank"
+                              "_blank",
                             )
                             ?.focus()
                         }

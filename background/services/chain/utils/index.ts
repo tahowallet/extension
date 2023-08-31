@@ -32,7 +32,7 @@ import type { PartialTransactionRequestWithFrom } from "../../enrichment"
  */
 export function blockFromEthersBlock(
   network: EVMNetwork,
-  gethResult: EthersBlock
+  gethResult: EthersBlock,
 ): AnyEVMBlock {
   return {
     hash: gethResult.hash,
@@ -56,7 +56,7 @@ export function blockFromEthersBlock(
  */
 export function blockFromProviderBlock(
   network: EVMNetwork,
-  incomingGethResult: unknown
+  incomingGethResult: unknown,
 ): AnyEVMBlock {
   const gethResult = incomingGethResult as {
     hash: string
@@ -82,7 +82,7 @@ export function blockFromProviderBlock(
 }
 
 export function ethersTransactionRequestFromEIP1559TransactionRequest(
-  transaction: EIP1559TransactionRequest
+  transaction: EIP1559TransactionRequest,
 ): EthersTransactionRequest {
   return {
     to: transaction.to,
@@ -99,7 +99,7 @@ export function ethersTransactionRequestFromEIP1559TransactionRequest(
 }
 
 export function ethersTransactionRequestFromLegacyTransactionRequest(
-  transaction: LegacyEVMTransactionRequest
+  transaction: LegacyEVMTransactionRequest,
 ): EthersTransactionRequest {
   const { to, input, type, nonce, gasPrice, value, chainID, gasLimit, from } =
     transaction
@@ -118,21 +118,21 @@ export function ethersTransactionRequestFromLegacyTransactionRequest(
 }
 
 export function ethersTransactionFromTransactionRequest(
-  transactionRequest: TransactionRequest
+  transactionRequest: TransactionRequest,
 ): EthersTransactionRequest {
   if (isEIP1559TransactionRequest(transactionRequest)) {
     return ethersTransactionRequestFromEIP1559TransactionRequest(
-      transactionRequest
+      transactionRequest,
     )
   }
   // Legacy Transaction
   return ethersTransactionRequestFromLegacyTransactionRequest(
-    transactionRequest
+    transactionRequest,
   )
 }
 
 function eip1559TransactionRequestFromEthersTransactionRequest(
-  transaction: EthersTransactionRequest
+  transaction: EthersTransactionRequest,
 ): Partial<EIP1559TransactionRequest> {
   return {
     to: transaction.to,
@@ -164,7 +164,7 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
 }
 
 function legacyEVMTransactionRequestFromEthersTransactionRequest(
-  transaction: EthersTransactionRequest
+  transaction: EthersTransactionRequest,
 ): Partial<LegacyEVMTransactionRequest> {
   return {
     to: transaction.to,
@@ -192,20 +192,20 @@ function legacyEVMTransactionRequestFromEthersTransactionRequest(
 }
 
 export function transactionRequestFromEthersTransactionRequest(
-  ethersTransactionRequest: EthersTransactionRequest
+  ethersTransactionRequest: EthersTransactionRequest,
 ): Partial<TransactionRequest> {
   if (isEIP1559TransactionRequest(ethersTransactionRequest)) {
     return eip1559TransactionRequestFromEthersTransactionRequest(
-      ethersTransactionRequest
+      ethersTransactionRequest,
     )
   }
   return legacyEVMTransactionRequestFromEthersTransactionRequest(
-    ethersTransactionRequest
+    ethersTransactionRequest,
   )
 }
 
 export function unsignedTransactionFromEVMTransaction(
-  tx: AnyEVMTransaction | PartialTransactionRequestWithFrom
+  tx: AnyEVMTransaction | PartialTransactionRequestWithFrom,
 ): UnsignedTransaction {
   const unsignedTransaction: UnsignedTransaction = {
     to: tx.to,
@@ -217,7 +217,7 @@ export function unsignedTransactionFromEVMTransaction(
       isEnabled(FeatureFlags.USE_MAINNET_FORK)
         ? FORK.chainID
         : tx.network.chainID,
-      10
+      10,
     ),
     type: tx.type,
   }
@@ -225,7 +225,7 @@ export function unsignedTransactionFromEVMTransaction(
   if (isEIP1559TransactionRequest(tx)) {
     unsignedTransaction.maxFeePerGas = BigNumber.from(tx.maxFeePerGas)
     unsignedTransaction.maxPriorityFeePerGas = BigNumber.from(
-      tx.maxPriorityFeePerGas
+      tx.maxPriorityFeePerGas,
     )
   } else if ("gasPrice" in tx) {
     unsignedTransaction.gasPrice = BigNumber.from(tx?.gasPrice ?? 0)
@@ -234,7 +234,7 @@ export function unsignedTransactionFromEVMTransaction(
 }
 
 export function ethersTransactionFromSignedTransaction(
-  tx: SignedTransaction
+  tx: SignedTransaction,
 ): EthersTransaction {
   const baseTx: EthersTransaction = {
     nonce: Number(tx.nonce),
@@ -246,7 +246,7 @@ export function ethersTransactionFromSignedTransaction(
       isEnabled(FeatureFlags.USE_MAINNET_FORK)
         ? FORK.chainID
         : tx.network.chainID,
-      10
+      10,
     ),
     value: BigNumber.from(tx.value),
     gasLimit: BigNumber.from(tx.gasLimit),
@@ -272,7 +272,7 @@ export function ethersTransactionFromSignedTransaction(
  */
 export function enrichTransactionWithReceipt(
   transaction: AnyEVMTransaction,
-  receipt: EthersTransactionReceipt
+  receipt: EthersTransactionReceipt,
 ): ConfirmedEVMTransaction {
   const gasUsed = receipt.gasUsed.toBigInt()
 
@@ -315,7 +315,7 @@ export function transactionFromEthersTransaction(
     blockNumber?: number
     type?: number | null
   },
-  network: EVMNetwork
+  network: EVMNetwork,
 ): AnyEVMTransaction {
   if (!tx || tx.hash === undefined) {
     throw new Error("Malformed transaction")

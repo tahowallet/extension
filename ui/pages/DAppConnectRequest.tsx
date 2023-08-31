@@ -26,7 +26,7 @@ export default function DAppConnectRequest(): ReactElement {
           denyOrRevokePermission({
             ...permission,
             state: "deny",
-          })
+          }),
         )
       }
     }
@@ -42,7 +42,7 @@ export default function DAppConnectRequest(): ReactElement {
           ...permission,
           accountAddress: currentAccountTotal.address, // make sure address is matching current account
           state: "allow",
-        })
+        }),
       )
     }
     window.onbeforeunload = null

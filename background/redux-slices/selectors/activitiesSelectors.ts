@@ -7,13 +7,13 @@ export const selectCurrentAccountActivities = createSelector(
   selectCurrentAccount,
   selectCurrentNetwork,
   (activities, account, network) =>
-    activities?.[account.address]?.[network.chainID] ?? []
+    activities?.[account.address]?.[network.chainID] ?? [],
 )
 
 export const selectActivitesHashesForEnrichment = createSelector(
   selectCurrentAccountActivities,
   (currentActivities) =>
     currentActivities.flatMap((activity) =>
-      "type" in activity ? [] : activity.hash
-    )
+      "type" in activity ? [] : activity.hash,
+    ),
 )

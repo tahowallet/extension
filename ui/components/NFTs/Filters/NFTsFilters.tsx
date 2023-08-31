@@ -77,21 +77,21 @@ export default function NFTsFilters(): ReactElement {
         clearTimeout(timerRef.current)
       }
     },
-    []
+    [],
   )
 
   const handleUpdateSortType = useCallback(
     (type: SortType) => {
       dispatch(updateSortType(type))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const handleUpdateCollectionFilter = useCallback(
     (filter: Filter) => {
       dispatch(updateCollectionFilter(filter))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const handleUpdateAccountFilter = useCallback(
@@ -100,11 +100,11 @@ export default function NFTsFilters(): ReactElement {
       dispatch(updateAccountFilter(filter)).then(() => {
         timerRef.current = window.setTimeout(
           () => setIsLoading(false),
-          LOADING_DELAY
+          LOADING_DELAY,
         )
       })
     },
-    [dispatch]
+    [dispatch],
   )
 
   return (

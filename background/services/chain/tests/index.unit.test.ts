@@ -32,7 +32,7 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   }
   loadRecentAssetTransfers: (
     addressNetwork: AddressOnNetwork,
-    incomingOnly: boolean
+    incomingOnly: boolean,
   ) => Promise<void>
   retrieveTransaction: (queuedTx: QueuedTxToRetrieve) => Promise<void>
   transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
@@ -71,13 +71,13 @@ describe("Chain Service", () => {
 
       const stub = sandbox.stub(
         chainService as unknown as ChainServiceExternalized,
-        "populatePartialEIP1559TransactionRequest"
+        "populatePartialEIP1559TransactionRequest",
       )
 
       await chainService.populatePartialTransactionRequest(
         ETHEREUM,
         partialTransactionRequest,
-        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n }
+        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n },
       )
 
       expect(stub.callCount).toBe(1)
@@ -85,7 +85,7 @@ describe("Chain Service", () => {
       await chainService.populatePartialTransactionRequest(
         POLYGON,
         { ...partialTransactionRequest, network: POLYGON },
-        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n }
+        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n },
       )
 
       expect(stub.callCount).toBe(2)
@@ -102,13 +102,13 @@ describe("Chain Service", () => {
 
       const stub = sandbox.stub(
         chainService as unknown as ChainServiceExternalized,
-        "populatePartialLegacyEVMTransactionRequest"
+        "populatePartialLegacyEVMTransactionRequest",
       )
 
       await chainService.populatePartialTransactionRequest(
         OPTIMISM,
         partialTransactionRequest,
-        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n }
+        { maxFeePerGas: 100n, maxPriorityFeePerGas: 1000n },
       )
 
       expect(stub.callCount).toBe(1)
@@ -139,7 +139,7 @@ describe("Chain Service", () => {
 
       expect(lastUserActivity).toBeLessThan(
         (chainService as unknown as ChainServiceExternalized)
-          .lastUserActivityOnNetwork[ETHEREUM.chainID]
+          .lastUserActivityOnNetwork[ETHEREUM.chainID],
       )
 
       jest.useRealTimers()
@@ -175,7 +175,7 @@ describe("Chain Service", () => {
         .callsFake(async () => {})
 
       chainService.markAccountActivity(
-        createAddressOnNetwork({ network: ETHEREUM })
+        createAddressOnNetwork({ network: ETHEREUM }),
       )
 
       expect(stub.calledWith(ETHEREUM.chainID)).toEqual(true)
@@ -191,12 +191,12 @@ describe("Chain Service", () => {
       const stub = sandbox
         .stub(
           chainService as unknown as ChainServiceExternalized,
-          "loadRecentAssetTransfers"
+          "loadRecentAssetTransfers",
         )
         .callsFake(async () => {})
 
       await chainService.markAccountActivity(
-        createAddressOnNetwork({ network: ETHEREUM })
+        createAddressOnNetwork({ network: ETHEREUM }),
       )
       expect(stub.called).toEqual(true)
     })
@@ -209,7 +209,7 @@ describe("Chain Service", () => {
       sandbox
         .stub(
           chainService as unknown as ChainServiceExternalized,
-          "getNetworksToTrack"
+          "getNetworksToTrack",
         )
         .resolves([ETHEREUM, POLYGON])
 
@@ -218,7 +218,7 @@ describe("Chain Service", () => {
       sandbox
         .stub(
           chainService as unknown as ChainServiceExternalized,
-          "startTrackingNetworkOrThrow"
+          "startTrackingNetworkOrThrow",
         )
         .onFirstCall()
         .callsFake(() => {
@@ -254,7 +254,7 @@ describe("Chain Service", () => {
 
         retrieveTransactionStub = sandbox.stub(
           chainServiceExternalized,
-          "retrieveTransaction"
+          "retrieveTransaction",
         )
       })
       afterEach(() => {
@@ -298,7 +298,7 @@ describe("Chain Service", () => {
 
         expect(retrieveTransactionStub.callCount).toBe(txRetrievedCount)
         expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
-          txInQueueCount - txRetrievedCount
+          txInQueueCount - txRetrievedCount,
         )
       })
       it("should clean up the timer after the queue is emptied", async () => {
@@ -321,7 +321,7 @@ describe("Chain Service", () => {
 
         expect(clearIntervalSpy.calledOnce).toBe(true)
         expect(
-          chainServiceExternalized.transactionToRetrieveGranularTimer
+          chainServiceExternalized.transactionToRetrieveGranularTimer,
         ).toBe(undefined)
       })
     })
@@ -349,9 +349,9 @@ describe("Chain Service", () => {
               ETHEREUM,
               txHash,
               Date.now(),
-              idx < PRIORITY_MAX_COUNT ? 1 : 0
-            )
-          )
+              idx < PRIORITY_MAX_COUNT ? 1 : 0,
+            ),
+          ),
         )
 
         transactionsToRetrieve = chainServiceExternalized.transactionsToRetrieve
@@ -364,7 +364,7 @@ describe("Chain Service", () => {
       it(`the first ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the first account`, async () => {
         Array(PRIORITY_MAX_COUNT).forEach((idx) => {
           expect(transactionsToRetrieve[idx].transaction.hash).toBe(
-            hashesForFirstAccount[idx]
+            hashesForFirstAccount[idx],
           )
         })
       })
@@ -372,7 +372,7 @@ describe("Chain Service", () => {
       it(`another ${PRIORITY_MAX_COUNT} transactions have a higher priority and should come from the second account`, async () => {
         Array(PRIORITY_MAX_COUNT).forEach((idx) => {
           expect(
-            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT].transaction.hash
+            transactionsToRetrieve[idx + PRIORITY_MAX_COUNT].transaction.hash,
           ).toBe(hashesForSecondAccount[idx])
         })
       })
@@ -381,7 +381,7 @@ describe("Chain Service", () => {
         Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
           expect(
             transactionsToRetrieve[idx + PRIORITY_MAX_COUNT * 2].transaction
-              .hash
+              .hash,
           ).toBe(hashesForFirstAccount[idx + PRIORITY_MAX_COUNT])
         })
       })
@@ -390,7 +390,7 @@ describe("Chain Service", () => {
         Array(NUMBER_OF_TX - PRIORITY_MAX_COUNT).forEach((idx) => {
           expect(
             transactionsToRetrieve[idx + PRIORITY_MAX_COUNT + NUMBER_OF_TX]
-              .transaction.hash
+              .transaction.hash,
           ).toBe(hashesForSecondAccount[idx + PRIORITY_MAX_COUNT])
         })
       })

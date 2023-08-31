@@ -12,7 +12,7 @@ setTimeout(() => {
   const state = window.history?.state || {}
   let reloadCount = state?.reloadCount || 0
   const navigationItem = performance.getEntriesByType(
-    "navigation"
+    "navigation",
   )[0] as PerformanceNavigationTiming
 
   if (navigationItem?.type?.toString() === "reload") {

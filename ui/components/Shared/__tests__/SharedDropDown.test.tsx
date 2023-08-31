@@ -21,7 +21,7 @@ describe("SharedDropdown", () => {
             icon: "somesvg.svg",
           },
         ]}
-      />
+      />,
     )
 
     const toggler = await ui.findByText("toggle dropdown")
@@ -51,7 +51,7 @@ describe("SharedDropdown", () => {
             icon: "somesvg.svg",
           },
         ]}
-      />
+      />,
     )
 
     const toggler = await ui.findByText("toggle dropdown")
@@ -70,7 +70,7 @@ describe("SharedDropdown", () => {
     fireEvent.transitionEnd(firstItem, { bubbles: true })
 
     await waitFor(() =>
-      expect(ui.queryByText("First Item")).not.toBeInTheDocument()
+      expect(ui.queryByText("First Item")).not.toBeInTheDocument(),
     )
   })
 })

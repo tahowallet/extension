@@ -98,7 +98,7 @@ describe("SharedAssetInput", () => {
         selectedAsset={undefined}
         assetsAndAmounts={[]}
         label={label}
-      />
+      />,
     )
 
     expect(ui.getByText(label)).toBeInTheDocument()
@@ -195,7 +195,7 @@ describe("SharedAssetInput", () => {
 
   test("should display asset price", () => {
     const ui = renderWithProviders(
-      <SharedAssetInputWithState initialAmount="1" />
+      <SharedAssetInputWithState initialAmount="1" />,
     )
 
     expect(ui.getByText("$1")).toBeVisible()
@@ -219,7 +219,7 @@ describe("SharedAssetInput", () => {
         assetsAndAmounts={assetsAndAmounts}
         label={label}
         disableDropdown
-      />
+      />,
     )
 
     const assetButton = ui.getByText("FAKE")

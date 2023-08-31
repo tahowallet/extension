@@ -5,33 +5,33 @@ import { filterAbility } from "../utils/abilities-utils"
 
 const selectAbilities = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.abilities
+  (abilitiesSlice) => abilitiesSlice.abilities,
 )
 
 export const selectDescriptionHidden = createSelector(
   (state: RootState) => state.abilities.hideDescription,
-  (hideDescription) => hideDescription
+  (hideDescription) => hideDescription,
 )
 
 /* Filtering selectors */
 const selectAbilityFilter = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.filter
+  (abilitiesSlice) => abilitiesSlice.filter,
 )
 
 export const selectAbilityFilterState = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.filter.state
+  (abilitiesSlice) => abilitiesSlice.filter.state,
 )
 
 export const selectAbilityFilterTypes = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.filter.types
+  (abilitiesSlice) => abilitiesSlice.filter.types,
 )
 
 export const selectAbilityFilterAccounts = createSelector(
   (state: RootState) => state.abilities,
-  (abilitiesSlice) => abilitiesSlice.filter.accounts
+  (abilitiesSlice) => abilitiesSlice.filter.accounts,
 )
 
 /* Items selectors */
@@ -43,12 +43,12 @@ export const selectFilteredAbilities = createSelector(
     Object.values(abilities).forEach((addressAbilities) => {
       activeAbilities.push(
         ...Object.values(addressAbilities).filter((ability) =>
-          filterAbility(ability, filter)
-        )
+          filterAbility(ability, filter),
+        ),
       )
     })
     return activeAbilities
-  }
+  },
 )
 
 /* Counting selectors  */
@@ -59,5 +59,5 @@ export const selectOpenAbilityCount = createSelector(
     Object.values(abilities)
       .flatMap((address) => Object.values(address))
       .filter((ability) => filterAbility(ability, { ...filter, state: "open" }))
-      .length
+      .length,
 )

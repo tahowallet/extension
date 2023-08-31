@@ -20,10 +20,10 @@ const getAllAddresses = createSelector(
   (account) => [
     ...new Set(
       Object.values(account.accountsData.evm).flatMap((chainAddresses) =>
-        Object.keys(chainAddresses)
-      )
+        Object.keys(chainAddresses),
+      ),
     ),
-  ]
+  ],
 )
 
 export const selectAccountSignersByAddress = createSelector(
@@ -35,7 +35,7 @@ export const selectAccountSignersByAddress = createSelector(
     allAddresses,
     ledgerDevices,
     keyringsByAddress,
-    privateKeyWalletsByAddress
+    privateKeyWalletsByAddress,
   ) => {
     const allAccountsSeen = new Set<string>()
     const ledgerEntries = Object.values(ledgerDevices).flatMap((device) =>
@@ -50,8 +50,8 @@ export const selectAccountSignersByAddress = createSelector(
               { type: "ledger", deviceID: device.id, path: account.path },
             ],
           ]
-        }
-      )
+        },
+      ),
     )
 
     const keyringEntries = Object.entries(keyringsByAddress)
@@ -70,7 +70,7 @@ export const selectAccountSignersByAddress = createSelector(
               keyringID: keyring.id,
             },
           ]
-        }
+        },
       )
       .filter(isDefined)
 
@@ -92,7 +92,7 @@ export const selectAccountSignersByAddress = createSelector(
               walletID: wallet.id,
             },
           ]
-        }
+        },
       )
       .filter(isDefined)
 
@@ -111,11 +111,12 @@ export const selectAccountSignersByAddress = createSelector(
     ]
 
     return Object.fromEntries(entriesByPriority)
-  }
+  },
 )
 
 export const selectCurrentAccountSigner = createSelector(
   selectAccountSignersByAddress,
   selectCurrentAccount,
-  (signingAccounts, selectedAccount) => signingAccounts[selectedAccount.address]
+  (signingAccounts, selectedAccount) =>
+    signingAccounts[selectedAccount.address],
 )

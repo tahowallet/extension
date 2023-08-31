@@ -118,7 +118,7 @@ export function NetworkSettingsSelectOptionButton({
         </div>
         <span className="subtext_large large r_label">{t("maxBase")} </span>
         <div className="price">{` ${Number(option.baseMaxGwei).toFixed(
-          2
+          2,
         )}`}</div>
       </div>
       <style jsx>
@@ -144,14 +144,14 @@ export function NetworkSettingsSelectOptionButtonCustom({
   isActive: boolean
   updateCustomGas: (
     customMaxBaseFee: bigint,
-    customMaxPriorityFeePerGas: bigint
+    customMaxPriorityFeePerGas: bigint,
   ) => void
 }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "networkFees" })
   const [warningMessage, setWarningMessage] = useState("")
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const baseGasFee = useBackgroundSelector(
-    (state) => state.networks.blockInfo[selectedNetwork.chainID].baseFeePerGas
+    (state) => state.networks.blockInfo[selectedNetwork.chainID].baseFeePerGas,
   )
 
   return (
@@ -181,7 +181,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
               onChange={(value: string) => {
                 updateCustomGas(
                   option.baseMaxFeePerGas,
-                  gweiToWei(parseFloat(value))
+                  gweiToWei(parseFloat(value)),
                 )
               }}
               maxLength={4}
@@ -198,7 +198,7 @@ export function NetworkSettingsSelectOptionButtonCustom({
             onChange={(value: string) => {
               updateCustomGas(
                 gweiToWei(parseFloat(value)), // @TODO Replace
-                option.maxPriorityFeePerGas
+                option.maxPriorityFeePerGas,
               )
               if (baseGasFee && gweiToWei(parseFloat(value)) < baseGasFee) {
                 setWarningMessage(t("errors.lowGas"))

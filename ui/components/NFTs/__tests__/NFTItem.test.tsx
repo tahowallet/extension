@@ -71,7 +71,7 @@ describe("NFTItem", () => {
     expect(ui.getByRole("img")).toHaveStyle("transform: scale(1)")
     await userEvent.hover(item)
     await waitFor(() =>
-      expect(ui.getByRole("img")).toHaveStyle("transform: scale(1.5)")
+      expect(ui.getByRole("img")).toHaveStyle("transform: scale(1.5)"),
     )
   })
 
@@ -91,7 +91,7 @@ describe("NFTItem", () => {
 
     expect(price).toBeInTheDocument()
     expect(price).toHaveTextContent(
-      `~${floorPrice.value} ${floorPrice.tokenSymbol}`
+      `~${floorPrice.value} ${floorPrice.tokenSymbol}`,
     )
   })
 })

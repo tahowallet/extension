@@ -31,7 +31,7 @@ export default function TopMenuProfileButton(props: {
   const showTooltip = () => {
     timerRef.current = window.setTimeout(
       () => setShouldDisplayTooltip(true),
-      TOOLTIP_DELAY
+      TOOLTIP_DELAY,
     )
   }
   const hideTooltip = () => {

@@ -33,7 +33,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         tx
           .table(mainTable)
           .toArray()
-          .then((permissions) => tx.table(tempTable).bulkAdd(permissions))
+          .then((permissions) => tx.table(tempTable).bulkAdd(permissions)),
       )
 
     this.version(3).stores({
@@ -48,7 +48,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         tx
           .table(tempTable)
           .toArray()
-          .then((permissions) => tx.table(mainTable).bulkAdd(permissions))
+          .then((permissions) => tx.table(mainTable).bulkAdd(permissions)),
       )
 
     this.version(5).stores({
@@ -67,7 +67,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
             // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
             // eslint-disable-next-line no-param-reassign
             permission.chainID = ETHEREUM.chainID
-          })
+          }),
       )
 
     this.version(7)
@@ -79,7 +79,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
         tx
           .table(mainTable)
           .toArray()
-          .then((rows) => tx.table(tempTable).bulkAdd(rows))
+          .then((rows) => tx.table(tempTable).bulkAdd(rows)),
       )
 
     this.version(8).stores({
@@ -104,7 +104,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
               ...permission,
               chainID: POLYGON.chainID,
             })
-          })
+          }),
         )
       })
 
@@ -120,7 +120,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   }
 
   async setPermission(
-    permission: PermissionRequest
+    permission: PermissionRequest,
   ): Promise<string | undefined> {
     return this.dAppPermissions.put(permission)
   }
@@ -128,7 +128,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   async deletePermission(
     origin: string,
     accountAddress: string,
-    chainID: string
+    chainID: string,
   ): Promise<number> {
     return this.dAppPermissions
       .where({ origin, accountAddress, chainID })
@@ -146,7 +146,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
   async checkPermission(
     origin: string,
     accountAddress: string,
-    chainID: string
+    chainID: string,
   ): Promise<PermissionRequest | undefined> {
     return this.dAppPermissions.get({ origin, accountAddress, chainID })
   }

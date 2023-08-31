@@ -30,7 +30,7 @@ export default function SharedAccordion({
   /* If the accordion is open by default, the first opening should be without a transition. */
   const [withTransition, setWithTransition] = useState(!isInitiallyOpen)
   const [height, setHeight] = useState(
-    isInitiallyOpen && contentHeight ? contentHeight : 0
+    isInitiallyOpen && contentHeight ? contentHeight : 0,
   )
 
   const toggle = () => {
@@ -48,7 +48,7 @@ export default function SharedAccordion({
       () => {
         setIsVisible(isOpen)
       },
-      isOpen ? 140 : 50
+      isOpen ? 140 : 50,
     )
     return () => clearTimeout(timeout)
   }, [isOpen])
@@ -116,13 +116,15 @@ export default function SharedAccordion({
         .accordion_content {
           max-height: 0;
           overflow: hidden;
-          transition: max-height ${DELAY}ms ease-out,
+          transition:
+            max-height ${DELAY}ms ease-out,
             opacity var(--content-fade-in-duration, 130ms) ease-in;
           opacity: 0;
         }
         .accordion_content.visible {
           max-height: ${height + 10}px;
-          transition: max-height ${withTransition ? DELAY : 0}ms ease-in,
+          transition:
+            max-height ${withTransition ? DELAY : 0}ms ease-in,
             opacity var(--content-fade-in-duration, 130ms) ease-in;
           opacity: 1;
           overflow: ${isVisible ? "visible" : "hidden"};

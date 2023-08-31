@@ -20,12 +20,12 @@ export default function NFTList(props: {
   const [currentNFTPreview, setCurrentNFTPreview] =
     useState<NFTWithCollection | null>(null)
   const [currentExpandedID, setCurrentExpandedID] = useState<null | string>(
-    null
+    null,
   )
   const setExpandedID = useCallback(
     (id: string | null, owner: string | null) =>
       setCurrentExpandedID(`${id}_${owner}`), // TODO: owner can be removed after we will merge collections owned by multiple accounts
-    []
+    [],
   )
 
   const isReloading = useBackgroundSelector(selectIsReloadingNFTs)
@@ -73,7 +73,7 @@ export default function NFTList(props: {
                 `${collection.id}_${collection.owner}` === currentExpandedID
               }
             />
-          )
+          ),
         )}
       </ul>
       <SharedSlideUpMenu

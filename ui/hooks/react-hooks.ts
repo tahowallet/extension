@@ -21,7 +21,7 @@ export function useIsMounted(): React.MutableRefObject<boolean> {
  */
 export function useInterval<F extends (...args: unknown[]) => unknown>(
   callback: F,
-  delay: number
+  delay: number,
 ): void {
   const callbackRef = useRef(callback)
   callbackRef.current = callback
@@ -49,7 +49,7 @@ export function useValueRef<T>(value: T): React.MutableRefObject<T> {
  * it will be called on unmount
  */
 export function useOnMount<Fn extends (...args: unknown[]) => unknown>(
-  callback: Fn
+  callback: Fn,
 ): void {
   const callbackRef = useRef(callback)
 
@@ -82,13 +82,13 @@ export function usePrevious<T>(value: T): T {
  * Useful for "batching" state changes, Similar API to the old Component.setState
  */
 export function useSetState<S extends Record<string, unknown>>(
-  state: S
+  state: S,
 ): readonly [S, typeof setter] {
   const [value, setValue] = useState<S>(state)
 
   const setter = useCallback(
     <K extends keyof S>(
-      newValue: ((prev: Readonly<S>) => S) | (Pick<S, K> | S)
+      newValue: ((prev: Readonly<S>) => S) | (Pick<S, K> | S),
     ) =>
       setValue((prevState) => {
         if (typeof newValue === "function") {
@@ -97,7 +97,7 @@ export function useSetState<S extends Record<string, unknown>>(
 
         return { ...prevState, ...newValue }
       }),
-    []
+    [],
   )
 
   return [value, setter] as const
@@ -114,7 +114,7 @@ export function useRunOnFirstRender(func: () => void): void {
 
 export function useSkipFirstRenderEffect(
   func: () => void,
-  deps: unknown[] = []
+  deps: unknown[] = [],
 ): void {
   const didMount = useRef(false)
 

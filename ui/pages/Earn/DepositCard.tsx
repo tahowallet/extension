@@ -10,7 +10,7 @@ import SharedAssetIcon from "../../components/Shared/SharedAssetIcon"
 import SharedSkeletonLoader from "../../components/Shared/SharedSkeletonLoader"
 
 export const getDisplayAPR = (
-  data: APRData | undefined
+  data: APRData | undefined,
 ): string | ReactElement => {
   if (typeof data?.totalAPR === "undefined") {
     if (typeof data?.high === "undefined" || typeof data?.low === "undefined") {
@@ -32,14 +32,14 @@ export default function EarnDepositedCard({
       amount: userDeposited,
       decimals: asset.decimals,
     },
-    4
+    4,
   )
   const availableRewards = fromFixedPointNumber(
     {
       amount: vault.pendingRewards,
       decimals: DOGGO.decimals,
     },
-    2
+    2,
   )
   return (
     <li>

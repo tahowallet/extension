@@ -146,7 +146,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 1,
         valueUSD: 2000,
@@ -164,7 +164,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 0.5,
         valueUSD: 1000,
@@ -182,7 +182,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 2,
         valueUSD: 30,
@@ -200,7 +200,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 0.5,
         valueUSD: 25,
@@ -218,7 +218,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 0.5,
         tokenSymbol: "MATIC",
@@ -228,7 +228,7 @@ describe("NFTs utils", () => {
       const collection = COLLECTION_MOCK
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toBeUndefined()
     })
     test("shouldn't add floor price if price is not using base assets", () => {
@@ -242,7 +242,7 @@ describe("NFTs utils", () => {
 
       expect(
         enrichCollectionWithUSDFloorPrice(collection, pricesState, USD.symbol)
-          .floorPrice
+          .floorPrice,
       ).toMatchObject({
         value: 0.5,
         tokenSymbol: "XYZ",
@@ -277,14 +277,14 @@ describe("NFTs utils", () => {
       expect(
         collections
           .sort((a, b) => sortByPrice("asc", a, b))
-          .map((collection) => collection.id)
+          .map((collection) => collection.id),
       ).toMatchObject(["zero", "cheap", "expensive", "undefined"])
     })
     test("should sort collection by descending floor price", () => {
       expect(
         collections
           .sort((a, b) => sortByPrice("desc", a, b))
-          .map((collection) => collection.id)
+          .map((collection) => collection.id),
       ).toMatchObject(["expensive", "cheap", "zero", "undefined"])
     })
   })

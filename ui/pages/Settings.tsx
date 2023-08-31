@@ -319,7 +319,7 @@ export default function Settings(): ReactElement {
               label: t("settings.autoLockTimer.interval", { time: item.label }),
             }))}
             defaultIndex={AUTO_LOCK_OPTIONS.findIndex(
-              ({ value }) => value === String(autoLockInterval)
+              ({ value }) => value === String(autoLockInterval),
             )}
             width="100%"
             onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
@@ -393,7 +393,7 @@ export default function Settings(): ReactElement {
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
         ...wrapIfEnabled(
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
-          notificationBanner
+          notificationBanner,
         ),
       ],
     },

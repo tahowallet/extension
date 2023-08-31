@@ -40,7 +40,7 @@ export default function AccountItemEditName({
     (
       event:
         | React.FormEvent<HTMLFormElement>
-        | React.MouseEvent<HTMLButtonElement, MouseEvent>
+        | React.MouseEvent<HTMLButtonElement, MouseEvent>,
     ) => {
       event.preventDefault()
       if (!newName) {
@@ -55,11 +55,11 @@ export default function AccountItemEditName({
         addOrEditAddressName({
           ...addressOnNetwork,
           name: newName,
-        })
+        }),
       )
       close()
     },
-    [addressOnNetwork, close, dispatch, error, newName, t]
+    [addressOnNetwork, close, dispatch, error, newName, t],
   )
 
   return (

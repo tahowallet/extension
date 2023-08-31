@@ -41,7 +41,7 @@ export const test = base.extend<WalletTestFixtures>({
     if (!background) background = await context.waitForEvent("backgroundpage")
 
     await background.route(/app\.posthog\.com/i, async (route) =>
-      route.fulfill({ json: { status: 1 } })
+      route.fulfill({ json: { status: 1 } }),
     )
 
     await background.waitForResponse(/api\.coingecko\.com/i)
@@ -73,5 +73,5 @@ export const test = base.extend<WalletTestFixtures>({
 export const skipIfFeatureFlagged = (featureFlag: FeatureFlagType): void =>
   test.skip(
     !isEnabled(featureFlag, false),
-    `Feature Flag: ${featureFlag} has not been turned on for this run`
+    `Feature Flag: ${featureFlag} has not been turned on for this run`,
   )

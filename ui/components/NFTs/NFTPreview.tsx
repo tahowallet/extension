@@ -54,7 +54,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const ownerName = useBackgroundSelector((state) =>
-    getAccountNameOnChain(state, { address: owner, network })
+    getAccountNameOnChain(state, { address: owner, network }),
   )
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
@@ -68,7 +68,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         div.target.classList.add("preview_backdrop")
       }
     },
-    { threshold: 0.8 }
+    { threshold: 0.8 },
   )
 
   const marketsList = useMemo(() => getRelevantMarketsList(nft), [nft])
@@ -82,9 +82,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
         refetchNFTsFromCollection({
           collectionID,
           account: { address: owner, network },
-        })
+        }),
       ),
-    [collectionID, owner, network, dispatch]
+    [collectionID, owner, network, dispatch],
   )
 
   const localizedTotalCount = (totalNftCount ?? supply)?.toLocaleString()
@@ -237,7 +237,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                         {value}
                       </span>
                     </div>
-                  )
+                  ),
               )}
             </div>
           )}

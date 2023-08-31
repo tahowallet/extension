@@ -35,7 +35,7 @@ describe("Reducers", () => {
 
       const newState = reducer(
         state,
-        assetsLoaded([{ ...asset, metadata: { verified: true } }])
+        assetsLoaded([{ ...asset, metadata: { verified: true } }]),
       )
 
       expect(newState[0].metadata?.verified).toBeTruthy()
@@ -80,7 +80,7 @@ describe("Assets selectors", () => {
       const result = selectAssetPricePoint(
         pricesState,
         assetWithoutPricePoint,
-        "USD"
+        "USD",
       )
 
       expect(result).toMatchObject(pricePoint)

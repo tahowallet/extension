@@ -37,9 +37,9 @@ function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
   callback: (
     element: TypedIntersectionObserverEntry<
       T extends React.RefObject<infer U> ? U : never
-    >
+    >,
   ) => void,
-  options: IntersectionObserverInit
+  options: IntersectionObserverInit,
 ) {
   const callbackRef = useRef(callback)
   const [obs] = useState(
@@ -48,9 +48,9 @@ function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
         callbackRef.current(
           element as TypedIntersectionObserverEntry<
             T extends React.RefObject<infer U> ? U : never
-          >
+          >,
         )
-      }, options)
+      }, options),
   )
 
   useLayoutEffect(() => {
@@ -87,7 +87,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         setIsVisible(true)
       }
     },
-    { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" }
+    { threshold: 0.01, root: null, rootMargin: "50px 0px 50px 0px" },
   )
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             ) {
               const prefix = "data:image/svg+xml;base64,"
               const base64URI = Buffer.from(
-                await response.arrayBuffer()
+                await response.arrayBuffer(),
               ).toString("base64")
 
               setImageURL(prefix + base64URI)

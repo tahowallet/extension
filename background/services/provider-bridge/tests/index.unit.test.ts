@@ -73,7 +73,7 @@ describe("ProviderBridgeService", () => {
         enablingPermission,
         method,
         params,
-        origin
+        origin,
       )
       expect(response).toEqual([enablingPermission.accountAddress])
     })
@@ -88,7 +88,7 @@ describe("ProviderBridgeService", () => {
         enablingPermission,
         method,
         params,
-        origin
+        origin,
       )
 
       expect(stub.called).toBe(true)
@@ -104,7 +104,7 @@ describe("ProviderBridgeService", () => {
         { ...enablingPermission, state: "deny" },
         method,
         params,
-        origin
+        origin,
       )
 
       expect(stub.called).toBe(false)
@@ -141,7 +141,7 @@ describe("ProviderBridgeService", () => {
         },
         "wallet_addEthereumChain",
         params,
-        enablingPermission.origin
+        enablingPermission.origin,
       )
 
       // @ts-expect-error private access to reference the service
@@ -152,7 +152,7 @@ describe("ProviderBridgeService", () => {
       await waitFor(() => expect(showPopupSpy).toHaveBeenCalled())
 
       const validatedPayload = validateAddEthereumChainParameter(
-        params[0] as AddEthereumChainParameter
+        params[0] as AddEthereumChainParameter,
       )
 
       await waitFor(() =>
@@ -160,7 +160,7 @@ describe("ProviderBridgeService", () => {
           ...validatedPayload,
           favicon: "favicon.png",
           siteTitle: "some site",
-        })
+        }),
       )
 
       expect(spy).not.toHaveBeenCalled()
@@ -170,8 +170,8 @@ describe("ProviderBridgeService", () => {
         expect(spy).toHaveBeenCalledWith(
           "wallet_addEthereumChain",
           [validatedPayload, "0xd8da6bf26964af9d7eed9e03e53415d37aa96045"],
-          BASE_DATA.origin
-        )
+          BASE_DATA.origin,
+        ),
       )
 
       await expect(request).resolves.toEqual(null) // resolves without errors
@@ -205,7 +205,7 @@ describe("ProviderBridgeService", () => {
         .mockImplementation(() => Promise.resolve(ETHEREUM))
       const internalEthereumProviderSpy = jest.spyOn(
         internalEthereumProvider,
-        "routeSafeRPCRequest"
+        "routeSafeRPCRequest",
       )
 
       const request = providerBridgeService.routeContentScriptRPCRequest(
@@ -214,15 +214,15 @@ describe("ProviderBridgeService", () => {
         },
         "wallet_addEthereumChain",
         params,
-        enablingPermission.origin
+        enablingPermission.origin,
       )
 
       await waitFor(() =>
         expect(internalEthereumProviderSpy).toHaveBeenCalledWith(
           "wallet_addEthereumChain",
           params,
-          BASE_DATA.origin
-        )
+          BASE_DATA.origin,
+        ),
       )
 
       // expect no popup

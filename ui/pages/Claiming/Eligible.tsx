@@ -34,7 +34,7 @@ export default function Eligible(): ReactElement | null {
             amount: BigInt(Number(state.claim?.eligibility?.amount)) || 0n,
             decimals: doggoTokenDecimalDigits,
           },
-          0
+          0,
         ),
       step: state.claim.claimStep,
       referrer: state.claim.referrer,
@@ -44,13 +44,13 @@ export default function Eligible(): ReactElement | null {
   const [infoModalVisible, setInfoModalVisible] = useState(false)
   const [showSuccessStep, setShowSuccessStep] = useState(false)
   const { accountData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
+    selectAccountAndTimestampedActivities,
   )
   const { selectedDelegate, selectedForBonus } = useBackgroundSelector(
-    selectClaimSelections
+    selectClaimSelections,
   )
   const hasAccounts = useBackgroundSelector(
-    (state) => Object.keys(state.account.accountsData).length > 0
+    (state) => Object.keys(state.account.accountsData).length > 0,
   )
 
   if (!hasAccounts) {

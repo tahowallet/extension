@@ -67,7 +67,7 @@ function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {
  * @param encryptedVault - an encrypted keyring vault
  */
 export async function writeLatestEncryptedVault(
-  encryptedVault: EncryptedVault
+  encryptedVault: EncryptedVault,
 ): Promise<void> {
   const serializedVaults = await getEncryptedVaults()
   const vaults = [...serializedVaults.vaults]
@@ -76,7 +76,7 @@ export async function writeLatestEncryptedVault(
       newestVault && newestVault.timeSaved > nextVault.timeSaved
         ? newestVault
         : nextVault,
-    null
+    null,
   )
   const oldVault = currentLatest && currentLatest.vault
   // if there's been a change, persist the vault
@@ -118,11 +118,11 @@ export async function migrateVaultsToLatestVersion(password: string): Promise<
       vaults.map(async ({ vault, timeSaved }) => {
         const deprecatedSaltedKey = await deprecatedDerivePbkdf2KeyFromPassword(
           password,
-          vault.salt
+          vault.salt,
         )
         const newSaltedKey = await deriveArgon2KeyFromPassword(
           password,
-          vault.salt
+          vault.salt,
         )
 
         const deprecatedDecryptedVault = await decryptVault({
@@ -148,7 +148,7 @@ export async function migrateVaultsToLatestVersion(password: string): Promise<
           JSON.stringify(deprecatedDecryptedVault)
         ) {
           throw new Error(
-            "Failed to migrate vaults to Argon2. Decrypted vaults do not match."
+            "Failed to migrate vaults to Argon2. Decrypted vaults do not match.",
           )
         }
 
@@ -156,7 +156,7 @@ export async function migrateVaultsToLatestVersion(password: string): Promise<
           timeSaved,
           vault: newEncryptedVault,
         }
-      })
+      }),
     )
 
     const newSerializedVaults = {

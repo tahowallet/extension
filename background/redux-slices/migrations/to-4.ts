@@ -21,7 +21,7 @@ type NetworkState = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const oldState = prevState as OldState
 
@@ -32,8 +32,8 @@ export default (
         blockHeight:
           Math.max(
             ...Object.keys(oldState.account?.blocks ?? {}).map((s) =>
-              parseInt(s, 10)
-            )
+              parseInt(s, 10),
+            ),
           ) || null,
       },
     },

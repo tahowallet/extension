@@ -121,10 +121,10 @@ export type EnrichedEVMTransactionRequest =
   | EnrichedLegacyTransactionRequest
 
 type PartialEIP1559TransactionRequestWithFrom =
-  | Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork }
+  Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork }
 
 type PartialLegacyEVMTransactionRequestWithFrom =
-  | Partial<LegacyEVMTransactionRequest> & { from: string; network: EVMNetwork }
+  Partial<LegacyEVMTransactionRequest> & { from: string; network: EVMNetwork }
 
 export type PartialTransactionRequestWithFrom =
   | PartialEIP1559TransactionRequestWithFrom

@@ -13,12 +13,12 @@ import { AbilitiesDatabase } from "../db"
 import { normalizeEVMAddress } from "../../../lib/utils"
 
 const address = normalizeEVMAddress(
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd",
 )
 
 const sortAbilities = (abilities: Ability[]) =>
   abilities.sort(
-    (ability1, ability2) => ability1.interestRank - ability2.interestRank
+    (ability1, ability2) => ability1.interestRank - ability2.interestRank,
   )
 
 type AbilitiesServiceExternalized = Omit<AbilitiesService, "db"> & {
@@ -133,7 +133,7 @@ describe("AbilitiesService", () => {
       // We use the updated state because it should be the same in the cache
       const abilities = normalizeDaylightAbilities(
         updatedDaylightAbilities,
-        address
+        address,
       )
 
       expect(stubGetAbilities.called).toBe(true)
@@ -144,7 +144,7 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
-        }
+        },
       )
     })
 
@@ -166,7 +166,7 @@ describe("AbilitiesService", () => {
       // We use the updated state because it should be the same in the cache
       const abilities = normalizeDaylightAbilities(
         updatedDaylightAbilities,
-        address
+        address,
       )
 
       expect(stubGetAbilities.called).toBe(true)
@@ -177,7 +177,7 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
-        }
+        },
       )
     })
 
@@ -192,7 +192,7 @@ describe("AbilitiesService", () => {
       // Mark second ability as completed
       await abilitiesServiceExternalized.db.markAsCompleted(
         address,
-        daylightAbilities[1].uid
+        daylightAbilities[1].uid,
       )
       await abilitiesServiceExternalized.pollForAbilities(address)
 
@@ -209,7 +209,7 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
-        }
+        },
       )
     })
 
@@ -224,7 +224,7 @@ describe("AbilitiesService", () => {
       // Mark second ability as removed
       await abilitiesServiceExternalized.db.markAsRemoved(
         address,
-        daylightAbilities[1].uid
+        daylightAbilities[1].uid,
       )
       await abilitiesServiceExternalized.pollForAbilities(address)
 
@@ -241,7 +241,7 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
-        }
+        },
       )
     })
 
@@ -263,7 +263,7 @@ describe("AbilitiesService", () => {
 
       // Normalized abilities that should be returned for redux status updates
       const abilities = sortAbilities(
-        normalizeDaylightAbilities(updatedDaylightAbilities, address)
+        normalizeDaylightAbilities(updatedDaylightAbilities, address),
       )
 
       expect(stubGetAbilities.called).toBe(true)
@@ -274,7 +274,7 @@ describe("AbilitiesService", () => {
         {
           address,
           abilities,
-        }
+        },
       )
     })
   })

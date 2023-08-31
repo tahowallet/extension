@@ -22,7 +22,7 @@ const useDropdownContext = () => {
 
   if (!value) {
     throw new Error(
-      "Dropdown context is only available inside a Dropdown container"
+      "Dropdown context is only available inside a Dropdown container",
     )
   }
 
@@ -48,7 +48,7 @@ function DropdownContainer({ children }: DropdownContainerProps): ReactElement {
   const dropdownToggle = useCallback(
     (value?: boolean) =>
       setIsOpen(value ?? ((existingValue) => !existingValue)),
-    [setIsOpen]
+    [setIsOpen],
   )
 
   const contextValue: DropdownContextValue = useMemo<DropdownContextValue>(
@@ -56,7 +56,7 @@ function DropdownContainer({ children }: DropdownContainerProps): ReactElement {
       isOpen,
       toggle: dropdownToggle,
     }),
-    [isOpen, dropdownToggle]
+    [isOpen, dropdownToggle],
   )
 
   return (
@@ -188,7 +188,7 @@ export default function SharedDropdown({
                 {options
                   .filter(
                     (option): option is DropdownOption =>
-                      typeof option !== "undefined"
+                      typeof option !== "undefined",
                   )
                   .map(({ key, onClick, icon, label, color, hoverColor }) => (
                     <li key={key} className="option">
@@ -237,8 +237,10 @@ export default function SharedDropdown({
                     border-radius: 4px;
                     z-index: 1;
 
-                    box-shadow: 0px 2px 4px 0px #00141357,
-                      0px 6px 8px 0px #0014133d, 0px 16px 16px 0px #00141324;
+                    box-shadow:
+                      0px 2px 4px 0px #00141357,
+                      0px 6px 8px 0px #0014133d,
+                      0px 16px 16px 0px #00141324;
                   }
                   ul.options {
                     display: flex;

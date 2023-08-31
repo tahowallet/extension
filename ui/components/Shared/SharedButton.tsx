@@ -37,7 +37,7 @@ export type Props = {
 }
 
 export default function SharedButton(
-  props: Props & PropsWithIcon
+  props: Props & PropsWithIcon,
 ): ReactElement {
   const {
     id,
@@ -73,7 +73,7 @@ export default function SharedButton(
   }
 
   async function handleClick(
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) {
     setIsClicked(true)
     onClick?.(e)
@@ -104,7 +104,7 @@ export default function SharedButton(
         { deemphasized_white: type === "deemphasizedWhite" },
         { warning: type === "warning" },
         { twitter: type === "twitter" },
-        { center }
+        { center },
       )}
       onClick={handleClick}
       style={style}
@@ -127,7 +127,7 @@ export default function SharedButton(
           <span
             className={classNames(
               { icon_button: true },
-              { icon_medium: iconMedium }
+              { icon_medium: iconMedium },
             )}
           />
         ) : null}
@@ -149,7 +149,9 @@ export default function SharedButton(
             line-height: 24px;
             text-align: center;
             padding: 0 17px;
-            transition: background-color 0.2s, color 0.2s;
+            transition:
+              background-color 0.2s,
+              color 0.2s;
           }
           .button:hover {
             background-color: var(--gold-80);

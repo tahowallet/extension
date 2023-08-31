@@ -41,7 +41,7 @@ export default function InternalSignerUnlock({
   }, [history, areInternalSignersUnlocked, dispatch, t])
 
   const dispatchUnlockWallet = async (
-    event: React.FormEvent<HTMLFormElement>
+    event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> => {
     event.preventDefault()
     await dispatch(unlockInternalSigners(password))

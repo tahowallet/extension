@@ -43,7 +43,7 @@ const getAddresses = async () => {
   await signInWithEmailAndPassword(
     getAuth(app),
     FIRESTORE_USER,
-    FIRESTORE_PASSWORD
+    FIRESTORE_PASSWORD,
   )
 
   const db = getFirestore(app)
@@ -56,7 +56,7 @@ const getAddresses = async () => {
       dbCollection,
       orderBy("signedManifesto.timestamp", "desc"),
       limit(CHUNK_SIZE),
-      where("signedManifesto.timestamp", ">=", TARGET_DATE)
+      where("signedManifesto.timestamp", ">=", TARGET_DATE),
     )
 
     if (offset) {

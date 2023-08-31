@@ -12,7 +12,9 @@ const resolvers = {
   rnsResolver,
 }
 
-type ResolverConstructors = ReturnType<typeof resolvers[keyof typeof resolvers]>
+type ResolverConstructors = ReturnType<
+  (typeof resolvers)[keyof typeof resolvers]
+>
 
 export type NameResolverSystem = ResolverConstructors["type"]
 

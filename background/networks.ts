@@ -175,7 +175,7 @@ export type LegacyEVMTransactionRequest = Pick<
  * 100 - EIP-2718 on Arbitrum
  */
 export const KNOWN_TX_TYPES = [0, 1, 2, 100] as const
-export type KnownTxTypes = typeof KNOWN_TX_TYPES[number]
+export type KnownTxTypes = (typeof KNOWN_TX_TYPES)[number]
 export function isKnownTxType(arg: unknown): arg is KnownTxTypes {
   return (
     arg !== undefined &&
@@ -362,7 +362,7 @@ export type BlockEstimate = {
  */
 export function sameNetwork(
   network1: AnyNetwork,
-  network2: AnyNetwork
+  network2: AnyNetwork,
 ): boolean {
   return (
     network1.family === network2.family && network1.chainID === network2.chainID
@@ -389,7 +389,7 @@ export const isEIP1559TransactionRequest = (
   transactionRequest:
     | AnyEVMTransaction
     | EthersTransactionRequest
-    | Partial<PartialTransactionRequestWithFrom>
+    | Partial<PartialTransactionRequestWithFrom>,
 ): transactionRequest is EIP1559TransactionRequest =>
   "maxFeePerGas" in transactionRequest &&
   transactionRequest.maxFeePerGas !== null &&
@@ -397,7 +397,7 @@ export const isEIP1559TransactionRequest = (
   transactionRequest.maxPriorityFeePerGas !== null
 
 export const isEIP1559SignedTransaction = (
-  signedTransaction: SignedTransaction
+  signedTransaction: SignedTransaction,
 ): signedTransaction is SignedEIP1559Transaction =>
   "maxFeePerGas" in signedTransaction &&
   "maxPriorityFeePerGas" in signedTransaction &&
@@ -405,18 +405,18 @@ export const isEIP1559SignedTransaction = (
   signedTransaction.maxPriorityFeePerGas !== null
 
 export const isEIP1559EnrichedTransactionSignatureRequest = (
-  transactionSignatureRequest: EnrichedEVMTransactionSignatureRequest
+  transactionSignatureRequest: EnrichedEVMTransactionSignatureRequest,
 ): transactionSignatureRequest is EnrichedEIP1559TransactionSignatureRequest =>
   "maxFeePerGas" in transactionSignatureRequest &&
   "maxPriorityFeePerGas" in transactionSignatureRequest
 
 export const isEIP1559EnrichedTransactionRequest = (
-  enrichedTransactionRequest: EnrichedEVMTransactionRequest
+  enrichedTransactionRequest: EnrichedEVMTransactionRequest,
 ): enrichedTransactionRequest is EnrichedEIP1559TransactionRequest =>
   "maxFeePerGas" in enrichedTransactionRequest &&
   "maxPriorityFeePerGas" in enrichedTransactionRequest
 
 export const isEnrichedEVMTransactionRequest = (
-  transactionRequest: TransactionRequest
+  transactionRequest: TransactionRequest,
 ): transactionRequest is EnrichedEVMTransactionRequest =>
   "annotation" in transactionRequest

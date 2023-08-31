@@ -11,7 +11,7 @@ type AssetWarningWrapperProps = {
 }
 
 export default function AssetWarningWrapper(
-  props: AssetWarningWrapperProps
+  props: AssetWarningWrapperProps,
 ): ReactElement {
   const { asset, close } = props
 

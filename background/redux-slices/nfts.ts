@@ -68,7 +68,7 @@ export const emitter = new Emittery<Events>()
 
 export function updateCollection(
   acc: NFTsSliceState,
-  collection: NFTCollection
+  collection: NFTCollection,
 ): void {
   const {
     id,
@@ -101,7 +101,7 @@ export function updateCollection(
     floorPrice: floorPrice && {
       value: fromFixedPointNumber(
         { amount: floorPrice.value, decimals: floorPrice.token.decimals },
-        4
+        4,
       ),
       tokenSymbol: floorPrice.token.symbol,
     },
@@ -111,12 +111,12 @@ export function updateCollection(
 export function updateFilter(
   acc: NFTsSliceState,
   collection: NFTCollection,
-  type: "accounts" | "collections"
+  type: "accounts" | "collections",
 ): void {
   const { id, name, thumbnailURL, owner } = collection
 
   const existingFilterId = acc.filters[type].findIndex(
-    (obj) => obj.id === (type === "accounts" ? owner : id)
+    (obj) => obj.id === (type === "accounts" ? owner : id),
   )
   const filter =
     type === "accounts"
@@ -149,7 +149,7 @@ export function updateFilter(
 
 export function updateFilters(
   acc: NFTsSliceState,
-  collection: NFTCollection
+  collection: NFTCollection,
 ): void {
   const { nftCount } = collection
   if ((nftCount ?? 0) > 0) {
@@ -184,7 +184,7 @@ const NFTsSlice = createSlice({
         payload: collections,
       }: {
         payload: NFTCollection[]
-      }
+      },
     ) => {
       const state: NFTsSliceState = {
         isReloading: false,
@@ -199,7 +199,7 @@ const NFTsSlice = createSlice({
     },
     updateNFTsCollections: (
       immerState,
-      { payload: collections }: { payload: NFTCollection[] }
+      { payload: collections }: { payload: NFTCollection[] },
     ) => {
       collections.forEach((collection) => {
         updateCollection(immerState, collection)
@@ -217,7 +217,7 @@ const NFTsSlice = createSlice({
           nfts: NFT[]
           hasNextPage: boolean
         }
-      }
+      },
     ) => {
       const {
         account: { network, address },
@@ -236,7 +236,7 @@ const NFTsSlice = createSlice({
     },
     updateIsReloading: (
       immerState,
-      { payload: isReloading }: { payload: boolean }
+      { payload: isReloading }: { payload: boolean },
     ) => {
       immerState.isReloading = isReloading
     },
@@ -246,12 +246,12 @@ const NFTsSlice = createSlice({
         payload: address,
       }: {
         payload: string
-      }
+      },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
       immerState.filters.accounts = immerState.filters.accounts.filter(
-        ({ id }) => id !== address
+        ({ id }) => id !== address,
       )
       immerState.filters.collections = immerState.filters.collections.flatMap(
         (collection) => {
@@ -261,13 +261,13 @@ const NFTsSlice = createSlice({
               : {
                   ...collection,
                   owners: collection.owners.filter(
-                    (owner) => owner !== address
+                    (owner) => owner !== address,
                   ),
                 }
           }
 
           return collection
-        }
+        },
       )
 
       Object.keys(immerState.nfts).forEach((chainID) => {
@@ -276,7 +276,7 @@ const NFTsSlice = createSlice({
     },
     deleteTransferredNFTs: (
       immerState,
-      { payload: transfers }: { payload: TransferredNFT[] }
+      { payload: transfers }: { payload: TransferredNFT[] },
     ) => {
       transfers.forEach(
         ({ id: nftID, chainID, from: address, collectionID }) => {
@@ -289,7 +289,7 @@ const NFTsSlice = createSlice({
           if (collection) {
             const hasLastNFT = (collection.nftCount ?? 0) <= 1
             const hasCachedTransferredNFT = collection.nfts.some(
-              (nft) => nft.id === nftID
+              (nft) => nft.id === nftID,
             )
 
             // let's update NFT count manually in case of multiple transfers from the same collection
@@ -300,18 +300,18 @@ const NFTsSlice = createSlice({
                 // this is last cached NFT or we know it was the last one owned then remove it from Redux cache
                 immerState.filters.collections =
                   immerState.filters.collections.filter(
-                    ({ id }) => id !== collectionID
+                    ({ id }) => id !== collectionID,
                   )
                 delete immerState.nfts[chainID][normalizedAddress][collectionID]
               } else {
                 // there are more NFTs owned in this collection, let's just remove transferred one
                 collection.nfts = collection.nfts.filter(
-                  (nft) => nft.id !== nftID
+                  (nft) => nft.id !== nftID,
                 )
               }
             }
           }
-        }
+        },
       )
     },
     cleanCachedNFTs: (immerState) => {
@@ -327,26 +327,26 @@ const NFTsSlice = createSlice({
                 const reducedList = collection.nfts.slice(0, 2) // leave 2 nfts to avoid unnecessary updates
                 collection.nfts = reducedList
               }
-            }
-          )
-        )
+            },
+          ),
+        ),
       )
     },
     updateCollectionFilter: (
       immerState,
-      { payload: filter }: { payload: Filter }
+      { payload: filter }: { payload: Filter },
     ) => {
       const idx = immerState.filters.collections.findIndex(
-        ({ id }) => id === filter.id
+        ({ id }) => id === filter.id,
       )
       immerState.filters.collections[idx] = filter
     },
     updateAccountFilter: (
       immerState,
-      { payload: filter }: { payload: Filter }
+      { payload: filter }: { payload: Filter },
     ) => {
       const idx = immerState.filters.accounts.findIndex(
-        ({ id }) => id === filter.id
+        ({ id }) => id === filter.id,
       )
       immerState.filters.accounts[idx] = filter
     },
@@ -374,26 +374,26 @@ export const fetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchNFTs", payload)
-  }
+  },
 )
 
 export const refetchNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/refetchNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("refetchNFTs", payload)
-  }
+  },
 )
 
 export const fetchMoreNFTsFromCollection = createBackgroundAsyncThunk(
   "nfts/fetchMoreNFTsFromCollection",
   async (payload: { collectionID: string; account: AddressOnNetwork }) => {
     await emitter.emit("fetchMoreNFTs", payload)
-  }
+  },
 )
 
 export const refetchCollections = createBackgroundAsyncThunk(
   "nfts/refetchCollections",
   async () => {
     await emitter.emit("refetchCollections")
-  }
+  },
 )

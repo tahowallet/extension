@@ -97,7 +97,7 @@ export default (state: Record<string, unknown>): ActivitiesEntityState => {
           // eslint-disable-next-line no-param-reassign
           typedState.activities[address][networkID].entities[transactionHash] =
             pick(originalTx, transactionPropertiesForUI)
-        }
+        },
       )
     })
   })

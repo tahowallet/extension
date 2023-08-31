@@ -21,7 +21,7 @@ export default function SignerBaseFrame({
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
   const additionalSigningStatus = useBackgroundSelector(
-    selectAdditionalSigningStatus
+    selectAdditionalSigningStatus,
   )
   const tooltip =
     additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""

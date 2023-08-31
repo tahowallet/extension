@@ -57,7 +57,7 @@ export default function Send(): ReactElement {
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
-    location.state ?? currentAccount.network.baseAsset
+    location.state ?? currentAccount.network.baseAsset,
   )
 
   const [assetType, setAssetType] = useState<"token" | "nft">("token")
@@ -110,10 +110,10 @@ export default function Send(): ReactElement {
       (assetAmount): assetAmount is CompleteAssetAmount<FungibleAsset> =>
         isFungibleAssetAmount(assetAmount) &&
         assetAmount.decimalAmount > 0 &&
-        isTrustedAsset(assetAmount.asset)
+        isTrustedAsset(assetAmount.asset),
     )
   const assetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.prices, selectedAsset, mainCurrencySymbol)
+    selectAssetPricePoint(state.prices, selectedAsset, mainCurrencySymbol),
   )
 
   const assetAmountFromForm = () => {
@@ -124,7 +124,7 @@ export default function Send(): ReactElement {
 
     const decimalMatched = convertFixedPointNumber(
       fixedPointAmount,
-      selectedAsset.decimals
+      selectedAsset.decimals,
     )
 
     return enrichAssetAmountWithMainCurrencyValues(
@@ -133,7 +133,7 @@ export default function Send(): ReactElement {
         amount: decimalMatched.amount,
       },
       assetPricePoint,
-      2
+      2,
     )
   }
 
@@ -155,7 +155,7 @@ export default function Send(): ReactElement {
             network: currentAccount.network,
           },
           assetAmount,
-        })
+        }),
       )
     } finally {
       setIsSendingTransactionRequest(false)
@@ -179,7 +179,7 @@ export default function Send(): ReactElement {
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
   } = useAddressOrNameValidation((value) =>
-    setDestinationAddress(value?.address)
+    setDestinationAddress(value?.address),
   )
 
   // True if the user input a valid name (ENS, address book, etc) that we

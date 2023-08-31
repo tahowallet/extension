@@ -37,7 +37,7 @@ const networksSlice = createSlice({
   reducers: {
     blockSeen: (
       immerState,
-      { payload: blockPayload }: { payload: AnyEVMBlock }
+      { payload: blockPayload }: { payload: AnyEVMBlock },
     ) => {
       const block = blockPayload as EIP1559Block
 
@@ -93,5 +93,5 @@ export const removeCustomChain = createBackgroundAsyncThunk(
     await dispatch(removeChainBalances(chainID))
 
     return main.removeEVMNetwork(chainID)
-  }
+  },
 )

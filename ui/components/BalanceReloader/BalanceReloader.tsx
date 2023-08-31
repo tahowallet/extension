@@ -12,7 +12,7 @@ export default function BalanceReloader(): ReactElement {
   // 0 = never
   const [timeWhenLastReloaded, setTimeWhenLastReloaded] = useLocalStorage(
     "timeWhenLastReloaded",
-    "0"
+    "0",
   )
 
   const loadingTimeMs = 15000

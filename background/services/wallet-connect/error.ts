@@ -48,7 +48,7 @@ function getErrorByCode(code: number): ErrorResponse {
 }
 
 export function formatErrorMessage(
-  error?: string | ErrorResponse
+  error?: string | ErrorResponse,
 ): ErrorResponse {
   let translatedError = error
   if (typeof translatedError === "undefined") {

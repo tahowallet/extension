@@ -22,10 +22,10 @@ export default function Overview(): ReactElement {
   const accountsCount = useBackgroundSelector(getAddressCount)
 
   const { combinedData } = useBackgroundSelector(
-    selectAccountAndTimestampedActivities
+    selectAccountAndTimestampedActivities,
   )
   const initializationLoadingTimeExpired = useBackgroundSelector(
-    selectInitializationTimeExpired
+    selectInitializationTimeExpired,
   )
 
   return (

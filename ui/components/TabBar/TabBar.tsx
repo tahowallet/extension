@@ -30,12 +30,12 @@ export default function TabBar(): ReactElement {
   const { t } = useTranslation()
 
   const noActiveTab = ["abilities"].some((pathName) =>
-    location.pathname.includes(pathName)
+    location.pathname.includes(pathName),
   )
 
   const activeTab =
     tabs.find(({ path }) =>
-      matchPath(location.pathname, { path, exact: false })
+      matchPath(location.pathname, { path, exact: false }),
     ) ?? defaultTab
 
   const hasNotifications = useCallback(
@@ -47,7 +47,7 @@ export default function TabBar(): ReactElement {
           return false
       }
     },
-    [abilityCount]
+    [abilityCount],
   )
 
   return (

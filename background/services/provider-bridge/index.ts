@@ -90,13 +90,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
     new this(
       await getOrCreateDB(),
       await internalEthereumProviderService,
-      await preferenceService
+      await preferenceService,
     )
 
   private constructor(
     private db: ProviderBridgeServiceDatabase,
     private internalEthereumProviderService: InternalEthereumProviderService,
-    private preferenceService: PreferenceService
+    private preferenceService: PreferenceService,
   ) {
     super()
 
@@ -107,7 +107,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         })
         port.onDisconnect.addListener(() => {
           this.openPorts = this.openPorts.filter(
-            (openPort) => openPort !== port
+            (openPort) => openPort !== port,
           )
         })
         this.openPorts.push(port)
@@ -133,13 +133,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     this.emitter.emit(
       "initializeAllowedPages",
-      await this.db.getAllPermission()
+      await this.db.getAllPermission(),
     )
   }
 
   async onMessageListener(
     port: Required<browser.Runtime.Port>,
-    event: PortRequestEvent
+    event: PortRequestEvent,
   ): Promise<void> {
     const { url, tab } = port.sender
     if (typeof url === "undefined") {
@@ -155,7 +155,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
     const network =
       await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
-        origin
+        origin,
       )
 
     const originPermission = await this.checkPermission(origin, network.chainID)
@@ -163,7 +163,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // Explicitly disallow anyone who has managed to pretend to be the
       // internal provider.
       response.result = new EIP1193Error(
-        EIP1193_ERROR_CODES.unauthorized
+        EIP1193_ERROR_CODES.unauthorized,
       ).toJSON()
     } else if (isTahoConfigPayload(event.request)) {
       // let's start with the internal communication
@@ -178,7 +178,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "tally_setClaimReferrer":
           if (origin !== WEBSITE_ORIGIN) {
             logger.warn(
-              `invalid WEBSITE_ORIGIN ${WEBSITE_ORIGIN} when using a custom 'tally_...' method`
+              `invalid WEBSITE_ORIGIN ${WEBSITE_ORIGIN} when using a custom 'tally_...' method`,
             )
             return
           }
@@ -202,7 +202,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         }
         default:
           logger.debug(
-            `Unknown method ${event.request.method} in 'ProviderBridgeService'`
+            `Unknown method ${event.request.method} in 'ProviderBridgeService'`,
           )
       }
 
@@ -221,7 +221,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         await this.internalEthereumProviderService.routeSafeRPCRequest(
           event.request.method,
           event.request.params,
-          origin
+          origin,
         )
     } else if (typeof originPermission !== "undefined") {
       // if it's not internal but dapp has permission to communicate we proxy the request
@@ -230,7 +230,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         originPermission,
         event.request.method,
         event.request.params,
-        origin
+        origin,
       )
     } else if (event.request.method === "eth_requestAccounts") {
       // if it's external communication AND the dApp does not have permission BUT asks for it
@@ -245,8 +245,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
         (await this.internalEthereumProviderService.routeSafeRPCRequest(
           "eth_chainId",
           [],
-          origin
-        )) as string
+          origin,
+        )) as string,
       ).toString()
 
       // these params are taken directly from the dapp website
@@ -262,15 +262,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         accountAddress,
       }
 
-      const blockUntilUserAction = await this.requestPermission(
-        permissionRequest
-      )
+      const blockUntilUserAction =
+        await this.requestPermission(permissionRequest)
 
       await blockUntilUserAction
 
       const persistedPermission = await this.checkPermission(
         origin,
-        dAppChainID
+        dAppChainID,
       )
 
       if (typeof persistedPermission !== "undefined") {
@@ -280,19 +279,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
           persistedPermission,
           "eth_accounts",
           event.request.params,
-          origin
+          origin,
         )
 
         // on dApp connection, persist the current network/origin state
         await this.internalEthereumProviderService.switchToSupportedNetwork(
           origin,
-          network
+          network,
         )
       } else {
         // if user does NOT agree, then reject
 
         response.result = new EIP1193Error(
-          EIP1193_ERROR_CODES.userRejectedRequest
+          EIP1193_ERROR_CODES.userRejectedRequest,
         ).toJSON()
       }
     } else if (event.request.method === "eth_accounts") {
@@ -300,8 +299,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
         (await this.internalEthereumProviderService.routeSafeRPCRequest(
           "eth_chainId",
           [],
-          origin
-        )) as string
+          origin,
+        )) as string,
       ).toString()
 
       const permission = await this.checkPermission(origin, dAppChainID)
@@ -313,13 +312,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
           permission,
           "eth_accounts",
           event.request.params,
-          origin
+          origin,
         )
       }
     } else {
       // sorry dear dApp, there is no love for you here
       response.result = new EIP1193Error(
-        EIP1193_ERROR_CODES.unauthorized
+        EIP1193_ERROR_CODES.unauthorized,
       ).toJSON()
     }
 
@@ -345,7 +344,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const { origin } = new URL(port.sender?.url as string)
       const { chainID } =
         await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
-          origin
+          origin,
         )
       if (await this.checkPermission(origin, chainID)) {
         port.postMessage({
@@ -368,7 +367,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async requestPermission(
-    permissionRequest: PermissionRequest
+    permissionRequest: PermissionRequest,
   ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
     await showExtensionPopup(AllowedQueryParamPage.dappPermission)
@@ -402,7 +401,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     const deleted = await this.db.deletePermission(
       permission.origin,
       address,
-      permission.chainID
+      permission.chainID,
     )
 
     if (this.#pendingPermissionsRequests[permission.origin]) {
@@ -422,7 +421,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async checkPermission(
     origin: string,
-    chainID: string
+    chainID: string,
   ): Promise<PermissionRequest | undefined> {
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
@@ -439,7 +438,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     method: string,
     params: unknown[],
     origin: string,
-    popupPromise: Promise<browser.Windows.Window>
+    popupPromise: Promise<browser.Windows.Window>,
   ): Promise<unknown> {
     const response = await this.internalEthereumProviderService
       .routeSafeRPCRequest(method, params, origin)
@@ -457,7 +456,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     enablingPermission: PermissionRequest,
     method: string,
     rawParams: RPCRequest["params"],
-    origin: string
+    origin: string,
   ): Promise<unknown> {
     const params = parseRPCRequestParams(enablingPermission, method, rawParams)
 
@@ -472,14 +471,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_signTypedData_v4":
           checkPermissionSignTypedData(
             params[0] as HexString,
-            enablingPermission
+            enablingPermission,
           )
 
           return await this.routeSafeRequest(
             method,
             params,
             origin,
-            showExtensionPopup(AllowedQueryParamPage.signData)
+            showExtensionPopup(AllowedQueryParamPage.signData),
           )
         case "eth_sign":
           checkPermissionSign(params[0] as HexString, enablingPermission)
@@ -488,7 +487,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
             method,
             params,
             origin,
-            showExtensionPopup(AllowedQueryParamPage.personalSignData)
+            showExtensionPopup(AllowedQueryParamPage.personalSignData),
           )
         case "personal_sign":
           checkPermissionSign(params[1] as HexString, enablingPermission)
@@ -497,7 +496,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
             method,
             params,
             origin,
-            showExtensionPopup(AllowedQueryParamPage.personalSignData)
+            showExtensionPopup(AllowedQueryParamPage.personalSignData),
           )
         case "eth_signTransaction":
         case "eth_sendTransaction":
@@ -509,21 +508,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
               ...(params[0] as EthersTransactionRequest),
               nonce: undefined,
             },
-            enablingPermission
+            enablingPermission,
           )
 
           return await this.routeSafeRequest(
             method,
             params,
             origin,
-            showExtensionPopup(AllowedQueryParamPage.signTransaction)
+            showExtensionPopup(AllowedQueryParamPage.signTransaction),
           )
 
         case "wallet_switchEthereumChain":
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             params,
-            origin
+            origin,
           )
 
         case "wallet_addEthereumChain": {
@@ -533,12 +532,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           const [rawChainData, address, siteTitle, favicon] = params
           const validatedData = validateAddEthereumChainParameter(
-            rawChainData as AddEthereumChainParameter
+            rawChainData as AddEthereumChainParameter,
           )
 
           const supportedNetwork =
             await this.internalEthereumProviderService.getTrackedNetworkByChainId(
-              validatedData.chainId
+              validatedData.chainId,
             )
 
           if (supportedNetwork) {
@@ -546,13 +545,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
             return await this.internalEthereumProviderService.routeSafeRPCRequest(
               method,
               params,
-              origin
+              origin,
             )
           }
 
           const window = await showExtensionPopup(
             AllowedQueryParamPage.addNewChain,
-            { requestId: id.toString() }
+            { requestId: id.toString() },
           )
 
           browser.windows.onRemoved.addListener((removed) => {
@@ -586,14 +585,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             [validatedData, address],
-            origin
+            origin,
           )
         }
         default: {
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             params,
-            origin
+            origin,
           )
         }
       }

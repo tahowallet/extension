@@ -34,7 +34,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account1.name
+        account1.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -73,7 +73,7 @@ test.describe("Token Trust", () => {
         account1.name,
         /^MATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
-        "base"
+        "base",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -88,7 +88,7 @@ test.describe("Token Trust", () => {
         .click({ trial: true })
       await assetsHelper.assertVerifiedAssetOnWalletPage(
         /^WMATIC$/,
-        "knownERC20"
+        "knownERC20",
       )
 
       /**
@@ -107,7 +107,7 @@ test.describe("Token Trust", () => {
         /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
-        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -179,7 +179,7 @@ test.describe("Token Trust", () => {
         account1.name,
         /^MATIC$/,
         /^(\d|,)+(\.\d{2,4)*$/,
-        "base"
+        "base",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -194,7 +194,7 @@ test.describe("Token Trust", () => {
         .click({ trial: true })
       await assetsHelper.assertVerifiedAssetOnWalletPage(
         /^WMATIC$/,
-        "knownERC20"
+        "knownERC20",
       )
 
       /**
@@ -213,7 +213,7 @@ test.describe("Token Trust", () => {
         /^WMATIC$/,
         /^(\d|,)+(\.\d{2,4})*$/,
         "knownERC20",
-        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270"
+        "https://polygonscan.com/token/0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -242,7 +242,7 @@ test.describe("Token Trust", () => {
         /^(\d|,)+(\.\d{2,4})*$/,
         "unverified",
         "https://polygonscan.com/token/0x5d47baba0d66083c52009271faf3f50dcc01023c",
-        "0x5d47…1023c"
+        "0x5d47…1023c",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
@@ -306,7 +306,7 @@ test.describe("Token Trust", () => {
        * Confirm there is `Asset removed from list` snackbar visible.
        */
       await expect(
-        popup.getByText("Asset removed from list").first()
+        popup.getByText("Asset removed from list").first(),
       ).toBeVisible({ timeout: 5000 })
 
       /**
@@ -316,7 +316,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
-        account1.name
+        account1.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
@@ -329,7 +329,7 @@ test.describe("Token Trust", () => {
       await expect(
         popup.getByTestId("asset_list_item").filter({
           has: popup.locator("span").filter({ hasText: /^pAAVE$/ }),
-        })
+        }),
       ).not.toBeVisible()
 
       /**
@@ -400,7 +400,7 @@ test.describe("Token Trust", () => {
         /^(\d|,)+(\.\d{2,4})*$/,
         "trusted",
         "https://polygonscan.com/token/0x5d47baba0d66083c52009271faf3f50dcc01023c",
-        "0x5d47…1023c"
+        "0x5d47…1023c",
       )
 
       /**
@@ -461,7 +461,7 @@ test.describe("Token Trust", () => {
        * Confirm there is `Asset removed from list` snackbar visible.
        */
       await expect(
-        popup.getByText("Asset removed from list").first()
+        popup.getByText("Asset removed from list").first(),
       ).toBeVisible({ timeout: 5000 })
 
       /**
@@ -471,7 +471,7 @@ test.describe("Token Trust", () => {
       await walletPageHelper.assertCommonElements(
         /^Polygon$/,
         false,
-        account1.name
+        account1.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
@@ -484,7 +484,7 @@ test.describe("Token Trust", () => {
       await expect(
         popup.getByTestId("asset_list_item").filter({
           has: popup.locator("span").filter({ hasText: /^BANANA$/ }),
-        })
+        }),
       ).not.toBeVisible()
 
       /**

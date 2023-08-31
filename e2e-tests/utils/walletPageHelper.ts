@@ -14,7 +14,7 @@ export default class WalletPageHelper {
   constructor(
     public readonly popup: Page,
     public readonly context: BrowserContext,
-    public readonly extensionId: string
+    public readonly extensionId: string,
   ) {
     this.url = `chrome-extension://${extensionId}/popup.html`
     this.#onboardingHelper = new OnboardingHelper(popup, context)
@@ -57,7 +57,7 @@ export default class WalletPageHelper {
   async onboardWithJSON(
     account: Account | "custom",
     customJsonBody?: string,
-    customFilePassword?: string
+    customFilePassword?: string,
   ): Promise<void> {
     /**
      * Set variables storing JSON file content and password.
@@ -106,7 +106,7 @@ export default class WalletPageHelper {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
     await expect(
-      this.popup.getByTestId("top_menu_network_switcher").last()
+      this.popup.getByTestId("top_menu_network_switcher").last(),
     ).toHaveText(network)
     await this.popup
       .getByTestId("top_menu_network_switcher")
@@ -114,12 +114,12 @@ export default class WalletPageHelper {
       .click({ trial: true })
 
     await expect(this.popup.getByText("Connect to website using:")).toHaveCount(
-      1
+      1,
     )
     await this.popup.locator(".bulb").last().click({ trial: true })
 
     await expect(
-      this.popup.getByTestId("top_menu_profile_button").last()
+      this.popup.getByTestId("top_menu_profile_button").last(),
     ).toHaveText(accountLabel, { timeout: 240000 })
     await this.popup
       .getByTestId("top_menu_profile_button")
@@ -153,13 +153,13 @@ export default class WalletPageHelper {
   async assertCommonElements(
     network: RegExp,
     testnet: boolean,
-    accountLabel: RegExp
+    accountLabel: RegExp,
   ): Promise<void> {
     await expect(this.popup.getByText("Total account balance")).toBeVisible({
       timeout: 240000,
     }) // we need longer timeout, because on fork it often takes long to load this section
     await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
-      /^\$(\d|,)+(\.\d{1,2})*$/
+      /^\$(\d|,)+(\.\d{1,2})*$/,
     )
 
     await this.assertTopWrap(network, accountLabel)
@@ -200,8 +200,8 @@ export default class WalletPageHelper {
     await expect(
       analyticsBanner.getByText(
         "They help us improve the wallet. You can disable anytime",
-        { exact: true }
-      )
+        { exact: true },
+      ),
     ).toBeVisible()
     await analyticsBanner
       .getByText("Change settings", { exact: true })
@@ -219,7 +219,7 @@ export default class WalletPageHelper {
 
   async assertDefaultWalletBanner(): Promise<void> {
     await expect(
-      this.popup.getByText("Taho is not your default wallet")
+      this.popup.getByText("Taho is not your default wallet"),
     ).toBeVisible()
     await this.popup
       .locator(".default_toggle")
@@ -231,7 +231,7 @@ export default class WalletPageHelper {
     await this.popup.getByTestId("top_menu_network_switcher").last().click()
     await this.popup.getByText(network).click()
     await expect(
-      this.popup.getByTestId("top_menu_network_switcher").last()
+      this.popup.getByTestId("top_menu_network_switcher").last(),
     ).toHaveText(network)
   }
 
@@ -259,10 +259,10 @@ export default class WalletPageHelper {
     await accountLabelButton.click()
     await this.popup.getByText(/^Add address$/).click()
     await expect(this.popup.getByTestId("wallet_address_item")).toHaveCount(
-      numberOfAccounts + 1
+      numberOfAccounts + 1,
     )
     await expect(
-      this.popup.getByTestId("slide_up_menu").locator(".spinner")
+      this.popup.getByTestId("slide_up_menu").locator(".spinner"),
     ).toHaveCount(0)
 
     /**
@@ -284,7 +284,7 @@ export default class WalletPageHelper {
   async switchToAddress(
     accountLabel: string,
     addressNo: number, // 1 for the 1st address under the `accountLabel` label, 2 for the 2nd, etc.
-    accountName: RegExp // the name displayed in the top menu after account switching
+    accountName: RegExp, // the name displayed in the top menu after account switching
   ): Promise<void> {
     await this.popup.getByTestId("top_menu_profile_button").last().click()
     await this.popup
@@ -296,7 +296,7 @@ export default class WalletPageHelper {
       .nth(addressNo - 1)
       .click()
     await expect(
-      this.popup.getByTestId("top_menu_profile_button").last()
+      this.popup.getByTestId("top_menu_profile_button").last(),
     ).toHaveText(accountName)
   }
 

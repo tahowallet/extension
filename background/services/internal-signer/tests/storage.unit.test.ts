@@ -105,7 +105,7 @@ describe("Storage utils", () => {
 
     expect(migrationData.migrated).toEqual(false)
     expect(
-      migrationData.migrated === false && migrationData.errorMessage
+      migrationData.migrated === false && migrationData.errorMessage,
     ).toBeUndefined()
     expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults[0].vault).toEqual(vaultEncryptedWithArgon2)
@@ -124,12 +124,12 @@ describe("Storage utils", () => {
 
     expect(migrationData.migrated).toEqual(false)
     expect(
-      migrationData.migrated === false && migrationData.errorMessage
+      migrationData.migrated === false && migrationData.errorMessage,
     ).not.toBeUndefined()
     expect(
       migrationData.migrated === false &&
         migrationData.errorMessage !== undefined &&
-        migrationData.errorMessage.length
+        migrationData.errorMessage.length,
     ).toBeGreaterThan(1)
   })
 })

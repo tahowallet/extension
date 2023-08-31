@@ -321,7 +321,7 @@ const earnSlice = createSlice({
   reducers: {
     saveSignature: (
       state,
-      { payload: { r, s, v, deadline } }: { payload: Signature }
+      { payload: { r, s, v, deadline } }: { payload: Signature },
     ) => ({
       ...state,
       signature: { r, s, v, deadline },
@@ -362,7 +362,7 @@ const earnSlice = createSlice({
       availableVaults: state.availableVaults.map((availableVault) => {
         const currentVault = payload.find(
           (updatedVault) =>
-            availableVault.vaultAddress === updatedVault.vaultAddress
+            availableVault.vaultAddress === updatedVault.vaultAddress,
         )
         return currentVault || availableVault
       }),
@@ -374,7 +374,7 @@ const earnSlice = createSlice({
       state,
       {
         payload,
-      }: { payload: { contractAddress: HexString; allowance: number } }
+      }: { payload: { contractAddress: HexString; allowance: number } },
     ) => {
       const { contractAddress, allowance } = payload
       return {
@@ -421,7 +421,7 @@ export const updateVaults = createBackgroundAsyncThunk(
       const userLockedValue: BigNumber = await vaultContract.balanceOf(account)
       const yearnVaultContract = await getContract(
         vault.yearnVault,
-        YEARN_VAULT_ABI
+        YEARN_VAULT_ABI,
       )
       const pricePerShare = await yearnVaultContract.pricePerShare()
       const yearnVaultDecimals = await yearnVaultContract.decimals()
@@ -430,7 +430,7 @@ export const updateVaults = createBackgroundAsyncThunk(
         .div(BigNumber.from("10").pow(yearnVaultDecimals))
       const totalSupply: BigNumber = await vaultContract.getTVL()
       const newTotalTVL = totalSupply.div(
-        BigNumber.from("10").pow(yearnVaultDecimals)
+        BigNumber.from("10").pow(yearnVaultDecimals),
       )
 
       const earned: BigNumber = await vaultContract.earned(account)
@@ -445,12 +445,12 @@ export const updateVaults = createBackgroundAsyncThunk(
       const userTVL = enrichAssetAmountWithMainCurrencyValues(
         { amount: newUserLockedValue.toBigInt(), asset: vault.asset },
         pricePoint,
-        2
+        2,
       )
       const totalTVL = enrichAssetAmountWithMainCurrencyValues(
         { amount: newTotalTVL.toBigInt(), asset: vault.asset },
         pricePoint,
-        2
+        2,
       )
 
       // TODO Check if management fee can change, if not => hardcode it
@@ -475,7 +475,7 @@ export const updateVaults = createBackgroundAsyncThunk(
     const updatedVaults = await Promise.all(vaultsWithNewValues)
     dispatch(updateVaultsStats(updatedVaults))
     return updatedVaults
-  }
+  },
 )
 
 export const vaultWithdraw = createBackgroundAsyncThunk(
@@ -491,7 +491,7 @@ export const vaultWithdraw = createBackgroundAsyncThunk(
     if (receipt.status === 1) {
       dispatch(updateVaults([vault]))
     }
-  }
+  },
 )
 
 export const vaultDeposit = createBackgroundAsyncThunk(
@@ -505,7 +505,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       amount: string
       tokenAddress: HexString
     },
-    { getState, dispatch }
+    { getState, dispatch },
   ) => {
     dispatch(depositProcess(false))
     const provider = getProvider()
@@ -532,7 +532,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
         ethers.BigNumber.from(signature.deadline),
         signature.v,
         signature.r,
-        signature.s
+        signature.s,
       )
     if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       depositTransactionData.gasLimit = BigNumber.from(850000) // for mainnet fork only
@@ -556,7 +556,7 @@ export const vaultDeposit = createBackgroundAsyncThunk(
       dispatch(currentlyDepositing(false))
       dispatch(dispatch(depositError(true)))
     }
-  }
+  },
 )
 
 export const claimVaultRewards = createBackgroundAsyncThunk(
@@ -568,20 +568,20 @@ export const claimVaultRewards = createBackgroundAsyncThunk(
     const vaultContract = new ethers.Contract(
       vault.vaultAddress,
       VAULT_ABI,
-      signer
+      signer,
     )
     const tx = await vaultContract.functions["getReward()"]()
     const response = signer.sendTransaction(tx)
     await tx.wait(response)
     dispatch(updateVaults([vault]))
-  }
+  },
 )
 
 export const approveApprovalTarget = createBackgroundAsyncThunk(
   "earn/approveApprovalTarget",
   async (
     tokenContractAddress: HexString,
-    { dispatch }
+    { dispatch },
   ): Promise<TransactionResponse | undefined> => {
     dispatch(currentlyApproving(true))
     const provider = getProvider()
@@ -592,7 +592,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
     const approvalTransactionData =
       await assetContract.populateTransaction.approve(
         APPROVAL_TARGET_CONTRACT_ADDRESS,
-        ethers.constants.MaxUint256
+        ethers.constants.MaxUint256,
       )
     try {
       if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
@@ -606,7 +606,7 @@ export const approveApprovalTarget = createBackgroundAsyncThunk(
       dispatch(currentlyApproving(false))
       return undefined
     }
-  }
+  },
 )
 
 export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
@@ -617,11 +617,11 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
     try {
       const allowance: BigNumber = await assetContract.allowance(
         signerAddress,
-        APPROVAL_TARGET_CONTRACT_ADDRESS
+        APPROVAL_TARGET_CONTRACT_ADDRESS,
       )
       const amount = fromFixedPointNumber(
         { amount: allowance.toBigInt(), decimals: 18 },
-        2
+        2,
       )
       return {
         contractAddress: tokenContractAddress,
@@ -630,7 +630,7 @@ export const checkApprovalTargetApproval = createBackgroundAsyncThunk(
     } catch (err) {
       return undefined
     }
-  }
+  },
 )
 
 export const permitVaultDeposit = createBackgroundAsyncThunk(
@@ -645,7 +645,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
       amount: string
       tokenAddress: HexString
     },
-    { dispatch }
+    { dispatch },
   ) => {
     const provider = getProvider()
     const signer = provider.getSigner()
@@ -656,7 +656,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
 
     const ApprovalTargetContract = await getContract(
       APPROVAL_TARGET_CONTRACT_ADDRESS,
-      APPROVAL_TARGET_ABI
+      APPROVAL_TARGET_ABI,
     )
 
     const timestamp = await getCurrentTimestamp()
@@ -697,7 +697,7 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
 
     dispatch(earnSlice.actions.saveSignature({ r, s, v, deadline }))
     dispatch(depositProcess(true))
-  }
+  },
 )
 export const selectApprovalTargetApprovals = createSelector(
   (state: { earn?: EarnState | undefined }) => {
@@ -706,22 +706,22 @@ export const selectApprovalTargetApprovals = createSelector(
     }
     return undefined
   },
-  (approvals) => approvals
+  (approvals) => approvals,
 )
 
 export const selectCurrentlyApproving = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState?.currentlyApproving
+  (earnState: EarnState) => earnState?.currentlyApproving,
 )
 
 export const selectCurrentlyDepositing = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.currentlyDepositing
+  (earnState: EarnState) => earnState.currentlyDepositing,
 )
 
 export const selectAvailableVaults = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.availableVaults
+  (earnState: EarnState) => earnState.availableVaults,
 )
 
 export const selectSignature = createSelector(
@@ -736,20 +736,20 @@ export const selectSignature = createSelector(
       return earnState.signature
     }
     return undefined
-  }
+  },
 )
 
 export const selectEarnInputAmount = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.inputAmount
+  (earnState: EarnState) => earnState.inputAmount,
 )
 
 export const selectDepositingProcess = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.depositingProcess
+  (earnState: EarnState) => earnState.depositingProcess,
 )
 
 export const selectIsVaultDataStale = createSelector(
   (state: { earn: EarnState }): EarnState => state.earn,
-  (earnState: EarnState) => earnState.isVaultDataStale
+  (earnState: EarnState) => earnState.isVaultDataStale,
 )

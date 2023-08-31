@@ -48,6 +48,6 @@ export const extractCollection = (
   state: NFTsSliceState,
   collectionID: string = COLLECTION_MOCK.id,
   chainID: string = ETHEREUM.chainID,
-  address: string = OWNER_MOCK
+  address: string = OWNER_MOCK,
 ): NFTCollectionCached | undefined =>
   state.nfts?.[chainID]?.[address]?.[collectionID]

@@ -24,12 +24,12 @@ export default function NFTListPortfolio(props: {
   const collections = useBackgroundSelector(
     type === "nfts"
       ? selectFilteredNFTCollections
-      : selectFilteredNFTBadgesCollections
+      : selectFilteredNFTBadgesCollections,
   )
   const nftCount = useBackgroundSelector(
     type === "nfts"
       ? selectFilteredNFTCollectionsCount
-      : selectFilteredNFTBadgesCount
+      : selectFilteredNFTBadgesCount,
   )
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
 

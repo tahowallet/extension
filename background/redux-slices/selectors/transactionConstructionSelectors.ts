@@ -14,7 +14,7 @@ import { selectAssetPricePoint } from "../prices"
 export const selectTransactionNetwork = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest?.network,
-  (network) => network
+  (network) => network,
 )
 
 export const selectDefaultNetworkFeeSettings = createSelector(
@@ -27,7 +27,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
     transactionConstruction,
     networks,
     selectedNetwork,
-    transactionNetwork
+    transactionNetwork,
   ): NetworkFeeSettings => {
     const currentNetwork = transactionNetwork || selectedNetwork
     const selectedFeesPerGas =
@@ -52,7 +52,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
           undefined,
       },
     }
-  }
+  },
 )
 
 export const selectEstimatedFeesPerGas = createSelector(
@@ -63,61 +63,63 @@ export const selectEstimatedFeesPerGas = createSelector(
   (gasData, transactionNetwork, selectedNetwork) =>
     transactionNetwork
       ? gasData[transactionNetwork.chainID]
-      : gasData[selectedNetwork.chainID]
+      : gasData[selectedNetwork.chainID],
 )
 
 export const selectFeeType = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.feeTypeSelected,
-  (feeTypeChosen) => feeTypeChosen
+  (feeTypeChosen) => feeTypeChosen,
 )
 
 export const selectBaseAsset = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest?.network.baseAsset,
-  (baseAsset) => baseAsset
+  (baseAsset) => baseAsset,
 )
 
 export const selectTransactionMainCurrencyPricePoint = createSelector(
-  selectBaseAsset, // Base asset for transaction
-  getPricesState,
-  (state) => selectMainCurrencySymbol(state),
-  selectCurrentNetwork,
+  [
+    selectBaseAsset, // Base asset for transaction
+    getPricesState,
+    (state) => selectMainCurrencySymbol(state),
+    selectCurrentNetwork,
+  ],
   (
     baseAsset,
     prices,
     mainCurrencySymbol,
-    currentNetwork
+    currentNetwork,
   ): PricePoint | undefined =>
     selectAssetPricePoint(
       prices,
       baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
-      mainCurrencySymbol
-    )
+      mainCurrencySymbol,
+    ),
 )
 
 export const selectTransactionData = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.transactionRequest,
-  (transactionRequestData) => transactionRequestData
+  (transactionRequestData) => transactionRequestData,
 )
 
 export const selectIsTransactionPendingSignature = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.status,
-  (status) => status === "loaded" || status === "pending"
+  (status) => status === "loaded" || status === "pending",
 )
 
 export const selectIsTransactionLoaded = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.status,
-  (status) => status === "loaded"
+  (status) => status === "loaded",
 )
 
 export const selectIsTransactionSigned = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
     state.transactionConstruction.status,
-  (status) => status === "signed"
+  (status) => status === "signed",
 )
 
 export const selectCurrentlyChosenNetworkFees = createSelector(
@@ -125,11 +127,11 @@ export const selectCurrentlyChosenNetworkFees = createSelector(
     state.transactionConstruction?.estimatedFeesPerGas?.[
       state.transactionConstruction.feeTypeSelected
     ],
-  (feeData) => feeData
+  (feeData) => feeData,
 )
 
 export const selectHasInsufficientFunds = createSelector(
   selectTransactionData,
   (transactionDetails) =>
-    !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds")
+    !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds"),
 )

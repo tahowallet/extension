@@ -175,9 +175,8 @@ test.describe("NFTs", () => {
         .click()
     })
 
-    const collectionItem = await test.step(
-      "Check collection expands",
-      async () => {
+    const collectionItem =
+      await test.step("Check collection expands", async () => {
         const nftCollection = page
           .getByTestId("nft_list_item")
           .filter({ has: page.getByTestId("nft_list_item_collection") })
@@ -188,14 +187,13 @@ test.describe("NFTs", () => {
         await nftCollection.getByTestId("expand").click()
 
         const collectionItems = nftCollection.getByTestId(
-          "nft_list_item_single"
+          "nft_list_item_single",
         )
 
         expect((await collectionItems.all()).length).toBeGreaterThan(1)
 
         return collectionItems.filter({ hasText: /2152/ })
-      }
-    )
+      })
 
     // Check Details
     await test.step("Check NFT details", async () => {
@@ -207,12 +205,12 @@ test.describe("NFTs", () => {
 
       // Displays traits
       expect(
-        await previewMenu.locator(".preview_property_trait").allInnerTexts()
+        await previewMenu.locator(".preview_property_trait").allInnerTexts(),
       ).toEqual(expect.arrayContaining(["background", "body", "eyez"]))
 
       // ...And their values
       await expect(
-        previewMenu.locator(".preview_property_value")
+        previewMenu.locator(".preview_property_value"),
       ).toContainText([/dark green/i, /dark brown/i, /blue sunglasses/i])
 
       await previewMenu.getByRole("button", { name: "Close menu" }).click()
@@ -236,20 +234,20 @@ test.describe("NFTs", () => {
       await expect(
         poapPreview.getByRole("heading", {
           name: "Taho TEST POAP",
-        })
+        }),
       ).toBeVisible()
 
       expect(
         await poapPreview
           .getByRole("link", { name: "POAP" })
-          .getAttribute("href")
+          .getAttribute("href"),
       ).toEqual("https://app.poap.xyz/token/6676760")
 
       // Description
       await expect(
         poapPreview.getByText(
-          "This is a POAP used to test some functionalities of a Taho wallet"
-        )
+          "This is a POAP used to test some functionalities of a Taho wallet",
+        ),
       ).toBeVisible()
 
       // Displays properties
@@ -278,15 +276,15 @@ test.describe("NFTs", () => {
       await expect(
         galxePreview.getByRole("heading", {
           name: "PARIS",
-        })
+        }),
       ).toBeVisible()
 
       expect(
         await galxePreview
           .getByRole("link", { name: "Galxe" })
-          .getAttribute("href")
+          .getAttribute("href"),
       ).toEqual(
-        "https://galxe.com/nft/8038/0x9972158B1456bd22cF4D2436831942a135492369"
+        "https://galxe.com/nft/8038/0x9972158B1456bd22cF4D2436831942a135492369",
       )
 
       // Displays properties

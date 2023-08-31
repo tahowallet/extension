@@ -12,7 +12,7 @@ describe("PriceDetails", () => {
         priceImpact={undefined}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
     expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
   })
@@ -25,7 +25,7 @@ describe("PriceDetails", () => {
         priceImpact={undefined}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
     expect(ui.getByText(`<${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
   })
@@ -39,7 +39,7 @@ describe("PriceDetails", () => {
         isLoading
         mainCurrencySign={hardcodedMainCurrencySign}
       />,
-      {}
+      {},
     )
     expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
@@ -54,7 +54,7 @@ describe("PriceDetails", () => {
         priceImpact={priceImpact}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
 
     expect(ui.getByText(`(${priceImpact}%)`)).toBeVisible()
@@ -67,7 +67,7 @@ describe("PriceDetails", () => {
         priceImpact={undefined}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
 
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
@@ -80,7 +80,7 @@ describe("PriceDetails", () => {
         priceImpact={0}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
 
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
@@ -93,7 +93,7 @@ describe("PriceDetails", () => {
         priceImpact={0}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
 
     expect(ui.getByText("No price information")).toBeVisible()
@@ -109,7 +109,7 @@ describe("PriceDetails", () => {
         priceImpact={priceImpact}
         isLoading={false}
         mainCurrencySign={hardcodedMainCurrencySign}
-      />
+      />,
     )
 
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()

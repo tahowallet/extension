@@ -83,11 +83,11 @@ type SpamReportResponse = {
 export const getDaylightAbilities = async (
   address: string,
   // Amount of times to retry fetching abilities for an address that is not fully synced yet.
-  retries = DEFAULT_RETRIES
+  retries = DEFAULT_RETRIES,
 ): Promise<DaylightAbility[]> => {
   // Learn more at https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
   const requestURL = new URL(
-    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities`
+    `${DAYLIGHT_BASE_URL}/wallets/${address}/abilities`,
   )
   // The most interesting abilities will be the first
   requestURL.searchParams.set("sort", "magic")
@@ -134,7 +134,7 @@ export const getDaylightAbilities = async (
 export const createSpamReport = async (
   address: string,
   abilitySlug: string,
-  reason: string
+  reason: string,
 ): Promise<boolean> => {
   try {
     const options = JSON.stringify({
@@ -145,7 +145,7 @@ export const createSpamReport = async (
 
     const response: SpamReportResponse = await fetchJson(
       `${DAYLIGHT_BASE_URL}/spam-report`,
-      options
+      options,
     )
 
     return response.success

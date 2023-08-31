@@ -23,7 +23,7 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
 
   useEffect(() => {
     dispatch(getAddNetworkRequestDetails(requestId)).then((chainDetails) =>
-      setNetworkDetails(chainDetails as unknown as AddChainRequestData)
+      setNetworkDetails(chainDetails as unknown as AddChainRequestData),
     )
   }, [dispatch, requestId])
 
@@ -34,7 +34,7 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
   }
 
   const existingNetwork = allNetworks.find(
-    (network) => network.chainID === networkDetails.chainId
+    (network) => network.chainID === networkDetails.chainId,
   )
 
   const {
@@ -50,7 +50,7 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
 
   function handleUserResponse(success: boolean): void {
     dispatch(addNetworkUserResponse([requestId, success])).then(() =>
-      window.close()
+      window.close(),
     )
   }
 

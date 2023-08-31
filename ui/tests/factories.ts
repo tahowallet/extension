@@ -9,11 +9,11 @@ import {
 import { createAccountData } from "@tallyho/tally-background/tests/factories"
 
 export const TEST_ADDRESS = normalizeEVMAddress(
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd",
 )
 
 export const createAccountState = (
-  overrides: Partial<AccountState> = {}
+  overrides: Partial<AccountState> = {},
 ): AccountState => ({
   accountsData: {
     evm: {
@@ -68,7 +68,7 @@ export const createNFT = (overrides: Partial<NFTCached> = {}): NFTCached => ({
 })
 
 export const createNFTCollection = (
-  overrides: Partial<NFTCollectionCached> = {}
+  overrides: Partial<NFTCollectionCached> = {},
 ): NFTCollectionCached => ({
   id: "",
   name: "",

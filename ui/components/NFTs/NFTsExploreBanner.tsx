@@ -43,7 +43,7 @@ export default function NFTsExploreBanner(props: {
                 icon,
               }}
             />
-          )
+          ),
         )}
       </nav>
       <style jsx>{`

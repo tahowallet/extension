@@ -76,7 +76,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
  * @returns
  */
 export async function getPoapNFTs(
-  address: string
+  address: string,
 ): Promise<NFTsWithPagesResponse> {
   const requestURL = new URL(`https://api.poap.tech/actions/scan/${address}`)
 
@@ -100,7 +100,7 @@ export async function getPoapNFTs(
 }
 
 export async function getPoapCollections(
-  address: string
+  address: string,
 ): Promise<NFTCollection> {
   return {
     id: POAP_COLLECTION_ID, // let's keep POAPs in one collection

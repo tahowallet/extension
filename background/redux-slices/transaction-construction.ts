@@ -114,10 +114,10 @@ export const emitter = new Emittery<Events>()
 
 const makeBlockEstimate = (
   type: number,
-  estimatedFeesPerGas: BlockPrices
+  estimatedFeesPerGas: BlockPrices,
 ): BlockEstimate => {
   let maxFeePerGas = estimatedFeesPerGas.estimatedPrices.find(
-    (el) => el.confidence === type
+    (el) => el.confidence === type,
   )?.maxFeePerGas
 
   if (typeof maxFeePerGas === "undefined") {
@@ -145,7 +145,7 @@ export const updateTransactionData = createBackgroundAsyncThunk(
   "transaction-construction/update-transaction",
   async (payload: EnrichedEVMTransactionSignatureRequest) => {
     await emitter.emit("updateTransaction", payload)
-  }
+  },
 )
 
 export const signTransaction = createBackgroundAsyncThunk(
@@ -153,14 +153,14 @@ export const signTransaction = createBackgroundAsyncThunk(
   async (
     request: SignOperation<
       EIP1559TransactionRequest | LegacyEVMTransactionRequest
-    >
+    >,
   ) => {
     if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       request.request.chainID = FORK.chainID
     }
 
     await emitter.emit("requestSignature", request)
-  }
+  },
 )
 
 const transactionSlice = createSlice({
@@ -176,7 +176,7 @@ const transactionSlice = createSlice({
           transactionRequest: TransactionRequest
           transactionLikelyFails: boolean
         }
-      }
+      },
     ) => {
       const newState = {
         ...state,
@@ -229,7 +229,7 @@ const transactionSlice = createSlice({
     },
     clearTransactionState: (
       state,
-      { payload }: { payload: TransactionConstructionStatus }
+      { payload }: { payload: TransactionConstructionStatus },
     ) => ({
       estimatedFeesPerGas: state.estimatedFeesPerGas,
       status: payload,
@@ -245,7 +245,7 @@ const transactionSlice = createSlice({
         payload,
       }: {
         payload: { estimatedRollupFee: bigint; estimatedRollupGwei: bigint }
-      }
+      },
     ) => {
       const { estimatedRollupFee, estimatedRollupGwei } = payload
       if (
@@ -258,7 +258,7 @@ const transactionSlice = createSlice({
     },
     setFeeType: (
       immerState,
-      { payload }: { payload: NetworkFeeTypeChosen }
+      { payload }: { payload: NetworkFeeTypeChosen },
     ) => {
       immerState.feeTypeSelected = payload
     },
@@ -280,13 +280,13 @@ const transactionSlice = createSlice({
       immerState,
       {
         payload: { estimatedFeesPerGas, network },
-      }: { payload: { estimatedFeesPerGas: BlockPrices; network: EVMNetwork } }
+      }: { payload: { estimatedFeesPerGas: BlockPrices; network: EVMNetwork } },
     ) => {
       if (network.chainID === OPTIMISM.chainID) {
         // @TODO change up how we do block estimates since alchemy only gives us an `instant` estimate for optimism.
         const optimismBlockEstimate = makeBlockEstimate(
           INSTANT,
-          estimatedFeesPerGas
+          estimatedFeesPerGas,
         )
         immerState.estimatedFeesPerGas = {
           ...(immerState.estimatedFeesPerGas ?? {}),
@@ -318,7 +318,7 @@ const transactionSlice = createSlice({
           maxPriorityFeePerGas: bigint
           maxFeePerGas: bigint
         }
-      }
+      },
     ) => {
       immerState.customFeesPerGas = {
         maxPriorityFeePerGas,
@@ -332,7 +332,7 @@ const transactionSlice = createSlice({
     },
     setCustomGasLimit: (
       immerState,
-      { payload: gasLimit }: { payload: bigint | undefined }
+      { payload: gasLimit }: { payload: bigint | undefined },
     ) => {
       if (
         typeof gasLimit !== "undefined" &&
@@ -371,7 +371,7 @@ export const broadcastSignedTransaction = createBackgroundAsyncThunk(
   "transaction-construction/broadcast",
   async (transaction: SignedTransaction) => {
     await emitter.emit("broadcastSignedTransaction", transaction)
-  }
+  },
 )
 
 export const transactionSigned = createBackgroundAsyncThunk(
@@ -386,7 +386,7 @@ export const transactionSigned = createBackgroundAsyncThunk(
     if (transactionConstruction.broadcastOnSign ?? false) {
       await dispatch(broadcastSignedTransaction(transaction))
     }
-  }
+  },
 )
 
 export const rejectTransactionSignature = createBackgroundAsyncThunk(
@@ -396,8 +396,8 @@ export const rejectTransactionSignature = createBackgroundAsyncThunk(
     // Provide a clean slate for future transactions.
     dispatch(
       transactionSlice.actions.clearTransactionState(
-        TransactionConstructionStatus.Idle
-      )
+        TransactionConstructionStatus.Idle,
+      ),
     )
-  }
+  },
 )

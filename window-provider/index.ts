@@ -34,9 +34,9 @@ export default class TahoWindowProvider extends EventEmitter {
 
   connected = false
 
-  isTally: true = true
+  isTally = true as const
 
-  isTaho: true = true
+  isTaho = true as const
 
   isMetaMask = false
 
@@ -102,7 +102,7 @@ export default class TahoWindowProvider extends EventEmitter {
 
         window.walletRouter?.shouldSetTahoForCurrentProvider(
           result.defaultWallet,
-          false
+          false,
         )
         this.tahoSetAsDefault = result.defaultWallet
 
@@ -196,7 +196,7 @@ export default class TahoWindowProvider extends EventEmitter {
         // null result indicates successful chain change https://eips.ethereum.org/EIPS/eip-3326#specification
         if (result === null) {
           this.handleChainIdChange(
-            (sendData.request.params[0] as { chainId: string }).chainId
+            (sendData.request.params[0] as { chainId: string }).chainId,
           )
         }
         break
@@ -241,11 +241,11 @@ export default class TahoWindowProvider extends EventEmitter {
   // https://github.com/ethers-io/ethers.js/blob/73a46efea32c3f9a4833ed77896a216e3d3752a0/packages/providers/src.ts/web3-provider.ts#L19
   send(
     request: RequestArgument,
-    callback: (error: unknown, response: unknown) => void
+    callback: (error: unknown, response: unknown) => void,
   ): void
   send(
     methodOrRequest: string | RequestArgument,
-    paramsOrCallback: Array<unknown> | EthersSendCallback
+    paramsOrCallback: Array<unknown> | EthersSendCallback,
   ): Promise<unknown> | void {
     if (
       typeof methodOrRequest === "string" &&
@@ -265,7 +265,7 @@ export default class TahoWindowProvider extends EventEmitter {
   // added as some dapps are still using it
   sendAsync(
     request: RequestArgument & { id?: number; jsonrpc?: string },
-    callback: (error: unknown, response: unknown) => void
+    callback: (error: unknown, response: unknown) => void,
   ): Promise<unknown> | void {
     return this.request(request).then(
       (response) =>
@@ -274,7 +274,7 @@ export default class TahoWindowProvider extends EventEmitter {
           id: request.id,
           jsonrpc: request.jsonrpc,
         }),
-      (error) => callback(error, null)
+      (error) => callback(error, null),
     )
   }
 
@@ -312,7 +312,7 @@ export default class TahoWindowProvider extends EventEmitter {
   override emit(event: string | symbol, ...args: unknown[]): boolean {
     const hadAdditionalListeners = window.walletRouter?.reemitTahoEvent(
       event,
-      ...args
+      ...args,
     )
 
     const hadDirectListeners = super.emit(event, ...args)

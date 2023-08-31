@@ -21,7 +21,8 @@ export function HeaderContainer({
             flex-direction: column;
             align-items: center;
             background:   
-                /* filter */ linear-gradient(
+                /* filter */
+              linear-gradient(
                 180deg,
                 rgba(11, 41, 38, 0) 0%,
                 var(--hunter-green) 140px /* bg fades at 140px height */

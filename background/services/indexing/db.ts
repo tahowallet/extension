@@ -172,10 +172,10 @@ export class IndexingDatabase extends Dexie {
             // This is how migrations are expected to work
             // eslint-disable-next-line no-param-reassign
             storedTokenList.list.tokens = fixPolygonWETHIssue(
-              storedTokenList.list.tokens
+              storedTokenList.list.tokens,
             )
           }
-        })
+        }),
     )
 
     this.version(4).upgrade(async (tx) => {
@@ -185,7 +185,7 @@ export class IndexingDatabase extends Dexie {
         record: SmartContractFungibleAsset & {
           chainId?: unknown
           address?: string
-        }
+        },
       ) => {
         const normalizedAddress = normalizeEVMAddress(record.contractAddress)
         // These properties are not included after parsing
@@ -251,7 +251,7 @@ export class IndexingDatabase extends Dexie {
         .modify((customAsset: CustomAsset) => {
           // eslint-disable-next-line no-param-reassign
           delete customAsset.metadata?.discoveryTxHash
-        })
+        }),
     )
   }
 
@@ -259,7 +259,7 @@ export class IndexingDatabase extends Dexie {
     pricePoint: PricePoint,
     retrievedAt: number,
     dataSource: PriceMeasurement["dataSource"],
-    exchange?: string
+    exchange?: string,
   ): Promise<void> {
     const measurement = {
       ...normalizePricePoint(pricePoint),
@@ -273,7 +273,7 @@ export class IndexingDatabase extends Dexie {
   async getLatestAccountBalance(
     address: string,
     network: EVMNetwork,
-    asset: FungibleAsset
+    asset: FungibleAsset,
   ): Promise<AccountBalance | null> {
     // TODO this needs to be tightened up, both for performance and specificity
     const balanceCandidates = await this.balances
@@ -283,7 +283,7 @@ export class IndexingDatabase extends Dexie {
         (balance) =>
           balance.address === address &&
           balance.assetAmount.asset.symbol === asset.symbol &&
-          balance.network.name === network.name
+          balance.network.name === network.name,
       )
       .reverse()
       .sortBy("retrievedAt")
@@ -305,7 +305,7 @@ export class IndexingDatabase extends Dexie {
     return (
       (await this.getTrackedAssetByAddressAndNetwork(
         asset.homeNetwork,
-        asset.contractAddress
+        asset.contractAddress,
       )) !== undefined
     )
   }
@@ -315,7 +315,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getActiveCustomAssetsByNetworks(
-    networks: EVMNetwork[]
+    networks: EVMNetwork[],
   ): Promise<CustomAsset[]> {
     return (
       await this.customAssets
@@ -327,7 +327,7 @@ export class IndexingDatabase extends Dexie {
 
   async getCustomAssetByAddressAndNetwork(
     network: EVMNetwork,
-    contractAddress: string
+    contractAddress: string,
   ): Promise<CustomAsset | undefined> {
     return this.customAssets
       .where("[contractAddress+homeNetwork.name]")
@@ -337,7 +337,7 @@ export class IndexingDatabase extends Dexie {
 
   async getTrackedAssetByAddressAndNetwork(
     network: EVMNetwork,
-    contractAddress: string
+    contractAddress: string,
   ): Promise<SmartContractFungibleAsset | undefined> {
     return this.assetsToTrack
       .where("[contractAddress+homeNetwork.name]")
@@ -346,7 +346,7 @@ export class IndexingDatabase extends Dexie {
   }
 
   async addOrUpdateCustomAsset(
-    asset: SmartContractFungibleAsset
+    asset: SmartContractFungibleAsset,
   ): Promise<void> {
     this.customAssets.put(asset)
   }
@@ -379,34 +379,37 @@ export class IndexingDatabase extends Dexie {
   }
 
   async getLatestTokenLists(
-    urls: string[]
+    urls: string[],
   ): Promise<{ url: string; tokenList: TokenList }[]> {
     const candidateLists = (await this.tokenLists
       .where("url")
       .anyOf(urls)
       .toArray()) as CachedTokenList[]
     return Object.entries(
-      candidateLists.reduce((acc, cachedList) => {
-        if (!(cachedList.url in acc)) {
-          acc[cachedList.url] = cachedList.list
-        } else {
-          const orig = acc[cachedList.url]
-          const origV = [
-            orig.version.major,
-            orig.version.minor,
-            orig.version.patch,
-          ]
-          const cachedV = [
-            cachedList.list.version.major,
-            cachedList.list.version.minor,
-            cachedList.list.version.patch,
-          ]
-          if (numberArrayCompare(origV, cachedV) < 0) {
+      candidateLists.reduce(
+        (acc, cachedList) => {
+          if (!(cachedList.url in acc)) {
             acc[cachedList.url] = cachedList.list
+          } else {
+            const orig = acc[cachedList.url]
+            const origV = [
+              orig.version.major,
+              orig.version.minor,
+              orig.version.patch,
+            ]
+            const cachedV = [
+              cachedList.list.version.major,
+              cachedList.list.version.minor,
+              cachedList.list.version.patch,
+            ]
+            if (numberArrayCompare(origV, cachedV) < 0) {
+              acc[cachedList.url] = cachedList.list
+            }
           }
-        }
-        return { ...acc }
-      }, {} as { [url: string]: TokenList })
+          return { ...acc }
+        },
+        {} as { [url: string]: TokenList },
+      ),
     ).map(([k, v]) => ({
       url: k,
       tokenList: v as TokenList,
@@ -415,7 +418,7 @@ export class IndexingDatabase extends Dexie {
 }
 
 export async function getOrCreateDb(
-  options?: DexieOptions
+  options?: DexieOptions,
 ): Promise<IndexingDatabase> {
   return new IndexingDatabase(options)
 }

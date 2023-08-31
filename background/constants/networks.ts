@@ -107,12 +107,12 @@ export const DEFAULT_NETWORKS = [
 
 export function isBuiltInNetwork(network: EVMNetwork): boolean {
   return DEFAULT_NETWORKS.some(
-    (builtInNetwork) => builtInNetwork.chainID === network.chainID
+    (builtInNetwork) => builtInNetwork.chainID === network.chainID,
   )
 }
 
 export const DEFAULT_NETWORKS_BY_CHAIN_ID = new Set(
-  DEFAULT_NETWORKS.map((network) => network.chainID)
+  DEFAULT_NETWORKS.map((network) => network.chainID),
 )
 
 export const FORK: EVMNetwork = {
@@ -124,13 +124,13 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID),
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
   [ETHEREUM, POLYGON, AVALANCHE, GOERLI, BINANCE_SMART_CHAIN].map(
-    (network) => network.chainID
-  )
+    (network) => network.chainID,
+  ),
 )
 
 export const NETWORK_BY_CHAIN_ID = {
@@ -148,7 +148,7 @@ export const NETWORK_BY_CHAIN_ID = {
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
-  [GOERLI].map((network) => network.chainID)
+  [GOERLI].map((network) => network.chainID),
 )
 
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
@@ -168,13 +168,13 @@ export const CHAIN_ID_TO_0X_API_BASE: {
 }
 
 export const NETWORKS_SUPPORTING_SWAPS = new Set(
-  Object.keys(CHAIN_ID_TO_0X_API_BASE)
+  Object.keys(CHAIN_ID_TO_0X_API_BASE),
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
   [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
-    (network) => network.chainID
-  )
+    (network) => network.chainID,
+  ),
 )
 
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
@@ -251,5 +251,7 @@ export const CHAIN_ID_TO_OPENSEA_CHAIN = {
 }
 
 export const NETWORKS_WITH_FEE_SETTINGS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE].map((network) => network.chainID)
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, AVALANCHE].map(
+    (network) => network.chainID,
+  ),
 )

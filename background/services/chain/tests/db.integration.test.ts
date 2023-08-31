@@ -29,7 +29,7 @@ describe("Chain Database ", () => {
       await db.addAccountToTrack(account2)
       const accountsToTrack = await db.getAccountsToTrack()
       expect(accountsToTrack).toEqual(
-        expect.arrayContaining([account1, account2])
+        expect.arrayContaining([account1, account2]),
       )
     })
 
@@ -74,12 +74,12 @@ describe("Chain Database ", () => {
 
       const getEthTransaction = await db.getTransaction(
         addTransactionEth.network,
-        addTransactionEth.hash
+        addTransactionEth.hash,
       )
 
       const getOptTransaction = await db.getTransaction(
         addTransactionOpt.network,
-        addTransactionOpt.hash
+        addTransactionOpt.hash,
       )
 
       expect(getEthTransaction?.hash).toEqual(addTransactionEth.hash)
@@ -94,12 +94,12 @@ describe("Chain Database ", () => {
 
       const getEthTransaction = await db.getTransaction(
         addTransactionEth.network,
-        addTransactionEth.hash
+        addTransactionEth.hash,
       )
 
       const getOptTransaction = await db.getTransaction(
         addTransactionOpt.network,
-        addTransactionOpt.hash
+        addTransactionOpt.hash,
       )
 
       expect(getEthTransaction).toBeTruthy()
@@ -131,7 +131,7 @@ describe("Chain Database ", () => {
       const accountsToTrack = await db.getAccountsToTrack()
 
       expect(accountsToTrack).toEqual(
-        expect.arrayContaining([account1, account2])
+        expect.arrayContaining([account1, account2]),
       )
     })
   })
@@ -183,7 +183,7 @@ describe("Chain Database ", () => {
       expect(await db.getChainIDsToTrack()).toEqual(new Set(ETHEREUM.chainID))
       await db.addAccountToTrack(account2)
       expect(await db.getChainIDsToTrack()).toEqual(
-        new Set([ETHEREUM.chainID, POLYGON.chainID])
+        new Set([ETHEREUM.chainID, POLYGON.chainID]),
       )
     })
     it("should disallow duplicate chain ids", async () => {
@@ -211,7 +211,7 @@ describe("Chain Database ", () => {
       const latest = await db.getLatestAccountBalance(
         accountBalance.address,
         accountBalance.network,
-        ETH
+        ETH,
       )
       expect(latest?.assetAmount.amount).toEqual(4n)
     })
@@ -221,7 +221,7 @@ describe("Chain Database ", () => {
       const latest = await db.getLatestAccountBalance(
         accountBalance.address,
         accountBalance.network,
-        ETH
+        ETH,
       )
       expect(latest).toBeNull()
     })
@@ -261,30 +261,28 @@ describe("Chain Database ", () => {
       await db.addOrUpdateTransaction(completeEthTx, "alchemy")
       await db.addOrUpdateTransaction(pendingOptimismTx1, "alchemy")
 
-      const ethPendingTransactions = await db.getNetworkPendingTransactions(
-        ETHEREUM
-      )
+      const ethPendingTransactions =
+        await db.getNetworkPendingTransactions(ETHEREUM)
 
-      const opPendingTransactions = await db.getNetworkPendingTransactions(
-        OPTIMISM
-      )
+      const opPendingTransactions =
+        await db.getNetworkPendingTransactions(OPTIMISM)
 
       // Should pick up pending transactions
       expect(ethPendingTransactions.length).toEqual(2)
       expect(
-        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx1.hash)
+        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx1.hash),
       ).toBeTruthy()
       expect(
-        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx2.hash)
+        ethPendingTransactions.find((tx) => tx.hash === pendingEthTx2.hash),
       ).toBeTruthy()
       // Should not pick up complete transactions
       expect(
-        ethPendingTransactions.find((tx) => tx.hash === completeEthTx.hash)
+        ethPendingTransactions.find((tx) => tx.hash === completeEthTx.hash),
       ).toBeFalsy()
       // Should pick up pending transactions on different networks separately
       expect(opPendingTransactions.length).toEqual(1)
       expect(
-        opPendingTransactions.find((tx) => tx.hash === pendingOptimismTx1.hash)
+        opPendingTransactions.find((tx) => tx.hash === pendingOptimismTx1.hash),
       ).toBeTruthy()
     })
   })
@@ -351,8 +349,8 @@ describe("Chain Database ", () => {
       expect(await db.getEVMNetworkByChainID("12345")).toBeTruthy()
       expect(
         (await db.getAllRpcUrls()).find((rpcUrl) =>
-          rpcUrl.rpcUrls.includes("https://foo.com")
-        )
+          rpcUrl.rpcUrls.includes("https://foo.com"),
+        ),
       ).toBeTruthy()
 
       expect(await db.getBaseAssetForNetwork("12345")).toBeTruthy()

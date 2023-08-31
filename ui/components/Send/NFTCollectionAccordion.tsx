@@ -35,7 +35,7 @@ export default function NFTCollectionAccordion({
             address: collection.owner,
             network: NETWORK_BY_CHAIN_ID[collection.chainID],
           },
-        })
+        }),
       ).then(() => setIsLoading(false))
     }
   }, [

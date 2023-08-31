@@ -51,7 +51,7 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
         type: SignerSourceTypes.jsonFile,
         jsonFile: file,
         password,
-      })
+      }),
     )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
     setIsImporting(false)

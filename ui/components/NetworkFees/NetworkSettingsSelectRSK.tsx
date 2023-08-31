@@ -13,7 +13,7 @@ export default function NetworkSettingsRSK(): ReactElement {
 
   if (transactionData?.network.chainID !== ROOTSTOCK.chainID) {
     throw new Error(
-      "NetworkSettingsSelect mismatch - expected an RSK transaction"
+      "NetworkSettingsSelect mismatch - expected an RSK transaction",
     )
   }
 

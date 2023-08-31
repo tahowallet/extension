@@ -40,7 +40,7 @@ export default function ImportPrivateKey(props: Props): ReactElement {
         importSigner({
           type: SignerSourceTypes.privateKey,
           privateKey: trimmedPrivateKey,
-        })
+        }),
       )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
       if (success) {

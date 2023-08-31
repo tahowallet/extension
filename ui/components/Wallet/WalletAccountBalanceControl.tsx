@@ -129,7 +129,7 @@ interface Props {
 }
 
 export default function WalletAccountBalanceControl(
-  props: Props
+  props: Props,
 ): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",

@@ -2,7 +2,7 @@ import { CombinedState, configureStore, EnhancedStore } from "@reduxjs/toolkit"
 import rootReducer, { RootState } from "@tallyho/tally-background/redux-slices"
 
 export const initializeStoreForTest = (
-  preloadedState = {}
+  preloadedState = {},
 ): EnhancedStore<CombinedState<RootState>> =>
   configureStore({
     reducer: rootReducer,

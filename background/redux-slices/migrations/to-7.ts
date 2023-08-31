@@ -29,7 +29,7 @@ type OldState = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const oldState = prevState as OldState
   const { activities } = oldState

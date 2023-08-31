@@ -47,7 +47,7 @@ export function prioritizedAssetSimilarityKeys(asset: AnyAsset): string[] {
 
   if (isSmartContractFungibleAsset(asset)) {
     const normalizedContractAddressAndNetwork = `${normalizeEVMAddress(
-      asset.contractAddress
+      asset.contractAddress,
     )}-${asset.homeNetwork.chainID}`
 
     similarityKeys = [...similarityKeys, normalizedContractAddressAndNetwork]
@@ -71,7 +71,7 @@ export function prioritizedAssetSimilarityKeys(asset: AnyAsset): string[] {
 export function findClosestAssetIndex(
   assetToFind: AnyAsset,
   assets: AnyAsset[],
-  minimumSimilarityScore = 2
+  minimumSimilarityScore = 2,
 ): number | undefined {
   const [bestScore, index] = assets.reduce(
     ([runningScore, runningScoreIndex], asset, i) => {
@@ -81,7 +81,7 @@ export function findClosestAssetIndex(
       }
       return [runningScore, runningScoreIndex]
     },
-    [0, -1]
+    [0, -1],
   )
 
   if (bestScore >= minimumSimilarityScore && index >= 0) {
@@ -104,7 +104,7 @@ export function mergeAssets(asset1: AnyAsset, asset2: AnyAsset): AnyAsset {
       ...asset2.metadata,
       tokenLists:
         asset1.metadata?.tokenLists?.concat(
-          asset2.metadata?.tokenLists ?? []
+          asset2.metadata?.tokenLists ?? [],
         ) ?? [],
     },
   }

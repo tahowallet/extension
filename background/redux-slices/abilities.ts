@@ -7,17 +7,19 @@ import { createBackgroundAsyncThunk } from "./utils"
 
 const isLedgerAccount = (
   ledger: LedgerState,
-  address: NormalizedEVMAddress
+  address: NormalizedEVMAddress,
 ): boolean =>
   Object.values(ledger.devices)
     .flatMap((device) =>
-      Object.values(device.accounts).flatMap((account) => account.address ?? "")
+      Object.values(device.accounts).flatMap(
+        (account) => account.address ?? "",
+      ),
     )
     .includes(address)
 
 const isImportOrInternalAccount = (
   internalSigner: InternalSignerState,
-  address: NormalizedEVMAddress
+  address: NormalizedEVMAddress,
 ): boolean =>
   internalSigner.keyrings
     .flatMap(({ addresses }) => addresses)
@@ -25,7 +27,7 @@ const isImportOrInternalAccount = (
 
 const isPrivateKeyAccount = (
   internalSigner: InternalSignerState,
-  address: NormalizedEVMAddress
+  address: NormalizedEVMAddress,
 ): boolean =>
   internalSigner.privateKeys
     .flatMap(({ addresses }) => addresses)
@@ -65,11 +67,11 @@ const abilitiesSlice = createSlice({
   reducers: {
     setAbilitiesForAddress: (
       immerState,
-      { payload }: { payload: { address: HexString; abilities: Ability[] } }
+      { payload }: { payload: { address: HexString; abilities: Ability[] } },
     ) => {
       const { address, abilities } = payload
       immerState.abilities[address] = Object.fromEntries(
-        abilities.map((ability) => [ability.abilityId, ability])
+        abilities.map((ability) => [ability.abilityId, ability]),
       )
     },
     updateAbility: (immerState, { payload }: { payload: Ability }) => {
@@ -77,13 +79,13 @@ const abilitiesSlice = createSlice({
     },
     deleteAbilitiesForAccount: (
       immerState,
-      { payload: address }: { payload: HexString }
+      { payload: address }: { payload: HexString },
     ) => {
       delete immerState.abilities[address]
     },
     deleteAbility: (
       immerState,
-      { payload }: { payload: { address: HexString; abilityId: string } }
+      { payload }: { payload: { address: HexString; abilityId: string } },
     ) => {
       delete immerState.abilities[payload.address]?.[payload.abilityId]
     },
@@ -98,7 +100,7 @@ const abilitiesSlice = createSlice({
     },
     deleteType: (immerState, { payload: type }: { payload: string }) => {
       immerState.filter.types = immerState.filter.types.filter(
-        (value) => value !== type
+        (value) => value !== type,
       )
     },
     addAccount: (immerState, { payload: account }: { payload: string }) => {
@@ -108,7 +110,7 @@ const abilitiesSlice = createSlice({
     },
     deleteAccount: (immerState, { payload: account }: { payload: string }) => {
       immerState.filter.accounts = immerState.filter.accounts.filter(
-        (value) => value !== account
+        (value) => value !== account,
       )
     },
   },
@@ -134,10 +136,10 @@ export const completeAbility = createBackgroundAsyncThunk(
       address,
       abilityId,
     }: { address: NormalizedEVMAddress; abilityId: string },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.markAbilityAsCompleted(address, abilityId)
-  }
+  },
 )
 
 export const removeAbility = createBackgroundAsyncThunk(
@@ -147,10 +149,10 @@ export const removeAbility = createBackgroundAsyncThunk(
       address,
       abilityId,
     }: { address: NormalizedEVMAddress; abilityId: string },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.markAbilityAsRemoved(address, abilityId)
-  }
+  },
 )
 
 export const reportAndRemoveAbility = createBackgroundAsyncThunk(
@@ -167,17 +169,17 @@ export const reportAndRemoveAbility = createBackgroundAsyncThunk(
       abilityId: string
       reason: string
     },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.reportAndRemoveAbility(address, abilitySlug, abilityId, reason)
-  }
+  },
 )
 
 export const initAbilities = createBackgroundAsyncThunk(
   "abilities/initAbilities",
   async (
     address: NormalizedEVMAddress,
-    { dispatch, getState, extra: { main } }
+    { dispatch, getState, extra: { main } },
   ) => {
     const { ledger, internalSigner, abilities } = getState() as {
       ledger: LedgerState
@@ -196,7 +198,7 @@ export const initAbilities = createBackgroundAsyncThunk(
         dispatch(addAccount(address))
       }
     }
-  }
+  },
 )
 
 export default abilitiesSlice.reducer

@@ -2,7 +2,7 @@ import PreferenceService from "../../preferences"
 import { NameResolver } from "../name-resolver"
 
 export default function knownContractResolverFor(
-  preferenceService: PreferenceService
+  preferenceService: PreferenceService,
 ): NameResolver<"tally-known-contracts"> {
   return {
     type: "tally-known-contracts",
@@ -20,7 +20,7 @@ export default function knownContractResolverFor(
       preferenceService.lookUpAddressForContractName.bind(preferenceService),
     async lookUpAvatar() {
       throw new Error(
-        "Avatar resolution not supported in known contracts resolver."
+        "Avatar resolution not supported in known contracts resolver.",
       )
     },
     lookUpNameForAddress:

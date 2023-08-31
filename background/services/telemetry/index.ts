@@ -51,7 +51,7 @@ export default class TelemetryService extends BaseService<ServiceLifecycleEvents
       const state = this.store.getState()
       output.push(
         "\nRedux state:",
-        TelemetryService.formatBytes(encodeJSON(state).length)
+        TelemetryService.formatBytes(encodeJSON(state).length),
       )
     }
 

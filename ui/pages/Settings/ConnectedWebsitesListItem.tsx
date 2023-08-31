@@ -11,7 +11,7 @@ type ConnectedWebsitesListItemProps = {
 }
 
 export default function ConnectedWebsitesListItem(
-  props: ConnectedWebsitesListItemProps
+  props: ConnectedWebsitesListItemProps,
 ): React.ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "settings" })
 

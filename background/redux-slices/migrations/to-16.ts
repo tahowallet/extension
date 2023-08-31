@@ -75,7 +75,7 @@ export default (prevState: Record<string, unknown>): NewState => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_) => {
           Object.values(
-            typedPrevState.activities[address][chainID].entities
+            typedPrevState.activities[address][chainID].entities,
           ).forEach((activityItem) => {
             const { annotation } = activityItem
             if (
@@ -113,7 +113,7 @@ export default (prevState: Record<string, unknown>): NewState => {
               }
             }
           })
-        }
+        },
       )
     })
   })

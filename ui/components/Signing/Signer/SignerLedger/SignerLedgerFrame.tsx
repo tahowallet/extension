@@ -22,7 +22,7 @@ import TransactionButton from "../TransactionButton"
 
 export default function SignerLedgerFrame<
   T extends SignOperationType,
-  S extends LedgerAccountSigner
+  S extends LedgerAccountSigner,
 >({
   children,
   request,
@@ -69,7 +69,7 @@ export default function SignerLedgerFrame<
 
   const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
   const additionalSigningStatus = useBackgroundSelector(
-    selectAdditionalSigningStatus
+    selectAdditionalSigningStatus,
   )
 
   const mustEnableArbitraryDataSigning =

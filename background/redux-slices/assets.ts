@@ -30,7 +30,7 @@ const assetsSlice = createSlice({
   reducers: {
     assetsLoaded: (
       immerState,
-      { payload: newAssets }: { payload: AnyAsset[] }
+      { payload: newAssets }: { payload: AnyAsset[] },
     ) => {
       const mappedAssets: { [sym: string]: SingleAssetState[] } = {}
       // bin existing known assets
@@ -82,7 +82,7 @@ const assetsSlice = createSlice({
     },
     removeAsset: (
       immerState,
-      { payload: removedAsset }: { payload: AnyAsset }
+      { payload: removedAsset }: { payload: AnyAsset },
     ) => immerState.filter((asset) => !isSameAsset(asset, removedAsset)),
   },
 })
@@ -101,10 +101,10 @@ export const updateAssetMetadata = createBackgroundAsyncThunk(
       asset: SmartContractFungibleAsset
       metadata: AnyAssetMetadata
     },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.updateAssetMetadata(asset, metadata)
-  }
+  },
 )
 
 export const refreshAsset = createBackgroundAsyncThunk(
@@ -115,13 +115,13 @@ export const refreshAsset = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { dispatch }
+    { dispatch },
   ) => {
     // Update assets slice
     await dispatch(assetsLoaded([asset]))
     // Update accounts slice cached data about this asset
     await dispatch(updateAssetReferences(asset))
-  }
+  },
 )
 
 export const hideAsset = createBackgroundAsyncThunk(
@@ -132,10 +132,10 @@ export const hideAsset = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { extra: { main } }
+    { extra: { main } },
   ) => {
     await main.hideAsset(asset)
-  }
+  },
 )
 
 /**
@@ -150,11 +150,11 @@ export const removeAssetData = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { dispatch }
+    { dispatch },
   ) => {
     await dispatch(removeAsset(asset))
     await dispatch(removeAssetReferences(asset))
-  }
+  },
 )
 
 /**
@@ -189,7 +189,7 @@ export const transferAsset = createBackgroundAsyncThunk(
     if (isBaseAssetForNetwork(assetAmount.asset, fromNetwork)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
-          `${fromAddress} to ${toAddress} as a base asset transfer.`
+          `${fromAddress} to ${toAddress} as a base asset transfer.`,
       )
       await signer.sendTransaction({
         from: fromAddress,
@@ -201,17 +201,17 @@ export const transferAsset = createBackgroundAsyncThunk(
     } else if (isSmartContractFungibleAsset(assetAmount.asset)) {
       logger.debug(
         `Sending ${assetAmount.amount} ${assetAmount.asset.symbol} from ` +
-          `${fromAddress} to ${toAddress} as an ERC20 transfer.`
+          `${fromAddress} to ${toAddress} as an ERC20 transfer.`,
       )
       const token = new ethers.Contract(
         assetAmount.asset.contractAddress,
         ERC20_INTERFACE,
-        signer
+        signer,
       )
 
       const transactionDetails = await token.populateTransaction.transfer(
         toAddress,
-        assetAmount.amount
+        assetAmount.amount,
       )
 
       await signer.sendUncheckedTransaction({
@@ -221,10 +221,10 @@ export const transferAsset = createBackgroundAsyncThunk(
       })
     } else {
       throw new Error(
-        "Only base and fungible smart contract asset transfers are supported for now."
+        "Only base and fungible smart contract asset transfers are supported for now.",
       )
     }
-  }
+  },
 )
 
 export const importCustomToken = createBackgroundAsyncThunk(
@@ -235,8 +235,8 @@ export const importCustomToken = createBackgroundAsyncThunk(
     }: {
       asset: SmartContractFungibleAsset
     },
-    { extra: { main } }
-  ) => ({ success: await main.importCustomToken(asset) })
+    { extra: { main } },
+  ) => ({ success: await main.importCustomToken(asset) }),
 )
 
 export const checkTokenContractDetails = createBackgroundAsyncThunk(
@@ -246,7 +246,7 @@ export const checkTokenContractDetails = createBackgroundAsyncThunk(
       contractAddress,
       network,
     }: { contractAddress: NormalizedEVMAddress; network: EVMNetwork },
-    { getState, extra: { main } }
+    { getState, extra: { main } },
   ) => {
     const state = getState() as RootState
     const currentAccount = state.ui.selectedAccount
@@ -260,5 +260,5 @@ export const checkTokenContractDetails = createBackgroundAsyncThunk(
       // FIXME: Rejected thunks return undefined instead of throwing
       return null
     }
-  }
+  },
 )

@@ -2,7 +2,7 @@ import { BrowserContext, test as base, expect, Page } from "@playwright/test"
 import * as path from "path"
 
 export const getOnboardingPage = async (
-  context: BrowserContext
+  context: BrowserContext,
 ): Promise<Page> => {
   const getOnboardingOrThrow = () => {
     const pages = context.pages()
@@ -51,12 +51,12 @@ export default class OnboardingHelper {
   constructor(
     public readonly popup: Page,
     // public readonly backgroundPage: Page,
-    public readonly context: BrowserContext
+    public readonly context: BrowserContext,
   ) {}
 
   async addReadOnlyAccount(
     addressOrName: string,
-    onboardingPage?: Page
+    onboardingPage?: Page,
   ): Promise<void> {
     const page = onboardingPage || (await getOnboardingPage(this.context))
 
@@ -67,7 +67,7 @@ export default class OnboardingHelper {
       await page.getByRole("button", { name: "Preview Taho" }).click()
 
       await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" })
+        page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
     })
   }
@@ -102,7 +102,7 @@ export default class OnboardingHelper {
 
       await page.getByRole("button", { name: "Import account" }).click()
       await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" })
+        page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
     })
   }
@@ -143,10 +143,10 @@ export default class OnboardingHelper {
       await fileChooser.setFiles(file)
 
       await expect(
-        page.getByTestId("file_status").getByText(path.basename(file))
+        page.getByTestId("file_status").getByText(path.basename(file)),
       ).toBeVisible()
       await expect(
-        page.getByText("Wrong file, only JSON accepted")
+        page.getByText("Wrong file, only JSON accepted"),
       ).toHaveCount(0)
 
       await page.getByPlaceholder(" ").fill(filePassword)
@@ -161,7 +161,7 @@ export default class OnboardingHelper {
       await page.getByRole("button", { name: "Finalize" }).click()
 
       await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" })
+        page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
     })
   }
@@ -191,11 +191,11 @@ export default class OnboardingHelper {
     await page.getByRole("button", { name: "I wrote it down" }).click()
 
     const seedWordPlaceholders = page.getByTestId(
-      "verify_seed_word_placeholder"
+      "verify_seed_word_placeholder",
     )
 
     const wordsToVerify = (await seedWordPlaceholders.allTextContents()).map(
-      (word) => Number((word.match(/\d+/) ?? ["0"])[0])
+      (word) => Number((word.match(/\d+/) ?? ["0"])[0]),
     )
 
     await seedWordPlaceholders.first().click()
@@ -219,7 +219,7 @@ export default class OnboardingHelper {
     await page.getByRole("button", { name: "Finalize" }).click()
 
     await expect(
-      page.getByRole("heading", { name: "Welcome to Taho" })
+      page.getByRole("heading", { name: "Welcome to Taho" }),
     ).toBeVisible()
   }
 }

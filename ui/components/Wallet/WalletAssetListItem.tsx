@@ -13,7 +13,7 @@ type Props = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
   initializationLoadingTimeExpired: boolean
   onUnverifiedAssetWarningClick?: (
-    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"]
+    asset: CompleteAssetAmount<SmartContractFungibleAsset>["asset"],
   ) => void
 }
 

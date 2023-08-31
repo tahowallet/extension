@@ -28,11 +28,11 @@ type BaseWalletProvider = {
   emit: (eventName: string | symbol, ...args: unknown[]) => boolean
   on: (
     eventName: string | symbol,
-    listener: (...args: unknown[]) => void
+    listener: (...args: unknown[]) => void,
   ) => unknown
   removeListener: (
     eventName: string | symbol,
-    listener: (...args: unknown[]) => void
+    listener: (...args: unknown[]) => void,
   ) => unknown
 }
 
@@ -61,16 +61,16 @@ interface Window {
     providers: WalletProvider[]
     shouldSetTallyForCurrentProvider: (
       shouldSetTaho: boolean,
-      shouldReload?: boolean
+      shouldReload?: boolean,
     ) => void
     shouldSetTahoForCurrentProvider: (
       shouldSetTaho: boolean,
-      shouldReload?: boolean
+      shouldReload?: boolean,
     ) => void
     routeToNewNonTahoDefault: (request: unknown) => Promise<unknown>
     reemitTahoEvent: (event: string | symbol, ...args: unknown[]) => boolean
     getProviderInfo: (
-      provider: WalletProvider
+      provider: WalletProvider,
     ) => WalletProvider["providerInfo"]
     addProvider: (newProvider: WalletProvider) => void
   }

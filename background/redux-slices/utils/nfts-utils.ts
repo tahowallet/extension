@@ -28,7 +28,7 @@ const isETHPrice = (collection: NFTCollectionCached): boolean =>
 
 export const getAdditionalDataForFilter = (
   id: string,
-  accounts: AccountTotal[]
+  accounts: AccountTotal[],
 ): { name?: string; thumbnailURL?: string } => {
   const a = accounts.find(({ address }) => address === id)
   return a ? { name: a.name ?? a.address, thumbnailURL: a.avatarURL } : {}
@@ -38,7 +38,7 @@ export const getAdditionalDataForFilter = (
 export const sortByPrice = (
   type: "asc" | "desc",
   collection1: NFTCollectionEnriched,
-  collection2: NFTCollectionEnriched
+  collection2: NFTCollectionEnriched,
 ): number => {
   if (collection1.floorPrice?.valueUSD === undefined) return 1
   if (collection2.floorPrice?.valueUSD === undefined) return -1
@@ -52,14 +52,14 @@ export const sortByPrice = (
 const sortByDate = (
   type: "new" | "old",
   collection1: NFTCollectionCached,
-  collection2: NFTCollectionCached
+  collection2: NFTCollectionCached,
 ): number => {
   // NFTs are already sorted with current sort type
   const transferDate1 = new Date(
-    collection1.nfts[0]?.transferDate ?? ""
+    collection1.nfts[0]?.transferDate ?? "",
   ).getTime()
   const transferDate2 = new Date(
-    collection2.nfts[0]?.transferDate ?? ""
+    collection2.nfts[0]?.transferDate ?? "",
   ).getTime()
 
   if (type === "new") {
@@ -71,12 +71,12 @@ const sortByDate = (
 
 const sortNFTsByDate = (
   type: "new" | "old",
-  nfts: NFTCached[]
+  nfts: NFTCached[],
 ): NFTCached[] => {
   const sorted = nfts.sort(
     (nft1, nft2) =>
       new Date(nft2.transferDate ?? "").getTime() -
-      new Date(nft1.transferDate ?? "").getTime()
+      new Date(nft1.transferDate ?? "").getTime(),
   )
 
   return type === "new" ? sorted : sorted.reverse()
@@ -84,14 +84,14 @@ const sortNFTsByDate = (
 
 const sortByNFTCount = (
   collection1: NFTCollectionCached,
-  collection2: NFTCollectionCached
+  collection2: NFTCollectionCached,
 ): number =>
   (Number(collection2?.nftCount) || 0) - (Number(collection1?.nftCount) || 0)
 
 export const sortCollections = (
   collection1: NFTCollectionCached,
   collection2: NFTCollectionCached,
-  type: SortType
+  type: SortType,
 ): number => {
   switch (type) {
     case "asc":
@@ -111,7 +111,7 @@ export const sortCollections = (
 
 const sortNFTs = (
   collection: NFTCollectionCached,
-  type: SortType
+  type: SortType,
 ): NFTCollectionCached => {
   switch (type) {
     case "new":
@@ -132,7 +132,7 @@ const sortNFTs = (
 type TotalFloorPriceMap = { [symbol: string]: number }
 
 export const getTotalFloorPrice = (
-  collections: NFTCollectionCached[]
+  collections: NFTCollectionCached[],
 ): TotalFloorPriceMap =>
   collections.reduce(
     (acc, collection) => {
@@ -149,7 +149,7 @@ export const getTotalFloorPrice = (
 
       return acc
     },
-    { ETH: 0 } as TotalFloorPriceMap
+    { ETH: 0 } as TotalFloorPriceMap,
   )
 
 export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
@@ -158,7 +158,7 @@ export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
 export function enrichCollectionWithUSDFloorPrice(
   collection: NFTCollectionCached,
   prices: PricesState,
-  mainCurrencySymbol: string
+  mainCurrencySymbol: string,
 ): NFTCollectionEnriched {
   if (!collection.floorPrice) return collection
 
@@ -166,7 +166,7 @@ export function enrichCollectionWithUSDFloorPrice(
   const symbol = isETHPrice(collection) ? "ETH" : tokenSymbol
 
   const baseAsset = BUILT_IN_NETWORK_BASE_ASSETS.find(
-    (asset) => symbol === asset.symbol
+    (asset) => symbol === asset.symbol,
   )
 
   if (!baseAsset) return collection
@@ -174,7 +174,7 @@ export function enrichCollectionWithUSDFloorPrice(
   const pricePoint = selectAssetPricePoint(
     prices,
     baseAsset,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
 
   const valueUSD =
@@ -184,7 +184,7 @@ export function enrichCollectionWithUSDFloorPrice(
         amount: BigInt(Math.round(value * 10 ** baseAsset.decimals)),
       },
       pricePoint,
-      2
+      2,
     ).mainCurrencyAmount ?? 0
 
   return {
@@ -201,7 +201,7 @@ export const getFilteredCollections = (
   collections: NFTCollectionCached[],
   filters: FiltersState,
   prices: PricesState,
-  mainCurrencySymbol: string
+  mainCurrencySymbol: string,
 ): NFTCollectionCached[] => {
   const applyPriceSort = filters.type === "asc" || filters.type === "desc"
 
@@ -209,7 +209,7 @@ export const getFilteredCollections = (
     .filter(
       (collection) =>
         isEnabledFilter(collection.id, filters.collections) &&
-        isEnabledFilter(collection.owner, filters.accounts)
+        isEnabledFilter(collection.owner, filters.accounts),
     )
     .map((collection) => {
       const collectionWithSortedNFTs = sortNFTs(collection, filters.type)
@@ -218,11 +218,11 @@ export const getFilteredCollections = (
         ? enrichCollectionWithUSDFloorPrice(
             collectionWithSortedNFTs,
             prices,
-            mainCurrencySymbol
+            mainCurrencySymbol,
           )
         : collectionWithSortedNFTs
     })
     .sort((collection1, collection2) =>
-      sortCollections(collection1, collection2, filters.type)
+      sortCollections(collection1, collection2, filters.type),
     )
 }

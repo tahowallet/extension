@@ -21,7 +21,7 @@ export default function RevealPrivateKey({
   useEffect(() => {
     const fetchPrivateKey = async () => {
       const key = (await dispatch(
-        exportPrivateKey(address)
+        exportPrivateKey(address),
       )) as unknown as AsyncThunkFulfillmentType<typeof exportPrivateKey>
 
       if (key) {

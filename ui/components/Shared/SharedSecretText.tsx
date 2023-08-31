@@ -73,7 +73,9 @@ export default function SharedSecretText(props: Props): ReactElement {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          transition: opacity 200ms ease-in-out, filter 200ms ease-in-out;
+          transition:
+            opacity 200ms ease-in-out,
+            filter 200ms ease-in-out;
         }
       `}</style>
     </>

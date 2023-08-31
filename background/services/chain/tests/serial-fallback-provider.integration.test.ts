@@ -79,7 +79,7 @@ describe("Serial Fallback Provider", () => {
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
-        fallbackProvider.send("eth_getBalance", [])
+        fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
@@ -95,7 +95,7 @@ describe("Serial Fallback Provider", () => {
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
-        fallbackProvider.send("eth_getBalance", [])
+        fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
@@ -111,7 +111,7 @@ describe("Serial Fallback Provider", () => {
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
-        fallbackProvider.send("eth_getBalance", [])
+        fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
@@ -127,17 +127,17 @@ describe("Serial Fallback Provider", () => {
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
-        fallbackProvider.send("eth_getBalance", [])
+        fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
 
       expect(
         genericSendStub.args.filter((args) => args[0] === "eth_getBalance")
-          .length
+          .length,
       ).toEqual(4)
       // 1 try of eth_getBalance
       expect(
         alchemySendStub.args.filter((args) => args[0] === "eth_getBalance")
-          .length
+          .length,
       ).toEqual(1)
     })
 
@@ -146,7 +146,7 @@ describe("Serial Fallback Provider", () => {
       genericSendStub.throws(error)
       alchemySendStub.throws(error)
       await expect(fallbackProvider.send("eth_getBalance", [])).rejects.toEqual(
-        error
+        error,
       )
       expect(genericSendStub.called).toEqual(true)
       expect(alchemySendStub.called).toEqual(true)
@@ -220,7 +220,7 @@ describe("Serial Fallback Provider", () => {
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
       await expect(
-        fallbackProvider.send("eth_getBalance", [])
+        fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
       // Accessing private property
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
