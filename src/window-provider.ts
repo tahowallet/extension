@@ -38,6 +38,10 @@ const metaMaskMock: WalletProvider = {
   emit: (_: string | symbol, ...__: unknown[]) => false,
   on: () => {},
   removeListener: () => {},
+  _metamask: {
+    isUnlocked: () => {},
+    requestBatch: () => {},
+  },
   _state: {
     accounts: null,
     isConnected: false,
@@ -338,14 +342,15 @@ Object.defineProperty(window, "ethereum", {
           window.walletRouter &&
           window.walletRouter.currentProvider === tahoWindowProvider &&
           tahoWindowProvider.tahoSetAsDefault &&
-          prop === "isMetaMask"
+          (prop === "isMetaMask" || String(prop).startsWith("_"))
         ) {
-          // Return `true` for window.ethereum isMetaMask call if Taho is
-          // installed and set as default. The Taho provider itself will
-          // always return `false`, as certain dApps detect a wallet that
-          // declares isMetaMask AND isSomethingElse and disallow the behavior
-          // we're going for here.
-          return true
+          // For MetaMask-specific properties like isMetaMask, _metamask, and others,
+          // return our mock values if Taho is installed and set as default.
+          // The Taho provider itself will always return `false` for isMetaMask and
+          // doesn't respond to other MetaMask-specific properties, as certain
+          // dApps detect a wallet that declares MetaMask-like properties AND
+          // isSomethingElse and disallow the behavior we're going for here.
+          return metaMaskMock[String(prop)]
         }
 
         if (
