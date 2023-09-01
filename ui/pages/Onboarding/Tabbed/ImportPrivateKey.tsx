@@ -5,7 +5,6 @@ import { SignerSourceTypes } from "@tallyho/tally-background/services/internal-s
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
-import { validatePrivateKey } from "@tallyho/tally-background/utils/internal-signer"
 import SharedButton from "../../../components/Shared/SharedButton"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import { useBackgroundDispatch } from "../../../hooks"
@@ -34,24 +33,22 @@ export default function ImportPrivateKey(props: Props): ReactElement {
 
   const importWallet = useCallback(async () => {
     const trimmedPrivateKey = privateKey.toLowerCase().trim()
-    if (validatePrivateKey(trimmedPrivateKey)) {
-      setIsImporting(true)
-      const { success } = (await dispatch(
-        importSigner({
-          type: SignerSourceTypes.privateKey,
-          privateKey: trimmedPrivateKey,
-        }),
-      )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
-      if (success) {
-        dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
-        finalize()
-      } else {
-        setIsImporting(false)
-        setErrorMessage(t("errorImport"))
-      }
+    setIsImporting(true)
+
+    const { success } = (await dispatch(
+      importSigner({
+        type: SignerSourceTypes.privateKey,
+        privateKey: trimmedPrivateKey,
+      }),
+    )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
+
+    if (success) {
+      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+      finalize()
     } else {
-      setErrorMessage(t("errorFormat"))
+      setIsImporting(false)
+      setErrorMessage(t("errorImport"))
     }
   }, [dispatch, privateKey, setIsImporting, finalize, t])
 
