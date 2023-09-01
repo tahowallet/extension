@@ -51,6 +51,117 @@ const metaMaskMock: WalletProvider = {
   },
 }
 
+// When doing development logging, used to associate timer logs with the final
+// execution result.
+let globalLoggingIndex = 0
+/**
+ * This function reflects the given prop off of the given reflectedObject. If
+ * the prop is a function, it ensures that the underlying function is invoked
+ * with the original `this` pointer. Finally, if the file was compiled in
+ * development mode, it also inserts intercepting logging for introspection.
+ */
+function reflectRedirectAndDevLog(
+  marker: string,
+  reflectedObject: object,
+  prop: string | symbol,
+) {
+  const reflected = Reflect.get(reflectedObject, prop, reflectedObject)
+
+  if (process.env.NODE_ENV === "development") {
+    if (typeof reflected === "function") {
+      return (...args: unknown[]) => {
+        const safeSerialize = (object: unknown) => {
+          if (object instanceof Error) {
+            return `${object.name}[${object.message}]${
+              object.stack ? `: \n${object.stack}` : ""
+            }`
+          }
+
+          try {
+            return JSON.stringify(object)
+          } catch (err) {
+            return `${String(object)} (failed serialization due to ${
+              err instanceof Error ? err.message : "an error"
+            })`
+          }
+        }
+
+        const loggingIndex = globalLoggingIndex
+        globalLoggingIndex += 1
+        const startTime = Date.now()
+        const labelString = () =>
+          `%c[${loggingIndex.toFixed(0).padStart(4, " ")},${(
+            (Date.now() - startTime) /
+            1000
+          )
+            .toFixed(2)
+            .padStart(6, " ")}s] ${marker}.${String(prop)}: ${safeSerialize(
+            args,
+          )}`
+        const timeLoggingInterval = setInterval(() => {
+          // Logging for development purposes; should not appear on prod. t
+          // prefix indicates this is a timing log rather than a completion
+          // log.
+          // eslint-disable-next-line no-console
+          console.log(
+            `t${labelString()}`,
+            "color: #bada55; background-color: #222;",
+          )
+        }, 1000)
+
+        try {
+          const result = reflected.apply(reflectedObject, args)
+
+          Promise.resolve(result)
+            .then((succesfulResult) => {
+              clearInterval(timeLoggingInterval)
+              // Logging for development purposes; should not appear on prod.
+              // eslint-disable-next-line no-console
+              console.log(
+                `${labelString()}%c -> ${safeSerialize(succesfulResult)}`,
+                "background: #bada55; color: #222",
+                "background: #222; color: #bada55",
+              )
+            })
+            .catch((error) => {
+              clearInterval(timeLoggingInterval)
+              // Logging for development purposes; should not appear on prod.
+              // eslint-disable-next-line no-console
+              console.log(
+                `${labelString()}%c -> ${safeSerialize(error)}`,
+                "background: #bada55; color: #222",
+                // Error -- red background.
+                "background: #dd0000; color: #bada55",
+              )
+            })
+
+          return result
+        } catch (err) {
+          clearInterval(timeLoggingInterval)
+
+          // Logging for development purposes; should not appear on prod.
+          // eslint-disable-next-line no-console
+          console.log(
+            `${labelString()}%c -> ${safeSerialize(err)}`,
+            "background: #bada55; color: #222",
+            // Error -- red background.
+            "background: #dd0000; color: #bada55",
+          )
+
+          throw err
+        }
+      }
+    }
+  }
+
+  if (typeof reflected === "function") {
+    // In production mode, still wrap reflected functions to set the `this`
+    // pointer to the reflected object.
+    return (...args: unknown[]) => reflected.apply(reflectedObject, args)
+  }
+
+  return reflected
+}
 // A tracking list of MetaMask wrappers that allow us to avoid double-wrapping.
 // The map key is the provider that *was wrapped*, i.e. the original, and the
 // map value is the wrapping provider, i.e. the proxy that makes sure default
@@ -92,7 +203,8 @@ function wrapMetaMaskProvider(provider: WalletProvider): {
           tahoRoutedProperties.has(String(prop)) &&
           prop in tahoWindowProvider
         ) {
-          return Reflect.get(
+          return reflectRedirectAndDevLog(
+            "TH",
             // Always proxy to the current provider, even if it has changed. This
             // allows changes in the current provider, particularly when the user
             // changes their default wallet, to take effect immediately. Combined
@@ -101,11 +213,10 @@ function wrapMetaMaskProvider(provider: WalletProvider): {
             // attempt at connecting.
             tahoWindowProvider,
             prop,
-            tahoWindowProvider,
           )
         }
 
-        return Reflect.get(target, prop, target)
+        return reflectRedirectAndDevLog("MM", target, prop)
       },
     })
 
