@@ -252,47 +252,63 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // these params are taken directly from the dapp website
       const [title, faviconUrl] = event.request.params as string[]
 
-      const permissionRequest: PermissionRequest = {
-        key: `${origin}_${accountAddress}_${dAppChainID}`,
-        origin,
-        chainID: dAppChainID,
-        faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
-        title,
-        state: "request",
-        accountAddress,
-      }
-
-      const blockUntilUserAction =
-        await this.requestPermission(permissionRequest)
-
-      await blockUntilUserAction
-
-      const persistedPermission = await this.checkPermission(
-        origin,
-        dAppChainID,
-      )
-
-      if (typeof persistedPermission !== "undefined") {
-        // if agrees then let's return the account data
-
-        response.result = await this.routeContentScriptRPCRequest(
-          persistedPermission,
-          "eth_accounts",
-          event.request.params,
-          origin,
-        )
-
-        // on dApp connection, persist the current network/origin state
-        await this.internalEthereumProviderService.switchToSupportedNetwork(
-          origin,
-          network,
-        )
-      } else {
-        // if user does NOT agree, then reject
-
+      const existingPermission = await this.checkPermission(origin, dAppChainID)
+      if (
+        // If there's an existing permission record and it's not an explicit
+        // allow, immediately return a rejection.
+        (existingPermission !== undefined &&
+          existingPermission.state !== "allow") ||
+        // If there's an unresolved request for the domain, likewise return a
+        // rejection. We only allow one in-flight permissions request for a
+        // given domain at a time.
+        this.#pendingPermissionsRequests[origin] !== undefined
+      ) {
         response.result = new EIP1193Error(
           EIP1193_ERROR_CODES.userRejectedRequest,
         ).toJSON()
+      } else {
+        const permissionRequest: PermissionRequest = {
+          key: `${origin}_${accountAddress}_${dAppChainID}`,
+          origin,
+          chainID: dAppChainID,
+          faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
+          title,
+          state: "request",
+          accountAddress,
+        }
+
+        const blockUntilUserAction =
+          await this.requestPermission(permissionRequest)
+
+        await blockUntilUserAction
+
+        const newlyPersistedPermission = await this.checkPermission(
+          origin,
+          dAppChainID,
+        )
+
+        if (typeof newlyPersistedPermission !== "undefined") {
+          // if agrees then let's return the account data
+
+          response.result = await this.routeContentScriptRPCRequest(
+            newlyPersistedPermission,
+            "eth_accounts",
+            event.request.params,
+            origin,
+          )
+
+          // on dApp connection, persist the current network/origin state
+          await this.internalEthereumProviderService.switchToSupportedNetwork(
+            origin,
+            network,
+          )
+        } else {
+          // if user does NOT agree, then reject
+
+          response.result = new EIP1193Error(
+            EIP1193_ERROR_CODES.userRejectedRequest,
+          ).toJSON()
+        }
       }
     } else if (event.request.method === "eth_accounts") {
       const dAppChainID = Number(
