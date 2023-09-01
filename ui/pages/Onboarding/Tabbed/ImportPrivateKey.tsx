@@ -48,9 +48,10 @@ export default function ImportPrivateKey(props: Props): ReactElement {
         finalize()
       } else {
         setIsImporting(false)
+        setErrorMessage(t("errorImport"))
       }
     } else {
-      setErrorMessage(t("error"))
+      setErrorMessage(t("errorFormat"))
     }
   }, [dispatch, privateKey, setIsImporting, finalize, t])
 
