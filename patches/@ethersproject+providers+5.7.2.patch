@@ -32,7 +32,7 @@ index 9c80426..89307e9 100644
                  if (apiKey === defaultApiKey) {
                      showThrottleMessage();
 diff --git a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
-index 7db7f78..b95b041 100644
+index 7db7f78..0e49c0a 100644
 --- a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
 +++ b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
 @@ -1,6 +1,6 @@
@@ -54,7 +54,7 @@ index 7db7f78..b95b041 100644
          const promise = new Promise((resolve, reject) => {
              inflightRequest.resolve = resolve;
              inflightRequest.reject = reject;
-@@ -34,13 +34,14 @@ export class JsonRpcBatchProvider extends JsonRpcProvider {
+@@ -34,13 +34,26 @@ export class JsonRpcBatchProvider extends JsonRpcProvider {
                      request: deepCopy(request),
                      provider: this
                  });
@@ -67,7 +67,19 @@ index 7db7f78..b95b041 100644
 +                        response: rawResult,
                          provider: this
                      });
++
++                    if (!Array.isArray(rawResult) && rawResult?.error) {
++                        batch.forEach((inflightRequest) => {
++                                const error = new Error(rawResult.error.message);
++                                error.code = error.code;
++                                error.data = error.data;
++                                inflightRequest.reject(error);
++                        })
++                        return
++                    }
++
 +                    const result = rawResult.sort((a, b) => a.id - b.id);
++
                      // For each result, feed it to the correct Promise, depending
                      // on whether it was a success or error
                      batch.forEach((inflightRequest, index) => {
