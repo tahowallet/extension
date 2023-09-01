@@ -277,10 +277,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           accountAddress,
         }
 
-        const blockUntilUserAction =
-          await this.requestPermission(permissionRequest)
-
-        await blockUntilUserAction
+        await this.requestPermission(permissionRequest)
 
         const newlyPersistedPermission = await this.checkPermission(
           origin,
@@ -386,10 +383,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
     permissionRequest: PermissionRequest,
   ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
-    await showExtensionPopup(AllowedQueryParamPage.dappPermission)
 
     return new Promise((resolve) => {
       this.#pendingPermissionsRequests[permissionRequest.origin] = resolve
+
+      showExtensionPopup(AllowedQueryParamPage.dappPermission, {}, () => {
+        if (
+          this.#pendingPermissionsRequests[permissionRequest.origin] === resolve
+        ) {
+          delete this.#pendingPermissionsRequests[permissionRequest.origin]
+        }
+
+        resolve("Time to move on")
+      })
     })
   }
 
