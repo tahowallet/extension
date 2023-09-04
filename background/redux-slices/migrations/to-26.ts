@@ -11,7 +11,7 @@ type State = {
 }
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const typedPrevState = prevState as State
 

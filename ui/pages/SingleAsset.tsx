@@ -71,7 +71,7 @@ export default function SingleAsset(): ReactElement {
         default:
           return false
       }
-    })
+    }),
   )
 
   const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
@@ -167,26 +167,28 @@ export default function SingleAsset(): ReactElement {
             )}
           </div>
           <div className="right">
-            {!isVerified && !isTrusted && isSmartContractFungibleAsset(asset) && (
-              <div className="unverified_asset_button">
-                <AssetVerifyToggler
-                  text={t("assets.unverifiedAsset")}
-                  icon="notif-attention"
-                  color="var(--green-20)"
-                  hoverColor="var(--white)"
-                  onClick={() => setWarnedAsset(asset)}
-                />
-                <div>
-                  <SharedButton
-                    type="primary"
-                    size="medium"
+            {!isVerified &&
+              !isTrusted &&
+              isSmartContractFungibleAsset(asset) && (
+                <div className="unverified_asset_button">
+                  <AssetVerifyToggler
+                    text={t("assets.unverifiedAsset")}
+                    icon="notif-attention"
+                    color="var(--green-20)"
+                    hoverColor="var(--white)"
                     onClick={() => setWarnedAsset(asset)}
-                  >
-                    {t("assets.verifyAsset")}
-                  </SharedButton>
+                  />
+                  <div>
+                    <SharedButton
+                      type="primary"
+                      size="medium"
+                      onClick={() => setWarnedAsset(asset)}
+                    >
+                      {t("assets.verifyAsset")}
+                    </SharedButton>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {isTrusted && currentAccountSigner !== ReadOnlyAccountSigner && (
               <>

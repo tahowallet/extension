@@ -2,7 +2,7 @@
 // base assets https://github.com/tahowallet/extension/issues/3445
 
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const { assets: _, ...newState } = prevState
 

@@ -34,7 +34,7 @@ function SigningLoaded<T extends SignOperationType>({
   const { signingAddress, renderedSigningData } = signatureDetails
 
   const signerAccountTotal = useBackgroundSelector((state) =>
-    getAccountTotal(state, signingAddress)
+    getAccountTotal(state, signingAddress),
   )
 
   return (
@@ -66,7 +66,7 @@ function SigningLoaded<T extends SignOperationType>({
           }
           section :global(h1.title) {
             color: var(--trophy-gold);
-            font-size: ;
+            font-size:;
             font-weight: 500;
             line-height: 42px;
             text-align: center;
@@ -110,7 +110,7 @@ export default function Signing<T extends SignOperationType>({
       : {
           request,
           accountSigner,
-        }
+        },
   )
 
   // Note that signatureDetails should only be undefined if request is

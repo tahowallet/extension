@@ -30,15 +30,15 @@ const pricesSlice = createSlice({
   reducers: {
     newPricePoints: (
       immerState,
-      { payload: pricePoints }: { payload: PricePoint[] }
+      { payload: pricePoints }: { payload: PricePoint[] },
     ) => {
       pricePoints.forEach((pricePoint) => {
         const fiatCurrency = pricePoint.pair.find((asset) =>
-          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol)
+          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol),
         )
 
         const [pricedAsset] = pricePoint.pair.filter(
-          (asset) => asset !== fiatCurrency
+          (asset) => asset !== fiatCurrency,
         )
 
         if (fiatCurrency && isTrustedAsset(pricedAsset)) {
@@ -62,7 +62,7 @@ const selectAsset = (_: PricesState, asset: AnyAsset) => asset
 const selectPairedAssetSymbol = (
   _: PricesState,
   _2: AnyAsset,
-  pairedAssetSymbol: string
+  pairedAssetSymbol: string,
 ) => pairedAssetSymbol
 
 /**
@@ -82,7 +82,7 @@ export const selectAssetPricePoint = createSelector(
       pricePoint.pair.filter(({ symbol }) => symbol !== pairedAssetSymbol)[0]
 
     const hasRecentPriceData = (
-      assetPriceData: AssetPricesMap | undefined
+      assetPriceData: AssetPricesMap | undefined,
     ): boolean => !!assetPriceData?.[pairedAssetSymbol]
 
     let pricedAsset: AssetPricesMap | undefined
@@ -107,7 +107,7 @@ export const selectAssetPricePoint = createSelector(
         (assetPriceData) =>
           hasRecentPriceData(assetPriceData) &&
           getTargetAssetFromPricePoint(assetPriceData[pairedAssetSymbol])
-            .symbol === assetToFind.symbol
+            .symbol === assetToFind.symbol,
       )
     }
 
@@ -134,7 +134,7 @@ export const selectAssetPricePoint = createSelector(
             convertFixedPoint(
               amounts[0],
               pricePointAssetDecimals,
-              assetDecimals
+              assetDecimals,
             ),
             amounts[1],
           ],
@@ -146,5 +146,5 @@ export const selectAssetPricePoint = createSelector(
 
     // If no matching priced asset was found, return undefined.
     return undefined
-  }
+  },
 )

@@ -8,7 +8,7 @@ describe("Utils", () => {
   describe("handleRPCErrorResponse", () => {
     it("should return a provider Rpc error", () => {
       const response = handleRPCErrorResponse(
-        new EIP1193Error(EIP1193_ERROR_CODES.disconnected)
+        new EIP1193Error(EIP1193_ERROR_CODES.disconnected),
       )
 
       expect(response).toBe(EIP1193_ERROR_CODES.disconnected)

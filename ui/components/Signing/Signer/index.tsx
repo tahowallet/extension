@@ -9,7 +9,7 @@ import { ResolvedSignatureDetails } from "../SignatureDetails"
  */
 export type SignerFrameProps<
   T extends SignOperationType,
-  S extends AccountSigner = AccountSigner
+  S extends AccountSigner = AccountSigner,
 > = ResolvedSignatureDetails & {
   request: T
   signer: S

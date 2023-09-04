@@ -20,11 +20,13 @@ const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"
 // @TODO Test Me
 export async function getPrices(
   assets: AnyAsset[],
-  vsCurrencies: FiatCurrency[]
+  vsCurrencies: FiatCurrency[],
 ): Promise<PricePoint[]> {
   const queryableAssets = assets.filter(
     (asset): asset is AnyAsset & Required<CoinGeckoAsset> =>
-      "metadata" in asset && !!asset.metadata && "coinGeckoID" in asset.metadata
+      "metadata" in asset &&
+      !!asset.metadata &&
+      "coinGeckoID" in asset.metadata,
   )
 
   if (queryableAssets.length === 0) {
@@ -54,7 +56,7 @@ export async function getPrices(
       logger.warn(
         "CoinGecko price response didn't validate, did the API change?",
         json,
-        isValidCoinGeckoPriceResponse.errors
+        isValidCoinGeckoPriceResponse.errors,
       )
 
       return []
@@ -103,7 +105,7 @@ export async function getPrices(
 export async function getTokenPrices(
   tokenAddresses: string[],
   fiatCurrency: FiatCurrency,
-  network: EVMNetwork
+  network: EVMNetwork,
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
@@ -134,12 +136,12 @@ export async function getTokenPrices(
         [address: string]: { last_updated_at: number } & {
           [currencySymbol: string]: string
         }
-      }
+      },
     ).forEach(([address, priceDetails]) => {
       // TODO parse this as a fixed decimal rather than a number. Will require
       // custom JSON deserialization
       const price: number = Number.parseFloat(
-        priceDetails[fiatSymbol.toLowerCase()]
+        priceDetails[fiatSymbol.toLowerCase()],
       )
       if (!Number.isNaN(price)) {
         prices[address] = {
@@ -153,7 +155,7 @@ export async function getTokenPrices(
         logger.warn(
           "Price for Ethereum token from CoinGecko cannot be parsed.",
           address,
-          priceDetails
+          priceDetails,
         )
       }
     })
@@ -162,7 +164,7 @@ export async function getTokenPrices(
       "Error fetching price for tokens on network.",
       tokenAddresses,
       network,
-      err
+      err,
     )
   }
   return prices
@@ -173,7 +175,7 @@ export async function getTokenPrices(
  */
 export function getPricePoint(
   asset: SmartContractFungibleAsset | FungibleAsset,
-  unitPricePoint: UnitPricePoint<FungibleAsset>
+  unitPricePoint: UnitPricePoint<FungibleAsset>,
 ): PricePoint {
   return {
     pair: [asset, USD],
@@ -183,8 +185,8 @@ export function getPricePoint(
         Math.trunc(
           (Number(unitPricePoint.unitPrice.amount) /
             10 ** (unitPricePoint.unitPrice.asset as FungibleAsset).decimals) *
-            10 ** USD.decimals
-        )
+            10 ** USD.decimals,
+        ),
       ),
     ],
     time: unitPricePoint.time,

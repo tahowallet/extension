@@ -71,7 +71,7 @@ const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
   const distributor = await getContract(
     distributorContractAddress,
-    DISTRIBUTOR_ABI
+    DISTRIBUTOR_ABI,
   )
   return distributor
 }
@@ -134,7 +134,7 @@ const claimingSlice = createSlice({
     },
     claimed: (
       immerState,
-      { payload }: { payload: { account: HexString; alreadyClaimed: boolean } }
+      { payload }: { payload: { account: HexString; alreadyClaimed: boolean } },
     ) => {
       immerState.claimed[payload.account] = payload.alreadyClaimed
       immerState.claimError[payload.account] = false
@@ -143,7 +143,7 @@ const claimingSlice = createSlice({
       state,
       {
         payload: { signature, nonce, expiry },
-      }: { payload: { signature: Signature; nonce: number; expiry: number } }
+      }: { payload: { signature: Signature; nonce: number; expiry: number } },
     ) => ({
       ...state,
       signature,
@@ -162,7 +162,7 @@ const claimingSlice = createSlice({
     },
     setReferrer: (
       immerState,
-      { payload: referrer }: { payload: Referrer | null }
+      { payload: referrer }: { payload: Referrer | null },
     ) => {
       immerState.referrer = referrer
     },
@@ -171,7 +171,7 @@ const claimingSlice = createSlice({
     },
     setReferrerStats: (
       immerState,
-      { payload: reffererStats }: { payload: ReferrerStats }
+      { payload: reffererStats }: { payload: ReferrerStats },
     ) => {
       immerState.referrerStats = reffererStats
     },
@@ -209,13 +209,13 @@ export const checkAlreadyClaimed = createBackgroundAsyncThunk(
       return false
     }
     const alreadyClaimed = await distributorContract.isClaimed(
-      eligibility.index
+      eligibility.index,
     )
     if (alreadyClaimed) {
       dispatch(claimed({ account: eligibility.account, alreadyClaimed }))
     }
     return alreadyClaimed
-  }
+  },
 )
 
 export const claimRewards = createBackgroundAsyncThunk(
@@ -247,7 +247,7 @@ export const claimRewards = createBackgroundAsyncThunk(
           claimed({
             account: normalizeEVMAddress(account),
             alreadyClaimed: true,
-          })
+          }),
         )
         dispatch(resetClaimFlow())
         return
@@ -263,7 +263,7 @@ export const claimRewards = createBackgroundAsyncThunk(
         eligibility.index,
         account,
         eligibility.amount,
-        eligibility.proof
+        eligibility.proof,
       )
     }
 
@@ -274,7 +274,7 @@ export const claimRewards = createBackgroundAsyncThunk(
           account,
           eligibility.amount,
           eligibility.proof,
-          referralAddress
+          referralAddress,
         )
     }
     if (
@@ -292,7 +292,7 @@ export const claimRewards = createBackgroundAsyncThunk(
           eligibility.proof,
           referralAddress,
           delegate.address,
-          { nonce, expiry, r, s, v }
+          { nonce, expiry, r, s, v },
         )
     }
     if (claimTransaction) {
@@ -307,7 +307,7 @@ export const claimRewards = createBackgroundAsyncThunk(
         dispatch(dispatch(claimError(normalizeEVMAddress(account))))
       }
     }
-  }
+  },
 )
 
 export const signTokenDelegationData = createBackgroundAsyncThunk(
@@ -325,7 +325,7 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
     if (delegatee) {
       const TahoTokenContract = await getContract(
         DOGGO_TOKEN_ADDRESS,
-        ERC2612_INTERFACE
+        ERC2612_INTERFACE,
       )
 
       const nonce: BigNumber = await TahoTokenContract.nonces(address)
@@ -361,35 +361,35 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
           signature,
           nonce: nonceValue,
           expiry,
-        })
+        }),
       )
     }
-  }
+  },
 )
 
 export const selectClaim = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState
+  (claimState: ClaimingState) => claimState,
 )
 
 export const selectIsDelegationSigned = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => typeof claimState.signature !== "undefined"
+  (claimState: ClaimingState) => typeof claimState.signature !== "undefined",
 )
 
 export const selectClaimed = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState.claimed
+  (claimState: ClaimingState) => claimState.claimed,
 )
 
 export const selectClaimError = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState.claimError
+  (claimState: ClaimingState) => claimState.claimError,
 )
 
 export const selectCurrentlyClaiming = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState.currentlyClaiming
+  (claimState: ClaimingState) => claimState.currentlyClaiming,
 )
 
 export const selectClaimSelections = createSelector(
@@ -402,12 +402,12 @@ export const selectClaimSelections = createSelector(
         : undefined,
     },
     selectedForBonus: claimState.selectedForBonus,
-  })
+  }),
 )
 
 export const selectReferrerStats = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState.referrerStats
+  (claimState: ClaimingState) => claimState.referrerStats,
 )
 
 export const selectEligibility = createSelector(
@@ -418,11 +418,11 @@ export const selectEligibility = createSelector(
         amount: BigInt(Number(claimState.eligibility?.amount || 0n)) || 0n,
         decimals: DOGGO.decimals,
       },
-      0
-    )
+      0,
+    ),
 )
 
 export const selectEligibilityLoading = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
-  (claimState: ClaimingState) => claimState.eligibilityLoading
+  (claimState: ClaimingState) => claimState.eligibilityLoading,
 )

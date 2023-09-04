@@ -65,7 +65,7 @@ describe("Accounts redux slice", () => {
         updateAccountBalance({
           balances,
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const updatedAccountData =
@@ -88,7 +88,7 @@ describe("Accounts redux slice", () => {
         updateAccountBalance({
           balances,
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
       const updatedAccountData =
         updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
@@ -116,7 +116,7 @@ describe("Accounts redux slice", () => {
         updateAccountBalance({
           balances,
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const updatedAccountData =
@@ -147,7 +147,7 @@ describe("Accounts redux slice", () => {
         updateAccountBalance({
           balances,
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
       const updatedAccountData =
         updated.accountsData.evm[ETHEREUM.chainID][ADDRESS_MOCK]
@@ -169,7 +169,7 @@ describe("Accounts redux slice", () => {
             { ...BALANCE_MOCK, assetAmount: { asset: ASSET_MOCK, amount: 5n } },
           ],
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
       const updated = reducer(
         initial,
@@ -181,7 +181,7 @@ describe("Accounts redux slice", () => {
             },
           ],
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const updatedAccountData =
@@ -190,7 +190,7 @@ describe("Accounts redux slice", () => {
 
       expect(updatedBalance?.[getFullAssetID(ETH)].assetAmount.amount).toBe(1n)
       expect(
-        updatedBalance?.[getFullAssetID(ASSET_MOCK)].assetAmount.amount
+        updatedBalance?.[getFullAssetID(ASSET_MOCK)].assetAmount.amount,
       ).toBe(10n)
     })
 
@@ -207,7 +207,7 @@ describe("Accounts redux slice", () => {
         updateAccountBalance({
           balances: [BALANCE_MOCK],
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const updated = reducer(
@@ -225,7 +225,7 @@ describe("Accounts redux slice", () => {
             },
           ],
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const updatedAccountData =
@@ -235,17 +235,17 @@ describe("Accounts redux slice", () => {
       expect(balances?.[getFullAssetID(ETH)].assetAmount.asset).toEqual(ETH)
 
       expect(balances?.[getFullAssetID(someToken)].assetAmount.asset).toEqual(
-        someToken
+        someToken,
       )
       expect(balances?.[getFullAssetID(someToken)].assetAmount.amount).toEqual(
-        1n
+        1n,
       )
 
       expect(
-        balances?.[getFullAssetID(someOtherToken)].assetAmount.asset
+        balances?.[getFullAssetID(someOtherToken)].assetAmount.asset,
       ).toEqual(someOtherToken)
       expect(
-        balances?.[getFullAssetID(someOtherToken)].assetAmount.amount
+        balances?.[getFullAssetID(someOtherToken)].assetAmount.amount,
       ).toEqual(2n)
     })
 
@@ -271,7 +271,7 @@ describe("Accounts redux slice", () => {
             },
           ],
           addressOnNetwork: { address: ADDRESS_MOCK, network: ETHEREUM },
-        })
+        }),
       )
 
       const secondAccountUpdate = reducer(
@@ -288,7 +288,7 @@ describe("Accounts redux slice", () => {
             address: otherAccount.address,
             network: ETHEREUM,
           },
-        })
+        }),
       )
 
       const firstAccountData = secondAccountUpdate.accountsData.evm[
@@ -301,11 +301,11 @@ describe("Accounts redux slice", () => {
 
       expect(
         firstAccountData.balances[getFullAssetID(asset)].assetAmount.asset
-          .metadata?.verified
+          .metadata?.verified,
       ).not.toBeDefined()
       expect(
         secondAccountData.balances[getFullAssetID(asset)].assetAmount.asset
-          .metadata?.verified
+          .metadata?.verified,
       ).not.toBeDefined()
 
       const updatedAsset = cloneDeep(asset)
@@ -314,7 +314,7 @@ describe("Accounts redux slice", () => {
 
       const newState = reducer(
         secondAccountUpdate,
-        updateAssetReferences(updatedAsset)
+        updateAssetReferences(updatedAsset),
       )
 
       const updatedFirstAccountData = newState.accountsData.evm[
@@ -327,11 +327,11 @@ describe("Accounts redux slice", () => {
 
       expect(
         updatedFirstAccountData.balances[getFullAssetID(asset)].assetAmount
-          .asset.metadata?.verified
+          .asset.metadata?.verified,
       ).toBe(true)
       expect(
         updatedSecondAccountData.balances[getFullAssetID(asset)].assetAmount
-          .asset.metadata?.verified
+          .asset.metadata?.verified,
       ).toBe(true)
     })
   })
@@ -348,7 +348,7 @@ describe("Utilities", () => {
         {
           hideDust: true,
           showUnverifiedAssets: false,
-        }
+        },
       )
       expect(displayAsset).toBe(true)
     })
@@ -363,7 +363,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -378,7 +378,7 @@ describe("Utilities", () => {
           {
             hideDust: false,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -393,7 +393,7 @@ describe("Utilities", () => {
           {
             hideDust: false,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -408,7 +408,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(false)
@@ -424,12 +424,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 200,
               mainCurrencyAmount: 200,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -443,12 +443,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 200,
               mainCurrencyAmount: 200,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: true,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -462,12 +462,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 200,
               mainCurrencyAmount: 200,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(false)
@@ -481,12 +481,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 200,
               mainCurrencyAmount: 200,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(false)
@@ -500,12 +500,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 200,
               mainCurrencyAmount: 200,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: true,
-          }
+          },
         )
 
         expect(displayAsset).toBe(true)
@@ -519,12 +519,12 @@ describe("Utilities", () => {
             {
               decimalAmount: 0,
               mainCurrencyAmount: 0,
-            }
+            },
           ),
           {
             hideDust: true,
             showUnverifiedAssets: false,
-          }
+          },
         )
 
         expect(displayAsset).toBe(false)

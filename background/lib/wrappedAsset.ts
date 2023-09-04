@@ -17,16 +17,16 @@ export const WRAPPED_ASSET_FUNCTIONS = {
 const WRAPPED_ASSET_EVENTS = {
   Deposit: EventFragment.from("Deposit(address indexed dst, uint amount)"),
   Withdrawal: EventFragment.from(
-    "Withdrawal(address indexed src, uint amount)"
+    "Withdrawal(address indexed src, uint amount)",
   ),
 }
 
 export const WRAPPED_ASSET_ABI = Object.values<Fragment>(
-  WRAPPED_ASSET_FUNCTIONS
+  WRAPPED_ASSET_FUNCTIONS,
 ).concat(Object.values(WRAPPED_ASSET_EVENTS))
 
 export const WRAPPED_ASSET_INTERFACE = new ethers.utils.Interface(
-  WRAPPED_ASSET_ABI
+  WRAPPED_ASSET_ABI,
 )
 
 export type WrappedAssetDepositLog = {
@@ -52,7 +52,7 @@ export type WrappedAssetDepositLog = {
  *         `Deposit` or `Withdrawal` events, simply that they can be parsed as such.
  */
 export function parseLogsForWrappedDepositsAndWithdrawals(
-  logs: EVMLog[]
+  logs: EVMLog[],
 ): WrappedAssetDepositLog[] {
   return logs
     .map(({ contractAddress, data, topics }) => {
@@ -60,7 +60,7 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
         const decodedDeposit = WRAPPED_ASSET_INTERFACE.decodeEventLog(
           WRAPPED_ASSET_EVENTS.Deposit,
           data,
-          topics
+          topics,
         )
 
         if (
@@ -81,7 +81,7 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
         const decodedWithdrawal = WRAPPED_ASSET_INTERFACE.decodeEventLog(
           WRAPPED_ASSET_EVENTS.Withdrawal,
           data,
-          topics
+          topics,
         )
 
         if (
@@ -101,6 +101,6 @@ export function parseLogsForWrappedDepositsAndWithdrawals(
       return undefined
     })
     .filter(
-      (info): info is WrappedAssetDepositLog => typeof info !== "undefined"
+      (info): info is WrappedAssetDepositLog => typeof info !== "undefined",
     )
 }

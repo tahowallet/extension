@@ -49,7 +49,7 @@ function requireCryptoGlobal(message?: string) {
     throw new Error(
       `${
         message || "Taho"
-      } requires WebCrypto API support — is this being run in a modern browser?`
+      } requires WebCrypto API support — is this being run in a modern browser?`,
     )
   }
 }
@@ -72,7 +72,7 @@ function requireCryptoGlobal(message?: string) {
  */
 export async function deprecatedDerivePbkdf2KeyFromPassword(
   password: string,
-  existingSalt?: string
+  existingSalt?: string,
 ): Promise<SaltedKey> {
   const { crypto } = global
 
@@ -85,7 +85,7 @@ export async function deprecatedDerivePbkdf2KeyFromPassword(
     encoder.encode(password),
     { name: "PBKDF2" },
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   )
 
   const key = await crypto.subtle.deriveKey(
@@ -98,7 +98,7 @@ export async function deprecatedDerivePbkdf2KeyFromPassword(
     derivationKey,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   )
 
   return {
@@ -109,7 +109,7 @@ export async function deprecatedDerivePbkdf2KeyFromPassword(
 
 export async function deriveArgon2KeyFromPassword(
   password: string,
-  existingSalt?: string
+  existingSalt?: string,
 ): Promise<SaltedKey> {
   const { crypto } = global
 
@@ -126,7 +126,7 @@ export async function deriveArgon2KeyFromPassword(
     hash,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   )
 
   return {
@@ -138,7 +138,7 @@ export async function deriveArgon2KeyFromPassword(
 export async function deriveSymmetricKeyFromPassword(
   version: VaultVersion,
   password: string,
-  existingSalt?: string
+  existingSalt?: string,
 ): Promise<SaltedKey> {
   switch (version) {
     case VaultVersion.PBKDF2:
@@ -184,7 +184,7 @@ export async function encryptVault<V>(vaultData: {
     // resistance
     { name: "AES-GCM", iv: initializationVector },
     key,
-    encodedPlaintext
+    encodedPlaintext,
   )
 
   return {
@@ -225,14 +225,14 @@ export async function decryptVault<V>(vaultData: {
       ? await deriveSymmetricKeyFromPassword(
           vaultData.version,
           passwordOrSaltedKey,
-          salt
+          salt,
         )
       : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: base64ToBuffer(initializationVector) },
     key,
-    base64ToBuffer(cipherText)
+    base64ToBuffer(cipherText),
   )
 
   return JSON.parse(new TextDecoder().decode(plaintext))

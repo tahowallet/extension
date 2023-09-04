@@ -16,7 +16,7 @@ test.describe("Onboarding", () => {
 
     await expect(async () => {
       await expect(
-        popup.getByTestId("top_menu_profile_button").last()
+        popup.getByTestId("top_menu_profile_button").last(),
       ).toHaveText(readOnlyAddress)
     }).toPass()
 
@@ -43,7 +43,7 @@ test.describe("Onboarding", () => {
 
     await page.getByRole("button", { name: "Import account" }).click()
     await expect(
-      page.getByRole("heading", { name: "Welcome to Taho" })
+      page.getByRole("heading", { name: "Welcome to Taho" }),
     ).toBeVisible()
 
     await walletPageHelper.setViewportSize()
@@ -80,16 +80,16 @@ test.describe("Onboarding", () => {
     await page.getByRole("button", { name: "I wrote it down" }).click()
 
     const seedWordPlaceholders = page.getByTestId(
-      "verify_seed_word_placeholder"
+      "verify_seed_word_placeholder",
     )
 
     const wordsToVerify = (await seedWordPlaceholders.allTextContents()).map(
-      (word) => Number((word.match(/\d+/) ?? ["0"])[0])
+      (word) => Number((word.match(/\d+/) ?? ["0"])[0]),
     )
 
     const wordsInWrongOrder = wordsToVerify.slice(0, -2).concat(
       // last 2 in wrong order
-      wordsToVerify.slice(-2).reverse()
+      wordsToVerify.slice(-2).reverse(),
     )
 
     // eslint-disable-next-line no-restricted-syntax
@@ -107,7 +107,7 @@ test.describe("Onboarding", () => {
     await page.getByRole("button", { name: "Verify recovery phrase" }).click()
 
     await expect(
-      page.getByRole("button", { name: "Incorrect Order" })
+      page.getByRole("button", { name: "Incorrect Order" }),
     ).toBeVisible()
 
     // Remove all to start over in valid order
@@ -135,7 +135,7 @@ test.describe("Onboarding", () => {
     await page.getByRole("button", { name: "Finalize" }).click()
 
     await expect(
-      page.getByRole("heading", { name: "Welcome to Taho" })
+      page.getByRole("heading", { name: "Welcome to Taho" }),
     ).toBeVisible()
 
     await walletPageHelper.setViewportSize()
@@ -143,7 +143,7 @@ test.describe("Onboarding", () => {
 
     // If the popup finished rendering then we were able to onboard successfully
     await expect(
-      popup.getByTestId("top_menu_network_switcher").last()
+      popup.getByTestId("top_menu_network_switcher").last(),
     ).toHaveText("Ethereum")
   })
 })

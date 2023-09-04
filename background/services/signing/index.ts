@@ -98,19 +98,19 @@ export default class SigningService extends BaseService<Events> {
     [
       Promise<InternalSignerService>,
       Promise<LedgerService>,
-      Promise<ChainService>
+      Promise<ChainService>,
     ]
   > = async (internalSignerService, ledgerService, chainService) =>
     new this(
       await internalSignerService,
       await ledgerService,
-      await chainService
+      await chainService,
     )
 
   private constructor(
     private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
-    private chainService: ChainService
+    private chainService: ChainService,
   ) {
     super()
   }
@@ -133,13 +133,13 @@ export default class SigningService extends BaseService<Events> {
 
   private async signTransactionWithNonce(
     transactionWithNonce: TransactionRequestWithNonce,
-    accountSigner: AccountSigner
+    accountSigner: AccountSigner,
   ): Promise<SignedTransaction> {
     switch (accountSigner.type) {
       case "ledger":
         return this.ledgerService.signTransaction(
           transactionWithNonce,
-          accountSigner
+          accountSigner,
         )
       case "private-key":
       case "keyring":
@@ -148,7 +148,7 @@ export default class SigningService extends BaseService<Events> {
             address: transactionWithNonce.from,
             network: transactionWithNonce.network,
           },
-          transactionWithNonce
+          transactionWithNonce,
         )
       case "read-only":
         throw new Error("Read-only signers cannot sign.")
@@ -159,7 +159,7 @@ export default class SigningService extends BaseService<Events> {
 
   async removeAccount(
     address: HexString,
-    signerType?: SignerType
+    signerType?: SignerType,
   ): Promise<void> {
     if (signerType) {
       switch (signerType) {
@@ -198,7 +198,7 @@ export default class SigningService extends BaseService<Events> {
 
   async signTransaction(
     transactionRequest: TransactionRequest,
-    accountSigner: AccountSigner
+    accountSigner: AccountSigner,
   ): Promise<SignedTransaction> {
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
@@ -206,7 +206,7 @@ export default class SigningService extends BaseService<Events> {
     try {
       const signedTx = await this.signTransactionWithNonce(
         transactionWithNonce,
-        accountSigner
+        accountSigner,
       )
 
       this.emitter.emit("signingTxResponse", {
@@ -255,7 +255,7 @@ export default class SigningService extends BaseService<Events> {
         chainId !== parseInt(account.network.chainID)
       ) {
         throw new Error(
-          "Attempting to sign typed data with mismatched chain IDs."
+          "Attempting to sign typed data with mismatched chain IDs.",
         )
       }
 
@@ -264,7 +264,7 @@ export default class SigningService extends BaseService<Events> {
           signedData = await this.ledgerService.signTypedData(
             typedData,
             account.address,
-            accountSigner
+            accountSigner,
           )
           break
         case "private-key":
@@ -298,7 +298,7 @@ export default class SigningService extends BaseService<Events> {
   async signData(
     addressOnNetwork: AddressOnNetwork,
     hexDataToSign: HexString,
-    accountSigner: AccountSigner
+    accountSigner: AccountSigner,
   ): Promise<string> {
     if (!hexDataToSign.startsWith("0x")) {
       throw new Error("Signing service can only sign hex data.")
@@ -310,7 +310,7 @@ export default class SigningService extends BaseService<Events> {
         case "ledger":
           signedData = await this.ledgerService.signMessage(
             addressOnNetwork,
-            hexDataToSign
+            hexDataToSign,
           )
           break
         case "private-key":

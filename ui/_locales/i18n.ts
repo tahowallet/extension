@@ -30,7 +30,7 @@ const setLanguage = (lang: string): void => {
 
 declare module "react-i18next" {
   interface CustomTypeOptions {
-    resources: typeof resources["en"]
+    resources: (typeof resources)["en"]
   }
 }
 

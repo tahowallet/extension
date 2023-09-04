@@ -65,7 +65,7 @@ export const NewSeedRoutes = {
 export default function NewSeed(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const mnemonic = useBackgroundSelector(
-    (state) => state.internalSigner.keyringToVerify?.mnemonic
+    (state) => state.internalSigner.keyringToVerify?.mnemonic,
   )
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
@@ -76,7 +76,7 @@ export default function NewSeed(): ReactElement {
 
   const showNewSeedPhrase = () => {
     dispatch(
-      generateNewKeyring(selectedNetwork.derivationPath ?? "m/44'/60'/0'/0")
+      generateNewKeyring(selectedNetwork.derivationPath ?? "m/44'/60'/0'/0"),
     ).then(() => history.push(NewSeedRoutes.REVIEW_SEED))
   }
 
@@ -90,7 +90,7 @@ export default function NewSeed(): ReactElement {
         type: SignerSourceTypes.keyring,
         mnemonic: verifiedMnemonic.join(" "),
         source: SignerImportSource.internal,
-      })
+      }),
     )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
     if (success) {

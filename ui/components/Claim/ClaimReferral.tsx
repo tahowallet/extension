@@ -16,7 +16,7 @@ function DAOButton(
   props: DAO & {
     isActive: boolean
     onSelect: (dao: DAO) => void
-  }
+  },
 ) {
   const { address, name, avatar, isActive, onSelect } = props
 
@@ -74,7 +74,7 @@ function getInitialCustomDAO(selectedForBonus: DAO | null, DAOs: DAO[]) {
   if (!selectedForBonus) return undefined
 
   const isCustom = !DAOs.some(
-    (current) => current.address === selectedForBonus.address
+    (current) => current.address === selectedForBonus.address,
   )
 
   return isCustom
@@ -93,7 +93,7 @@ export default function ClaimReferral(props: {
   const amountWithBonus = formatCurrencyAmount(
     mainCurrency,
     claimAmount * 0.05,
-    2
+    2,
   )
   const [isCustomDAOEmpty, setIsCustomDAOEmpty] = useState<boolean>(false)
   const [customAddressForBonus, setCustomAddressForBonus] = useState<
@@ -102,7 +102,7 @@ export default function ClaimReferral(props: {
 
   const setSelectedForBonus = useCallback(
     (newDAO: DAO | null) => dispatch(chooseSelectedForBonus(newDAO)),
-    [dispatch]
+    [dispatch],
   )
 
   const handleInputChange = useCallback(
@@ -115,7 +115,7 @@ export default function ClaimReferral(props: {
         setSelectedForBonus(null)
       }
     },
-    [setSelectedForBonus]
+    [setSelectedForBonus],
   )
 
   const handleInputFocus = () => {

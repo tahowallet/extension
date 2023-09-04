@@ -40,7 +40,7 @@ export default function DetailPanel({
   defaultPanelState,
 }: DetailPanelProps): ReactElement | null {
   const [panelState, setPanelState] = useState(
-    defaultPanelState ?? { dismissedWarnings: [] }
+    defaultPanelState ?? { dismissedWarnings: [] },
   )
   const [networkSettingsModalOpen, setNetworkSettingsModalOpen] =
     useState(false)
@@ -76,7 +76,7 @@ export default function DetailPanel({
   if (transactionRequest === undefined) return null
 
   const isEIP1559Compliant = EIP_1559_COMPLIANT_CHAIN_IDS.has(
-    transactionRequest.network.chainID
+    transactionRequest.network.chainID,
   )
 
   const hasInsufficientFundsWarning =
@@ -86,7 +86,7 @@ export default function DetailPanel({
     transactionRequest.annotation?.warnings?.includes("send-to-contract")
 
   const canUseFlashbots = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(
-    transactionRequest.chainID
+    transactionRequest.chainID,
   )
 
   const networkSettingsSaved = () => {
@@ -208,7 +208,9 @@ export default function DetailPanel({
             width: 100%;
             max-height: 0;
             transform: translateX(calc(-100% - 24px));
-            transition: transform ease-out 0.2s, max-height ease-out 0.2s;
+            transition:
+              transform ease-out 0.2s,
+              max-height ease-out 0.2s;
           }
           .warning.visible {
             transform: translateX(0);

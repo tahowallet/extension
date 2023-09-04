@@ -11,7 +11,7 @@ import { AddressOnNetworkAnnotation, EnrichedAddressOnNetwork } from "./types"
 export async function resolveAddressAnnotation(
   chainService: ChainService,
   nameService: NameService,
-  addressOnNetwork: AddressOnNetwork
+  addressOnNetwork: AddressOnNetwork,
 ): Promise<AddressOnNetworkAnnotation> {
   const { address, network } = addressOnNetwork
   const provider = chainService.providerForNetworkOrThrow(network)
@@ -31,14 +31,14 @@ export async function resolveAddressAnnotation(
 export async function enrichAddressOnNetwork(
   chainService: ChainService,
   nameService: NameService,
-  addressOnNetwork: AddressOnNetwork
+  addressOnNetwork: AddressOnNetwork,
 ): Promise<EnrichedAddressOnNetwork> {
   return {
     ...addressOnNetwork,
     annotation: await resolveAddressAnnotation(
       chainService,
       nameService,
-      addressOnNetwork
+      addressOnNetwork,
     ),
   }
 }

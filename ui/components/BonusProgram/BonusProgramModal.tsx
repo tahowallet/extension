@@ -21,7 +21,7 @@ function BonusProgramModalContent(): ReactElement {
       amount: bonusTotal,
       decimals: DOGGO.decimals,
     },
-    2
+    2,
   )
 
   const referralLink = useMemo(
@@ -29,10 +29,10 @@ function BonusProgramModalContent(): ReactElement {
       link: `${WEBSITE_ORIGIN}/claim/${currentAccount.address}`,
       shortLink: `${WEBSITE_ORIGIN?.replace(
         /^https?:\/\//,
-        ""
+        "",
       )}/claim/${truncateAddress(currentAccount.address)}`,
     }),
-    [currentAccount.address]
+    [currentAccount.address],
   )
 
   const copyLink = useCallback(() => {

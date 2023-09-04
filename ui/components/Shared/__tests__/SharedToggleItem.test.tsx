@@ -14,7 +14,7 @@ describe("SharedToggleItem", () => {
         thumbnailURL={undefined}
         checked={false}
         onChange={onChange}
-      />
+      />,
     )
 
     expect(ui.queryByText(NAME)).toBeInTheDocument()
@@ -27,7 +27,7 @@ describe("SharedToggleItem", () => {
         thumbnailURL={undefined}
         checked={false}
         onChange={onChange}
-      />
+      />,
     )
 
     expect(ui.queryByText("0x208e…090cd")).toBeInTheDocument()
@@ -41,13 +41,13 @@ describe("SharedToggleItem", () => {
         thumbnailURL={thumbnailURL}
         checked
         onChange={onChange}
-      />
+      />,
     )
     const thumbnail = ui.getByRole("img")
 
     expect(thumbnail).toBeInTheDocument()
     expect(thumbnail).toHaveStyle(
-      `background: url(${thumbnailURL}) center no-repeat`
+      `background: url(${thumbnailURL}) center no-repeat`,
     )
   })
 
@@ -58,13 +58,13 @@ describe("SharedToggleItem", () => {
         thumbnailURL={undefined}
         checked
         onChange={onChange}
-      />
+      />,
     )
     const thumbnail = ui.getByRole("img")
 
     expect(thumbnail).toBeInTheDocument()
     expect(thumbnail).toHaveStyle(
-      `background: url(${STARS_GREY_URL}) center no-repeat`
+      `background: url(${STARS_GREY_URL}) center no-repeat`,
     )
   })
 
@@ -75,7 +75,7 @@ describe("SharedToggleItem", () => {
         thumbnailURL={undefined}
         checked
         onChange={onChange}
-      />
+      />,
     )
     const toggleButton = ui.getByRole("checkbox")
 
@@ -89,7 +89,7 @@ describe("SharedToggleItem", () => {
         thumbnailURL={undefined}
         checked={false}
         onChange={onChange}
-      />
+      />,
     )
     const toggleButton = ui.getByRole("checkbox")
 

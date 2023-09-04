@@ -66,7 +66,7 @@ describe("SharedInput", () => {
         label={label}
         value={text}
         errorMessage={errorMessage}
-      />
+      />,
     )
     const errorElement = ui.queryByText(errorMessage)
 
@@ -81,7 +81,7 @@ describe("SharedInput", () => {
         label={label}
         value={text}
         warningMessage={warningMessage}
-      />
+      />,
     )
     const errorElement = ui.queryByText(warningMessage)
 
@@ -97,7 +97,7 @@ describe("SharedInput", () => {
         value={text}
         errorMessage={errorMessage}
         isEmpty
-      />
+      />,
     )
     const inputElement = ui.getByLabelText(label)
     const errorElement = ui.queryByText(errorMessage)
@@ -109,14 +109,14 @@ describe("SharedInput", () => {
   test("should not be able to type more than 1 character into input", async () => {
     const maxLength = 1
     const ui = render(
-      <SharedInput id={id} label={label} maxLength={maxLength} />
+      <SharedInput id={id} label={label} maxLength={maxLength} />,
     )
     const inputElement = ui.getByLabelText(label)
 
     await userEvent.click(inputElement)
     await userEvent.type(inputElement, text)
     await waitFor(() =>
-      expect(inputElement).toHaveValue(text.slice(0, maxLength))
+      expect(inputElement).toHaveValue(text.slice(0, maxLength)),
     )
   })
 

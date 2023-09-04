@@ -27,7 +27,7 @@ export default function WalletActivityList({
   })
   const dispatch = useBackgroundDispatch()
   const showingActivityDetail = useBackgroundSelector(
-    selectShowingActivityDetail
+    selectShowingActivityDetail,
   )
 
   // Used to fix Tx Details Slide-up menu should close
@@ -50,7 +50,7 @@ export default function WalletActivityList({
     window
       .open(
         `${blockExplorerInfo.url}/address/${activityInitiatorAddress}`,
-        "_blank"
+        "_blank",
       )
       ?.focus()
   }, [blockExplorerInfo, activityInitiatorAddress])
@@ -60,7 +60,7 @@ export default function WalletActivityList({
       setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const handleClose = useCallback(() => {

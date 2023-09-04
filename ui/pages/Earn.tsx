@@ -38,7 +38,7 @@ export default function Earn(): ReactElement {
     ?.map((item) =>
       typeof item.numberValueTotalDeposited !== "undefined"
         ? item.numberValueTotalDeposited
-        : 0
+        : 0,
     )
     .reduce((prev, curr) => prev + curr, 0)
 
@@ -46,7 +46,7 @@ export default function Earn(): ReactElement {
     ?.map((item) =>
       typeof item.numberValueUserDeposited !== "undefined"
         ? item.numberValueUserDeposited
-        : 0
+        : 0,
     )
     .reduce((prev, curr) => prev + curr, 0)
 
@@ -54,8 +54,8 @@ export default function Earn(): ReactElement {
     ?.map((item) =>
       fromFixedPointNumber(
         { amount: item.pendingRewards, decimals: DOGGO.decimals },
-        2
-      )
+        2,
+      ),
     )
     .reduce((prev, curr) => prev + curr, 0)
     .toFixed(2)
@@ -82,9 +82,7 @@ export default function Earn(): ReactElement {
           {stage === EarnStages.PartialyLive && <NotificationVaults />}
           <ul className="cards_wrap">
             {/* TODO Replace isComing soon with a check if current Timestamp > vault.poolStartTime */}
-            {vaultsWithLockedValues?.map((vault) => (
-              <PoolCard vault={vault} />
-            ))}
+            {vaultsWithLockedValues?.map((vault) => <PoolCard vault={vault} />)}
           </ul>
         </section>
       )}

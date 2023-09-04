@@ -40,7 +40,7 @@ const getFeeDollarValue = (
   currencyPrice: PricePoint | undefined,
   gasLimit?: bigint,
   estimatedSpendPerGas?: bigint,
-  estimatedL1RollupFee?: bigint
+  estimatedL1RollupFee?: bigint,
 ): string | undefined => {
   if (estimatedSpendPerGas) {
     if (!gasLimit || !currencyPrice) return undefined
@@ -53,7 +53,7 @@ const getFeeDollarValue = (
     if (unitPricePoint) {
       currencyCostPerBaseAsset = assetAmountToDesiredDecimals(
         unitPricePoint.unitPrice,
-        2
+        2,
       )
     }
 
@@ -65,7 +65,7 @@ const getFeeDollarValue = (
             estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
         },
         currencyPrice,
-        currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2
+        currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2,
       )
     return localizedMainCurrencyAmount
   }
@@ -112,11 +112,11 @@ const estimateGweiAmount = (options: {
   const estimatedSpendPerGasInGwei = weiToGwei(estimatedSpendPerGas ?? 0n)
   const decimalLength = heuristicDesiredDecimalsForUnitPrice(
     desiredDecimals,
-    Number(estimatedSpendPerGasInGwei)
+    Number(estimatedSpendPerGasInGwei),
   )
   const estimatedGweiAmount = truncateDecimalAmount(
     estimatedSpendPerGasInGwei,
-    decimalLength
+    decimalLength,
   )
 
   return estimatedGweiAmount
@@ -137,13 +137,14 @@ export default function FeeSettingsText({
   networkSettings = customNetworkSetting ?? networkSettings
   const baseFeePerGas =
     useBackgroundSelector(
-      (state) => state.networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas
+      (state) =>
+        state.networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas,
     ) ??
     networkSettings.values?.baseFeePerGas ??
     0n
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint
+    selectTransactionMainCurrencyPricePoint,
   )
   const estimatedGweiAmount = estimateGweiAmount({
     baseFeePerGas,
@@ -172,7 +173,7 @@ export default function FeeSettingsText({
     mainCurrencyPricePoint,
     gasLimit,
     estimatedSpendPerGas,
-    estimatedRollupFee
+    estimatedRollupFee,
   )
 
   if (!dollarValue) return <div>~{gweiValue}</div>

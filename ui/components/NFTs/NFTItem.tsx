@@ -9,7 +9,7 @@ import NFTHover from "./NFTHover"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 export default function NFTItem<
-  T extends NFTCached | NFTCollectionCached
+  T extends NFTCached | NFTCollectionCached,
 >(props: {
   item: T
   isCollection?: boolean

@@ -15,7 +15,7 @@ export default function setAnimationConditions(
       pathname: string
     }
   },
-  setIsDirectionRight: (choice: boolean) => void
+  setIsDirectionRight: (choice: boolean) => void,
 ): void {
   const { entries } = routeProps.history
   const locationName = routeProps.location.pathname.split("/")[1]

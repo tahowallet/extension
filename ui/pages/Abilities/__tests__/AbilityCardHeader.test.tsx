@@ -20,7 +20,7 @@ describe("AbilityCardHeader", () => {
       <AbilityCardHeader ability={createAbility()} />,
       {
         preloadedState: { account },
-      }
+      },
     )
 
     expect(ui.queryByText(accountData.ens.name)).toBeInTheDocument()
@@ -35,7 +35,7 @@ describe("AbilityCardHeader", () => {
       <AbilityCardHeader ability={createAbility()} />,
       {
         preloadedState: { account },
-      }
+      },
     )
 
     expect(ui.queryByText("0x208e…090cd")).toBeInTheDocument()

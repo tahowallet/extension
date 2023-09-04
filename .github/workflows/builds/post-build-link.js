@@ -13,7 +13,7 @@ module.exports = async function postBuildLink({ github, context }) {
   const manualWorkFlowId = context?.inputs?.workflow_run_id
 
   const workflowRunId = Number(
-    context.payload?.workflow_run?.id ?? manualWorkFlowId
+    context.payload?.workflow_run?.id ?? manualWorkFlowId,
   )
 
   if (Number.isNaN(workflowRunId)) {
@@ -31,7 +31,7 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (workflowLookupStatus !== 200) {
     throw new Error(
-      `Failed to fetch workflow :( Status ${workflowLookupStatus}.`
+      `Failed to fetch workflow :( Status ${workflowLookupStatus}.`,
     )
   }
 
@@ -46,19 +46,19 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (artifactLookupStatus !== 200) {
     throw new Error(
-      `Failed to fetch workflow artifacts :( Status ${artifactLookupStatus}.`
+      `Failed to fetch workflow artifacts :( Status ${artifactLookupStatus}.`,
     )
   }
 
   const matchArtifact = allArtifacts.filter((artifact) =>
-    artifact.name.startsWith("extension-builds-")
+    artifact.name.startsWith("extension-builds-"),
   )[0]
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(
       `Failed to find extension artifact :( Artifacts were ${JSON.stringify(
-        allArtifacts
-      )}`
+        allArtifacts,
+      )}`,
     )
   }
 
@@ -66,16 +66,16 @@ module.exports = async function postBuildLink({ github, context }) {
 
   if (prNumber === undefined) {
     throw new Error(
-      `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`
+      `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`,
     )
   } else if (prNumber.match(/^[a-f0-9]+$/) && !prNumber.match(/^[0-9]+$/)) {
     console.log(
-      "Workflow was for a merge commit rather than a PR, skipping build link."
+      "Workflow was for a merge commit rather than a PR, skipping build link.",
     )
     return
   } else if (!prNumber.match(/^[0-9]+$/)) {
     throw new Error(
-      `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`
+      `Could not extract PR number from extension artifact filename (${matchArtifact.name}) :(`,
     )
   }
 
@@ -96,14 +96,14 @@ module.exports = async function postBuildLink({ github, context }) {
   const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact.id}`
 
   console.log(
-    `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`
+    `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`,
   )
 
   const updatedBody = `${(body ?? "").replace(
     /\s+Latest build: [^\n]*/,
-    ""
+    "",
   )}\n\nLatest build: [${matchArtifact.name}](${artifactUrl}) (as of ${new Date(
-    workflowUpdatedAt
+    workflowUpdatedAt,
   ).toUTCString()}).`
 
   await github.rest.pulls.update({

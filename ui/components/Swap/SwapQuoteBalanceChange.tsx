@@ -23,7 +23,7 @@ type SwapQuoteBalanceChangeProps = {
   priceImpact: number
 }
 export default function SwapQuoteBalanceChange(
-  props: SwapQuoteBalanceChangeProps
+  props: SwapQuoteBalanceChangeProps,
 ): ReactElement {
   const { fromAsset, toAsset, priceImpact } = props
   const { t } = useTranslation()
@@ -39,23 +39,23 @@ export default function SwapQuoteBalanceChange(
   const fromAssetPricePoint = selectAssetPricePoint(
     prices,
     fromAsset.asset,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
   const toAssetPricePoint = selectAssetPricePoint(
     prices,
     toAsset.asset,
-    mainCurrencySymbol
+    mainCurrencySymbol,
   )
 
   const fromAssetMainCurrencyAmount = enrichAssetAmountWithMainCurrencyValues(
     fromAsset,
     fromAssetPricePoint,
-    2
+    2,
   ).localizedMainCurrencyAmount
   const toAssetMainCurrencyAmount = enrichAssetAmountWithMainCurrencyValues(
     toAsset,
     toAssetPricePoint,
-    2
+    2,
   ).localizedMainCurrencyAmount
 
   return (

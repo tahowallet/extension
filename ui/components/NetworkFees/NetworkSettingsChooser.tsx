@@ -32,7 +32,7 @@ export default function NetworkSettingsChooser({
   onNetworkSettingsSave,
 }: NetworkSettingsChooserProps): ReactElement | null {
   const [networkSettings, setNetworkSettings] = useState(
-    useBackgroundSelector(selectDefaultNetworkFeeSettings)
+    useBackgroundSelector(selectDefaultNetworkFeeSettings),
   )
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 

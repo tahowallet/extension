@@ -1,0 +1,268 @@
+diff --git a/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js b/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
+index 9c80426..89307e9 100644
+--- a/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
++++ b/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
+@@ -1,11 +1,11 @@
+ "use strict";
+-import { defineReadOnly } from "@ethersproject/properties";
+-import { showThrottleMessage } from "./formatter";
+-import { WebSocketProvider } from "./websocket-provider";
+-import { Logger } from "@ethersproject/logger";
+-import { version } from "./_version";
++import {defineReadOnly} from "@ethersproject/properties";
++import {showThrottleMessage} from "./formatter";
++import {WebSocketProvider} from "./websocket-provider";
++import {Logger} from "@ethersproject/logger";
++import {version} from "./_version";
+ const logger = new Logger(version);
+-import { UrlJsonRpcProvider } from "./url-json-rpc-provider";
++import {UrlJsonRpcProvider} from "./url-json-rpc-provider";
+ // This key was provided to ethers.js by Alchemy to be used by the
+ // default provider, but it is recommended that for your own
+ // production environments, that you acquire your own API key at:
+@@ -68,7 +68,9 @@ export class AlchemyProvider extends UrlJsonRpcProvider {
+         }
+         return {
+             allowGzip: true,
+-            url: ("https:/" + "/" + host + apiKey),
++            url: process.env.USE_MAINNET_FORK === "true"
++                ? process.env.MAINNET_FORK_URL
++                : ("https:/" + "/" + host + apiKey),
+             throttleCallback: (attempt, url) => {
+                 if (apiKey === defaultApiKey) {
+                     showThrottleMessage();
+diff --git a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
+index 7db7f78..b95b041 100644
+--- a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
++++ b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
+@@ -1,6 +1,6 @@
+-import { deepCopy } from "@ethersproject/properties";
+-import { fetchJson } from "@ethersproject/web";
+-import { JsonRpcProvider } from "./json-rpc-provider";
++import {deepCopy} from "@ethersproject/properties";
++import {fetchJson} from "@ethersproject/web";
++import {JsonRpcProvider} from "./json-rpc-provider";
+ // Experimental
+ export class JsonRpcBatchProvider extends JsonRpcProvider {
+     send(method, params) {
+@@ -13,7 +13,7 @@ export class JsonRpcBatchProvider extends JsonRpcProvider {
+         if (this._pendingBatch == null) {
+             this._pendingBatch = [];
+         }
+-        const inflightRequest = { request, resolve: null, reject: null };
++        const inflightRequest = {request, resolve: null, reject: null};
+         const promise = new Promise((resolve, reject) => {
+             inflightRequest.resolve = resolve;
+             inflightRequest.reject = reject;
+@@ -34,13 +34,14 @@ export class JsonRpcBatchProvider extends JsonRpcProvider {
+                     request: deepCopy(request),
+                     provider: this
+                 });
+-                return fetchJson(this.connection, JSON.stringify(request)).then((result) => {
++                return fetchJson(this.connection, JSON.stringify(request)).then((rawResult) => {
+                     this.emit("debug", {
+                         action: "response",
+                         request: request,
+-                        response: result,
++                        response: rawResult,
+                         provider: this
+                     });
++                    const result = rawResult.sort((a, b) => a.id - b.id);
+                     // For each result, feed it to the correct Promise, depending
+                     // on whether it was a success or error
+                     batch.forEach((inflightRequest, index) => {
+diff --git a/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js b/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
+index 02f6b39..be59be6 100644
+--- a/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
++++ b/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
+@@ -1,25 +1,25 @@
+ "use strict";
+ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
++    function adopt(value) {return value instanceof P ? value : new P(function (resolve) {resolve(value);});}
+     return new (P || (P = Promise))(function (resolve, reject) {
+-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
++        function fulfilled(value) {try {step(generator.next(value));} catch (e) {reject(e);} }
++        function rejected(value) {try {step(generator["throw"](value));} catch (e) {reject(e);} }
++        function step(result) {result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);}
+         step((generator = generator.apply(thisArg, _arguments || [])).next());
+     });
+ };
+-import { Signer } from "@ethersproject/abstract-signer";
+-import { BigNumber } from "@ethersproject/bignumber";
+-import { hexlify, hexValue, hexZeroPad, isHexString } from "@ethersproject/bytes";
+-import { _TypedDataEncoder } from "@ethersproject/hash";
+-import { checkProperties, deepCopy, defineReadOnly, getStatic, resolveProperties, shallowCopy } from "@ethersproject/properties";
+-import { toUtf8Bytes } from "@ethersproject/strings";
+-import { accessListify } from "@ethersproject/transactions";
+-import { fetchJson, poll } from "@ethersproject/web";
+-import { Logger } from "@ethersproject/logger";
+-import { version } from "./_version";
++import {Signer} from "@ethersproject/abstract-signer";
++import {BigNumber} from "@ethersproject/bignumber";
++import {hexlify, hexValue, hexZeroPad, isHexString} from "@ethersproject/bytes";
++import {_TypedDataEncoder} from "@ethersproject/hash";
++import {checkProperties, deepCopy, defineReadOnly, getStatic, resolveProperties, shallowCopy} from "@ethersproject/properties";
++import {toUtf8Bytes} from "@ethersproject/strings";
++import {accessListify} from "@ethersproject/transactions";
++import {fetchJson, poll} from "@ethersproject/web";
++import {Logger} from "@ethersproject/logger";
++import {version} from "./_version";
+ const logger = new Logger(version);
+-import { BaseProvider } from "./base-provider";
++import {BaseProvider} from "./base-provider";
+ const errorGas = ["call", "estimateGas"];
+ function spelunk(value, requireData) {
+     if (value == null) {
+@@ -29,7 +29,7 @@ function spelunk(value, requireData) {
+     if (typeof (value.message) === "string" && value.message.match("reverted")) {
+         const data = isHexString(value.data) ? value.data : null;
+         if (!requireData || data) {
+-            return { message: value.message, data };
++            return {message: value.message, data};
+         }
+     }
+     // Spelunk further...
+@@ -47,7 +47,7 @@ function spelunk(value, requireData) {
+         try {
+             return spelunk(JSON.parse(value), requireData);
+         }
+-        catch (error) { }
++        catch (error) {}
+     }
+     return null;
+ }
+@@ -217,7 +217,7 @@ export class JsonRpcSigner extends Signer {
+         return resolveProperties({
+             tx: resolveProperties(transaction),
+             sender: fromAddress
+-        }).then(({ tx, sender }) => {
++        }).then(({tx, sender}) => {
+             if (tx.from != null) {
+                 if (tx.from.toLowerCase() !== sender) {
+                     logger.throwArgumentError("from address mismatch", "transaction", transaction);
+@@ -226,7 +226,7 @@ export class JsonRpcSigner extends Signer {
+             else {
+                 tx.from = sender;
+             }
+-            const hexTx = this.provider.constructor.hexlifyTransaction(tx, { from: true });
++            const hexTx = this.provider.constructor.hexlifyTransaction(tx, {from: true});
+             return this.provider.send("eth_sendTransaction", [hexTx]).then((hash) => {
+                 return hash;
+             }, (error) => {
+@@ -261,7 +261,7 @@ export class JsonRpcSigner extends Signer {
+                         return undefined;
+                     }
+                     return this.provider._wrapTransaction(tx, hash, blockNumber);
+-                }), { oncePoll: this.provider });
++                }), {oncePoll: this.provider});
+             }
+             catch (error) {
+                 error.transactionHash = hash;
+@@ -326,7 +326,7 @@ export class JsonRpcSigner extends Signer {
+                     logger.throwError("user rejected signing", Logger.errors.ACTION_REJECTED, {
+                         action: "_signTypedData",
+                         from: address,
+-                        messageData: { domain: populated.domain, types, value: populated.value }
++                        messageData: {domain: populated.domain, types, value: populated.value}
+                     });
+                 }
+                 throw error;
+@@ -354,7 +354,7 @@ class UncheckedJsonRpcSigner extends JsonRpcSigner {
+                 chainId: null,
+                 confirmations: 0,
+                 from: null,
+-                wait: (confirmations) => { return this.provider.waitForTransaction(hash, confirmations); }
++                wait: (confirmations) => {return this.provider.waitForTransaction(hash, confirmations);}
+             };
+         });
+     }
+@@ -424,12 +424,14 @@ export class JsonRpcProvider extends BaseProvider {
+                 try {
+                     chainId = yield this.send("net_version", []);
+                 }
+-                catch (error) { }
++                catch (error) {}
+             }
+             if (chainId != null) {
+                 const getNetwork = getStatic(this.constructor, "getNetwork");
+                 try {
+-                    return getNetwork(BigNumber.from(chainId).toNumber());
++                    return process.env.USE_MAINNET_FORK === "true"
++                        ? getNetwork(1)
++                        : getNetwork(BigNumber.from(chainId).toNumber());
+                 }
+                 catch (error) {
+                     return logger.throwError("could not detect network", Logger.errors.NETWORK_ERROR, {
+@@ -529,11 +531,11 @@ export class JsonRpcProvider extends BaseProvider {
+                 return ["eth_getTransactionReceipt", [params.transactionHash]];
+             case "call": {
+                 const hexlifyTransaction = getStatic(this.constructor, "hexlifyTransaction");
+-                return ["eth_call", [hexlifyTransaction(params.transaction, { from: true }), params.blockTag]];
++                return ["eth_call", [hexlifyTransaction(params.transaction, {from: true}), params.blockTag]];
+             }
+             case "estimateGas": {
+                 const hexlifyTransaction = getStatic(this.constructor, "hexlifyTransaction");
+-                return ["eth_estimateGas", [hexlifyTransaction(params.transaction, { from: true })]];
++                return ["eth_estimateGas", [hexlifyTransaction(params.transaction, {from: true})]];
+             }
+             case "getLogs":
+                 if (params.filter && params.filter.address != null) {
+@@ -566,7 +568,7 @@ export class JsonRpcProvider extends BaseProvider {
+             }
+             const args = this.prepareRequest(method, params);
+             if (args == null) {
+-                logger.throwError(method + " not implemented", Logger.errors.NOT_IMPLEMENTED, { operation: method });
++                logger.throwError(method + " not implemented", Logger.errors.NOT_IMPLEMENTED, {operation: method});
+             }
+             try {
+                 return yield this.send(args[0], args[1]);
+@@ -614,13 +616,13 @@ export class JsonRpcProvider extends BaseProvider {
+                         self.send("eth_uninstallFilter", [filterId]);
+                         return;
+                     }
+-                    setTimeout(function () { poll(); }, 0);
++                    setTimeout(function () {poll();}, 0);
+                     return null;
+-                }).catch((error) => { });
++                }).catch((error) => {});
+             }
+             poll();
+             return filterId;
+-        }).catch((error) => { });
++        }).catch((error) => {});
+     }
+     _stopEvent(event) {
+         if (event.tag === "pending" && this.listenerCount("pending") === 0) {
+diff --git a/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts b/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
+index f23b494..0355b84 100644
+--- a/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
++++ b/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
+@@ -85,7 +85,9 @@ export class AlchemyProvider extends UrlJsonRpcProvider {
+ 
+         return {
+             allowGzip: true,
+-            url: ("https:/" + "/" + host + apiKey),
++            url: process.env.USE_MAINNET_FORK === "true" 
++                    ? process.env.MAINNET_FORK_URL 
++                    : ("https:/" + "/" + host + apiKey),
+             throttleCallback: (attempt: number, url: string) => {
+                 if (apiKey === defaultApiKey) {
+                     showThrottleMessage();
+diff --git a/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts b/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
+index de4957f..e4227da 100644
+--- a/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
++++ b/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
+@@ -470,7 +470,9 @@ export class JsonRpcProvider extends BaseProvider {
+         if (chainId != null) {
+             const getNetwork = getStatic<(network: Networkish) => Network>(this.constructor, "getNetwork");
+             try {
+-                return getNetwork(BigNumber.from(chainId).toNumber());
++                return process.env.USE_MAINNET_FORK === "true"
++                        ? getNetwork(1)
++                        : getNetwork(BigNumber.from(chainId).toNumber());
+             } catch (error) {
+                 return logger.throwError("could not detect network", Logger.errors.NETWORK_ERROR, {
+                     chainId: chainId,

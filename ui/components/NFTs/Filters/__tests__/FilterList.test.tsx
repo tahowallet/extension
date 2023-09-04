@@ -32,7 +32,7 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
     const list = ui.getByTestId("nft_filters_list")
 
@@ -45,7 +45,7 @@ describe("FilterList", () => {
         filters={[]}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
     const emptyMessage = ui.queryByText(EMPTY_MESSAGE)
 
@@ -58,7 +58,7 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
     const items = ui.getAllByTestId("toggle_item")
 
@@ -72,7 +72,7 @@ describe("FilterList", () => {
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
         isLoaded={false}
-      />
+      />,
     )
     const items = ui.getAllByTestId("loading_skeleton")
 
@@ -85,7 +85,7 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
 
     expect(ui.queryByText(FILTER_LIST[0].name)).toBeInTheDocument()
@@ -99,17 +99,17 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
 
     const thumbnails = ui.getAllByRole("img")
 
     expect(thumbnails.length).toEqual(FILTER_LIST.length)
     expect(thumbnails[0]).toHaveStyle(
-      `background: url(${FILTER_LIST[0].thumbnailURL}) center no-repeat`
+      `background: url(${FILTER_LIST[0].thumbnailURL}) center no-repeat`,
     )
     expect(thumbnails[1]).toHaveStyle(
-      `background: url(${FILTER_LIST[1].thumbnailURL}) center no-repeat`
+      `background: url(${FILTER_LIST[1].thumbnailURL}) center no-repeat`,
     )
   })
 
@@ -119,14 +119,14 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
 
     const thumbnails = ui.getAllByRole("img")
 
     expect(thumbnails.length).toEqual(FILTER_LIST.length)
     expect(thumbnails[2]).toHaveStyle(
-      `background: url(${STARS_GREY_URL}) center no-repeat`
+      `background: url(${STARS_GREY_URL}) center no-repeat`,
     )
   })
 
@@ -136,7 +136,7 @@ describe("FilterList", () => {
         filters={FILTER_LIST}
         onChange={onChange}
         emptyMessage={EMPTY_MESSAGE}
-      />
+      />,
     )
 
     const toggleButtons = ui.getAllByRole("checkbox")

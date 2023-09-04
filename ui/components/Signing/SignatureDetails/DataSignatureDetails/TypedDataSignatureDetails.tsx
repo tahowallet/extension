@@ -61,14 +61,14 @@ function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
 }
 
 type BasicTypedDataDetailsProps<
-  T extends Record<string, unknown> = Record<string, unknown>
+  T extends Record<string, unknown> = Record<string, unknown>,
 > = {
   primaryType: string
   fieldsToDisplay: T
 }
 
 function BasicTypedDataDetails<
-  T extends Record<string, unknown> = Record<string, unknown>
+  T extends Record<string, unknown> = Record<string, unknown>,
 >({
   primaryType,
   fieldsToDisplay,

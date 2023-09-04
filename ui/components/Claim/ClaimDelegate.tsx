@@ -23,7 +23,7 @@ function CustomDelegatePanel({
   const [addressInputValue, setAddressInputValue] = useState(
     selectedDelegate.enteredBy === "custom"
       ? selectedDelegate.address
-      : undefined
+      : undefined,
   )
 
   const clearSelectedDelegate = useCallback(() => {
@@ -33,7 +33,7 @@ function CustomDelegatePanel({
   }, [dispatch, selectedDelegate.enteredBy])
 
   const handleAddressInputChange = useCallback(
-    (value) => {
+    (value: string) => {
       if (isAddress(value)) {
         setErrorMessage("")
         dispatch(chooseDelegate({ address: value, enteredBy: "custom" }))
@@ -47,7 +47,7 @@ function CustomDelegatePanel({
       }
       setAddressInputValue(value)
     },
-    [dispatch, clearSelectedDelegate]
+    [dispatch, clearSelectedDelegate],
   )
 
   return (

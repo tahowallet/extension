@@ -84,31 +84,31 @@ const uiSlice = createSlice({
   reducers: {
     toggleHideDust: (
       immerState,
-      { payload: shouldHideDust }: { payload: boolean }
+      { payload: shouldHideDust }: { payload: boolean },
     ): void => {
       immerState.settings.hideDust = shouldHideDust
     },
     toggleTestNetworks: (
       immerState,
-      { payload: showTestNetworks }: { payload: boolean }
+      { payload: showTestNetworks }: { payload: boolean },
     ): void => {
       immerState.settings.showTestNetworks = showTestNetworks
     },
     toggleShowUnverifiedAssets: (
       immerState,
-      { payload: showUnverifiedAssets }: { payload: boolean }
+      { payload: showUnverifiedAssets }: { payload: boolean },
     ): void => {
       immerState.settings.showUnverifiedAssets = showUnverifiedAssets
     },
     toggleUseFlashbots: (
       immerState,
-      { payload: useFlashbots }: { payload: boolean }
+      { payload: useFlashbots }: { payload: boolean },
     ): void => {
       immerState.settings.useFlashbots = useFlashbots
     },
     toggleCollectAnalytics: (
       state,
-      { payload: collectAnalytics }: { payload: boolean }
+      { payload: collectAnalytics }: { payload: boolean },
     ) => ({
       ...state,
       settings: {
@@ -119,7 +119,7 @@ const uiSlice = createSlice({
     }),
     setShowAnalyticsNotification: (
       state,
-      { payload: showAnalyticsNotification }: { payload: boolean }
+      { payload: showAnalyticsNotification }: { payload: boolean },
     ) => ({
       ...state,
       settings: {
@@ -129,7 +129,7 @@ const uiSlice = createSlice({
     }),
     toggleHideBanners: (
       state,
-      { payload: hideBanners }: { payload: boolean }
+      { payload: hideBanners }: { payload: boolean },
     ) => ({
       ...state,
       settings: {
@@ -139,14 +139,14 @@ const uiSlice = createSlice({
     }),
     setShowingActivityDetail: (
       state,
-      { payload: transactionID }: { payload: string | null }
+      { payload: transactionID }: { payload: string | null },
     ): UIState => ({
       ...state,
       showingActivityDetailID: transactionID,
     }),
     setSelectedAccount: (
       immerState,
-      { payload: addressNetwork }: { payload: AddressOnNetwork }
+      { payload: addressNetwork }: { payload: AddressOnNetwork },
     ) => {
       immerState.selectedAccount = addressNetwork
     },
@@ -156,7 +156,7 @@ const uiSlice = createSlice({
     }),
     setSnackbarMessage: (
       state,
-      { payload: snackbarMessage }: { payload: string }
+      { payload: snackbarMessage }: { payload: string },
     ): UIState => ({
       ...state,
       snackbarMessage,
@@ -167,7 +167,7 @@ const uiSlice = createSlice({
     }),
     setDefaultWallet: (
       state,
-      { payload: defaultWallet }: { payload: boolean }
+      { payload: defaultWallet }: { payload: boolean },
     ) => ({
       ...state,
       settings: {
@@ -177,14 +177,14 @@ const uiSlice = createSlice({
     }),
     setShownDismissableItems: (
       state,
-      { payload: shownDismissableItems }: { payload: DismissableItem[] }
+      { payload: shownDismissableItems }: { payload: DismissableItem[] },
     ) => ({
       ...state,
       shownDismissableItems,
     }),
     dismissableItemMarkedAsShown: (
       state,
-      { payload: shownDismissableItem }: { payload: DismissableItem }
+      { payload: shownDismissableItem }: { payload: DismissableItem },
     ) => ({
       ...state,
       shownDismissableItems: [
@@ -194,21 +194,21 @@ const uiSlice = createSlice({
     }),
     setRouteHistoryEntries: (
       state,
-      { payload: routeHistoryEntries }: { payload: Partial<Location>[] }
+      { payload: routeHistoryEntries }: { payload: Partial<Location>[] },
     ) => ({
       ...state,
       routeHistoryEntries,
     }),
     setSlippageTolerance: (
       state,
-      { payload: slippageTolerance }: { payload: number }
+      { payload: slippageTolerance }: { payload: number },
     ) => ({
       ...state,
       slippageTolerance,
     }),
     setAccountsSignerSettings: (
       state,
-      { payload }: { payload: AccountSignerSettings[] }
+      { payload }: { payload: AccountSignerSettings[] },
     ) => ({ ...state, accountSignerSettings: payload }),
     setAutoLockInterval: (state, { payload }: { payload: number }) => ({
       ...state,
@@ -247,14 +247,14 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
     await emitter.emit("updateAnalyticsPreferences", {
       isEnabled: collectAnalytics,
     })
-  }
+  },
 )
 
 export const deleteAnalyticsData = createBackgroundAsyncThunk(
   "ui/deleteAnalyticsData",
   async () => {
     await emitter.emit("deleteAnalyticsData")
-  }
+  },
 )
 
 // Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
@@ -264,7 +264,7 @@ export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
     await emitter.emit("newDefaultWalletValue", defaultWallet)
     // Once the default value has persisted, propagate to the store.
     dispatch(uiSlice.actions.setDefaultWallet(defaultWallet))
-  }
+  },
 )
 
 // TBD @Antonio: It would be good to have a consistent naming strategy
@@ -276,32 +276,32 @@ export const setNewSelectedAccount = createBackgroundAsyncThunk(
     dispatch(uiSlice.actions.setSelectedAccount(addressNetwork))
     // Do async work needed after the account is switched
     await emitter.emit("newSelectedAccountSwitched", addressNetwork)
-  }
+  },
 )
 
 export const updateSignerTitle = createBackgroundAsyncThunk(
   "ui/updateSignerTitle",
   async ([signer, title]: [AccountSignerWithId, string], { extra: { main } }) =>
-    main.updateSignerTitle(signer, title)
+    main.updateSignerTitle(signer, title),
 )
 
 export const markDismissableItemAsShown = createBackgroundAsyncThunk(
   "ui/markDismissableItemAsShown",
   async (item: DismissableItem, { extra: { main } }) =>
-    main.markDismissableItemAsShown(item)
+    main.markDismissableItemAsShown(item),
 )
 
 export const getAddNetworkRequestDetails = createBackgroundAsyncThunk(
   "ui/getAddNetworkRequestDetails",
   async (requestId: string, { extra: { main } }) =>
-    main.getAddNetworkRequestDetails(requestId)
+    main.getAddNetworkRequestDetails(requestId),
 )
 
 export const addNetworkUserResponse = createBackgroundAsyncThunk(
   "ui/handleAddNetworkConfirmation",
   async ([requestId, result]: [string, boolean]) => {
     emitter.emit("addCustomNetworkResponse", [requestId, result])
-  }
+  },
 )
 
 export const updateAutoLockInterval = createBackgroundAsyncThunk(
@@ -314,14 +314,14 @@ export const updateAutoLockInterval = createBackgroundAsyncThunk(
     }
 
     emitter.emit("updateAutoLockInterval", parsedValue)
-  }
+  },
 )
 
 export const userActivityEncountered = createBackgroundAsyncThunk(
   "ui/userActivityEncountered",
   async (addressNetwork: AddressOnNetwork) => {
     await emitter.emit("userActivityEncountered", addressNetwork)
-  }
+  },
 )
 
 export const setSelectedNetwork = createBackgroundAsyncThunk(
@@ -338,24 +338,24 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
         if (!account.accountsData.evm[network.chainID]?.[address]) {
           dispatch(addAddressNetwork({ address, network }))
         }
-      }
+      },
     )
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
-  }
+  },
 )
 
 export const refreshBackgroundPage = createBackgroundAsyncThunk(
   "ui/refreshBackgroundPage",
   async () => {
     await emitter.emit("refreshBackgroundPage", null)
-  }
+  },
 )
 
 export const sendEvent = createBackgroundAsyncThunk(
   "ui/sendEvent",
   async (event: AnalyticsEvent | OneTimeAnalyticsEvent) => {
     await emitter.emit("sendEvent", event)
-  }
+  },
 )
 
 export const toggleFlashbots = createBackgroundAsyncThunk(
@@ -363,85 +363,85 @@ export const toggleFlashbots = createBackgroundAsyncThunk(
   async (value: boolean, { dispatch, extra: { main } }) => {
     await main.toggleFlashbotsProvider(value)
     dispatch(toggleUseFlashbots(value))
-  }
+  },
 )
 
 export const toggleUsingFlashbotsForGivenTx = createBackgroundAsyncThunk(
   "ui/toggleUsingFlashbotsForGivenTx",
   async (value: boolean, { extra: { main } }) => {
     await main.toggleFlashbotsProvider(value)
-  }
+  },
 )
 
 export const selectUI = createSelector(
   (state: { ui: UIState }): UIState => state.ui,
-  (uiState) => uiState
+  (uiState) => uiState,
 )
 
 export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 
 export const selectHideDust = createSelector(
   selectSettings,
-  (settings) => settings?.hideDust
+  (settings) => settings?.hideDust,
 )
 
 export const selectAutoLockTimer = createSelector(
   selectSettings,
-  (settings) => settings.autoLockInterval
+  (settings) => settings.autoLockInterval,
 )
 
 export const selectSnackbarMessage = createSelector(
   selectUI,
-  (ui) => ui.snackbarMessage
+  (ui) => ui.snackbarMessage,
 )
 
 export const selectDefaultWallet = createSelector(
   selectSettings,
-  (settings) => settings?.defaultWallet
+  (settings) => settings?.defaultWallet,
 )
 
 export const selectShowAnalyticsNotification = createSelector(
   selectSettings,
-  (settings) => settings?.showAnalyticsNotification
+  (settings) => settings?.showAnalyticsNotification,
 )
 
 export const selectSlippageTolerance = createSelector(
   selectUI,
-  (ui) => ui.slippageTolerance
+  (ui) => ui.slippageTolerance,
 )
 
 export const selectInitializationTimeExpired = createSelector(
   selectUI,
-  (ui) => ui.initializationLoadingTimeExpired
+  (ui) => ui.initializationLoadingTimeExpired,
 )
 
 export const selectShowTestNetworks = createSelector(
   selectSettings,
-  (settings) => settings?.showTestNetworks
+  (settings) => settings?.showTestNetworks,
 )
 
 export const selectShowUnverifiedAssets = createSelector(
   selectSettings,
-  (settings) => settings?.showUnverifiedAssets
+  (settings) => settings?.showUnverifiedAssets,
 )
 
 export const selectCollectAnalytics = createSelector(
   selectSettings,
-  (settings) => settings?.collectAnalytics
+  (settings) => settings?.collectAnalytics,
 )
 
 export const selectHideBanners = createSelector(
   selectSettings,
-  (settings) => settings?.hideBanners
+  (settings) => settings?.hideBanners,
 )
 
 export const selectUseFlashbots = createSelector(
   selectSettings,
-  (settings) => settings?.useFlashbots
+  (settings) => settings?.useFlashbots,
 )
 
 export function selectShouldShowDismissableItem(
-  dismissableItem: DismissableItem
+  dismissableItem: DismissableItem,
 ) {
   return (state: { ui: UIState }): boolean => {
     const itemWasShown =

@@ -19,10 +19,10 @@ export default function ClaimReview({
   backToChooseDelegate: () => void
 }): ReactElement {
   const { selectedDelegate, selectedForBonus } = useBackgroundSelector(
-    selectClaimSelections
+    selectClaimSelections,
   )
   const referrer: Referrer | null = useBackgroundSelector(
-    (state) => state.claim.referrer
+    (state) => state.claim.referrer,
   )
 
   return (

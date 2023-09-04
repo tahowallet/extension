@@ -51,7 +51,7 @@ export default function SharedFileInput(props: Props): ReactElement {
           setErrorMessage(
             t("wrongFile", {
               type: fileTypeLabel,
-            })
+            }),
           )
         } else {
           setIsUploaded(true)
@@ -64,7 +64,7 @@ export default function SharedFileInput(props: Props): ReactElement {
         onFileLoad(null)
       }
     },
-    [onFileLoad, fileTypeLabel, t]
+    [onFileLoad, fileTypeLabel, t],
   )
 
   const handleRemove = () => {

@@ -29,7 +29,7 @@ module.exports = async function detectEnvBlock({ github, context }) {
       context.issue?.number,
       "; status code was ",
       status,
-      ". "
+      ". ",
     )
     return ""
   }
@@ -46,7 +46,7 @@ module.exports = async function detectEnvBlock({ github, context }) {
         varName.startsWith("ENABLE_") ||
         varName.startsWith("USE_") ||
         varName.startsWith("SHOW_") ||
-        varName.startsWith("SUPPORT_")
+        varName.startsWith("SUPPORT_"),
     )
     .map((varPair) => varPair.join("="))
 
@@ -54,7 +54,9 @@ module.exports = async function detectEnvBlock({ github, context }) {
 
   if (envLines.length !== validEnvLines.length) {
     console.warn(
-      `Filtered ${validEnvLines.length - envLines.length} disallowed env lines.`
+      `Filtered ${
+        validEnvLines.length - envLines.length
+      } disallowed env lines.`,
     )
   }
   console.log("Detected env block", validEnvBlock)

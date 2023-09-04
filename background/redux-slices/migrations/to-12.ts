@@ -56,12 +56,12 @@ export default (prevState: Record<string, unknown>): NewState => {
                         ? { [ETHEREUM.chainID]: accountData.balance }
                         : {},
                     },
-                  ]
-                )
+                  ],
+                ),
               ),
             },
-          ]
-        )
+          ],
+        ),
       ),
     },
   }

@@ -64,8 +64,8 @@ export default class Blocknative {
     accountAddress: string,
     handler: (
       transactionData: EthereumTransactionData,
-      balanceDelta: bigint
-    ) => void
+      balanceDelta: bigint,
+    ) => void,
   ): void {
     // TODO Centralize handling of txConfirmed.
     this.blocknative
@@ -84,7 +84,7 @@ export default class Blocknative {
             .reduce(
               (ethBalanceChangeDelta, { delta }) =>
                 ethBalanceChangeDelta + BigInt(delta),
-              0n
+              0n,
             )
 
           if (balanceDelta) {
@@ -126,7 +126,7 @@ export default class Blocknative {
           price: gweiToWei(estimate.price ?? 0),
           maxPriorityFeePerGas: gweiToWei(estimate.maxPriorityFeePerGas),
           maxFeePerGas: gweiToWei(estimate.maxFeePerGas),
-        })
+        }),
       ),
       dataSource: "blocknative",
     }

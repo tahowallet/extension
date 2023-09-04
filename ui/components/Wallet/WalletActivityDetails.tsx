@@ -117,7 +117,7 @@ interface WalletActivityDetailsProps {
 // has real data
 
 export default function WalletActivityDetails(
-  props: WalletActivityDetailsProps
+  props: WalletActivityDetailsProps,
 ): ReactElement {
   const { activityItem, activityInitiatorAddress } = props
   const dispatch = useBackgroundDispatch()
@@ -137,8 +137,8 @@ export default function WalletActivityDetails(
       if (activityItem?.hash) {
         setDetails(
           (await dispatch(
-            fetchSelectedActivityDetails(activityItem.hash)
-          )) as unknown as ActivityDetail[]
+            fetchSelectedActivityDetails(activityItem.hash),
+          )) as unknown as ActivityDetail[],
         )
       }
     }
@@ -147,7 +147,7 @@ export default function WalletActivityDetails(
 
   const activityViewDetails = useActivityViewDetails(
     activityItem,
-    activityInitiatorAddress
+    activityInitiatorAddress,
   )
 
   return (

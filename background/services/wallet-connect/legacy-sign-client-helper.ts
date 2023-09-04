@@ -53,7 +53,7 @@ function getCachedLegacySession(): IWalletConnectSession | null {
 export function createLegacySignClient(
   uri?: string,
   sessionProposalListener?: SessionProposalListener,
-  sessionRequestListener?: SessionRequestListener
+  sessionRequestListener?: SessionRequestListener,
 ): void {
   // If URI is passed always create a new session,
   // otherwise fall back to cached session if client isn't already instantiated.
@@ -100,7 +100,7 @@ export function createLegacySignClient(
 
 export function acknowledgeLegacyProposal(
   proposal: LegacyProposal,
-  accounts: string[]
+  accounts: string[],
 ): void {
   const { params } = proposal
   const [{ chainId }] = params
@@ -116,7 +116,7 @@ export function rejectLegacyProposal(): void {
 }
 
 export function processLegacyRequestParams(
-  payload: LegacyEventData
+  payload: LegacyEventData,
 ): TranslatedRequestParams | undefined {
   // TODO: figure out if this method is needed
   const { method } = payload
@@ -135,7 +135,7 @@ export function processLegacyRequestParams(
 
 export async function postLegacyApprovalResponse(
   event: TranslatedRequestParams,
-  payload: string
+  payload: string,
 ): Promise<void> {
   const { id } = event
   const { result } = approveEIP155Request(event, payload)
@@ -146,7 +146,7 @@ export async function postLegacyApprovalResponse(
 }
 
 export async function postLegacyRejectionResponse(
-  event: TranslatedRequestParams
+  event: TranslatedRequestParams,
 ): Promise<void> {
   const { id } = event
   const { error } = rejectEIP155Request(event)

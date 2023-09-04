@@ -30,7 +30,7 @@ export default function TransactionSignatureSummaryDefault({
 
   const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.prices, network.baseAsset, mainCurrencySymbol)
+    selectAssetPricePoint(state.prices, network.baseAsset, mainCurrencySymbol),
   )
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
@@ -41,8 +41,8 @@ export default function TransactionSignatureSummaryDefault({
       2,
       typeof baseAssetPricePoint !== "undefined"
         ? unitPricePointForPricePoint(baseAssetPricePoint)
-        : undefined
-    )
+        : undefined,
+    ),
   )
 
   return (

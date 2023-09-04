@@ -1,4 +1,4 @@
-import Dexie, { IndexableTypeArrayReadonly } from "dexie"
+import Dexie from "dexie"
 import { ABILITY_TYPES, Ability } from "../../abilities"
 import { HexString, NormalizedEVMAddress } from "../../types"
 
@@ -23,7 +23,7 @@ export class AbilitiesDatabase extends Dexie {
         const abilities = await tx.table("abilities").toArray()
         // Remove abilities from the db whose types are not supported
         const filteredAbilities = abilities.filter(({ type }) =>
-          ABILITY_TYPES.includes(type)
+          ABILITY_TYPES.includes(type),
         )
         await tx.table("abilitiesTemp").bulkAdd(filteredAbilities)
       })
@@ -44,10 +44,10 @@ export class AbilitiesDatabase extends Dexie {
   }
 
   async removeAbilities(abilities: Ability[]): Promise<void> {
-    const keys = abilities.map(({ abilityId, address }) => [
+    const keys = abilities.map(({ abilityId, address }): [string, string] => [
       abilityId,
       address,
-    ]) as unknown as IndexableTypeArrayReadonly
+    ])
     await this.abilities.bulkDelete(keys)
   }
 
@@ -61,14 +61,14 @@ export class AbilitiesDatabase extends Dexie {
 
   async getAbility(
     address: NormalizedEVMAddress,
-    abilityId: string
+    abilityId: string,
   ): Promise<Ability | undefined> {
     return this.abilities.get({ address, abilityId })
   }
 
   async markAsCompleted(
     address: NormalizedEVMAddress,
-    abilityId: string
+    abilityId: string,
   ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
     if (ability) {
@@ -84,7 +84,7 @@ export class AbilitiesDatabase extends Dexie {
 
   async markAsRemoved(
     address: NormalizedEVMAddress,
-    abilityId: string
+    abilityId: string,
   ): Promise<Ability | undefined> {
     const ability = await this.getAbility(address, abilityId)
     if (ability) {

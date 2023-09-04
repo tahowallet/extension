@@ -79,7 +79,7 @@ export default function OnboardingDerivationPathSelect({
         ...path,
         label: i18n.t(path.label),
       })),
-    [i18n]
+    [i18n],
   )
 
   const [derivationPaths, setDerivationPaths] = useState<Option[]>([])
@@ -88,7 +88,7 @@ export default function OnboardingDerivationPathSelect({
   const [customPath, setCustomPath] = useState(initialCustomPath)
   const [customPathLabel, setCustomPathLabel] = useState("")
   const [defaultIndex, setDefaultIndex] = useState<number | undefined>(
-    defaultPath
+    defaultPath,
   )
 
   // Reset value to display placeholder after adding a custom path
@@ -138,7 +138,7 @@ export default function OnboardingDerivationPathSelect({
   }
 
   const handleKeypressCustomInput: KeyboardEventHandler<HTMLInputElement> = (
-    e
+    e,
   ) => {
     if (e.key === "Enter") setModalStep(1)
   }

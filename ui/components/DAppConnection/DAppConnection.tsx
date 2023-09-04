@@ -21,14 +21,14 @@ export default function DAppConnection(): ReactElement {
         lastFocusedWindow: true,
       })
       .then((tabs) =>
-        tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" }
+        tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" },
       )
     if (!url) return
 
     const { origin } = new URL(url)
 
     const allowPermission = allowedPages.find(
-      (permission) => permission.origin === origin
+      (permission) => permission.origin === origin,
     )
 
     if (allowPermission) {

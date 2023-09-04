@@ -25,7 +25,7 @@ module.exports = {
     getCurrent: jest.fn(() =>
       // getCurrent can return undefined if there is no tab, and we act accordingly
       // in the code.
-      Promise.resolve(undefined as unknown as Tabs.Tab)
+      Promise.resolve(undefined as unknown as Tabs.Tab),
     ),
   },
   windows: {

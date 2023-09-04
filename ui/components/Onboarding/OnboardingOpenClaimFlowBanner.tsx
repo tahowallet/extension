@@ -254,7 +254,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement | null {
     useLocalStorage("addresHasNothingToClaimClosed", "")
   const [addressFinishedClaiming, setAddressFinishedClaiming] = useLocalStorage(
     "addressFinishedClaiming",
-    ""
+    "",
   )
   const currentAddress = currentAccount.address
   const hasAlreadyClaimed = claimed[currentAddress]
@@ -290,7 +290,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement | null {
             hasError={hasError}
             handleCloseBanner={() =>
               setAddressFinishedClaiming(
-                `${addressFinishedClaiming};${currentAddress}`
+                `${addressFinishedClaiming};${currentAddress}`,
               )
             }
           />
@@ -298,7 +298,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement | null {
           <IneligibleCTAContent
             handleCloseBanner={() =>
               setAddresHasNothingToClaimClosed(
-                `${addresHasNothingToClaimClosed};${currentAddress}`
+                `${addresHasNothingToClaimClosed};${currentAddress}`,
               )
             }
           />

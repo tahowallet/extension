@@ -65,7 +65,7 @@ describe("Signing Service Unit", () => {
       expect(
         signingService.deriveAddress({
           type: "read-only",
-        })
+        }),
       ).rejects.toBeTruthy()
     })
   })

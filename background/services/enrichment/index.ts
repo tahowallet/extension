@@ -64,7 +64,7 @@ export default class EnrichmentService extends BaseService<Events> {
   private constructor(
     private chainService: ChainService,
     private indexingService: IndexingService,
-    private nameService: NameService
+    private nameService: NameService,
   ) {
     super({})
   }
@@ -84,7 +84,7 @@ export default class EnrichmentService extends BaseService<Events> {
         transaction: enrichedTransaction,
         forAccounts: getRelevantTransactionAddresses(
           enrichedTransaction,
-          accounts
+          accounts,
         ),
       })
     })
@@ -93,7 +93,7 @@ export default class EnrichmentService extends BaseService<Events> {
   async enrichTransactionSignature(
     network: EVMNetwork,
     transaction: PartialTransactionRequestWithFrom,
-    desiredDecimals: number
+    desiredDecimals: number,
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
     const enrichedTxSignatureRequest = {
       ...transaction,
@@ -104,20 +104,20 @@ export default class EnrichmentService extends BaseService<Events> {
         this.nameService,
         network,
         transaction,
-        desiredDecimals
+        desiredDecimals,
       ),
     }
 
     this.emitter.emit(
       "enrichedEVMTransactionSignatureRequest",
-      enrichedTxSignatureRequest
+      enrichedTxSignatureRequest,
     )
 
     return enrichedTxSignatureRequest
   }
 
   async enrichSignTypedDataRequest(
-    signTypedDataRequest: SignTypedDataRequest
+    signTypedDataRequest: SignTypedDataRequest,
   ): Promise<EnrichedSignTypedDataRequest> {
     let annotation: SignTypedDataAnnotation | undefined
 
@@ -137,12 +137,12 @@ export default class EnrichmentService extends BaseService<Events> {
             )
           }
           return false
-        }
+        },
       )
       annotation = await enrichEIP2612SignTypedDataRequest(
         typedData,
         this.nameService,
-        correspondingAsset
+        correspondingAsset,
       )
     }
 
@@ -153,7 +153,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
     this.emitter.emit(
       "enrichedSignTypedDataRequest",
-      enrichedSignTypedDataRequest
+      enrichedSignTypedDataRequest,
     )
 
     return enrichedSignTypedDataRequest
@@ -161,7 +161,7 @@ export default class EnrichmentService extends BaseService<Events> {
 
   async enrichTransaction(
     transaction: AnyEVMTransaction,
-    desiredDecimals: number
+    desiredDecimals: number,
   ): Promise<EnrichedEVMTransaction> {
     return {
       ...transaction,
@@ -171,7 +171,7 @@ export default class EnrichmentService extends BaseService<Events> {
         this.nameService,
         transaction.network,
         transaction,
-        desiredDecimals
+        desiredDecimals,
       ),
     }
   }

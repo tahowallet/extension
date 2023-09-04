@@ -44,7 +44,7 @@ export default function Wallet(): ReactElement {
     dispatch(
       checkAlreadyClaimed({
         claimState,
-      })
+      }),
     )
   }, [claimState, dispatch])
 
@@ -63,7 +63,7 @@ export default function Wallet(): ReactElement {
     }
 
   const currentAccountActivities = useBackgroundSelector(
-    selectCurrentAccountActivities
+    selectCurrentAccountActivities,
   )
 
   useEffect(() => {
@@ -81,12 +81,12 @@ export default function Wallet(): ReactElement {
   }, [history, selectedNetwork.chainID])
 
   const initializationLoadingTimeExpired = useBackgroundSelector(
-    (background) => background.ui?.initializationLoadingTimeExpired
+    (background) => background.ui?.initializationLoadingTimeExpired,
   )
 
   const showHiddenAssets = useMemo(
     () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
-    [showUnverifiedAssets, unverifiedAssetAmounts.length]
+    [showUnverifiedAssets, unverifiedAssetAmounts.length],
   )
 
   const panelNames = [t("wallet.pages.assets")]

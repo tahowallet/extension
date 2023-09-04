@@ -43,7 +43,7 @@ const cleanTokenListResponse = (json: any, url: string) => {
 }
 
 export async function fetchAndValidateTokenList(
-  url: string
+  url: string,
 ): Promise<DeepWriteable<TokenListAndReference>> {
   let ok = true
   const response = await fetchJson({ url, timeout: 10 * SECOND }).catch(() => {
@@ -65,7 +65,7 @@ export async function fetchAndValidateTokenList(
 }
 
 export async function fetchAndValidateTokenLists(
-  urls: string[]
+  urls: string[],
 ): Promise<TokenListAndReference[]> {
   return (await Promise.allSettled(urls.map(fetchAndValidateTokenList)))
     .filter((l) => l.status === "fulfilled")
@@ -74,7 +74,7 @@ export async function fetchAndValidateTokenLists(
 
 function tokenListToFungibleAssetsForNetwork(
   network: EVMNetwork,
-  { url: tokenListURL, tokenList }: TokenListAndReference
+  { url: tokenListURL, tokenList }: TokenListAndReference,
 ): SmartContractFungibleAsset[] {
   const networkChainID = Number(network.chainID)
   const tokenListCitation = {
@@ -88,7 +88,7 @@ function tokenListToFungibleAssetsForNetwork(
       ({ chainId, symbol }) =>
         chainId === networkChainID &&
         // Filter out assets with the same symbol as the network base asset
-        symbol !== network.baseAsset.symbol
+        symbol !== network.baseAsset.symbol,
     )
     .map((tokenMetadata) => ({
       metadata: {
@@ -118,7 +118,7 @@ export function mergeAssets<T extends FungibleAsset>(
     seenAssetsBySimilarityKey: {
       [similarityKey: string]: T[]
     },
-    asset: T
+    asset: T,
   ) {
     const updatedSeenAssetsBySimilarityKey = { ...seenAssetsBySimilarityKey }
 
@@ -132,7 +132,7 @@ export function mergeAssets<T extends FungibleAsset>(
     // For each key, determine where a close asset match exists.
     const matchingAssetIndex = findClosestAssetIndex(
       asset,
-      updatedSeenAssetsBySimilarityKey[referenceKey]
+      updatedSeenAssetsBySimilarityKey[referenceKey],
     )
 
     if (typeof matchingAssetIndex !== "undefined") {
@@ -147,7 +147,7 @@ export function mergeAssets<T extends FungibleAsset>(
           ...matchingAsset.metadata,
           ...asset.metadata,
           tokenLists: (matchingAsset.metadata?.tokenLists || [])?.concat(
-            asset.metadata?.tokenLists ?? []
+            asset.metadata?.tokenLists ?? [],
           ),
         },
       }
@@ -165,7 +165,7 @@ export function mergeAssets<T extends FungibleAsset>(
   return mergedAssets.sort(
     (a, b) =>
       (a.metadata?.tokenLists?.length || 0) -
-      (b.metadata?.tokenLists?.length || 0)
+      (b.metadata?.tokenLists?.length || 0),
   )
 }
 
@@ -175,7 +175,7 @@ export function mergeAssets<T extends FungibleAsset>(
 // This is not 100% accurate, but given that we are dealing with token lists it seems to be
 // a safe bet. The chances are slim that 1 asset is added and 1 is removed in 1 minute.
 export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) =>
-  assetLists.reduce((acc, curr) => acc + curr.length, 0)
+  assetLists.reduce((acc, curr) => acc + curr.length, 0),
 )
 
 /*
@@ -185,10 +185,10 @@ export const memoizedMergeAssets = memoize(mergeAssets, (...assetLists) =>
  */
 export function networkAssetsFromLists(
   network: EVMNetwork,
-  tokenLists: TokenListAndReference[]
+  tokenLists: TokenListAndReference[],
 ): SmartContractFungibleAsset[] {
   const fungibleAssets = tokenLists.map((tokenListAndReference) =>
-    tokenListToFungibleAssetsForNetwork(network, tokenListAndReference)
+    tokenListToFungibleAssetsForNetwork(network, tokenListAndReference),
   )
 
   return memoizedMergeAssets(...fungibleAssets)

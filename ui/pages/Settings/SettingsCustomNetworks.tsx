@@ -30,12 +30,12 @@ export default function SettingsCustomNetworks(): ReactElement {
 
   const customNetworksListItems = intersperseWith(
     allCustomNetworks,
-    () => "spacer" as const
+    () => "spacer" as const,
   )
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [networkToDelete, setNetworkToDelete] = useState<EVMNetwork | null>(
-    null
+    null,
   )
 
   const handleModalConfirm = () => {

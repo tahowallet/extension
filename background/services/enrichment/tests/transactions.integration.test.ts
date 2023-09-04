@@ -72,7 +72,7 @@ describe("Enrichment Service Transactions", () => {
         ETHEREUM,
         2,
         Date.now(),
-        createAnyEVMBlock()
+        createAnyEVMBlock(),
       )
 
       expect(subannotations.length).toBe(2)

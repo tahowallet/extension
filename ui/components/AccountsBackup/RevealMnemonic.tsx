@@ -50,7 +50,7 @@ export default function RevealMnemonic({
   useEffect(() => {
     const fetchMnemonic = async () => {
       const mnemonicText = (await dispatch(
-        exportMnemonic(address)
+        exportMnemonic(address),
       )) as unknown as AsyncThunkFulfillmentType<typeof exportMnemonic>
 
       if (mnemonicText) {

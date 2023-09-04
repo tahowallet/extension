@@ -56,7 +56,7 @@ export default function TopMenuProtocolList({
 
   const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
   const customNetworks = productionNetworks.filter(
-    (network) => !isBuiltInNetwork(network)
+    (network) => !isBuiltInNetwork(network),
   )
 
   return (

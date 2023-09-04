@@ -10,7 +10,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
 export function isEIP2612TypedData(
-  typedData: EIP712TypedData
+  typedData: EIP712TypedData,
 ): typedData is EIP2612TypedData {
   if (typeof typedData.message.spender === "string") {
     if (
@@ -20,7 +20,7 @@ export function isEIP2612TypedData(
       // Must have all expected fields
       // @TODO use AJV validation
       ["owner", "spender", "value", "nonce", "deadline"].every(
-        (key) => key in typedData.message
+        (key) => key in typedData.message,
       )
     ) {
       return true
@@ -32,7 +32,7 @@ export function isEIP2612TypedData(
 export async function enrichEIP2612SignTypedDataRequest(
   typedData: EIP2612TypedData,
   nameService: NameService,
-  asset: SmartContractFungibleAsset | undefined
+  asset: SmartContractFungibleAsset | undefined,
 ): Promise<EIP2612SignTypedDataAnnotation> {
   const { message, domain } = typedData
   const { value, owner, spender, nonce } = message
@@ -54,11 +54,11 @@ export async function enrichEIP2612SignTypedDataRequest(
       }),
       await nameService.lookUpName(
         { address: owner, network: ETHEREUM },
-        false
+        false,
       ),
       await nameService.lookUpName(
         { address: spender, network: ETHEREUM },
-        false
+        false,
       ),
     ])
   ).map((nameOnNetwork) => nameOnNetwork?.resolved?.nameOnNetwork.name)
@@ -79,21 +79,21 @@ export async function enrichEIP2612SignTypedDataRequest(
 }
 
 export function getDistinctRecipentAddressesFromERC20Logs(
-  logs: ERC20TransferLog[]
+  logs: ERC20TransferLog[],
 ): string[] {
   return [...new Set([...logs.map(({ recipientAddress }) => recipientAddress)])]
 }
 
 export const getERC20LogsForAddresses = (
   logs: ERC20TransferLog[],
-  addresses: string[]
+  addresses: string[],
 ): ERC20TransferLog[] => {
   const relevantAddresses = new Set(addresses)
 
   return logs.filter(
     (log) =>
       relevantAddresses.has(normalizeEVMAddress(log.recipientAddress)) ||
-      relevantAddresses.has(normalizeEVMAddress(log.senderAddress))
+      relevantAddresses.has(normalizeEVMAddress(log.senderAddress)),
   )
 }
 
@@ -147,7 +147,7 @@ export function getSender(transaction: EnrichedEVMTransaction): {
 
 export function getRelevantTransactionAddresses(
   transaction: EnrichedEVMTransaction,
-  trackedAccounts: AddressOnNetwork[]
+  trackedAccounts: AddressOnNetwork[],
 ): string[] {
   const { address: recipientAddress } = getRecipient(transaction)
   const { address: senderAddress } = getSender(transaction)
@@ -156,7 +156,7 @@ export function getRelevantTransactionAddresses(
     .filter(
       ({ address }) =>
         sameEVMAddress(recipientAddress, address) ||
-        sameEVMAddress(senderAddress, address)
+        sameEVMAddress(senderAddress, address),
     )
     .map(({ address }) => normalizeEVMAddress(address))
 }

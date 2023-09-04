@@ -29,7 +29,7 @@ export default function SharedButtonUp<T extends HTMLElement>(props: {
       elementRef.current?.scrollIntoView({
         behavior: "smooth",
       }),
-    [elementRef]
+    [elementRef],
   )
 
   return (

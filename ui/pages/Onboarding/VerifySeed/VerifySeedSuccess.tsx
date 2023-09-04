@@ -50,7 +50,7 @@ function VerifySeedSuccess({
               mnemonic: mnemonic.join(" "),
               source: SignerImportSource.internal,
               path: selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
-            })
+            }),
           )) as unknown as AsyncThunkFulfillmentType<typeof importSigner>
 
           if (success) history.push(nextPage)

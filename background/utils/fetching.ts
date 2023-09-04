@@ -6,7 +6,7 @@ export const makeFetchWithTimeout = (timeoutMs: number) =>
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   async function fetchWithTimeout(
     requestInfo: RequestInfo,
-    options?: RequestInit | undefined
+    options?: RequestInit | undefined,
   ) {
     const controller = new AbortController()
     const id = setTimeout(() => {

@@ -10,7 +10,7 @@ import { HexString } from "../../types"
 
 export function checkPermissionSignTypedData(
   walletAddress: HexString,
-  enablingPermission: PermissionRequest
+  enablingPermission: PermissionRequest,
 ): void {
   if (
     enablingPermission.state !== "allow" ||
@@ -22,7 +22,7 @@ export function checkPermissionSignTypedData(
 
 export function checkPermissionSign(
   walletAddress: HexString,
-  enablingPermission: PermissionRequest
+  enablingPermission: PermissionRequest,
 ): void {
   if (
     enablingPermission.state !== "allow" ||
@@ -34,7 +34,7 @@ export function checkPermissionSign(
 
 export function checkPermissionSignTransaction(
   transactionRequest: EthersTransactionRequest,
-  enablingPermission: PermissionRequest
+  enablingPermission: PermissionRequest,
 ): void {
   if (typeof transactionRequest.chainId !== "undefined") {
     if (

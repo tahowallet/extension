@@ -118,7 +118,7 @@ async function deriveAddressOnLedger(path: string, eth: Eth) {
 
 async function generateLedgerId(
   transport: Transport,
-  eth: Eth
+  eth: Eth,
 ): Promise<[string | undefined, LedgerType]> {
   let extensionDeviceType = LedgerType.UNKNOWN
 
@@ -183,12 +183,12 @@ export default class LedgerService extends BaseService<Events> {
   private runSerialized<T>(operation: () => Promise<T>) {
     const oldOperationPromise = this.#lastOperationPromise
     const newOperationPromise = oldOperationPromise.then(async () =>
-      operation()
+      operation(),
     )
 
     this.#lastOperationPromise = newOperationPromise.then(
       () => {},
-      () => {}
+      () => {},
     )
 
     return newOperationPromise
@@ -228,7 +228,7 @@ export default class LedgerService extends BaseService<Events> {
         })
 
         const knownAddresses = await this.db.getAllAccountsByLedgerId(
-          this.#currentLedgerId
+          this.#currentLedgerId,
         )
 
         if (!knownAddresses.length) {
@@ -246,7 +246,7 @@ export default class LedgerService extends BaseService<Events> {
       } catch (error) {
         logger.error(
           "Treating Ledger as having disconnected due to a connection error:",
-          error
+          error,
         )
         await this.#handleUSBDisconnect()
       }
@@ -256,7 +256,7 @@ export default class LedgerService extends BaseService<Events> {
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
       "usbDeviceCount",
-      (await navigator.usb.getDevices()).length
+      (await navigator.usb.getDevices()).length,
     )
     if (!TestedProductId(event.device.productId)) {
       return
@@ -269,7 +269,7 @@ export default class LedgerService extends BaseService<Events> {
     async (/* event: USBConnectionEvent */): Promise<void> => {
       this.emitter.emit(
         "usbDeviceCount",
-        (await navigator.usb.getDevices()).length
+        (await navigator.usb.getDevices()).length,
       )
       if (!this.#currentLedgerId) {
         return
@@ -332,7 +332,7 @@ export default class LedgerService extends BaseService<Events> {
         const eth = new Eth(this.transport)
 
         const accountAddress = normalizeEVMAddress(
-          await deriveAddressOnLedger(derivationPath, eth)
+          await deriveAddressOnLedger(derivationPath, eth),
         )
 
         this.emitter.emit("address", {
@@ -346,7 +346,7 @@ export default class LedgerService extends BaseService<Events> {
         logger.error(
           `Error encountered deriving address at path ${derivationPath}! ledgerID: ${
             this.#currentLedgerId
-          } error: ${err}`
+          } error: ${err}`,
         )
         throw err
       }
@@ -372,7 +372,7 @@ export default class LedgerService extends BaseService<Events> {
 
   async signTransaction(
     transactionRequest: TransactionRequestWithNonce,
-    { deviceID, path: derivationPath }: LedgerAccountSigner
+    { deviceID, path: derivationPath }: LedgerAccountSigner,
   ): Promise<SignedTransaction> {
     return this.runSerialized(async () => {
       try {
@@ -396,11 +396,11 @@ export default class LedgerService extends BaseService<Events> {
         }
 
         const serializedTx = serialize(
-          serializableEthersTx as UnsignedTransaction
+          serializableEthersTx as UnsignedTransaction,
         ).substring(2) // serialize adds 0x prefix which kills Eth::signTransaction
 
         const accountData = await this.db.getAccountByAddress(
-          transactionRequest.from
+          transactionRequest.from,
         )
 
         this.checkCanSign(accountData, derivationPath, deviceID)
@@ -409,7 +409,7 @@ export default class LedgerService extends BaseService<Events> {
         const signature = await eth.signTransaction(
           derivationPath,
           serializedTx,
-          null
+          null,
         )
 
         const signedTransaction = serialize(
@@ -418,7 +418,7 @@ export default class LedgerService extends BaseService<Events> {
             r: `0x${signature.r}`,
             s: `0x${signature.s}`,
             v: parseInt(signature.v, 16),
-          }
+          },
         )
         const tx = parseRawTransaction(signedTransaction)
 
@@ -464,7 +464,7 @@ export default class LedgerService extends BaseService<Events> {
         logger.error(
           `Error encountered! ledgerID: ${
             this.#currentLedgerId
-          } transactionRequest: ${transactionRequest} error: ${err}`
+          } transactionRequest: ${transactionRequest} error: ${err}`,
         )
 
         throw err
@@ -475,7 +475,7 @@ export default class LedgerService extends BaseService<Events> {
   async signTypedData(
     typedData: EIP712TypedData,
     account: HexString,
-    { deviceID, path: derivationPath }: LedgerAccountSigner
+    { deviceID, path: derivationPath }: LedgerAccountSigner,
   ): Promise<string> {
     return this.runSerialized(async () => {
       if (!this.transport) {
@@ -500,7 +500,7 @@ export default class LedgerService extends BaseService<Events> {
       const signature = await eth.signEIP712HashedMessage(
         derivationPath,
         hashedDomain,
-        hashedMessage
+        hashedMessage,
       )
 
       this.emitter.emit(
@@ -509,7 +509,7 @@ export default class LedgerService extends BaseService<Events> {
           r: `0x${signature.r}`,
           s: `0x${signature.s}`,
           v: signature.v,
-        })
+        }),
       )
 
       return joinSignature({
@@ -523,7 +523,7 @@ export default class LedgerService extends BaseService<Events> {
   private checkCanSign(
     accountData: LedgerAccount | null,
     path: string,
-    deviceID: string
+    deviceID: string,
   ) {
     if (
       !accountData ||
@@ -540,11 +540,11 @@ export default class LedgerService extends BaseService<Events> {
 
   async signMessage(
     { address, network }: AddressOnNetwork,
-    hexDataToSign: HexString
+    hexDataToSign: HexString,
   ): Promise<string> {
     if (
       !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
-        sameNetwork(network, supportedNetwork)
+        sameNetwork(network, supportedNetwork),
       )
     ) {
       throw new Error("Unsupported network for Ledger signing")
@@ -562,7 +562,7 @@ export default class LedgerService extends BaseService<Events> {
 
     if (!accountData) {
       throw new Error(
-        `Address "${address}" doesn't have corresponding derivation path!`
+        `Address "${address}" doesn't have corresponding derivation path!`,
       )
     }
 
@@ -571,7 +571,7 @@ export default class LedgerService extends BaseService<Events> {
     const signature = await eth.signPersonalMessage(
       accountData.path,
       // Ledger requires unprefixed hex, so make sure that's what we pass.
-      hexDataToSign.replace(/^0x/, "")
+      hexDataToSign.replace(/^0x/, ""),
     )
 
     const signatureHex = joinSignature({

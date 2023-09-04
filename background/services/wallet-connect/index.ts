@@ -66,26 +66,26 @@ export default class WalletConnectService extends BaseService<Events> {
       Promise<ProviderBridgeService>,
       Promise<InternalEthereumProviderService>,
       Promise<PreferenceService>,
-      Promise<ChainService>
+      Promise<ChainService>,
     ]
   > = async (
     providerBridgeService,
     internalEthereumProviderService,
     preferenceService,
-    chainService
+    chainService,
   ) =>
     new this(
       await providerBridgeService,
       await internalEthereumProviderService,
       await preferenceService,
-      await chainService
+      await chainService,
     )
 
   private constructor(
     private providerBridgeService: ProviderBridgeService,
     private internalEthereumProviderService: InternalEthereumProviderService,
     private preferenceService: PreferenceService,
-    private chainService: ChainService
+    private chainService: ChainService,
   ) {
     super()
   }
@@ -97,7 +97,7 @@ export default class WalletConnectService extends BaseService<Events> {
     this.defineEventHandlers()
 
     this.providerBridgeService.emitter.on("walletConnectInit", async (wcUri) =>
-      this.performConnection(wcUri)
+      this.performConnection(wcUri),
     )
   }
 
@@ -110,11 +110,11 @@ export default class WalletConnectService extends BaseService<Events> {
 
   private defineEventHandlers(): void {
     this.signClientv2.on("session_proposal", (proposal) =>
-      this.sessionProposalListener(false, proposal)
+      this.sessionProposalListener(false, proposal),
     )
 
     this.signClientv2.on("session_request", (event) =>
-      this.sessionRequestListener(false, event)
+      this.sessionRequestListener(false, event),
     )
   }
 
@@ -130,7 +130,7 @@ export default class WalletConnectService extends BaseService<Events> {
           createLegacySignClient(
             uri,
             (payload) => this.sessionProposalListener(true, undefined, payload),
-            (payload) => this.sessionRequestListener(true, undefined, payload)
+            (payload) => this.sessionRequestListener(true, undefined, payload),
           )
           break
 
@@ -143,21 +143,21 @@ export default class WalletConnectService extends BaseService<Events> {
           // TODO: decide how to handle this
           WalletConnectService.tempFeatureLog(
             "unhandled uri version: ",
-            version
+            version,
           )
           break
       }
     } catch (err: unknown) {
       WalletConnectService.tempFeatureLog(
         "TODO: Error while establishing session",
-        err
+        err,
       )
     }
   }
 
   private async acknowledgeProposal(
     proposal: SignClientTypes.EventArguments["session_proposal"],
-    selectedAccounts: [string]
+    selectedAccounts: [string],
   ) {
     // TODO: in case of a new connection, this callback should perform request processing AFTER wallet selection/confirmation dialog
     const { id, params } = proposal
@@ -166,7 +166,7 @@ export default class WalletConnectService extends BaseService<Events> {
     WalletConnectService.tempFeatureLog("proposal", proposal)
     WalletConnectService.tempFeatureLog(
       "requiredNamespaces",
-      requiredNamespaces
+      requiredNamespaces,
     )
 
     const ethNamespaceKey = "eip155"
@@ -177,10 +177,9 @@ export default class WalletConnectService extends BaseService<Events> {
     }
 
     const namespaces: SessionTypes.Namespaces = {}
-    const accounts: string[] = []
-    ethNamespace.chains.forEach((chain) => {
-      selectedAccounts.map((acc) => accounts.push(`${chain}:${acc}`))
-    })
+    const accounts = (ethNamespace.chains ?? []).flatMap((chain) =>
+      selectedAccounts.map((selectedAccount) => `${chain}:${selectedAccount}`),
+    )
     namespaces[ethNamespaceKey] = {
       accounts,
       methods: requiredNamespaces[ethNamespaceKey].methods,
@@ -211,7 +210,7 @@ export default class WalletConnectService extends BaseService<Events> {
 
   private async postApprovalResponse(
     event: TranslatedRequestParams,
-    payload: string
+    payload: string,
   ) {
     const { topic } = event
     const response = approveEIP155Request(event, payload)
@@ -233,7 +232,7 @@ export default class WalletConnectService extends BaseService<Events> {
   async sessionRequestListener(
     isLegacy: boolean, // TODO: this along with @legacyEvent should be removed when we fully migrate to v2, @event should become non optional
     event?: SignClientTypes.EventArguments["session_request"],
-    legacyEvent?: LegacyEventData
+    legacyEvent?: LegacyEventData,
   ): Promise<void> {
     WalletConnectService.tempFeatureLog("in sessionRequestListener", event)
 
@@ -255,7 +254,7 @@ export default class WalletConnectService extends BaseService<Events> {
       async (message) => {
         WalletConnectService.tempFeatureLog(
           "sessionRequestListenerPort message:",
-          message
+          message,
         )
 
         if (!request) {
@@ -273,7 +272,7 @@ export default class WalletConnectService extends BaseService<Events> {
         } else {
           await this.postApprovalResponse(request, message.result)
         }
-      }
+      },
     )
 
     await this.providerBridgeService.onMessageListener(port, {
@@ -285,11 +284,11 @@ export default class WalletConnectService extends BaseService<Events> {
   async sessionProposalListener(
     isLegacy: boolean,
     proposal?: SignClientTypes.EventArguments["session_proposal"],
-    legacyProposal?: LegacyProposal
+    legacyProposal?: LegacyProposal,
   ): Promise<void> {
     WalletConnectService.tempFeatureLog(
       "in sessionProposalListener",
-      proposal ?? legacyProposal
+      proposal ?? legacyProposal,
     )
 
     let favicon = ""
@@ -331,7 +330,7 @@ export default class WalletConnectService extends BaseService<Events> {
             await this.rejectProposal(proposal?.id)
           }
         }
-      }
+      },
     )
 
     await this.providerBridgeService.onMessageListener(port, {

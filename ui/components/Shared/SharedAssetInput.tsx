@@ -54,14 +54,14 @@ const symbolPriority = Object.fromEntries(
   SYMBOL_PRIORITY_LIST.map((symbol, idx) => [
     symbol,
     SYMBOL_PRIORITY_LIST.length - idx,
-  ])
+  ]),
 )
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
   currentNetwork: EVMNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   nfts: NFTCollectionCached[]
   setSelectedAssetAndClose: (
-    asset: AnyAssetWithOptionalAmount<AssetType>
+    asset: AnyAssetWithOptionalAmount<AssetType>,
   ) => void
   onSelectNFT?: (nft: NFTCached) => void
 }
@@ -71,7 +71,7 @@ interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
 // over alphabetical sorting.
 function prioritizedAssetAlphabeticSorter<
   AssetType extends AnyAsset,
-  T extends AnyAssetWithOptionalAmount<AssetType>
+  T extends AnyAssetWithOptionalAmount<AssetType>,
 >({ asset: { symbol: symbol1 } }: T, { asset: { symbol: symbol2 } }: T) {
   const firstSymbolPriority = symbolPriority[symbol1] ?? 0
   const secondSymbolPriority = symbolPriority[symbol2] ?? 0
@@ -98,13 +98,13 @@ function prioritizedAssetAlphabeticSorter<
 // assets.
 function assetAlphabeticSorterWithFilter<
   AssetType extends AnyAsset,
-  T extends AnyAssetWithOptionalAmount<AssetType>
+  T extends AnyAssetWithOptionalAmount<AssetType>,
 >(searchTerm: string): (asset1: T, asset2: T) => number {
   const startingSearchTermRegExp = new RegExp(`^${searchTerm}.*$`, "i")
 
   return (
     { asset: { symbol: symbol1 } }: T,
-    { asset: { symbol: symbol2 } }: T
+    { asset: { symbol: symbol2 } }: T,
   ) => {
     const searchTermStartMatch1 = startingSearchTermRegExp.test(symbol1)
     const searchTermStartMatch2 = startingSearchTermRegExp.test(symbol2)
@@ -123,7 +123,7 @@ function assetAlphabeticSorterWithFilter<
 }
 
 function SelectAssetMenuContent<T extends AnyAsset>(
-  props: SelectAssetMenuContentProps<T>
+  props: SelectAssetMenuContentProps<T>,
 ): ReactElement {
   const { t } = useTranslation()
   const {
@@ -149,15 +149,15 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                 // The replace handles `normalizeEVMAddress`'s
                 // octet alignment that prefixes a `0` to a partial address
                 // if it has an uneven number of digits.
-                normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x")
+                normalizeEVMAddress(searchTerm).replace(/^0x0?/, "0x"),
               ) &&
-              asset.contractAddress.length >= searchTerm.length)
+              asset.contractAddress.length >= searchTerm.length),
         )
 
   const sortedFilteredAssets = filteredAssets.sort(
     searchTerm.trim() === ""
       ? prioritizedAssetAlphabeticSorter
-      : assetAlphabeticSorterWithFilter(searchTerm.trim())
+      : assetAlphabeticSorterWithFilter(searchTerm.trim()),
   )
 
   useEffect(() => {
@@ -433,11 +433,11 @@ function isSameAsset(asset1: Asset, asset2: Asset) {
 
 function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
   asset: T,
-  assetsToSearch: AnyAssetWithOptionalAmount<T>[]
+  assetsToSearch: AnyAssetWithOptionalAmount<T>[],
 ): AnyAssetWithOptionalAmount<T> {
   return (
     assetsToSearch.find(({ asset: listAsset }) =>
-      isSameAsset(asset, listAsset)
+      isSameAsset(asset, listAsset),
     ) ?? {
       // If not found, default balance to zero
       asset: { ...asset, decimals: 1 },
@@ -448,7 +448,7 @@ function assetWithOptionalAmountFromAsset<T extends AnyAsset>(
 }
 
 export default function SharedAssetInput<T extends AnyAsset>(
-  props: SharedAssetInputProps<T>
+  props: SharedAssetInputProps<T>,
 ): ReactElement {
   const { t } = useTranslation()
   const {
@@ -497,7 +497,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
       onAssetSelect?.(assetWithOptionalAmount.asset)
     },
 
-    [onAssetSelect]
+    [onAssetSelect],
   )
 
   const isMaxButtonVisible =
@@ -524,7 +524,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
       const decimalMatched = convertFixedPointNumber(
         parsedGivenAmount,
-        selectedAssetAndAmount.asset.decimals
+        selectedAssetAndAmount.asset.decimals,
       )
       if (
         decimalMatched.amount > selectedAssetAndAmount.amount ||
@@ -535,7 +535,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
 
       return undefined
     },
-    [selectedAssetAndAmount, t]
+    [selectedAssetAndAmount, t],
   )
 
   const handleSelectNFT = (nft: NFTCached) => {
@@ -668,7 +668,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
               onChange={(event) =>
                 onAmountChange?.(
                   event.target.value,
-                  getErrorMessage(event.target.value)
+                  getErrorMessage(event.target.value),
                 )
               }
             />

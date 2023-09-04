@@ -39,12 +39,12 @@ export default (oldState: Record<string, unknown>): State => {
                       ...accountData,
                       balances: Object.fromEntries(
                         Object.entries(accountData.balances ?? {}).filter(
-                          ([symbol]) => symbol !== "ETH" // remove duplicate with WETH
-                        )
+                          ([symbol]) => symbol !== "ETH", // remove duplicate with WETH
+                        ),
                       ),
                     },
-              ]
-            )
+              ],
+            ),
           ),
         },
       },

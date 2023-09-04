@@ -19,15 +19,15 @@ export const IPFSHTTPGet = "https://ipfs.io/api/v0/dag/get?arg="
  * To find which file to look in, we reference claim-index.json
  */
 export async function getFileHashProspect(
-  targetAddress: string
+  targetAddress: string,
 ): Promise<string> {
   const numericTargetAddress = BigInt(targetAddress)
 
   const IPFSFileDirectory = await fetchWithTimeout(
-    `${IPFSHTTPGet}${IPFSFileDirectoryIPFSHash}`
+    `${IPFSHTTPGet}${IPFSFileDirectoryIPFSHash}`,
   )
   const partGlossary = await fetchWithTimeout(
-    `${IPFSHTTPGatewayPrefix}${partGlossaryIPFSHash}`
+    `${IPFSHTTPGatewayPrefix}${partGlossaryIPFSHash}`,
   )
 
   const IPFSFileDirectoryJson = await IPFSFileDirectory.json()
@@ -38,12 +38,12 @@ export async function getFileHashProspect(
       .map((item: { startAddress: string; file: string }) => item.startAddress)
       .findIndex(
         (startAddress: string) =>
-          BigInt(startAddress ?? 0) > numericTargetAddress
+          BigInt(startAddress ?? 0) > numericTargetAddress,
       ) - 1
   const inClaimFileName = partGlossaryJson[fileIndex]?.file
 
   const IPFSHashForFoundFile = IPFSFileDirectoryJson.Links.find(
-    (linkItem: IPFSLinkItem) => linkItem.Name === inClaimFileName
+    (linkItem: IPFSLinkItem) => linkItem.Name === inClaimFileName,
   )
 
   return IPFSHashForFoundFile?.Hash["/"]
@@ -51,7 +51,7 @@ export async function getFileHashProspect(
 
 export async function getClaimFromFileHash(
   targetAddress: string,
-  hash: string
+  hash: string,
 ): Promise<{
   account: HexString
   amount: string | number

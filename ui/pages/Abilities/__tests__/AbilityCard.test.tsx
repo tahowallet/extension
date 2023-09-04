@@ -30,7 +30,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ closeAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     expect(ui.queryByText("Closes in 7 days")).toBeInTheDocument()
@@ -44,7 +44,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ closeAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     expect(ui.queryByText("Closes in 1 day")).toBeInTheDocument()
@@ -58,7 +58,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ closeAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     const timeDetails = ui.container.getElementsByClassName("time_details")[0]
@@ -73,7 +73,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ openAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     expect(ui.queryByText("Starting in 7 days")).toBeInTheDocument()
@@ -87,7 +87,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ openAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     expect(ui.queryByText("Starting in 1 day")).toBeInTheDocument()
@@ -101,7 +101,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ openAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     const timeDetails = ui.container.getElementsByClassName("time_details")[0]
@@ -125,7 +125,7 @@ describe("AbilityCard", () => {
       />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     const timeDetails = ui.container.getElementsByClassName("time_details")[0]
@@ -140,7 +140,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ closeAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     const timeDetails = ui.container.getElementsByClassName("time_details")[0]
@@ -155,7 +155,7 @@ describe("AbilityCard", () => {
       <AbilityCard ability={createAbility({ openAt: date.toDateString() })} />,
       {
         preloadedState: { account: createAccountState() },
-      }
+      },
     )
 
     const timeDetails = ui.container.getElementsByClassName("time_details")[0]

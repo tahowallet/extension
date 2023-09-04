@@ -7,7 +7,7 @@ import {
 
 export const selectCurrentNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount.network,
-  (selectedNetwork) => selectedNetwork
+  (selectedNetwork) => selectedNetwork,
 )
 
 export const selectCurrentAccount = createSelector(
@@ -16,7 +16,7 @@ export const selectCurrentAccount = createSelector(
     address,
     network,
     truncatedAddress: address.toLowerCase().slice(0, 7),
-  })
+  }),
 )
 
 export const selectShowingActivityDetail = createSelector(
@@ -33,22 +33,22 @@ export const selectShowingActivityDetail = createSelector(
         currentAccountOnNetwork.network.chainID
       ]?.find((activity) => activity.hash === showingActivityDetailID) ?? null
     )
-  }
+  },
 )
 
 export const selectCurrentAddressNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount,
-  (selectedAccount) => selectedAccount
+  (selectedAccount) => selectedAccount,
 )
 
 export const selectMainCurrencySymbol = createSelector(
-  () => null,
-  () => hardcodedMainCurrencySymbol
+  (_: RootState) => null,
+  () => hardcodedMainCurrencySymbol,
 )
 
 export const selectMainCurrencySign = createSelector(
-  () => null,
-  () => hardcodedMainCurrencySign
+  (_: RootState) => null,
+  () => hardcodedMainCurrencySign,
 )
 
 export const selectMainCurrency = createSelector(
@@ -56,5 +56,5 @@ export const selectMainCurrency = createSelector(
   (state: RootState) => state.assets,
   (state: RootState) => selectMainCurrencySymbol(state),
   (_, assets, mainCurrencySymbol) =>
-    assets.find((asset) => asset.symbol === mainCurrencySymbol)
+    assets.find((asset) => asset.symbol === mainCurrencySymbol),
 )

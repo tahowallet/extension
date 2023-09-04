@@ -14,7 +14,7 @@ interface TallyInternalJsonRpcSigner extends JsonRpcSigner {
   sendTransaction(
     transaction: Deferrable<
       TransactionRequest & { annotation?: TransactionAnnotation }
-    >
+    >,
   ): Promise<TransactionResponse>
 }
 
@@ -29,14 +29,14 @@ export default class TallyWeb3Provider extends Web3Provider {
   }
 
   override getSigner(
-    addressOrIndex?: string | number
+    addressOrIndex?: string | number,
   ): TallyInternalJsonRpcSigner {
     return super.getSigner(addressOrIndex)
   }
 
   static override hexlifyTransaction(
     transaction: TransactionRequest & { annotation?: TransactionAnnotation },
-    allowExtra?: { [key: string]: boolean }
+    allowExtra?: { [key: string]: boolean },
   ): { [key: string]: string | AccessList } {
     const { annotation, ...transactionRequest } = transaction
     return {

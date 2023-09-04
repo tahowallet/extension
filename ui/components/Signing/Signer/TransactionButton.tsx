@@ -46,7 +46,7 @@ export default function TransactionButton({
   // Debounced unlock buttons because dispatching transaction events is async and can happen in batches
   const [unlockButtons, setUnlockButtons] = useDebounce(
     isTransactionDataReady,
-    300
+    300,
   )
   const [focusChangeNonce, setFocusChangeNonce] = useState(0)
 
@@ -57,10 +57,9 @@ export default function TransactionButton({
     }
   }
 
-  useEffect(
-    () => setUnlockButtons(isTransactionDataReady),
-    [isTransactionDataReady, setUnlockButtons]
-  )
+  useEffect(() => {
+    setUnlockButtons(isTransactionDataReady)
+  }, [isTransactionDataReady, setUnlockButtons])
 
   useEffect(() => {
     const increaseFocusChangeNonce = () => {
@@ -80,10 +79,13 @@ export default function TransactionButton({
     clearDelaySignButtonTimeout()
 
     if (document.hasFocus()) {
-      delaySignButtonTimeout.current = window.setTimeout(() => {
-        setIsOnDelayToSign(false)
-        // Random delay between 0.5 and 2 seconds
-      }, Math.floor(Math.random() * 4 + 1) * 500)
+      delaySignButtonTimeout.current = window.setTimeout(
+        () => {
+          setIsOnDelayToSign(false)
+          // Random delay between 0.5 and 2 seconds
+        },
+        Math.floor(Math.random() * 4 + 1) * 500,
+      )
     } else {
       setIsOnDelayToSign(true)
     }

@@ -42,7 +42,7 @@ export default class NFTsService extends BaseService<Events> {
 
   private constructor(
     private db: NFTsDatabase,
-    private chainService: ChainService
+    private chainService: ChainService,
   ) {
     super()
     this.#transfersLookupTimestamp = getUNIXTimestamp() // will be discarded when chainService starts
@@ -92,7 +92,7 @@ export default class NFTsService extends BaseService<Events> {
         this.emitter.emit("isReloadingNFTs", true)
         await this.initializeCollections([addressOnNetwork])
         this.emitter.emit("isReloadingNFTs", false)
-      }
+      },
     )
   }
 
@@ -128,16 +128,16 @@ export default class NFTsService extends BaseService<Events> {
 
           this.emitter.emit(
             "updateCollections",
-            await this.db.getAllCollections()
+            await this.db.getAllCollections(),
           )
-        })
-      )
+        }),
+      ),
     )
   }
 
   async refreshNFTsFromCollection(
     collectionID: string,
-    account: AddressOnNetwork
+    account: AddressOnNetwork,
   ): Promise<void> {
     this.setFreshCollection(collectionID, account.address, false)
     await this.db.setFreshCollections(this.#freshCollections)
@@ -146,7 +146,7 @@ export default class NFTsService extends BaseService<Events> {
 
   async fetchNFTsFromCollection(
     collectionID: string,
-    account: AddressOnNetwork
+    account: AddressOnNetwork,
   ): Promise<void> {
     if (
       this.#freshCollections[collectionID]?.[
@@ -159,7 +159,7 @@ export default class NFTsService extends BaseService<Events> {
         getNFTs([account], [collectionID]).map(async (request) => {
           const { nfts, nextPageURLs } = await request
           await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
-        })
+        }),
       )
     }
   }
@@ -167,14 +167,14 @@ export default class NFTsService extends BaseService<Events> {
   async fetchPOAPs(accounts: AddressOnNetwork[]): Promise<void> {
     await Promise.allSettled(
       accounts.map((account) =>
-        this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account)
-      )
+        this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account),
+      ),
     )
   }
 
   async fetchNFTsFromDatabase(
     collectionID: string,
-    account: AddressOnNetwork
+    account: AddressOnNetwork,
   ): Promise<void> {
     await this.emitter.emit("updateNFTs", {
       collectionID,
@@ -186,7 +186,7 @@ export default class NFTsService extends BaseService<Events> {
 
   async fetchNFTsFromNextPage(
     collectionID: string,
-    account: AddressOnNetwork
+    account: AddressOnNetwork,
   ): Promise<void> {
     const nextPage = this.#nextPageUrls[collectionID]?.[account.address]
 
@@ -195,7 +195,7 @@ export default class NFTsService extends BaseService<Events> {
         account.address,
         collectionID,
         [account.network.chainID],
-        nextPage
+        nextPage,
       ).then(async ({ nfts, nextPageURL }) => {
         delete this.#nextPageUrls[collectionID][account.address]
 
@@ -211,13 +211,13 @@ export default class NFTsService extends BaseService<Events> {
     collectionID: string,
     account: AddressOnNetwork,
     nfts: NFT[],
-    nextPageURLs: NextPageURLsMap
+    nextPageURLs: NextPageURLsMap,
   ): Promise<void> {
     await this.db.updateNFTs(nfts)
 
     const updatedNFTs = await this.db.getCollectionNFTsForAccount(
       collectionID,
-      account
+      account,
     )
 
     this.updateNextPages(nextPageURLs)
@@ -231,7 +231,7 @@ export default class NFTsService extends BaseService<Events> {
         account,
         {
           nftCount: updatedNFTs.length,
-        }
+        },
       )
     } else if (updatedNFTs.some((nft) => nft.isBadge)) {
       // update collection as a badges collection
@@ -240,7 +240,7 @@ export default class NFTsService extends BaseService<Events> {
         account,
         {
           hasBadges: true,
-        }
+        },
       )
     }
 
@@ -267,14 +267,14 @@ export default class NFTsService extends BaseService<Events> {
       Object.entries(nextPageURLs[collectionID]).forEach(([address, url]) => {
         this.#nextPageUrls[collectionID] ??= {}
         this.#nextPageUrls[collectionID][address] = url
-      })
+      }),
     )
   }
 
   setFreshCollection(
     collectionID: string,
     address: string,
-    isFresh: boolean
+    isFresh: boolean,
   ): void {
     // POAPs won't appear in transfers so we don't know if they are stale
     if (collectionID === POAP_COLLECTION_ID) return
@@ -301,11 +301,11 @@ export default class NFTsService extends BaseService<Events> {
   }
 
   async fetchTransferredNFTs(
-    accounts: AddressOnNetwork[]
+    accounts: AddressOnNetwork[],
   ): Promise<TransferredNFT[]> {
     const transfers = await getNFTsTransfers(
       accounts,
-      this.#transfersLookupTimestamp
+      this.#transfersLookupTimestamp,
     )
 
     this.#transfersLookupTimestamp = await this.setTransfersLookupTimestamp()
@@ -324,12 +324,12 @@ export default class NFTsService extends BaseService<Events> {
     await this.db.setFreshCollections(this.#freshCollections)
 
     const knownFromAddress = transfers.filter(
-      (transfer) => transfer.isKnownFromAddress
+      (transfer) => transfer.isKnownFromAddress,
     )
 
     if (knownFromAddress.length) {
       await this.db.removeNFTsByIDs(
-        knownFromAddress.map((transferred) => transferred.id)
+        knownFromAddress.map((transferred) => transferred.id),
       )
       this.emitter.emit("removeTransferredNFTs", knownFromAddress)
     }

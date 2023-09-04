@@ -13,7 +13,7 @@ export default function GlobalModal({ id }: { id: string }): ReactElement {
 
   const [showModal, setShowModal] = useLocalStorage(
     `modal_${id}`,
-    getLocalStorageItem(`modal_${id}`, "true")
+    getLocalStorageItem(`modal_${id}`, "true"),
   )
 
   const handleClick = () => {

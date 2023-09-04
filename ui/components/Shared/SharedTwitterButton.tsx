@@ -15,7 +15,7 @@ export default function SharedTwitterButton({
   return (
     <a
       href={encodeURI(
-        `https://twitter.com/intent/tweet?url=${link}&text=${text}`
+        `https://twitter.com/intent/tweet?url=${link}&text=${text}`,
       )}
       target="_blank"
       rel="noreferrer"

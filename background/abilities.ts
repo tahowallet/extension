@@ -39,7 +39,7 @@ export const ABILITY_TYPES = [
   "misc",
 ] as const
 
-export type AbilityType = typeof ABILITY_TYPES[number]
+export type AbilityType = (typeof ABILITY_TYPES)[number]
 
 export type Ability = {
   type: AbilityType

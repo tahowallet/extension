@@ -23,7 +23,7 @@ export type ValidDataChangeHandler<T> = (validData: T | undefined) => void
  * valid, undefined.
  */
 export type AdditionalDataValidator<T> = (
-  data: T
+  data: T,
 ) => { error: string } | undefined
 
 export type ValidationHookProperties = {
@@ -97,7 +97,7 @@ export type AsyncValidationHook<T> = (
 export const useParsedValidation = <T>(
   onValidChange: (validValue: T | undefined) => void,
   parser: (value: string) => { parsed: T } | { error: string },
-  additionalValidator?: AdditionalDataValidator<T>
+  additionalValidator?: AdditionalDataValidator<T>,
 ): ValidationHookProperties => {
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [rawValue, setRawValue] = useState<string>("")
@@ -179,7 +179,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
         validatingValue.current = trimmed
 
         const resolved = (await dispatch(
-          resolveNameOnNetwork({ name: trimmed, network })
+          resolveNameOnNetwork({ name: trimmed, network }),
         )) as unknown as AddressOnNetwork | undefined
 
         // Asynchronicity means we could already have started validating another
@@ -197,7 +197,7 @@ export const useAddressOrNameValidation: AsyncValidationHook<
         }
       }
     },
-    [dispatch, network, onValidChange]
+    [dispatch, network, onValidChange],
   )
 
   return {

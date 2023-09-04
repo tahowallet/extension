@@ -72,7 +72,7 @@ export default function AbilityFilter(): ReactElement {
   const accounts = useBackgroundSelector(selectAbilityFilterAccounts)
   const accountTotals = useBackgroundSelector(selectAccountTotals)
   const filteredAccountTotals = accountTotals.filter(
-    ({ accountType }) => accountType !== AccountType.ReadOnly
+    ({ accountType }) => accountType !== AccountType.ReadOnly,
   )
   const dispatch = useBackgroundDispatch()
 
@@ -80,7 +80,7 @@ export default function AbilityFilter(): ReactElement {
     (value: State) => {
       dispatch(updateState(value))
     },
-    [dispatch]
+    [dispatch],
   )
 
   const handleUpdateType = useCallback(
@@ -91,7 +91,7 @@ export default function AbilityFilter(): ReactElement {
         dispatch(deleteType(value))
       }
     },
-    [dispatch]
+    [dispatch],
   )
 
   const handleUpdateAccount = useCallback(
@@ -102,7 +102,7 @@ export default function AbilityFilter(): ReactElement {
         dispatch(deleteAccount(value))
       }
     },
-    [dispatch]
+    [dispatch],
   )
 
   return (

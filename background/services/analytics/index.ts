@@ -41,7 +41,7 @@ export default class AnalyticsService extends BaseService<Events> {
 
   private constructor(
     private db: AnalyticsDatabase,
-    private preferenceService: PreferenceService
+    private preferenceService: PreferenceService,
   ) {
     super()
   }
@@ -74,7 +74,7 @@ export default class AnalyticsService extends BaseService<Events> {
       browser.runtime.setUninstallURL(
         process.env.NODE_ENV === "development"
           ? "about:blank"
-          : `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`
+          : `${process.env.WEBSITE_ORIGIN}/goodbye?uuid=${uuid}`,
       )
 
       if (isNew) {
@@ -91,7 +91,7 @@ export default class AnalyticsService extends BaseService<Events> {
 
   async sendAnalyticsEvent(
     eventName: AnalyticsEvent,
-    payload?: Record<string, unknown>
+    payload?: Record<string, unknown>,
   ): Promise<void> {
     // @TODO: implement event batching
 
@@ -109,7 +109,7 @@ export default class AnalyticsService extends BaseService<Events> {
 
   async sendOneTimeAnalyticsEvent(
     eventName: OneTimeAnalyticsEvent,
-    payload?: Record<string, unknown>
+    payload?: Record<string, unknown>,
   ): Promise<void> {
     const { isEnabled } = await this.preferenceService.getAnalyticsPreferences()
     if (!isEnabled) {

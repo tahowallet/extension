@@ -94,7 +94,7 @@ function usePageData({
         path,
         address,
         network,
-      })
+      }),
     )
   }, [device.id, dispatch, items, network])
 
@@ -169,7 +169,7 @@ function LedgerAccountList({
                               `${
                                 blockExplorer[selectedNetwork.chainID].url
                               }/address/${address}`,
-                              "_blank"
+                              "_blank",
                             )
                             ?.focus()
                         }}
@@ -180,7 +180,7 @@ function LedgerAccountList({
                   </>
                 )}
               </div>
-            )
+            ),
           )}
         </div>
         <div className="pagination">
@@ -216,7 +216,7 @@ function LedgerAccountList({
         isDisabled={pageData.selectedAccounts.length === 0}
         onClick={() => {
           dispatch(
-            importLedgerAccounts({ accounts: pageData.selectedAccounts })
+            importLedgerAccounts({ accounts: pageData.selectedAccounts }),
           )
           onConnect()
         }}

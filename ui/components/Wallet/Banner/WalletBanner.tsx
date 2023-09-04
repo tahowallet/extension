@@ -31,7 +31,7 @@ export default function WalletBanner(): ReactElement {
   const [currentCampaignId, setCurrentCampaignId] = useState("")
   const [dismissedCampaignId, setDismissedCampaignId] = useLocalStorage(
     "dismissedCampaignBanner",
-    ""
+    "",
   )
 
   useEffect(() => {

@@ -98,8 +98,10 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
           background-color: var(--green-120);
           border: 1px solid var(--green-80);
           border-radius: 16px;
-          box-shadow: 0 10px 12px rgba(0, 20, 19, 0.34),
-            0 14px 16px rgba(0, 20, 19, 0.24), 0 24px 24px rgba(0, 20, 19, 0.14);
+          box-shadow:
+            0 10px 12px rgba(0, 20, 19, 0.34),
+            0 14px 16px rgba(0, 20, 19, 0.24),
+            0 24px 24px rgba(0, 20, 19, 0.14);
         }
 
         section:before,
@@ -184,7 +186,7 @@ export default function DAppConnectionInfoBar(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const shouldImmediatelyShowPopover = useBackgroundSelector(
-    selectShouldShowDismissableItem("default-connection-popover")
+    selectShouldShowDismissableItem("default-connection-popover"),
   )
 
   const [

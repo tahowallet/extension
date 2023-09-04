@@ -202,7 +202,7 @@ function ExploreMarketIcon(props: ExploreMarketIconProps): ReactElement {
 }
 
 export default function ExploreMarketLink(
-  props: ExploreMarketLinkProps
+  props: ExploreMarketLinkProps,
 ): ReactElement {
   const { type, title, url } = props
   return (

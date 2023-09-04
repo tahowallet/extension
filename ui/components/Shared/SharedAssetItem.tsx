@@ -17,7 +17,7 @@ export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
     }
 
 export function hasAmounts<T extends AnyAsset>(
-  assetWithOptionalAmount: AnyAssetWithOptionalAmount<T>
+  assetWithOptionalAmount: AnyAssetWithOptionalAmount<T>,
 ): assetWithOptionalAmount is AnyAssetAmount<T> & {
   localizedDecimalAmount: string
 } {
@@ -33,7 +33,7 @@ interface Props<T extends AnyAsset> {
 }
 
 export default function SharedAssetItem<T extends AnyAsset>(
-  props: Props<T>
+  props: Props<T>,
 ): ReactElement {
   const { onClick, assetAndAmount, currentNetwork } = props
   const { asset } = assetAndAmount

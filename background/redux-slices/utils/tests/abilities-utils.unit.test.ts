@@ -7,7 +7,7 @@ import {
 } from "../abilities-utils"
 
 const ADDRESS = normalizeEVMAddress(
-  "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+  "0x208e94d5661a73360d9387d3ca169e5c130090cd",
 )
 
 const ABILITY_DEFAULT: Ability = {

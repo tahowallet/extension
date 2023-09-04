@@ -36,7 +36,7 @@ export const NFT_PROVIDER_TO_CHAIN = {
 }
 
 export const NETWORKS_SUPPORTING_NFTS = new Set(
-  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER)
+  Object.keys(CHAIN_ID_TO_NFT_METADATA_PROVIDER),
 )
 
 export type NFTsWithPagesResponse = {

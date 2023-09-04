@@ -19,7 +19,7 @@ describe("InternalSignerUnlock", () => {
   test("should not unlock the wallet when an incorrect password is submitted", async () => {
     const ui = renderWithProviders(
       <InternalSignerUnlock displayCancelButton={false} />,
-      { preloadedState: getPreloadedState("locked") }
+      { preloadedState: getPreloadedState("locked") },
     )
     const inputElement = ui.getByLabelText(label)
     const submitBtnElement = ui.getByRole("button")

@@ -9,7 +9,7 @@ import {
 
 export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
-  handler: (event: MouseEvent | TouchEvent) => void
+  handler: (event: MouseEvent | TouchEvent) => void,
 ): void => {
   useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {
@@ -58,7 +58,7 @@ export const useOnClickOutside = <T extends HTMLElement = HTMLElement>(
 export function useDelayContentChange<T>(
   storedContent: T,
   delayCondition: boolean,
-  delayMs: number
+  delayMs: number,
 ): T {
   const [delayedContent, setDelayedContent] = useState(storedContent)
   const delayedContentUpdateTimeout = useRef<number | undefined>(undefined)
@@ -105,7 +105,7 @@ export const useDebounce = <T>(initial: T, wait = 300): [T, (v: T) => void] => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debounceCallback = useCallback(
     debounce((prop: T) => setState(prop), wait),
-    [debounce, wait]
+    [debounce, wait],
   )
 
   const setDebouncedState = (debounced: T) => {
@@ -120,15 +120,15 @@ export const setLocalStorageItem = (key: string, value: string): void =>
 
 export const getLocalStorageItem = (
   key: string,
-  defaultValue: string
+  defaultValue: string,
 ): string => localStorage.getItem(key) || defaultValue
 
 export function useLocalStorage(
   key: string,
-  initialValue: string
+  initialValue: string,
 ): [string, React.Dispatch<React.SetStateAction<string>>] {
   const [value, setValue] = useState(() =>
-    getLocalStorageItem(key, initialValue)
+    getLocalStorageItem(key, initialValue),
   )
 
   useEffect(() => {
@@ -140,12 +140,12 @@ export function useLocalStorage(
 
 export function useIntersectionObserver<T extends HTMLElement>(
   callback: IntersectionObserverCallback,
-  options?: { threshold: number }
+  options?: { threshold: number },
 ): RefObject<T> {
   const ref = useRef<T>(null)
   const observer = useMemo(
     () => new IntersectionObserver(callback, options),
-    [callback, options]
+    [callback, options],
   )
 
   useEffect(() => {

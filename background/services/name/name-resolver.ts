@@ -36,7 +36,7 @@ export interface NameResolver<ResolverType extends string> {
    * Returning false should mean {@see lookUpAvatar} will never be called.
    */
   canAttemptAvatarResolution(
-    addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork
+    addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork,
   ): boolean
   /**
    * Given a name and network, synchronously returns a boolean indicating
@@ -57,7 +57,7 @@ export interface NameResolver<ResolverType extends string> {
    * communicating with a server).
    */
   lookUpAddressForName(
-    nameOnNetwork: NameOnNetwork
+    nameOnNetwork: NameOnNetwork,
   ): Promise<AddressOnNetwork | undefined>
   /**
    * Given an address and network, attempt to resolve an avatar URI for that
@@ -70,7 +70,7 @@ export interface NameResolver<ResolverType extends string> {
    * communicating with a server).
    */
   lookUpAvatar(
-    addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork
+    addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork,
   ): Promise<
     | {
         uri: URL | string
@@ -88,6 +88,6 @@ export interface NameResolver<ResolverType extends string> {
    * communicating with a server).
    */
   lookUpNameForAddress(
-    addressOnNetwork: AddressOnNetwork
+    addressOnNetwork: AddressOnNetwork,
   ): Promise<NameOnNetwork | undefined>
 }

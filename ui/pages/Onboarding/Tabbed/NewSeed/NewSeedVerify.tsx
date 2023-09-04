@@ -133,7 +133,7 @@ export default function NewSeedVerify({
         .map((_, index) => index)
         .sort(() => Math.random() - 0.5)
         .slice(0, SEED_WORDS_TO_VERIFY),
-    [mnemonic]
+    [mnemonic],
   )
 
   const [placeholderList, setPlaceholders] = useState<SeedWordPlaceholder[]>(
@@ -151,13 +151,13 @@ export default function NewSeedVerify({
         key: `${word}-${wordIndex}`,
         wordIndex,
       }))
-    }
+    },
   )
 
   const [activePlaceholder, setActivePlaceholder] = useState<number>(0)
 
   const [remainingWords, setRemainingWords] = useState<string[]>(() =>
-    randomIndexes.map((index) => mnemonic[index])
+    randomIndexes.map((index) => mnemonic[index]),
   )
 
   const [submitted, setSubmitted] = useState(false)
@@ -165,7 +165,7 @@ export default function NewSeedVerify({
 
   const handleVerification = () => {
     const isValid = placeholderList.every(
-      ({ correctWord, selectedWord }) => correctWord === selectedWord
+      ({ correctWord, selectedWord }) => correctWord === selectedWord,
     )
 
     setSubmitted(true)
@@ -186,7 +186,7 @@ export default function NewSeedVerify({
       const newSelectedWords = placeholderList.map((word, index) =>
         index === position
           ? { ...word, selectedWord: remainingWords[wordIndex] }
-          : word
+          : word,
       )
 
       setPlaceholders(newSelectedWords)
@@ -194,7 +194,7 @@ export default function NewSeedVerify({
       setRemainingWords((words) => words.filter((_, i) => i !== wordIndex))
 
       const nextActivePlaceholder = newSelectedWords.findIndex(
-        (word) => word.selectedWord === undefined
+        (word) => word.selectedWord === undefined,
       )
 
       // Set the next available placeholder as active
@@ -202,7 +202,7 @@ export default function NewSeedVerify({
 
       if (submitted && nextActivePlaceholder === -1) {
         const isValid = newSelectedWords.every(
-          ({ correctWord, selectedWord }) => correctWord === selectedWord
+          ({ correctWord, selectedWord }) => correctWord === selectedWord,
         )
 
         setIsValidSeed(isValid)
@@ -220,8 +220,8 @@ export default function NewSeedVerify({
 
       setPlaceholders((words) =>
         words.map((word, i) =>
-          i === position ? { ...word, selectedWord: undefined } : word
-        )
+          i === position ? { ...word, selectedWord: undefined } : word,
+        ),
       )
     }
 

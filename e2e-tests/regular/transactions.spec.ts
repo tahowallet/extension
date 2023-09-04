@@ -23,7 +23,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name
+        account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -55,7 +55,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Goerli$/,
         true,
-        account2.name
+        account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -86,7 +86,7 @@ test.describe("Transactions", () => {
         account2.name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
-        true
+        true,
       )
 
       /**
@@ -94,11 +94,11 @@ test.describe("Transactions", () => {
        */
       await popup.locator("input.input_amount").fill("0.00001")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+(\.\d{1,2})*$/)
+        popup.locator(".value").getByText(/^\$\d+(\.\d{1,2})*$/),
       ).toBeVisible()
 
       await expect(
-        popup.getByRole("button", { name: "Continue", exact: true })
+        popup.getByRole("button", { name: "Continue", exact: true }),
       ).toHaveClass(/disabled/) // We can't use `toBeDisabled`, as the element doesn't have `disabled` attribute.
       await popup
         .getByRole("button", { name: "Continue", exact: true })
@@ -124,7 +124,7 @@ test.describe("Transactions", () => {
         "0x4774…875a6",
         "0",
         "ETH",
-        true
+        true,
       )
 
       /**
@@ -137,117 +137,111 @@ test.describe("Transactions", () => {
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
       await expect(
-        popup.getByText("Transaction signed, broadcasting...").first()
+        popup.getByText("Transaction signed, broadcasting...").first(),
       ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
       await expect(
-        popup.getByText("Transaction failed to broadcast.")
+        popup.getByText("Transaction failed to broadcast."),
       ).toHaveCount(0)
     })
 
-    await test.step(
-      "Verify asset activity screen and latest transaction status",
-      async () => {
-        /**
-         * Verify elements on the asset activity screen
-         */
-        await expect(popup.getByTestId("activity_list")).toHaveCount(1)
-        await assetsHelper.assertAssetDetailsPage(
-          /^Goerli$/,
-          account2.name,
-          /^ETH$/,
-          /^(\d|,)+(\.\d{0,4})*$/,
-          "base"
-        )
+    await test.step("Verify asset activity screen and latest transaction status", async () => {
+      /**
+       * Verify elements on the asset activity screen
+       */
+      await expect(popup.getByTestId("activity_list")).toHaveCount(1)
+      await assetsHelper.assertAssetDetailsPage(
+        /^Goerli$/,
+        account2.name,
+        /^ETH$/,
+        /^(\d|,)+(\.\d{0,4})*$/,
+        "base",
+      )
 
-        /**
-         * Verify latest transaction.
-         */
-        setTimeout(() => {}, 10000) // wait for 10s
+      /**
+       * Verify latest transaction.
+       */
+      setTimeout(() => {}, 10000) // wait for 10s
 
-        const latestSentTx = popup.getByTestId("activity_list_item").first()
-        await expect(latestSentTx.getByText("Pending")).toHaveCount(0, {
-          timeout: 60000,
-        })
-        await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
-        await expect(
-          latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
-        ).toBeVisible()
-        await expect(
-          latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/)
-        ).toBeVisible()
-        await expect(
-          latestSentTx
-            .getByTestId("activity_list_item_amount")
-            .getByText(/^ETH$/)
-        ).toBeVisible()
-        await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
+      const latestSentTx = popup.getByTestId("activity_list_item").first()
+      await expect(latestSentTx.getByText("Pending")).toHaveCount(0, {
+        timeout: 60000,
+      })
+      await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
+      await expect(
+        latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/),
+      ).toBeVisible()
+      await expect(
+        latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/),
+      ).toBeVisible()
+      await expect(
+        latestSentTx
+          .getByTestId("activity_list_item_amount")
+          .getByText(/^ETH$/),
+      ).toBeVisible()
+      await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
-        /**
-         * Open latest transaction and verify it's deatils
-         */
-        await latestSentTx.click()
+      /**
+       * Open latest transaction and verify it's deatils
+       */
+      await latestSentTx.click()
 
-        await transactionsHelper.assertActivityItemProperties(
-          account2.address,
-          "0x0581…20fc7",
-          "0x47745A7252e119431CCF973c0eBD4279638875a6",
-          "0x4774…875a6",
-          /^0\.00001 ETH$/,
-          /^21000$/
-        )
-      }
-    )
+      await transactionsHelper.assertActivityItemProperties(
+        account2.address,
+        "0x0581…20fc7",
+        "0x47745A7252e119431CCF973c0eBD4279638875a6",
+        "0x4774…875a6",
+        /^0\.00001 ETH$/,
+        /^21000$/,
+      )
+    })
 
-    await test.step(
-      "Verify activity screen and latest transaction status",
-      async () => {
-        /**
-         * Close and navigate to `Wallet` -> `Activity`
-         */
-        await transactionsHelper.closeVerifyAssetPopup()
-        await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
-        await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
+    await test.step("Verify activity screen and latest transaction status", async () => {
+      /**
+       * Close and navigate to `Wallet` -> `Activity`
+       */
+      await transactionsHelper.closeVerifyAssetPopup()
+      await popup.getByText("Wallet", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `link`
+      await popup.getByText("Activity", { exact: true }).click() // We can't use `getByRole` here, as the button uses the role `tab`
 
-        /**
-         * Verify elements on the activity screen
-         */
-        await walletPageHelper.assertCommonElements(
-          /^Goerli$/,
-          true,
-          account2.name
-        )
-        await walletPageHelper.assertAnalyticsBanner()
+      /**
+       * Verify elements on the activity screen
+       */
+      await walletPageHelper.assertCommonElements(
+        /^Goerli$/,
+        true,
+        account2.name,
+      )
+      await walletPageHelper.assertAnalyticsBanner()
 
-        /**
-         * Open latest transaction and verify it's deatils
-         */
-        const latestSentTx = popup.getByTestId("activity_list_item").first()
+      /**
+       * Open latest transaction and verify it's deatils
+       */
+      const latestSentTx = popup.getByTestId("activity_list_item").first()
 
-        await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
-        await expect(
-          latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/)
-        ).toBeVisible()
-        await expect(
-          latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/)
-        ).toBeVisible()
-        await expect(
-          latestSentTx
-            .getByTestId("activity_list_item_amount")
-            .getByText(/^ETH$/)
-        ).toBeVisible()
-        await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
+      await expect(latestSentTx.getByText(/^Send$/)).toBeVisible()
+      await expect(
+        latestSentTx.getByText(/^[a-zA-Z]{3} \d{1,2}$/),
+      ).toBeVisible()
+      await expect(
+        latestSentTx.getByTestId("activity_list_item_amount").getByText(/^0$/),
+      ).toBeVisible()
+      await expect(
+        latestSentTx
+          .getByTestId("activity_list_item_amount")
+          .getByText(/^ETH$/),
+      ).toBeVisible()
+      await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
-        await latestSentTx.click()
+      await latestSentTx.click()
 
-        await transactionsHelper.assertActivityItemProperties(
-          account2.address,
-          "0x0581…20fc7",
-          "0x47745A7252e119431CCF973c0eBD4279638875a6",
-          "0x4774…875a6",
-          /^0\.00001 ETH$/,
-          /^21000$/
-        )
-      }
-    )
+      await transactionsHelper.assertActivityItemProperties(
+        account2.address,
+        "0x0581…20fc7",
+        "0x47745A7252e119431CCF973c0eBD4279638875a6",
+        "0x4774…875a6",
+        /^0\.00001 ETH$/,
+        /^21000$/,
+      )
+    })
   })
 })

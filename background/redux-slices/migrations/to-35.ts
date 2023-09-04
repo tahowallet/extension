@@ -57,7 +57,7 @@ export default (prevState: Record<string, unknown>): NewState => {
         // Clear all accounts cached balances
         account.balances = {}
       }
-    })
+    }),
   )
 
   return {

@@ -91,7 +91,7 @@ function isPolygonBaseAsset(asset: AnyAsset) {
  */
 export function isBaseAssetForNetwork(
   asset: AnyAsset,
-  network: AnyNetwork
+  network: AnyNetwork,
 ): asset is NetworkBaseAsset {
   if (network.chainID === OPTIMISM.chainID && isOptimismBaseAsset(asset)) {
     return true
@@ -114,10 +114,10 @@ export function isBaseAssetForNetwork(
  */
 export function getBuiltInNetworkBaseAsset(
   symbol: string,
-  chainID: string
+  chainID: string,
 ): (NetworkBaseAsset & Required<CoinGeckoAsset>) | undefined {
   return BUILT_IN_NETWORK_BASE_ASSETS.find(
-    (asset) => asset.symbol === symbol && asset.chainID === chainID
+    (asset) => asset.symbol === symbol && asset.chainID === chainID,
   )
 }
 
@@ -128,7 +128,7 @@ export function getBuiltInNetworkBaseAsset(
  */
 export function sameNetworkBaseAsset(
   asset1: AnyAsset,
-  asset2: AnyAsset
+  asset2: AnyAsset,
 ): boolean {
   // for base assets with possible homeNetwork field
   if (isOptimismBaseAsset(asset1) && isOptimismBaseAsset(asset2)) return true
@@ -157,12 +157,12 @@ export function sameNetworkBaseAsset(
  */
 export function sameBuiltInNetworkBaseAsset(
   asset1: AnyAsset,
-  asset2: AnyAsset
+  asset2: AnyAsset,
 ): boolean {
   return BUILT_IN_NETWORK_BASE_ASSETS.some(
     (baseAsset) =>
       sameNetworkBaseAsset(baseAsset, asset1) &&
-      sameNetworkBaseAsset(baseAsset, asset2)
+      sameNetworkBaseAsset(baseAsset, asset2),
   )
 }
 
@@ -182,7 +182,7 @@ export function sameBuiltInNetworkBaseAsset(
 export function formatCurrencyAmount(
   currencySymbol: string,
   currencyAmount: number,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): string {
   return (
     new Intl.NumberFormat("default", {
@@ -225,15 +225,15 @@ export function formatCurrencyAmount(
  *         localized string based on the user's locale.
  */
 export function enrichAssetAmountWithMainCurrencyValues<
-  T extends AnyAssetAmount
+  T extends AnyAssetAmount,
 >(
   assetAmount: T,
   assetPricePoint: PricePoint | undefined,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): T & AssetMainCurrencyAmount {
   const convertedAssetAmount = convertAssetAmountViaPricePoint(
     assetAmount,
-    assetPricePoint
+    assetPricePoint,
   )
   const { unitPrice } = unitPricePointForPricePoint(assetPricePoint) ?? {
     unitPrice: undefined,
@@ -242,7 +242,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
   if (typeof convertedAssetAmount !== "undefined") {
     const convertedDecimalValue = assetAmountToDesiredDecimals(
       convertedAssetAmount,
-      desiredDecimals
+      desiredDecimals,
     )
     const unitPriceDecimalValue =
       typeof unitPrice === "undefined"
@@ -255,7 +255,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
       localizedMainCurrencyAmount: formatCurrencyAmount(
         convertedAssetAmount.asset.symbol,
         convertedDecimalValue,
-        desiredDecimals
+        desiredDecimals,
       ),
       unitPrice: unitPriceDecimalValue,
       localizedUnitPrice:
@@ -264,7 +264,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
           : formatCurrencyAmount(
               convertedAssetAmount.asset.symbol,
               unitPriceDecimalValue,
-              desiredDecimals
+              desiredDecimals,
             ),
     }
   }
@@ -280,7 +280,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
  */
 export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
   assetAmount: T,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): T & AssetDecimalAmount {
   const decimalAmount = isFungibleAssetAmount(assetAmount)
     ? assetAmountToDesiredDecimals(assetAmount, desiredDecimals)
@@ -288,7 +288,7 @@ export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
       // precision.
       assetAmountToDesiredDecimals(
         { ...assetAmount, asset: { ...assetAmount.asset, decimals: 0 } },
-        desiredDecimals
+        desiredDecimals,
       )
 
   return {
@@ -320,7 +320,7 @@ export function enrichAssetAmountWithDecimalValues<T extends AnyAssetAmount>(
  */
 export function heuristicDesiredDecimalsForUnitPrice(
   minimumDesiredDecimals: number,
-  unitPrice: UnitPricePoint<FungibleAsset> | number | undefined
+  unitPrice: UnitPricePoint<FungibleAsset> | number | undefined,
 ): number {
   const numericUnitPrice =
     typeof unitPrice === "undefined" || typeof unitPrice === "number"
@@ -330,7 +330,7 @@ export function heuristicDesiredDecimalsForUnitPrice(
             amount: unitPrice.unitPrice.amount,
             decimals: unitPrice.unitPrice.asset.decimals,
           },
-          10
+          10,
         )
 
   return Math.max(
@@ -338,7 +338,7 @@ export function heuristicDesiredDecimalsForUnitPrice(
     // desired decimals. Supporting this makes it easier for callers to
     // special-case unit prices that could not be resolved.
     Math.ceil(Math.log10(numericUnitPrice ?? 0)),
-    minimumDesiredDecimals
+    minimumDesiredDecimals,
   )
 }
 
@@ -408,7 +408,7 @@ type ChainID = string
 export type FullAssetID = `${ChainID}/${AssetID}`
 
 export const getFullAssetID = (
-  asset: NetworkBaseAsset | SmartContractFungibleAsset
+  asset: NetworkBaseAsset | SmartContractFungibleAsset,
 ): FullAssetID => {
   if (isNetworkBaseAsset(asset)) {
     return `${asset.chainID}/base`

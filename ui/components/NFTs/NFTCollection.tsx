@@ -33,9 +33,9 @@ export default function NFTCollection(props: {
         fetchNFTsFromCollection({
           collectionID: id,
           account: { address: owner, network },
-        })
+        }),
       ),
-    [id, owner, network, dispatch]
+    [id, owner, network, dispatch],
   )
 
   const fetchMore = useCallback(
@@ -44,12 +44,12 @@ export default function NFTCollection(props: {
         fetchMoreNFTsFromCollection({
           collectionID: id,
           account: { address: owner, network },
-        })
+        }),
       ),
-    [id, owner, network, dispatch]
+    [id, owner, network, dispatch],
   )
 
-  const intersectionCallback = useCallback(
+  const intersectionCallback = useCallback<IntersectionObserverCallback>(
     ([element]) => {
       if (element.isIntersecting && !wasUpdated) {
         // if collection doesn't have nfts then load some
@@ -71,15 +71,15 @@ export default function NFTCollection(props: {
         }
       }
     },
-    [fetchCollection, isLoading, isUpdating, wasUpdated, nfts.length]
+    [fetchCollection, isLoading, isUpdating, wasUpdated, nfts.length],
   )
 
   const collectionRef = useIntersectionObserver<HTMLLIElement>(
     intersectionCallback,
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   )
 
-  const loadMoreCallback = useCallback(
+  const loadMoreCallback = useCallback<IntersectionObserverCallback>(
     ([element]) => {
       if (element.isIntersecting && !isUpdating) {
         if (hasNextPage) setIsUpdating(true) // if next page is known show loader
@@ -88,12 +88,12 @@ export default function NFTCollection(props: {
         })
       }
     },
-    [fetchMore, hasNextPage, isUpdating]
+    [fetchMore, hasNextPage, isUpdating],
   )
 
   const loadMoreRef = useIntersectionObserver<HTMLDivElement>(
     loadMoreCallback,
-    { threshold: 0.1 }
+    { threshold: 0.1 },
   )
 
   useEffect(() => {
@@ -192,8 +192,10 @@ export default function NFTCollection(props: {
           margin: 8px -16px;
           padding: 8px 16px 6px;
           background: var(--green-120);
-          box-shadow: 0 3px 7px rgb(0 20 19 / 54%),
-            0 14px 16px rgb(0 20 19 / 54%), 0 32px 32px rgb(0 20 19 / 20%);
+          box-shadow:
+            0 3px 7px rgb(0 20 19 / 54%),
+            0 14px 16px rgb(0 20 19 / 54%),
+            0 32px 32px rgb(0 20 19 / 20%);
           border-radius: 16px;
           display: flex;
           flex-wrap: wrap;

@@ -54,13 +54,13 @@ const findAndReplaceUniswapInjectedOption = (): void => {
       // Replace the arrow icon with the Taho icon
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         /\ssrc="(.+)"\s/,
-        ` src="${TAHO_ICON_URL}" `
+        ` src="${TAHO_ICON_URL}" `,
       )
 
       // Replace the `Injected` text with `Taho`
       iconAndTextDiv.innerHTML = iconAndTextDiv.innerHTML.replace(
         "Injected",
-        TAHO_NAME
+        TAHO_NAME,
       )
     }
   }
@@ -123,7 +123,7 @@ function findAndReplaceGMXMetamaskOption(addedNode: Node): void {
         // Replace metamask icon with Taho icon
         option.innerHTML = option.innerHTML.replace(
           /\ssrc="(.+)"\s/,
-          ` src="${TAHO_ICON_URL}" `
+          ` src="${TAHO_ICON_URL}" `,
         )
       }
     }
@@ -163,7 +163,7 @@ function findAndReplaceYieldProtocolMetamaskOption(addedNode: Node): void {
 
     metamaskText.innerHTML = metamaskText.innerHTML.replace(
       "Metamask",
-      TAHO_NAME
+      TAHO_NAME,
     )
 
     const metamaskIcon = container?.children?.[2]
@@ -232,7 +232,7 @@ function findAndReplaceAboardMetamaskOption(addedNode: Node): void {
     if (child.innerHTML.includes("img/metamask")) {
       child.innerHTML = child.innerHTML.replace(
         /\ssrc="(.+)"\s/,
-        ` src="${TAHO_ICON_URL}" `
+        ` src="${TAHO_ICON_URL}" `,
       )
     }
   }
@@ -344,7 +344,7 @@ function findAndReplaceCelerMetamaskOption(addedNode: Node): void {
 }
 
 function findAndReplaceMultchainMetamaskAndInjectedOption(
-  addedNode: Node
+  addedNode: Node,
 ): void {
   if (moreThanOneWalletInstalledAndTahoIsNotDefault()) {
     return

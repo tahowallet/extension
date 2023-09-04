@@ -34,7 +34,7 @@ export type FixedPointNumber = {
 export function convertFixedPoint(
   fixedPoint: bigint,
   fixedPointDecimals: number,
-  targetDecimals: number
+  targetDecimals: number,
 ): bigint {
   if (fixedPointDecimals >= targetDecimals) {
     return fixedPoint / 10n ** BigInt(fixedPointDecimals - targetDecimals)
@@ -49,7 +49,7 @@ export function convertFixedPoint(
  */
 export function convertFixedPointNumber(
   { amount, decimals }: FixedPointNumber,
-  targetDecimals: number
+  targetDecimals: number,
 ): FixedPointNumber {
   return {
     amount: convertFixedPoint(amount, decimals, targetDecimals),
@@ -67,7 +67,7 @@ export function convertFixedPointNumber(
 export function multiplyFixedPointNumbers(
   { amount: amount1, decimals: decimals1 }: FixedPointNumber,
   { amount: amount2, decimals: decimals2 }: FixedPointNumber,
-  desiredResultDecimals?: number
+  desiredResultDecimals?: number,
 ): { amount: bigint; decimals: number } {
   const baseResult = {
     amount: amount1 * amount2,
@@ -87,7 +87,7 @@ export function multiplyFixedPointNumbers(
  */
 export function multiplyByFloat(
   fixedPointNumber: FixedPointNumber,
-  floatingPoint: number
+  floatingPoint: number,
 ): bigint {
   const floatingDecimals = (floatingPoint.toString().split(".")[1] ?? "").length
 
@@ -96,7 +96,7 @@ export function multiplyByFloat(
       amount: BigInt(Math.floor(floatingPoint * 10 ** floatingDecimals)),
       decimals: floatingDecimals,
     }),
-    fixedPointNumber.decimals
+    fixedPointNumber.decimals,
   ).amount
 }
 
@@ -106,14 +106,14 @@ export function multiplyByFloat(
  */
 export function toFixedPoint(
   floatingPoint: number,
-  fixedPointDecimals: number
+  fixedPointDecimals: number,
 ): bigint {
   return multiplyByFloat(
     {
       amount: 10n ** BigInt(fixedPointDecimals),
       decimals: fixedPointDecimals,
     },
-    floatingPoint
+    floatingPoint,
   )
 }
 
@@ -123,7 +123,7 @@ export function toFixedPoint(
  */
 export function toFixedPointNumber(
   floatingPoint: number,
-  fixedPointDecimals: number
+  fixedPointDecimals: number,
 ): FixedPointNumber {
   return {
     amount: toFixedPoint(floatingPoint, fixedPointDecimals),
@@ -139,7 +139,7 @@ export function toFixedPointNumber(
  * floating point string.
  */
 export function parseToFixedPointNumber(
-  floatingPointString: string
+  floatingPointString: string,
 ): FixedPointNumber | undefined {
   if (!floatingPointString.match(/^[^0-9]*([0-9,]+)(?:\.([0-9]*))?$/)) {
     return undefined
@@ -163,7 +163,7 @@ export function parseToFixedPointNumber(
   } catch (error) {
     logger.debug(
       `Error parsing ${floatingPointString} to fixed-point number:`,
-      error
+      error,
     )
     return undefined
   }
@@ -183,7 +183,7 @@ export function parseToFixedPointNumber(
  */
 export function fixedPointNumberToString(
   { amount, decimals }: FixedPointNumber,
-  trimTrailingZeros = true
+  trimTrailingZeros = true,
 ): string {
   const undecimaledAmount = amount.toString()
   const preDecimalLength = undecimaledAmount.length - decimals
@@ -226,7 +226,7 @@ export function fixedPointNumberToString(
 export function fromFixedPoint(
   fixedPoint: bigint,
   fixedPointDecimals: number,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): number {
   const fixedPointDesiredDecimalsAmount =
     fixedPoint /
@@ -249,7 +249,7 @@ export function fromFixedPoint(
  */
 export function fromFixedPointNumber(
   { amount, decimals }: FixedPointNumber,
-  desiredDecimals: number
+  desiredDecimals: number,
 ): number {
   return fromFixedPoint(amount, decimals, desiredDecimals)
 }

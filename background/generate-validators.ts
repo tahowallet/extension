@@ -35,19 +35,19 @@ const ajvJSON = new AjvJSON({
 
 const jtdModuleCode = standaloneCode(ajvJTD).replace(
   '/*# sourceURL="https://uniswap.org/tokenlist.schema.json" */',
-  ""
+  "",
 )
 const jsonModuleCode = standaloneCode(ajvJSON).replace(
   '/*# sourceURL="https://uniswap.org/tokenlist.schema.json" */',
-  ""
+  "",
 )
 
 writeFileSync(
   path.join(__dirname, "/lib/validate/jtd-validators.js"),
-  jtdModuleCode
+  jtdModuleCode,
 )
 
 writeFileSync(
   path.join(__dirname, "/lib/validate/json-validators.js"),
-  jsonModuleCode
+  jsonModuleCode,
 )

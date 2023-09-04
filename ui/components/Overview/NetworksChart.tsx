@@ -40,7 +40,7 @@ const NETWORK_COLORS = shuffle([
 ])
 
 const getNetworksPercents = (
-  accountsTotal: AccountTotalList
+  accountsTotal: AccountTotalList,
 ): { chainID: string; percent: number }[] => {
   let totalsSum = 0
   const totalsByChain: { [chainID: string]: number } = {}
@@ -50,7 +50,7 @@ const getNetworksPercents = (
       totalsByChain[chainID] ??= 0
       totalsByChain[chainID] += total
       totalsSum += total
-    })
+    }),
   )
 
   return Object.entries(totalsByChain).flatMap(([chainID, total]) => {
@@ -78,7 +78,7 @@ export default function NetworksChart({
       acc[network.chainID] = network
       return acc
     },
-    {}
+    {},
   )
   const availableColors = [...NETWORK_COLORS]
   const percents = getNetworksPercents(accountsTotal).map((percent) => {

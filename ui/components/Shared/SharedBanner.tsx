@@ -56,7 +56,8 @@ function Banner(props: BannerProps): ReactElement {
             ${customStyles};
           }
           .banner_wrap.shadow {
-            box-shadow: 0px 16px 16px rgba(7, 17, 17, 0.3),
+            box-shadow:
+              0px 16px 16px rgba(7, 17, 17, 0.3),
               0px 6px 8px rgba(7, 17, 17, 0.24),
               0px 2px 4px rgba(7, 17, 17, 0.34);
           }
@@ -71,7 +72,7 @@ function Banner(props: BannerProps): ReactElement {
 }
 
 function BannerWithClose(
-  props: BannerProps & { id: string }
+  props: BannerProps & { id: string },
 ): ReactElement | null {
   const {
     id,
@@ -113,7 +114,7 @@ function BannerWithClose(
 }
 
 export default function SharedBanner(
-  props: BannerProps & CanBeClosedProps
+  props: BannerProps & CanBeClosedProps,
 ): ReactElement | null {
   const { canBeClosed = false, id, ...bannerProps } = props
 

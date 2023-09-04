@@ -108,7 +108,7 @@ export default abstract class BaseService<Events extends ServiceLifecycleEvents>
    * are not added until `startService` is called.
    */
   protected constructor(
-    protected readonly alarmSchedules: AlarmHandlerScheduleMap = {}
+    protected readonly alarmSchedules: AlarmHandlerScheduleMap = {},
   ) {}
 
   /**

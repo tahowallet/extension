@@ -6,7 +6,7 @@ import {
 export type TransactionSignatureSummaryProps<
   T extends TransactionAnnotation | undefined =
     | TransactionAnnotation
-    | undefined
+    | undefined,
 > = {
   transactionRequest: EnrichedEVMTransactionRequest
   annotation: T

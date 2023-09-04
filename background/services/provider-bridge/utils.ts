@@ -22,7 +22,7 @@ export type PermissionMap = {
 
 export const keyPermissionsByChainIdAddressOrigin = (
   permissions: PermissionRequest[],
-  permissionMap?: PermissionMap
+  permissionMap?: PermissionMap,
 ): PermissionMap => {
   const map = permissionMap ?? { evm: {} }
   permissions.forEach((permission) => {
@@ -79,7 +79,7 @@ export function handleRPCErrorResponse(error: unknown): unknown {
       response = parsedRPCErrorResponse(error as { body: string })
     } else if ("error" in error) {
       response = parsedRPCErrorResponse(
-        (error as { error: { body: string } }).error
+        (error as { error: { body: string } }).error,
       )
     }
   }
@@ -154,13 +154,13 @@ export const validateAddEthereumChainParameter = ({
 export function parseRPCRequestParams(
   enablingPermission: PermissionRequest,
   method: string,
-  params: RPCRequest["params"]
+  params: RPCRequest["params"],
 ): RPCRequest["params"] {
   switch (method) {
     case "eth_sign":
       return sameEVMAddress(
         params[0] as HexString,
-        enablingPermission.accountAddress
+        enablingPermission.accountAddress,
       )
         ? params
         : [params[1], params[0]]
@@ -168,7 +168,7 @@ export function parseRPCRequestParams(
     case "personal_sign":
       return sameEVMAddress(
         params[1] as HexString,
-        enablingPermission.accountAddress
+        enablingPermission.accountAddress,
       )
         ? params
         : [params[1], params[0]]

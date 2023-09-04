@@ -29,7 +29,7 @@ describe(sameNetworkBaseAsset, () => {
         chainID: "43114",
         name: "Avalanche",
         symbol: "AVAX",
-      })
+      }),
     ).toBe(true)
   })
 })
@@ -55,7 +55,7 @@ describe(enrichAssetAmountWithMainCurrencyValues, () => {
     const result = enrichAssetAmountWithMainCurrencyValues(
       assetAmount,
       pricePoint,
-      2
+      2,
     )
 
     expect(result).toMatchObject({

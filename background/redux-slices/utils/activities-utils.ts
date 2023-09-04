@@ -45,7 +45,7 @@ export type ActivityDetail = {
 const ACTIVITY_DECIMALS = 2
 
 function isEnrichedTransaction(
-  transaction: Transaction | EnrichedEVMTransaction
+  transaction: Transaction | EnrichedEVMTransaction,
 ): transaction is EnrichedEVMTransaction {
   return "annotation" in transaction
 }
@@ -116,7 +116,7 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
       asset,
       amount: value,
     },
-    ACTIVITY_DECIMALS
+    ACTIVITY_DECIMALS,
   ).toLocaleString("default", {
     maximumFractionDigits: ACTIVITY_DECIMALS,
   })
@@ -139,7 +139,7 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
 }
 
 export const getActivity = (
-  transaction: Transaction | EnrichedEVMTransaction
+  transaction: Transaction | EnrichedEVMTransaction,
 ): Activity => {
   const { to, from, blockHeight, nonce, hash, blockHash, asset } = transaction
 
@@ -210,7 +210,7 @@ export const sortActivities = (a: Activity, b: Activity): number => {
 }
 
 export function getActivityDetails(
-  tx: EnrichedEVMTransaction
+  tx: EnrichedEVMTransaction,
 ): ActivityDetail[] {
   const { annotation } = tx
   const assetTransfers =
@@ -253,6 +253,6 @@ export function getActivityDetails(
         transfer.direction === "in"
           ? transfer.localizedDecimalAmount
           : `-${transfer.localizedDecimalAmount}`,
-    }))
+    })),
   )
 }

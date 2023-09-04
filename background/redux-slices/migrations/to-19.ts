@@ -1,5 +1,5 @@
 export default (
-  prevState: Record<string, unknown>
+  prevState: Record<string, unknown>,
 ): Record<string, unknown> => {
   const { activities: _, ...newState } = prevState
 

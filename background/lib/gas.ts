@@ -42,7 +42,7 @@ type PolygonGasResponse = {
 const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   // @TODO Validate this response using ajv
   const gasEstimates = (await fetchJson(
-    "https://gasstation.polygon.technology/v2"
+    "https://gasstation.polygon.technology/v2",
   )) as PolygonGasResponse
 
   const baseFeePerGas = BigInt(Math.ceil(gasEstimates.estimatedBaseFee * 1e9))
@@ -55,7 +55,7 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
       {
         confidence: 99,
         maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.fast.maxPriorityFee)
+          Math.ceil(gasEstimates.fast.maxPriorityFee),
         ),
         maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.fast.maxFee)),
         price, // this estimate isn't great
@@ -63,7 +63,7 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
       {
         confidence: 95,
         maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.standard.maxPriorityFee)
+          Math.ceil(gasEstimates.standard.maxPriorityFee),
         ),
         maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.standard.maxFee)),
         price,
@@ -71,7 +71,7 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
       {
         confidence: 70,
         maxPriorityFeePerGas: gweiToWei(
-          Math.ceil(gasEstimates.safeLow.maxPriorityFee)
+          Math.ceil(gasEstimates.safeLow.maxPriorityFee),
         ),
         maxFeePerGas: gweiToWei(Math.ceil(gasEstimates.safeLow.maxFee)),
         price,
@@ -83,7 +83,7 @@ const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
 
 const getArbitrumPrices = async (
   baseFeePerGas: bigint,
-  blockNumber: number
+  blockNumber: number,
 ): Promise<BlockPrices> => ({
   network: ARBITRUM_ONE,
   blockNumber,
@@ -114,7 +114,7 @@ const getArbitrumPrices = async (
 const getLegacyGasPrices = async (
   network: EVMNetwork,
   gasPrice: bigint,
-  blockNumber: number
+  blockNumber: number,
 ): Promise<BlockPrices> => ({
   network,
   blockNumber,
@@ -144,7 +144,7 @@ const getLegacyGasPrices = async (
 
 export default async function getBlockPrices(
   network: EVMNetwork,
-  provider: Provider
+  provider: Provider,
 ): Promise<BlockPrices> {
   // if BlockNative is configured and we're on mainnet, prefer their gas service
   if (
@@ -155,7 +155,7 @@ export default async function getBlockPrices(
       if (!blocknative) {
         blocknative = Blocknative.connect(
           BLOCKNATIVE_API_KEY,
-          BlocknativeNetworkIds.ethereum.mainnet
+          BlocknativeNetworkIds.ethereum.mainnet,
         )
       }
       return await blocknative.getBlockPrices()
@@ -175,7 +175,7 @@ export default async function getBlockPrices(
     try {
       return await getPolygonGasPrices(
         feeData?.gasPrice?.toBigInt() ??
-          0n /* @TODO what do we do if this is 0n */
+          0n /* @TODO what do we do if this is 0n */,
       )
     } catch (e) {
       logger.error("Error getting block prices from Polygon", e)
@@ -193,7 +193,7 @@ export default async function getBlockPrices(
       return await getLegacyGasPrices(
         BINANCE_SMART_CHAIN,
         gasPrice,
-        currentBlock.number
+        currentBlock.number,
       )
     } catch (err) {
       logger.error("Error getting gas price from BlockNative", err)
@@ -244,7 +244,7 @@ export default async function getBlockPrices(
     logger.warn(
       "Not receiving accurate EIP-1559 gas prices from provider",
       feeData,
-      network.name
+      network.name,
     )
   }
 

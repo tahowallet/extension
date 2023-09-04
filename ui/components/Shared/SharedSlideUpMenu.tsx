@@ -15,7 +15,10 @@ const SLIDE_TRANSITION_MS = 445
 type Props = {
   isOpen: boolean
   close: (
-    e: MouseEvent | TouchEvent | React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e:
+      | MouseEvent
+      | TouchEvent
+      | React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => void
   children: React.ReactNode
   customSize?: string
@@ -61,7 +64,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
   const displayChildren = useDelayContentChange(
     visibleChildren,
     !isOpen,
-    SLIDE_TRANSITION_MS
+    SLIDE_TRANSITION_MS,
   )
 
   const menuHeight = menuHeights[size] ?? customSize ?? menuHeights.medium
@@ -138,7 +141,8 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             z-index: 998;
             background: var(--green-120);
             opacity: 0.7;
-            transition: opacity cubic-bezier(0.19, 1, 0.22, 1) 0.445s,
+            transition:
+              opacity cubic-bezier(0.19, 1, 0.22, 1) 0.445s,
               visiblity 0.445s;
           }
           .overlay.closed {
@@ -151,8 +155,8 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           }
           .slide_up_menu.closed {
             transform: translateY(100%);
-            transition: transform cubic-bezier(0.19, 1, 0.22, 1)
-                ${SLIDE_TRANSITION_MS}ms,
+            transition:
+              transform cubic-bezier(0.19, 1, 0.22, 1) ${SLIDE_TRANSITION_MS}ms,
               // Drop opacity all at once at the end.
               opacity 0ms ${SLIDE_TRANSITION_MS}ms;
             opacity: 0;

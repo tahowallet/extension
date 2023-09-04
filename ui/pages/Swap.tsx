@@ -32,7 +32,6 @@ import {
   SECOND,
 } from "@tallyho/tally-background/constants"
 
-import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import {
   selectLatestQuoteRequest,
   selectSwapBuyAssets,
@@ -78,7 +77,7 @@ export default function Swap(): ReactElement {
 
   const ownedSellAssetAmounts = getOwnedSellAssetAmounts(
     accountBalances?.allAssetAmounts,
-    currentNetwork
+    currentNetwork,
   )
 
   const {
@@ -95,7 +94,7 @@ export default function Swap(): ReactElement {
         )
       }
       return candidateAsset.symbol === locationAssetSymbol
-    }
+    },
   )?.asset
 
   const savedQuoteRequest = useBackgroundSelector(selectLatestQuoteRequest)
@@ -109,20 +108,20 @@ export default function Swap(): ReactElement {
   }
 
   const [sellAsset, setSellAsset] = useState<SwappableAsset | undefined>(
-    savedSellAsset
+    savedSellAsset,
   )
   const [buyAsset, setBuyAsset] = useState<SwappableAsset | undefined>(
-    savedBuyAsset
+    savedBuyAsset,
   )
   const [sellAmount, setSellAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "sellAmount" in savedSwapAmount
       ? savedSwapAmount.sellAmount
-      : ""
+      : "",
   )
   const [buyAmount, setBuyAmount] = useState(
     typeof savedSwapAmount !== "undefined" && "buyAmount" in savedSwapAmount
       ? savedSwapAmount.buyAmount
-      : ""
+      : "",
   )
 
   const previousChainId = usePrevious(currentNetwork.chainID)
@@ -144,13 +143,13 @@ export default function Swap(): ReactElement {
   const sellAssetAmounts = getSellAssetAmounts(
     ownedSellAssetAmounts,
     sellAsset,
-    buyAsset
+    buyAsset,
   )
 
   useEffect(() => {
     if (typeof sellAsset !== "undefined") {
       const isSelectedSellAssetInSellAssets = sellAssetAmounts.some(
-        ({ asset }) => isSameAsset(asset, sellAsset)
+        ({ asset }) => isSameAsset(asset, sellAsset),
       )
 
       if (!isSelectedSellAssetInSellAssets) {
@@ -178,7 +177,7 @@ export default function Swap(): ReactElement {
   })
 
   const inProgressApprovalContract = useBackgroundSelector(
-    selectInProgressApprovalContract
+    selectInProgressApprovalContract,
   )
   const isApprovalInProgress =
     sellAsset &&
@@ -206,7 +205,7 @@ export default function Swap(): ReactElement {
       approveTransfer({
         assetContractAddress: sellAsset.contractAddress,
         approvalTarget: quote.approvalTarget,
-      })
+      }),
     )
   }, [dispatch, quote, sellAsset, t])
 
@@ -227,7 +226,7 @@ export default function Swap(): ReactElement {
         requestQuoteUpdate.flush()
       }
     },
-    [requestQuoteUpdate, buyAmount, buyAsset]
+    [requestQuoteUpdate, buyAmount, buyAsset],
   )
 
   const updateBuyAsset = useCallback(
@@ -247,7 +246,7 @@ export default function Swap(): ReactElement {
         requestQuoteUpdate.flush()
       }
     },
-    [sellAmount, requestQuoteUpdate, sellAsset]
+    [sellAmount, requestQuoteUpdate, sellAsset],
   )
 
   const flipSwap = useCallback(() => {
@@ -347,9 +346,7 @@ export default function Swap(): ReactElement {
 
   const handleExecuteSwap = useCallback(async () => {
     if (sellAsset && buyAsset && quote) {
-      const finalQuote = (await dispatch(
-        fetchSwapQuote(quote.quoteRequest)
-      )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapQuote>
+      const finalQuote = await dispatch(fetchSwapQuote(quote.quoteRequest))
 
       if (finalQuote) {
         const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
@@ -366,7 +363,7 @@ export default function Swap(): ReactElement {
                 ? gasPrice
                 : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
                   gasPrice,
-          })
+          }),
         )
       }
     }

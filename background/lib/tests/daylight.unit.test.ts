@@ -16,7 +16,7 @@ describe("Daylight", () => {
 
       await daylight.getDaylightAbilities(
         "0x208e94d5661a73360d9387d3ca169e5c130090cd",
-        5
+        5,
       )
 
       expect(spy).toHaveBeenCalledTimes(6)

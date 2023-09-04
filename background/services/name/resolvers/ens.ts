@@ -23,7 +23,7 @@ const ENS_SUPPORTED_NETWORKS = [
 ]
 
 export default function ensResolverFor(
-  chainService: ChainService
+  chainService: ChainService,
 ): NameResolver<"ENS"> {
   return {
     type: "ENS",
@@ -40,7 +40,7 @@ export default function ensResolverFor(
       return (
         name.endsWith(".eth") &&
         ENS_SUPPORTED_NETWORKS.some((supportedNetwork) =>
-          sameNetwork(network, supportedNetwork)
+          sameNetwork(network, supportedNetwork),
         )
       )
     },
@@ -64,7 +64,7 @@ export default function ensResolverFor(
       }
     },
     async lookUpAvatar(
-      addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork
+      addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork,
     ) {
       const { network } = addressOrNameOnNetwork
 

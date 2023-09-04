@@ -30,7 +30,7 @@ describe("NFTs redux slice", () => {
       it("should handle transfer even if collection is not saved in state", () => {
         const stateAfterTransfers = reducer(
           state,
-          deleteTransferredNFTs([TRANSFER_MOCK])
+          deleteTransferredNFTs([TRANSFER_MOCK]),
         )
         expect(stateAfterTransfers.nfts).toMatchObject({})
       })
@@ -38,11 +38,11 @@ describe("NFTs redux slice", () => {
       it("should handle transfer if collection has many owned NFTs but none cached", () => {
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 10 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 10 }]),
         )
         const stateAfterTransfers = reducer(
           stateWithCollections,
-          deleteTransferredNFTs([TRANSFER_MOCK])
+          deleteTransferredNFTs([TRANSFER_MOCK]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -54,11 +54,11 @@ describe("NFTs redux slice", () => {
       it("should handle transfer if collection has single NFT owned but none cached", () => {
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 1 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 1 }]),
         )
         const stateAfterTransfers = reducer(
           stateWithCollections,
-          deleteTransferredNFTs([TRANSFER_MOCK])
+          deleteTransferredNFTs([TRANSFER_MOCK]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -68,11 +68,11 @@ describe("NFTs redux slice", () => {
       it("should handle transfer when there is unknown number of NFTs owned", () => {
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: undefined }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: undefined }]),
         )
 
         expect(() =>
-          reducer(stateWithCollections, deleteTransferredNFTs([TRANSFER_MOCK]))
+          reducer(stateWithCollections, deleteTransferredNFTs([TRANSFER_MOCK])),
         ).not.toThrow()
       })
 
@@ -81,18 +81,18 @@ describe("NFTs redux slice", () => {
 
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3, owner }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3, owner }]),
         )
         const stateAfterTransfers = reducer(
           stateWithCollections,
-          deleteTransferredNFTs([{ ...TRANSFER_MOCK, from: owner }])
+          deleteTransferredNFTs([{ ...TRANSFER_MOCK, from: owner }]),
         )
 
         const collection = extractCollection(
           stateAfterTransfers,
           COLLECTION_MOCK.id,
           ETHEREUM.chainID,
-          normalizeEVMAddress(owner)
+          normalizeEVMAddress(owner),
         )
 
         expect(collection).toBeDefined()
@@ -102,11 +102,11 @@ describe("NFTs redux slice", () => {
       it("should handle transfer even if chainID is unknown", () => {
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([COLLECTION_MOCK])
+          updateNFTsCollections([COLLECTION_MOCK]),
         )
         const stateAfterTransfers = reducer(
           stateWithCollections,
-          deleteTransferredNFTs([{ ...TRANSFER_MOCK, chainID: "12345" }])
+          deleteTransferredNFTs([{ ...TRANSFER_MOCK, chainID: "12345" }]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -120,7 +120,7 @@ describe("NFTs redux slice", () => {
 
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 2 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 2 }]),
         )
         const stateWithNFTs = reducer(
           stateWithCollections,
@@ -132,11 +132,11 @@ describe("NFTs redux slice", () => {
             collectionID: COLLECTION_MOCK.id,
             hasNextPage: false,
             nfts: [NFT_MOCK, { ...NFT_MOCK, id: secondID, tokenId: secondID }],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs,
-          deleteTransferredNFTs([TRANSFER_MOCK])
+          deleteTransferredNFTs([TRANSFER_MOCK]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -150,7 +150,7 @@ describe("NFTs redux slice", () => {
       it("should handle transfer when it is last NFT owned and cached", () => {
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([COLLECTION_MOCK])
+          updateNFTsCollections([COLLECTION_MOCK]),
         )
         const stateWithNFTs = reducer(
           stateWithCollections,
@@ -162,11 +162,11 @@ describe("NFTs redux slice", () => {
             collectionID: COLLECTION_MOCK.id,
             hasNextPage: false,
             nfts: [NFT_MOCK],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs,
-          deleteTransferredNFTs([TRANSFER_MOCK])
+          deleteTransferredNFTs([TRANSFER_MOCK]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -180,7 +180,7 @@ describe("NFTs redux slice", () => {
 
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3 }]),
         )
         const stateWithNFTs = reducer(
           stateWithCollections,
@@ -192,11 +192,11 @@ describe("NFTs redux slice", () => {
             collectionID: COLLECTION_MOCK.id,
             hasNextPage: false,
             nfts: [NFT_MOCK, { ...NFT_MOCK, id: secondID, tokenId: secondID }],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs,
-          deleteTransferredNFTs([{ ...TRANSFER_MOCK, id: thirdID }])
+          deleteTransferredNFTs([{ ...TRANSFER_MOCK, id: thirdID }]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -224,7 +224,7 @@ describe("NFTs redux slice", () => {
               id: secondCollectionID,
               name: "ABC",
             },
-          ])
+          ]),
         )
         const stateWithNFTs1 = reducer(
           stateWithCollections,
@@ -236,7 +236,7 @@ describe("NFTs redux slice", () => {
             collectionID: COLLECTION_MOCK.id,
             hasNextPage: false,
             nfts: [NFT_MOCK],
-          })
+          }),
         )
         const stateWithNFTs2 = reducer(
           stateWithNFTs1,
@@ -263,7 +263,7 @@ describe("NFTs redux slice", () => {
                 name: "ABC 2 NFT",
               },
             ],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs2,
@@ -274,13 +274,13 @@ describe("NFTs redux slice", () => {
               id: secondNftID,
               collectionID: secondCollectionID,
             },
-          ])
+          ]),
         )
 
         const firstCollection = extractCollection(stateAfterTransfers)
         const secondCollection = extractCollection(
           stateAfterTransfers,
-          secondCollectionID
+          secondCollectionID,
         )
         const secondCollectionNFTs = secondCollection?.nfts.map((nft) => nft.id)
 
@@ -297,7 +297,7 @@ describe("NFTs redux slice", () => {
 
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 3 }]),
         )
         const stateWithNFTs = reducer(
           stateWithCollections,
@@ -318,14 +318,14 @@ describe("NFTs redux slice", () => {
               },
               { ...NFT_MOCK, id: thirdID, tokenId: thirdID, name: "XYZ 3 NFT" },
             ],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs,
           deleteTransferredNFTs([
             TRANSFER_MOCK,
             { ...TRANSFER_MOCK, id: secondID },
-          ])
+          ]),
         )
 
         const collection = extractCollection(stateAfterTransfers)
@@ -341,7 +341,7 @@ describe("NFTs redux slice", () => {
 
         const stateWithCollections = reducer(
           state,
-          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 2 }])
+          updateNFTsCollections([{ ...COLLECTION_MOCK, nftCount: 2 }]),
         )
         const stateWithNFTs = reducer(
           stateWithCollections,
@@ -361,14 +361,14 @@ describe("NFTs redux slice", () => {
                 name: "XYZ 2 NFT",
               },
             ],
-          })
+          }),
         )
         const stateAfterTransfers = reducer(
           stateWithNFTs,
           deleteTransferredNFTs([
             TRANSFER_MOCK,
             { ...TRANSFER_MOCK, id: secondID },
-          ])
+          ]),
         )
 
         const collection = extractCollection(stateAfterTransfers)

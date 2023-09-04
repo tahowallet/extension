@@ -6,7 +6,7 @@ import SharedButton from "../components/Shared/SharedButton"
 import { useOnMount } from "../hooks/react-hooks"
 
 export default function ErrorFallback(
-  props: Partial<FallbackProps>
+  props: Partial<FallbackProps>,
 ): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "genericPages" })
 

@@ -58,9 +58,9 @@ export default function SharedSelect(props: Props): ReactElement {
           : {
               value: option,
               label: option,
-            }
+            },
       ) as Option[],
-    [initialOptions]
+    [initialOptions],
   )
 
   const currentOption =
@@ -224,14 +224,17 @@ export default function SharedSelect(props: Props): ReactElement {
             border-radius: 5px;
             overflow-y: auto;
             color: var(--green-60);
-            box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
+            box-shadow:
+              0px 16px 16px rgba(0, 20, 19, 0.14),
               0px 6px 8px rgba(0, 20, 19, 0.24),
               0px 2px 4px rgba(0, 20, 19, 0.34);
             max-height: 0;
             height: fit-content;
             opacity: 0;
             line-height: 1.5;
-            transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
+            transition:
+              max-height 0.2s ease-in-out,
+              opacity 0.2s ease-in-out;
             z-index: 1;
           }
 

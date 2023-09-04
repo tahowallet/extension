@@ -16,7 +16,7 @@ const filters = Object.values(LedgerProductDatabase).map(
   ({ productId }): USBDeviceFilter => ({
     vendorId: ledgerUSBVendorId,
     productId,
-  })
+  }),
 )
 
 export default function Ledger(): ReactElement {
@@ -27,7 +27,7 @@ export default function Ledger(): ReactElement {
   })
 
   const deviceID = useBackgroundSelector(
-    (state) => state.ledger.currentDeviceID
+    (state) => state.ledger.currentDeviceID,
   )
   const [connecting, setConnecting] = useState(false)
 
@@ -35,7 +35,7 @@ export default function Ledger(): ReactElement {
   const device = deviceID === null ? null : devices[deviceID] ?? null
 
   const usbDeviceCount = useBackgroundSelector(
-    (state) => state.ledger.usbDeviceCount
+    (state) => state.ledger.usbDeviceCount,
   )
 
   const dispatch = useBackgroundDispatch()

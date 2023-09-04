@@ -15,7 +15,7 @@ type WalletAssetListProps = {
 }
 
 export default function WalletAssetList(
-  props: WalletAssetListProps
+  props: WalletAssetListProps,
 ): ReactElement | null {
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.activities",
