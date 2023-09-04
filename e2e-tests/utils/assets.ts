@@ -1,10 +1,11 @@
-import { Page, expect } from "@playwright/test"
+import { BrowserContext, Page, expect } from "@playwright/test"
 import WalletPageHelper from "./walletPageHelper"
 
 export default class AssetsHelper {
   constructor(
     public readonly popup: Page,
     public readonly walletPageHelper: WalletPageHelper,
+    public readonly context: BrowserContext,
   ) {}
 
   /**
@@ -72,7 +73,7 @@ export default class AssetsHelper {
     assetSymbol: RegExp,
     expectedBalance: RegExp,
     assetType: "base" | "knownERC20" | "unverified" | "trusted",
-    tokenLink?: string, // needed only when `assetType` is not `base`
+    tokenURL?: string, // needed only when `assetType` is not `base`
     tokenAddressShortened?: string, // needed only when `assetType` is `unverified` or `trusted`
   ): Promise<void> {
     /**
@@ -118,10 +119,10 @@ export default class AssetsHelper {
       .getByRole("link")
       .filter({ has: this.popup.locator(".icon_new_tab") })
     if (assetType !== "base") {
-      if (tokenLink !== undefined) {
-        await expect(tokenLinkIcon).toHaveAttribute("href", tokenLink)
+      if (tokenURL !== undefined) {
+        await expect(tokenLinkIcon).toHaveAttribute("href", tokenURL)
       } else {
-        throw new Error("`tokenLink` not defined.")
+        throw new Error("`tokenURL` not defined.")
       }
       await tokenLinkIcon.click({ trial: true })
     } else {
@@ -136,16 +137,20 @@ export default class AssetsHelper {
         .getByRole("button", { name: "Asset not verified" })
         .click()
       await this.assertVerifyAssetPopup(
+        this.context,
         assetSymbol,
         assetType,
         tokenAddressShortened,
+        tokenURL,
       )
       this.closeVerifyAssetPopup()
       await this.popup.getByRole("button", { name: "Verify asset" }).click()
       await this.assertVerifyAssetPopup(
+        this.context,
         assetSymbol,
         assetType,
         tokenAddressShortened,
+        tokenURL,
       )
       this.closeVerifyAssetPopup()
     } else {
@@ -156,9 +161,11 @@ export default class AssetsHelper {
     if (assetType === "trusted") {
       await this.popup.getByRole("button", { name: "Verified by you" }).click()
       await this.assertVerifyAssetPopup(
+        this.context,
         assetSymbol,
         assetType,
         tokenAddressShortened,
+        tokenURL,
       )
       this.closeVerifyAssetPopup()
     } else {
@@ -206,9 +213,11 @@ export default class AssetsHelper {
    * Function asserting the Verify Asset popup
    */
   async assertVerifyAssetPopup(
+    context: BrowserContext,
     assetSymbol: RegExp,
     assetType: "unverified" | "trusted",
     tokenAddressShortened: string | undefined,
+    tokenURL: string | undefined,
   ): Promise<void> {
     await expect(
       this.popup.getByText("Asset automatically imported"),
@@ -262,14 +271,22 @@ export default class AssetsHelper {
       throw new Error("`tokenAddressShortened` not defined.")
     }
 
-    await verifyAssetPopup
-      .locator("li")
-      .filter({
-        hasText: "Contract address",
-      })
-      .locator(".right")
-      .click({ trial: true })
-    // TODO: Click and verify the scan website address
+    if (tokenURL !== undefined) {
+      await verifyAssetPopup
+        .locator("li")
+        .filter({
+          hasText: "Contract address",
+        })
+        .locator(".right")
+        .click()
+
+      await this.popup.waitForTimeout(1000)
+      const scanWebsite = context.pages().at(-1)
+      await expect(scanWebsite as Page).toHaveURL(tokenURL)
+      await scanWebsite?.close()
+    } else {
+      throw new Error("`tokenURL` not defined.")
+    }
 
     await verifyAssetPopup
       .getByRole("button", { name: "Don’t show", exact: true })
