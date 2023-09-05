@@ -14,8 +14,12 @@ import {
 } from "../../lib/posthog"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
-import SigningService from "../signing"
+import SigningService, {
+  SignatureResponse,
+  TXSignatureResponse,
+} from "../signing"
 import InternalSignerService from "../internal-signer"
+import { assertUnreachable } from "../../lib/utils/type-guards"
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -71,6 +75,19 @@ export default class AnalyticsService extends BaseService<Events> {
           })
         }
       },
+    )
+
+    this.signingService.emitter.on(
+      "signingTxResponse",
+      this.trackSigningEvent.bind(this),
+    )
+    this.signingService.emitter.on(
+      "signingDataResponse",
+      this.trackSigningEvent.bind(this),
+    )
+    this.signingService.emitter.on(
+      "personalSigningResponse",
+      this.trackSigningEvent.bind(this),
     )
   }
 
@@ -172,6 +189,25 @@ export default class AnalyticsService extends BaseService<Events> {
       deletePerson(id)
     } catch (e) {
       logger.error("Deleting Analytics Data Failed ", e)
+    }
+  }
+
+  private async trackSigningEvent(
+    event: TXSignatureResponse | SignatureResponse,
+  ): Promise<void> {
+    switch (event.type) {
+      case "success-tx":
+        return this.sendAnalyticsEvent(AnalyticsEvent.TRANSACTION_SIGNED, {
+          chainId: event.signedTx.network.chainID,
+        })
+      case "success-data":
+        return this.sendAnalyticsEvent(AnalyticsEvent.DATA_SIGNED)
+      case "error":
+        return this.sendAnalyticsEvent(AnalyticsEvent.SIGNATURE_FAILED, {
+          reason: event.reason,
+        })
+      default:
+        return assertUnreachable(event)
     }
   }
 
