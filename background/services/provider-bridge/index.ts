@@ -274,7 +274,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
       if (typeof persistedPermission !== "undefined") {
         // if agrees then let's return the account data
-
         response.result = await this.routeContentScriptRPCRequest(
           persistedPermission,
           "eth_accounts",

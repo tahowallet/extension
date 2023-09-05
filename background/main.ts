@@ -304,12 +304,9 @@ export default class Main extends BaseService<never> {
 
   static create: ServiceCreatorFunction<never, Main, []> = async () => {
     const preferenceService = PreferenceService.create()
-    const analyticsService = AnalyticsService.create(preferenceService)
 
-    const internalSignerService = InternalSignerService.create(
-      preferenceService,
-      analyticsService,
-    )
+    const internalSignerService =
+      InternalSignerService.create(preferenceService)
     const chainService = ChainService.create(
       preferenceService,
       internalSignerService,
@@ -340,6 +337,12 @@ export default class Main extends BaseService<never> {
       internalSignerService,
       ledgerService,
       chainService,
+    )
+
+    const analyticsService = AnalyticsService.create(
+      internalSignerService,
+      signingService,
+      preferenceService,
     )
 
     const nftsService = NFTsService.create(chainService)

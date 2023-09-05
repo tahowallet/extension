@@ -14,6 +14,8 @@ import {
 } from "../../lib/posthog"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
+import SigningService from "../signing"
+import InternalSignerService from "../internal-signer"
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -32,18 +34,44 @@ export default class AnalyticsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     AnalyticsService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
+    [
+      Promise<InternalSignerService>,
+      Promise<SigningService>,
+      Promise<PreferenceService>,
+    ]
+  > = async (internalSignerService, signingService, preferenceService) => {
     const db = await getOrCreateDB()
 
-    return new this(db, await preferenceService)
+    return new this(
+      db,
+      await internalSignerService,
+      await signingService,
+      await preferenceService,
+    )
   }
 
   private constructor(
     private db: AnalyticsDatabase,
+    private internalSignerService: InternalSignerService,
+    private signingService: SigningService,
     private preferenceService: PreferenceService,
   ) {
     super()
+
+    this.internalSignerService.emitter.on(
+      "vaultMigrationCompleted",
+      (result) => {
+        if ("newVaultVersion" in result) {
+          this.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION, {
+            version: result.newVaultVersion,
+          })
+        } else {
+          this.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION_FAILED, {
+            error: result.errorMessage,
+          })
+        }
+      },
+    )
   }
 
   protected override async internalStartService(): Promise<void> {
