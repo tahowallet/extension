@@ -344,7 +344,7 @@ export type AccountTotal = AddressOnNetwork & {
 function signerIdFor(accountSigner: AccountSigner): string | null {
   switch (accountSigner.type) {
     case "private-key":
-      return accountSigner.walletID
+      return "private-key"
     case "keyring":
       return accountSigner.keyringID
     case "ledger":
