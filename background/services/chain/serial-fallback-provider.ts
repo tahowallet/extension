@@ -405,7 +405,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
          * - missing response
          * We might be disconnected due to network instability
          * - we can't execute this request
-         * ankr rate limit hit
+         * ankr rate limit hit / invalid response from some rpcs
          * - failed response
          * fetchJson default "fallback" error, generally thrown after 429s
          * - TIMEOUT
