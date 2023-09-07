@@ -29,8 +29,6 @@ import { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
-import AnalyticsService from "../analytics"
-import { AnalyticsEvent } from "../../lib/posthog"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -125,9 +123,9 @@ interface Events extends ServiceLifecycleEvents {
     }
   }
   address: string
-  // TODO message was signed
-  signedTx: SignedTransaction
-  signedData: string
+  vaultMigrationCompleted:
+    | { newVaultVersion: VaultVersion }
+    | { errorMessage: string }
 }
 
 const isPrivateKey = (
@@ -183,14 +181,10 @@ export default class InternalSignerService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     InternalSignerService,
-    [Promise<PreferenceService>, Promise<AnalyticsService>]
-  > = async (preferenceService, analyticsService) =>
-    new this(await preferenceService, await analyticsService)
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => new this(await preferenceService)
 
-  private constructor(
-    private preferenceService: PreferenceService,
-    private analyticsService: AnalyticsService,
-  ) {
+  private constructor(private preferenceService: PreferenceService) {
     super({
       autolock: {
         schedule: {
@@ -283,14 +277,11 @@ export default class InternalSignerService extends BaseService<Events> {
     this.#cachedVaultVersion = version
 
     if (migrationResults.migrated) {
-      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION, {
-        version,
-      })
+      this.emitter.emit("vaultMigrationCompleted", { newVaultVersion: version })
     } else if (migrationResults.errorMessage !== undefined) {
-      this.analyticsService.sendAnalyticsEvent(
-        AnalyticsEvent.VAULT_MIGRATION_FAILED,
-        { error: migrationResults.errorMessage },
-      )
+      this.emitter.emit("vaultMigrationCompleted", {
+        errorMessage: migrationResults.errorMessage,
+      })
     }
 
     if (!ignoreExistingVaults) {

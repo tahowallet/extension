@@ -14,6 +14,12 @@ import {
 } from "../../lib/posthog"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
+import SigningService, {
+  SignatureResponse,
+  TXSignatureResponse,
+} from "../signing"
+import InternalSignerService from "../internal-signer"
+import { assertUnreachable } from "../../lib/utils/type-guards"
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -32,18 +38,57 @@ export default class AnalyticsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     AnalyticsService,
-    [Promise<PreferenceService>]
-  > = async (preferenceService) => {
+    [
+      Promise<InternalSignerService>,
+      Promise<SigningService>,
+      Promise<PreferenceService>,
+    ]
+  > = async (internalSignerService, signingService, preferenceService) => {
     const db = await getOrCreateDB()
 
-    return new this(db, await preferenceService)
+    return new this(
+      db,
+      await internalSignerService,
+      await signingService,
+      await preferenceService,
+    )
   }
 
   private constructor(
     private db: AnalyticsDatabase,
+    private internalSignerService: InternalSignerService,
+    private signingService: SigningService,
     private preferenceService: PreferenceService,
   ) {
     super()
+
+    this.internalSignerService.emitter.on(
+      "vaultMigrationCompleted",
+      (result) => {
+        if ("newVaultVersion" in result) {
+          this.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION, {
+            version: result.newVaultVersion,
+          })
+        } else {
+          this.sendAnalyticsEvent(AnalyticsEvent.VAULT_MIGRATION_FAILED, {
+            error: result.errorMessage,
+          })
+        }
+      },
+    )
+
+    this.signingService.emitter.on(
+      "signingTxResponse",
+      this.trackSigningEvent.bind(this),
+    )
+    this.signingService.emitter.on(
+      "signingDataResponse",
+      this.trackSigningEvent.bind(this),
+    )
+    this.signingService.emitter.on(
+      "personalSigningResponse",
+      this.trackSigningEvent.bind(this),
+    )
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -144,6 +189,25 @@ export default class AnalyticsService extends BaseService<Events> {
       deletePerson(id)
     } catch (e) {
       logger.error("Deleting Analytics Data Failed ", e)
+    }
+  }
+
+  private async trackSigningEvent(
+    event: TXSignatureResponse | SignatureResponse,
+  ): Promise<void> {
+    switch (event.type) {
+      case "success-tx":
+        return this.sendAnalyticsEvent(AnalyticsEvent.TRANSACTION_SIGNED, {
+          chainId: event.signedTx.network.chainID,
+        })
+      case "success-data":
+        return this.sendAnalyticsEvent(AnalyticsEvent.DATA_SIGNED)
+      case "error":
+        return this.sendAnalyticsEvent(AnalyticsEvent.SIGNATURE_FAILED, {
+          reason: event.reason,
+        })
+      default:
+        return assertUnreachable(event)
     }
   }
 
