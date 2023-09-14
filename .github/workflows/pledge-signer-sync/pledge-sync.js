@@ -22,8 +22,8 @@ if (!GALXE_ACCESS_TOKEN || !FIRESTORE_USER || !FIRESTORE_PASSWORD) {
   process.exit(1)
 }
 
-// Limit sync range to last 4 days ( 2 days from last sync + 2 days from now )
-const TARGET_DATE = new Date(Date.now() - 4 * 24 * 60 * 60_000)
+// Limit sync range to last 2 days (1 day from the last sync + 1 day margin)
+const TARGET_DATE = new Date(Date.now() - 2 * 24 * 60 * 60_000)
 
 const wait = (ms) =>
   new Promise((r) => {
