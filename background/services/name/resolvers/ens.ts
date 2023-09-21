@@ -6,6 +6,7 @@ import {
   BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
+  SEPOLIA,
   OPTIMISM,
   POLYGON,
 } from "../../../constants"
@@ -18,6 +19,7 @@ const ENS_SUPPORTED_NETWORKS = [
   OPTIMISM,
   ARBITRUM_ONE,
   GOERLI,
+  SEPOLIA,
   AVALANCHE,
   BINANCE_SMART_CHAIN,
 ]
