@@ -64,6 +64,12 @@ export const SEPOLIA_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...ETH_DATA,
 }
 
+export const ARBITRUM_SEPOLIA_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> =
+  {
+    ...BASE_ASSETS_BY_CUSTOM_NAME.ARBITRUM_SEPOLIA_ETH,
+    ...ETH_DATA,
+  }
+
 export const ZK_SYNC_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...BASE_ASSETS_BY_CUSTOM_NAME.ZK_SYNC_ETH,
   ...ETH_DATA,
@@ -109,6 +115,7 @@ export const BUILT_IN_NETWORK_BASE_ASSETS = [
   ARBITRUM_NOVA_ETH,
   GOERLI_ETH,
   SEPOLIA_ETH,
+  ARBITRUM_SEPOLIA_ETH,
   AVAX,
   BNB,
 ]

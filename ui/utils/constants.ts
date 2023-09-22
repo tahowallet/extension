@@ -6,6 +6,7 @@ import {
   ETHEREUM,
   GOERLI,
   SEPOLIA,
+  ARBITRUM_SEPOLIA,
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
@@ -27,6 +28,10 @@ export const blockExplorer = {
   [SEPOLIA.chainID]: {
     title: "Etherscan",
     url: "https://sepolia.etherscan.io/",
+  },
+  [ARBITRUM_SEPOLIA.chainID]: {
+    title: "Arbiscan",
+    url: "https://sepolia.arbiscan.io/",
   },
   [ARBITRUM_ONE.chainID]: { title: "Arbiscan", url: "https://arbiscan.io/" },
   [AVALANCHE.chainID]: { title: "Snowtrace", url: "https://snowtrace.io/" },

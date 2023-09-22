@@ -56,6 +56,15 @@ const SEPOLIA_ETH: NetworkBaseAsset = {
   },
 }
 
+const ARBITRUM_SEPOLIA_ETH: NetworkBaseAsset = {
+  ...ETH,
+  chainID: "421614",
+  metadata: {
+    coinGeckoID: "ethereum",
+    tokenLists: [],
+  },
+}
+
 const RBTC: NetworkBaseAsset = {
   chainID: "30",
   name: "RSK Token",
@@ -119,6 +128,7 @@ export const BASE_ASSETS_BY_CUSTOM_NAME = {
   OPTIMISTIC_ETH,
   GOERLI_ETH,
   SEPOLIA_ETH,
+  ARBITRUM_SEPOLIA_ETH,
   ZK_SYNC_ETH,
 }
 

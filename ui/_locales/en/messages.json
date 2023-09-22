@@ -545,6 +545,7 @@
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",
+    "l2Testnet": "L2 Test Network",
     "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected"

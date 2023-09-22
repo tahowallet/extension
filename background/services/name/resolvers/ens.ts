@@ -20,6 +20,8 @@ const ENS_SUPPORTED_NETWORKS = [
   ARBITRUM_ONE,
   GOERLI,
   SEPOLIA,
+  // TODO: Add ARBITRUM_SEPOLIA once the support is added (tracked in
+  // https://github.com/ProjectOpenSea/opensea-js/issues/1201).
   AVALANCHE,
   BINANCE_SMART_CHAIN,
 ]

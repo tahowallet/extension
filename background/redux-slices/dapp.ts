@@ -10,6 +10,7 @@ import {
   ETHEREUM,
   GOERLI,
   SEPOLIA,
+  ARBITRUM_SEPOLIA,
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
@@ -137,6 +138,7 @@ const dappSlice = createSlice({
             BINANCE_SMART_CHAIN,
             GOERLI,
             SEPOLIA,
+            ARBITRUM_SEPOLIA,
             ARBITRUM_NOVA,
           ].map((network) => ({
             ...permission,
