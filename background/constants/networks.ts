@@ -230,7 +230,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
   ],
   [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
-  [SEPOLIA.chainID]: ["https://ethereum-sepolia-rpc.allthatnode.com"],
+  [SEPOLIA.chainID]: ["https://endpoints.omniatech.io/v1/eth/sepolia/public"],
   [ARBITRUM_SEPOLIA.chainID]: ["https://sepolia-rollup.arbitrum.io/rpc"],
   [AVALANCHE.chainID]: [
     "https://api.avax.network/ext/bc/C/rpc",
