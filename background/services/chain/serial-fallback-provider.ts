@@ -1,6 +1,4 @@
 import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
   EventType,
   JsonRpcBatchProvider,
   JsonRpcProvider,
@@ -27,6 +25,7 @@ import {
 } from "../../lib/alchemy"
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
+import TahoAlchemyProvider from "./taho-provider"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -1097,15 +1096,7 @@ export function makeSerialFallbackProvider(
           {
             type: "alchemy" as const,
             creator: () =>
-              new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-          },
-          {
-            type: "alchemy" as const,
-            creator: () =>
-              new AlchemyWebSocketProvider(
-                getNetwork(Number(chainID)),
-                ALCHEMY_KEY,
-              ),
+              new TahoAlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
           },
         ]
       : []

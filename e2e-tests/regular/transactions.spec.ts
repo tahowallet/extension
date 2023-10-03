@@ -49,11 +49,11 @@ test.describe("Transactions", () => {
        */
       await popup.getByTestId("top_menu_network_switcher").last().click()
       await popup
-        .getByText(/^Goerli$/)
+        .getByText(/^Ethereum Goerli$/)
         .last()
         .click()
       await walletPageHelper.assertCommonElements(
-        /^Goerli$/,
+        /^Ethereum Goerli$/,
         true,
         account2.name,
       )
@@ -82,7 +82,7 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Goerli$/,
+        /^Ethereum Goerli$/,
         account2.name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
@@ -118,7 +118,7 @@ test.describe("Transactions", () => {
        * Check if "Transfer" has opened and verify elements on the page.
        */
       await transactionsHelper.assertTransferScreen(
-        "Goerli",
+        "Ethereum Goerli",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
         "0x4774…875a6",
@@ -150,7 +150,7 @@ test.describe("Transactions", () => {
        */
       await expect(popup.getByTestId("activity_list")).toHaveCount(1)
       await assetsHelper.assertAssetDetailsPage(
-        /^Goerli$/,
+        /^Ethereum Goerli$/,
         account2.name,
         /^ETH$/,
         /^(\d|,)+(\.\d{0,4})*$/,
@@ -207,7 +207,7 @@ test.describe("Transactions", () => {
        * Verify elements on the activity screen
        */
       await walletPageHelper.assertCommonElements(
-        /^Goerli$/,
+        /^Ethereum Goerli$/,
         true,
         account2.name,
       )

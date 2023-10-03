@@ -6,6 +6,7 @@ import {
   BINANCE_SMART_CHAIN,
   ETHEREUM,
   GOERLI,
+  SEPOLIA,
   OPTIMISM,
   POLYGON,
 } from "../../../constants"
@@ -18,6 +19,9 @@ const ENS_SUPPORTED_NETWORKS = [
   OPTIMISM,
   ARBITRUM_ONE,
   GOERLI,
+  SEPOLIA,
+  // TODO: Add ARBITRUM_SEPOLIA once the support is added (tracked in
+  // https://github.com/ProjectOpenSea/opensea-js/issues/1201).
   AVALANCHE,
   BINANCE_SMART_CHAIN,
 ]
