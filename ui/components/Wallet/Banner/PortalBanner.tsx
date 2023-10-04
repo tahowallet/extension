@@ -3,10 +3,11 @@ import {
   dismissableItemMarkedAsShown,
   selectShouldShowDismissableItem,
 } from "@tallyho/tally-background/redux-slices/ui"
+import { selectIsTestTahoDeployed } from "@tallyho/tally-background/redux-slices/claim"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 
 export default function PortalBanner(): ReactElement | null {
-  const isTokenDeployed = true // useBackgroundSelector(isTestTahoDeployed)
+  const isTokenDeployed = useBackgroundSelector(selectIsTestTahoDeployed)
   const isBannerVisible = useBackgroundSelector(
     selectShouldShowDismissableItem("testnet-portal-is-open-banner"),
   )

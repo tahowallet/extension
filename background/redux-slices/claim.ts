@@ -438,3 +438,9 @@ export const selectEligibilityLoading = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
   (claimState: ClaimingState) => claimState.eligibilityLoading,
 )
+
+export const selectIsTestTahoDeployed = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) =>
+    claimState.islandAssets.some((asset) => isSameAsset(asset, TESTNET_TAHO)),
+)

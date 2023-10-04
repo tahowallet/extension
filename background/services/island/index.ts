@@ -90,6 +90,12 @@ export default class IslandService extends BaseService<Events> {
       return
     }
 
+    // Bail if the TAHO contract hasn't been deployed.
+    if ((await islandProvider.getCode(TESTNET_TAHO.contractAddress)) === "0x") {
+      logger.debug("TAHO contract not deployed, not setting up The Island...")
+      return
+    }
+
     if (!this.indexingService.isTrackingAsset(TESTNET_TAHO)) {
       await this.indexingService.addAssetToTrack(TESTNET_TAHO)
 
