@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import { ethers } from "ethers"
 import { SmartContractFungibleAsset } from "../../assets"
 import { WEBSITE_ORIGIN } from "../../constants/website"
@@ -23,6 +24,8 @@ export const TESTNET_TAHO: SmartContractFungibleAsset = {
   metadata: {
     tokenLists: [],
     websiteURL: WEBSITE_ORIGIN,
+    logoURL: browser.runtime.getURL("images/assets/doggo.png"),
+    verified: true,
   },
 }
 
