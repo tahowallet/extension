@@ -29,7 +29,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
-  DoggoService,
+  IslandService,
   LedgerService,
   SigningService,
   NFTsService,
@@ -41,7 +41,7 @@ import {
 import { HexString, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible } from "./services/doggo/types"
+import { Eligible } from "./services/island/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -327,7 +327,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService,
     )
-    const doggoService = DoggoService.create(chainService, indexingService)
+    const doggoService = IslandService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -458,7 +458,7 @@ export default class Main extends BaseService<never> {
      * A promise to the claim service, which saves the eligibility data
      * for efficient storage and retrieval.
      */
-    private doggoService: DoggoService,
+    private doggoService: IslandService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
