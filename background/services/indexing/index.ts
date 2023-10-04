@@ -243,6 +243,15 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
+   * Check whether the specified asset is already being tracked.
+   *
+   * @param asset The fungible asset to track.
+   */
+  async isTrackingAsset(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.db.isTrackingAsset(asset)
+  }
+
+  /**
    * Adds/updates a custom asset, invalidates internal cache for asset network
    * @param asset The custom asset
    */
