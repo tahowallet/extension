@@ -292,6 +292,13 @@ export default class IndexingService extends BaseService<Events> {
    * lists.
    */
   async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
+    // FIXME Somewhere along the line, we started confusing tracked and custom
+    // FIXME assets as informational data. We pull tracked and then custom
+    // FIXME assets, but really this should never touch custom assets; all
+    // FIXME custom assets should be tracked if we want to pull them.
+    const trackedAssets = (await this.db.getAssetsToTrack()).filter((asset) =>
+      sameNetwork(asset.homeNetwork, network),
+    )
     const customAssets = await this.db.getActiveCustomAssetsByNetworks([
       network,
     ])
@@ -301,6 +308,7 @@ export default class IndexingService extends BaseService<Events> {
 
     this.cachedAssets[network.chainID] = mergeAssets<FungibleAsset>(
       [network.baseAsset],
+      trackedAssets,
       customAssets,
       networkAssetsFromLists(network, tokenLists),
     )
