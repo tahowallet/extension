@@ -1,13 +1,14 @@
 import { BigNumber } from "ethers"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
-import { Eligible } from "./types"
+import { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { ARBITRUM_ONE, DOGGO, ETHEREUM } from "../../constants"
+import { DOGGO, ETHEREUM } from "../../constants"
 import { sameNetwork } from "../../networks"
 import {
   ClaimWithFriends,
+  ISLAND_NETWORK,
   STARTING_REALM_NAMES,
   TESTNET_TAHO,
   TestnetTahoDeployer,
@@ -18,11 +19,18 @@ import { initialVaults } from "../../redux-slices/earn"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
-import { IslandDatabase, getOrCreateDB, ReferrerStats } from "./db"
+import { IslandDatabase, getOrCreateDB } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
+import { SmartContractFungibleAsset } from "../../assets"
 
-export { TESTNET_TAHO, TestnetTahoDeployer as TahoDeployer } from "./contracts"
+export {
+  TESTNET_TAHO,
+  VOTE_WITH_FRIENDS_ADDRESS,
+  TestnetTahoDeployer as TahoDeployer,
+} from "./contracts"
+
+export { ReferrerStats } from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -72,8 +80,8 @@ export default class IslandService extends BaseService<Events> {
       return
     }
 
-    const arbitrumProvider = this.chainService.providerForNetwork(ARBITRUM_ONE)
-    if (arbitrumProvider === undefined) {
+    const islandProvider = this.chainService.providerForNetwork(ISLAND_NETWORK)
+    if (islandProvider === undefined) {
       logger.debug(
         "No Arbitrum provider available, not setting up The Island...",
       )
@@ -82,10 +90,10 @@ export default class IslandService extends BaseService<Events> {
     }
 
     if (!this.indexingService.isTrackingAsset(TESTNET_TAHO)) {
-      this.indexingService.addAssetToTrack(TESTNET_TAHO)
+      await this.indexingService.addAssetToTrack(TESTNET_TAHO)
     }
 
-    const connectedDeployer = TestnetTahoDeployer.connect(arbitrumProvider)
+    const connectedDeployer = TestnetTahoDeployer.connect(islandProvider)
     await Promise.all(
       STARTING_REALM_NAMES.map(async (realmName) => {
         const realmAddress =
@@ -93,11 +101,11 @@ export default class IslandService extends BaseService<Events> {
             `${realmName.toUpperCase()}_REALM`
           ]()
         const realmContract =
-          buildRealmContract(realmAddress).connect(arbitrumProvider)
+          buildRealmContract(realmAddress).connect(islandProvider)
 
         const xpAddress = await realmContract.functions.xp()
-        await this.indexingService.addTokenToTrackByContract(
-          ARBITRUM_ONE,
+        const asset = await this.indexingService.addTokenToTrackByContract(
+          ISLAND_NETWORK,
           xpAddress,
           { verified: true },
         )

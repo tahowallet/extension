@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { Eligible } from "../services/doggo/types"
+import { Eligible } from "../services/island/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
@@ -19,7 +19,11 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 import { DOGGO, HOUR } from "../constants"
 import { FeatureFlags, isEnabled } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
-import { ReferrerStats } from "../services/doggo/db"
+import {
+  ReferrerStats,
+  TESTNET_TAHO,
+  VOTE_WITH_FRIENDS_ADDRESS,
+} from "../services/island"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 
 export interface DAO {
@@ -64,8 +68,6 @@ interface ClaimingState {
 }
 
 const DOGGO_TOKEN_ADDRESS = DOGGO.contractAddress
-export const VOTE_WITH_FRIENDS_ADDRESS =
-  "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
