@@ -35,6 +35,7 @@ export { ReferrerStats } from "./types"
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
   newReferral: { referrer: AddressOnNetwork } & ReferrerStats
+  monitoringTestnetAsset: SmartContractFungibleAsset
 }
 
 /*
@@ -91,6 +92,8 @@ export default class IslandService extends BaseService<Events> {
 
     if (!this.indexingService.isTrackingAsset(TESTNET_TAHO)) {
       await this.indexingService.addAssetToTrack(TESTNET_TAHO)
+
+      this.emitter.emit("monitoringTestnetAsset", TESTNET_TAHO)
     }
 
     const connectedDeployer = TestnetTahoDeployer.connect(islandProvider)
@@ -109,6 +112,9 @@ export default class IslandService extends BaseService<Events> {
           xpAddress,
           { verified: true },
         )
+        if (asset !== undefined) {
+          this.emitter.emit("monitoringTestnetAsset", asset)
+        }
       }),
     )
 

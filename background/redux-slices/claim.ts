@@ -25,6 +25,8 @@ import {
   VOTE_WITH_FRIENDS_ADDRESS,
 } from "../services/island"
 import { fromFixedPointNumber } from "../lib/fixed-point"
+import { SmartContractFungibleAsset } from "../assets"
+import { isSameAsset } from "./utils/asset-utils"
 
 export interface DAO {
   address: string
@@ -48,6 +50,7 @@ export interface Referrer {
 
 interface ClaimingState {
   status: string
+  islandAssets: SmartContractFungibleAsset[]
   claimed: {
     [address: HexString]: boolean
   }
@@ -80,6 +83,7 @@ const getDistributorContract = async () => {
 
 const initialState: ClaimingState = {
   status: "idle",
+  islandAssets: [],
   claimed: {},
   selectedForBonus: null,
   selectedDelegate: null,
@@ -152,6 +156,12 @@ const claimingSlice = createSlice({
       nonce,
       expiry,
     }),
+    addIslandAsset: (
+      immerState,
+      { payload: asset }: { payload: SmartContractFungibleAsset },
+    ) => {
+      immerState.islandAssets.push(asset)
+    },
     resetClaimFlow: (immerState) => {
       immerState.signature = undefined
       immerState.selectedForBonus = null

@@ -1660,6 +1660,8 @@ export default class Main extends BaseService<never> {
         }
       },
     )
+
+    this.islandService.emitter.on("monitoringTestnetAsset", (asset) => { this.store.dispatch(addIslandAsset(asset)}))
   }
 
   connectTelemetryService(): void {
