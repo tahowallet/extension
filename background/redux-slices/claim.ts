@@ -50,7 +50,7 @@ export interface Referrer {
 
 interface ClaimingState {
   status: string
-  islandAssets: SmartContractFungibleAsset[]
+  islandAssets: SmartContractFungibleAsset[] | undefined
   claimed: {
     [address: HexString]: boolean
   }
@@ -160,7 +160,11 @@ const claimingSlice = createSlice({
       immerState,
       { payload: asset }: { payload: SmartContractFungibleAsset },
     ) => {
-      immerState.islandAssets.push(asset)
+      if (immerState.islandAssets === undefined) {
+        immerState.islandAssets = [asset]
+      } else {
+        immerState.islandAssets.push(asset)
+      }
     },
     resetClaimFlow: (immerState) => {
       immerState.signature = undefined
@@ -191,6 +195,7 @@ const claimingSlice = createSlice({
 })
 
 export const {
+  addIslandAsset,
   chooseSelectedForBonus,
   chooseDelegate,
   setEligibility,
@@ -442,5 +447,7 @@ export const selectEligibilityLoading = createSelector(
 export const selectIsTestTahoDeployed = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
   (claimState: ClaimingState) =>
-    claimState.islandAssets.some((asset) => isSameAsset(asset, TESTNET_TAHO)),
+    claimState.islandAssets?.some((asset) =>
+      isSameAsset(asset, TESTNET_TAHO),
+    ) ?? false,
 )

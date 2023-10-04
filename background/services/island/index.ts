@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers"
+import { BigNumber, ethers } from "ethers"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 import { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
@@ -65,7 +65,7 @@ export default class IslandService extends BaseService<Events> {
         schedule: {
           periodInMinutes: 10,
         },
-        handler: () => this.startMonitoringIfNeeded,
+        handler: () => this.startMonitoringIfNeeded(),
         runAtStart: true,
       },
     })
@@ -73,6 +73,7 @@ export default class IslandService extends BaseService<Events> {
 
   private async startMonitoringIfNeeded(): Promise<void> {
     if (isDisabled(FeatureFlags.SUPPORT_THE_ISLAND_TESTNET)) {
+      logger.debug("Island testnet disabled, not setting up The Island...")
       this.isRelevantMonitoringEnabled = true
       return
     }
@@ -90,39 +91,56 @@ export default class IslandService extends BaseService<Events> {
       return
     }
 
-    // Bail if the TAHO contract hasn't been deployed.
-    if ((await islandProvider.getCode(TESTNET_TAHO.contractAddress)) === "0x") {
-      logger.debug("TAHO contract not deployed, not setting up The Island...")
-      return
+    try {
+      // Bail if the TAHO contract hasn't been deployed.
+      if (
+        (await islandProvider.getCode(TESTNET_TAHO.contractAddress)) === "0x"
+      ) {
+        logger.debug("TAHO contract not deployed, not setting up The Island...")
+        return
+      }
+
+      if (!(await this.indexingService.isTrackingAsset(TESTNET_TAHO))) {
+        await this.indexingService.addAssetToTrack(TESTNET_TAHO)
+
+        this.emitter.emit("monitoringTestnetAsset", TESTNET_TAHO)
+      }
+
+      const connectedDeployer = TestnetTahoDeployer.connect(islandProvider)
+      await Promise.all(
+        STARTING_REALM_NAMES.map(async (realmName) => {
+          const realmAddress =
+            await connectedDeployer.functions[
+              `${realmName.toUpperCase()}_REALM`
+            ]()
+          const realmContract = buildRealmContract(realmAddress[0]).connect(
+            islandProvider,
+          )
+
+          const xpAddress = (await realmContract.functions.xp())[0]
+
+          if (xpAddress === ethers.constants.AddressZero) {
+            logger.debug(
+              `XP token for realm ${realmName} at ${realmAddress} is not yet set, throwing an error to retry tracking later.`,
+            )
+
+            throw new Error(`XP token does not exist for realm ${realmAddress}`)
+          }
+
+          const asset = await this.indexingService.addTokenToTrackByContract(
+            ISLAND_NETWORK,
+            xpAddress,
+            { verified: true },
+          )
+          if (asset !== undefined) {
+            this.emitter.emit("monitoringTestnetAsset", asset)
+          }
+        }),
+      )
+    } catch (error) {
+      logger.error("Error setting up monitoring for realms", error)
+      throw error
     }
-
-    if (!this.indexingService.isTrackingAsset(TESTNET_TAHO)) {
-      await this.indexingService.addAssetToTrack(TESTNET_TAHO)
-
-      this.emitter.emit("monitoringTestnetAsset", TESTNET_TAHO)
-    }
-
-    const connectedDeployer = TestnetTahoDeployer.connect(islandProvider)
-    await Promise.all(
-      STARTING_REALM_NAMES.map(async (realmName) => {
-        const realmAddress =
-          await connectedDeployer.functions[
-            `${realmName.toUpperCase()}_REALM`
-          ]()
-        const realmContract =
-          buildRealmContract(realmAddress).connect(islandProvider)
-
-        const xpAddress = await realmContract.functions.xp()
-        const asset = await this.indexingService.addTokenToTrackByContract(
-          ISLAND_NETWORK,
-          xpAddress,
-          { verified: true },
-        )
-        if (asset !== undefined) {
-          this.emitter.emit("monitoringTestnetAsset", asset)
-        }
-      }),
-    )
 
     // If all monitoring is enabled successfully, don't try again later.
     this.isRelevantMonitoringEnabled = true

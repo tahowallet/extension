@@ -41,7 +41,7 @@ import {
 import { HexString, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible } from "./services/island/types"
+import { Eligible, ReferrerStats } from "./services/island/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -58,6 +58,7 @@ import {
   removeAssetData,
 } from "./redux-slices/assets"
 import {
+  addIslandAsset,
   setEligibility,
   setEligibilityLoading,
   setReferrer,
@@ -135,7 +136,6 @@ import {
   SignatureResponse,
   TXSignatureResponse,
 } from "./services/signing"
-import { ReferrerStats } from "./services/doggo/db"
 import {
   migrateReduxState,
   REDUX_STATE_VERSION,
@@ -1661,7 +1661,9 @@ export default class Main extends BaseService<never> {
       },
     )
 
-    this.islandService.emitter.on("monitoringTestnetAsset", (asset) => { this.store.dispatch(addIslandAsset(asset)}))
+    this.islandService.emitter.on("monitoringTestnetAsset", (asset) => {
+      this.store.dispatch(addIslandAsset(asset))
+    })
   }
 
   connectTelemetryService(): void {
