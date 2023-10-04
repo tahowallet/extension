@@ -4,17 +4,25 @@ import { Eligible } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { DOGGO, ETHEREUM } from "../../constants"
+import { ARBITRUM_ONE, DOGGO, ETHEREUM } from "../../constants"
 import { sameNetwork } from "../../networks"
-import { ClaimWithFriends } from "./contracts"
+import {
+  ClaimWithFriends,
+  STARTING_REALM_NAMES,
+  TESTNET_TAHO,
+  TestnetTahoDeployer,
+  buildRealmContract,
+} from "./contracts"
 import IndexingService from "../indexing"
 import { initialVaults } from "../../redux-slices/earn"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
 import { AddressOnNetwork } from "../../accounts"
-import { DoggoDatabase, getOrCreateDB, ReferrerStats } from "./db"
+import { IslandDatabase, getOrCreateDB, ReferrerStats } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { FeatureFlags, isEnabled } from "../../features"
+import { FeatureFlags, isDisabled, isEnabled } from "../../features"
+
+export { TESTNET_TAHO, TestnetTahoDeployer as TahoDeployer } from "./contracts"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
@@ -22,38 +30,88 @@ interface Events extends ServiceLifecycleEvents {
 }
 
 /*
- * The DOGGO service handles interactions, caching, and indexing related to the
- * DOGGO token and its capabilities.
+ * The Island service handles interactions, caching, and indexing related to
+ * the Island game and its capabilities.
  *
- * This includes handling DOGGO claim data, as well as
+ * This includes handling Island contracts, as well as metadata that is best
+ * maintained in-wallet around XP, etc.
  */
-export default class DoggoService extends BaseService<Events> {
+export default class IslandService extends BaseService<Events> {
+  private isRelevantMonitoringEnabled = false
+
   static create: ServiceCreatorFunction<
     Events,
-    DoggoService,
+    IslandService,
     [Promise<ChainService>, Promise<IndexingService>]
   > = async (chainService, indexingService) =>
     new this(await getOrCreateDB(), await chainService, await indexingService)
 
   private constructor(
-    private db: DoggoDatabase,
+    private db: IslandDatabase,
     private chainService: ChainService,
     private indexingService: IndexingService,
   ) {
-    super()
+    super({
+      startMonitoringIfNeeded: {
+        schedule: {
+          periodInMinutes: 10,
+        },
+        handler: () => this.startMonitoringIfNeeded,
+        runAtStart: true,
+      },
+    })
+  }
+
+  private async startMonitoringIfNeeded(): Promise<void> {
+    if (isDisabled(FeatureFlags.SUPPORT_THE_ISLAND_TESTNET)) {
+      this.isRelevantMonitoringEnabled = true
+      return
+    }
+
+    if (this.isRelevantMonitoringEnabled) {
+      return
+    }
+
+    const arbitrumProvider = this.chainService.providerForNetwork(ARBITRUM_ONE)
+    if (arbitrumProvider === undefined) {
+      logger.debug(
+        "No Arbitrum provider available, not setting up The Island...",
+      )
+
+      return
+    }
+
+    if (!this.indexingService.isTrackingAsset(TESTNET_TAHO)) {
+      this.indexingService.addAssetToTrack(TESTNET_TAHO)
+    }
+
+    const connectedDeployer = TestnetTahoDeployer.connect(arbitrumProvider)
+    await Promise.all(
+      STARTING_REALM_NAMES.map(async (realmName) => {
+        const realmAddress =
+          await connectedDeployer.functions[
+            `${realmName.toUpperCase()}_REALM`
+          ]()
+        const realmContract =
+          buildRealmContract(realmAddress).connect(arbitrumProvider)
+
+        const xpAddress = await realmContract.functions.xp()
+        await this.indexingService.addTokenToTrackByContract(
+          ARBITRUM_ONE,
+          xpAddress,
+          { verified: true },
+        )
+      }),
+    )
+
+    // If all monitoring is enabled successfully, don't try again later.
+    this.isRelevantMonitoringEnabled = true
   }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     const huntingGrounds = initialVaults
-
-    const ethereumProvider = this.chainService.providerForNetwork(ETHEREUM)
-    if (ethereumProvider === undefined) {
-      logger.error(
-        "No Ethereum provider available, not setting up DOGGO monitoring...",
-      )
-    }
 
     if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.

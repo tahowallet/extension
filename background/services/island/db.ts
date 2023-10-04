@@ -7,14 +7,14 @@ export type ReferrerStats = {
   referredUsers: number
 }
 
-export class DoggoDatabase extends Dexie {
+export class IslandDatabase extends Dexie {
   private referralBonuses!: Dexie.Table<
     AddressOnNetwork & { referredBy: AddressOnNetwork; referralBonus: bigint },
     [string, string, string]
   >
 
   constructor() {
-    super("tally/doggo")
+    super("taho/island")
 
     this.version(1).stores({
       referralBonuses:
@@ -54,6 +54,6 @@ export class DoggoDatabase extends Dexie {
   }
 }
 
-export async function getOrCreateDB(): Promise<DoggoDatabase> {
-  return new DoggoDatabase()
+export async function getOrCreateDB(): Promise<IslandDatabase> {
+  return new IslandDatabase()
 }
