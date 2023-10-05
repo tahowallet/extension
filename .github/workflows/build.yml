@@ -237,20 +237,20 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: ci/cache
-          # 17094516 is a forking block used in the tests.
-          key: hardhat-17094516-${{ github.ref_name }}
+          # 18291960 is a forking block used in the tests.
+          key: hardhat-18291960-${{ github.ref_name }}
           restore-keys: |
-            hardhat-17094516-
+            hardhat-18291960-
             hardhat-
       - name: Run Hardhat
         env:
           CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
           MAINNET_FORK_CHAIN_ID: 1337
           # We're using a fixed block number as a start of the fork to get
-          # consistent behavior in tests. The `17094516` block is a block at
-          # which the wallet used in tests (`testertesting.eth`) had multiple
-          # assets.
-          FORKING_BLOCK: 17094516
+          # consistent behavior in tests. The `18291960` block is a block at
+          # which the wallet used in tests (`testertesting.eth`) had the two
+          # assets used in e2e tests.
+          FORKING_BLOCK: 18291960
         run: |
           cd ci
           yarn install
@@ -278,4 +278,4 @@ jobs:
         if: always()
         with:
           path: ci/cache
-          key: hardhat-17094516-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}
+          key: hardhat-18291960-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}
