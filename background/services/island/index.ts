@@ -117,9 +117,20 @@ export default class IslandService extends BaseService<Events> {
             islandProvider,
           )
 
-          const xpAddress = (await realmContract.functions.xp())[0]
+          const realmVeTahoAddress = (await realmContract.functions.veTaho())[0]
+          const realmVeAsset =
+            await this.indexingService.addTokenToTrackByContract(
+              ISLAND_NETWORK,
+              realmVeTahoAddress,
+              { verified: true },
+            )
+          if (realmVeAsset !== undefined) {
+            this.emitter.emit("monitoringTestnetAsset", realmVeAsset)
+          }
 
-          if (xpAddress === ethers.constants.AddressZero) {
+          const realmXpAddress = (await realmContract.functions.xp())[0]
+
+          if (realmXpAddress === ethers.constants.AddressZero) {
             logger.debug(
               `XP token for realm ${realmName} at ${realmAddress} is not yet set, throwing an error to retry tracking later.`,
             )
@@ -127,13 +138,14 @@ export default class IslandService extends BaseService<Events> {
             throw new Error(`XP token does not exist for realm ${realmAddress}`)
           }
 
-          const asset = await this.indexingService.addTokenToTrackByContract(
-            ISLAND_NETWORK,
-            xpAddress,
-            { verified: true },
-          )
-          if (asset !== undefined) {
-            this.emitter.emit("monitoringTestnetAsset", asset)
+          const realmXpAsset =
+            await this.indexingService.addTokenToTrackByContract(
+              ISLAND_NETWORK,
+              realmXpAddress,
+              { verified: true },
+            )
+          if (realmXpAsset !== undefined) {
+            this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
           }
         }),
       )
