@@ -1090,6 +1090,19 @@ export function makeSerialFallbackProvider(
     ])
   }
 
+  if (
+    chainID === ARBITRUM_ONE.chainID &&
+    process.env.ARBITRUM_FORK_RPC !== undefined &&
+    process.env.ARBITRUM_FORK_RPC.trim() !== ""
+  ) {
+    return new SerialFallbackProvider(ARBITRUM_ONE.chainID, [
+      {
+        type: "generic" as const,
+        creator: () => new JsonRpcBatchProvider(process.env.ARBITRUM_FORK_RPC),
+      },
+    ])
+  }
+
   const alchemyProviderCreators: ProviderCreator[] =
     ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
       ? [
