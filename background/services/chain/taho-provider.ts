@@ -15,7 +15,7 @@ import { ConnectionInfo } from "@ethersproject/web"
 // upcoming patch, but as it's release date is unknown, we're adding the Sepolia
 // support by creating `TahoAlchemyProvider` class that handles this case.
 // In the future we may want to add there another case, for `arbitrum-sepolia`,
-// but we can't do that at this moment, as Alchemy dos not offers an RPC for
+// but we can't do that at this moment, as Alchemy does not offer an RPC for
 // Arbitrum Sepolia yet.
 export default class TahoAlchemyProvider extends AlchemyProvider {
   static override getUrl(network: Network, apiKey: string): ConnectionInfo {
