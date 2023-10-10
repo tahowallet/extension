@@ -101,7 +101,7 @@ export const ARBITRUM_SEPOLIA: EVMNetwork = {
   baseAsset: ARBITRUM_SEPOLIA_ETH,
   chainID: "421614",
   family: "EVM",
-  coingeckoPlatformID: "ethereum",
+  coingeckoPlatformID: "arbitrum-one",
 }
 
 export const ZK_SYNC: EVMNetwork = {

@@ -49,7 +49,7 @@ const testNetworks = [
   },
   {
     network: ARBITRUM_SEPOLIA,
-    info: i18n.t("protocol.l2Testnet"),
+    info: i18n.t("protocol.testnet"),
     isDisabled: false,
   },
 ]
