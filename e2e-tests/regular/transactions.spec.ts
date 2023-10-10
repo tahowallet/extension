@@ -187,7 +187,7 @@ test.describe("Transactions", () => {
 
       await transactionsHelper.assertActivityItemProperties(
         account2.address,
-        "0x0581…20fc7",
+        "0x6e80…bb017",
         "0x47745A7252e119431CCF973c0eBD4279638875a6",
         "0x4774…875a6",
         /^0\.00001 ETH$/,
@@ -236,7 +236,7 @@ test.describe("Transactions", () => {
 
       await transactionsHelper.assertActivityItemProperties(
         account2.address,
-        "0x0581…20fc7",
+        "0x6e80…bb017",
         "0x47745A7252e119431CCF973c0eBD4279638875a6",
         "0x4774…875a6",
         /^0\.00001 ETH$/,

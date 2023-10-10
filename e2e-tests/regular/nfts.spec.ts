@@ -241,7 +241,7 @@ test.describe("NFTs", () => {
         await poapPreview
           .getByRole("link", { name: "POAP" })
           .getAttribute("href"),
-      ).toEqual("https://app.poap.xyz/token/6676760")
+      ).toEqual("https://app.poap.xyz/token/6809595")
 
       // Description
       await expect(
@@ -254,7 +254,7 @@ test.describe("NFTs", () => {
       const poapTraits = poapPreview.getByTestId("nft_properties_list")
 
       await expect(poapTraits.getByText("Event")).toBeVisible()
-      await expect(poapTraits.getByTitle("Taho TEST POAP")).toBeVisible()
+      await expect(poapTraits.getByTitle("Taho TEST POAP 2")).toBeVisible()
       await expect(poapTraits.getByText("Year")).toBeVisible()
       await expect(poapTraits.getByText("2023")).toBeVisible()
 
