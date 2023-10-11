@@ -46,7 +46,7 @@ interface Events extends ServiceLifecycleEvents {
  * maintained in-wallet around XP, etc.
  */
 export default class IslandService extends BaseService<Events> {
-  private isRelevantMonitoringEnabled = false
+  private isRelevantMonitoringAlreadyEnabled = false
 
   static create: ServiceCreatorFunction<
     Events,
@@ -72,13 +72,13 @@ export default class IslandService extends BaseService<Events> {
   }
 
   private async startMonitoringIfNeeded(): Promise<void> {
-    if (isDisabled(FeatureFlags.SUPPORT_THE_ISLAND_TESTNET)) {
+    if (isDisabled(FeatureFlags.SUPPORT_THE_ISLAND)) {
       logger.debug("Island testnet disabled, not setting up The Island...")
-      this.isRelevantMonitoringEnabled = true
+      this.isRelevantMonitoringAlreadyEnabled = true
       return
     }
 
-    if (this.isRelevantMonitoringEnabled) {
+    if (this.isRelevantMonitoringAlreadyEnabled) {
       return
     }
 
@@ -155,7 +155,7 @@ export default class IslandService extends BaseService<Events> {
     }
 
     // If all monitoring is enabled successfully, don't try again later.
-    this.isRelevantMonitoringEnabled = true
+    this.isRelevantMonitoringAlreadyEnabled = true
   }
 
   protected override async internalStartService(): Promise<void> {

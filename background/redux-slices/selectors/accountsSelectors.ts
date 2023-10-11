@@ -69,8 +69,7 @@ const shouldForciblyDisplayAsset = (
   const isIslandRelated =
     (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
       assetAmount.asset.symbol === DOGGO.symbol) ||
-    (isEnabled(FeatureFlags.SUPPORT_THE_ISLAND_TESTNET) &&
-      isSameAsset(assetAmount.asset, TESTNET_TAHO))
+    isSameAsset(assetAmount.asset, TESTNET_TAHO)
 
   return isIslandRelated || isNetworkBaseAsset(assetAmount.asset)
 }

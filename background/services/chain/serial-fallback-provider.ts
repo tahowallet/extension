@@ -14,6 +14,7 @@ import {
   ARBITRUM_ONE,
   OPTIMISM,
   FORK,
+  ARBITRUM_SEPOLIA,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -1091,11 +1092,17 @@ export function makeSerialFallbackProvider(
   }
 
   if (
-    chainID === ARBITRUM_ONE.chainID &&
+    chainID === ARBITRUM_SEPOLIA.chainID &&
     process.env.ARBITRUM_FORK_RPC !== undefined &&
-    process.env.ARBITRUM_FORK_RPC.trim() !== ""
+    process.env.ARBITRUM_FORK_RPC.trim() !== "" &&
+    process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true"
   ) {
-    return new SerialFallbackProvider(ARBITRUM_ONE.chainID, [
+    // eslint-disable-next-line no-console
+    console.log(
+      "%c🦴 Using Tenderly fork as Arbitrum Sepolia provider",
+      "background: #071111; color: #fff; font-weight: 900;",
+    )
+    return new SerialFallbackProvider(ARBITRUM_SEPOLIA.chainID, [
       {
         type: "generic" as const,
         creator: () => new JsonRpcBatchProvider(process.env.ARBITRUM_FORK_RPC),
