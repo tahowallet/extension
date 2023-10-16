@@ -66,12 +66,11 @@ export default class IslandService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.startMonitoringIfNeeded(),
-        runAtStart: true,
       },
     })
   }
 
-  private async startMonitoringIfNeeded(): Promise<void> {
+  async startMonitoringIfNeeded(): Promise<void> {
     if (isDisabled(FeatureFlags.SUPPORT_THE_ISLAND)) {
       logger.debug("Island testnet disabled, not setting up The Island...")
       this.isRelevantMonitoringAlreadyEnabled = true
@@ -90,6 +89,8 @@ export default class IslandService extends BaseService<Events> {
 
       return
     }
+
+    this.chainService.startTrackingNetworkOrThrow(ISLAND_NETWORK.chainID)
 
     try {
       // Bail if the TAHO contract hasn't been deployed.
@@ -122,7 +123,7 @@ export default class IslandService extends BaseService<Events> {
             await this.indexingService.addTokenToTrackByContract(
               ISLAND_NETWORK,
               realmVeTahoAddress,
-              { verified: true },
+              TESTNET_TAHO.metadata,
             )
           if (realmVeAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmVeAsset)
@@ -142,7 +143,7 @@ export default class IslandService extends BaseService<Events> {
             await this.indexingService.addTokenToTrackByContract(
               ISLAND_NETWORK,
               realmXpAddress,
-              { verified: true },
+              TESTNET_TAHO.metadata,
             )
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)

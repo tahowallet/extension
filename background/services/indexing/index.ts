@@ -727,6 +727,7 @@ export default class IndexingService extends BaseService<Events> {
         [address: HexString]: HexString
       }
       verified?: boolean
+      logoURL?: string
     } = {},
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
@@ -767,15 +768,21 @@ export default class IndexingService extends BaseService<Events> {
       if (!isRemoved || (isRemoved && isVerified)) {
         if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
+
           if (metadata.verified !== undefined) {
             customAsset.metadata.verified = metadata.verified
           }
+
           if (metadata.discoveryTxHash) {
             customAsset.metadata.discoveryTxHash ??= {}
             Object.assign(
               customAsset.metadata.discoveryTxHash,
               metadata.discoveryTxHash,
             )
+          }
+
+          if (metadata.logoURL) {
+            customAsset.metadata.logoURL = metadata.logoURL
           }
 
           if (isRemoved) {

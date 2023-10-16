@@ -840,6 +840,9 @@ export default class Main extends BaseService<never> {
         // Force a refresh of the account balance to populate the store.
         this.chainService.getLatestBaseAccountBalance(addressNetwork)
       })
+
+      // Set up Island Monitoring
+      await this.islandService.startMonitoringIfNeeded()
     })
 
     // Wire up chain service to account slice.
