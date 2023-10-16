@@ -459,9 +459,10 @@ export const selectHasIslandAssets = createSelector(
   [
     (state: { claim: ClaimingState }): ClaimingState => state.claim,
     (state: { account: AccountState }): AccountState => state.account,
+    selectIsTestTahoDeployed,
     selectCurrentAccount,
   ],
-  (claimState, accountState, { address }) => {
+  (claimState, accountState, isTahoDeployed, { address }) => {
     const { islandAssets } = claimState
 
     const currentAccountData =
@@ -470,6 +471,7 @@ export const selectHasIslandAssets = createSelector(
       ]
 
     if (
+      !isTahoDeployed ||
       islandAssets === undefined ||
       islandAssets.length === 0 ||
       !currentAccountData ||
