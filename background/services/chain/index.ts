@@ -70,6 +70,7 @@ import {
 } from "./utils/optimismGasPriceOracle"
 import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
+import { ISLAND_NETWORK } from "../island/contracts"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -875,8 +876,17 @@ export default class ChainService extends BaseService<Events> {
   async getNetworksToTrack(): Promise<EVMNetwork[]> {
     const chainIDs = await this.db.getChainIDsToTrack()
     if (chainIDs.size === 0) {
-      // Default to tracking Ethereum so ENS resolution works during onboarding
+      // Ethereum - default to tracking Ethereum so ENS resolution works during onboarding
+      // Arbitrum Sepolia - default to tracking so we can support Island Dapp
+      if (isEnabled(FeatureFlags.SUPPORT_THE_ISLAND)) {
+        return [ETHEREUM, ISLAND_NETWORK]
+      }
+
       return [ETHEREUM]
+    }
+
+    if (isEnabled(FeatureFlags.SUPPORT_THE_ISLAND)) {
+      chainIDs.add(ISLAND_NETWORK.chainID)
     }
 
     const networks = await Promise.all(
@@ -888,6 +898,7 @@ export default class ChainService extends BaseService<Events> {
         return network
       }),
     )
+
     return networks.filter((network): network is EVMNetwork => !!network)
   }
 

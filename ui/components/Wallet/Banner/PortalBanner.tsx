@@ -4,7 +4,10 @@ import {
   dismissableItemMarkedAsShown,
   selectShouldShowDismissableItem,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { selectIsTestTahoDeployed } from "@tallyho/tally-background/redux-slices/claim"
+import {
+  selectHasIslandAssets,
+  selectIsTestTahoDeployed,
+} from "@tallyho/tally-background/redux-slices/claim"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
@@ -12,6 +15,7 @@ import SharedBanner from "../../Shared/SharedBanner"
 
 export default function PortalBanner(): ReactElement | null {
   const isTokenDeployed = useBackgroundSelector(selectIsTestTahoDeployed)
+  const hasIslandAssets = useBackgroundSelector(selectHasIslandAssets)
   const isBannerVisible = useBackgroundSelector(
     selectShouldShowDismissableItem("testnet-portal-is-open-banner"),
   )
@@ -23,7 +27,7 @@ export default function PortalBanner(): ReactElement | null {
     dispatch(dismissableItemMarkedAsShown("testnet-portal-is-open-banner"))
   }
 
-  if (!isTokenDeployed || !isBannerVisible) {
+  if (!isTokenDeployed || !isBannerVisible || !hasIslandAssets) {
     return null
   }
 

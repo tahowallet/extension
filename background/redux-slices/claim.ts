@@ -27,6 +27,9 @@ import {
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { SmartContractFungibleAsset } from "../assets"
 import { isSameAsset } from "./utils/asset-utils"
+import { selectCurrentAccount } from "./selectors/uiSelectors"
+import { AccountState } from "./accounts"
+import { ISLAND_NETWORK } from "../services/island/contracts"
 
 export interface DAO {
   address: string
@@ -450,4 +453,38 @@ export const selectIsTestTahoDeployed = createSelector(
     claimState.islandAssets?.some((asset) =>
       isSameAsset(asset, TESTNET_TAHO),
     ) ?? false,
+)
+
+export const selectHasIslandAssets = createSelector(
+  [
+    (state: { claim: ClaimingState }): ClaimingState => state.claim,
+    (state: { account: AccountState }): AccountState => state.account,
+    selectCurrentAccount,
+  ],
+  (claimState, accountState, { address }) => {
+    const { islandAssets } = claimState
+
+    const currentAccountData =
+      accountState.accountsData.evm[ISLAND_NETWORK.chainID]?.[
+        normalizeEVMAddress(address)
+      ]
+
+    if (
+      islandAssets === undefined ||
+      islandAssets.length === 0 ||
+      !currentAccountData ||
+      currentAccountData === "loading"
+    ) {
+      return false
+    }
+
+    const balances = Object.values(currentAccountData?.balances ?? {})
+
+    const hasIslandAssets = islandAssets.some((islandAsset) =>
+      balances.some(({ assetAmount: { asset } }) =>
+        isSameAsset(asset, islandAsset),
+      ),
+    )
+    return hasIslandAssets
+  },
 )
