@@ -2,7 +2,7 @@ import browser from "webextension-polyfill"
 import { ethers } from "ethers"
 import { SmartContractFungibleAsset } from "../../assets"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { ARBITRUM_ONE, ARBITRUM_SEPOLIA } from "../../constants"
+import { ARBITRUM_SEPOLIA } from "../../constants"
 import { NormalizedEVMAddress } from "../../types"
 
 export const ISLAND_NETWORK = ARBITRUM_SEPOLIA // TODO: change once we move to Arbitrum One
@@ -16,7 +16,7 @@ export const TESTNET_TAHO: SmartContractFungibleAsset = {
   decimals: 18,
   contractAddress:
     process.env.TESTNET_TAHO_ADDRESS ?? ethers.constants.AddressZero,
-  homeNetwork: ARBITRUM_ONE,
+  homeNetwork: ISLAND_NETWORK,
   metadata: {
     tokenLists: [],
     websiteURL: WEBSITE_ORIGIN,
