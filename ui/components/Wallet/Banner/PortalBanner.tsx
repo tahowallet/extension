@@ -5,6 +5,7 @@ import {
   selectShouldShowDismissableItem,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { selectHasIslandAssets } from "@tallyho/tally-background/redux-slices/claim"
+import classNames from "classnames"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
@@ -22,7 +23,7 @@ export default function PortalBanner(): ReactElement | null {
     dispatch(dismissableItemMarkedAsShown("testnet-portal-is-open-banner"))
   }
 
-  if (!isBannerVisible || !hasIslandAssets) {
+  if (!isBannerVisible) {
     return null
   }
 
@@ -46,14 +47,23 @@ export default function PortalBanner(): ReactElement | null {
              )
       `}
     >
-      <i className="portal_open_image" />
-      <h2 className="serif_header">The portal is open!</h2>{" "}
+      <i
+        className={classNames({
+          portal_open_image: hasIslandAssets,
+          portal_open_title_image: !hasIslandAssets,
+        })}
+      />
+      <h2 className="serif_header">
+        {hasIslandAssets ? "The portal is open!" : "The Island is live!"}
+      </h2>
+      {hasIslandAssets || <p>See if the portal is open for you.</p>}
       <SharedButton
         type="primary"
         size="medium"
         onClick={showIslandAndDismissBanner}
+        style={{ marginTop: "5px" }}
       >
-        Explore The Island{" "}
+        {hasIslandAssets ? "Explore The Island" : "Check now"}
         <SharedIcon
           icon="new_tab@2x.png"
           width={16}
@@ -70,11 +80,25 @@ export default function PortalBanner(): ReactElement | null {
             background: url("./images/island/portal-image@2x.png");
             background-size: cover;
           }
+          .portal_open_title_image {
+            float: left;
+            width: 120px;
+            height: 117px;
+            background: url("./images/island/portal-image-title@2x.png");
+            background-size: cover;
+            margin-right: 10px;
+            margin-bottom: 12px;
+          }
 
           h2 {
             font-size: 22px;
             line-height: 32px;
-            margin-bottom: 5px;
+            margin: 0;
+          }
+
+          p {
+            margin: 0 0 8px;
+            color: var(--green-40);
           }
         `}
       </style>
