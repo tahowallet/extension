@@ -18,8 +18,7 @@ export default function PortalBanner(): ReactElement | null {
   const dispatch = useBackgroundDispatch()
 
   const showIslandAndDismissBanner = () => {
-    // FIXME Shortcut. We should use a real link here.
-    browser.tabs.create({ url: "https://island.taho.xyz" })
+    browser.tabs.create({ url: "https://app.taho.xyz" })
     dispatch(dismissableItemMarkedAsShown("testnet-portal-is-open-banner"))
   }
 
