@@ -2,13 +2,10 @@ import browser from "webextension-polyfill"
 import { ethers } from "ethers"
 import { SmartContractFungibleAsset } from "../../assets"
 import { WEBSITE_ORIGIN } from "../../constants/website"
-import { ARBITRUM_ONE, ARBITRUM_SEPOLIA } from "../../constants"
+import { ARBITRUM_SEPOLIA } from "../../constants"
 import { NormalizedEVMAddress } from "../../types"
 
-export const ISLAND_NETWORK =
-  process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true"
-    ? ARBITRUM_ONE
-    : ARBITRUM_SEPOLIA // TODO: change once we move to Arbitrum One
+export const ISLAND_NETWORK = ARBITRUM_SEPOLIA // TODO: change once we move to Arbitrum One
 
 export const VOTE_WITH_FRIENDS_ADDRESS =
   "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
