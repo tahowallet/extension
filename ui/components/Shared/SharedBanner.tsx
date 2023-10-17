@@ -14,7 +14,7 @@ type BannerProps = {
 
 export type CanBeClosedProps =
   | { canBeClosed: true; id: string }
-  | { canBeClosed?: false; id?: never }
+  | { canBeClosed?: false; id?: unknown }
 
 function Banner(props: BannerProps): ReactElement {
   const {
@@ -118,7 +118,8 @@ export default function SharedBanner(
 ): ReactElement | null {
   const { canBeClosed = false, id, ...bannerProps } = props
 
-  if (canBeClosed && id) return BannerWithClose({ id, ...bannerProps })
+  if (canBeClosed && typeof id === "string")
+    return BannerWithClose({ id, ...bannerProps })
 
   return Banner({ ...bannerProps })
 }

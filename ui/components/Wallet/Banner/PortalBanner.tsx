@@ -11,16 +11,18 @@ import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
 import SharedBanner from "../../Shared/SharedBanner"
 
+const PORTAL_ID = "testnet-portal-is-open-banner"
+
 export default function PortalBanner(): ReactElement | null {
   const hasIslandAssets = useBackgroundSelector(selectHasIslandAssets)
   const isBannerVisible = useBackgroundSelector(
-    selectShouldShowDismissableItem("testnet-portal-is-open-banner"),
+    selectShouldShowDismissableItem(PORTAL_ID),
   )
   const dispatch = useBackgroundDispatch()
 
   const showIslandAndDismissBanner = () => {
     browser.tabs.create({ url: "https://app.taho.xyz" })
-    dispatch(dismissableItemMarkedAsShown("testnet-portal-is-open-banner"))
+    dispatch(dismissableItemMarkedAsShown(PORTAL_ID))
   }
 
   if (!isBannerVisible) {
@@ -29,6 +31,8 @@ export default function PortalBanner(): ReactElement | null {
 
   return (
     <SharedBanner
+      id={PORTAL_ID}
+      canBeClosed={!hasIslandAssets}
       customStyles={`
         padding: 8px 11px 0 0;
         margin-bottom: 18px;
