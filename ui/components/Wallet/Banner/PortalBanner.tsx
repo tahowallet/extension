@@ -1,38 +1,25 @@
 import browser from "webextension-polyfill"
 import React, { ReactElement } from "react"
-import {
-  dismissableItemMarkedAsShown,
-  selectShouldShowDismissableItem,
-} from "@tallyho/tally-background/redux-slices/ui"
 import { selectHasIslandAssets } from "@tallyho/tally-background/redux-slices/claim"
-import classNames from "classnames"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../../hooks"
+import { useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
 import SharedBanner from "../../Shared/SharedBanner"
 
-const PORTAL_ID = "testnet-portal-is-open-banner"
+const PORTAL_ID_WITH_ASSETS = "testnet-portal-is-open-banner-with-assets"
+const PORTAL_ID_NO_ASSETS = "testnet-portal-is-open-banner-no-assets"
 
 export default function PortalBanner(): ReactElement | null {
   const hasIslandAssets = useBackgroundSelector(selectHasIslandAssets)
-  const isBannerVisible = useBackgroundSelector(
-    selectShouldShowDismissableItem(PORTAL_ID),
-  )
-  const dispatch = useBackgroundDispatch()
 
   const showIslandAndDismissBanner = () => {
     browser.tabs.create({ url: "https://app.taho.xyz" })
-    dispatch(dismissableItemMarkedAsShown(PORTAL_ID))
-  }
-
-  if (!isBannerVisible) {
-    return null
   }
 
   return (
     <SharedBanner
-      id={PORTAL_ID}
-      canBeClosed={!hasIslandAssets}
+      id={hasIslandAssets ? PORTAL_ID_WITH_ASSETS : PORTAL_ID_NO_ASSETS}
+      canBeClosed
       customStyles={`
         padding: 8px 11px 0 0;
         margin-bottom: 18px;
@@ -51,23 +38,20 @@ export default function PortalBanner(): ReactElement | null {
              )
       `}
     >
-      <i
-        className={classNames({
-          portal_open_image: hasIslandAssets,
-          portal_open_title_image: !hasIslandAssets,
-        })}
-      />
-      <h2 className="serif_header">
-        {hasIslandAssets ? "The portal is open!" : "The Island is live!"}
-      </h2>
-      {hasIslandAssets || <p>See if the portal is open for you.</p>}
+      <i className="portal_open_title_image" />
+      <h2 className="serif_header">Subscape is online</h2>
+      <p>
+        {hasIslandAssets
+          ? "You're eligible for the Beta."
+          : "Try the live Beta."}
+      </p>
       <SharedButton
         type="primary"
         size="medium"
         onClick={showIslandAndDismissBanner}
         style={{ marginTop: "5px" }}
       >
-        {hasIslandAssets ? "Explore The Island" : "Check now"}
+        {hasIslandAssets ? "Explore Subscape" : "Check eligibility"}
         <SharedIcon
           icon="new_tab@2x.png"
           width={16}
@@ -77,13 +61,6 @@ export default function PortalBanner(): ReactElement | null {
       </SharedButton>
       <style jsx>
         {`
-          .portal_open_image {
-            float: left;
-            width: 132px;
-            height: 92px;
-            background: url("./images/island/portal-image@2x.png");
-            background-size: cover;
-          }
           .portal_open_title_image {
             float: left;
             width: 120px;
@@ -97,11 +74,11 @@ export default function PortalBanner(): ReactElement | null {
           h2 {
             font-size: 22px;
             line-height: 32px;
-            margin: 0;
+            margin: 0 0 5px;
           }
 
           p {
-            margin: 0 0 8px;
+            margin: 0 0 16px;
             color: var(--green-40);
           }
         `}
