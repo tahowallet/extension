@@ -29,7 +29,7 @@ import {
   ProviderBridgeService,
   TelemetryService,
   ServiceCreatorFunction,
-  DoggoService,
+  IslandService,
   LedgerService,
   SigningService,
   NFTsService,
@@ -41,7 +41,7 @@ import {
 import { HexString, NormalizedEVMAddress } from "./types"
 import { SignedTransaction } from "./networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible } from "./services/doggo/types"
+import { Eligible, ReferrerStats } from "./services/island/types"
 
 import rootReducer from "./redux-slices"
 import {
@@ -58,6 +58,7 @@ import {
   removeAssetData,
 } from "./redux-slices/assets"
 import {
+  addIslandAsset,
   setEligibility,
   setEligibilityLoading,
   setReferrer,
@@ -135,7 +136,6 @@ import {
   SignatureResponse,
   TXSignatureResponse,
 } from "./services/signing"
-import { ReferrerStats } from "./services/doggo/db"
 import {
   migrateReduxState,
   REDUX_STATE_VERSION,
@@ -327,7 +327,7 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService,
     )
-    const doggoService = DoggoService.create(chainService, indexingService)
+    const islandService = IslandService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -399,7 +399,7 @@ export default class Main extends BaseService<never> {
       await nameService,
       await internalEthereumProviderService,
       await providerBridgeService,
-      await doggoService,
+      await islandService,
       await telemetryService,
       await ledgerService,
       await signingService,
@@ -458,7 +458,7 @@ export default class Main extends BaseService<never> {
      * A promise to the claim service, which saves the eligibility data
      * for efficient storage and retrieval.
      */
-    private doggoService: DoggoService,
+    private islandService: IslandService,
     /**
      * A promise to the telemetry service, which keeps track of extension
      * storage usage and (eventually) other statistics.
@@ -602,7 +602,7 @@ export default class Main extends BaseService<never> {
       this.nameService.startService(),
       this.internalEthereumProviderService.startService(),
       this.providerBridgeService.startService(),
-      this.doggoService.startService(),
+      this.islandService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
       this.signingService.startService(),
@@ -625,7 +625,7 @@ export default class Main extends BaseService<never> {
       this.nameService.stopService(),
       this.internalEthereumProviderService.stopService(),
       this.providerBridgeService.stopService(),
-      this.doggoService.stopService(),
+      this.islandService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
       this.signingService.stopService(),
@@ -647,7 +647,7 @@ export default class Main extends BaseService<never> {
     this.connectProviderBridgeService()
     this.connectPreferenceService()
     this.connectEnrichmentService()
-    this.connectDoggoService()
+    this.connectIslandService()
     this.connectTelemetryService()
     this.connectLedgerService()
     this.connectSigningService()
@@ -840,6 +840,9 @@ export default class Main extends BaseService<never> {
         // Force a refresh of the account balance to populate the store.
         this.chainService.getLatestBaseAccountBalance(addressNetwork)
       })
+
+      // Set up Island Monitoring
+      await this.islandService.startMonitoringIfNeeded()
     })
 
     // Wire up chain service to account slice.
@@ -1584,14 +1587,14 @@ export default class Main extends BaseService<never> {
 
       this.store.dispatch(clearSwapQuote())
       this.store.dispatch(setEligibilityLoading())
-      this.doggoService.getEligibility(addressNetwork.address)
+      this.islandService.getEligibility(addressNetwork.address)
 
       this.store.dispatch(setVaultsAsStale())
 
       await this.chainService.markAccountActivity(addressNetwork)
 
       const referrerStats =
-        await this.doggoService.getReferrerStats(addressNetwork)
+        await this.islandService.getReferrerStats(addressNetwork)
       this.store.dispatch(setReferrerStats(referrerStats))
 
       this.providerBridgeService.notifyContentScriptsAboutAddressChange(
@@ -1629,15 +1632,15 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectDoggoService(): Promise<void> {
-    this.doggoService.emitter.on(
+  async connectIslandService(): Promise<void> {
+    this.islandService.emitter.on(
       "newEligibility",
       async (eligibility: Eligible) => {
         await this.store.dispatch(setEligibility(eligibility))
       },
     )
 
-    this.doggoService.emitter.on(
+    this.islandService.emitter.on(
       "newReferral",
       async (
         referral: {
@@ -1660,6 +1663,10 @@ export default class Main extends BaseService<never> {
         }
       },
     )
+
+    this.islandService.emitter.on("monitoringTestnetAsset", (asset) => {
+      this.store.dispatch(addIslandAsset(asset))
+    })
   }
 
   connectTelemetryService(): void {

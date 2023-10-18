@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { Eligible } from "../services/doggo/types"
+import { Eligible } from "../services/island/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
@@ -19,8 +19,17 @@ import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 import { DOGGO, HOUR } from "../constants"
 import { FeatureFlags, isEnabled } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
-import { ReferrerStats } from "../services/doggo/db"
+import {
+  ReferrerStats,
+  TESTNET_TAHO,
+  VOTE_WITH_FRIENDS_ADDRESS,
+} from "../services/island"
 import { fromFixedPointNumber } from "../lib/fixed-point"
+import { SmartContractFungibleAsset } from "../assets"
+import { isSameAsset } from "./utils/asset-utils"
+import { selectCurrentAccount } from "./selectors/uiSelectors"
+import { AccountState } from "./accounts"
+import { ISLAND_NETWORK } from "../services/island/contracts"
 
 export interface DAO {
   address: string
@@ -44,6 +53,7 @@ export interface Referrer {
 
 interface ClaimingState {
   status: string
+  islandAssets: SmartContractFungibleAsset[] | undefined
   claimed: {
     [address: HexString]: boolean
   }
@@ -64,8 +74,6 @@ interface ClaimingState {
 }
 
 const DOGGO_TOKEN_ADDRESS = DOGGO.contractAddress
-export const VOTE_WITH_FRIENDS_ADDRESS =
-  "0x0036B3a9D385Ce2CC072cf4A26dE29aE3283DEd0"
 
 const getDistributorContract = async () => {
   const distributorContractAddress = VOTE_WITH_FRIENDS_ADDRESS // VoteWithFriends contract address
@@ -78,6 +86,7 @@ const getDistributorContract = async () => {
 
 const initialState: ClaimingState = {
   status: "idle",
+  islandAssets: [],
   claimed: {},
   selectedForBonus: null,
   selectedDelegate: null,
@@ -150,6 +159,16 @@ const claimingSlice = createSlice({
       nonce,
       expiry,
     }),
+    addIslandAsset: (
+      immerState,
+      { payload: asset }: { payload: SmartContractFungibleAsset },
+    ) => {
+      if (immerState.islandAssets === undefined) {
+        immerState.islandAssets = [asset]
+      } else {
+        immerState.islandAssets.push(asset)
+      }
+    },
     resetClaimFlow: (immerState) => {
       immerState.signature = undefined
       immerState.selectedForBonus = null
@@ -179,6 +198,7 @@ const claimingSlice = createSlice({
 })
 
 export const {
+  addIslandAsset,
   chooseSelectedForBonus,
   chooseDelegate,
   setEligibility,
@@ -425,4 +445,48 @@ export const selectEligibility = createSelector(
 export const selectEligibilityLoading = createSelector(
   (state: { claim: ClaimingState }): ClaimingState => state.claim,
   (claimState: ClaimingState) => claimState.eligibilityLoading,
+)
+
+export const selectIsTestTahoDeployed = createSelector(
+  (state: { claim: ClaimingState }): ClaimingState => state.claim,
+  (claimState: ClaimingState) =>
+    claimState.islandAssets?.some((asset) =>
+      isSameAsset(asset, TESTNET_TAHO),
+    ) ?? false,
+)
+
+export const selectHasIslandAssets = createSelector(
+  [
+    (state: { claim: ClaimingState }): ClaimingState => state.claim,
+    (state: { account: AccountState }): AccountState => state.account,
+    selectIsTestTahoDeployed,
+    selectCurrentAccount,
+  ],
+  (claimState, accountState, isTahoDeployed, { address }) => {
+    const { islandAssets } = claimState
+
+    const currentAccountData =
+      accountState.accountsData.evm[ISLAND_NETWORK.chainID]?.[
+        normalizeEVMAddress(address)
+      ]
+
+    if (
+      !isTahoDeployed ||
+      islandAssets === undefined ||
+      islandAssets.length === 0 ||
+      !currentAccountData ||
+      currentAccountData === "loading"
+    ) {
+      return false
+    }
+
+    const balances = Object.values(currentAccountData?.balances ?? {})
+
+    const hasIslandAssets = islandAssets.some((islandAsset) =>
+      balances.some(({ assetAmount: { asset } }) =>
+        isSameAsset(asset, islandAsset),
+      ),
+    )
+    return hasIslandAssets
+  },
 )

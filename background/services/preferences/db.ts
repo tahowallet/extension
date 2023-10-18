@@ -71,6 +71,7 @@ export type Preferences = {
 export type ManuallyDismissableItem =
   | "analytics-enabled-banner"
   | "copy-sensitive-material-warning"
+  | "testnet-portal-is-open-banner"
 /**
  * Items that the user will see once and will not be auto-displayed again. Can
  * be used for tours, or for popups that can be retriggered but will not

@@ -423,7 +423,7 @@ const accountSlice = createSlice({
       { payload: asset }: { payload: SmartContractFungibleAsset },
     ) => {
       const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
-      Object.keys(allAccounts).forEach((address) => {
+      Object.keys(allAccounts ?? {}).forEach((address) => {
         const account = allAccounts[address]
         if (account !== "loading") {
           Object.values(account.balances).forEach(({ assetAmount }) => {
