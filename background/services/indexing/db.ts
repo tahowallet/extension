@@ -143,7 +143,10 @@ export class IndexingDatabase extends Dexie {
    * Tokens whose balances should be checked periodically. It might make sense
    * for this to be tracked against particular accounts in the future.
    */
-  private assetsToTrack!: Dexie.Table<SmartContractFungibleAsset, number>
+  private assetsToTrack!: Dexie.Table<
+    SmartContractFungibleAsset,
+    [string, string]
+  >
 
   constructor(options?: DexieOptions) {
     super("tally/indexing", options)

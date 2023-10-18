@@ -13,6 +13,7 @@ import {
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
+  isSameAsset,
   isTrustedAsset,
 } from "../utils/asset-utils"
 import {
@@ -45,6 +46,7 @@ import { AccountSigner, SignerType } from "../../services/signing"
 import { SignerImportSource } from "../../services/internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 import { PricesState, selectAssetPricePoint } from "../prices"
+import { TESTNET_TAHO } from "../../services/island"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -64,11 +66,12 @@ export const userValueDustThreshold = 2
 const shouldForciblyDisplayAsset = (
   assetAmount: CompleteAssetAmount<AnyAsset>,
 ) => {
-  const isDoggo =
-    !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
-    assetAmount.asset.symbol === DOGGO.symbol
+  const isIslandRelated =
+    (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
+      assetAmount.asset.symbol === DOGGO.symbol) ||
+    isSameAsset(assetAmount.asset, TESTNET_TAHO)
 
-  return isDoggo || isNetworkBaseAsset(assetAmount.asset)
+  return isIslandRelated || isNetworkBaseAsset(assetAmount.asset)
 }
 
 export function determineAssetDisplayAndVerify(
