@@ -232,7 +232,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
         event.request.params,
         origin,
       )
-    } else if (event.request.method === "eth_requestAccounts") {
+    } else if (
+      event.request.method === "eth_requestAccounts" ||
+      // We implement a partial wallet_requestPermissions implementation that
+      // only ever allows access to eth_accounts.
+      event.request.method === "wallet_requestPermissions"
+    ) {
       // if it's external communication AND the dApp does not have permission BUT asks for it
       // then let's ask the user what he/she thinks
 
@@ -255,7 +260,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const existingPermission = await this.checkPermission(origin, dAppChainID)
       if (
         // If there's an existing permission record and it's not an explicit
-        // allow, immediately return a rejection.
+        // allow, immedhttps://doc.rust-lang.org/std/primitive.char.html#representationiately return a rejection.
         (existingPermission !== undefined &&
           existingPermission.state !== "allow") ||
         // If there's an unresolved request for the domain, likewise return a
@@ -287,12 +292,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
         if (typeof newlyPersistedPermission !== "undefined") {
           // if agrees then let's return the account data
 
-          response.result = await this.routeContentScriptRPCRequest(
-            newlyPersistedPermission,
-            "eth_accounts",
-            event.request.params,
-            origin,
-          )
+          if (event.request.method === "wallet_requestPermissions") {
+            response.result = await this.routeContentScriptRPCRequest(
+              newlyPersistedPermission,
+              "wallet_getPermissions",
+              event.request.params,
+              origin,
+            )
+          } else {
+            response.result = await this.routeContentScriptRPCRequest(
+              newlyPersistedPermission,
+              "eth_accounts",
+              event.request.params,
+              origin,
+            )
+          }
 
           // on dApp connection, persist the current network/origin state
           await this.internalEthereumProviderService.switchToSupportedNetwork(
@@ -486,6 +500,20 @@ export default class ProviderBridgeService extends BaseService<Events> {
         case "eth_requestAccounts":
         case "eth_accounts":
           return [enablingPermission.accountAddress]
+        case "wallet_requestPermissions":
+        case "wallet_getPermissions":
+          return [
+            {
+              parentCapability: "eth_accounts",
+              caveats: [
+                {
+                  type: "restrictReturnedAccounts",
+                  value: [enablingPermission.accountAddress],
+                },
+              ],
+              date: Date.now(),
+            },
+          ]
         case "eth_signTypedData":
         case "eth_signTypedData_v1":
         case "eth_signTypedData_v3":
