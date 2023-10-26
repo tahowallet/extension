@@ -9,6 +9,8 @@ export enum AnalyticsEvent {
   ANALYTICS_TOGGLED = "Analytics Toggled",
   DEFAULT_WALLET_TOGGLED = "Default Wallet Toggled",
   TRANSACTION_SIGNED = "Transaction Signed",
+  DATA_SIGNED = "Data Signed",
+  SIGNATURE_FAILED = "Signature Failed",
   NEW_ACCOUNT_TO_TRACK = "Address added to tracking on network",
   CUSTOM_CHAIN_ADDED = "Custom chain added",
   DAPP_CONNECTED = "Dapp Connected",

@@ -243,6 +243,15 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
+   * Check whether the specified asset is already being tracked.
+   *
+   * @param asset The fungible asset to track.
+   */
+  async isTrackingAsset(asset: SmartContractFungibleAsset): Promise<boolean> {
+    return this.db.isTrackingAsset(asset)
+  }
+
+  /**
    * Adds/updates a custom asset, invalidates internal cache for asset network
    * @param asset The custom asset
    */
@@ -283,6 +292,13 @@ export default class IndexingService extends BaseService<Events> {
    * lists.
    */
   async cacheAssetsForNetwork(network: EVMNetwork): Promise<void> {
+    // FIXME Somewhere along the line, we started confusing tracked and custom
+    // FIXME assets as informational data. We pull tracked and then custom
+    // FIXME assets, but really this should never touch custom assets; all
+    // FIXME custom assets should be tracked if we want to pull them.
+    const trackedAssets = (await this.db.getAssetsToTrack()).filter((asset) =>
+      sameNetwork(asset.homeNetwork, network),
+    )
     const customAssets = await this.db.getActiveCustomAssetsByNetworks([
       network,
     ])
@@ -292,6 +308,7 @@ export default class IndexingService extends BaseService<Events> {
 
     this.cachedAssets[network.chainID] = mergeAssets<FungibleAsset>(
       [network.baseAsset],
+      trackedAssets,
       customAssets,
       networkAssetsFromLists(network, tokenLists),
     )
@@ -710,6 +727,7 @@ export default class IndexingService extends BaseService<Events> {
         [address: HexString]: HexString
       }
       verified?: boolean
+      logoURL?: string
     } = {},
   ): Promise<SmartContractFungibleAsset | undefined> {
     const normalizedAddress = normalizeEVMAddress(contractAddress)
@@ -750,15 +768,21 @@ export default class IndexingService extends BaseService<Events> {
       if (!isRemoved || (isRemoved && isVerified)) {
         if (Object.keys(metadata).length !== 0) {
           customAsset.metadata ??= {}
+
           if (metadata.verified !== undefined) {
             customAsset.metadata.verified = metadata.verified
           }
+
           if (metadata.discoveryTxHash) {
             customAsset.metadata.discoveryTxHash ??= {}
             Object.assign(
               customAsset.metadata.discoveryTxHash,
               metadata.discoveryTxHash,
             )
+          }
+
+          if (metadata.logoURL) {
+            customAsset.metadata.logoURL = metadata.logoURL
           }
 
           if (isRemoved) {

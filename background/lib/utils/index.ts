@@ -2,7 +2,7 @@ import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
 import { NormalizedEVMAddress, UNIXTime } from "../../types"
 import { EVMNetwork } from "../../networks"
-import { ETHEREUM, GOERLI } from "../../constants"
+import { ETHEREUM, GOERLI, SEPOLIA } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
 
 export function isValidChecksumAddress(
@@ -159,6 +159,10 @@ export function getEthereumNetwork(): EVMNetwork {
 
   if (ethereumNetwork === "GOERLI") {
     return GOERLI
+  }
+
+  if (ethereumNetwork === "SEPOLIA") {
+    return SEPOLIA
   }
 
   // Default to mainnet

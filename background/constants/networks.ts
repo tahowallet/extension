@@ -7,6 +7,8 @@ import {
   BNB,
   ETH,
   GOERLI_ETH,
+  SEPOLIA_ETH,
+  ARBITRUM_SEPOLIA_ETH,
   MATIC,
   OPTIMISTIC_ETH,
   RBTC,
@@ -79,11 +81,27 @@ export const OPTIMISM: EVMNetwork = {
 }
 
 export const GOERLI: EVMNetwork = {
-  name: "Goerli",
+  name: "Ethereum Goerli",
   baseAsset: GOERLI_ETH,
   chainID: "5",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
+}
+
+export const SEPOLIA: EVMNetwork = {
+  name: "Ethereum Sepolia",
+  baseAsset: SEPOLIA_ETH,
+  chainID: "11155111",
+  family: "EVM",
+  coingeckoPlatformID: "ethereum",
+}
+
+export const ARBITRUM_SEPOLIA: EVMNetwork = {
+  name: "Arbitrum Sepolia",
+  baseAsset: ARBITRUM_SEPOLIA_ETH,
+  chainID: "421614",
+  family: "EVM",
+  coingeckoPlatformID: "arbitrum-one",
 }
 
 export const ZK_SYNC: EVMNetwork = {
@@ -98,6 +116,8 @@ export const DEFAULT_NETWORKS = [
   POLYGON,
   OPTIMISM,
   GOERLI,
+  SEPOLIA,
+  ARBITRUM_SEPOLIA,
   ARBITRUM_ONE,
   ROOTSTOCK,
   AVALANCHE,
@@ -124,11 +144,13 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, GOERLI, AVALANCHE].map((network) => network.chainID),
+  [ETHEREUM, POLYGON, GOERLI, SEPOLIA, AVALANCHE].map(
+    (network) => network.chainID,
+  ),
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
-  [ETHEREUM, POLYGON, AVALANCHE, GOERLI, BINANCE_SMART_CHAIN].map(
+  [ETHEREUM, POLYGON, AVALANCHE, GOERLI, SEPOLIA, BINANCE_SMART_CHAIN].map(
     (network) => network.chainID,
   ),
 )
@@ -143,12 +165,14 @@ export const NETWORK_BY_CHAIN_ID = {
   [OPTIMISM.chainID]: OPTIMISM,
   [BINANCE_SMART_CHAIN.chainID]: BINANCE_SMART_CHAIN,
   [GOERLI.chainID]: GOERLI,
+  [SEPOLIA.chainID]: SEPOLIA,
+  [ARBITRUM_SEPOLIA.chainID]: ARBITRUM_SEPOLIA,
   [FORK.chainID]: FORK,
   [ZK_SYNC.chainID]: ZK_SYNC,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
-  [GOERLI].map((network) => network.chainID),
+  [GOERLI, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
 export const NETWORK_FOR_LEDGER_SIGNING = [ETHEREUM, POLYGON]
@@ -162,6 +186,7 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
+  // TODO: Add Swap API for Sepolia once 0x supports it.
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
   [AVALANCHE.chainID]: "avalanche.api.0x.org",
   [BINANCE_SMART_CHAIN.chainID]: "bsc.api.0x.org",
@@ -172,7 +197,8 @@ export const NETWORKS_SUPPORTING_SWAPS = new Set(
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI].map(
+  // TODO: Add `ARBITRUM_SEPOLIA` once Alchemy creates a dedicated  RPC.
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, SEPOLIA].map(
     (network) => network.chainID,
   ),
 )
@@ -203,6 +229,8 @@ export const CHAIN_ID_TO_RPC_URLS: {
   ],
   [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
   [GOERLI.chainID]: ["https://ethereum-goerli-rpc.allthatnode.com"],
+  [SEPOLIA.chainID]: ["https://endpoints.omniatech.io/v1/eth/sepolia/public"],
+  [ARBITRUM_SEPOLIA.chainID]: ["https://sepolia-rollup.arbitrum.io/rpc"],
   [AVALANCHE.chainID]: [
     "https://api.avax.network/ext/bc/C/rpc",
     "https://1rpc.io/avax/c",

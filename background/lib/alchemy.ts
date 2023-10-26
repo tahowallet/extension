@@ -69,7 +69,7 @@ export async function getAssetTransfers(
   const category = ["external", "erc20"]
 
   if (addressOnNetwork.network.name === "Ethereum") {
-    // "internal" is supported only on Ethereum Mainnet and Goerli atm
+    // "internal" is supported only on Ethereum Mainnet, Goerli and Sepolia atm
     // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
     category.push("internal")
   }

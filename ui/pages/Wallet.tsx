@@ -26,6 +26,7 @@ import NFTListCurrentWallet from "../components/NFTs/NFTListCurrentWallet"
 import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
+import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
@@ -113,6 +114,7 @@ export default function Wallet(): ReactElement {
         {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
+        <PortalBanner />
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}

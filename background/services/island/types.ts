@@ -1,5 +1,10 @@
 import { HexString } from "../../types"
 
+export type ReferrerStats = {
+  bonusTotal: bigint
+  referredUsers: number
+}
+
 export interface Eligible {
   index: HexString
   account: HexString

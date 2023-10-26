@@ -130,10 +130,18 @@ export function useLocalStorage(
   const [value, setValue] = useState(() =>
     getLocalStorageItem(key, initialValue),
   )
+  const [cachedKey, setCachedKey] = useState(key)
 
   useEffect(() => {
-    setLocalStorageItem(key, value)
-  }, [key, value])
+    if (key !== cachedKey) {
+      setValue(getLocalStorageItem(key, initialValue))
+      setCachedKey(key)
+    }
+  }, [key, cachedKey, initialValue])
+
+  useEffect(() => {
+    setLocalStorageItem(cachedKey, value)
+  }, [cachedKey, value])
 
   return [value, setValue]
 }

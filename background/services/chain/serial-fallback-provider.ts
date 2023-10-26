@@ -1,6 +1,4 @@
 import {
-  AlchemyProvider,
-  AlchemyWebSocketProvider,
   EventType,
   JsonRpcBatchProvider,
   JsonRpcProvider,
@@ -16,6 +14,7 @@ import {
   ARBITRUM_ONE,
   OPTIMISM,
   FORK,
+  ARBITRUM_SEPOLIA,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -27,6 +26,7 @@ import {
 } from "../../lib/alchemy"
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
+import TahoAlchemyProvider from "./taho-provider"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -405,7 +405,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
          * - missing response
          * We might be disconnected due to network instability
          * - we can't execute this request
-         * ankr rate limit hit
+         * ankr rate limit hit / invalid response from some rpcs
          * - failed response
          * fetchJson default "fallback" error, generally thrown after 429s
          * - TIMEOUT
@@ -1091,21 +1091,32 @@ export function makeSerialFallbackProvider(
     ])
   }
 
+  if (
+    chainID === ARBITRUM_SEPOLIA.chainID &&
+    process.env.ARBITRUM_FORK_RPC !== undefined &&
+    process.env.ARBITRUM_FORK_RPC.trim() !== "" &&
+    process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true"
+  ) {
+    // eslint-disable-next-line no-console
+    console.log(
+      "%c🦴 Using Tenderly fork as Arbitrum Sepolia provider",
+      "background: #071111; color: #fff; font-weight: 900;",
+    )
+    return new SerialFallbackProvider(ARBITRUM_SEPOLIA.chainID, [
+      {
+        type: "generic" as const,
+        creator: () => new JsonRpcBatchProvider(process.env.ARBITRUM_FORK_RPC),
+      },
+    ])
+  }
+
   const alchemyProviderCreators: ProviderCreator[] =
     ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
       ? [
           {
             type: "alchemy" as const,
             creator: () =>
-              new AlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-          },
-          {
-            type: "alchemy" as const,
-            creator: () =>
-              new AlchemyWebSocketProvider(
-                getNetwork(Number(chainID)),
-                ALCHEMY_KEY,
-              ),
+              new TahoAlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
           },
         ]
       : []

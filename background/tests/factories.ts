@@ -66,18 +66,8 @@ const createRandom0xHash = () =>
 export const createPreferenceService = async (): Promise<PreferenceService> =>
   PreferenceService.create()
 
-export async function createAnalyticsService(overrides?: {
-  chainService?: Promise<ChainService>
-  preferenceService?: Promise<PreferenceService>
-}): Promise<AnalyticsService> {
-  const preferenceService =
-    overrides?.preferenceService ?? createPreferenceService()
-  return AnalyticsService.create(preferenceService)
-}
-
 type CreateInternalSignerServiceOverrides = {
   preferenceService?: Promise<PreferenceService>
-  analyticsService?: Promise<AnalyticsService>
 }
 
 export const createInternalSignerService = async (
@@ -85,7 +75,6 @@ export const createInternalSignerService = async (
 ): Promise<InternalSignerService> =>
   InternalSignerService.create(
     overrides.preferenceService ?? createPreferenceService(),
-    overrides.analyticsService ?? createAnalyticsService(),
   )
 
 type CreateChainServiceOverrides = {
@@ -160,6 +149,23 @@ export const createSigningService = async (
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService(),
   )
+
+export async function createAnalyticsService(overrides?: {
+  preferenceService?: Promise<PreferenceService>
+  internalSignerService?: Promise<InternalSignerService>
+  signingService?: Promise<SigningService>
+}): Promise<AnalyticsService> {
+  const preferenceService =
+    overrides?.preferenceService ?? createPreferenceService()
+  const internalSignerService =
+    overrides?.internalSignerService ?? createInternalSignerService()
+  const signerService = overrides?.signingService ?? createSigningService()
+  return AnalyticsService.create(
+    internalSignerService,
+    signerService,
+    preferenceService,
+  )
+}
 
 export const createAbilitiesService = async (
   overrides: CreateAbilitiesServiceOverrides = {},
