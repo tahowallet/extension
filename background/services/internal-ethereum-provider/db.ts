@@ -53,6 +53,22 @@ export class InternalEthereumProviderDatabase extends Dexie {
     return this.currentNetwork.put({ origin, network })
   }
 
+  /**
+   * Clear origin's current network state if it is the same as the passed
+   * chainId.
+   */
+  async unsetCurrentNetworkForOrigin(
+    origin: string,
+    chainId: string,
+  ): Promise<void> {
+    const originMatches =
+      (await this.currentNetwork.where({ origin, chainId }).count()) > 0
+
+    if (originMatches) {
+      await this.currentNetwork.delete(origin)
+    }
+  }
+
   async getCurrentNetworkForOrigin(
     origin: string,
   ): Promise<EVMNetwork | undefined> {

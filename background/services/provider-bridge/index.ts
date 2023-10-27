@@ -444,6 +444,13 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
     this.#pendingPermissionsRequests[permission.origin]?.("Time to move on")
 
+    // If the removed permission is for the origin's current network, clear
+    // that state so the origin isn't stuck on a disconnected network.
+    this.internalEthereumProviderService.unsetCurrentNetworkForOrigin(
+      permission.origin,
+      permission.chainID,
+    )
+
     if (deleted > 0) {
       this.notifyContentScriptsAboutAddressChange()
     }
