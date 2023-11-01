@@ -86,6 +86,11 @@ export const createInternalSignerService = async (
     overrides.preferenceService ?? createPreferenceService(),
   )
 
+type CreateSigningServiceOverrides = {
+  internalSignerService?: Promise<InternalSignerService>
+  ledgerService?: Promise<LedgerService>
+}
+
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {}
 ): Promise<SigningService> =>
@@ -119,12 +124,25 @@ export const createChainService = async (
 
 export async function createNameService(overrides?: {
   chainService?: Promise<ChainService>
+  internalSignerService?: Promise<InternalSignerService>
+  ledgerService?: Promise<LedgerService>
+  signingService?: Promise<SigningService>
   preferenceService?: Promise<PreferenceService>
 }): Promise<NameService> {
   const preferenceService =
     overrides?.preferenceService ?? createPreferenceService()
+  const internalSignerService =
+    overrides?.internalSignerService ??
+    createInternalSignerService({ preferenceService })
+
   return NameService.create(
-    overrides?.chainService ?? createChainService({ preferenceService }),
+    overrides?.chainService ??
+      createChainService({ internalSignerService, preferenceService }),
+    overrides?.signingService ??
+      createSigningService({
+        internalSignerService,
+        ledgerService: overrides?.ledgerService ?? createLedgerService(),
+      }),
     preferenceService,
   )
 }

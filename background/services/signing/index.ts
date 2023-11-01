@@ -14,7 +14,7 @@ import {
 import { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { AddressOnNetwork } from "../../accounts"
+import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 import { sameEVMAddress } from "../../lib/utils"
 
@@ -207,6 +207,7 @@ export default class SigningService extends BaseService<Events> {
 
       switch (addressHandler.signer) {
         case "keyring":
+        case "private-key":
           return this.internalSignerService.isTransactionCompatible(
             network,
             otherNetwork

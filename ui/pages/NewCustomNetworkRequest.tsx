@@ -6,6 +6,7 @@ import {
 import { AddChainRequestData } from "@tallyho/tally-background/services/provider-bridge"
 import { useTranslation } from "react-i18next"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
@@ -95,6 +96,7 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
                       name: chainName,
                       chainID,
                       family: "EVM",
+                      derivationPath: ETHEREUM.derivationPath,
                       baseAsset: { ...nativeCurrency, chainID },
                     }
                   }

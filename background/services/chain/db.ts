@@ -17,6 +17,7 @@ import {
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
   ETH,
+  ETHEREUM,
   GOERLI,
   isBuiltInNetwork,
   NETWORK_BY_CHAIN_ID,
@@ -269,6 +270,7 @@ export class ChainDatabase extends Dexie {
       coingeckoPlatformID: CHAIN_ID_TO_COINGECKO_PLATFORM_ID[chainID],
       chainID,
       family: "EVM",
+      derivationPath: ETHEREUM.derivationPath,
       blockExplorerURL,
       baseAsset: {
         decimals,

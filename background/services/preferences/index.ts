@@ -12,9 +12,13 @@ import {
   PreferenceDatabase,
 } from "./db"
 import BaseService from "../base"
-import { normalizeEVMAddress } from "../../lib/utils"
+import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
-import { EVMNetwork, sameNetwork } from "../../networks"
+import {
+  areNetworksAddressCompatible,
+  EVMNetwork,
+  sameNetwork,
+} from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
@@ -187,6 +191,8 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
+    // FIXME Edits need to take place with some sort of identifier for the
+    // FIXME entry, since names can come from a different network.
     const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
       this.sameAddressBookEntry(newEntry, entry)
     )
@@ -206,17 +212,36 @@ export default class PreferenceService extends BaseService<Events> {
     name,
     network,
   }: NameOnNetwork): AddressOnNetwork | undefined {
-    return this.addressBook.find(
-      ({ name: entryName, network: entryNetwork }) =>
-        sameNetwork(network, entryNetwork) && name === entryName,
+    return (
+      this.addressBook.find(
+        ({ name: entryName, network: entryNetwork }) =>
+          sameNetwork(network, entryNetwork) && name === entryName
+      ) ??
+      // If no direct match is found, fall back on the first matching name on
+      // an address-compatible network.
+      this.addressBook.find(
+        ({ name: entryName, network: entryNetwork }) =>
+          name === entryName &&
+          areNetworksAddressCompatible(network, entryNetwork)
+      )
     )
   }
 
   lookUpNameForAddress(
     addressOnNetwork: AddressOnNetwork,
   ): NameOnNetwork | undefined {
-    return this.addressBook.find((addressBookEntry) =>
-      this.sameAddressBookEntry(addressBookEntry, addressOnNetwork)
+    const { address, network } = addressOnNetwork
+    return (
+      this.addressBook.find((addressBookEntry) =>
+        sameAddressBookEntry(addressBookEntry, addressOnNetwork)
+      ) ??
+      // If no direct match is found, fall back on the first matching address on
+      // an address-compatible network.
+      this.addressBook.find(
+        ({ address: entryAddress, network: entryNetwork }) =>
+          sameEVMAddress(address, entryAddress) &&
+          areNetworksAddressCompatible(network, entryNetwork)
+      )
     )
   }
 

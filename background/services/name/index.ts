@@ -20,7 +20,7 @@ import {
   rnsResolver,
 } from "./resolvers"
 import PreferenceService from "../preferences"
-import { isFulfilledPromise } from "../../lib/utils/type-guards"
+import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import SigningService from "../signing"
 
 export { NameResolverSystem }
@@ -29,6 +29,7 @@ export type ResolvedAddressRecord = {
   from: NameOnNetwork
   resolved: {
     addressOnNetwork: AddressOnNetwork
+    isControlCompatible: boolean
   }
   system: NameResolverSystem
 }
@@ -39,6 +40,7 @@ export type ResolvedNameRecord = {
   }
   resolved: {
     nameOnNetwork: NameOnNetwork
+    isControlCompatible: boolean
     expiresAt: UNIXTime
   }
   system: NameResolverSystem
@@ -155,7 +157,7 @@ export default class NameService extends BaseService<Events> {
                 address,
                 network: controlCompatibleNetwork,
               },
-              false
+              { checkCache: false }
             )
           })
       },
@@ -185,8 +187,27 @@ export default class NameService extends BaseService<Events> {
     })
   }
 
+  /**
+   * Looks up an Ethereum address for the given name on the given network.
+   *
+   * By default, specific resolvers are allowed to resolve the name at their
+   * discretion, so e.g. the ENS mainnet resolver may resolve addresses even
+   * if the nameOnNetworks' network is not Ethereum mainnet. In these cases
+   * where the resolved address is not on the same network as the
+   * nameOnNetwork, the addresses are also checked for *control compatibility*.
+   *
+   * Control compatibility is further addressed at XXXXXXX.
+   *
+   * By default, this method will only resolve an address from a name if it is
+   * considered control compatible. Callers may wish to allow results that are
+   * not control compatible, in which case `requireControlCompatibility` can be
+   * passed as `false`.
+   */
   async lookUpEthereumAddress(
     nameOnNetwork: NameOnNetwork,
+    { requireControlCompatibility } = {
+      requireControlCompatibility: true,
+    }
   ): Promise<ResolvedAddressRecord | undefined> {
     const workingResolvers = this.resolvers.filter((resolver) =>
       resolver.canAttemptAddressResolution(nameOnNetwork),
@@ -201,17 +222,36 @@ export default class NameService extends BaseService<Events> {
       )
     )
       .filter(isFulfilledPromise)
-      .find(({ value: { resolved } }) => resolved !== undefined)?.value
+      .map(({ value: { type, resolved } }) => {
+        if (resolved === undefined) {
+          return undefined
+        }
 
-    if (
-      firstMatchingResolution === undefined ||
-      firstMatchingResolution.resolved === undefined
-    ) {
+        return {
+          type,
+          resolved: {
+            addressOnNetwork: resolved,
+            isControlCompatible: this.signingService.isControlCompatible(
+              resolved,
+              nameOnNetwork.network
+            ),
+          },
+        }
+      })
+      .filter(isDefined)
+      .find(
+        ({ resolved: { isControlCompatible } }) =>
+          isControlCompatible || !requireControlCompatibility
+      )
+
+    if (firstMatchingResolution === undefined) {
       return undefined
     }
 
-    const { type: resolverType, resolved: addressOnNetwork } =
-      firstMatchingResolution
+    const {
+      type: resolverType,
+      resolved: { addressOnNetwork, isControlCompatible },
+    } = firstMatchingResolution
 
     // TODO cache name resolution and TTL
     const normalizedAddressOnNetwork =
@@ -219,7 +259,10 @@ export default class NameService extends BaseService<Events> {
 
     const resolvedRecord = {
       from: nameOnNetwork,
-      resolved: { addressOnNetwork: normalizedAddressOnNetwork },
+      resolved: {
+        addressOnNetwork: normalizedAddressOnNetwork,
+        isControlCompatible,
+      },
       system: resolverType,
     }
     this.emitter.emit("resolvedAddress", resolvedRecord)
@@ -227,10 +270,36 @@ export default class NameService extends BaseService<Events> {
     return resolvedRecord
   }
 
+  /**
+   * Looks up the name associated with the given address on the given network.
+   *
+   * By default, specific resolvers are allowed to reverse-resolve the address
+   * at their discretion, so e.g. the ENS mainnet resolver may resolve names
+   * even if the addressOnNetwork's network is not Ethereum mainnet. In these
+   * cases where the resolved name is not on the same network as the
+   * addressOnNetwork, the names are also checked for *control compatibility*.
+   *
+   * Control compatibility is further addressed at XXXXXXX.
+   *
+   * By default, this method will only resolve a name from an address if it is
+   * considered control compatible. Callers may wish to allow results that are
+   * not control compatible, in which case `requireControlCompatibility` can be
+   * passed as `false`.
+   *
+   * Name lookups are cached for a limited amount of time by default; callers
+   * wishing to force a remote lookup that bypasses the cache can pass
+   * `checkCache` as `false`.
+   */
   async lookUpName(
     addressOnNetwork: AddressOnNetwork,
-    checkCache = true,
+    options: { requireControlCompatibility?: boolean; checkCache?: boolean } = {
+      requireControlCompatibility: true,
+      checkCache: true,
+    }
   ): Promise<ResolvedNameRecord | undefined> {
+    const requireControlCompatibility = options?.requireControlCompatibility ?? true
+    const checkCache = options?.checkCache ?? true
+
     const { address, network } = normalizeAddressOnNetwork(addressOnNetwork)
 
     if (!this.cachedResolvedNames[network.family][network.chainID]) {
@@ -274,7 +343,27 @@ export default class NameService extends BaseService<Events> {
       )
     )
       .filter(isFulfilledPromise)
-      .find(({ value: { resolved } }) => resolved !== undefined)?.value
+      .map(({ value: { type, resolved } }) => {
+        if (resolved === undefined) {
+          return undefined
+        }
+
+        return {
+          type,
+          resolved: {
+            nameOnNetwork: resolved,
+            isControlCompatible: this.signingService.isControlCompatible(
+              resolved,
+              addressOnNetwork.network
+            ),
+          },
+        }
+      })
+      .filter(isDefined)
+      .find(
+        ({ resolved: { isControlCompatible } }) =>
+          isControlCompatible || !requireControlCompatibility
+      )
 
     if (!firstMatchingResolution) {
       firstMatchingResolution = (
@@ -286,7 +375,27 @@ export default class NameService extends BaseService<Events> {
         )
       )
         .filter(isFulfilledPromise)
-        .find(({ value: { resolved } }) => resolved !== undefined)?.value
+        .map(({ value: { type, resolved } }) => {
+          if (resolved === undefined) {
+            return undefined
+          }
+
+          return {
+            type,
+            resolved: {
+              nameOnNetwork: resolved,
+              isControlCompatible: this.signingService.isControlCompatible(
+                resolved,
+                addressOnNetwork.network
+              ),
+            },
+          }
+        })
+        .filter(isDefined)
+        .find(
+          ({ resolved: { isControlCompatible } }) =>
+            isControlCompatible || !requireControlCompatibility
+        )
     }
 
     if (
@@ -296,13 +405,16 @@ export default class NameService extends BaseService<Events> {
       return undefined
     }
 
-    const { type: resolverType, resolved: nameOnNetwork } =
-      firstMatchingResolution
+    const {
+      type: resolverType,
+      resolved: { nameOnNetwork, isControlCompatible },
+    } = firstMatchingResolution
 
     const nameRecord = {
       from: { addressOnNetwork: { address, network } },
       resolved: {
         nameOnNetwork,
+        isControlCompatible,
         // TODO Read this from the name service; for now, this avoids infinite
         // TODO resolution loops.
         expiresAt: Date.now() + MINIMUM_RECORD_EXPIRY,

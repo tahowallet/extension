@@ -54,11 +54,11 @@ export async function enrichEIP2612SignTypedDataRequest(
       }),
       await nameService.lookUpName(
         { address: owner, network: ETHEREUM },
-        false,
+        { checkCache: false }
       ),
       await nameService.lookUpName(
         { address: spender, network: ETHEREUM },
-        false,
+        { checkCache: false }
       ),
     ])
   ).map((nameOnNetwork) => nameOnNetwork?.resolved?.nameOnNetwork.name)

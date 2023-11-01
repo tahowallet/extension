@@ -467,6 +467,7 @@ describe("ChainService", () => {
           name: "Foo",
           chainID: "12345",
           family: "EVM",
+          derivationPath: ETHEREUM.derivationPath,
           baseAsset: {
             decimals: 18,
             symbol: "FOO",
