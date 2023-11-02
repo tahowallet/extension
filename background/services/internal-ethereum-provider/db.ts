@@ -59,10 +59,12 @@ export class InternalEthereumProviderDatabase extends Dexie {
    */
   async unsetCurrentNetworkForOrigin(
     origin: string,
-    chainId: string,
+    chainID: string,
   ): Promise<void> {
     const originMatches =
-      (await this.currentNetwork.where({ origin, chainId }).count()) > 0
+      (await this.currentNetwork
+        .where({ origin, "network.chainID": chainID })
+        .count()) > 0
 
     if (originMatches) {
       await this.currentNetwork.delete(origin)
