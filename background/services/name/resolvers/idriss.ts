@@ -32,7 +32,6 @@ export default function idrissResolver(): NameResolver<"idriss"> {
       name,
       network,
     }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
-      console.log("Checking with idriss resolver: ", name)
       const resolver = new IdrissCrypto()
       const result = await resolver.resolve(name, { network: "evm" })
       const address = result["Public ETH"] ?? Object.values(result)[0]
