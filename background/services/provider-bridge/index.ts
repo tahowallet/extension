@@ -260,7 +260,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       const existingPermission = await this.checkPermission(origin, dAppChainID)
       if (
         // If there's an existing permission record and it's not an explicit
-        // allow, immedhttps://doc.rust-lang.org/std/primitive.char.html#representationiately return a rejection.
+        // allow, immediately return a rejection.
         (existingPermission !== undefined &&
           existingPermission.state !== "allow") ||
         // If there's an unresolved request for the domain, likewise return a
