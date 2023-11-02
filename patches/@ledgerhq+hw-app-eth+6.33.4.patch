@@ -7,7 +7,7 @@ index f3815c8..7581b15 100644
                  else {
                      // Legacy type transaction with a big chain ID
 -                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
-+                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 412614 ? ecc_parity % 2 : ecc_parity).toString(16);
++                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
                  }
              }
              else {
@@ -20,7 +20,7 @@ index 4a7cb64..f11819b 100644
                  else {
                      // Legacy type transaction with a big chain ID
 -                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
-+                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 412614 ? ecc_parity % 2 : ecc_parity).toString(16);
++                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
                  }
              }
              else {
@@ -33,7 +33,7 @@ index a501e97..72f63eb 100644
        } else {
          // Legacy type transaction with a big chain ID
 -        v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
-+        v = chainId.times(2).plus(35).plus(chainIdTruncated === 412614 ? ecc_parity % 2 : ecc_parity).toString(16);
++        v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
        }
      } else {
        v = response_byte.toString(16);
