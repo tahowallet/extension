@@ -180,7 +180,7 @@ test.describe("NFTs", () => {
         const nftCollection = page
           .getByTestId("nft_list_item")
           .filter({ has: page.getByTestId("nft_list_item_collection") })
-          .filter({ hasText: "Notable Crypto Punks" })
+          .filter({ hasText: "Notable Punks" })
           .first()
 
         await nftCollection.hover()
