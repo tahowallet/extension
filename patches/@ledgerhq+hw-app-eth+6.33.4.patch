@@ -1,5 +1,18 @@
+diff --git a/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js b/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
+index f3815c8..7581b15 100644
+--- a/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
++++ b/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
+@@ -206,7 +206,7 @@ export default class Eth {
+                 }
+                 else {
+                     // Legacy type transaction with a big chain ID
+-                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
++                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
+                 }
+             }
+             else {
 diff --git a/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js b/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
-index 4a7cb64..bd7051b 100644
+index 4a7cb64..f11819b 100644
 --- a/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
 +++ b/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
 @@ -228,7 +228,7 @@ class Eth {
@@ -7,7 +20,20 @@ index 4a7cb64..bd7051b 100644
                  else {
                      // Legacy type transaction with a big chain ID
 -                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
-+                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 412614 ? ecc_parity % 2 : ecc_parity).toString(16);
++                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
                  }
              }
              else {
+diff --git a/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts b/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
+index a501e97..72f63eb 100644
+--- a/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
++++ b/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
+@@ -316,7 +316,7 @@ export default class Eth {
+         v = ecc_parity % 2 == 1 ? "00" : "01";
+       } else {
+         // Legacy type transaction with a big chain ID
+-        v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
++        v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
+       }
+     } else {
+       v = response_byte.toString(16);

@@ -539,6 +539,20 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
   }
 
+  /**
+   * Clears the current network for the given origin if and only if it matches
+   * the passed chain id.
+   *
+   * If the origin has a different chain id set as the current network, the
+   * current network will be left in place.
+   */
+  async unsetCurrentNetworkForOrigin(
+    origin: string,
+    chainId: string,
+  ): Promise<void> {
+    await this.db.unsetCurrentNetworkForOrigin(origin, chainId)
+  }
+
   private async signData(
     {
       input,
