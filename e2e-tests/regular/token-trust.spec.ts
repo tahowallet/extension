@@ -135,16 +135,10 @@ test.describe("Token Trust", () => {
        * Verify there are no unverified assets on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -265,16 +259,10 @@ test.describe("Token Trust", () => {
        * Verify there are no unverified assets on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -345,16 +333,10 @@ test.describe("Token Trust", () => {
        * Verify there is no "pAAVE" asset on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -423,16 +405,10 @@ test.describe("Token Trust", () => {
        * Verify recently trusted asset is available on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -500,16 +476,10 @@ test.describe("Token Trust", () => {
        * Verify there is no "BANANA" asset on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
