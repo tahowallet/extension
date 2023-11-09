@@ -4,7 +4,7 @@ import { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { DOGGO, ETHEREUM } from "../../constants"
+import { DOGGO, ETHEREUM, HOUR } from "../../constants"
 import { sameNetwork } from "../../networks"
 import {
   ClaimWithFriends,
@@ -23,6 +23,7 @@ import { IslandDatabase, getOrCreateDB } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
 import { SmartContractFungibleAsset } from "../../assets"
+import { Alarms } from "webextension-polyfill"
 
 export {
   TESTNET_TAHO,
@@ -66,6 +67,12 @@ export default class IslandService extends BaseService<Events> {
           periodInMinutes: 10,
         },
         handler: () => this.startMonitoringIfNeeded(),
+      },
+      checkForXpDrop: {
+        schedule: {
+          periodInMinutes: 1 * HOUR,
+        },
+        handler: () => this.checkForXpDrop(),
       },
     })
   }
@@ -223,6 +230,27 @@ export default class IslandService extends BaseService<Events> {
    */
   async getReferrerStats(referrer: AddressOnNetwork): Promise<ReferrerStats> {
     return this.db.getReferrerStats(referrer)
+  }
+
+  private async checkForXpDrop(): Promise<void> {
+    const trackedAddresses =
+      await this.chainService.getTrackedAddressesOnNetwork(ISLAND_NETWORK)
+
+    trackedAddresses.forEach(async (trackedAccount) => {
+      const memberships = await this.db.getRealmMembershipsFor(trackedAccount)
+
+      memberships.forEach(({ realm: { addressOnNetwork } }) => {
+        // TODO Check for eligibility via adjusted getClaimFromFileHash util
+        // TODO If found, check if we have a claim for it.
+      })
+    })
+    // TODO Hey, we gotta do this for every tracked account!
+    // TODO Store realm addresses?
+    // TODO Store realm XP addresses
+    // TODO Monitor for XP balance changes
+    // TODO Monitor for XP drops (via underlying asseet URL lookups)
+
+    // this.db.
   }
 
   private async trackReferrals({
