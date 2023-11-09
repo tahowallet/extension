@@ -17,6 +17,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
+import logger from "../../lib/logger"
 
 export {
   AnalyticsPreferences,
@@ -113,6 +114,7 @@ interface Events extends ServiceLifecycleEvents {
   updatedSignerSettings: AccountSignerSettings[]
   updateAutoLockInterval: UNIXTime
   dismissableItemMarkedAsShown: DismissableItem
+  updateShouldShowNotifications: { shouldShowNotifications: boolean }
 }
 
 /*
@@ -262,6 +264,31 @@ export default class PreferenceService extends BaseService<Events> {
     const { analytics } = await this.db.getPreferences()
 
     this.emitter.emit("updateAnalyticsPreferences", analytics)
+  }
+
+  async getShouldShowNotifications(): Promise<boolean> {
+    return (await this.db.getPreferences()).shouldShowNotifications
+  }
+
+  async setShouldShowNotifications(
+    shouldShowNotifications: boolean,
+  ): Promise<void> {
+    if (
+      shouldShowNotifications &&
+      !(await browser.permissions.getAll()).permissions?.includes(
+        "notifications",
+      )
+    ) {
+      logger.error(
+        "Trying to set shouldShowNotifications to true but notifications permission has not been granted. Aborting.",
+      )
+      return
+    }
+
+    await this.db.setShouldShowNotifications(shouldShowNotifications)
+    this.emitter.emit("updateShouldShowNotifications", {
+      shouldShowNotifications,
+    })
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
