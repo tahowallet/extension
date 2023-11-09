@@ -57,7 +57,7 @@ class NotificationService {
           this.#permission = permission
           this.pushNotification({
             title: "Welcome in Subscape, Nomad!",
-            options: { body: `Your notificaition status: ${permission}}` },
+            options: { body: `Your notificaition status: ${permission}` },
           })
         },
       )
@@ -70,7 +70,7 @@ class NotificationService {
 
   public cancelPermission() {
     if (this.#permission === "granted") {
-      browser.permissions.remove({ permissions: ["notifications"] })
+      chrome.permissions.remove({ permissions: ["notifications"] })
     }
   }
 }

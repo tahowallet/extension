@@ -12,10 +12,12 @@ import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { UNIXTime } from "../types"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
+import notificationService from "../services/notification/notification.service"
 
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
+  showNotifications: notificationService.permission === "granted",
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
@@ -34,6 +36,7 @@ export type UIState = {
   settings: {
     hideDust: boolean
     defaultWallet: boolean
+    showNotifications: boolean
     showTestNetworks: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
@@ -87,6 +90,12 @@ const uiSlice = createSlice({
       { payload: shouldHideDust }: { payload: boolean },
     ): void => {
       immerState.settings.hideDust = shouldHideDust
+    },
+    toggleNotifications: (
+      immerState,
+      { payload: showNotifications }: { payload: boolean },
+    ): void => {
+      immerState.settings.showNotifications = showNotifications
     },
     toggleTestNetworks: (
       immerState,
@@ -221,6 +230,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleNotifications,
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
@@ -413,6 +423,11 @@ export const selectSlippageTolerance = createSelector(
 export const selectInitializationTimeExpired = createSelector(
   selectUI,
   (ui) => ui.initializationLoadingTimeExpired,
+)
+
+export const selectShowNotifications = createSelector(
+  selectSettings,
+  (settings) => settings?.showNotifications,
 )
 
 export const selectShowTestNetworks = createSelector(

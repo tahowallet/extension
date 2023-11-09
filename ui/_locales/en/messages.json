@@ -561,6 +561,7 @@
     "signing": "Signing",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as default wallet",
+    "enableNotifications": "Show notifications",
     "enableTestNetworks": "Show testnet networks",
     "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",

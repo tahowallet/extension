@@ -5,6 +5,7 @@ import {
   selectHideDust,
   toggleHideDust,
   selectShowTestNetworks,
+  toggleNotifications,
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
@@ -14,6 +15,7 @@ import {
   selectUseFlashbots,
   selectAutoLockTimer as selectAutoLockInterval,
   updateAutoLockInterval,
+  selectShowNotifications,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
@@ -26,6 +28,7 @@ import {
   isEnabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
+import notificationService from "@tallyho/tally-background/services/notification/notification.service"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -163,6 +166,7 @@ export default function Settings(): ReactElement {
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
   const hideBanners = useSelector(selectHideBanners)
+  const showNotifications = useSelector(selectShowNotifications)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const useFlashbots = useSelector(selectUseFlashbots)
@@ -170,6 +174,16 @@ export default function Settings(): ReactElement {
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
+  }
+
+  const toggleShowNotifications = (toggleValue: boolean) => {
+    if (toggleValue) {
+      notificationService.requestPermission()
+    } else {
+      notificationService.cancelPermission()
+    }
+
+    dispatch(toggleNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -211,6 +225,16 @@ export default function Settings(): ReactElement {
       <SharedToggleButton
         onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
         value={showUnverifiedAssets}
+      />
+    ),
+  }
+
+  const enableNotifications = {
+    title: t("settings.enableNotifications"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowNotifications(toggleValue)}
+        value={showNotifications}
       />
     ),
   }
@@ -404,6 +428,7 @@ export default function Settings(): ReactElement {
         unverifiedAssets,
         customNetworks,
         addCustomAsset,
+        enableNotifications,
         enableTestNetworks,
         flashbotsRPC,
         autoLockSettings,
