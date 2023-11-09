@@ -33,6 +33,7 @@
     "default_popup": "popup.html"
   },
   "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
+  "optional_permissions": ["notifications"],
   "background": {
     "persistent": true,
     "scripts": ["background.js", "background-ui.js"]
