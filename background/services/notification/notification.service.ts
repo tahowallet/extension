@@ -1,17 +1,12 @@
 type NotificationPermission = "default" | "denied" | "granted" | null
 
 class NotificationService {
-  #isNotificationSupported: boolean
-
   #permission: NotificationPermission
 
   static #instance: NotificationService
 
   constructor() {
-    this.#isNotificationSupported = "Notification" in window
-    this.#permission = this.#isNotificationSupported
-      ? Notification.permission
-      : null
+    this.#permission = Notification.permission
   }
 
   static get instance() {
@@ -26,7 +21,7 @@ class NotificationService {
     console.log(`%c${log}`, "color: red")
   }
 
-  public set permission(permission: NotificationPermission) {
+  private set permission(permission: NotificationPermission) {
     this.#permission = permission
   }
 
@@ -51,19 +46,18 @@ class NotificationService {
   }
 
   public requestPermission() {
-    if (this.#isNotificationSupported) {
-      Notification.requestPermission().then(
-        (permission: NotificationPermission) => {
-          this.#permission = permission
-          this.pushNotification({
-            title: "Welcome in Subscape, Nomad!",
-            options: { body: `Your notificaition status: ${permission}` },
-          })
+    if (this.#permission !== "granted") {
+      chrome.permissions.request(
+        {
+          permissions: ["notifications"],
         },
-      )
-    } else {
-      NotificationService.log(
-        "This browser does not support desktop notification",
+        (granted) => {
+          if (granted) {
+            this.#permission = "granted"
+          } else {
+            // do that
+          }
+        },
       )
     }
   }
@@ -71,6 +65,7 @@ class NotificationService {
   public cancelPermission() {
     if (this.#permission === "granted") {
       chrome.permissions.remove({ permissions: ["notifications"] })
+      this.#permission = null
     }
   }
 }

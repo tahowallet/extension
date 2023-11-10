@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill"
 import React, { ReactElement } from "react"
 import { selectHasIslandAssets } from "@tallyho/tally-background/redux-slices/claim"
+import notificationService from "@tallyho/tally-background/services/notification/notification.service"
 import { useBackgroundSelector } from "../../../hooks"
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
@@ -13,6 +14,7 @@ export default function PortalBanner(): ReactElement | null {
   const hasIslandAssets = useBackgroundSelector(selectHasIslandAssets)
 
   const showIslandAndDismissBanner = () => {
+    notificationService.requestPermission()
     browser.tabs.create({ url: "https://app.taho.xyz" })
   }
 
