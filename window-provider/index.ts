@@ -81,7 +81,7 @@ export default class TahoWindowProvider extends EventEmitter {
       ) {
         if (
           event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
-          event.source !== window || // we want to recieve messages only from the provider-bridge script
+          event.source !== window || // we want to receive messages only from the provider-bridge script
           event.data.target !== WINDOW_PROVIDER_TARGET
         ) {
           return
@@ -155,7 +155,7 @@ export default class TahoWindowProvider extends EventEmitter {
     if (isWindowResponseEvent(event)) {
       if (
         event.origin !== this.transport.origin || // filter to messages claiming to be from the provider-bridge script
-        event.source !== window || // we want to recieve messages only from the provider-bridge script
+        event.source !== window || // we want to receive messages only from the provider-bridge script
         event.data.target !== WINDOW_PROVIDER_TARGET
       ) {
         return
