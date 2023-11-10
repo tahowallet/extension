@@ -54,18 +54,19 @@ class NotificationService {
         (granted) => {
           if (granted) {
             this.#permission = "granted"
-          } else {
-            // do that
           }
-        },
+        }
       )
     }
   }
 
   public cancelPermission() {
     if (this.#permission === "granted") {
-      chrome.permissions.remove({ permissions: ["notifications"] })
-      this.#permission = null
+      chrome.permissions.remove({ permissions: ["notifications"] }, (removed) => {
+        if (removed) {
+          this.#permission = null;
+        }
+      })
     }
   }
 }
