@@ -5,7 +5,6 @@ import {
   selectHideDust,
   toggleHideDust,
   selectShowTestNetworks,
-  toggleNotifications,
   toggleTestNetworks,
   toggleHideBanners,
   selectHideBanners,
@@ -28,7 +27,6 @@ import {
   isEnabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
-import notificationService from "@tallyho/tally-background/services/notification/notification.service"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -38,6 +36,7 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedLink from "../components/Shared/SharedLink"
+import useNotifications from "../components/Notification/Notification"
 
 type SettingsItem = {
   title: string
@@ -171,6 +170,7 @@ export default function Settings(): ReactElement {
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const { requestPermission, cancelPermission } = useNotifications()
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -178,12 +178,10 @@ export default function Settings(): ReactElement {
 
   const toggleShowNotifications = (toggleValue: boolean) => {
     if (toggleValue) {
-      notificationService.requestPermission()
+      requestPermission()
     } else {
-      notificationService.cancelPermission()
+      cancelPermission()
     }
-
-    dispatch(toggleNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {

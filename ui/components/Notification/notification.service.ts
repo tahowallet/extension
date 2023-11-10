@@ -29,46 +29,50 @@ class NotificationService {
     return this.#permission
   }
 
-  public pushNotification({
+  public pushNotification = ({
     title,
     options,
   }: {
     title: string
     options?: NotificationOptions
-  }): Notification | undefined {
+  }): Notification | undefined => {
     if (this.#permission === "granted") {
       return new Notification(title, options)
-    }
-    if (this.#permission !== "denied") {
-      this.requestPermission()
     }
     return undefined
   }
 
-  public requestPermission() {
-    if (this.#permission !== "granted") {
-      chrome.permissions.request(
-        {
-          permissions: ["notifications"],
-        },
-        (granted) => {
-          if (granted) {
-            this.#permission = "granted"
-          }
-        }
-      )
-    }
-  }
+  public requestPermission = () =>
+    new Promise<boolean>((resolve) => {
+      if (this.#permission !== "granted") {
+        chrome.permissions.request(
+          {
+            permissions: ["notifications"],
+          },
+          (granted) => {
+            if (granted) {
+              this.#permission = "granted"
+            } else {
+              this.#permission = "denied"
+            }
+            resolve(granted)
+          },
+        )
+      }
+    })
 
-  public cancelPermission() {
-    if (this.#permission === "granted") {
-      chrome.permissions.remove({ permissions: ["notifications"] }, (removed) => {
-        if (removed) {
-          this.#permission = null;
-        }
-      })
-    }
-  }
+  public cancelPermission = () =>
+    new Promise<boolean>((resolve) => {
+      chrome.permissions.remove(
+        { permissions: ["notifications"] },
+        (removed) => {
+          if (removed) {
+            this.#permission = null
+          }
+          resolve(removed)
+        },
+      )
+    })
 }
 
 export default NotificationService.instance

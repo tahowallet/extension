@@ -12,12 +12,11 @@ import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { UNIXTime } from "../types"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
-import notificationService from "@tallyho/tally-background/services/notification/notification.service"
 
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
-  showNotifications: notificationService.permission === "granted",
+  showNotifications: false,
   showTestNetworks: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
