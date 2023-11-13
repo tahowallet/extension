@@ -55,12 +55,12 @@ export default function DAppConnectRequest(): ReactElement {
   }, [])
 
   if (typeof permission === "undefined") {
-    // something went wrong with permisison request
+    // something went wrong with permissions request
     return <ErrorFallback />
   }
 
   if (typeof currentAccountTotal === "undefined") {
-    // there is no account, let's onbaord first
+    // there is no account, let's onboard first
     return <Redirect to="/onboarding/info-intro" />
   }
 

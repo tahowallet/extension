@@ -27,7 +27,7 @@ We want to change the functionality of our dApp connections to
       - We don't use optimistic update to avoid the complexity of rollbacks
     - typical data flow:
       - initialization: service emits an initialize event > listener in main dispatches action > reducer sets the content of the slice to the payload in the action
-      - user action: UI dispatches async thunk > async thunk calls service through main OR emits an event (whichever makes sense in given context) > service updates persistance layer > service fires an event > in main there is a listener that dispatches the redux action > reducer updates redux > UI updates
+      - user action: UI dispatches async thunk > async thunk calls service through main OR emits an event (whichever makes sense in given context) > service updates persistence layer > service fires an event > in main there is a listener that dispatches the redux action > reducer updates redux > UI updates
 
 3. The extension can be thought of as a multinetwork skeleton AND network specific internal dApps.
    - Multinetwork skeleton: settings, overview, assets, activity, ...
