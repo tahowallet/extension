@@ -66,13 +66,7 @@ export async function getAssetTransfers(
 
   // Categories that are most important to us, supported both on Ethereum Mainnet and polygon
   // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
-  const category = ["erc20"]
-
-  // TODO: seems bugged on Alchemy, it is not supporting `external` category on Arbitrum Sepolia
-  // despite the docs saying it should be supported.
-  if (addressOnNetwork.network.name !== "Arbitrum Sepolia") {
-    category.push("external")
-  }
+  const category = ["external", "erc20"]
 
   if (addressOnNetwork.network.name === "Ethereum") {
     // "internal" is supported only on Ethereum Mainnet, Goerli and Sepolia atm
