@@ -25,11 +25,15 @@ import SharedAddress from "../../../../Shared/SharedAddress"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import TransactionSignatureSummaryBody from "./TransactionSignatureSummaryBody"
 import SharedSkeletonLoader from "../../../../Shared/SharedSkeletonLoader"
+import { useDappPermision } from "../../../../../hooks/dapp-hooks"
 
 export default function SpendApprovalSummary({
   transactionRequest,
   annotation,
 }: TransactionSignatureSummaryProps<AssetApproval>): ReactElement {
+  const { currentPermission } = useDappPermision()
+  const dappFavicon = currentPermission?.faviconUrl
+
   const { t } = useTranslation("translation", {
     keyPrefix: "signTransaction.spendApproval",
   })
@@ -240,7 +244,8 @@ export default function SpendApprovalSummary({
       <style jsx>
         {`
           .site_icon {
-            background: url("./images/dapp_favicon_default@2x.png");
+            background: url(${dappFavicon ??
+            "./images/dapp_favicon_default@2x.png"});
             background-size: cover;
             width: 48px;
             height: 48px;
