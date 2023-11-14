@@ -237,7 +237,7 @@ This release checklist should be performed before release is published.
 
 - [ ] check `hide balance under $2` option
 - [ ] check bug reports - export logs
-- [ ] check connected dapp - confirm you are able to disconnect from a dapp
+- [ ] check connected dapp - confirm you are able to disconnect from a dapp and connect again on different network
 
 ### ☀️ Abilities
 

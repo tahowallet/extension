@@ -477,7 +477,7 @@ export function SignerLedgerFrame({
             Reject
           </SharedButton>
 
-          {signingLedgerState !== "avaiable" ? (
+          {signingLedgerState !== "available" ? (
               <SharedButton
                 type="primary"
                 iconSize="large"
