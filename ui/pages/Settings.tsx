@@ -4,6 +4,8 @@ import { Trans, useTranslation } from "react-i18next"
 import {
   selectHideDust,
   toggleHideDust,
+  selectPushNotifications,
+  togglePushNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
   toggleHideBanners,
@@ -165,11 +167,16 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
+  const showPushNotifications = useSelector(selectPushNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
+  }
+
+  const toggleShowPushNotifications = (toggleValue: boolean) => {
+    dispatch(togglePushNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -211,6 +218,16 @@ export default function Settings(): ReactElement {
       <SharedToggleButton
         onChange={(toggleValue) => toggleShowUnverified(toggleValue)}
         value={showUnverifiedAssets}
+      />
+    ),
+  }
+
+  const pushNotifications = {
+    title: t("settings.showPushNotifications"),
+    component: () => (
+      <SharedToggleButton
+        onChange={(toggleValue) => toggleShowPushNotifications(toggleValue)}
+        value={showPushNotifications}
       />
     ),
   }
@@ -400,6 +417,7 @@ export default function Settings(): ReactElement {
     walletOptions: {
       title: t("settings.group.walletOptions"),
       items: [
+        pushNotifications,
         hideSmallAssetBalance,
         unverifiedAssets,
         customNetworks,

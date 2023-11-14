@@ -1852,6 +1852,15 @@ export default class Main extends BaseService<never> {
     )
 
     uiSliceEmitter.on(
+      "showPushNotifications",
+      async (shouldShowNotifications: boolean) => {
+        await this.preferenceService.setShouldShowNotifications(
+          shouldShowNotifications,
+        )
+      },
+    )
+
+    uiSliceEmitter.on(
       "updateAnalyticsPreferences",
       async (analyticsPreferences: Partial<AnalyticsPreferences>) => {
         await this.preferenceService.updateAnalyticsPreferences(

@@ -4,7 +4,11 @@ import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
-import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
+import {
+  AnalyticsPreferences,
+  DismissableItem,
+  Preferences,
+} from "../services/preferences"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
@@ -16,6 +20,7 @@ export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
+  showPushNotifications: false,
   collectAnalytics: false,
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
@@ -34,6 +39,7 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
+    showPushNotifications: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
@@ -57,6 +63,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
+  showPushNotifications: boolean
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
@@ -116,6 +123,12 @@ const uiSlice = createSlice({
         showAnalyticsNotification: false,
       },
     }),
+    toggleShowPushNotifications: (
+      immerState,
+      { payload: showPushNotifications }: { payload: boolean },
+    ) => {
+      immerState.settings.showPushNotifications = showPushNotifications
+    },
     setShowAnalyticsNotification: (
       state,
       { payload: showAnalyticsNotification }: { payload: boolean },
@@ -220,6 +233,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  toggleShowPushNotifications,
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
@@ -246,6 +260,16 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
     await emitter.emit("updateAnalyticsPreferences", {
       isEnabled: collectAnalytics,
     })
+  },
+)
+
+export const togglePushNotifications = createBackgroundAsyncThunk(
+  "ui/showPushNotifications",
+  async (shouldShowPushNotifications: boolean, { dispatch }) => {
+    dispatch(
+      uiSlice.actions.toggleShowPushNotifications(shouldShowPushNotifications),
+    )
+    await emitter.emit("showPushNotifications", shouldShowPushNotifications)
   },
 )
 
@@ -427,6 +451,11 @@ export const selectShowUnverifiedAssets = createSelector(
 export const selectCollectAnalytics = createSelector(
   selectSettings,
   (settings) => settings?.collectAnalytics,
+)
+
+export const selectPushNotifications = createSelector(
+  selectSettings,
+  (settings) => settings?.showPushNotifications,
 )
 
 export const selectHideBanners = createSelector(
