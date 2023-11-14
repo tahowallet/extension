@@ -50,6 +50,7 @@ export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_sendRawTransaction", // broadcast should always go to alchemy
     "eth_subscribe", // generic http providers do not support this, but dapps need this
     "eth_estimateGas", // just want to be safe, when setting up a transaction
+    "eth_getLogs", // to avoid eth_getLogs block range limitations
   ],
   [OPTIMISM.chainID]: [
     "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
