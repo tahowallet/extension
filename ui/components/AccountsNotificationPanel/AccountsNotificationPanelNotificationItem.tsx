@@ -6,7 +6,7 @@ export default function NotificationItem(): ReactElement {
       <div className="icon_notification" />
       <div>
         Receive <span className="white">240 ETH</span> from{" "}
-        <span className="white">0x424..12f3</span> succesful{" "}
+        <span className="white">0x424..12f3</span> successful{" "}
         <span className="time">03:03 on 14 May</span>
       </div>
       <style jsx>{`
