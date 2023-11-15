@@ -84,6 +84,7 @@ import {
   setShowAnalyticsNotification,
   setSelectedNetwork,
   setAutoLockInterval,
+  togglePushNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
@@ -1852,11 +1853,13 @@ export default class Main extends BaseService<never> {
     )
 
     uiSliceEmitter.on(
-      "showPushNotifications",
+      "shouldShowNotifications",
       async (shouldShowNotifications: boolean) => {
-        await this.preferenceService.setShouldShowNotifications(
-          shouldShowNotifications,
-        )
+        const isPermissionGranted =
+          await this.preferenceService.setShouldShowNotifications(
+            shouldShowNotifications,
+          )
+        this.store.dispatch(togglePushNotifications(isPermissionGranted))
       },
     )
 

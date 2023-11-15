@@ -25,7 +25,7 @@ type NotificationClickHandler = (() => Promise<void>) | (() => void)
  * on and creates user-visible content directly.
  */
 export default class NotificationsService extends BaseService<Events> {
-  private deliverNotifications = false
+  private isPermissionGranted: boolean | null = null
 
   private clickHandlers: {
     [notificationId: string]: NotificationClickHandler
@@ -57,14 +57,13 @@ export default class NotificationsService extends BaseService<Events> {
     // browser notifications permission has been granted. The preferences service
     // does guard this, but if that ends up not being true, browser.notifications
     // will be undefined and all of this will explode.
-    this.deliverNotifications =
+    this.isPermissionGranted =
       await this.preferenceService.getShouldShowNotifications()
-    this.preferenceService.emitter.on(
-      "updateShouldShowNotifications",
-      ({ shouldShowNotifications }) => {
-        this.deliverNotifications = shouldShowNotifications
 
-        if (shouldShowNotifications) {
+    this.preferenceService.emitter.on(
+      "setNotificationsPermission",
+      (isPermissionGranted) => {
+        if (isPermissionGranted) {
           browser.notifications.onClicked.addListener(
             this.handleNotificationClicks.bind(this),
           )
@@ -82,7 +81,7 @@ export default class NotificationsService extends BaseService<Events> {
       },
     )
 
-    if (this.deliverNotifications) {
+    if (this.isPermissionGranted) {
       browser.notifications.onClicked.addListener(
         this.handleNotificationClicks.bind(this),
       )
@@ -98,11 +97,12 @@ export default class NotificationsService extends BaseService<Events> {
   }
 
   protected async notifyDrop(/* xpInfos: XpInfo[] */): Promise<void> {
-    this.notify("", "", "", () => {
+    const callback = () => {
       browser.tabs.create({
         url: "dapp url for realm claim, XpInfo must include realm id, ideally some way to communicate if the address is right as well",
       })
-    })
+    }
+    this.pushNotification({ callback })
   }
 
   // Fires the click handler for the given notification id.
@@ -120,35 +120,28 @@ export default class NotificationsService extends BaseService<Events> {
    * The click action, if specified, will be fired when the user clicks on the
    * notification.
    */
-  protected async notify(
-    title: string,
-    message: string,
-    contextMessage: string,
-    clickAction?: () => void,
-  ) {
-    if (!this.deliverNotifications) {
+  protected async pushNotification({
+    title = "",
+    message = "",
+    contextMessage = "",
+    callback,
+  }: {
+    title?: string
+    message?: string
+    contextMessage?: string
+    callback?: () => void
+  }) {
+    if (!this.isPermissionGranted) {
       return
     }
-
     const notificationId = uniqueId("notification-")
 
-    if (typeof clickAction === "function") {
-      this.clickHandlers[notificationId] = clickAction
-
-      await browser.notifications.create(notificationId, {
-        type: "basic",
-        title: "",
-        message: "",
-        contextMessage: "",
-        isClickable: true,
-      })
-    } else {
-      await browser.notifications.create({
-        type: "basic",
-        title: "",
-        message: "",
-        contextMessage: "",
-      })
-    }
+    await browser.notifications.create(notificationId, {
+      type: "basic",
+      title,
+      message,
+      contextMessage,
+      isClickable: !!callback,
+    })
   }
 }

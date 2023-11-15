@@ -17,7 +17,6 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
-import logger from "../../lib/logger"
 
 export {
   AnalyticsPreferences,
@@ -114,7 +113,7 @@ interface Events extends ServiceLifecycleEvents {
   updatedSignerSettings: AccountSignerSettings[]
   updateAutoLockInterval: UNIXTime
   dismissableItemMarkedAsShown: DismissableItem
-  updateShouldShowNotifications: { shouldShowNotifications: boolean }
+  setNotificationsPermission: boolean
 }
 
 /*
@@ -270,24 +269,32 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getPreferences()).shouldShowNotifications
   }
 
-  async setShouldShowNotifications(
-    shouldShowNotifications: boolean,
-  ): Promise<void> {
-    if (
-      shouldShowNotifications &&
-      !(await browser.permissions.getAll()).permissions?.includes(
-        "notifications",
-      )
-    ) {
-      logger.error(
-        "Trying to set shouldShowNotifications to true but notifications permission has not been granted. Aborting.",
-      )
-      return
-    }
+  async setShouldShowNotifications(shouldShowNotifications: boolean) {
+    const permissionRequest: Promise<boolean> = new Promise((resolve) => {
+      if (shouldShowNotifications) {
+        chrome.permissions.request(
+          {
+            permissions: ["notifications"],
+          },
+          async (granted) => {
+            resolve(granted)
+          },
+        )
+      } else {
+        chrome.permissions.remove(
+          { permissions: ["notifications"] },
+          async (removed) => {
+            resolve(!removed)
+          },
+        )
+      }
+    })
 
-    await this.db.setShouldShowNotifications(shouldShowNotifications)
-    this.emitter.emit("updateShouldShowNotifications", {
-      shouldShowNotifications,
+    return permissionRequest.then(async (granted) => {
+      await this.db.setShouldShowNotifications(granted)
+      this.emitter.emit("setNotificationsPermission", granted)
+
+      return granted
     })
   }
 

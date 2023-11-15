@@ -5,7 +5,7 @@ import {
   selectHideDust,
   toggleHideDust,
   selectPushNotifications,
-  togglePushNotifications,
+  toggleShowPushNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
   toggleHideBanners,
@@ -175,8 +175,8 @@ export default function Settings(): ReactElement {
     dispatch(toggleHideDust(toggleValue))
   }
 
-  const toggleShowPushNotifications = (toggleValue: boolean) => {
-    dispatch(togglePushNotifications(toggleValue))
+  const togglePushNotifications = (toggleValue: boolean) => {
+    dispatch(toggleShowPushNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -226,7 +226,7 @@ export default function Settings(): ReactElement {
     title: t("settings.showPushNotifications"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => toggleShowPushNotifications(toggleValue)}
+        onChange={(toggleValue) => togglePushNotifications(toggleValue)}
         value={showPushNotifications}
       />
     ),

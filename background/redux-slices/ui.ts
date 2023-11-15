@@ -4,11 +4,7 @@ import { AddressOnNetwork } from "../accounts"
 import { ETHEREUM } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
-import {
-  AnalyticsPreferences,
-  DismissableItem,
-  Preferences,
-} from "../services/preferences"
+import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
 import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
@@ -63,7 +59,7 @@ export type Events = {
   newSelectedAccountSwitched: AddressOnNetwork
   userActivityEncountered: AddressOnNetwork
   newSelectedNetwork: EVMNetwork
-  showPushNotifications: boolean
+  shouldShowNotifications: boolean
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
@@ -123,7 +119,7 @@ const uiSlice = createSlice({
         showAnalyticsNotification: false,
       },
     }),
-    toggleShowPushNotifications: (
+    togglePushNotifications: (
       immerState,
       { payload: showPushNotifications }: { payload: boolean },
     ) => {
@@ -233,13 +229,13 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
-  toggleShowPushNotifications,
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
   toggleUseFlashbots,
   setShowAnalyticsNotification,
   toggleHideBanners,
+  togglePushNotifications,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -263,13 +259,10 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
   },
 )
 
-export const togglePushNotifications = createBackgroundAsyncThunk(
-  "ui/showPushNotifications",
-  async (shouldShowPushNotifications: boolean, { dispatch }) => {
-    dispatch(
-      uiSlice.actions.toggleShowPushNotifications(shouldShowPushNotifications),
-    )
-    await emitter.emit("showPushNotifications", shouldShowPushNotifications)
+export const toggleShowPushNotifications = createBackgroundAsyncThunk(
+  "ui/shouldShowNotifications",
+  async (shouldShowNotifications: boolean) => {
+    await emitter.emit("shouldShowNotifications", shouldShowNotifications)
   },
 )
 
