@@ -3,17 +3,17 @@ import classNames from "classnames"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function WalletSubspaceLink(): ReactElement {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isFullyVisible, setIsFullyVisible] = useState(false)
 
   return (
     <button
       type="button"
-      className={classNames("subscape_link", { visible: isVisible })}
+      className={classNames("subscape_link", { visible: isFullyVisible })}
       onClick={() => {
         window.open("https://app.taho.xyz/", "_blank")?.focus()
       }}
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
+      onMouseEnter={() => setIsFullyVisible(true)}
+      onMouseLeave={() => setIsFullyVisible(false)}
     >
       <SharedIcon
         icon="subscape-logo.svg"
