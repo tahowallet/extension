@@ -5,7 +5,7 @@ import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selec
 import { useBackgroundSelector } from "./redux-hooks"
 
 // eslint-disable-next-line import/prefer-default-export
-export function useDappPermision(): {
+export function useDappPermission(): {
   isConnected: boolean
   currentPermission: PermissionRequest | undefined
   allowedPages: PermissionRequest[]

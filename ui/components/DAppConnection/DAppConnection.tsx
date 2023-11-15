@@ -1,10 +1,10 @@
 import React, { ReactElement } from "react"
 import ActiveDAppConnection from "./ActiveDAppConnection"
 import DAppConnectionDefaultToggle from "./DAppConnectionDefaultToggle"
-import { useDappPermision } from "../../hooks/dapp-hooks"
+import { useDappPermission } from "../../hooks/dapp-hooks"
 
 export default function DAppConnection(): ReactElement {
-  const { isConnected, currentPermission, allowedPages } = useDappPermision()
+  const { isConnected, currentPermission, allowedPages } = useDappPermission()
 
   return (
     <section>
