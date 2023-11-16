@@ -293,9 +293,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      await expect(
-        popup.getByText("Asset removed from list").first(),
-      ).toBeVisible({ timeout: 5000 })
+      await expect
+        .soft(popup.getByText("Asset removed from list").first())
+        .toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets
@@ -367,9 +367,11 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset added to list` snackbar visible.
        */
-      await expect(popup.getByText("Asset added to list").first()).toBeVisible({
-        timeout: 5000,
-      })
+      await expect
+        .soft(popup.getByText("Asset added to list").first())
+        .toBeVisible({
+          timeout: 5000,
+        })
 
       /**
        * Confirm asset's details are opened. Ensure there are fields related to
@@ -436,9 +438,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      await expect(
-        popup.getByText("Asset removed from list").first(),
-      ).toBeVisible({ timeout: 5000 })
+      await expect
+        .soft(popup.getByText("Asset removed from list").first())
+        .toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets
