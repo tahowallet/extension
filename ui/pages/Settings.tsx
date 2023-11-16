@@ -5,7 +5,7 @@ import {
   selectHideDust,
   toggleHideDust,
   selectPushNotifications,
-  toggleShowPushNotifications,
+  showPushNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
   toggleHideBanners,
@@ -167,7 +167,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
-  const showPushNotifications = useSelector(selectPushNotifications)
+  const shouldShowPushNotifications = useSelector(selectPushNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
@@ -176,7 +176,7 @@ export default function Settings(): ReactElement {
   }
 
   const togglePushNotifications = (toggleValue: boolean) => {
-    dispatch(toggleShowPushNotifications(toggleValue))
+    dispatch(showPushNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -227,7 +227,7 @@ export default function Settings(): ReactElement {
     component: () => (
       <SharedToggleButton
         onChange={(toggleValue) => togglePushNotifications(toggleValue)}
-        value={showPushNotifications}
+        value={shouldShowPushNotifications}
       />
     ),
   }

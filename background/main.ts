@@ -87,6 +87,7 @@ import {
   togglePushNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
+  showPushNotifications,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -600,6 +601,8 @@ export default class Main extends BaseService<never> {
     })
 
     this.initializeRedux()
+
+    // shouldShowNotifications
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -2045,14 +2048,18 @@ export default class Main extends BaseService<never> {
     runtime.onConnect.addListener((port) => {
       if (port.name !== popupMonitorPortName) return
 
+      const { ui } = this.store.getState()
+
+      if (ui.settings.showPushNotifications === undefined) {
+        this.store.dispatch(showPushNotifications(true))
+      }
+
       const openTime = Date.now()
 
-      const originalNetworkName =
-        this.store.getState().ui.selectedAccount.network.name
+      const originalNetworkName = ui.selectedAccount.network.name
 
       port.onDisconnect.addListener(() => {
-        const networkNameAtClose =
-          this.store.getState().ui.selectedAccount.network.name
+        const networkNameAtClose = ui.selectedAccount.network.name
         this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
           openTime: new Date(openTime).toISOString(),
           closeTime: new Date().toISOString(),

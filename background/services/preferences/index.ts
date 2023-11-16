@@ -17,6 +17,7 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
+import logger from "../../lib/logger"
 
 export {
   AnalyticsPreferences,

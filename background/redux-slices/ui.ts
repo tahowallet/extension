@@ -16,7 +16,7 @@ export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
-  showPushNotifications: false,
+  showPushNotifications: undefined,
   collectAnalytics: false,
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
@@ -35,7 +35,7 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
-    showPushNotifications: boolean
+    showPushNotifications?: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
@@ -259,8 +259,8 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
   },
 )
 
-export const toggleShowPushNotifications = createBackgroundAsyncThunk(
-  "ui/shouldShowNotifications",
+export const showPushNotifications = createBackgroundAsyncThunk(
+  "ui/showPushNotifications",
   async (shouldShowNotifications: boolean) => {
     await emitter.emit("shouldShowNotifications", shouldShowNotifications)
   },
