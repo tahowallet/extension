@@ -3,17 +3,17 @@ import classNames from "classnames"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function WalletSubspaceLink(): ReactElement {
-  const [isFullyVisible, setIsFullyVisible] = useState(false)
+  const [isIconOnly, setIsIconOnly] = useState(true)
 
   return (
     <button
       type="button"
-      className={classNames("subscape_link", { visible: isFullyVisible })}
+      className={classNames("subscape_link", { icon_only: isIconOnly })}
       onClick={() => {
         window.open("https://app.taho.xyz/", "_blank")?.focus()
       }}
-      onMouseEnter={() => setIsFullyVisible(true)}
-      onMouseLeave={() => setIsFullyVisible(false)}
+      onMouseEnter={() => setIsIconOnly(false)}
+      onMouseLeave={() => setIsIconOnly(true)}
     >
       <SharedIcon
         icon="subscape-logo.svg"
@@ -35,7 +35,7 @@ export default function WalletSubspaceLink(): ReactElement {
           z-index: 998; // Above the UI, below the menu
           right: 0;
           top: 90;
-          transform: translateX(160px);
+          transform: translateX(0px);
           transition: transform 0.3s ease-in-out;
           padding: 5px 10px 5px 5px;
           border-radius: 16px 0 0 16px;
@@ -50,8 +50,8 @@ export default function WalletSubspaceLink(): ReactElement {
             0px 14px 16px 0px rgba(7, 17, 17, 0.24),
             0px 24px 24px 0px rgba(7, 17, 17, 0.14);
         }
-        .subscape_link.visible {
-          transform: translateX(0px);
+        .subscape_link.icon_only {
+          transform: translateX(160px);
         }
       `}</style>
     </button>
