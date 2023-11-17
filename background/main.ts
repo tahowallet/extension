@@ -153,7 +153,6 @@ import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
 import { getActivityDetails } from "./redux-slices/utils/activities-utils"
 import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
 import { AccountSignerWithId } from "./signing"
-import { AnalyticsPreferences } from "./services/preferences/types"
 import {
   AnyAssetMetadata,
   assetAmountToDesiredDecimals,
@@ -197,7 +196,7 @@ import {
 } from "./services/internal-signer"
 import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
-import { DismissableItem } from "./services/preferences"
+import { AnalyticsPreferences, DismissableItem } from "./services/preferences"
 import { newPricePoints } from "./redux-slices/prices"
 
 // This sanitizer runs on store and action data before serializing for remote
