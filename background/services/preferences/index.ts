@@ -4,10 +4,12 @@ import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
 import {
   AnalyticsPreferences,
-  Preferences,
+  Preferences as DbPreferences,
   TokenListPreferences,
-} from "./types"
-import { DismissableItem, getOrCreateDB, PreferenceDatabase } from "./db"
+  DismissableItem,
+  getOrCreateDB,
+  PreferenceDatabase,
+} from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
@@ -16,7 +18,14 @@ import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 
-export { ManuallyDismissableItem, SingleShotItem, DismissableItem } from "./db"
+export {
+  AnalyticsPreferences,
+  ManuallyDismissableItem,
+  SingleShotItem,
+  DismissableItem,
+} from "./db"
+
+export type Preferences = Omit<DbPreferences, "id" | "savedAt">
 
 type AddressBookEntry = {
   network: EVMNetwork
