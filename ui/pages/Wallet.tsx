@@ -27,6 +27,7 @@ import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import PortalBanner from "../components/Wallet/Banner/PortalBanner"
+import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
@@ -101,6 +102,7 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
+        <WalletSubspaceLink />
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
@@ -188,10 +190,12 @@ export default function Wallet(): ReactElement {
           .page_content {
             width: 100%;
             height: inherit;
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
+            overflow-x: hidden;
           }
           .section {
             display: flex;
