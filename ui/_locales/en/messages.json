@@ -559,7 +559,7 @@
     },
     "mainMenu": "Settings",
     "signing": "Signing",
-    "showPushNotifications": "Show notifications",
+    "showNotifications": "Show Subscape notifications",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as default wallet",
     "enableTestNetworks": "Show testnet networks",

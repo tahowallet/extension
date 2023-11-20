@@ -4,8 +4,8 @@ import { Trans, useTranslation } from "react-i18next"
 import {
   selectHideDust,
   toggleHideDust,
-  selectPushNotifications,
-  showPushNotifications,
+  selectNotifications,
+  showNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
   toggleHideBanners,
@@ -167,7 +167,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
-  const shouldShowPushNotifications = useSelector(selectPushNotifications)
+  const shouldShowNotifications = useSelector(selectNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
@@ -175,8 +175,8 @@ export default function Settings(): ReactElement {
     dispatch(toggleHideDust(toggleValue))
   }
 
-  const togglePushNotifications = (toggleValue: boolean) => {
-    dispatch(showPushNotifications(toggleValue))
+  const toggleNotifications = (toggleValue: boolean) => {
+    dispatch(showNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
@@ -222,12 +222,12 @@ export default function Settings(): ReactElement {
     ),
   }
 
-  const pushNotifications = {
-    title: t("settings.showPushNotifications"),
+  const toggleShowNotifications = {
+    title: t("settings.showNotifications"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => togglePushNotifications(toggleValue)}
-        value={shouldShowPushNotifications}
+        onChange={(toggleValue) => toggleNotifications(toggleValue)}
+        value={shouldShowNotifications}
       />
     ),
   }
@@ -417,7 +417,7 @@ export default function Settings(): ReactElement {
     walletOptions: {
       title: t("settings.group.walletOptions"),
       items: [
-        pushNotifications,
+        toggleShowNotifications,
         hideSmallAssetBalance,
         unverifiedAssets,
         customNetworks,

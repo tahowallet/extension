@@ -84,10 +84,9 @@ import {
   setShowAnalyticsNotification,
   setSelectedNetwork,
   setAutoLockInterval,
-  togglePushNotifications,
+  toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
-  showPushNotifications,
 } from "./redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -601,8 +600,6 @@ export default class Main extends BaseService<never> {
     })
 
     this.initializeRedux()
-
-    // shouldShowNotifications
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -1862,7 +1859,7 @@ export default class Main extends BaseService<never> {
           await this.preferenceService.setShouldShowNotifications(
             shouldShowNotifications,
           )
-        this.store.dispatch(togglePushNotifications(isPermissionGranted))
+        this.store.dispatch(toggleNotifications(isPermissionGranted))
       },
     )
 
@@ -2049,10 +2046,6 @@ export default class Main extends BaseService<never> {
       if (port.name !== popupMonitorPortName) return
 
       const { ui } = this.store.getState()
-
-      if (ui.settings.showPushNotifications === undefined) {
-        this.store.dispatch(showPushNotifications(true))
-      }
 
       const openTime = Date.now()
 

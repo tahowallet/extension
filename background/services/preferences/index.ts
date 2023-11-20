@@ -17,7 +17,6 @@ import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
-import logger from "../../lib/logger"
 
 export {
   AnalyticsPreferences,
@@ -277,17 +276,12 @@ export default class PreferenceService extends BaseService<Events> {
           {
             permissions: ["notifications"],
           },
-          async (granted) => {
+          (granted) => {
             resolve(granted)
           },
         )
       } else {
-        chrome.permissions.remove(
-          { permissions: ["notifications"] },
-          async (removed) => {
-            resolve(!removed)
-          },
-        )
+        resolve(false)
       }
     })
 

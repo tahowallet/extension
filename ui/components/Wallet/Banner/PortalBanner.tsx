@@ -13,7 +13,6 @@ export default function PortalBanner(): ReactElement | null {
   const hasIslandAssets = useBackgroundSelector(selectHasIslandAssets)
 
   const showIslandAndDismissBanner = () => {
-    browser.permissions.request({ permissions: ["notifications"] })
     browser.tabs.create({ url: "https://app.taho.xyz" })
   }
 

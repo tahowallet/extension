@@ -16,7 +16,7 @@ export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
   showTestNetworks: false,
-  showPushNotifications: undefined,
+  showNotifications: undefined,
   collectAnalytics: false,
   showAnalyticsNotification: false,
   showUnverifiedAssets: false,
@@ -35,7 +35,7 @@ export type UIState = {
     hideDust: boolean
     defaultWallet: boolean
     showTestNetworks: boolean
-    showPushNotifications?: boolean
+    showNotifications?: boolean
     collectAnalytics: boolean
     showAnalyticsNotification: boolean
     showUnverifiedAssets: boolean
@@ -119,11 +119,11 @@ const uiSlice = createSlice({
         showAnalyticsNotification: false,
       },
     }),
-    togglePushNotifications: (
+    toggleNotifications: (
       immerState,
-      { payload: showPushNotifications }: { payload: boolean },
+      { payload: showNotifications }: { payload: boolean },
     ) => {
-      immerState.settings.showPushNotifications = showPushNotifications
+      immerState.settings.showNotifications = showNotifications
     },
     setShowAnalyticsNotification: (
       state,
@@ -235,7 +235,7 @@ export const {
   toggleUseFlashbots,
   setShowAnalyticsNotification,
   toggleHideBanners,
-  togglePushNotifications,
+  toggleNotifications,
   setSelectedAccount,
   setSnackbarMessage,
   setDefaultWallet,
@@ -259,8 +259,8 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
   },
 )
 
-export const showPushNotifications = createBackgroundAsyncThunk(
-  "ui/showPushNotifications",
+export const showNotifications = createBackgroundAsyncThunk(
+  "ui/showNotifications",
   async (shouldShowNotifications: boolean) => {
     await emitter.emit("shouldShowNotifications", shouldShowNotifications)
   },
@@ -446,9 +446,9 @@ export const selectCollectAnalytics = createSelector(
   (settings) => settings?.collectAnalytics,
 )
 
-export const selectPushNotifications = createSelector(
+export const selectNotifications = createSelector(
   selectSettings,
-  (settings) => settings?.showPushNotifications,
+  (settings) => settings?.showNotifications,
 )
 
 export const selectHideBanners = createSelector(
