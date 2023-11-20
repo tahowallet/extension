@@ -4,7 +4,7 @@ import { Trans, useTranslation } from "react-i18next"
 import {
   selectHideDust,
   toggleHideDust,
-  selectNotifications,
+  selectShowNotifications,
   showNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
@@ -167,7 +167,7 @@ export default function Settings(): ReactElement {
   const hideBanners = useSelector(selectHideBanners)
   const showTestNetworks = useSelector(selectShowTestNetworks)
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
-  const shouldShowNotifications = useSelector(selectNotifications)
+  const shouldShowNotifications = useSelector(selectShowNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 

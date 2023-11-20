@@ -2,14 +2,14 @@ import React, { ReactElement, useState } from "react"
 import classNames from "classnames"
 import { useDispatch, useSelector } from "react-redux"
 import {
-  selectNotifications,
+  selectShowNotifications,
   showNotifications,
 } from "@tallyho/tally-background/redux-slices/ui"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function WalletSubspaceLink(): ReactElement {
   const dispatch = useDispatch()
-  const shouldShowNotifications = useSelector(selectNotifications)
+  const shouldShowNotifications = useSelector(selectShowNotifications)
   const [isIconOnly, setIsIconOnly] = useState(true)
 
   const onClick = () => {

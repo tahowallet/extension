@@ -31,6 +31,12 @@ export default class NotificationsService extends BaseService<Events> {
     [notificationId: string]: NotificationClickHandler
   } = {}
 
+  protected boundHandleNotificationClicks =
+    this.handleNotificationClicks.bind(this)
+
+  protected boundCleanUpNotificationClickHandler =
+    this.cleanUpNotificationClickHandler.bind(this)
+
   /*
    * Create a new NotificationsService. The service isn't initialized until
    * startService() is called and resolved.
@@ -65,17 +71,17 @@ export default class NotificationsService extends BaseService<Events> {
       (isPermissionGranted) => {
         if (isPermissionGranted) {
           browser.notifications.onClicked.addListener(
-            this.handleNotificationClicks.bind(this),
+            this.boundHandleNotificationClicks,
           )
           browser.notifications.onClosed.addListener(
-            this.cleanUpNotificationClickHandler.bind(this),
+            this.boundCleanUpNotificationClickHandler,
           )
         } else {
           browser.notifications.onClicked.removeListener(
-            this.handleNotificationClicks.bind(this),
+            this.boundHandleNotificationClicks,
           )
           browser.notifications.onClosed.removeListener(
-            this.cleanUpNotificationClickHandler.bind(this),
+            this.boundCleanUpNotificationClickHandler,
           )
         }
       },
@@ -83,10 +89,10 @@ export default class NotificationsService extends BaseService<Events> {
 
     if (this.isPermissionGranted) {
       browser.notifications.onClicked.addListener(
-        this.handleNotificationClicks.bind(this),
+        this.boundHandleNotificationClicks,
       )
       browser.notifications.onClosed.addListener(
-        this.cleanUpNotificationClickHandler.bind(this),
+        this.boundCleanUpNotificationClickHandler,
       )
     }
 
@@ -96,14 +102,15 @@ export default class NotificationsService extends BaseService<Events> {
     */
   }
 
-  protected async notifyDrop(/* xpInfos: XpInfo[] */): Promise<void> {
-    const callback = () => {
-      browser.tabs.create({
-        url: "dapp url for realm claim, XpInfo must include realm id, ideally some way to communicate if the address is right as well",
-      })
-    }
-    this.pushNotification({ callback })
-  }
+  // TODO: uncomment when the XP drop is ready
+  // protected async notifyDrop(/* xpInfos: XpInfo[] */): Promise<void> {
+  //   const callback = () => {
+  //     browser.tabs.create({
+  //       url: "dapp url for realm claim, XpInfo must include realm id, ideally some way to communicate if the address is right as well",
+  //     })
+  //   }
+  //   this.notify({ callback })
+  // }
 
   // Fires the click handler for the given notification id.
   protected handleNotificationClicks(notificationId: string): void {
@@ -120,7 +127,7 @@ export default class NotificationsService extends BaseService<Events> {
    * The click action, if specified, will be fired when the user clicks on the
    * notification.
    */
-  protected async pushNotification({
+  protected async notify({
     title = "",
     message = "",
     contextMessage = "",

@@ -446,7 +446,7 @@ export const selectCollectAnalytics = createSelector(
   (settings) => settings?.collectAnalytics,
 )
 
-export const selectNotifications = createSelector(
+export const selectShowNotifications = createSelector(
   selectSettings,
   (settings) => settings?.showNotifications,
 )
