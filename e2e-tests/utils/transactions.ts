@@ -271,7 +271,7 @@ export default class TransactionsHelper {
       timestampRow
         .locator(".right")
         // eslint-disable-next-line no-irregular-whitespace
-        .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/),
+        .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/),
     ).toBeVisible()
   }
 

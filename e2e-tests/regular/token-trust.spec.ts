@@ -135,16 +135,10 @@ test.describe("Token Trust", () => {
        * Verify there are no unverified assets on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -265,16 +259,10 @@ test.describe("Token Trust", () => {
        * Verify there are no unverified assets on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(untrustedAssets)
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -305,9 +293,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      await expect(
-        popup.getByText("Asset removed from list").first(),
-      ).toBeVisible({ timeout: 5000 })
+      await expect
+        .soft(popup.getByText("Asset removed from list").first())
+        .toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets
@@ -345,16 +333,10 @@ test.describe("Token Trust", () => {
        * Verify there is no "pAAVE" asset on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["pAAVE"])
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -385,9 +367,11 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset added to list` snackbar visible.
        */
-      await expect(popup.getByText("Asset added to list").first()).toBeVisible({
-        timeout: 5000,
-      })
+      await expect
+        .soft(popup.getByText("Asset added to list").first())
+        .toBeVisible({
+          timeout: 5000,
+        })
 
       /**
        * Confirm asset's details are opened. Ensure there are fields related to
@@ -423,16 +407,10 @@ test.describe("Token Trust", () => {
        * Verify recently trusted asset is available on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
@@ -460,9 +438,9 @@ test.describe("Token Trust", () => {
       /**
        * Confirm there is `Asset removed from list` snackbar visible.
        */
-      await expect(
-        popup.getByText("Asset removed from list").first(),
-      ).toBeVisible({ timeout: 5000 })
+      await expect
+        .soft(popup.getByText("Asset removed from list").first())
+        .toBeVisible({ timeout: 5000 })
 
       /**
        * Make sure `Wallet` page is opened and there are unverified assets
@@ -500,16 +478,10 @@ test.describe("Token Trust", () => {
        * Verify there is no "BANANA" asset on the Swap screen.
        */
       await popup.getByLabel("Swap", { exact: true }).click()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .first()
-        .click()
+      await popup.getByLabel("Swap from:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
-      await popup
-        .getByRole("button", { name: "Select token", exact: true })
-        .nth(1)
-        .click()
+      await popup.getByLabel("Swap to:").click()
       await assetsHelper.assertAssetsNotPresentOnAssetsList(["BANANA"])
       await assetsHelper.closeSelectTokenPopup()
     })
