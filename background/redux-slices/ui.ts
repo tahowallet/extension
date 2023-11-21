@@ -259,7 +259,7 @@ export const updateAnalyticsPreferences = createBackgroundAsyncThunk(
   },
 )
 
-export const showNotifications = createBackgroundAsyncThunk(
+export const setShouldShowNotifications = createBackgroundAsyncThunk(
   "ui/showNotifications",
   async (shouldShowNotifications: boolean) => {
     await emitter.emit("shouldShowNotifications", shouldShowNotifications)

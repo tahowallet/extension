@@ -5,7 +5,7 @@ import {
   selectHideDust,
   toggleHideDust,
   selectShowNotifications,
-  showNotifications,
+  setShouldShowNotifications,
   selectShowTestNetworks,
   toggleTestNetworks,
   toggleHideBanners,
@@ -176,7 +176,7 @@ export default function Settings(): ReactElement {
   }
 
   const toggleNotifications = (toggleValue: boolean) => {
-    dispatch(showNotifications(toggleValue))
+    dispatch(setShouldShowNotifications(toggleValue))
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {

@@ -3,7 +3,7 @@ import classNames from "classnames"
 import { useDispatch, useSelector } from "react-redux"
 import {
   selectShowNotifications,
-  showNotifications,
+  setShouldShowNotifications,
 } from "@tallyho/tally-background/redux-slices/ui"
 import SharedIcon from "../Shared/SharedIcon"
 
@@ -14,7 +14,7 @@ export default function WalletSubspaceLink(): ReactElement {
 
   const onClick = () => {
     if (!shouldShowNotifications) {
-      dispatch(showNotifications(true))
+      dispatch(setShouldShowNotifications(true))
     }
 
     window.open("https://app.taho.xyz/", "_blank")?.focus()

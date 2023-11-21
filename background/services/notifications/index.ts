@@ -69,20 +69,22 @@ export default class NotificationsService extends BaseService<Events> {
     this.preferenceService.emitter.on(
       "setNotificationsPermission",
       (isPermissionGranted) => {
-        if (isPermissionGranted) {
-          browser.notifications.onClicked.addListener(
-            this.boundHandleNotificationClicks,
-          )
-          browser.notifications.onClosed.addListener(
-            this.boundCleanUpNotificationClickHandler,
-          )
-        } else {
-          browser.notifications.onClicked.removeListener(
-            this.boundHandleNotificationClicks,
-          )
-          browser.notifications.onClosed.removeListener(
-            this.boundCleanUpNotificationClickHandler,
-          )
+        if (typeof browser !== "undefined") {
+          if (isPermissionGranted) {
+            browser.notifications.onClicked.addListener(
+              this.boundHandleNotificationClicks,
+            )
+            browser.notifications.onClosed.addListener(
+              this.boundCleanUpNotificationClickHandler,
+            )
+          } else {
+            browser.notifications.onClicked.removeListener(
+              this.boundHandleNotificationClicks,
+            )
+            browser.notifications.onClosed.removeListener(
+              this.boundCleanUpNotificationClickHandler,
+            )
+          }
         }
       },
     )
