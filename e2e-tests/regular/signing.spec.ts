@@ -26,8 +26,11 @@ test.describe("Signing", () => {
     await signDataPromptOpens.then(async (prompt) => {
       await prompt.getByRole("button", { name: "Sign" }).click()
     })
-
-    // If we see this then it means we were able to sign in
+    // There's a bug on login.xyz that makes the test fail
+    // (https://discord.com/channels/862419652286218251/886997073650655232/1173226370776694794).
+    // We're adding the expectation of failure. Playwright will throw `Expected
+    // to fail, but passed.` when bug is fixed.
+    test.fail()
     await expect(siwe.getByText("Vote for your favorite emoji")).toBeVisible()
   })
 

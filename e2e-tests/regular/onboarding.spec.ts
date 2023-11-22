@@ -72,7 +72,11 @@ test.describe("Onboarding", () => {
     await page.getByRole("button", { name: "Begin the hunt" }).click()
     await page.getByRole("button", { name: "Create recovery phrase" }).click()
 
-    // Verify seed
+    // Wait for the seed phrase to load.
+    const seedPhraseWord = await page.locator(".seed_phrase .word")
+    await expect(seedPhraseWord).toHaveCount(24)
+
+    // Extract seed into an array of words with no spaces or dashes.
     const seedWords = (
       await page.locator(".seed_phrase .word").allTextContents()
     ).map((word) => word.replace(/-|\s/, ""))
@@ -83,6 +87,8 @@ test.describe("Onboarding", () => {
       "verify_seed_word_placeholder",
     )
 
+    // Extract the ids of the seed phrase words that need to be verified and
+    // store them as an array of numbers.
     const wordsToVerify = (await seedWordPlaceholders.allTextContents()).map(
       (word) => Number((word.match(/\d+/) ?? ["0"])[0]),
     )

@@ -20,9 +20,12 @@ import { ConnectionInfo } from "@ethersproject/web"
 export default class TahoAlchemyProvider extends AlchemyProvider {
   static override getUrl(network: Network, apiKey: string): ConnectionInfo {
     let host = null
-    switch (network.name) {
-      case "sepolia":
+    switch (network.chainId) {
+      case 11155111: // Ethereum Sepolia
         host = "eth-sepolia.g.alchemy.com/v2/"
+        break
+      case 421614: // Arbitrum Sepolia
+        host = "arb-sepolia.g.alchemy.com/v2/"
         break
       default:
         return AlchemyProvider.getUrl(network, apiKey)
