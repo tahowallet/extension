@@ -197,10 +197,15 @@ export const NETWORKS_SUPPORTING_SWAPS = new Set(
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  // TODO: Add `ARBITRUM_SEPOLIA` once Alchemy creates a dedicated  RPC.
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, SEPOLIA].map(
-    (network) => network.chainID,
-  ),
+  [
+    ETHEREUM,
+    POLYGON,
+    ARBITRUM_ONE,
+    OPTIMISM,
+    GOERLI,
+    SEPOLIA,
+    ARBITRUM_SEPOLIA,
+  ].map((network) => network.chainID),
 )
 
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
