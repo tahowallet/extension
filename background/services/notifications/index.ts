@@ -31,12 +31,6 @@ export default class NotificationsService extends BaseService<Events> {
     [notificationId: string]: NotificationClickHandler
   } = {}
 
-  protected boundHandleNotificationClicks =
-    this.handleNotificationClicks.bind(this)
-
-  protected boundCleanUpNotificationClickHandler =
-    this.cleanUpNotificationClickHandler.bind(this)
-
   /*
    * Create a new NotificationsService. The service isn't initialized until
    * startService() is called and resolved.
@@ -58,6 +52,12 @@ export default class NotificationsService extends BaseService<Events> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    const boundHandleNotificationClicks =
+      this.handleNotificationClicks.bind(this)
+
+    const boundCleanUpNotificationClickHandler =
+      this.cleanUpNotificationClickHandler.bind(this)
+
     // Preference and listener setup.
     // NOTE: Below, we assume if we got `shouldShowNotifications` as true, the
     // browser notifications permission has been granted. The preferences service
@@ -72,17 +72,17 @@ export default class NotificationsService extends BaseService<Events> {
         if (typeof browser !== "undefined") {
           if (isPermissionGranted) {
             browser.notifications.onClicked.addListener(
-              this.boundHandleNotificationClicks,
+              boundHandleNotificationClicks,
             )
             browser.notifications.onClosed.addListener(
-              this.boundCleanUpNotificationClickHandler,
+              boundCleanUpNotificationClickHandler,
             )
           } else {
             browser.notifications.onClicked.removeListener(
-              this.boundHandleNotificationClicks,
+              boundHandleNotificationClicks,
             )
             browser.notifications.onClosed.removeListener(
-              this.boundCleanUpNotificationClickHandler,
+              boundCleanUpNotificationClickHandler,
             )
           }
         }
@@ -90,11 +90,9 @@ export default class NotificationsService extends BaseService<Events> {
     )
 
     if (this.isPermissionGranted) {
-      browser.notifications.onClicked.addListener(
-        this.boundHandleNotificationClicks,
-      )
+      browser.notifications.onClicked.addListener(boundHandleNotificationClicks)
       browser.notifications.onClosed.addListener(
-        this.boundCleanUpNotificationClickHandler,
+        boundCleanUpNotificationClickHandler,
       )
     }
 
