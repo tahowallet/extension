@@ -113,6 +113,7 @@ interface Events extends ServiceLifecycleEvents {
   updatedSignerSettings: AccountSignerSettings[]
   updateAutoLockInterval: UNIXTime
   dismissableItemMarkedAsShown: DismissableItem
+  setNotificationsPermission: boolean
 }
 
 /*
@@ -262,6 +263,34 @@ export default class PreferenceService extends BaseService<Events> {
     const { analytics } = await this.db.getPreferences()
 
     this.emitter.emit("updateAnalyticsPreferences", analytics)
+  }
+
+  async getShouldShowNotifications(): Promise<boolean> {
+    return (await this.db.getPreferences()).shouldShowNotifications
+  }
+
+  async setShouldShowNotifications(shouldShowNotifications: boolean) {
+    const permissionRequest: Promise<boolean> = new Promise((resolve) => {
+      if (shouldShowNotifications) {
+        chrome.permissions.request(
+          {
+            permissions: ["notifications"],
+          },
+          (granted) => {
+            resolve(granted)
+          },
+        )
+      } else {
+        resolve(false)
+      }
+    })
+
+    return permissionRequest.then(async (granted) => {
+      await this.db.setShouldShowNotifications(granted)
+      this.emitter.emit("setNotificationsPermission", granted)
+
+      return granted
+    })
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
