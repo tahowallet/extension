@@ -34,6 +34,7 @@ const defaultPreferences = {
     hasDefaultOnBeenTurnedOn: false,
   },
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+  shouldShowNotifications: false,
 }
 
 export default defaultPreferences

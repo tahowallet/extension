@@ -56,6 +56,8 @@ to only rebuild the Firefox extension on change:
 $ yarn start --config-name firefox
 # On change, rebuild the firefox and brave extensions but not others.
 $ yarn start --config-name firefox --config-name brave
+# On change, rebuild the chrome
+$ yarn start --config-name chrome
 ```
 
 ### Note for some Linux distributions

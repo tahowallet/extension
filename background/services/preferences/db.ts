@@ -64,6 +64,7 @@ export type Preferences = {
   accountSignersSettings: AccountSignerSettings[]
   analytics: AnalyticsPreferences
   autoLockInterval: UNIXTime
+  shouldShowNotifications: boolean
 }
 
 /**
@@ -423,6 +424,16 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    // Add default notifications and set as default off.
+    this.version(21).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Omit<Preferences, "showNotifications">) => {
+          Object.assign(storedPreferences, { showNotifications: false })
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -447,6 +458,18 @@ export class PreferenceDatabase extends Dexie {
       .toCollection()
       .modify((storedPreferences: Preferences) => {
         const update: Partial<Preferences> = { autoLockInterval: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
+  }
+
+  async setShouldShowNotifications(newValue: boolean): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = {
+          shouldShowNotifications: newValue,
+        }
 
         Object.assign(storedPreferences, update)
       })

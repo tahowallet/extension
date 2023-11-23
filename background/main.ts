@@ -84,6 +84,7 @@ import {
   setShowAnalyticsNotification,
   setSelectedNetwork,
   setAutoLockInterval,
+  toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
 } from "./redux-slices/ui"
@@ -198,6 +199,7 @@ import { getPricePoint, getTokenPrices } from "./lib/prices"
 import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
 import { AnalyticsPreferences, DismissableItem } from "./services/preferences"
 import { newPricePoints } from "./redux-slices/prices"
+import NotificationsService from "./services/notifications"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -351,6 +353,11 @@ export default class Main extends BaseService<never> {
       ledgerService,
     )
 
+    const notificationsService = NotificationsService.create(
+      preferenceService,
+      islandService,
+    )
+
     const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
       ? WalletConnectService.create(
           providerBridgeService,
@@ -406,6 +413,7 @@ export default class Main extends BaseService<never> {
       await nftsService,
       await walletConnectService,
       await abilitiesService,
+      await notificationsService,
     )
   }
 
@@ -499,6 +507,11 @@ export default class Main extends BaseService<never> {
      * A promise to the Abilities service which takes care of fetching and storing abilities
      */
     private abilitiesService: AbilitiesService,
+
+    /**
+     * A promise to the Notifications service which takes care of observing and delivering notifications
+     */
+    private notificationsService: NotificationsService,
   ) {
     super({
       initialLoadWaitExpired: {
@@ -609,6 +622,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.startService(),
       this.walletConnectService.startService(),
       this.abilitiesService.startService(),
+      this.notificationsService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -632,6 +646,7 @@ export default class Main extends BaseService<never> {
       this.nftsService.stopService(),
       this.walletConnectService.stopService(),
       this.abilitiesService.stopService(),
+      this.notificationsService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -690,6 +705,9 @@ export default class Main extends BaseService<never> {
     signer: AccountSigner,
     lastAddressInAccount: boolean,
   ): Promise<void> {
+    // FIXME This whole method should be replaced with a call to
+    // FIXME signerService.removeAccount and an event emission that is
+    // FIXME observed by other services, either directly or indirectly.
     this.store.dispatch(deleteAccount(address))
 
     if (signer.type !== AccountType.ReadOnly && lastAddressInAccount) {
@@ -1831,6 +1849,17 @@ export default class Main extends BaseService<never> {
             analyticsEnabled: analyticsPreferences.isEnabled,
           },
         )
+      },
+    )
+
+    uiSliceEmitter.on(
+      "shouldShowNotifications",
+      async (shouldShowNotifications: boolean) => {
+        const isPermissionGranted =
+          await this.preferenceService.setShouldShowNotifications(
+            shouldShowNotifications,
+          )
+        this.store.dispatch(toggleNotifications(isPermissionGranted))
       },
     )
 

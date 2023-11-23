@@ -1,17 +1,30 @@
 import React, { ReactElement, useState } from "react"
 import classNames from "classnames"
+import { useDispatch, useSelector } from "react-redux"
+import {
+  selectShowNotifications,
+  setShouldShowNotifications,
+} from "@tallyho/tally-background/redux-slices/ui"
 import SharedIcon from "../Shared/SharedIcon"
 
 export default function WalletSubspaceLink(): ReactElement {
+  const dispatch = useDispatch()
+  const shouldShowNotifications = useSelector(selectShowNotifications)
   const [isIconOnly, setIsIconOnly] = useState(true)
+
+  const onClick = () => {
+    if (!shouldShowNotifications) {
+      dispatch(setShouldShowNotifications(true))
+    }
+
+    window.open("https://app.taho.xyz/", "_blank")?.focus()
+  }
 
   return (
     <button
       type="button"
       className={classNames("subscape_link", { icon_only: isIconOnly })}
-      onClick={() => {
-        window.open("https://app.taho.xyz/", "_blank")?.focus()
-      }}
+      onClick={onClick}
       onMouseEnter={() => setIsIconOnly(false)}
       onMouseLeave={() => setIsIconOnly(true)}
     >
