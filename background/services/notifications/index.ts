@@ -1,6 +1,5 @@
 import { uniqueId } from "lodash"
 import BaseService from "../base"
-import IslandService from "../island"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
@@ -38,14 +37,10 @@ export default class NotificationsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     NotificationsService,
-    [Promise<PreferenceService>, Promise<IslandService>]
-  > = async (preferenceService, islandService) =>
-    new this(await preferenceService, await islandService)
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => new this(await preferenceService)
 
-  private constructor(
-    private preferenceService: PreferenceService,
-    private islandService: IslandService,
-  ) {
+  private constructor(private preferenceService: PreferenceService) {
     super()
   }
 
@@ -127,7 +122,7 @@ export default class NotificationsService extends BaseService<Events> {
    * The click action, if specified, will be fired when the user clicks on the
    * notification.
    */
-  protected async notify({
+  public async notify({
     title = "",
     message = "",
     contextMessage = "",

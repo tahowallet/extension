@@ -328,7 +328,14 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService,
     )
-    const islandService = IslandService.create(chainService, indexingService)
+
+    const notificationsService = NotificationsService.create(preferenceService)
+
+    const islandService = IslandService.create(
+      chainService,
+      indexingService,
+      notificationsService,
+    )
 
     const telemetryService = TelemetryService.create()
 
@@ -351,11 +358,6 @@ export default class Main extends BaseService<never> {
     const abilitiesService = AbilitiesService.create(
       chainService,
       ledgerService,
-    )
-
-    const notificationsService = NotificationsService.create(
-      preferenceService,
-      islandService,
     )
 
     const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
