@@ -25,6 +25,8 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
 import { SmartContractFungibleAsset } from "../../assets"
 
+const NOTIFICATIONS_XP_DROP_THRESHOLD_MS = 86_400_000 // 24h
+
 export {
   TESTNET_TAHO,
   VOTE_WITH_FRIENDS_ADDRESS,
@@ -48,6 +50,8 @@ interface Events extends ServiceLifecycleEvents {
  */
 export default class IslandService extends BaseService<Events> {
   private isRelevantMonitoringAlreadyEnabled = false
+
+  private lastXpDropNotificationInMs = Date.now()
 
   static create: ServiceCreatorFunction<
     Events,
@@ -165,8 +169,8 @@ export default class IslandService extends BaseService<Events> {
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
             realmContract.on(
-              realmContract.filters.XpDistributed(realmXpAddress),
-              () => {
+              realmContract.filters.XpDistributed(),
+              (eventObj) => {
                 this.checkXPDrop({ realmName, realmAddress, realmXpAsset })
               },
             )
@@ -257,12 +261,18 @@ export default class IslandService extends BaseService<Events> {
     realmAddress: string
     realmXpAsset: SmartContractFungibleAsset
   }) {
-    logger.debug(realmXpAsset)
-    const options = {
-      title: `XP droppped from ${realmName} realm`,
-      message: `Realm address: ${realmAddress}`,
+    const shouldShowXpDropNotifications =
+      Date.now() >
+      this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD_MS
+
+    if (shouldShowXpDropNotifications) {
+      this.lastXpDropNotificationInMs = Date.now()
+      const options = {
+        title: `XP dropped from ${realmName} realm`,
+        message: `Realm address: ${realmAddress}`,
+      }
+      this.notificationService.notify({ options })
     }
-    this.notificationService.notify(options)
     // this.chainService.loadRecentAssetTransfers()
   }
 

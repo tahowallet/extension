@@ -58,12 +58,12 @@ export default class NotificationsService extends BaseService<Events> {
     // browser notifications permission has been granted. The preferences service
     // does guard this, but if that ends up not being true, browser.notifications
     // will be undefined and all of this will explode.
-    this.isPermissionGranted =
-      await this.preferenceService.getShouldShowNotifications()
 
     this.preferenceService.emitter.on(
       "setNotificationsPermission",
       (isPermissionGranted) => {
+        this.isPermissionGranted = isPermissionGranted
+
         if (typeof browser !== "undefined") {
           if (isPermissionGranted) {
             browser.notifications.onClicked.addListener(
@@ -97,16 +97,6 @@ export default class NotificationsService extends BaseService<Events> {
     */
   }
 
-  // TODO: uncomment when the XP drop is ready
-  // protected async notifyDrop(/* xpInfos: XpInfo[] */): Promise<void> {
-  //   const callback = () => {
-  //     browser.tabs.create({
-  //       url: "dapp url for realm claim, XpInfo must include realm id, ideally some way to communicate if the address is right as well",
-  //     })
-  //   }
-  //   this.notify({ callback })
-  // }
-
   // Fires the click handler for the given notification id.
   protected handleNotificationClicks(notificationId: string): void {
     this.clickHandlers?.[notificationId]()
@@ -122,28 +112,32 @@ export default class NotificationsService extends BaseService<Events> {
    * The click action, if specified, will be fired when the user clicks on the
    * notification.
    */
-  public async notify({
-    title = "",
-    message = "",
-    contextMessage = "",
+  public notify({
+    options,
     callback,
   }: {
-    title?: string
-    message?: string
-    contextMessage?: string
+    options: {
+      title: string
+      message: string
+      contextMessage?: string
+      type?: chrome.notifications.TemplateType
+    }
     callback?: () => void
   }) {
     if (!this.isPermissionGranted) {
       return
     }
-    const notificationId = uniqueId("notification-")
+    const notificationId = `notification-${Date.now()}` // uniqueId("notification-")
 
-    await browser.notifications.create(notificationId, {
-      type: "basic",
-      title,
-      message,
-      contextMessage,
-      isClickable: !!callback,
+    const notificationOptions = {
+      type: "basic" as chrome.notifications.TemplateType,
+      iconUrl:
+        "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e",
+      ...options,
+    }
+
+    chrome.notifications.clear(notificationId, () => {
+      chrome.notifications.create(notificationId, notificationOptions, callback)
     })
   }
 }
