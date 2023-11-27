@@ -119,6 +119,12 @@ it does not mean that they all would be obsolete once automated).
 
 ### 💌 Send base asset
 
+When there are no changes touching sending txs in the release, only one base
+asset send transaction on some mainnet chain is required to be tested. Make sure
+it's on different chain than the ERC-20 asset send transaction.
+When there are changes in the release that may affect transactions, lets test
+everything from the list.
+
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
    - [ ] sign
@@ -145,6 +151,12 @@ it does not mean that they all would be obsolete once automated).
    - [ ] check transaction on scan website
 
 ### 🎁 Send ERC20
+
+When there are no changes touching sending txs in the release, only one ERC20
+send transaction on some mainnet chain is required to be tested. Make sure it's
+on different chain than the base asset send transaction.
+When there are changes in the release that may affect transactions, lets test
+everything from the list.
 
 1. Ethereum mainnet
    - [ ] check gas settings and gas price
@@ -174,8 +186,9 @@ it does not mean that they all would be obsolete once automated).
 ### 💸 Internal swap
 
 When there are no changes touching swaps in the release, only one swap on some
-mainnet chain is required to be tested. When there are changes that may affect
-swaps, lets test everything fromm the list.
+mainnet chain is required to be tested.
+When there are changes in the release that may affect swaps, lets test
+everything from the list.
 
 1. Ethereum mainnet
    - [ ] check token list
