@@ -82,12 +82,6 @@ export default class IslandService extends BaseService<Events> {
         },
         handler: () => this.startMonitoringIfNeeded(),
       },
-      // checkXPDrop: {
-      //   schedule: {
-      //     periodInMinutes: 60,
-      //   },
-      //   handler: () => this.checkXPDrop(),
-      // },
     })
   }
 
@@ -168,12 +162,9 @@ export default class IslandService extends BaseService<Events> {
             )
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
-            realmContract.on(
-              realmContract.filters.XpDistributed(),
-              (eventObj) => {
-                this.checkXPDrop({ realmName, realmAddress, realmXpAsset })
-              },
-            )
+            realmContract.on(realmContract.filters.XpDistributed(), () => {
+              this.checkXPDrop()
+            })
           }
         }),
       )
@@ -252,15 +243,7 @@ export default class IslandService extends BaseService<Events> {
     return this.db.getReferrerStats(referrer)
   }
 
-  private checkXPDrop({
-    realmName,
-    realmAddress,
-    realmXpAsset,
-  }: {
-    realmName: string
-    realmAddress: string
-    realmXpAsset: SmartContractFungibleAsset
-  }) {
+  private checkXPDrop() {
     const shouldShowXpDropNotifications =
       Date.now() >
       this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD_MS
@@ -268,12 +251,11 @@ export default class IslandService extends BaseService<Events> {
     if (shouldShowXpDropNotifications) {
       this.lastXpDropNotificationInMs = Date.now()
       const options = {
-        title: `XP dropped from ${realmName} realm`,
-        message: `Realm address: ${realmAddress}`,
+        title: "Weekly XP distributed",
+        message: "Visit Subscape to see if you are eligible",
       }
       this.notificationService.notify({ options })
     }
-    // this.chainService.loadRecentAssetTransfers()
   }
 
   private async trackReferrals({
