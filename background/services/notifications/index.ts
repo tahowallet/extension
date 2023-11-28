@@ -127,7 +127,7 @@ export default class NotificationsService extends BaseService<Events> {
     if (!this.isPermissionGranted) {
       return
     }
-    const notificationId = `notification-${Date.now()}` // uniqueId("notification-")
+    const notificationId = uniqueId("notification-")
 
     const notificationOptions = {
       type: "basic" as chrome.notifications.TemplateType,
