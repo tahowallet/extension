@@ -116,7 +116,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             left: 0px;
             right: 0px;
             bottom: 0px;
-            z-index: 999;
+            z-index: var(--z-menu);
             transform: translateY(0); /* open by default */
             opacity: 1;
             transition: transform cubic-bezier(0.19, 1, 0.22, 1)
@@ -138,7 +138,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             bottom: 0;
             top: 0;
             cursor: pointer;
-            z-index: 998;
+            z-index: var(--z-below-menu);
             background: var(--green-120);
             opacity: 0.7;
             transition:
@@ -164,7 +164,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           }
           .slide_up_close {
             position: absolute;
-            z-index: 2;
+            z-index: var(--z-settings);
             top: 24px;
             right: 24px;
           }
