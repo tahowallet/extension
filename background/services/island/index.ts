@@ -25,8 +25,7 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
 import { SmartContractFungibleAsset } from "../../assets"
 
-// const NOTIFICATIONS_XP_DROP_THRESHOLD_MS = 86_400_000 // 24h
-const NOTIFICATIONS_XP_DROP_THRESHOLD_MS_FOR_TESTING_PURPOSE = 30_000 // 30s
+const NOTIFICATIONS_XP_DROP_THRESHOLD_MS = 86_400_000 // 24h
 
 export {
   TESTNET_TAHO,
@@ -247,8 +246,7 @@ export default class IslandService extends BaseService<Events> {
   private checkXPDrop() {
     const shouldShowXpDropNotifications =
       Date.now() >
-      this.lastXpDropNotificationInMs +
-        NOTIFICATIONS_XP_DROP_THRESHOLD_MS_FOR_TESTING_PURPOSE
+      this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD_MS
 
     if (shouldShowXpDropNotifications) {
       this.lastXpDropNotificationInMs = Date.now()
