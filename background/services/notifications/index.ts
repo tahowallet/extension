@@ -3,6 +3,9 @@ import BaseService from "../base"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
+const TAHO_ICON_URL =
+  "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
+
 type Events = ServiceLifecycleEvents & {
   notificationDisplayed: string
   notificationSuppressed: string
@@ -120,7 +123,7 @@ export default class NotificationsService extends BaseService<Events> {
       title: string
       message: string
       contextMessage?: string
-      type?: chrome.notifications.TemplateType
+      type?: browser.Notifications.TemplateType
     }
     callback?: () => void
   }) {
@@ -130,14 +133,17 @@ export default class NotificationsService extends BaseService<Events> {
     const notificationId = uniqueId("notification-")
 
     const notificationOptions = {
-      type: "basic" as chrome.notifications.TemplateType,
-      iconUrl:
-        "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e",
+      type: "basic" as browser.Notifications.TemplateType,
+      iconUrl: TAHO_ICON_URL,
       ...options,
     }
 
-    chrome.notifications.clear(notificationId, () => {
-      chrome.notifications.create(notificationId, notificationOptions, callback)
+    browser.notifications.clear(notificationId).then(() => {
+      browser.notifications
+        .create(notificationId, notificationOptions)
+        .then(() => {
+          callback?.()
+        })
     })
   }
 }

@@ -156,6 +156,7 @@ export default class PreferenceService extends BaseService<Events> {
       "initializeShownDismissableItems",
       await this.getShownDismissableItems(),
     )
+    this.setShouldShowNotifications()
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -269,25 +270,29 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getPreferences()).shouldShowNotifications
   }
 
-  async setShouldShowNotifications(shouldShowNotifications: boolean) {
+  async setShouldShowNotifications(shouldShowNotifications?: boolean) {
+    if (shouldShowNotifications === undefined) {
+      const granted = await this.getShouldShowNotifications()
+      this.emitter.emit("setNotificationsPermission", granted)
+      return granted
+    }
     const permissionRequest: Promise<boolean> = new Promise((resolve) => {
       if (shouldShowNotifications) {
-        chrome.permissions.request(
-          {
+        browser.permissions
+          .request({
             permissions: ["notifications"],
-          },
-          (granted) => {
+          })
+          .then((granted) => {
             resolve(granted)
-          },
-        )
+          })
       } else {
-        resolve(false)
+        resolve(shouldShowNotifications)
       }
     })
 
     return permissionRequest.then(async (granted) => {
-      await this.db.setShouldShowNotifications(granted)
       this.emitter.emit("setNotificationsPermission", granted)
+      await this.db.setShouldShowNotifications(granted)
 
       return granted
     })

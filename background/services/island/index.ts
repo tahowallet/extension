@@ -4,7 +4,7 @@ import { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { DOGGO, ETHEREUM } from "../../constants"
+import { DOGGO, ETHEREUM, HOUR } from "../../constants"
 import { sameNetwork } from "../../networks"
 import {
   ClaimWithFriends,
@@ -25,7 +25,7 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
 import { SmartContractFungibleAsset } from "../../assets"
 
-const NOTIFICATIONS_XP_DROP_THRESHOLD_MS = 86_400_000 // 24h
+const NOTIFICATIONS_XP_DROP_THRESHOLD = 24 * HOUR
 
 export {
   TESTNET_TAHO,
@@ -51,7 +51,7 @@ interface Events extends ServiceLifecycleEvents {
 export default class IslandService extends BaseService<Events> {
   private isRelevantMonitoringAlreadyEnabled = false
 
-  private lastXpDropNotificationInMs = Date.now()
+  private lastXpDropNotificationInMs?: number
 
   static create: ServiceCreatorFunction<
     Events,
@@ -244,9 +244,10 @@ export default class IslandService extends BaseService<Events> {
   }
 
   private checkXPDrop() {
-    const shouldShowXpDropNotifications =
-      Date.now() >
-      this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD_MS
+    const shouldShowXpDropNotifications = this.lastXpDropNotificationInMs
+      ? Date.now() >
+        this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD
+      : true
 
     if (shouldShowXpDropNotifications) {
       this.lastXpDropNotificationInMs = Date.now()
