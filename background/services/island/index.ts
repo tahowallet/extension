@@ -4,7 +4,7 @@ import { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
-import { DOGGO, ETHEREUM, HOUR } from "../../constants"
+import { DOGGO, ETHEREUM } from "../../constants"
 import { sameNetwork } from "../../networks"
 import {
   ClaimWithFriends,
