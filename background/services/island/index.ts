@@ -25,8 +25,6 @@ import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
 import { SmartContractFungibleAsset } from "../../assets"
 
-const NOTIFICATIONS_XP_DROP_THRESHOLD = 24 * HOUR
-
 export {
   TESTNET_TAHO,
   VOTE_WITH_FRIENDS_ADDRESS,
@@ -50,8 +48,6 @@ interface Events extends ServiceLifecycleEvents {
  */
 export default class IslandService extends BaseService<Events> {
   private isRelevantMonitoringAlreadyEnabled = false
-
-  private lastXpDropNotificationInMs?: number
 
   static create: ServiceCreatorFunction<
     Events,
@@ -244,19 +240,7 @@ export default class IslandService extends BaseService<Events> {
   }
 
   private checkXPDrop() {
-    const shouldShowXpDropNotifications = this.lastXpDropNotificationInMs
-      ? Date.now() >
-        this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD
-      : true
-
-    if (shouldShowXpDropNotifications) {
-      this.lastXpDropNotificationInMs = Date.now()
-      const options = {
-        title: "Weekly XP distributed",
-        message: "Visit Subscape to see if you are eligible",
-      }
-      this.notificationService.notify({ options })
-    }
+    this.notificationService.notifyXPDrop()
   }
 
   private async trackReferrals({

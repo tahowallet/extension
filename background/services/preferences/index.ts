@@ -272,31 +272,24 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async setShouldShowNotifications(shouldShowNotifications?: boolean) {
+    let granted
     if (shouldShowNotifications === undefined) {
-      const granted = await this.getShouldShowNotifications()
+      granted = await this.getShouldShowNotifications()
       this.emitter.emit("setNotificationsPermission", granted)
       return granted
     }
-    const permissionRequest: Promise<boolean> = new Promise((resolve) => {
-      if (shouldShowNotifications) {
-        browser.permissions
-          .request({
-            permissions: ["notifications"],
-          })
-          .then((granted) => {
-            resolve(granted)
-          })
-      } else {
-        resolve(shouldShowNotifications)
+
+    if (shouldShowNotifications) {
+      granted = await browser.permissions.request({
+        permissions: ["notifications"],
+      })
+
+      if (granted) {
+        this.emitter.emit("setNotificationsPermission", granted)
+        await this.db.setShouldShowNotifications(granted)
       }
-    })
-
-    return permissionRequest.then(async (granted) => {
-      this.emitter.emit("setNotificationsPermission", granted)
-      await this.db.setShouldShowNotifications(granted)
-
-      return granted
-    })
+    }
+    return granted
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {

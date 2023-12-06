@@ -3,6 +3,7 @@ import browser from "webextension-polyfill"
 import BaseService from "../base"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import { HOUR } from "../../constants"
 
 const TAHO_ICON_URL =
   "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
@@ -13,6 +14,8 @@ type Events = ServiceLifecycleEvents & {
 }
 
 type NotificationClickHandler = (() => Promise<void>) | (() => void)
+
+const NOTIFICATIONS_XP_DROP_THRESHOLD = 24 * HOUR
 
 /**
  * The NotificationService manages all notifications for the extension. It is
@@ -33,6 +36,8 @@ export default class NotificationsService extends BaseService<Events> {
   private clickHandlers: {
     [notificationId: string]: NotificationClickHandler
   } = {}
+
+  private lastXpDropNotificationInMs?: number
 
   /*
    * Create a new NotificationsService. The service isn't initialized until
@@ -139,10 +144,22 @@ export default class NotificationsService extends BaseService<Events> {
       ...options,
     }
 
-    browser.notifications
-      .create(notificationId, notificationOptions)
-      .then(() => {
-        callback?.()
-      })
+    browser.notifications.create(notificationId, notificationOptions)
+  }
+
+  public notifyXPDrop(callback?: () => void): void {
+    const shouldShowXpDropNotifications = this.lastXpDropNotificationInMs
+      ? Date.now() >
+        this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD
+      : true
+
+    if (shouldShowXpDropNotifications) {
+      this.lastXpDropNotificationInMs = Date.now()
+      const options = {
+        title: "Weekly XP distributed",
+        message: "Visit Subscape to see if you are eligible",
+      }
+      this.notify({ options, callback })
+    }
   }
 }
