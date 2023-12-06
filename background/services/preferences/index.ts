@@ -282,10 +282,9 @@ export default class PreferenceService extends BaseService<Events> {
         permissions: ["notifications"],
       })
 
-      if (granted) {
-        await this.db.setShouldShowNotifications(granted)
-        this.emitter.emit("setNotificationsPermission", granted)
-      }
+      await this.db.setShouldShowNotifications(granted)
+      this.emitter.emit("setNotificationsPermission", granted)
+
       return granted
     }
 

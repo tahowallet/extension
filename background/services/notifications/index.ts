@@ -69,6 +69,13 @@ export default class NotificationsService extends BaseService<Events> {
     // will be undefined and all of this will explode.
 
     this.preferenceService.emitter.on(
+      "initializeNotificationsPreferences",
+      async (isPermissionGranted) => {
+        this.isPermissionGranted = isPermissionGranted
+      },
+    )
+
+    this.preferenceService.emitter.on(
       "setNotificationsPermission",
       (isPermissionGranted) => {
         this.isPermissionGranted = isPermissionGranted
