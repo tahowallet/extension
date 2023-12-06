@@ -99,11 +99,6 @@ export default class NotificationsService extends BaseService<Events> {
         boundCleanUpNotificationClickHandler,
       )
     }
-
-    /*
-     * FIXME add below
-    this.islandService.emitter.on("xpDropped", this.notifyXpDrop.bind(this))
-    */
   }
 
   // Fires the click handler for the given notification id.

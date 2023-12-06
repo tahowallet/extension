@@ -1592,6 +1592,13 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
+      "initializeNotificationsPreferences",
+      async (isPermissionGranted) => {
+        this.store.dispatch(toggleNotifications(isPermissionGranted))
+      },
+    )
+
+    this.preferenceService.emitter.on(
       "dismissableItemMarkedAsShown",
       async (dismissableItem) => {
         this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))

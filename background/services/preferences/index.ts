@@ -109,6 +109,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
   initializeShownDismissableItems: DismissableItem[]
+  initializeNotificationsPreferences: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
@@ -157,7 +158,11 @@ export default class PreferenceService extends BaseService<Events> {
       "initializeShownDismissableItems",
       await this.getShownDismissableItems(),
     )
-    this.setShouldShowNotifications()
+
+    this.emitter.emit(
+      "initializeNotificationsPreferences",
+      await this.getShouldShowNotificationsPreferences(),
+    )
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -267,20 +272,13 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("updateAnalyticsPreferences", analytics)
   }
 
-  async getShouldShowNotifications(): Promise<boolean> {
+  async getShouldShowNotificationsPreferences(): Promise<boolean> {
     return (await this.db.getPreferences()).shouldShowNotifications
   }
 
-  async setShouldShowNotifications(shouldShowNotifications?: boolean) {
-    let granted = false
-    if (shouldShowNotifications === undefined) {
-      granted = await this.getShouldShowNotifications()
-      this.emitter.emit("setNotificationsPermission", granted)
-      return granted
-    }
-
+  async setShouldShowNotifications(shouldShowNotifications: boolean) {
     if (shouldShowNotifications) {
-      granted = await browser.permissions.request({
+      const granted = await browser.permissions.request({
         permissions: ["notifications"],
       })
 
@@ -288,8 +286,10 @@ export default class PreferenceService extends BaseService<Events> {
         await this.db.setShouldShowNotifications(granted)
         this.emitter.emit("setNotificationsPermission", granted)
       }
+      return granted
     }
-    return granted
+
+    return false
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
