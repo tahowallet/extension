@@ -80,22 +80,20 @@ export default class NotificationsService extends BaseService<Events> {
       (isPermissionGranted) => {
         this.isPermissionGranted = isPermissionGranted
 
-        if (typeof browser !== "undefined") {
-          if (isPermissionGranted) {
-            browser.notifications.onClicked.addListener(
-              boundHandleNotificationClicks,
-            )
-            browser.notifications.onClosed.addListener(
-              boundCleanUpNotificationClickHandler,
-            )
-          } else {
-            browser.notifications.onClicked.removeListener(
-              boundHandleNotificationClicks,
-            )
-            browser.notifications.onClosed.removeListener(
-              boundCleanUpNotificationClickHandler,
-            )
-          }
+        if (this.isPermissionGranted) {
+          browser.notifications.onClicked.addListener(
+            boundHandleNotificationClicks,
+          )
+          browser.notifications.onClosed.addListener(
+            boundCleanUpNotificationClickHandler,
+          )
+        } else {
+          browser.notifications.onClicked.removeListener(
+            boundHandleNotificationClicks,
+          )
+          browser.notifications.onClosed.removeListener(
+            boundCleanUpNotificationClickHandler,
+          )
         }
       },
     )
@@ -144,6 +142,10 @@ export default class NotificationsService extends BaseService<Events> {
       type: "basic" as browser.Notifications.TemplateType,
       iconUrl: TAHO_ICON_URL,
       ...options,
+    }
+
+    if (typeof callback === "function") {
+      this.clickHandlers[notificationId] = callback
     }
 
     browser.notifications.create(notificationId, notificationOptions)
