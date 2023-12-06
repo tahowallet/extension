@@ -331,11 +331,7 @@ export default class Main extends BaseService<never> {
 
     const notificationsService = NotificationsService.create(preferenceService)
 
-    const islandService = IslandService.create(
-      chainService,
-      indexingService,
-      notificationsService,
-    )
+    const islandService = IslandService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
 
@@ -671,6 +667,7 @@ export default class Main extends BaseService<never> {
     this.connectWalletConnectService()
     this.connectAbilitiesService()
     this.connectNFTsService()
+    this.connectNotificationsService()
 
     await this.connectChainService()
 
@@ -1755,6 +1752,12 @@ export default class Main extends BaseService<never> {
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
+    })
+  }
+
+  connectNotificationsService(): void {
+    this.islandService.emitter.on("newXpDrop", () => {
+      this.notificationsService.notifyXPDrop()
     })
   }
 

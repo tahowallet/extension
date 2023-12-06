@@ -15,7 +15,6 @@ import {
   buildRealmContract,
 } from "./contracts"
 import IndexingService from "../indexing"
-import NotificationService from "../notifications"
 import { initialVaults } from "../../redux-slices/earn"
 import logger from "../../lib/logger"
 import { HexString } from "../../types"
@@ -37,6 +36,7 @@ interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
   newReferral: { referrer: AddressOnNetwork } & ReferrerStats
   monitoringTestnetAsset: SmartContractFungibleAsset
+  newXpDrop: void
 }
 
 /*
@@ -52,24 +52,14 @@ export default class IslandService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     IslandService,
-    [
-      Promise<ChainService>,
-      Promise<IndexingService>,
-      Promise<NotificationService>,
-    ]
-  > = async (chainService, indexingService, notificationService) =>
-    new this(
-      await getOrCreateDB(),
-      await chainService,
-      await indexingService,
-      await notificationService,
-    )
+    [Promise<ChainService>, Promise<IndexingService>]
+  > = async (chainService, indexingService) =>
+    new this(await getOrCreateDB(), await chainService, await indexingService)
 
   private constructor(
     private db: IslandDatabase,
     private chainService: ChainService,
     private indexingService: IndexingService,
-    private notificationService: NotificationService,
   ) {
     super({
       startMonitoringIfNeeded: {
@@ -240,7 +230,7 @@ export default class IslandService extends BaseService<Events> {
   }
 
   private checkXPDrop() {
-    this.notificationService.notifyXPDrop()
+    this.emitter.emit("newXpDrop", undefined)
   }
 
   private async trackReferrals({
