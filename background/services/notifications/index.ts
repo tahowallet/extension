@@ -1,4 +1,5 @@
 import { uniqueId } from "lodash"
+import browser from "webextension-polyfill"
 import BaseService from "../base"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -138,12 +139,10 @@ export default class NotificationsService extends BaseService<Events> {
       ...options,
     }
 
-    browser.notifications.clear(notificationId).then(() => {
-      browser.notifications
-        .create(notificationId, notificationOptions)
-        .then(() => {
-          callback?.()
-        })
-    })
+    browser.notifications
+      .create(notificationId, notificationOptions)
+      .then(() => {
+        callback?.()
+      })
   }
 }
