@@ -272,7 +272,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async setShouldShowNotifications(shouldShowNotifications?: boolean) {
-    let granted
+    let granted = false
     if (shouldShowNotifications === undefined) {
       granted = await this.getShouldShowNotifications()
       this.emitter.emit("setNotificationsPermission", granted)
