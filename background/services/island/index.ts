@@ -36,6 +36,7 @@ interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible
   newReferral: { referrer: AddressOnNetwork } & ReferrerStats
   monitoringTestnetAsset: SmartContractFungibleAsset
+  newXpDrop: void
 }
 
 /*
@@ -147,6 +148,9 @@ export default class IslandService extends BaseService<Events> {
             )
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
+            realmContract.on(realmContract.filters.XpDistributed(), () => {
+              this.checkXPDrop()
+            })
           }
         }),
       )
@@ -223,6 +227,10 @@ export default class IslandService extends BaseService<Events> {
    */
   async getReferrerStats(referrer: AddressOnNetwork): Promise<ReferrerStats> {
     return this.db.getReferrerStats(referrer)
+  }
+
+  private checkXPDrop() {
+    this.emitter.emit("newXpDrop", undefined)
   }
 
   private async trackReferrals({

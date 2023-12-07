@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
@@ -108,6 +109,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeDefaultWallet: boolean
   initializeSelectedAccount: AddressOnNetwork
   initializeShownDismissableItems: DismissableItem[]
+  initializeNotificationsPreferences: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
@@ -155,6 +157,11 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit(
       "initializeShownDismissableItems",
       await this.getShownDismissableItems(),
+    )
+
+    this.emitter.emit(
+      "initializeNotificationsPreferences",
+      await this.getShouldShowNotificationsPreferences(),
     )
   }
 
@@ -265,32 +272,23 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit("updateAnalyticsPreferences", analytics)
   }
 
-  async getShouldShowNotifications(): Promise<boolean> {
+  async getShouldShowNotificationsPreferences(): Promise<boolean> {
     return (await this.db.getPreferences()).shouldShowNotifications
   }
 
   async setShouldShowNotifications(shouldShowNotifications: boolean) {
-    const permissionRequest: Promise<boolean> = new Promise((resolve) => {
-      if (shouldShowNotifications) {
-        chrome.permissions.request(
-          {
-            permissions: ["notifications"],
-          },
-          (granted) => {
-            resolve(granted)
-          },
-        )
-      } else {
-        resolve(false)
-      }
-    })
+    if (shouldShowNotifications) {
+      const granted = await browser.permissions.request({
+        permissions: ["notifications"],
+      })
 
-    return permissionRequest.then(async (granted) => {
       await this.db.setShouldShowNotifications(granted)
       this.emitter.emit("setNotificationsPermission", granted)
 
       return granted
-    })
+    }
+
+    return false
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
