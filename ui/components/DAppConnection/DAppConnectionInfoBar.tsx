@@ -35,6 +35,7 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
     >
       <section>
         <SharedIcon
+          id="close"
           icon="close.svg"
           width={12}
           aria-label={tShared("close")}
