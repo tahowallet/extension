@@ -9,9 +9,8 @@ import { sameNetwork } from "../../networks"
 import {
   ClaimWithFriends,
   ISLAND_NETWORK,
-  STARTING_REALM_NAMES,
+  STARTING_REALM_ADDRESSES,
   TESTNET_TAHO,
-  TestnetTahoDeployer,
   buildRealmContract,
 } from "./contracts"
 import IndexingService from "../indexing"
@@ -108,16 +107,11 @@ export default class IslandService extends BaseService<Events> {
         this.emitter.emit("monitoringTestnetAsset", TESTNET_TAHO)
       }
 
-      const connectedDeployer = TestnetTahoDeployer.connect(islandProvider)
       await Promise.all(
-        STARTING_REALM_NAMES.map(async (realmName) => {
-          const realmAddress =
-            await connectedDeployer.functions[
-              `${realmName.toUpperCase()}_REALM`
-            ]()
-          const realmContract = buildRealmContract(realmAddress[0]).connect(
-            islandProvider,
-          )
+        STARTING_REALM_ADDRESSES.map(async (realmAddress) => {
+          const realmContract = buildRealmContract(
+            normalizeEVMAddress(realmAddress),
+          ).connect(islandProvider)
 
           const realmVeTahoAddress = (await realmContract.functions.veTaho())[0]
           const realmVeAsset =
@@ -134,7 +128,7 @@ export default class IslandService extends BaseService<Events> {
 
           if (realmXpAddress === ethers.constants.AddressZero) {
             logger.debug(
-              `XP token for realm ${realmName} at ${realmAddress} is not yet set, throwing an error to retry tracking later.`,
+              `XP token for realm at ${realmAddress} is not yet set, throwing an error to retry tracking later.`,
             )
 
             throw new Error(`XP token does not exist for realm ${realmAddress}`)
@@ -148,9 +142,10 @@ export default class IslandService extends BaseService<Events> {
             )
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
-            realmContract.on(realmContract.filters.XpDistributed(), () => {
-              this.checkXPDrop()
-            })
+            // TODO: disabled because it causes `eth_getLogs` to spam the RPC node
+            // realmContract.on(realmContract.filters.XpDistributed(), () => {
+            //   this.checkXPDrop()
+            // })
           }
         }),
       )

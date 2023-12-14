@@ -1930,12 +1930,14 @@ export const CLAIM_WITH_FRIENDS_ABI = [
   },
 ] as const
 
-export const STARTING_REALM_NAMES = [
-  "Creators",
-  "Defi",
-  "Educate",
-  "Social",
-  "Vampire",
+export const STARTING_REALM_ADDRESSES = [
+  "0xa5853ca1eac56bf78213b8300b695e7cfa563b4a",
+  "0x06894597d381542a55d2946e20117c29dbae2351",
+  "0xc92AF0c1f3111254b73eea97D803155b1E542Ee3",
+  "0x42a0b5cab976d7a2a0038138dd1279b96b73f029",
+  "0x26770639eB1262cfA47A4C3Aa27902fa8FCA3465",
+  "0x6a3d1d9a7eb615be82b5c50bba8c6ecc7606afe6",
+  "0xdc053c0beed726ee6316d4d04135d755466522c8",
 ]
 
 export function buildRealmContract(

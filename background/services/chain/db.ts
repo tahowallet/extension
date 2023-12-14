@@ -292,6 +292,7 @@ export class ChainDatabase extends Dexie {
       this.baseAssets,
       this.rpcConfig,
       this.accountsToTrack,
+      this.customRpcConfig,
       async () => {
         await Promise.all([
           this.networks.where({ chainID }).delete(),
