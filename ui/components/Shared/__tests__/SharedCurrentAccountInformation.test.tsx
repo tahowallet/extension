@@ -16,6 +16,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
+        avatarType={undefined}
       />,
     )
 
@@ -28,6 +29,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={undefined}
         shortenedAddress={shortenedAddress}
         avatarURL={undefined}
+        avatarType={undefined}
       />,
     )
 
@@ -40,6 +42,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
+        avatarType={undefined}
         showLockStatus={false}
       />,
     )
@@ -54,6 +57,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
+        avatarType={undefined}
         showLockStatus
       />,
     )
@@ -70,6 +74,7 @@ describe("SharedCurrentAccountInformation", () => {
         name={name}
         shortenedAddress=""
         avatarURL={undefined}
+        avatarType={undefined}
         showLockStatus
       />,
       {

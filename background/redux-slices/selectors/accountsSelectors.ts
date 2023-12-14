@@ -336,6 +336,7 @@ export type AccountTotal = AddressOnNetwork & {
   accountSigner: AccountSigner
   name?: string
   avatarURL?: string
+  avatarType?: string
   localizedTotalMainCurrencyAmount?: string
 }
 
@@ -458,6 +459,8 @@ function getNetworkAccountTotalsByCategory(
         }
       }
 
+      const { name, avatarURL, avatarType } = accountData.ens
+
       return {
         address,
         network,
@@ -466,8 +469,9 @@ function getNetworkAccountTotalsByCategory(
         signerId,
         path,
         accountSigner,
-        name: accountData.ens.name ?? accountData.defaultName,
-        avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
+        name: name ?? accountData.defaultName,
+        avatarURL: avatarURL ?? accountData.defaultAvatar,
+        avatarType,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
           getTotalBalance(accountData.balances, prices, mainCurrencySymbol),

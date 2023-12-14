@@ -8,6 +8,7 @@ type Props = {
   shortenedAddress: string
   name: string | undefined
   avatarURL: string | undefined
+  avatarType: string | undefined
   showHoverStyle: boolean
   showLockStatus?: boolean
 }
@@ -16,6 +17,7 @@ export default function SharedCurrentAccountInformation({
   shortenedAddress,
   name,
   avatarURL,
+  avatarType,
   showHoverStyle,
   showLockStatus,
 }: Props): ReactElement {
@@ -28,6 +30,7 @@ export default function SharedCurrentAccountInformation({
       </span>
       <SharedAvatar
         avatarURL={avatarURL}
+        avatarType={avatarType}
         backupAvatar="./images/portrait.png"
         width="32px"
         style={{ marginLeft: 8 }}

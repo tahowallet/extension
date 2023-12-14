@@ -66,6 +66,7 @@ export type AccountData = {
   ens: {
     name?: DomainName
     avatarURL?: URI
+    avatarType?: string
   }
   defaultName: string
   defaultAvatar: string
@@ -386,8 +387,10 @@ const accountSlice = createSlice({
     updateENSAvatar: (
       immerState,
       {
-        payload: { address, network, avatar },
-      }: { payload: AddressOnNetwork & { avatar: URI } },
+        payload: { address, network, avatar, avatarType },
+      }: {
+        payload: AddressOnNetwork & { avatar: URI; avatarType?: string }
+      },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 
@@ -412,7 +415,7 @@ const accountSlice = createSlice({
 
       immerState.accountsData.evm[network.chainID][normalizedAddress] = {
         ...baseAccountData,
-        ens: { ...baseAccountData.ens, avatarURL: avatar },
+        ens: { ...baseAccountData.ens, avatarURL: avatar, avatarType },
       }
     },
     /**

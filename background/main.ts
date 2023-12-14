@@ -1059,11 +1059,19 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountName({ ...addressOnNetwork, name }))
       },
     )
+
     this.nameService.emitter.on(
       "resolvedAvatar",
       async ({ from: { addressOnNetwork }, resolved: { avatar } }) => {
+        const fileTypeResponse = await fetch(avatar, { method: "HEAD" })
+        const avatarType = fileTypeResponse.headers.get("Content-Type")
+
         this.store.dispatch(
-          updateENSAvatar({ ...addressOnNetwork, avatar: avatar.toString() }),
+          updateENSAvatar({
+            ...addressOnNetwork,
+            avatar: avatar.toString(),
+            avatarType: avatarType ?? undefined,
+          }),
         )
       },
     )

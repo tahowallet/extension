@@ -18,7 +18,7 @@ export default function TopMenuProfileButton(props: {
 }): ReactElement {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const { name, avatarURL, address, accountType } =
+  const { name, avatarURL, avatarType, address, accountType } =
     useBackgroundSelector(selectCurrentAccountTotal) ?? {}
 
   const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
@@ -68,6 +68,7 @@ export default function TopMenuProfileButton(props: {
             shortenedAddress={truncatedAddress}
             name={name}
             avatarURL={avatarURL}
+            avatarType={avatarType}
             showHoverStyle
             showLockStatus={accountType && isAccountWithSecrets(accountType)}
           />

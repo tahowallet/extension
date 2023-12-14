@@ -6,10 +6,16 @@ import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import SharedAvatar from "./SharedAvatar"
 
-function Avatar({ avatarURL }: { avatarURL?: string }) {
+type AvatarProps = {
+  avatarURL?: string
+  avatarType?: string
+}
+
+function Avatar({ avatarURL, avatarType }: AvatarProps) {
   return (
     <SharedAvatar
       avatarURL={avatarURL}
+      avatarType={avatarType}
       width="48px"
       backupAvatar="./images/avatar@2x.png"
     />
@@ -31,6 +37,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
     shortenedAddress,
     name,
     avatarURL,
+    avatarType,
     localizedTotalMainCurrencyAmount,
   } = accountTotal
 
@@ -44,10 +51,10 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         <div className="left">
           {isSelected ? (
             <div className="avatar_selected_outline">
-              <Avatar avatarURL={avatarURL} />
+              <Avatar avatarURL={avatarURL} avatarType={avatarType} />
             </div>
           ) : (
-            <Avatar avatarURL={avatarURL} />
+            <Avatar avatarURL={avatarURL} avatarType={avatarType} />
           )}
 
           <div className="info">
