@@ -33,10 +33,12 @@ export default function SharedAvatar({
           width: ${width};
           height: ${width};
           border-radius: ${borderRadius};
-          background-size: cover;
           flex-shrink: 0;
           background-color: ${background};
-          background: url("${avatarURL ?? backupAvatar}") center no-repeat;
+          background: url("${avatarURL ?? backupAvatar}");
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
         }
         .video {
           width: ${width};
