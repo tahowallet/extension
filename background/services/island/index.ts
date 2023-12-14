@@ -142,9 +142,10 @@ export default class IslandService extends BaseService<Events> {
             )
           if (realmXpAsset !== undefined) {
             this.emitter.emit("monitoringTestnetAsset", realmXpAsset)
-            realmContract.on(realmContract.filters.XpDistributed(), () => {
-              this.checkXPDrop()
-            })
+            // TODO: disabled because it causes `eth_getLogs` to spam the RPC node
+            // realmContract.on(realmContract.filters.XpDistributed(), () => {
+            //   this.checkXPDrop()
+            // })
           }
         }),
       )
