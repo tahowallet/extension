@@ -102,7 +102,7 @@ export default function Wallet(): ReactElement {
   return (
     <>
       <div className="page_content">
-        <WalletSubspaceLink />
+        {!isEnabled(FeatureFlags.HIDE_ISLAND_UI) && <WalletSubspaceLink />}
         <WalletAnalyticsNotificationBanner />
         <div className="section">
           <WalletAccountBalanceControl
@@ -116,7 +116,7 @@ export default function Wallet(): ReactElement {
         {!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
-        <PortalBanner />
+        {!isEnabled(FeatureFlags.HIDE_ISLAND_UI) && <PortalBanner />}
         <div className="section">
           <SharedPanelSwitcher
             setPanelNumber={setPanelNumber}

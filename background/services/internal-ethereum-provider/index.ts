@@ -387,7 +387,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     return currentNetwork
   }
 
-  async removePrefererencesForChain(chainId: string): Promise<void> {
+  async removePreferencesForChain(chainId: string): Promise<void> {
     await this.db.removeStoredPreferencesForChain(chainId)
   }
 
