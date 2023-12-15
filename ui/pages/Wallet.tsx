@@ -99,6 +99,8 @@ export default function Wallet(): ReactElement {
 
   panelNames.push(t("wallet.pages.activity"))
 
+  // console.log(unverifiedAssetAmounts)
+
   return (
     <>
       <div className="page_content">

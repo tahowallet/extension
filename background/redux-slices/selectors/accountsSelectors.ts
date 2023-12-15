@@ -12,6 +12,7 @@ import {
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
+  isHiddenAsset,
   isNetworkBaseAsset,
   isSameAsset,
   isTrustedAsset,
@@ -92,6 +93,7 @@ export function determineAssetDisplayAndVerify(
       ? true
       : assetAmount.mainCurrencyAmount > userValueDustThreshold
   const isPresent = assetAmount.decimalAmount > 0
+  const isHidden = isHiddenAsset(assetAmount.asset)
   const showDust = !hideDust
 
   const verificationStatusAllowsVisibility = showUnverifiedAssets || isTrusted
@@ -99,7 +101,9 @@ export function determineAssetDisplayAndVerify(
 
   return {
     displayAsset:
-      verificationStatusAllowsVisibility && enoughBalanceToBeVisible,
+      verificationStatusAllowsVisibility &&
+      enoughBalanceToBeVisible &&
+      !isHidden,
     trustedAsset: isTrusted,
   }
 }
