@@ -1,5 +1,11 @@
 import { HexString } from "@tallyho/tally-background/types"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, {
+  Dispatch,
+  ReactElement,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react"
 import { useDelayContentChange } from "../../hooks"
 import { useAddressOrNameValidation } from "../../hooks/validation-hooks"
 
@@ -16,6 +22,7 @@ type Props = {
   id?: string
   placeholder?: string
   isEmpty?: boolean
+  setIsValidating?: Dispatch<SetStateAction<boolean>>
 }
 
 export default function SharedAddressInput({
@@ -26,6 +33,7 @@ export default function SharedAddressInput({
   id,
   placeholder,
   isEmpty,
+  setIsValidating,
 }: Props): ReactElement {
   const [inputValue, setInputValue] = useState(value ?? "")
   const debouncedValue = useDelayContentChange(
@@ -40,6 +48,12 @@ export default function SharedAddressInput({
   useEffect(() => {
     handleInputChange(debouncedValue)
   }, [debouncedValue, handleInputChange])
+
+  useEffect(() => {
+    if (setIsValidating !== undefined) {
+      setIsValidating(isValidating)
+    }
+  }, [setIsValidating, isValidating])
 
   return (
     <>

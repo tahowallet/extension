@@ -21,6 +21,8 @@ export default function ViewOnlyWallet(): ReactElement {
     AddressOnNetwork | undefined
   >(undefined)
 
+  const [isValidating, setIsValidating] = useState(false)
+
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.viewOnly",
   })
@@ -42,7 +44,7 @@ export default function ViewOnlyWallet(): ReactElement {
   )
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    if (addressOnNetwork === undefined) {
+    if (addressOnNetwork === undefined || isValidating) {
       return
     }
 
@@ -61,7 +63,7 @@ export default function ViewOnlyWallet(): ReactElement {
 
     dispatch(setNewSelectedAccount(addressOnNetwork))
     setRedirect(true)
-  }, [dispatch, addressOnNetwork])
+  }, [dispatch, addressOnNetwork, isValidating])
 
   // Redirect to the final onboarding tab once an account is set
   if (redirect) {
@@ -91,7 +93,10 @@ export default function ViewOnlyWallet(): ReactElement {
           }}
         >
           <div className="input_wrap">
-            <SharedAddressInput onAddressChange={handleNewAddress} />
+            <SharedAddressInput
+              onAddressChange={handleNewAddress}
+              setIsValidating={setIsValidating}
+            />
           </div>
           <SharedButton
             type="primary"
