@@ -14,7 +14,7 @@ export default function NotificationVaults(): ReactElement {
     >
       <div className="title">Before you get started!</div>
       <p className="text">
-        Read this infromational blog post to understand how vaults work.
+        Read this informational blog post to understand how vaults work.
       </p>
       <SharedButton
         type="tertiary"
