@@ -49,14 +49,14 @@
   --z-expanded: 3;
   --z-content: 4;
   --z-section: 5;
-  --z-back-button: 6;
-  --z-footer: 7;
-  --z-tooltip: 8;
-  --z-below-menu: 9;
-  --z-menu: 10;
-  --z-over-menu: 11;
-  --z-99999: 12;
-  --z-overflow: 13;
+  --z-back-button: 10;
+  --z-footer: 11;
+  --z-tooltip: 20;
+  --z-below-menu: 998;
+  --z-menu: 999;
+  --z-over-menu: 1000;
+  --z-99999: 99999;
+  --z-overflow: 999999999;
 }
 
 ::-webkit-scrollbar {
