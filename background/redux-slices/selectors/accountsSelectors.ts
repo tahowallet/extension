@@ -458,6 +458,8 @@ function getNetworkAccountTotalsByCategory(
         }
       }
 
+      const { name, avatarURL } = accountData.ens
+
       return {
         address,
         network,
@@ -466,8 +468,8 @@ function getNetworkAccountTotalsByCategory(
         signerId,
         path,
         accountSigner,
-        name: accountData.ens.name ?? accountData.defaultName,
-        avatarURL: accountData.ens.avatarURL ?? accountData.defaultAvatar,
+        name: name ?? accountData.defaultName,
+        avatarURL: avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
           getTotalBalance(accountData.balances, prices, mainCurrencySymbol),
