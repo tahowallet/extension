@@ -37,7 +37,7 @@ import to35 from "./to-35"
  * The version of persisted Redux state the extension is expecting. Any previous
  * state without this version, or with a lower version, ought to be migrated.
  */
-export const REDUX_STATE_VERSION = 36
+export const REDUX_STATE_VERSION = 35
 
 /**
  * Common type for all migration functions.

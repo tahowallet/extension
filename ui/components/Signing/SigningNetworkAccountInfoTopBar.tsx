@@ -12,8 +12,7 @@ export default function SigningNetworkAccountInfoTopBar({
   accountTotal,
 }: Props): ReactElement {
   const { t } = useTranslation()
-  const { network, shortenedAddress, name, avatarURL, avatarType } =
-    accountTotal
+  const { network, shortenedAddress, name, avatarURL } = accountTotal
 
   return (
     <div className="top_bar_wrap standard_width">
@@ -30,7 +29,6 @@ export default function SigningNetworkAccountInfoTopBar({
           shortenedAddress={shortenedAddress}
           name={name}
           avatarURL={avatarURL}
-          avatarType={avatarType}
         />
       </div>
       <style jsx>
