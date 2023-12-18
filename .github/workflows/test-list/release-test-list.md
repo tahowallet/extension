@@ -23,6 +23,13 @@ This release checklist should be performed before release is published.
 🤖 Items marked with this emoji are good candidates for automation (although
 it does not mean that they all would be obsolete once automated).
 
+### 📝 Background processes
+
+1. During execution of other tests on the list monitor extension's DevTools
+   - [ ] check that there are no problematic errors in the Console tab
+   - [ ] check the number of requests on the Network tab (the number shouldn't
+         increase significantly in periods of user inactivity)
+
 ### 📨 Add account
 
 1. Add read-only account with ENS
