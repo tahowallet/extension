@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { CSSProperties, ReactElement, useEffect, useState } from "react"
 
 type VerticalPosition = "top" | "bottom"
 type HorizontalPosition = "left" | "center" | "right"
@@ -15,7 +15,8 @@ interface Props {
   isOpen?: boolean
   disabled?: boolean
   children: React.ReactNode
-  customStyles?: React.CSSProperties & Record<string, string>
+  customStyles?: CSSProperties & Record<string, string>
+  style?: CSSProperties
   // TODO: find a better way to tell the IconComponent that the tooltip it open
   IconComponent?: ({
     isShowingTooltip,
@@ -70,6 +71,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     disabled = false,
     IconComponent,
     customStyles = {},
+    style,
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
 
@@ -87,7 +89,7 @@ export default function SharedTooltip(props: Props): ReactElement {
       onMouseLeave={() => {
         setIsShowingTooltip(false)
       }}
-      style={customStyles}
+      style={{ ...style, ...customStyles }}
     >
       {IconComponent ? (
         <IconComponent isShowingTooltip={isShowingTooltip} />
