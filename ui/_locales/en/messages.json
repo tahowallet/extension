@@ -621,6 +621,7 @@
     "connectedWebsitesSettings": {
       "title": "Connected websites",
       "disconnected": "Website disconnected",
+      "disconnectTooltip": "Disconnect website",
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
     },
@@ -820,6 +821,7 @@
     "connectedDappInfo": {
       "dAppTitle": "Account connected to",
       "dappConnections": "Website connections",
+      "disconnectDapp": "Disconnect Dapp",
       "guideline": {
         "title": "How to connect to websites",
         "step1": "Connect using Taho",

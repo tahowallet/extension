@@ -5,6 +5,7 @@ import React, { useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import { useBackgroundDispatch } from "../../hooks"
+import SharedTooltip from "../../components/Shared/SharedTooltip"
 
 type ConnectedWebsitesListItemProps = {
   permission: PermissionRequest
@@ -43,14 +44,26 @@ export default function ConnectedWebsitesListItem(
             {host}
           </span>
         </div>
-        <SharedIcon
-          color="var(--green-40)"
-          hoverColor="var(--error)"
-          width={24}
-          icon="icons/m/disconnect.svg"
-          onClick={handleDisconnect}
-          customStyles="flex-shrink: 0;"
-        />
+        <SharedTooltip
+          width={140}
+          verticalPosition="top"
+          horizontalPosition="right"
+          verticalShift={-10}
+          horizontalShift={140}
+          type="dark"
+          IconComponent={() => (
+            <SharedIcon
+              color="var(--green-40)"
+              hoverColor="var(--error)"
+              width={24}
+              icon="icons/m/disconnect.svg"
+              onClick={handleDisconnect}
+              customStyles="flex-shrink: 0;"
+            />
+          )}
+        >
+          {t("connectedWebsitesSettings.disconnectTooltip")}
+        </SharedTooltip>
       </div>
       <style jsx>{`
         .container {
