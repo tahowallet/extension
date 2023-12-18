@@ -21,8 +21,6 @@ export default function ViewOnlyWallet(): ReactElement {
     AddressOnNetwork | undefined
   >(undefined)
 
-  const [isValidating, setIsValidating] = useState(false)
-
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.viewOnly",
   })
@@ -44,9 +42,7 @@ export default function ViewOnlyWallet(): ReactElement {
   )
 
   const handleSubmitViewOnlyAddress = useCallback(async () => {
-    if (addressOnNetwork === undefined || isValidating) {
-      return
-    }
+    if (addressOnNetwork === undefined) return
 
     await dispatch(addAddressNetwork(addressOnNetwork))
 
@@ -63,7 +59,23 @@ export default function ViewOnlyWallet(): ReactElement {
 
     dispatch(setNewSelectedAccount(addressOnNetwork))
     setRedirect(true)
-  }, [dispatch, addressOnNetwork, isValidating])
+  }, [dispatch, addressOnNetwork])
+
+  const handleFormSubmitOnEnter = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === "Enter") {
+      event.preventDefault()
+      handleSubmitViewOnlyAddress()
+    }
+  }
+
+  const handleFormSubmitOnClick = (
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+  ) => {
+    event.preventDefault()
+    handleSubmitViewOnlyAddress()
+  }
 
   // Redirect to the final onboarding tab once an account is set
   if (redirect) {
@@ -86,26 +98,20 @@ export default function ViewOnlyWallet(): ReactElement {
         </div>
       </header>
       <div className="content">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            handleSubmitViewOnlyAddress()
-          }}
-        >
+        <form>
           <div className="input_wrap">
             <SharedAddressInput
               onAddressChange={handleNewAddress}
-              setIsValidating={setIsValidating}
+              onKeyDown={handleFormSubmitOnEnter}
             />
           </div>
           <SharedButton
             type="primary"
             size="large"
-            onClick={handleSubmitViewOnlyAddress}
+            onClick={handleFormSubmitOnClick}
             isDisabled={addressOnNetwork === undefined}
             showLoadingOnClick
             center
-            isFormSubmit
           >
             {t("submit")}
           </SharedButton>

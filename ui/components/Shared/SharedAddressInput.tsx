@@ -1,11 +1,5 @@
 import { HexString } from "@tallyho/tally-background/types"
-import React, {
-  Dispatch,
-  ReactElement,
-  SetStateAction,
-  useEffect,
-  useState,
-} from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useDelayContentChange } from "../../hooks"
 import { useAddressOrNameValidation } from "../../hooks/validation-hooks"
 
@@ -19,10 +13,10 @@ type Props = {
     value: { address: HexString; name?: string } | undefined,
   ) => void
   onFocus?: () => void
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   id?: string
   placeholder?: string
   isEmpty?: boolean
-  setIsValidating?: Dispatch<SetStateAction<boolean>>
 }
 
 export default function SharedAddressInput({
@@ -30,10 +24,10 @@ export default function SharedAddressInput({
   label,
   onAddressChange,
   onFocus,
+  onKeyDown,
   id,
   placeholder,
   isEmpty,
-  setIsValidating,
 }: Props): ReactElement {
   const [inputValue, setInputValue] = useState(value ?? "")
   const debouncedValue = useDelayContentChange(
@@ -49,12 +43,6 @@ export default function SharedAddressInput({
     handleInputChange(debouncedValue)
   }, [debouncedValue, handleInputChange])
 
-  useEffect(() => {
-    if (setIsValidating !== undefined) {
-      setIsValidating(isValidating)
-    }
-  }, [setIsValidating, isValidating])
-
   return (
     <>
       <SharedInput
@@ -62,6 +50,7 @@ export default function SharedAddressInput({
         label={label}
         onChange={setInputValue}
         onFocus={onFocus}
+        onKeyDown={onKeyDown}
         errorMessage={errorMessage}
         id={id}
         placeholder={placeholder}
