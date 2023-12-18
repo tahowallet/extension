@@ -117,13 +117,6 @@ export default function NFTsHeader(): ReactElement {
           color: var(--green-20);
         }
 
-        .filters_container {
-          position: absolute;
-          width: 90vw;
-          display: flex;
-          justify-content: end;
-        }
-
         .stats_spinner {
           position: absolute;
           right: -25px;

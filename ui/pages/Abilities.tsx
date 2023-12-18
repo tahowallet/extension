@@ -72,12 +72,6 @@ export default function Abilities(): ReactElement {
             font-size: 22px;
             line-height: 32px;
           }
-          .filters_container {
-            position: absolute;
-            width: 90vw;
-            display: flex;
-            justify-content: end;
-          }
           section {
             height: 544px;
             width: 100%;
