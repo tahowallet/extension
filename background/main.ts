@@ -1977,7 +1977,7 @@ export default class Main extends BaseService<never> {
 
   async removeEVMNetwork(chainID: string): Promise<void> {
     // Per origin chain id settings
-    await this.internalEthereumProviderService.removePrefererencesForChain(
+    await this.internalEthereumProviderService.removePreferencesForChain(
       chainID,
     )
     // Connected dApps
