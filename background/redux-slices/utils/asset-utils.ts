@@ -393,10 +393,6 @@ export function isTrustedAsset(asset: AnyAsset): asset is
   return isBaselineTrustedAsset(asset) || isVerifiedAsset(asset)
 }
 
-export function isHiddenAsset(asset: AnyAsset): boolean {
-  return asset.metadata?.removed !== undefined && asset.metadata.removed
-}
-
 /**
  * Checks if the asset is untrusted.
  * Untrusted means the asset is neither baseline trusted NOR verified.

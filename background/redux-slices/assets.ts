@@ -80,7 +80,6 @@ const assetsSlice = createSlice({
 
       return Object.values(mappedAssets).flat()
     },
-    // TODO: remove asset seems to not filter out removed assets
     removeAsset: (
       immerState,
       { payload: removedAsset }: { payload: AnyAsset },
