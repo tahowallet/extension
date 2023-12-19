@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import React, { ReactElement } from "react"
+import React, { CSSProperties, ReactElement } from "react"
 import { useLocalStorage } from "../../hooks"
 import SharedIcon from "./SharedIcon"
 
@@ -9,7 +9,7 @@ type BannerProps = {
   iconColor?: string
   iconAriaLabel?: string
   hasShadow?: boolean
-  customStyles?: string
+  style?: CSSProperties
 }
 
 export type CanBeClosedProps =
@@ -22,7 +22,7 @@ function Banner(props: BannerProps): ReactElement {
     iconColor,
     iconAriaLabel,
     hasShadow = false,
-    customStyles = "",
+    style,
     children,
   } = props
 
@@ -31,6 +31,7 @@ function Banner(props: BannerProps): ReactElement {
       className={classNames("banner_wrap", {
         shadow: hasShadow,
       })}
+      style={style}
     >
       {icon && (
         <SharedIcon
@@ -38,7 +39,7 @@ function Banner(props: BannerProps): ReactElement {
           color={iconColor}
           width={24}
           ariaLabel={iconAriaLabel}
-          customStyles="flex-shrink:0; margin-right: 8px;"
+          style={{ flexShrink: 0, marginRight: 8 }}
         />
       )}
       <div className="banner_content">{children}</div>
@@ -53,7 +54,6 @@ function Banner(props: BannerProps): ReactElement {
             flex-direction: row;
             align-items: start;
             position: relative;
-            ${customStyles};
           }
           .banner_wrap.shadow {
             box-shadow:
@@ -74,15 +74,8 @@ function Banner(props: BannerProps): ReactElement {
 function BannerWithClose(
   props: BannerProps & { id: string },
 ): ReactElement | null {
-  const {
-    id,
-    children,
-    icon,
-    iconColor,
-    customStyles,
-    iconAriaLabel,
-    hasShadow,
-  } = props
+  const { id, children, icon, iconColor, style, iconAriaLabel, hasShadow } =
+    props
   const [isVisible, setIsVisible] = useLocalStorage(`banner_${id}`, "true")
 
   if (isVisible === "false") return null
@@ -92,7 +85,7 @@ function BannerWithClose(
       icon={icon}
       iconColor={iconColor}
       iconAriaLabel={iconAriaLabel}
-      customStyles={customStyles}
+      style={style}
       hasShadow={hasShadow}
     >
       <SharedIcon
@@ -102,11 +95,7 @@ function BannerWithClose(
         width={16}
         color="var(--green-40)"
         hoverColor="var(--green-20)"
-        customStyles={`
-              position: absolute;
-              top: 12px;
-              right: 12px;
-            `}
+        style={{ position: "absolute", top: 12, right: 12 }}
       />
       {children}
     </Banner>
