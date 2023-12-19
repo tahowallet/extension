@@ -22,11 +22,11 @@ export default function NFTCollectionListItem({
         fallback={noPreviewImg}
         loading="lazy"
         alt={name}
-        customStyles={`
-          border-radius: 4px;
-          object-position: center;
-          object-fit: cover;
-        `}
+        style={{
+          borderRadius: 4,
+          objectPosition: "center",
+          objectFit: "cover",
+        }}
       />
       <button type="button" className="label" onClick={onClick}>
         <p className="ellipsis">{name}</p>

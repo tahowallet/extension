@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode } from "react"
+import React, { CSSProperties, ReactElement, ReactNode } from "react"
 import classNames from "classnames"
 
 export default function SharedSkeletonLoader(props: {
@@ -7,10 +7,9 @@ export default function SharedSkeletonLoader(props: {
   borderRadius?: number
   children?: ReactNode
   isLoaded?: boolean
-  customStyles?: string
+  style?: CSSProperties
 }): ReactElement {
-  const { width, height, borderRadius, isLoaded, customStyles, children } =
-    props
+  const { width, height, borderRadius, isLoaded, style, children } = props
 
   // Want to return a ReactElement to make this maximally easy to integrate,
   // whereas children can be a ReactNode; Fragment will let us achieve that.
@@ -18,7 +17,11 @@ export default function SharedSkeletonLoader(props: {
   if (isLoaded) return <>{children}</>
 
   return (
-    <div className={classNames("skeleton")} data-testid="loading_skeleton">
+    <div
+      className={classNames("skeleton")}
+      data-testid="loading_skeleton"
+      style={style}
+    >
       <style jsx>
         {`
           .skeleton {
@@ -27,7 +30,6 @@ export default function SharedSkeletonLoader(props: {
             background-color: var(--hunter-green);
             border-radius: ${borderRadius}px;
             animation: pulse 1.1s infinite;
-            ${customStyles}
           }
           @keyframes pulse {
             0% {
@@ -45,8 +47,4 @@ export default function SharedSkeletonLoader(props: {
   )
 }
 
-SharedSkeletonLoader.defaultProps = {
-  borderRadius: 8,
-  isLoaded: false,
-  customStyles: "",
-}
+SharedSkeletonLoader.defaultProps = { borderRadius: 8, isLoaded: false }

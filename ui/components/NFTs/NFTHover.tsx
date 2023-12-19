@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import React, { ReactElement } from "react"
+import React, { CSSProperties, ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { I18nKey } from "../../_locales/i18n"
 import SharedIcon from "../Shared/SharedIcon"
@@ -12,7 +12,7 @@ const icons: Record<
     background: string
     backgroundHover?: string
     size: number
-    style: string
+    style?: CSSProperties
   }
 > = {
   close: {
@@ -21,21 +21,19 @@ const icons: Record<
     background: "var(--green-40)",
     backgroundHover: "var(--green-20)",
     size: 12,
-    style: "",
   },
   expand: {
     icon: "chevron",
     label: "nfts.collectionHover.expand",
     background: "var(--success)",
     size: 12,
-    style: "margin-bottom: 3px;",
+    style: { marginBottom: 3 },
   },
   view: {
     icon: "eye",
     label: "nfts.collectionHover.view",
     background: "var(--trophy-gold)",
     size: 22,
-    style: "",
   },
 }
 
@@ -72,7 +70,7 @@ export default function NFTsHover(props: {
           icon={`${icon}@2x.png`}
           width={size}
           color="var(--hunter-green)"
-          customStyles={style}
+          style={style}
         />
       </div>
       <style jsx>{`

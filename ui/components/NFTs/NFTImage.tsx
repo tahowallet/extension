@@ -1,8 +1,20 @@
 import classNames from "classnames"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { CSSProperties, ReactElement, useEffect, useState } from "react"
 import noop from "../../utils/noop"
 
 export const noPreviewLink = "./images/no_preview.svg"
+
+type NFTIMageProps = {
+  width: number
+  height?: number
+  alt: string
+  src?: string
+  highResolutionSrc?: string
+  fit?: string
+  isBadge?: boolean
+  isZoomed?: boolean
+  style?: CSSProperties
+}
 
 export default function NFTImage({
   width,
@@ -13,18 +25,8 @@ export default function NFTImage({
   fit = "cover",
   isBadge = false,
   isZoomed = false,
-  customStyles = "",
-}: {
-  width: number
-  height?: number
-  alt: string
-  src?: string
-  highResolutionSrc?: string
-  fit?: string
-  isBadge?: boolean
-  isZoomed?: boolean
-  customStyles?: string
-}): ReactElement {
+  style,
+}: NFTIMageProps): ReactElement {
   const [isLoading, setIsLoading] = useState(true)
   const [imageUrl, setImageUrl] = useState(src || noPreviewLink)
 
@@ -50,6 +52,7 @@ export default function NFTImage({
         className={classNames("nft_image_wrapper", {
           badge: isBadge,
         })}
+        style={style}
       >
         <div className="nft_image_background" />
         <img
@@ -116,7 +119,6 @@ export default function NFTImage({
         .nft_image_wrapper {
           border-radius: 8px;
           overflow: hidden;
-          ${customStyles}
         }
         .nft_image_wrapper.badge {
           overflow: hidden;

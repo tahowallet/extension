@@ -160,7 +160,7 @@ export default function AbilityFilter(): ReactElement {
             width={24}
             color="var(--link)"
             icon="icons/m/notif-announcement.svg"
-            customStyles="flex-shrink:0; margin-right: 18px;"
+            style={{ flexShrink: 0, marginRight: 18 }}
           />
           <span>{t("accountsReadOnlyInfo")}</span>
         </span>

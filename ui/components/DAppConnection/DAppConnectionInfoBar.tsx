@@ -41,11 +41,7 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
           onClick={animateThenClose}
           color="var(--green-20)"
           hoverColor="var(--white)"
-          customStyles={`
-            position: absolute;
-            top: 16px;
-            right: 16px;
-          `}
+          style={{ position: "absolute", top: 16, right: 16 }}
         />
 
         <h3>{t("title")}</h3>

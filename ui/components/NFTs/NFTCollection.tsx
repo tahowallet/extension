@@ -133,7 +133,7 @@ export default function NFTCollection(props: {
             isLoaded={!isLoading && !!nfts.length}
             width={168}
             height={168}
-            customStyles="margin: 8px 0 34px;"
+            style={{ margin: "8px 0 34px" }}
           >
             {nfts.length === 1 ? (
               <NFTItem
@@ -164,7 +164,7 @@ export default function NFTCollection(props: {
                   isLoaded={!isUpdating}
                   width={168}
                   height={168}
-                  customStyles="margin: 8px 0;"
+                  style={{ margin: "8px 0" }}
                 />
                 <div ref={loadMoreRef} className="nft_load_more" />
               </>

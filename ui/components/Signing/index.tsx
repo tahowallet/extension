@@ -43,7 +43,7 @@ function SigningLoaded<T extends SignOperationType>({
         isLoaded={signerAccountTotal !== undefined}
         height={32}
         width={120}
-        customStyles="margin: 15px 0 15px 220px;"
+        style={{ margin: "15px 0 15px 220px" }}
       >
         {signerAccountTotal !== undefined && (
           <SigningNetworkAccountInfoTopBar accountTotal={signerAccountTotal} />
