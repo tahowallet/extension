@@ -83,11 +83,7 @@ export default function WalletBanner(): ReactElement {
             width={16}
             color="var(--green-40)"
             hoverColor="var(--green-20)"
-            customStyles={`
-              position: absolute;
-              top: 0;
-              right: 0;
-            `}
+            style={{ position: "absolute", top: 0, right: 0 }}
           />
           <div
             className={classNames("thumbnail_container", {

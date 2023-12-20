@@ -54,7 +54,7 @@ export default function NFTListPortfolio(props: {
             <SharedBanner
               id="nfts_networks_banner"
               canBeClosed
-              customStyles="margin: 15px 0 30px;"
+              style={{ margin: "15px 0 30px" }}
               hasShadow
             >
               <div className="simple_text">{t("networksBanner")}</div>

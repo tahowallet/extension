@@ -108,9 +108,7 @@ export default function Earn(): ReactElement {
             <SharedSkeletonLoader
               isLoaded={!isValutDataStale}
               height={176}
-              customStyles={`
-                margin-top: 40px;
-              `}
+              style={{ marginTop: 40 }}
             >
               <ul className="cards_wrap">
                 {depositedVaults?.map((vault) => (

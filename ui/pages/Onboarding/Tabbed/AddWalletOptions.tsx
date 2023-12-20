@@ -31,7 +31,7 @@ export function AddWalletRow({
         <SharedIcon icon={icon} width={32} color="currentColor" />
         {label}
         <SharedIcon
-          customStyles="margin-left: auto;"
+          style={{ marginLeft: "auto" }}
           icon="chevron_right.svg"
           width={16}
           color="currentColor"

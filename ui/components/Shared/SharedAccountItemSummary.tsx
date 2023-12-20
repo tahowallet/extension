@@ -4,6 +4,17 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 
 import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
+import SharedAvatar from "./SharedAvatar"
+
+function Avatar({ avatarURL }: { avatarURL?: string }) {
+  return (
+    <SharedAvatar
+      avatarURL={avatarURL}
+      width="48px"
+      backupAvatar="./images/avatar@2x.png"
+    />
+  )
+}
 
 interface Props {
   isSelected?: boolean
@@ -33,10 +44,10 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
         <div className="left">
           {isSelected ? (
             <div className="avatar_selected_outline">
-              <div className="avatar" />
+              <Avatar avatarURL={avatarURL} />
             </div>
           ) : (
-            <div className="avatar" />
+            <Avatar avatarURL={avatarURL} />
           )}
 
           <div className="info">
@@ -90,16 +101,6 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           height: 52px;
           padding: 5px 0;
           overflow: hidden;
-        }
-        .avatar {
-          background: url("${avatarURL ?? "./images/avatar@2x.png"}") center
-            no-repeat;
-          background-color: var(--green-40);
-          background-size: cover;
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          flex-shrink: 0;
         }
         .avatar_selected_outline {
           width: 52px;

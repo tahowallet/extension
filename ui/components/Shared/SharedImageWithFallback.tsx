@@ -1,9 +1,22 @@
-import React, { PropsWithoutRef, useEffect, useState } from "react"
+import React, {
+  CSSProperties,
+  PropsWithoutRef,
+  useEffect,
+  useState,
+} from "react"
 import classNames from "classnames"
 
 // Transparent pixel
 const defaultPlaceholder =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+type SharedImageWithFallbackProps = PropsWithoutRef<
+  JSX.IntrinsicElements["img"]
+> & {
+  fallback: string
+  placeholder?: string
+  style?: CSSProperties
+}
 
 export default function SharedImageWithFallback({
   fallback,
@@ -13,13 +26,9 @@ export default function SharedImageWithFallback({
   loading,
   alt,
   className,
-  customStyles = "",
+  style,
   placeholder = defaultPlaceholder,
-}: PropsWithoutRef<JSX.IntrinsicElements["img"]> & {
-  fallback: string
-  placeholder?: string
-  customStyles?: string
-}): JSX.Element {
+}: SharedImageWithFallbackProps): JSX.Element {
   const [isLoading, setIsLoading] = useState(true)
   const [imageSrc, setImageSrc] = useState(placeholder)
 
@@ -49,6 +58,7 @@ export default function SharedImageWithFallback({
       <img
         className={classNames(className, { loading: isLoading })}
         src={imageSrc}
+        style={style}
         {...{ loading, alt, width, height }}
       />
       <style jsx>
@@ -70,11 +80,6 @@ export default function SharedImageWithFallback({
           }
         `}
       </style>
-      <style jsx>{`
-        img {
-          ${customStyles}
-        }
-      `}</style>
     </>
   )
 }
