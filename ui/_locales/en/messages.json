@@ -340,6 +340,7 @@
     "networksBanner": "Not seeing NFTs from all your networks? Activate a network by switching to it on the Wallet tab.",
     "filters": {
       "title": "Filter collections",
+      "tooltip": "Filter",
       "warning": "Changing filters here will affect your Portfolio page as well.",
       "sortType": {
         "priceDesc": "Floor price: Descending",
@@ -620,6 +621,7 @@
     "connectedWebsitesSettings": {
       "title": "Connected websites",
       "disconnected": "Website disconnected",
+      "disconnectTooltip": "Disconnect website",
       "ariaLabel": "Manage connected websites",
       "emptyList": "Not connected to any websites"
     },
@@ -804,6 +806,7 @@
   },
   "topMenu": {
     "showCurrentDappConnection": "Show current website connection",
+    "currentDappConnection": "Current website connection",
     "connectToWebsiteUsing": "Connect to website using:",
     "setTahoAsDefault": "Set Taho as default",
     "setOtherAsDefault": "Set MetaMask/other wallet as default",
@@ -818,6 +821,7 @@
     "connectedDappInfo": {
       "dAppTitle": "Account connected to",
       "dappConnections": "Website connections",
+      "disconnectDapp": "Disconnect Dapp",
       "guideline": {
         "title": "How to connect to websites",
         "step1": "Connect using Taho",
@@ -963,7 +967,7 @@
       "submitSpamBtn": "Yes, report & delete",
       "snackbar": "Ability deleted"
     },
-    "filter": {
+    "filters": {
       "title": "Filter Abilities",
       "tooltip": "Filter",
       "abilityState": {

@@ -4,6 +4,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useBackgroundDispatch } from "../../hooks"
 import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 type Props = {
   isConnectedToDApp: boolean
@@ -54,16 +55,29 @@ export default function ActiveDAppConnection({
           isConnected={isConnectedToDApp}
         />
       ) : null}
-      <button
-        type="button"
-        aria-label={t("showCurrentDappConnection")}
-        className="connection_button"
-        onClick={() => {
-          setIsActiveDAppConnectionInfoOpen(!isActiveDAppConnectionInfoOpen)
-        }}
+      <SharedTooltip
+        type="dark"
+        width={160}
+        horizontalShift={160}
+        verticalShift={-15}
+        verticalPosition="bottom"
+        horizontalPosition="left"
+        IconComponent={() => (
+          <button
+            type="button"
+            aria-label={t("showCurrentDappConnection")}
+            className="connection_button"
+            onClick={() => {
+              setIsActiveDAppConnectionInfoOpen(!isActiveDAppConnectionInfoOpen)
+            }}
+          >
+            <div className="connection_img" />
+          </button>
+        )}
       >
-        <div className="connection_img" />
-      </button>
+        {t("currentDappConnection")}
+      </SharedTooltip>
+
       <style jsx>{`
         .connection_button {
           width: 32px;
