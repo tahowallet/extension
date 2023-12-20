@@ -5,6 +5,7 @@ import classNames from "classnames"
 import React, { ReactElement, useCallback } from "react"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedTooltip from "./SharedTooltip"
+import { trimWithEllipsis } from "../../utils/textUtils"
 
 type SharedAddressProps = {
   address: string
@@ -53,7 +54,7 @@ export default function SharedAddress({
       className={classNames({ ellipsis: elide })}
     >
       <p className={classNames({ ellipsis: elide })}>
-        {primaryText}
+        {trimWithEllipsis(primaryText, 15)}
         {name !== undefined && nameResolverSystem !== undefined && (
           <>
             <SharedTooltip width={130}>
