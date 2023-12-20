@@ -128,6 +128,7 @@ export default function NFTsFilters(): ReactElement {
           <span className="filter_title">{t("accountsTitle")}</span>
           <FilterList
             filters={filters.accounts}
+            isAccountFilter
             onChange={handleUpdateAccountFilter}
             testid="nft_account_filters"
           />
