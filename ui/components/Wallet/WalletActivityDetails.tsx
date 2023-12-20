@@ -179,7 +179,7 @@ export default function WalletActivityDetails(
           Array.from({ length: 7 }).map(() => (
             <SharedSkeletonLoader
               height={24}
-              customStyles="margin: 10px 0 15px;"
+              style={{ margin: "10px 0 15px" }}
             />
           ))}
         {details.map(({ assetIconUrl, label, value }) => (

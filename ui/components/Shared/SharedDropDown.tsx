@@ -174,12 +174,12 @@ export default function SharedDropdown({
                 ariaLabel={t("shared.close")}
                 color="var(--green-40)"
                 hoverColor="var(--green-20)"
-                customStyles={`
-                  position: absolute;
-                  top: 16px;
-                  right: 12px;
-                  cursor: pointer;
-                `}
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 12,
+                  cursor: "pointer",
+                }}
                 width={12}
                 onClick={() => toggle()}
                 icon="close.svg"

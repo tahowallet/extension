@@ -17,7 +17,7 @@ export default function NFTsExploreBanner(props: {
   const items = type === "badge" ? HARDCODED_BADGES : HARDCODED_MARKETS
 
   return (
-    <SharedBanner customStyles="margin-top: 10px;">
+    <SharedBanner style={{ marginTop: 10 }}>
       <header>{t(`emptyBannerTitle.${type}`)}</header>
       <nav>
         {items.map(

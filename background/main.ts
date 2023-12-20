@@ -1059,11 +1059,15 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountName({ ...addressOnNetwork, name }))
       },
     )
+
     this.nameService.emitter.on(
       "resolvedAvatar",
       async ({ from: { addressOnNetwork }, resolved: { avatar } }) => {
         this.store.dispatch(
-          updateENSAvatar({ ...addressOnNetwork, avatar: avatar.toString() }),
+          updateENSAvatar({
+            ...addressOnNetwork,
+            avatar: avatar.toString(),
+          }),
         )
       },
     )

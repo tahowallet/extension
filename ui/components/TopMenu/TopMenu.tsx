@@ -33,7 +33,7 @@ export default function TopMenu(): ReactElement {
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
         isScrollable
-        customStyles={{ display: "flex", flexDirection: "column" }}
+        style={{ display: "flex", flexDirection: "column" }}
         close={() => {
           setIsProtocolListOpen(false)
         }}

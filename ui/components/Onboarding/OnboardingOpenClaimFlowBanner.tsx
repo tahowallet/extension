@@ -80,10 +80,7 @@ function EligibleCTAContent({
           hoverColor="#fff"
           ariaLabel="Close banner"
           onClick={handleCloseBanner}
-          customStyles={`
-            align-self: flex-start;
-            margin: 10px 12px;
-          `}
+          style={{ alignSelf: "flex-start", margin: "10px 12px" }}
         />
       ) : (
         <Link
@@ -184,11 +181,7 @@ function IneligibleCTAContent({
           color="var(--green-40)"
           onClick={handleCloseBanner}
           ariaLabel="Close menu"
-          customStyles={`
-            margin-top: 8px;
-            margin-right: 8px;
-            flex-shrink: 0;
-          `}
+          style={{ marginInline: 8, flexShrink: 0 }}
         />
       </div>
       <div className="banner_bottom">
@@ -274,7 +267,7 @@ export default function OnboardingOpenClaimFlowBanner(): ReactElement | null {
         height={90}
         width={352}
         borderRadius={16}
-        customStyles="margin: 0 0 20px; flex: 1 0 auto;"
+        style={{ margin: "0 0 20px", flex: "1 0 auto" }}
       />
     )
 

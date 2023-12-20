@@ -106,7 +106,7 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
                 width={14}
                 height={14}
                 color="var(--trophy-gold)"
-                customStyles="margin: 2px;"
+                style={{ margin: 2 }}
                 icon="plus@2x.png"
               />
             </div>
