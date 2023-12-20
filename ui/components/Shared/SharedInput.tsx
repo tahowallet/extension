@@ -143,7 +143,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-weight: 500;
             font-size: 14px;
             line-height: 20px;
-            margin-top: 3px;
+            margin-top: ${label ? "3px" : "53px"};
             margin-left: 5px;
           }
           .warning {
