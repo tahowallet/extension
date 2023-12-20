@@ -170,7 +170,7 @@ export default function AbilityFilter(): ReactElement {
           display: flex;
           flex-direction: column;
           gap: 24px;
-          height: 456px;
+          height: 471px;
           overflow-y: scroll;
           padding: 0 24px 8px;
         }

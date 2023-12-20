@@ -155,7 +155,7 @@ export default function NFTsFilters(): ReactElement {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          height: 456px;
+          height: 471px;
           overflow-y: scroll;
           padding: 0 24px 8px;
         }
