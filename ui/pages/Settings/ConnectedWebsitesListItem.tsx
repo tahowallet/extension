@@ -49,7 +49,7 @@ export default function ConnectedWebsitesListItem(
           width={24}
           icon="icons/m/disconnect.svg"
           onClick={handleDisconnect}
-          customStyles="flex-shrink: 0;"
+          style={{ flexShrink: 0 }}
         />
       </div>
       <style jsx>{`

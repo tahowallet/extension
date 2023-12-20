@@ -20,23 +20,12 @@ export default function PortalBanner(): ReactElement | null {
     <SharedBanner
       id={hasIslandAssets ? PORTAL_ID_WITH_ASSETS : PORTAL_ID_NO_ASSETS}
       canBeClosed
-      customStyles={`
-        padding: 8px 11px 0 0;
-        margin-bottom: 18px;
+      style={{
+        padding: "8px 11px 0 0",
+        marginBottom: 18,
         background:
-          var(--gradients-bg-cards,
-              radial-gradient(
-                57.41% 54.95% at 64.58% 47.64%,
-                rgba(27, 97, 94, 0.00) 0%,
-                rgba(27, 97, 94, 0.20) 100%
-              ),
-              linear-gradient(
-                156deg,
-                rgba(26, 94, 91, 0.90) 5.26%,
-                rgba(26, 106, 103, 0.00) 71.95%),
-                rgba(6, 48, 46, 0.50)
-             )
-      `}
+          "var(--gradients-bg-cards, radial-gradient(57.41% 54.95% at 64.58% 47.64%,rgba(27, 97, 94, 0.00) 0%,rgba(27, 97, 94, 0.20) 100%),linear-gradient(156deg,rgba(26, 94, 91, 0.90) 5.26%,rgba(26, 106, 103, 0.00) 71.95%),rgba(6, 48, 46, 0.50))",
+      }}
     >
       <i className="portal_open_title_image" />
       <h2 className="serif_header">Subscape is online</h2>
@@ -56,7 +45,7 @@ export default function PortalBanner(): ReactElement | null {
           icon="new_tab@2x.png"
           width={16}
           color="var(--castle-black)"
-          customStyles="margin-left: 5px;"
+          style={{ marginLeft: 5 }}
         />
       </SharedButton>
       <style jsx>

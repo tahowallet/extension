@@ -1,8 +1,12 @@
 import { uniqueId } from "lodash"
+import browser from "webextension-polyfill"
 import BaseService from "../base"
-import IslandService from "../island"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import { HOUR } from "../../constants"
+
+const TAHO_ICON_URL =
+  "https://taho.xyz/icons/icon-144x144.png?v=41306c4d4e6795cdeaecc31bd794f68e"
 
 type Events = ServiceLifecycleEvents & {
   notificationDisplayed: string
@@ -10,6 +14,8 @@ type Events = ServiceLifecycleEvents & {
 }
 
 type NotificationClickHandler = (() => Promise<void>) | (() => void)
+
+const NOTIFICATIONS_XP_DROP_THRESHOLD = 24 * HOUR
 
 /**
  * The NotificationService manages all notifications for the extension. It is
@@ -31,6 +37,8 @@ export default class NotificationsService extends BaseService<Events> {
     [notificationId: string]: NotificationClickHandler
   } = {}
 
+  private lastXpDropNotificationInMs?: number
+
   /*
    * Create a new NotificationsService. The service isn't initialized until
    * startService() is called and resolved.
@@ -38,14 +46,10 @@ export default class NotificationsService extends BaseService<Events> {
   static create: ServiceCreatorFunction<
     Events,
     NotificationsService,
-    [Promise<PreferenceService>, Promise<IslandService>]
-  > = async (preferenceService, islandService) =>
-    new this(await preferenceService, await islandService)
+    [Promise<PreferenceService>]
+  > = async (preferenceService) => new this(await preferenceService)
 
-  private constructor(
-    private preferenceService: PreferenceService,
-    private islandService: IslandService,
-  ) {
+  private constructor(private preferenceService: PreferenceService) {
     super()
   }
 
@@ -63,28 +67,33 @@ export default class NotificationsService extends BaseService<Events> {
     // browser notifications permission has been granted. The preferences service
     // does guard this, but if that ends up not being true, browser.notifications
     // will be undefined and all of this will explode.
-    this.isPermissionGranted =
-      await this.preferenceService.getShouldShowNotifications()
+
+    this.preferenceService.emitter.on(
+      "initializeNotificationsPreferences",
+      async (isPermissionGranted) => {
+        this.isPermissionGranted = isPermissionGranted
+      },
+    )
 
     this.preferenceService.emitter.on(
       "setNotificationsPermission",
       (isPermissionGranted) => {
-        if (typeof browser !== "undefined") {
-          if (isPermissionGranted) {
-            browser.notifications.onClicked.addListener(
-              boundHandleNotificationClicks,
-            )
-            browser.notifications.onClosed.addListener(
-              boundCleanUpNotificationClickHandler,
-            )
-          } else {
-            browser.notifications.onClicked.removeListener(
-              boundHandleNotificationClicks,
-            )
-            browser.notifications.onClosed.removeListener(
-              boundCleanUpNotificationClickHandler,
-            )
-          }
+        this.isPermissionGranted = isPermissionGranted
+
+        if (this.isPermissionGranted) {
+          browser.notifications.onClicked.addListener(
+            boundHandleNotificationClicks,
+          )
+          browser.notifications.onClosed.addListener(
+            boundCleanUpNotificationClickHandler,
+          )
+        } else {
+          browser.notifications.onClicked.removeListener(
+            boundHandleNotificationClicks,
+          )
+          browser.notifications.onClosed.removeListener(
+            boundCleanUpNotificationClickHandler,
+          )
         }
       },
     )
@@ -95,22 +104,7 @@ export default class NotificationsService extends BaseService<Events> {
         boundCleanUpNotificationClickHandler,
       )
     }
-
-    /*
-     * FIXME add below
-    this.islandService.emitter.on("xpDropped", this.notifyXpDrop.bind(this))
-    */
   }
-
-  // TODO: uncomment when the XP drop is ready
-  // protected async notifyDrop(/* xpInfos: XpInfo[] */): Promise<void> {
-  //   const callback = () => {
-  //     browser.tabs.create({
-  //       url: "dapp url for realm claim, XpInfo must include realm id, ideally some way to communicate if the address is right as well",
-  //     })
-  //   }
-  //   this.notify({ callback })
-  // }
 
   // Fires the click handler for the given notification id.
   protected handleNotificationClicks(notificationId: string): void {
@@ -127,15 +121,16 @@ export default class NotificationsService extends BaseService<Events> {
    * The click action, if specified, will be fired when the user clicks on the
    * notification.
    */
-  protected async notify({
-    title = "",
-    message = "",
-    contextMessage = "",
+  public notify({
+    options,
     callback,
   }: {
-    title?: string
-    message?: string
-    contextMessage?: string
+    options: {
+      title: string
+      message: string
+      contextMessage?: string
+      type?: browser.Notifications.TemplateType
+    }
     callback?: () => void
   }) {
     if (!this.isPermissionGranted) {
@@ -143,12 +138,32 @@ export default class NotificationsService extends BaseService<Events> {
     }
     const notificationId = uniqueId("notification-")
 
-    await browser.notifications.create(notificationId, {
-      type: "basic",
-      title,
-      message,
-      contextMessage,
-      isClickable: !!callback,
-    })
+    const notificationOptions = {
+      type: "basic" as browser.Notifications.TemplateType,
+      iconUrl: TAHO_ICON_URL,
+      ...options,
+    }
+
+    if (typeof callback === "function") {
+      this.clickHandlers[notificationId] = callback
+    }
+
+    browser.notifications.create(notificationId, notificationOptions)
+  }
+
+  public notifyXPDrop(callback?: () => void): void {
+    const shouldShowXpDropNotifications = this.lastXpDropNotificationInMs
+      ? Date.now() >
+        this.lastXpDropNotificationInMs + NOTIFICATIONS_XP_DROP_THRESHOLD
+      : true
+
+    if (shouldShowXpDropNotifications) {
+      this.lastXpDropNotificationInMs = Date.now()
+      const options = {
+        title: "Weekly XP distributed",
+        message: "Visit Subscape to see if you are eligible",
+      }
+      this.notify({ options, callback })
+    }
   }
 }

@@ -30,11 +30,7 @@ export default function TransactionSignatureDetailsWarning(
             width={16}
             color="var(--green-40)"
             hoverColor="var(--green-20)"
-            customStyles={`
-              position: absolute;
-              top: 12px;
-              right: 12px;
-            `}
+            style={{ position: "absolute", top: 12, right: 12 }}
           />
         )}
         <span className="detail_warning">{message}</span>

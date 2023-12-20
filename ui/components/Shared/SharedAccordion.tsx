@@ -72,11 +72,11 @@ export default function SharedAccordion({
             e.stopPropagation()
             toggle()
           }}
-          customStyles={`
-            margin: 2px 0 2px 8px;
-            transform: rotate(${isOpen ? "180" : "0"}deg);
-            transition: transform 100ms;
-          `}
+          style={{
+            margin: "2px 0 2px 8px",
+            transform: `rotate(${isOpen ? "180" : "0"}deg)`,
+            transition: "transform 100ms",
+          }}
         />
       </div>
       <div

@@ -1,11 +1,11 @@
-import React, { ReactElement } from "react"
+import React, { CSSProperties, ReactElement } from "react"
 
 type Props = {
   icon: string
   width: number
   height?: number
   color?: string
-  customStyles?: string
+  style?: CSSProperties
   hoverColor?: string
   transitionHoverTime: string
   ariaLabel?: string
@@ -14,13 +14,7 @@ type Props = {
 }
 
 export default function SharedIcon(props: Props): ReactElement {
-  const {
-    icon,
-    width,
-    height = width,
-    color = "transparent",
-    customStyles = "",
-  } = props
+  const { icon, width, height = width, color = "transparent", style } = props
 
   if ("onClick" in props) {
     const {
@@ -39,6 +33,7 @@ export default function SharedIcon(props: Props): ReactElement {
         disabled={disabled}
         title={ariaLabel}
         aria-label={ariaLabel}
+        style={style}
       >
         <style jsx>{`
           .icon {
@@ -48,7 +43,6 @@ export default function SharedIcon(props: Props): ReactElement {
             height: ${height}px;
             background-color: ${color};
             transition: background-color ${transitionHoverTime};
-            ${customStyles};
           }
 
           .icon:disabled {
@@ -66,7 +60,7 @@ export default function SharedIcon(props: Props): ReactElement {
   }
 
   return (
-    <i className="icon">
+    <i className="icon" style={style}>
       <style jsx>{`
         .icon {
           display: inline-block;
@@ -75,7 +69,6 @@ export default function SharedIcon(props: Props): ReactElement {
           width: ${width}px;
           height: ${height}px;
           background-color: ${color};
-          ${customStyles};
         }
       `}</style>
     </i>

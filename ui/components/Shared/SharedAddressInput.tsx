@@ -13,6 +13,7 @@ type Props = {
     value: { address: HexString; name?: string } | undefined,
   ) => void
   onFocus?: () => void
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   id?: string
   placeholder?: string
   isEmpty?: boolean
@@ -23,6 +24,7 @@ export default function SharedAddressInput({
   label,
   onAddressChange,
   onFocus,
+  onKeyDown,
   id,
   placeholder,
   isEmpty,
@@ -48,6 +50,7 @@ export default function SharedAddressInput({
         label={label}
         onChange={setInputValue}
         onFocus={onFocus}
+        onKeyDown={onKeyDown}
         errorMessage={errorMessage}
         id={id}
         placeholder={placeholder}

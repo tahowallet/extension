@@ -101,7 +101,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             width={384}
             height={isBadge ? 384 : undefined}
             isBadge={isBadge}
-            customStyles="border-radius: 0 0 8px 8px;"
+            style={{ borderRadius: "0 0 8px 8px" }}
           />
           <div className="preview_network">
             <SharedNetworkIcon

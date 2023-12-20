@@ -62,7 +62,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
             horizontalPosition="center"
             verticalPosition="bottom"
             horizontalShift={22}
-            customStyles={{
+            style={{
               marginLeft: "0",
               display: "flex",
               justifyContent: "center",
@@ -159,7 +159,7 @@ export default function WalletAccountBalanceControl(
           height={48}
           width={250}
           borderRadius={14}
-          customStyles="margin: 12px 0"
+          style={{ margin: "12px 0" }}
           isLoaded={!shouldIndicateLoading}
         >
           <div className="balance_label">{t("totalAccountBalance")}</div>
@@ -175,7 +175,7 @@ export default function WalletAccountBalanceControl(
           isLoaded={!shouldIndicateLoading}
           height={24}
           width={180}
-          customStyles="margin-bottom: 10px;"
+          style={{ marginBottom: 10 }}
         >
           <ReadOnlyNotice />
           {currentAccountSigner !== ReadOnlyAccountSigner &&

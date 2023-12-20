@@ -29,7 +29,7 @@ export default function SharedSlideUpMenuPanel({
             width={16}
             height={16}
             icon={icon}
-            customStyles="margin-right: 5px;"
+            style={{ marginRight: 5 }}
             color="var(--white)"
           />
         )}

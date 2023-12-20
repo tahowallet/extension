@@ -210,7 +210,7 @@ export default function Settings(): ReactElement {
   const unverifiedAssets = {
     title: t("settings.showUnverifiedAssets"),
     tooltip: () => (
-      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+      <SharedTooltip width={190} style={{ marginLeft: 4 }}>
         <Trans t={t} i18nKey="settings.unverifiedAssets.tooltip" />
       </SharedTooltip>
     ),
@@ -321,7 +321,7 @@ export default function Settings(): ReactElement {
   const autoLockSettings = {
     title: t("settings.autoLockTimer.label"),
     tooltip: () => (
-      <SharedTooltip width={190} customStyles={{ marginLeft: "4" }}>
+      <SharedTooltip width={190} style={{ marginLeft: 4 }}>
         <div className="tooltip">
           <span>{t("settings.autoLockTimer.tooltip")}</span>
         </div>
@@ -381,7 +381,7 @@ export default function Settings(): ReactElement {
     tooltip: () => (
       <SharedTooltip
         width={165}
-        customStyles={{ marginLeft: "4" }}
+        style={{ marginLeft: 4 }}
         verticalPosition="top"
       >
         <Trans

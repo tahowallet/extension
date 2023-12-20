@@ -328,6 +328,9 @@ export default class Main extends BaseService<never> {
       internalEthereumProviderService,
       preferenceService,
     )
+
+    const notificationsService = NotificationsService.create(preferenceService)
+
     const islandService = IslandService.create(chainService, indexingService)
 
     const telemetryService = TelemetryService.create()
@@ -351,11 +354,6 @@ export default class Main extends BaseService<never> {
     const abilitiesService = AbilitiesService.create(
       chainService,
       ledgerService,
-    )
-
-    const notificationsService = NotificationsService.create(
-      preferenceService,
-      islandService,
     )
 
     const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
@@ -669,6 +667,7 @@ export default class Main extends BaseService<never> {
     this.connectWalletConnectService()
     this.connectAbilitiesService()
     this.connectNFTsService()
+    this.connectNotificationsService()
 
     await this.connectChainService()
 
@@ -1060,11 +1059,15 @@ export default class Main extends BaseService<never> {
         this.store.dispatch(updateAccountName({ ...addressOnNetwork, name }))
       },
     )
+
     this.nameService.emitter.on(
       "resolvedAvatar",
       async ({ from: { addressOnNetwork }, resolved: { avatar } }) => {
         this.store.dispatch(
-          updateENSAvatar({ ...addressOnNetwork, avatar: avatar.toString() }),
+          updateENSAvatar({
+            ...addressOnNetwork,
+            avatar: avatar.toString(),
+          }),
         )
       },
     )
@@ -1593,6 +1596,13 @@ export default class Main extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
+      "initializeNotificationsPreferences",
+      async (isPermissionGranted) => {
+        this.store.dispatch(toggleNotifications(isPermissionGranted))
+      },
+    )
+
+    this.preferenceService.emitter.on(
       "dismissableItemMarkedAsShown",
       async (dismissableItem) => {
         this.store.dispatch(dismissableItemMarkedAsShown(dismissableItem))
@@ -1753,6 +1763,12 @@ export default class Main extends BaseService<never> {
     })
     this.abilitiesService.emitter.on("deleteAccount", (address) => {
       this.store.dispatch(deleteAccountFilter(address))
+    })
+  }
+
+  connectNotificationsService(): void {
+    this.islandService.emitter.on("newXpDrop", () => {
+      this.notificationsService.notifyXPDrop()
     })
   }
 
@@ -1961,7 +1977,7 @@ export default class Main extends BaseService<never> {
 
   async removeEVMNetwork(chainID: string): Promise<void> {
     // Per origin chain id settings
-    await this.internalEthereumProviderService.removePrefererencesForChain(
+    await this.internalEthereumProviderService.removePreferencesForChain(
       chainID,
     )
     // Connected dApps
