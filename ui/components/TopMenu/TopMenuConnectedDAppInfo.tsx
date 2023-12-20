@@ -6,6 +6,7 @@ import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefault
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedTooltip from "../Shared/SharedTooltip"
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -245,12 +246,23 @@ export default function TopMenuConnectedDAppInfo(props: {
             <div className="url text ellipsis" title={url}>
               {url}
             </div>
-            <button
-              aria-label="disconnect"
-              type="button"
-              className="disconnect_icon"
-              onClick={disconnect}
-            />
+            <SharedTooltip
+              width={120}
+              verticalPosition="bottom"
+              horizontalPosition="center"
+              verticalShift={-20}
+              type="dark"
+              IconComponent={() => (
+                <button
+                  aria-label="disconnect"
+                  type="button"
+                  className="disconnect_icon"
+                  onClick={disconnect}
+                />
+              )}
+            >
+              {t("disconnectDapp")}
+            </SharedTooltip>
           </div>
         </div>
         <ConnectionDAppGuideline isConnected={isConnected} />
@@ -351,7 +363,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           background-size: cover;
           width: 16px;
           height: 18px;
-          margin: 16px 0 32px;
+          margin: 16px 0 40px;
         }
         .dAppInfo_wrap {
           width: 100%;

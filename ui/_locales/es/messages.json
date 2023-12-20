@@ -68,10 +68,11 @@
     "bugReport": "Informe de errores",
     "connectedWebsites": "Sitios Web a los que está conectado",
     "connectedWebsitesSettings": {
-      "ariaLabel": "Administrar sitios web conectados",
+      "title": "Sitios web a los que está conectado",
       "disconnected": "Sitios web desconectados",
-      "emptyList": "No está conectado a ningún sitio web",
-      "title": "Sitios web a los que está conectado"
+      "disconnectTooltip": "Desconectar sitios web",
+      "ariaLabel": "Administrar sitios web conectados",
+      "emptyList": "No está conectado a ningún sitio web"
     },
     "enableTestNetworks": "Habilitar redes de prueba",
     "exportLogs": {

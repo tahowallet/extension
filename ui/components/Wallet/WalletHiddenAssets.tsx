@@ -78,7 +78,7 @@ export default function WalletHiddenAssets({
           id="unverified_asset_banner"
           title={t("verifiedAssets.banner.titleUnverified")}
           description={t("verifiedAssets.banner.description")}
-          customStyles="margin-bottom: 16px;"
+          style={{ marginBottom: 16 }}
         />
         <WalletAssetList
           assetAmounts={assetAmounts}
