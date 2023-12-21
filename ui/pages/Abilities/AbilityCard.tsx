@@ -122,7 +122,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement | null {
                   width={16}
                   icon="icons/s/mark-read.svg"
                   color="var(--green-40)"
-                  customStyles="margin-right: 8px;"
+                  style={{ marginRight: 8 }}
                   hoverColor="var(--success)"
                   disabled={ability.completed}
                   onClick={async () => {

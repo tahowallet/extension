@@ -74,11 +74,11 @@ export default function AccountList({
                   e.stopPropagation()
                   toggle()
                 }}
-                customStyles={`
-                margin-left: 5px;
-                transform: rotate(${isOpen ? "180" : "0"}deg);
-                transition: transform 100ms;
-              `}
+                style={{
+                  marginLeft: 5,
+                  transform: `rotate(${isOpen ? "180" : "0"}deg)`,
+                  transition: "transform 100ms",
+                }}
               />
             </button>
           )}

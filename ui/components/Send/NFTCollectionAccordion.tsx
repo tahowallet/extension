@@ -57,7 +57,7 @@ export default function NFTCollectionAccordion({
               width="32"
               height="32"
               src={collection.thumbnailURL}
-              customStyles="border-radius: 4px;"
+              style={{ borderRadius: 4 }}
             />
             <span className="ellipsis">{collection.name}</span>
           </div>
@@ -108,7 +108,7 @@ export default function NFTCollectionAccordion({
 
             window.open(url, "_blank")?.focus()
           }}
-          customStyles="margin: 12px 0 auto;"
+          style={{ margin: "12px 0 auto" }}
         />
       )}
       <style jsx>

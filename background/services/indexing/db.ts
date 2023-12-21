@@ -328,6 +328,17 @@ export class IndexingDatabase extends Dexie {
     ).filter((asset) => asset?.metadata?.removed !== true)
   }
 
+  async getRemovedCustomAssetsByNetworks(
+    networks: EVMNetwork[],
+  ): Promise<CustomAsset[]> {
+    return (
+      await this.customAssets
+        .where("homeNetwork.chainID")
+        .anyOf(networks.map((network) => network.chainID))
+        .toArray()
+    ).filter((asset) => asset?.metadata?.removed === true)
+  }
+
   async getCustomAssetByAddressAndNetwork(
     network: EVMNetwork,
     contractAddress: string,

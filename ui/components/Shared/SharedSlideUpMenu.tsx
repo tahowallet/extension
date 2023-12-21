@@ -29,7 +29,7 @@ type Props = {
   isDark?: boolean
   alwaysRenderChildren?: boolean
   testid?: string
-  customStyles?: React.CSSProperties & Record<string, string>
+  style?: CSSProperties
 }
 
 const menuHeights: Record<SharedSlideUpMenuSize, string | null> = {
@@ -52,7 +52,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
     allowOverflow,
     alwaysRenderChildren,
     testid = "slide_up_menu",
-    customStyles = {},
+    style,
   } = props
 
   const slideUpMenuRef = useRef(null)
@@ -80,9 +80,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
           with_overflow: allowOverflow,
         })}
         data-testid={testid}
-        style={
-          { "--menu-height": menuHeight, ...customStyles } as CSSProperties
-        }
+        style={{ "--menu-height": menuHeight, ...style } as CSSProperties}
         ref={isOpen ? slideUpMenuRef : null}
       >
         <div

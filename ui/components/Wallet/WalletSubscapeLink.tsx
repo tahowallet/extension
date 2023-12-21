@@ -32,14 +32,14 @@ export default function WalletSubspaceLink(): ReactElement {
         icon="subscape-logo.svg"
         width={22}
         color="var(--subscape)"
-        customStyles="margin-right: 10px;"
+        style={{ marginRight: 10 }}
       />
       <span>Subscape Beta</span>
       <SharedIcon
         icon="new_tab@2x.png"
         width={16}
         color="var(--trophy-gold)"
-        customStyles="margin-left: 5px;"
+        style={{ marginLeft: 5 }}
       />
       <style jsx>{`
         .subscape_link {

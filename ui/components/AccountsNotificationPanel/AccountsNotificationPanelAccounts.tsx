@@ -195,7 +195,7 @@ function WalletTypeHeader({
             toggler={(toggle) => (
               <SharedIcon
                 color="var(--green-40)"
-                customStyles="cursor: pointer;"
+                style={{ cursor: "pointer" }}
                 width={24}
                 onClick={() => toggle()}
                 icon="settings.svg"

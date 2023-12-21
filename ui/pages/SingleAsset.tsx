@@ -222,7 +222,7 @@ export default function SingleAsset(): ReactElement {
                     height={48}
                     horizontalPosition="center"
                     verticalPosition="bottom"
-                    customStyles={{ marginLeft: "0" }}
+                    style={{ marginLeft: 0 }}
                     horizontalShift={94}
                     IconComponent={() => (
                       <SharedButton

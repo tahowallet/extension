@@ -52,6 +52,7 @@ import {
   isBaselineTrustedAsset,
   isUnverifiedAsset,
   isTrustedAsset,
+  isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -562,6 +563,10 @@ export default class IndexingService extends BaseService<Events> {
       return acc
     }, {})
 
+    const removedCustomAssets = await this.db.getRemovedCustomAssetsByNetworks([
+      addressNetwork.network,
+    ])
+
     // look up all assets and set balances
     const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
@@ -603,7 +608,13 @@ export default class IndexingService extends BaseService<Events> {
 
     const accountBalances = unfilteredAccountBalances.reduce<AccountBalance[]>(
       (acc, current) => {
-        if (current.status === "fulfilled" && current.value) {
+        if (
+          current.status === "fulfilled" &&
+          current.value &&
+          !removedCustomAssets.some((asset) =>
+            isSameAsset(asset, current.value?.assetAmount.asset),
+          )
+        ) {
           return [...acc, current.value]
         }
         return acc

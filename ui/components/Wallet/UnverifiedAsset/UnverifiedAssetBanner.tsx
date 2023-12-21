@@ -1,23 +1,23 @@
-import React, { ReactElement } from "react"
+import React, { CSSProperties, ReactElement } from "react"
 import SharedBanner, { CanBeClosedProps } from "../../Shared/SharedBanner"
 
 export default function UnverifiedAssetBanner({
   id,
   title,
   description,
-  customStyles,
+  style,
 }: {
   id?: string
   title: string
   description: string
-  customStyles?: string
+  style?: CSSProperties
 }): ReactElement {
   const props: CanBeClosedProps = id ? { canBeClosed: true, id } : {}
   return (
     <SharedBanner
       icon="notif-attention"
       iconColor="var(--attention)"
-      customStyles={customStyles}
+      style={style}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...props}
     >
