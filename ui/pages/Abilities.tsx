@@ -4,11 +4,10 @@ import { useTranslation } from "react-i18next"
 import SharedButton from "../components/Shared/SharedButton"
 import AbilityCard from "./Abilities/AbilityCard"
 import { useBackgroundSelector } from "../hooks"
-import SharedIcon from "../components/Shared/SharedIcon"
-import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
 import AbilityFilter from "./Abilities/AbilityFilter"
 import { ONBOARDING_ROOT } from "./Onboarding/Tabbed/Routes"
+import SharedFilterTooltip from "../components/Shared/SharedFilterTooltip"
 
 export default function Abilities(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -30,29 +29,11 @@ export default function Abilities(): ReactElement {
         <div className="header">
           <div className="icon_tail logo" />
           <h1>{t("header")}</h1>
-          <div className="filters_container">
-            <SharedTooltip
-              width={36}
-              height={32}
-              verticalPosition="bottom"
-              horizontalPosition="center"
-              horizontalShift={8}
-              type="dark"
-              isOpen={openFilterMenu}
-              IconComponent={() => (
-                <SharedIcon
-                  width={24}
-                  icon="toggle.svg"
-                  ariaLabel={t("filter.title")}
-                  color="var(--green-40)"
-                  hoverColor="var(--green-20)"
-                  onClick={handleToggleClick}
-                />
-              )}
-            >
-              {t("filter.tooltip")}
-            </SharedTooltip>
-          </div>
+          <SharedFilterTooltip
+            keyPrefix="abilities"
+            isOpen={openFilterMenu}
+            setIsOpen={setOpenFilterMenu}
+          />
         </div>
         {abilities.length > 0 ? (
           abilities.map((ability, id) => {
@@ -90,12 +71,6 @@ export default function Abilities(): ReactElement {
             font-weight: 500;
             font-size: 22px;
             line-height: 32px;
-          }
-          .filters_container {
-            position: absolute;
-            width: 90vw;
-            display: flex;
-            justify-content: end;
           }
           section {
             height: 544px;
