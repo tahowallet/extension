@@ -4,7 +4,6 @@ import {
   AVALANCHE,
   BINANCE_SMART_CHAIN,
   ETHEREUM,
-  GOERLI,
   SEPOLIA,
   ARBITRUM_SEPOLIA,
   OPTIMISM,
@@ -24,7 +23,6 @@ export const blockExplorer = {
     url: "https://optimistic.etherscan.io",
   },
   [POLYGON.chainID]: { title: "Polygonscan", url: "https://polygonscan.com" },
-  [GOERLI.chainID]: { title: "Etherscan", url: "https://goerli.etherscan.io/" },
   [SEPOLIA.chainID]: {
     title: "Etherscan",
     url: "https://sepolia.etherscan.io/",
