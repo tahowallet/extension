@@ -252,7 +252,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
       <SharedSlideUpMenu
         isOpen={isNetworkSelectOpen}
         isScrollable
-        customStyles={{ display: "flex", flexDirection: "column" }}
+        style={{ display: "flex", flexDirection: "column" }}
         close={() => setNetworkSelectOpen(false)}
       >
         <div className="network_select">
@@ -308,7 +308,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             height={8}
             icon="chevron_down.svg"
             color="var(--icon-color, var(--white))"
-            customStyles="margin-left: auto"
+            style={{ marginLeft: "auto" }}
           />
         </div>
         <div className="input_container">
@@ -326,7 +326,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             <SharedTooltip
               width={219}
               horizontalShift={100}
-              customStyles={{ "--tooltip-icon-color": "var(--green-20)" }}
+              style={{ "--tooltip-icon-color": "var(--green-20)" }}
             >
               <Trans
                 t={t}
@@ -392,7 +392,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
             <SharedIcon
               color="var(--success)"
               width={24}
-              customStyles="min-width: 24px;"
+              style={{ minWidth: 24 }}
               icon="icons/m/notif-correct.svg"
             />
             <div className="alert_content">
@@ -406,7 +406,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
               <SharedIcon
                 color="var(--attention)"
                 width={24}
-                customStyles="min-width: 24px;"
+                style={{ minWidth: 24 }}
                 icon="icons/m/notif-attention.svg"
               />
               <div className="alert_content">

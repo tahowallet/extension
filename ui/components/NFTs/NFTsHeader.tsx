@@ -12,9 +12,9 @@ import {
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import { HeaderContainer, EmptyHeader } from "./NFTsHeaderBase"
 import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
-import SharedIcon from "../Shared/SharedIcon"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import NFTsFilters from "./Filters/NFTsFilters"
+import SharedFilterTooltip from "../Shared/SharedFilterTooltip"
 
 export default function NFTsHeader(): ReactElement {
   const { t } = useTranslation("translation", {
@@ -60,17 +60,11 @@ export default function NFTsHeader(): ReactElement {
         <div className="stats_container">
           <div className="stats_title">{t("header.title")}</div>
           {allNftCount > 0 && (
-            <div className="filters_container">
-              <SharedIcon
-                width={24}
-                icon="toggle.svg"
-                ariaLabel={t("filters.title")}
-                color="var(--green-40)"
-                hoverColor="var(--green-20)"
-                onClick={handleToggleClick}
-                disabled={isLoading}
-              />
-            </div>
+            <SharedFilterTooltip
+              keyPrefix="nfts"
+              isOpen={openFiltersMenu}
+              setIsOpen={setOpenFiltersMenu}
+            />
           )}
           <div className="stats_totals">
             <span className="currency_sign">{mainCurrencySign}</span>
@@ -121,13 +115,6 @@ export default function NFTsHeader(): ReactElement {
           line-height: 16px;
           letter-spacing: 0.03em;
           color: var(--green-20);
-        }
-
-        .filters_container {
-          position: absolute;
-          width: 90vw;
-          display: flex;
-          justify-content: end;
         }
 
         .stats_spinner {

@@ -19,7 +19,7 @@ export default function TopMenuProtocolListFooter(): JSX.Element {
         <SharedIcon
           width={16}
           height={16}
-          customStyles="margin-right: 4px"
+          style={{ marginRight: 4 }}
           icon="icons/s/add.svg"
           color="currentColor"
         />
