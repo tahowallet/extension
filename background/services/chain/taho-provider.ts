@@ -24,9 +24,6 @@ export default class TahoAlchemyProvider extends AlchemyProvider {
       case 11155111: // Ethereum Sepolia
         host = "eth-sepolia.g.alchemy.com/v2/"
         break
-      case 421614: // Arbitrum Sepolia
-        host = "arb-sepolia.g.alchemy.com/v2/"
-        break
       default:
         return AlchemyProvider.getUrl(network, apiKey)
     }
