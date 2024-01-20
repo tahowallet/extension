@@ -54,11 +54,6 @@ export const ARBITRUM_NOVA_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...ETH_DATA,
 }
 
-export const GOERLI_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
-  ...BASE_ASSETS_BY_CUSTOM_NAME.GOERLI_ETH,
-  ...ETH_DATA,
-}
-
 export const SEPOLIA_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   ...BASE_ASSETS_BY_CUSTOM_NAME.SEPOLIA_ETH,
   ...ETH_DATA,
@@ -113,7 +108,6 @@ export const BUILT_IN_NETWORK_BASE_ASSETS = [
   OPTIMISTIC_ETH,
   ARBITRUM_ONE_ETH,
   ARBITRUM_NOVA_ETH,
-  GOERLI_ETH,
   SEPOLIA_ETH,
   ARBITRUM_SEPOLIA_ETH,
   AVAX,

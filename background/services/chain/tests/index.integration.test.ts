@@ -197,7 +197,7 @@ describe("ChainService", () => {
     it("Should properly update supported networks", async () => {
       chainService.supportedNetworks = []
       await chainService.updateSupportedNetworks()
-      expect(chainService.supportedNetworks.length).toBe(10)
+      expect(chainService.supportedNetworks.length).toBe(9)
     })
   })
 
@@ -205,9 +205,9 @@ describe("ChainService", () => {
     // prettier-ignore
     const FANTOM_CHAIN_PARAMS = { chainId: "250", blockExplorerUrl: "https://ftmscan.com", chainName: "Fantom Opera", nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18, }, rpcUrls: [ "https://fantom-mainnet.gateway.pokt.network/v1/lb/62759259ea1b320039c9e7ac", "https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpc.fantom.network", "https://rpc2.fantom.network", "https://rpc3.fantom.network", "https://rpcapi.fantom.network", "https://fantom-mainnet.public.blastapi.io", "https://1rpc.io/ftm", ], blockExplorerUrls: ["https://ftmscan.com"], }
     it("should update supported networks after adding a chain", async () => {
-      expect(chainService.supportedNetworks.length).toBe(10)
+      expect(chainService.supportedNetworks.length).toBe(9)
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
-      expect(chainService.supportedNetworks.length).toBe(11)
+      expect(chainService.supportedNetworks.length).toBe(10)
     })
 
     it("should create a provider for the new chain", async () => {
