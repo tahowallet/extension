@@ -31,3 +31,37 @@ module.exports = {
     setUninstallURL: jest.fn(),
   },
 }
+
+
+// import { Tabs } from "webextension-polyfill";
+
+const browserMock = jest.createMockFromModule<typeof import("webextension-polyfill")>("webextension-polyfill");
+
+export const alarms = {
+  create: jest.fn(),
+  clear: jest.fn(),
+  onAlarm: {
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  },
+};
+
+export const extension = {
+  ...browserMock.extension,
+  getBackgroundPage: jest.fn(),
+};
+
+export const tabs = {
+  ...browserMock.tabs,
+  getCurrent: jest.fn<Promise<Tabs.Tab | undefined>>(() => Promise.resolve(undefined)),
+};
+
+export const runtime = {
+  ...browserMock.runtime,
+  setUninstallURL: jest.fn(),
+};
+
+
+
+
+
