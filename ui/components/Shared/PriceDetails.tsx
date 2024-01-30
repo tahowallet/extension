@@ -49,7 +49,7 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
                 width={16}
                 icon="icons/m/info.svg"
                 color="var(--attention)"
-                customStyles="flex-shrink: 0;"
+                style={{ flexShrink: 0 }}
               />
             </div>
           )}
@@ -81,7 +81,7 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
                     width={16}
                     icon="icons/m/info.svg"
                     color={`var(--${getPriceImpactColor(priceImpact)})`}
-                    customStyles="margin-left: -5px;"
+                    style={{ marginLeft: -5 }}
                   />
                 )}
               >

@@ -363,6 +363,12 @@ export default function SharedButton(
           .unstyled {
             unset: all;
           }
+          .spinner_wrap {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
+          }
         `}
       </style>
     </button>

@@ -122,6 +122,8 @@ export default function CommonAssetListItem(
                 path="/send"
                 state={assetAmount.asset}
                 iconClass="asset_icon_send"
+                isTooltip
+                tooltipText="Send"
               />
               {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
                 <SharedIconRouterLink
@@ -131,6 +133,8 @@ export default function CommonAssetListItem(
                     contractAddress,
                   }}
                   iconClass="asset_icon_swap"
+                  isTooltip
+                  tooltipText="Swap"
                 />
               ) : (
                 <SharedTooltip

@@ -112,7 +112,7 @@ export default function SharedFileInput(props: Props): ReactElement {
             icon="icons/m/import.svg"
             width={24}
             color="var(--attention)"
-            customStyles="flex-shrink:0;"
+            style={{ flexShrink: 0 }}
           />
         )}
         {!errorMessage && isUploaded && (
@@ -120,7 +120,7 @@ export default function SharedFileInput(props: Props): ReactElement {
             icon="icons/m/notif-correct.svg"
             width={24}
             color="var(--success)"
-            customStyles="flex-shrink:0;"
+            style={{ flexShrink: 0 }}
           />
         )}
         {errorMessage && (
@@ -128,7 +128,7 @@ export default function SharedFileInput(props: Props): ReactElement {
             color="var(--error)"
             width={24}
             icon="icons/m/notif-wrong.svg"
-            customStyles="flex-shrink:0;"
+            style={{ flexShrink: 0 }}
           />
         )}
         <div className="ellipsis">{errorMessage || fileName}</div>
@@ -136,7 +136,7 @@ export default function SharedFileInput(props: Props): ReactElement {
           color="var(--green-40)"
           width={16}
           icon="icons/s/close.svg"
-          customStyles="flex-shrink:0; margin-left: auto;"
+          style={{ flexShrink: 0, marginLeft: "auto" }}
           onClick={handleRemove}
         />
       </div>

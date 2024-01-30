@@ -10,11 +10,11 @@ export default function NotificationVaults(): ReactElement {
       id="earn-vaults"
       icon="notif-announcement"
       iconColor="var(--link)"
-      customStyles="margin-top: 16px; padding-bottom: 0;"
+      style={{ marginTop: 16, paddingBottom: 0 }}
     >
       <div className="title">Before you get started!</div>
       <p className="text">
-        Read this infromational blog post to understand how vaults work.
+        Read this informational blog post to understand how vaults work.
       </p>
       <SharedButton
         type="tertiary"

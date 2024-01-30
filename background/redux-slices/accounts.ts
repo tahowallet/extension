@@ -387,7 +387,9 @@ const accountSlice = createSlice({
       immerState,
       {
         payload: { address, network, avatar },
-      }: { payload: AddressOnNetwork & { avatar: URI } },
+      }: {
+        payload: AddressOnNetwork & { avatar: URI }
+      },
     ) => {
       const normalizedAddress = normalizeEVMAddress(address)
 

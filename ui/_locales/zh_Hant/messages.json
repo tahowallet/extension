@@ -69,10 +69,11 @@
     "bugReport": "問題回報",
     "connectedWebsites": "已連結的網站",
     "connectedWebsitesSettings": {
-      "ariaLabel": "管理已連結的網站",
+      "title": "已連結的網站",
       "disconnected": "網站已斷開",
-      "emptyList": "尚未與任何網站連結",
-      "title": "已連結的網站"
+      "disconnectTooltip": "斷開網站連接",
+      "ariaLabel": "管理已連結的網站",
+      "emptyList": "尚未與任何網站連結"
     },
     "enableTestNetworks": "啟用測試網路",
     "exportLogs": {

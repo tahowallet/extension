@@ -399,7 +399,7 @@ export default function Swap(): ReactElement {
                 width={20}
                 color="var(--green-60)"
                 hoverColor="#fff"
-                customStyles="margin: 17px 0 25px;"
+                style={{ margin: "17px 0 25px" }}
               />
             )}
         </div>
@@ -410,7 +410,7 @@ export default function Swap(): ReactElement {
               canBeClosed
               icon="notif-announcement"
               iconColor="var(--link)"
-              customStyles="margin-bottom: 16px"
+              style={{ marginBottom: 16 }}
             >
               {t("swap.swapRewardsTeaser")}
             </SharedBanner>

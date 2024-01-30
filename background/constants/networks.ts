@@ -186,7 +186,7 @@ export const CHAIN_ID_TO_0X_API_BASE: {
   [POLYGON.chainID]: "polygon.api.0x.org",
   [OPTIMISM.chainID]: "optimism.api.0x.org",
   [GOERLI.chainID]: "goerli.api.0x.org",
-  // TODO: Add Swap API for Sepolia once 0x supports it.
+  [SEPOLIA.chainID]: "sepolia.api.0x.org",
   [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
   [AVALANCHE.chainID]: "avalanche.api.0x.org",
   [BINANCE_SMART_CHAIN.chainID]: "bsc.api.0x.org",
@@ -197,15 +197,9 @@ export const NETWORKS_SUPPORTING_SWAPS = new Set(
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  [
-    ETHEREUM,
-    POLYGON,
-    ARBITRUM_ONE,
-    OPTIMISM,
-    GOERLI,
-    SEPOLIA,
-    ARBITRUM_SEPOLIA,
-  ].map((network) => network.chainID),
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, GOERLI, SEPOLIA].map(
+    (network) => network.chainID,
+  ),
 )
 
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])

@@ -14,6 +14,7 @@ interface Props<T> {
   value?: string | undefined
   onChange?: (value: T | undefined) => void
   onFocus?: () => void
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   errorMessage?: string
   warningMessage?: string
   autoFocus?: boolean
@@ -37,6 +38,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     name,
     onChange,
     onFocus,
+    onKeyDown,
     value: currentValue,
     errorMessage,
     warningMessage,
@@ -92,6 +94,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
           handleInputChange(event.target.value)
         }
         onFocus={onFocus}
+        onKeyDown={onKeyDown}
         data-empty={inputValue.trim().length < 1}
         className={classNames({
           error: !isEmpty && (errorMessage ?? parserError !== undefined),
@@ -140,7 +143,7 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             font-weight: 500;
             font-size: 14px;
             line-height: 20px;
-            margin-top: 3px;
+            margin-top: ${label ? "3px" : "53px"};
             margin-left: 5px;
           }
           .warning {
