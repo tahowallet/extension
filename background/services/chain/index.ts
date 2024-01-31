@@ -530,7 +530,7 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedLegacyTransactionRequest
     gasEstimationError: string | undefined
   }> {
-    const { from, to, value, gasLimit, input, gasPrice, nonce, annotation } =
+    const { from, to, value, gasLimit, input, gasPrice, nonce, annotation, broadcastOnSign } =
       partialRequest
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedLegacyTransactionRequest = {
@@ -553,6 +553,7 @@ export default class ChainService extends BaseService<Events> {
           ? await this.estimateL1RollupGasPrice(network)
           : 0n,
       estimatedRollupFee: 0n,
+      broadcastOnSign,
     }
 
     if (network.chainID === OPTIMISM.chainID) {
@@ -628,6 +629,7 @@ export default class ChainService extends BaseService<Events> {
       maxPriorityFeePerGas,
       nonce,
       annotation,
+      broadcastOnSign,
     } = partialRequest
 
     // Basic transaction construction based on the provided options, with extra data from the chain service
@@ -644,6 +646,7 @@ export default class ChainService extends BaseService<Events> {
       chainID: network.chainID,
       nonce,
       annotation,
+      broadcastOnSign,
     }
 
     // Always estimate gas to decide whether the transaction will likely fail.

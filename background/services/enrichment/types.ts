@@ -99,6 +99,7 @@ export type EnrichedEIP1559TransactionSignatureRequest =
     from: string
     annotation?: TransactionAnnotation
     network: EVMNetwork
+    broadcastOnSign: boolean
   }
 
 export type EnrichedLegacyTransactionSignatureRequest =
@@ -106,6 +107,7 @@ export type EnrichedLegacyTransactionSignatureRequest =
     from: string
     annotation?: TransactionAnnotation
     network: EVMNetwork
+    broadcastOnSign: boolean
   }
 
 export type EnrichedEIP1559TransactionRequest = EIP1559TransactionRequest & {
@@ -121,10 +123,10 @@ export type EnrichedEVMTransactionRequest =
   | EnrichedLegacyTransactionRequest
 
 type PartialEIP1559TransactionRequestWithFrom =
-  Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork }
+  Partial<EIP1559TransactionRequest> & { from: string; network: EVMNetwork; broadcastOnSign: boolean }
 
 type PartialLegacyEVMTransactionRequestWithFrom =
-  Partial<LegacyEVMTransactionRequest> & { from: string; network: EVMNetwork }
+  Partial<LegacyEVMTransactionRequest> & { from: string; network: EVMNetwork; broadcastOnSign: boolean }
 
 export type PartialTransactionRequestWithFrom =
   | PartialEIP1559TransactionRequestWithFrom
