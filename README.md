@@ -354,7 +354,7 @@ git checkout tags/latest_release-tag
 
 ```sh
 ./firefox-build.sh
-``` 
+```
 
 6. Archive it
 

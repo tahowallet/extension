@@ -18,8 +18,8 @@ import "dotenv-defaults/config"
 
 const supportedBrowsers = ["chrome"]
 
-if (process.env.SUPPORT_BROWSER == "firefox") {
-  supportedBrowsers.push("firefox") 
+if (process.env.SUPPORT_BROWSER === "firefox") {
+  supportedBrowsers.push("firefox")
 }
 
 // Replicated and adjusted for each target browser and the current build mode.
