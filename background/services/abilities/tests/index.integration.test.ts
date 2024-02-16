@@ -77,7 +77,8 @@ describe("AbilitiesService", () => {
     })
   })
 
-  describe("pollForAbilities", () => {
+  // FIXME Restore once abilities polling is restored.
+  describe.skip("pollForAbilities", () => {
     let daylightAbilities: DaylightAbility[]
 
     beforeEach(async () => {
