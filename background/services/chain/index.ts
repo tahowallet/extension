@@ -530,8 +530,17 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedLegacyTransactionRequest
     gasEstimationError: string | undefined
   }> {
-    const { from, to, value, gasLimit, input, gasPrice, nonce, annotation, broadcastOnSign } =
-      partialRequest
+    const {
+      from,
+      to,
+      value,
+      gasLimit,
+      input,
+      gasPrice,
+      nonce,
+      annotation,
+      broadcastOnSign,
+    } = partialRequest
     // Basic transaction construction based on the provided options, with extra data from the chain service
     const transactionRequest: EnrichedLegacyTransactionRequest = {
       from,

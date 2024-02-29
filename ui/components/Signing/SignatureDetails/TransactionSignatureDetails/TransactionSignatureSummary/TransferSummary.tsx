@@ -51,7 +51,11 @@ export function TransferSummaryBase({
         <div className="container">
           <div className="label">{t("sendTo")}</div>
           <div className="send_to">
-            <SharedAddress id="recipientAddress" address={recipientAddress} name={recipientName} />
+            <SharedAddress
+              id="recipientAddress"
+              address={recipientAddress}
+              name={recipientName}
+            />
           </div>
         </div>
         <div className="divider" />

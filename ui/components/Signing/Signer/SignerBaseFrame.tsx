@@ -30,7 +30,12 @@ export default function SignerBaseFrame({
     <>
       <div className="signature-details">{children}</div>
       <footer>
-        <TransactionButton id="reject" size="large" type="secondary" onClick={onReject}>
+        <TransactionButton
+          id="reject"
+          size="large"
+          type="secondary"
+          onClick={onReject}
+        >
           {t("reject")}
         </TransactionButton>
 

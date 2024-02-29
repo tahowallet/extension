@@ -37,7 +37,8 @@ function SigningLoaded<T extends SignOperationType>({
     getAccountTotal(state, signingAddress),
   )
 
-  const broadcastOnSign = "broadcastOnSign" in request && request.broadcastOnSign;
+  const broadcastOnSign =
+    "broadcastOnSign" in request && request.broadcastOnSign
 
   return (
     <section data-broadcast-on-sign={broadcastOnSign}>
