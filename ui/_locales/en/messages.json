@@ -393,6 +393,7 @@
           "importSeed": "Import recovery phrase",
           "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
+          "gridplus": "Connect to GridPlus",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
         },

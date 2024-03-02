@@ -31,6 +31,7 @@ import {
   ServiceCreatorFunction,
   IslandService,
   LedgerService,
+  GridplusService,
   SigningService,
   NFTsService,
   WalletConnectService,
@@ -200,6 +201,8 @@ import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-p
 import { AnalyticsPreferences, DismissableItem } from "./services/preferences"
 import { newPricePoints } from "./redux-slices/prices"
 import NotificationsService from "./services/notifications"
+import { resetGridPlusState } from "./redux-slices/gridplus"
+import { GridPlusAddress } from "./services/gridplus"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -219,7 +222,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const persistStoreFn = <T>(state: T) => {
+const persistStoreFn = <T,>(state: T) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -337,6 +340,8 @@ export default class Main extends BaseService<never> {
 
     const ledgerService = LedgerService.create()
 
+    const gridplusService = GridplusService.create()
+
     const signingService = SigningService.create(
       internalSignerService,
       ledgerService,
@@ -406,6 +411,7 @@ export default class Main extends BaseService<never> {
       await islandService,
       await telemetryService,
       await ledgerService,
+      await gridplusService,
       await signingService,
       await analyticsService,
       await nftsService,
@@ -476,6 +482,11 @@ export default class Main extends BaseService<never> {
      * tribal knowledge. ;)
      */
     private ledgerService: LedgerService,
+
+    /**
+     * A promise to the GridPlus service, handling the communication
+     */
+    private gridplusService: GridplusService,
 
     /**
      * A promise to the signing service which will route operations between the UI
@@ -615,6 +626,7 @@ export default class Main extends BaseService<never> {
       this.islandService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
+      this.gridplusService.startService(),
       this.signingService.startService(),
       this.analyticsService.startService(),
       this.nftsService.startService(),
@@ -639,6 +651,7 @@ export default class Main extends BaseService<never> {
       this.islandService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
+      this.gridplusService.stopService(),
       this.signingService.stopService(),
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
@@ -662,6 +675,7 @@ export default class Main extends BaseService<never> {
     this.connectIslandService()
     this.connectTelemetryService()
     this.connectLedgerService()
+    this.connectGridplusService()
     this.connectSigningService()
     this.connectAnalyticsService()
     this.connectWalletConnectService()
@@ -788,6 +802,38 @@ export default class Main extends BaseService<never> {
 
   async connectLedger(): Promise<string | null> {
     return this.ledgerService.refreshConnectedLedger()
+  }
+
+  async connectGridplus({
+    deviceId,
+    password,
+  }: {
+    deviceId?: string
+    password?: string
+  }) {
+    return this.gridplusService.setupClient({ deviceId, password })
+  }
+
+  async pairGridplusDevice({ pairingCode }: { pairingCode: string }) {
+    return this.gridplusService.pairDevice({ pairingCode })
+  }
+
+  async fetchGridPlusAddresses({
+    n = 10,
+    startPath = [0x80000000 + 44, 0x80000000 + 60, 0x80000000, 0, 0],
+  }: {
+    n?: number
+    startPath?: number[]
+  }) {
+    return this.gridplusService.fetchAddresses({ n, startPath })
+  }
+
+  async importGridPlusAddresses({
+    addresses,
+  }: {
+    addresses: GridPlusAddress[]
+  }) {
+    return this.gridplusService.importAddresses({ addresses })
   }
 
   async getAccountEthBalanceUncached(
@@ -1195,6 +1241,10 @@ export default class Main extends BaseService<never> {
     this.ledgerService.emitter.on("usbDeviceCount", (usbDeviceCount) => {
       this.store.dispatch(setUsbDeviceCount({ usbDeviceCount }))
     })
+  }
+
+  async connectGridplusService(): Promise<void> {
+    this.store.dispatch(resetGridPlusState())
   }
 
   async connectInternalSignerService(): Promise<void> {
@@ -1825,9 +1875,9 @@ export default class Main extends BaseService<never> {
         AnalyticsEvent.NEW_ACCOUNT_TO_TRACK,
         {
           description: `
-                This event is fired when any address on a network is added to the tracked list. 
-                
-                Note: this does not track recovery phrase(ish) import! But when an address is used 
+                This event is fired when any address on a network is added to the tracked list.
+
+                Note: this does not track recovery phrase(ish) import! But when an address is used
                 on a network for the first time (read-only or recovery phrase/ledger/keyring/private key).
                 `,
         },

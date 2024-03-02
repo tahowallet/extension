@@ -84,6 +84,12 @@ export default function AddWalletOptions(): JSX.Element {
         isAvailable: isLedgerSupported,
       },
       {
+        label: t("options.gridplus"),
+        icon: "add_wallet/gridplus.svg",
+        url: OnboardingRoutes.GRIDPLUS,
+        isAvailable: true,
+      },
+      {
         label: t("options.readOnly"),
         icon: "add_wallet/preview.svg",
         url: OnboardingRoutes.VIEW_ONLY_WALLET,

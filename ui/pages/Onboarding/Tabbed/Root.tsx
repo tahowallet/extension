@@ -23,6 +23,7 @@ import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import { useIsOnboarding } from "../../../hooks"
 import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
+import GridPlus from "./GridPlus/GridPlus"
 
 function Navigation({
   children,
@@ -169,6 +170,9 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={OnboardingRoutes.LEDGER}>
           <Ledger />
+        </Route>
+        <Route path={OnboardingRoutes.GRIDPLUS}>
+          <GridPlus />
         </Route>
         <Route path={OnboardingRoutes.SET_PASSWORD}>
           <SetPassword />
