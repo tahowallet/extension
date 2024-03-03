@@ -833,7 +833,32 @@ export default class Main extends BaseService<never> {
   }: {
     addresses: GridPlusAddress[]
   }) {
-    return this.gridplusService.importAddresses({ addresses })
+    const trackedNetworks = await this.chainService.getTrackedNetworks()
+    await Promise.all(
+      addresses.map(async (address) => {
+        await this.gridplusService.importAddresses({ address })
+        await Promise.all(
+          trackedNetworks.map(async (network) => {
+            const addressNetwork = {
+              address: address.address,
+              network,
+            }
+            await this.chainService.addAccountToTrack(addressNetwork)
+            this.abilitiesService.getNewAccountAbilities(address.address)
+            this.store.dispatch(loadAccount(addressNetwork))
+          }),
+        )
+      }),
+    )
+    this.store.dispatch(
+      setNewSelectedAccount({
+        address: addresses[0].address,
+        network:
+          await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
+            TAHO_INTERNAL_ORIGIN,
+          ),
+      }),
+    )
   }
 
   async getAccountEthBalanceUncached(

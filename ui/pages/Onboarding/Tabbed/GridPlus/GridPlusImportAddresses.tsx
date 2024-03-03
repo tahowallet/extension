@@ -2,46 +2,75 @@ import React, { useEffect, useState } from "react"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
-import { fetchGridPlusAddresses } from "@tallyho/tally-background/redux-slices/gridplus"
+import {
+  fetchGridPlusAddresses,
+  importGridPlusAddresses,
+} from "@tallyho/tally-background/redux-slices/gridplus"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
+import { useGridPlus } from "./GridPlus"
+import { GridPlusAddress } from "@tallyho/tally-background/services/gridplus"
 
 const useImportableAddresses = () =>
   useBackgroundSelector((state) => state.gridplus.importableAddresses)
 
 export default function GridPlusImportAddresses() {
-  const [selectedAddresses, setSelectedAddresses] = useState<string[]>([])
+  const [selectedAddresses, setSelectedAddresses] = useState<GridPlusAddress[]>(
+    [],
+  )
   const importableAddresses = useImportableAddresses()
   const dispatch = useBackgroundDispatch()
-  const toggleAddress = (address: string) => {
-    const selected = selectedAddresses.includes(address)
+  const { onImported } = useGridPlus()
+  const toggleAddress = ({
+    address,
+    addressIndex,
+  }: {
+    address: string
+    addressIndex: number
+  }) => {
+    const selected = selectedAddresses.some(
+      (account) => account.address === address,
+    )
     if (selected)
       return setSelectedAddresses(
         selectedAddresses.filter(
-          (selectedAddress) => selectedAddress !== address,
+          (selectedAddress) => selectedAddress.address !== address,
         ),
       )
-    setSelectedAddresses([...selectedAddresses, address])
+    setSelectedAddresses([...selectedAddresses, { address, addressIndex }])
+  }
+  const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
+    event.preventDefault()
+    await dispatch(importGridPlusAddresses({ addresses: selectedAddresses }))
+    onImported()
   }
   useEffect(() => {
     dispatch(fetchGridPlusAddresses({}))
   }, [])
   return (
-    <form className="form-container">
+    <form onSubmit={onSubmit} className="form-container">
       <header>
         <h1>Choose Addresses</h1>
         <p>Addresses available for an import from your Lattice1.</p>
       </header>
       <div className="addresses-list">
-        {importableAddresses.map((address) => (
+        {importableAddresses.map((address, i) => (
           <SharedCheckbox
             key={address}
             label={truncateAddress(address)}
-            checked={selectedAddresses.includes(address)}
-            onChange={() => toggleAddress(address)}
+            checked={selectedAddresses.some(
+              (account) => account.address === address,
+            )}
+            onChange={() => toggleAddress({ address, addressIndex: i })}
           />
         ))}
       </div>
-      <SharedButton id="formSubmit" type="primary" size="large">
+      <SharedButton
+        id="formSubmit"
+        type="primary"
+        size="large"
+        isDisabled={selectedAddresses.length === 0}
+        isFormSubmit
+      >
         Import Addresses
       </SharedButton>
       <style jsx>{`

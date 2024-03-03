@@ -89,10 +89,8 @@ export default class GridplusService extends BaseService<Events> {
     return fetchAddresses({ n, startPath })
   }
 
-  async importAddresses({ addresses }: { addresses: GridPlusAddress[] }) {
-    addresses.forEach((address) => {
-      this.activeAddresses.push(address)
-    })
+  async importAddresses({ address }: { address: GridPlusAddress }) {
+    this.activeAddresses.push(address)
     await this.writeAddresses(this.activeAddresses)
   }
 }
