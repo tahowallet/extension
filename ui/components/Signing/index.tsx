@@ -37,11 +37,8 @@ function SigningLoaded<T extends SignOperationType>({
     getAccountTotal(state, signingAddress),
   )
 
-  const broadcastOnSign =
-    "broadcastOnSign" in request && request.broadcastOnSign
-
   return (
-    <section data-broadcast-on-sign={broadcastOnSign}>
+    <section>
       <SharedSkeletonLoader
         isLoaded={signerAccountTotal !== undefined}
         height={32}

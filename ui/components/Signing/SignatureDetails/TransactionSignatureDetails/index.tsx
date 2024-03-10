@@ -11,12 +11,12 @@ export type TransactionSignatureDetailsProps = {
 export default function TransactionSignatureDetails({
   transactionRequest,
 }: TransactionSignatureDetailsProps): ReactElement {
-  const { annotation } = transactionRequest
+  const { annotation, broadcastOnSign } = transactionRequest
   const annotatedTransactionType = annotation?.type ?? "contract-interaction"
 
   return (
     <>
-      <div className="standard_width">
+      <div className="standard_width" data-broadcast-on-sign={broadcastOnSign}>
         <TransactionSignatureSummary
           transactionRequest={transactionRequest}
           annotation={annotation}
