@@ -33,6 +33,7 @@ export default function OnboardingAdditionalWallet(): JSX.Element {
           <ul className="list_container">
             <li>
               <AddWalletRow
+                id="newSeed"
                 icon="icons/m/wallet.svg"
                 label={t("options.createNew")}
                 url={OnboardingRoutes.NEW_SEED}

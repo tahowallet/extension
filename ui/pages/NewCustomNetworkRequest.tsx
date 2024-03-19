@@ -156,7 +156,12 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
               >
                 {t("addNewChain.cancel")}
               </SharedButton>
-              <SharedButton size="large" type="primary" isFormSubmit>
+              <SharedButton
+                id="addNewChain"
+                size="large"
+                type="primary"
+                isFormSubmit
+              >
                 {t("addNewChain.submit")}
               </SharedButton>
             </>

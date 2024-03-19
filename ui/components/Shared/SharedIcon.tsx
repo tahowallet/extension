@@ -1,6 +1,7 @@
 import React, { CSSProperties, ReactElement } from "react"
 
 type Props = {
+  id?: string
   icon: string
   width: number
   height?: number
@@ -14,7 +15,14 @@ type Props = {
 }
 
 export default function SharedIcon(props: Props): ReactElement {
-  const { icon, width, height = width, color = "transparent", style } = props
+  const {
+    id,
+    icon,
+    width,
+    height = width,
+    color = "transparent",
+    style,
+  } = props
 
   if ("onClick" in props) {
     const {
@@ -27,6 +35,7 @@ export default function SharedIcon(props: Props): ReactElement {
 
     return (
       <button
+        id={id}
         className="icon"
         type="button"
         onClick={onClick}
@@ -60,7 +69,7 @@ export default function SharedIcon(props: Props): ReactElement {
   }
 
   return (
-    <i className="icon" style={style}>
+    <i id={id} className="icon" style={style}>
       <style jsx>{`
         .icon {
           display: inline-block;
