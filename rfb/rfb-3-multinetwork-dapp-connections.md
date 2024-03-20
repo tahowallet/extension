@@ -100,7 +100,7 @@ Default account and network: The global current address and current network shou
 
 When connecting to a dApp the chainID needs to be set on the window-provider. The default network should be used for this.
 
-When permission is granted the default address and chain should be used if given permission. If not, then the first the was granted.
+When permission is granted the default address and chain should be used if given permission. If not, then the first was granted.
 
 ❗️The user can change networks e.g. on uniswap before granting permission but there is no way for us to know what it is and the dApp follows what the wallet sets on window-provider. So we can use the default value as active connection when permission is granted.
 
@@ -156,11 +156,11 @@ Our internal dApps — swap, send etc — will use the global account and networ
 
 - User changes network or account in the global selector
 - `setNewSelectedSelectedAddressOnNetwork` is dispatched
-  - ⚠️ note: We don't make the distinction here whether the account or the network was changed. This information will be important in the `window-provider` but it will take care of it in it's own scope.
+  - ⚠️ note: We don't make the distinction here whether the account or the network was changed. This information will be important in the `window-provider` but it will take care of it in its own scope.
   - redux is updated for every dApp that has been granted permission
 - in main we update the [uiSliceEmitter > newAddressOnNetwork listener](https://github.com/tallycash/extension/blob/0c12499d711290a0de9f28898be44f87fe6d664f/background/main.ts#L1110)
   - persist the change in `InternalEthereumProvider` for every dApp that has been granted permission
-  - notify the content scripts for every dApp that has an live connection / open port
+  - notify the content scripts for every dApp that has a live connection / open port
   - check referrals
 
 ###### Incoming RPC call augmentation flow
@@ -169,7 +169,7 @@ Every incoming RPC call from the dApps should be augmented with the information 
 This will be done in `InternalEthereumProvider` when calling `ChainService` as an additional argument for the method calls.
 
 ‼️ Security concern:
-Based on the [ethereum JSON RPC APIs spec](https://github.com/ethereum/execution-apis) calls that have transactions as a parameter have the chainID. We need to validate, that the call param is the same as one that the user has selected.
+Based on the [ethereum JSON RPC APIs spec](https://github.com/ethereum/execution-apis) calls that have transactions as a parameter have the chainID. We need to validate, that the call param is the same as the one that the user has selected.
 
 These are the following methods:
 
@@ -189,7 +189,7 @@ These are the following methods:
 
 - > Permissions are network bound or not (the question here is: do we need to track different permissions by network, or only by address?).
   - [Decision thread](https://www.flowdock.com/app/cardforcoin/tally-product-design/threads/GKW_YsOIDVoqoo9LV4fx5RIwHDh)
-  - Permissions are network bound, we need to be able differentiate between networks
+  - Permissions are network bound, we need to be able to differentiate between networks
     - it’s possible to have permission for `0xdeadbeef` on mainnet but not on polygon
     - it's possible to have permission for `0xdeadbeef` on mainnet and polygon but not on arbitrum
 - > The question of whether the current network is synced between a dApp and the extension popover (the question here is: do internal dApps need the same model to handle this as external dApps?).
