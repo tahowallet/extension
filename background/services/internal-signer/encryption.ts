@@ -62,7 +62,7 @@ function requireCryptoGlobal(message?: string) {
  *        been one before. If no salt is provided, a random salt will be
  *        generated.
  *
- *        Note that the the symmetric, alone, or the salt *and* the password,
+ *        Note that the symmetric, alone, or the salt *and* the password,
  *        together, must be retained to decrypt anything encrypted by the
  *        returned key. While the salt isn't secret key material, losing it
  *        could jeopardize access to user data (and therefor, funds).
