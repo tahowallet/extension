@@ -140,7 +140,7 @@ describe("Lib Utils", () => {
     )
 
     it.each(nonZeroWithLeadingZeros)(
-      "given number >=1 with leading zeros should should truncate at desired length",
+      "given number >=1 with leading zeros should truncate at desired length",
       ({ value, decimalLength, maxDecimalLength, expected }) => {
         expect(
           truncateDecimalAmount(value, decimalLength, maxDecimalLength),
