@@ -6,7 +6,7 @@ The Taho wallet was built with the intent of supporting not only multiple
 networks, but multiple networks that might be of different types (e.g.,
 non-EVM). This was a core design strategy, but it's often the case that
 ongoing development can deprioritize certain thinking that maintains the
-underlying flexibility needed to rerpesent these differences.
+underlying flexibility needed to represent these differences.
 
 Currently, the code base assumes that a given address is always controlled by
 the same underlying key, keyring, or external device, even if it is on a
@@ -118,9 +118,9 @@ another network:
 | Private key import     | Polygon | Yes                 | Private key        |
 | Private key import     | RSK     | Yes                 | Private key        |
 | Private key import     | BTC     | No                  | Address format     |
-| Ledger walllet         | Polygon | Yes                 | Tx compatible      |
-| Ledger walllet         | RSK     | Yes                 | Tx compatible      |
-| Ledger walllet         | BTC     | No                  | Address format     |
+| Ledger wallet         | Polygon | Yes                 | Tx compatible      |
+| Ledger wallet         | RSK     | Yes                 | Tx compatible      |
+| Ledger wallet         | BTC     | No                  | Address format     |
 | WalletConnect Safe[^5] | Polygon | No                  | Tx incompatible    |
 | WalletConnect Safe     | RSK     | No                  | Tx incompatible    |
 | WalletConnect Safe     | BTC     | No                  | Address format     |
