@@ -11,3 +11,4 @@ app/extension-scripts/api/playground/
 playwright-report
 test-results/
 ci/cache/
+package-lock.json

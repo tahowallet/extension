@@ -9,6 +9,7 @@ import BonusProgramModal from "../BonusProgram/BonusProgramModal"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import TopMenuProtocolList from "./TopMenuProtocolList"
+import TopMenuTestInfo from "./TopMenuTestInfo"
 
 import { useBackgroundDispatch } from "../../hooks"
 import DAppConnection from "../DAppConnection/DAppConnection"
@@ -19,6 +20,7 @@ export default function TopMenu(): ReactElement {
   const [isProtocolListOpen, setIsProtocolListOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
+  const [isTestPopupOpen, setIsTestPopupOpen] = useState(false)
 
   const dispatch = useBackgroundDispatch()
 
@@ -44,6 +46,16 @@ export default function TopMenu(): ReactElement {
             setIsProtocolListOpen(false)
           }}
         />
+      </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={isTestPopupOpen}
+        isScrollable
+        style={{ display: "flex", flexDirection: "column" }}
+        close={() => {
+          setIsTestPopupOpen(false)
+        }}
+      >
+        <TopMenuTestInfo buttonText="Test"></TopMenuTestInfo>
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}
@@ -75,6 +87,11 @@ export default function TopMenu(): ReactElement {
               setIsNotificationsOpen(!isNotificationsOpen)
             }}
           />
+          <button
+            type="button"
+            aria-label="test button"
+            onClick={() => { setIsTestPopupOpen(!isTestPopupOpen) }}
+          >Test</button>
         </div>
       </nav>
 
