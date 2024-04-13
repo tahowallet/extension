@@ -16,7 +16,7 @@ export default function ClaimSuccessModalContent({
   return (
     <div className="wrap">
       <div className="header_image" />
-      <div className="header_transaction">Transaction submited</div>
+      <div className="header_transaction">Transaction submitted</div>
       <h1>Share 5% bonus link</h1>
       <div className="subtitle">
         {`Each time someone uses your bonus link, you'll get 5% of all the DOGGO

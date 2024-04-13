@@ -183,7 +183,7 @@ export const NETWORKS_SUPPORTING_SWAPS = new Set(
 )
 
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, SEPOLIA, ARBITRUM_SEPOLIA].map(
+  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, SEPOLIA].map(
     (network) => network.chainID,
   ),
 )

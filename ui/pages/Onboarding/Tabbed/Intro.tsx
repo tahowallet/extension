@@ -20,6 +20,7 @@ export default function Intro(): ReactElement {
       </header>
       <div className="actions">
         <SharedButton
+          id="existingWallet"
           type="primary"
           size="large"
           linkTo={OnboardingRoutes.ADD_WALLET}
@@ -36,6 +37,7 @@ export default function Intro(): ReactElement {
           {t("useExisting")}
         </SharedButton>
         <SharedButton
+          id="newWallet"
           type="secondary"
           size="large"
           linkTo={OnboardingRoutes.NEW_SEED}

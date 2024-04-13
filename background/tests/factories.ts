@@ -245,6 +245,7 @@ export const createTransactionRequest = (
   gasLimit: 0n,
   chainID: "0",
   network: ETHEREUM,
+  broadcastOnSign: true,
   ...overrides,
 })
 
@@ -264,6 +265,7 @@ export const createLegacyTransactionRequest = (
   to: "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
   type: 0,
   value: 10000000000000000n,
+  broadcastOnSign: true,
   ...overrides,
 })
 

@@ -17,7 +17,7 @@ export default function EIP191Info({
     <>
       <div className="message">
         <div className="message-title">{t("message")}</div>
-        <div className="light">{`${signingData}`}</div>
+        <div id="message-content" className="light">{`${signingData}`}</div>
       </div>
       <div className="message">
         <div className="signed">{t("signed")}</div>

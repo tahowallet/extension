@@ -5,6 +5,7 @@ import { useAreInternalSignersUnlocked } from "../../hooks/signing-hooks"
 import SharedAvatar from "./SharedAvatar"
 
 type Props = {
+  address: string
   shortenedAddress: string
   name: string | undefined
   avatarURL: string | undefined
@@ -13,6 +14,7 @@ type Props = {
 }
 
 export default function SharedCurrentAccountInformation({
+  address,
   shortenedAddress,
   name,
   avatarURL,
@@ -23,7 +25,7 @@ export default function SharedCurrentAccountInformation({
   const icon = areInternalSignersUnlocked ? "unlock" : "lock"
   return (
     <div className={classNames("account_info_wrap", { hover: showHoverStyle })}>
-      <span className="account_info_label ellipsis">
+      <span title={address} className="account_info_label ellipsis">
         {name ?? shortenedAddress}
       </span>
       <SharedAvatar

@@ -2,7 +2,7 @@ import { test, expect } from "../utils"
 import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
-  test("User can send base asset (on Goerli testnet) @expensive", async ({
+  test("User can send base asset (on Sepolia testnet) @expensive", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
@@ -45,15 +45,15 @@ test.describe("Transactions", () => {
         .click()
 
       /**
-       * Switch to Goerli testnet.
+       * Switch to Sepolia testnet.
        */
       await popup.getByTestId("top_menu_network_switcher").last().click()
       await popup
-        .getByText(/^Ethereum Goerli$/)
+        .getByText(/^Ethereum Sepolia$/)
         .last()
         .click()
       await walletPageHelper.assertCommonElements(
-        /^Ethereum Goerli$/,
+        /^Ethereum Sepolia$/,
         true,
         account2.name,
       )
@@ -82,7 +82,7 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Ethereum Goerli$/,
+        /^Ethereum Sepolia$/,
         account2.name,
         "ETH",
         "(\\d|,)+(\\.\\d{0,4})*",
@@ -118,7 +118,7 @@ test.describe("Transactions", () => {
        * Check if "Transfer" has opened and verify elements on the page.
        */
       await transactionsHelper.assertTransferScreen(
-        "Ethereum Goerli",
+        "Ethereum Sepolia",
         "testertesting\\.eth",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
         "0x4774…875a6",
@@ -150,7 +150,7 @@ test.describe("Transactions", () => {
        */
       await expect(popup.getByTestId("activity_list")).toHaveCount(1)
       await assetsHelper.assertAssetDetailsPage(
-        /^Ethereum Goerli$/,
+        /^Ethereum Sepolia$/,
         account2.name,
         /^ETH$/,
         /^(\d|,)+(\.\d{0,4})*$/,
@@ -207,7 +207,7 @@ test.describe("Transactions", () => {
        * Verify elements on the activity screen
        */
       await walletPageHelper.assertCommonElements(
-        /^Ethereum Goerli$/,
+        /^Ethereum Sepolia$/,
         true,
         account2.name,
       )
