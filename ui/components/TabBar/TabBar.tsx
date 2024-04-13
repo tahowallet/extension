@@ -3,7 +3,7 @@ import React, { ReactElement, useCallback } from "react"
 import { matchPath, useHistory, useLocation } from "react-router-dom"
 import {
   selectCurrentNetwork,
-  selectOpenAbilityCount,
+  // selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
@@ -24,7 +24,7 @@ const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
 export default function TabBar(): ReactElement {
   const location = useLocation()
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const abilityCount = useBackgroundSelector(selectOpenAbilityCount)
+  // const abilityCount = useBackgroundSelector(selectOpenAbilityCount)
 
   const history = useHistory()
   const { t } = useTranslation()
@@ -42,12 +42,14 @@ export default function TabBar(): ReactElement {
     (path: string): boolean => {
       switch (path) {
         case "/portfolio":
-          return abilityCount > 0
+          return false // abilityCount > 0
         default:
           return false
       }
     },
-    [abilityCount],
+    [
+      /* abilityCount */
+    ],
   )
 
   return (

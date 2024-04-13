@@ -26,6 +26,7 @@ export default function SigningNetworkAccountInfoTopBar({
       </div>
       <div className="row_part account">
         <SharedCurrentAccountInformation
+          address={accountTotal.address}
           shortenedAddress={shortenedAddress}
           name={name}
           avatarURL={avatarURL}

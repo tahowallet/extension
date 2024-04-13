@@ -67,6 +67,7 @@ describe("Chain Service", () => {
           nonce: 1,
           maxPriorityFeePerGas: 1n,
           maxFeePerGas: 2n,
+          broadcastOnSign: true,
         }
 
       const stub = sandbox.stub(
@@ -98,6 +99,7 @@ describe("Chain Service", () => {
           network: OPTIMISM,
           nonce: 1,
           gasPrice: 1_000n,
+          broadcastOnSign: true,
         }
 
       const stub = sandbox.stub(

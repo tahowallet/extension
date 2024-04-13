@@ -18,6 +18,7 @@ export type TransactionButtonProps = SharedButtonProps & {
 
 // TODO: Rename this to signing button
 export default function TransactionButton({
+  id,
   type,
   size,
   isDisabled,
@@ -93,6 +94,7 @@ export default function TransactionButton({
 
   const renderButton = () => (
     <SharedButton
+      id={id}
       type={type}
       size={size}
       onClick={onClick}

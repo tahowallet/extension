@@ -191,6 +191,7 @@ export default function SetPassword(): JSX.Element {
         >
           <div className="input_wrap">
             <PasswordInput
+              id="password"
               label="Password"
               name="password"
               onChange={handleInputChange(setPassword)}
@@ -204,6 +205,7 @@ export default function SetPassword(): JSX.Element {
           </div>
           <div className="input_wrap repeat_password_wrap">
             <PasswordInput
+              id="passwordConfirm"
               name="confirm_password"
               label="Repeat Password"
               onChange={handleInputChange(setPasswordConfirmation)}
@@ -215,6 +217,7 @@ export default function SetPassword(): JSX.Element {
             <WalletDefaultToggle />
           </div>
           <SharedButton
+            id="confirm"
             type="primary"
             size="large"
             showLoadingOnClick={!passwordErrorMessage}

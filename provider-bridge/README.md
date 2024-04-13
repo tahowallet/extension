@@ -55,7 +55,7 @@
   - eg webextension-polyfill is 37KB which is comparable to the size spa web framewoks.
     > It's absolutely fine for now bc this way we get to use the same apis everywhere but good thing to have this consideration in the back of our minds
 - implement injection restrictions (only valid html files, blacklists?)
-- add message validaition mechanism to postMessage/addEventListener used in inpage<>content comm (signing, enveloping, asymmetric encryption etc. Can be as simple as a "parity bit")
+- add message validation mechanism to postMessage/addEventListener used in inpage<>content comm (signing, enveloping, asymmetric encryption etc. Can be as simple as a "parity bit")
 
 ## window.ethereum debug
 

@@ -7,6 +7,7 @@ import SharedButton from "../../../components/Shared/SharedButton"
 import SharedIcon from "../../../components/Shared/SharedIcon"
 
 type AddWalletRowProps = {
+  id: string
   icon: string
   label: string
   url?: string
@@ -14,6 +15,7 @@ type AddWalletRowProps = {
 }
 
 export function AddWalletRow({
+  id,
   icon,
   url,
   label,
@@ -21,6 +23,7 @@ export function AddWalletRow({
 }: AddWalletRowProps): JSX.Element {
   return (
     <SharedButton
+      id={id}
       style={{ width: "100%" }}
       type="unstyled"
       size="medium"
@@ -66,24 +69,28 @@ export default function AddWalletOptions(): JSX.Element {
   const optionsWithSpacer = useMemo(() => {
     const options = [
       {
+        id: "importSeed",
         label: t("options.importSeed"),
         icon: "add_wallet/import.svg",
         url: OnboardingRoutes.IMPORT_SEED,
         isAvailable: true,
       },
       {
+        id: "importPrivateKey",
         label: t("options.importPrivateKey"),
         icon: "key-light.svg",
         url: OnboardingRoutes.IMPORT_PRIVATE_KEY,
         isAvailable: true,
       },
       {
+        id: "ledger",
         label: t("options.ledger"),
         icon: "add_wallet/ledger.svg",
         url: OnboardingRoutes.LEDGER,
         isAvailable: isLedgerSupported,
       },
       {
+        id: "viewOnly",
         label: t("options.readOnly"),
         icon: "add_wallet/preview.svg",
         url: OnboardingRoutes.VIEW_ONLY_WALLET,
@@ -101,10 +108,10 @@ export default function AddWalletOptions(): JSX.Element {
           return <li key={option} className="spacer" role="presentation" />
         }
 
-        const { label, icon, url } = option
+        const { id, label, icon, url } = option
         return (
           <li key={url}>
-            <AddWalletRow icon={icon} url={url} label={label} />
+            <AddWalletRow id={id} icon={icon} url={url} label={label} />
           </li>
         )
       })}
