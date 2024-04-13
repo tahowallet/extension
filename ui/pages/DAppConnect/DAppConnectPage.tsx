@@ -80,10 +80,20 @@ export default function DAppConnectPage({
         </ul>
       </section>
       <div className="footer_actions">
-        <SharedButton size="large" type="secondary" onClick={denyPermission}>
+        <SharedButton
+          id="denyPermission"
+          size="large"
+          type="secondary"
+          onClick={denyPermission}
+        >
           {t("rejectConnection")}
         </SharedButton>
-        <SharedButton type="primary" size="large" onClick={grantPermission}>
+        <SharedButton
+          id="grantPermission"
+          type="primary"
+          size="large"
+          onClick={grantPermission}
+        >
           {t("acceptConnection")}
         </SharedButton>
       </div>

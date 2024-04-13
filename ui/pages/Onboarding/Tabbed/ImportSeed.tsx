@@ -120,6 +120,7 @@ export default function ImportSeed(props: Props): ReactElement {
           />
           <div className="bottom">
             <SharedButton
+              id="import"
               style={{
                 width: "100%",
                 boxSizing: "border-box",
