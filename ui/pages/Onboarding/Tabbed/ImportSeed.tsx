@@ -180,6 +180,7 @@ export default function ImportSeed(props: Props): ReactElement {
           margin-top: 16px;
         }
         .select_wrapper {
+          width: 100%;
           margin-bottom: 24px;
         }
       `}</style>
