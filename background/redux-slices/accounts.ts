@@ -33,6 +33,7 @@ export const enum AccountType {
   PrivateKey = "private-key",
   Imported = "imported",
   Ledger = "ledger",
+  GridPlus = "gridplus",
   Internal = "internal",
 }
 
@@ -41,6 +42,7 @@ export const accountTypes = [
   AccountType.Imported,
   AccountType.PrivateKey,
   AccountType.Ledger,
+  AccountType.GridPlus,
   AccountType.ReadOnly,
 ]
 

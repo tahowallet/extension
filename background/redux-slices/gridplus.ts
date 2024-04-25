@@ -4,10 +4,12 @@ import { type GridPlusAddress } from "../services/gridplus"
 
 export type GridPlusState = {
   importableAddresses: string[]
+  activeAddresses: GridPlusAddress[]
 }
 
 export const initialState: GridPlusState = {
   importableAddresses: [],
+  activeAddresses: [],
 }
 
 const gridplusSlice = createSlice({
@@ -16,6 +18,7 @@ const gridplusSlice = createSlice({
   reducers: {
     resetGridPlusState: (immerState) => {
       immerState.importableAddresses = []
+      immerState.activeAddresses = []
     },
     setImportableAddresses: (
       immerState,
@@ -23,11 +26,20 @@ const gridplusSlice = createSlice({
     ) => {
       immerState.importableAddresses = importableAddresses
     },
+    setActiveAddresses: (
+      immerState,
+      { payload: activeAddresses }: { payload: GridPlusAddress[] },
+    ) => {
+      immerState.activeAddresses = activeAddresses
+    },
   },
 })
 
-export const { resetGridPlusState, setImportableAddresses } =
-  gridplusSlice.actions
+export const {
+  resetGridPlusState,
+  setImportableAddresses,
+  setActiveAddresses,
+} = gridplusSlice.actions
 
 export default gridplusSlice.reducer
 
@@ -72,5 +84,13 @@ export const importGridPlusAddresses = createBackgroundAsyncThunk(
     { extra: { main } },
   ) => {
     return main.importGridPlusAddresses({ addresses })
+  },
+)
+
+export const initializeActiveAddresses = createBackgroundAsyncThunk(
+  "gridplus/initializeActiveAddresses",
+  async (_, { extra: { main }, dispatch }) => {
+    const activeAddresses = await main.readActiveGridPlusAddresses()
+    return dispatch(setActiveAddresses(activeAddresses))
   },
 )

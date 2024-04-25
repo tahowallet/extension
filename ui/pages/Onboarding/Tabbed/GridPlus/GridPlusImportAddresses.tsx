@@ -36,7 +36,14 @@ export default function GridPlusImportAddresses() {
           (selectedAddress) => selectedAddress.address !== address,
         ),
       )
-    setSelectedAddresses([...selectedAddresses, { address, addressIndex }])
+    setSelectedAddresses([
+      ...selectedAddresses,
+      {
+        address,
+        addressIndex,
+        path: [0x80000000 + 44, 0x80000000 + 60, 0x80000000, 0, addressIndex],
+      },
+    ])
   }
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()

@@ -109,6 +109,7 @@ type Events = ServiceLifecycleEvents & {
     Partial<EnrichedEVMTransactionRequest> & {
       from: string
       network: EVMNetwork
+      broadcastOnSign: boolean
     },
     SignedTransaction
   >
@@ -245,6 +246,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
             ...(params[0] as JsonRpcTransactionRequest),
           },
           origin,
+          true,
         ).then(async (signed) => {
           await this.chainService.broadcastSignedTransaction(signed)
           return signed.hash
@@ -253,6 +255,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         return this.signTransaction(
           params[0] as JsonRpcTransactionRequest,
           origin,
+          false,
         ).then((signedTransaction) =>
           serializeEthersTransaction(
             ethersTransactionFromSignedTransaction(signedTransaction),
@@ -394,6 +397,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   private async signTransaction(
     transactionRequest: JsonRpcTransactionRequest,
     origin: string,
+    broadcastOnSign: boolean,
   ): Promise<SignedTransaction> {
     const annotation =
       origin === TAHO_INTERNAL_ORIGIN &&
@@ -457,6 +461,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           from,
           network: currentNetwork,
           annotation,
+          broadcastOnSign,
         },
         resolver: resolve,
         rejecter: reject,

@@ -65,6 +65,7 @@ export default function TopMenuProfileButton(props: {
       >
         {truncatedAddress !== undefined && (
           <SharedCurrentAccountInformation
+            address={address ?? ""}
             shortenedAddress={truncatedAddress}
             name={name}
             avatarURL={avatarURL}

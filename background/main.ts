@@ -222,7 +222,7 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
-const persistStoreFn = <T,>(state: T) => {
+const persistStoreFn = <T>(state: T) => {
   if (process.env.WRITE_REDUX_CACHE === "true") {
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -346,6 +346,7 @@ export default class Main extends BaseService<never> {
       internalSignerService,
       ledgerService,
       chainService,
+      gridplusService,
     )
 
     const analyticsService = AnalyticsService.create(
@@ -861,6 +862,10 @@ export default class Main extends BaseService<never> {
     )
   }
 
+  async readActiveGridPlusAddresses(): Promise<GridPlusAddress[]> {
+    return this.gridplusService.readAddresses()
+  }
+
   async getAccountEthBalanceUncached(
     addressNetwork: AddressOnNetwork,
   ): Promise<bigint> {
@@ -1235,6 +1240,10 @@ export default class Main extends BaseService<never> {
 
     this.ledgerService.emitter.on("address", ({ address }) =>
       this.signingService.addTrackedAddress(address, "ledger"),
+    )
+
+    this.gridplusService.emitter.on("address", ({ address }) =>
+      this.signingService.addTrackedAddress(address, "gridplus"),
     )
   }
 

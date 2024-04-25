@@ -162,6 +162,7 @@ export type LegacyEVMTransactionRequest = Pick<
   estimatedRollupFee: bigint
   estimatedRollupGwei: bigint
   nonce?: number
+  broadcastOnSign: boolean
 }
 
 /**
@@ -219,6 +220,7 @@ export type EIP1559TransactionRequest = Pick<
   gasLimit: bigint
   chainID: EIP1559Transaction["network"]["chainID"]
   nonce?: number
+  broadcastOnSign: boolean
 }
 
 export type TransactionRequest =

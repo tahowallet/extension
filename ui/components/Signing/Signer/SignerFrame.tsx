@@ -29,6 +29,9 @@ export default function SignerFrame<T extends SignOperationType>(
       // Below, we repeat `signer` so it is typed correctly, because the prop
       // spread passes it with a type that is not specific enough.
       return <SignerLedgerFrame {...props} signer={signer} />
+    case "gridplus":
+      // FIXME: implement
+      return null
     case "read-only":
       return <SignerReadOnlyFrame {...props} />
     default:

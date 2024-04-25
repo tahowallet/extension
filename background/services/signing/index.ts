@@ -15,6 +15,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { AddressOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
+import GridplusService, { GridPlusAccountSigner } from "../gridplus"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -59,7 +60,7 @@ export type AccountSigner =
   | PrivateKeyAccountSigner
   | KeyringAccountSigner
   | HardwareAccountSigner
-export type HardwareAccountSigner = LedgerAccountSigner
+export type HardwareAccountSigner = LedgerAccountSigner | GridPlusAccountSigner
 
 export type SignerType = AccountSigner["type"]
 
@@ -99,18 +100,26 @@ export default class SigningService extends BaseService<Events> {
       Promise<InternalSignerService>,
       Promise<LedgerService>,
       Promise<ChainService>,
+      Promise<GridplusService>,
     ]
-  > = async (internalSignerService, ledgerService, chainService) =>
+  > = async (
+    internalSignerService,
+    ledgerService,
+    chainService,
+    gridplusService,
+  ) =>
     new this(
       await internalSignerService,
       await ledgerService,
       await chainService,
+      await gridplusService,
     )
 
   private constructor(
     private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
     private chainService: ChainService,
+    private gridplusService: GridplusService,
   ) {
     super()
   }
@@ -141,6 +150,12 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce,
           accountSigner,
         )
+      case "gridplus":
+        return this.gridplusService.signTransaction(
+          { address: transactionWithNonce.from },
+          transactionWithNonce,
+        )
+        break
       case "private-key":
       case "keyring":
         return this.internalSignerService.signTransaction(
@@ -169,6 +184,9 @@ export default class SigningService extends BaseService<Events> {
           break
         case "ledger":
           await this.ledgerService.removeAddress(address)
+          break
+        case "gridplus":
+          // FIXME: implement
           break
         case "read-only":
           break // no additional work here, just account removal below
@@ -267,6 +285,12 @@ export default class SigningService extends BaseService<Events> {
             accountSigner,
           )
           break
+        case "gridplus":
+          signedData = await this.gridplusService.signTypedData(
+            { address: account.address },
+            typedData,
+          )
+          break
         case "private-key":
         case "keyring":
           signedData = await this.internalSignerService.signTypedData({
@@ -309,6 +333,12 @@ export default class SigningService extends BaseService<Events> {
       switch (accountSigner.type) {
         case "ledger":
           signedData = await this.ledgerService.signMessage(
+            addressOnNetwork,
+            hexDataToSign,
+          )
+          break
+        case "gridplus":
+          signedData = await this.gridplusService.signMessage(
             addressOnNetwork,
             hexDataToSign,
           )

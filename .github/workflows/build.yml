@@ -59,7 +59,7 @@ jobs:
           POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
       - name: Create Release and Upload Artifacts
-        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # v1
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: dist/*.zip

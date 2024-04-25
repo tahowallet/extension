@@ -41,6 +41,7 @@ import { AccountData, CompleteAssetAmount } from "../redux-slices/accounts"
 import {
   AnalyticsService,
   ChainService,
+  GridplusService,
   IndexingService,
   InternalEthereumProviderService,
   InternalSignerService,
@@ -120,10 +121,14 @@ export async function createIndexingService(overrides?: {
 export const createLedgerService = async (): Promise<LedgerService> =>
   LedgerService.create()
 
+export const createGridPlusService = async (): Promise<GridplusService> =>
+  GridplusService.create()
+
 type CreateSigningServiceOverrides = {
   internalSignerService?: Promise<InternalSignerService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
+  gridPlusService?: Promise<GridplusService>
 }
 
 type CreateAbilitiesServiceOverrides = {
@@ -148,6 +153,7 @@ export const createSigningService = async (
     overrides.internalSignerService ?? createInternalSignerService(),
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService(),
+    overrides.gridPlusService ?? createGridPlusService(),
   )
 
 export async function createAnalyticsService(overrides?: {
@@ -245,6 +251,7 @@ export const createTransactionRequest = (
   gasLimit: 0n,
   chainID: "0",
   network: ETHEREUM,
+  broadcastOnSign: true,
   ...overrides,
 })
 
@@ -264,6 +271,7 @@ export const createLegacyTransactionRequest = (
   to: "0xdef1c0ded9bec7f1a1670819833240f027b25eff",
   type: 0,
   value: 10000000000000000n,
+  broadcastOnSign: true,
   ...overrides,
 })
 
