@@ -1,5 +1,7 @@
 export const STATE_KEY = "tally"
 
+export const POPUP_MONITOR_PORT_NAME = "popup-monitor"
+
 export const NETWORK_TYPES = {
   ethereum: "ethereum",
 }
