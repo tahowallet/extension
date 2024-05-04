@@ -1,4 +1,4 @@
-import { browser, startMain } from "@tallyho/tally-background"
+import { browser, startRedux } from "@tallyho/tally-background"
 import {
   FeatureFlags,
   isEnabled,
@@ -25,4 +25,4 @@ browser.runtime.onInstalled.addListener((obj) => {
   }
 })
 
-startMain()
+startRedux()

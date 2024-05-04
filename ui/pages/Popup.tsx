@@ -12,7 +12,7 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
-import { popupMonitorPortName } from "@tallyho/tally-background/main"
+import { POPUP_MONITOR_PORT_NAME } from "@tallyho/tally-background/constants"
 import {
   getAddressCount,
   selectCurrentAddressNetwork,
@@ -73,7 +73,7 @@ function transformLocation(
 
 function useConnectPopupMonitor() {
   useEffect(() => {
-    const port = runtime.connect(undefined, { name: popupMonitorPortName })
+    const port = runtime.connect(undefined, { name: POPUP_MONITOR_PORT_NAME })
 
     return () => {
       port.disconnect()
