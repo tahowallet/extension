@@ -4,8 +4,8 @@ import { Store as ProxyStore } from "webext-redux"
 import { produce } from "immer"
 import { Action, AnyAction, ThunkAction, ThunkDispatch } from "@reduxjs/toolkit"
 
-import { Delta, patch as patchDeepDiff } from "./differ"
-import Main from "./main"
+import { Delta, patch as patchDeepDiff } from "./services/redux/differ"
+import ReduxService from "./services/redux"
 import { encodeJSON, decodeJSON } from "./lib/utils"
 
 import { RootState } from "./redux-slices"
@@ -46,7 +46,7 @@ type BackgroundAsyncThunkDispatchify<T> = T extends ThunkDispatch<
   : never
 
 export type BackgroundDispatch = BackgroundAsyncThunkDispatchify<
-  Main["store"]["dispatch"]
+  ReduxService["store"]["dispatch"]
 >
 
 /**
@@ -82,12 +82,12 @@ export async function newProxyStore(): Promise<
 }
 
 /**
- * Starts the API subsystems, including all services.
+ * Starts the Redux subsystems, including all services.
  */
-export async function startMain(): Promise<Main> {
-  const mainService = await Main.create()
+export async function startRedux(): Promise<ReduxService> {
+  const reduxService = await ReduxService.create()
 
-  mainService.startService()
+  reduxService.startService()
 
-  return mainService.started()
+  return reduxService.started()
 }
