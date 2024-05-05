@@ -167,7 +167,6 @@ export default function SharedSelect(props: Props): ReactElement {
 
           .button {
             position: relative;
-            z-index: 1;
             box-sizing: border-box;
             display: flex;
             justify-content: space-between;

@@ -412,6 +412,7 @@ export default function Settings(): ReactElement {
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
           notificationBanner,
         ),
+        autoLockSettings,
       ],
     },
     walletOptions: {
@@ -424,7 +425,6 @@ export default function Settings(): ReactElement {
         addCustomAsset,
         enableTestNetworks,
         flashbotsRPC,
-        autoLockSettings,
       ],
     },
     helpCenter: {
