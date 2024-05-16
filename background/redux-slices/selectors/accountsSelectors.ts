@@ -353,7 +353,7 @@ function signerIdFor(accountSigner: AccountSigner): string | null {
     case "ledger":
       return accountSigner.deviceID
     case "gridplus":
-      return accountSigner.path
+      return accountSigner.path.join("/")
     case "read-only":
       return null
     default:
