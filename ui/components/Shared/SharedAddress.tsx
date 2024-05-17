@@ -8,6 +8,7 @@ import SharedTooltip from "./SharedTooltip"
 import { trimWithEllipsis } from "../../utils/textUtils"
 
 type SharedAddressProps = {
+  id?: string
   address: string
   name?: string | undefined
   elide: boolean
@@ -31,6 +32,7 @@ type SharedAddressProps = {
  * `nameResolverSystem` prop is ignored.
  */
 export default function SharedAddress({
+  id,
   name,
   address,
   elide,
@@ -48,6 +50,7 @@ export default function SharedAddress({
 
   return (
     <button
+      id={id}
       type="button"
       onClick={copyAddress}
       title={`Copy to clipboard:\n${address}`}
