@@ -155,7 +155,6 @@ export default class SigningService extends BaseService<Events> {
           { address: transactionWithNonce.from },
           transactionWithNonce,
         )
-        break
       case "private-key":
       case "keyring":
         return this.internalSignerService.signTransaction(

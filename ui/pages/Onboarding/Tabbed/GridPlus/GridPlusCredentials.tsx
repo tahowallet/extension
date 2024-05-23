@@ -5,12 +5,15 @@ import { useGridPlus } from "./GridPlus"
 import { useBackgroundDispatch } from "../../../../hooks"
 import { connectGridplus } from "@tallyho/tally-background/redux-slices/gridplus"
 
+const MOCKED_ONBOARDING = process.env.MOCKED_GRIDPLUS_ONBOARDING === "true"
+
 export default function GridPlusCredentials() {
   const dispatch = useBackgroundDispatch()
   const [formData, setFormData] = useState({ deviceId: "", password: "" })
   const { onSignedIn } = useGridPlus()
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
+    if (MOCKED_ONBOARDING) return onSignedIn(true)
     const permitted = await dispatch(
       connectGridplus({
         deviceId: formData.deviceId,

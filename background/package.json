@@ -24,8 +24,8 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
-    "@ethereumjs/common": "^2.4.0",
-    "@ethereumjs/tx": "^3.3.0",
+    "@ethereumjs/common": "^4.1.0",
+    "@ethereumjs/tx": "^5.0.0",
     "@ethersproject/abstract-provider": "5.7.0",
     "@ethersproject/abstract-signer": "5.7.0",
     "@ethersproject/networks": "5.7.1",

@@ -152,4 +152,23 @@ test.describe("Onboarding", () => {
       popup.getByTestId("top_menu_network_switcher").last(),
     ).toHaveText("Ethereum")
   })
+
+  test.describe("GridPlus onboarding", () => {
+    test.beforeEach(() => {
+      if (process.env.MOCKED_GRIDPLUS_ONBOARDING !== "true") test.skip()
+    })
+    test("Restores mocked GridPlus wallet", async ({ context }) => {
+      const page = await getOnboardingPage(context)
+      await page.getByRole("button", { name: "Use existing wallet" }).click()
+      await page.getByRole("button", { name: "Connect to GridPlus" }).click()
+      await page.locator('input[id="deviceId"]').fill("This is mocked")
+      await page.locator('input[id="password"]').fill("This is mocked")
+      await page.locator('button[id="formSubmit"]').click()
+      await page.locator(".checkbox_box").click()
+      await page.locator('button[id="formSubmit"]').click()
+      await expect(
+        page.getByRole("heading", { name: "Welcome to Taho" }),
+      ).toBeVisible()
+    })
+  })
 })

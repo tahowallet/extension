@@ -2,6 +2,8 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { type GridPlusAddress } from "../services/gridplus"
 
+const MOCKED_ONBOARDING = process.env.MOCKED_GRIDPLUS_ONBOARDING === "true"
+
 export type GridPlusState = {
   importableAddresses: string[]
   activeAddresses: GridPlusAddress[]
@@ -69,6 +71,11 @@ export const fetchGridPlusAddresses = createBackgroundAsyncThunk(
     }: { n?: number; startPath?: number[] },
     { dispatch, extra: { main } },
   ) => {
+    if (MOCKED_ONBOARDING) {
+      return dispatch(
+        setImportableAddresses(["0xdfb2682febe6ea96682b1018702958980449b7db"]),
+      )
+    }
     return dispatch(
       setImportableAddresses(
         await main.fetchGridPlusAddresses({ n, startPath }),

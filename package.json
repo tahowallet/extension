@@ -22,14 +22,9 @@
       "jest-webextension-mock",
       "./setupJest.ts"
     ],
-    "setupFilesAfterEnv": [
-      "./setupJest.env.ts",
-      "./ui/setupJest.env.ts"
-    ],
+    "setupFilesAfterEnv": ["./setupJest.env.ts", "./ui/setupJest.env.ts"],
     "testEnvironment": "jsdom",
-    "transformIgnorePatterns": [
-      "node_modules/(?!@walletconnect/)"
-    ],
+    "transformIgnorePatterns": ["node_modules/(?!@walletconnect/)"],
     "moduleNameMapper": {
       "^dexie$": "<rootDir>/node_modules/dexie",
       "^@walletconnect/utils$": "<rootDir>/node_modules/@walletconnect/utils",
@@ -47,7 +42,7 @@
     "dapp"
   ],
   "scripts": {
-    "start": "run-p -n -l devtools \"dev {@}\" --",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider run-p -n -l devtools \"dev {@}\" --",
     "generate:validators": "ts-node background/generate-validators.ts",
     "build": "webpack --mode=production",
     "dev": "patch-package && webpack --mode=development --watch",

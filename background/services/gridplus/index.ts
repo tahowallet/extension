@@ -1,10 +1,21 @@
 import BaseService from "../base"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { storage } from "webextension-polyfill"
-import { fetchAddresses, pair, setup, signMessage, sign } from "gridplus-sdk"
-import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx"
+import {
+  fetchAddresses,
+  pair,
+  setup,
+  signMessage,
+  sign,
+  Constants,
+} from "gridplus-sdk"
+import {
+  TransactionFactory,
+  TypedTransaction,
+  FeeMarketEIP1559TxData,
+} from "@ethereumjs/tx"
 import { EIP712TypedData, HexString } from "../../types"
-import { hexlify, joinSignature } from "ethers/lib/utils"
+import { getAddress, hexlify, joinSignature } from "ethers/lib/utils"
 import { BigNumber } from "ethers"
 import { TypedDataUtils, TypedMessage } from "@metamask/eth-sig-util"
 import {
@@ -18,6 +29,7 @@ import {
   parse,
   serialize,
 } from "@ethersproject/transactions"
+import { encode } from "rlp"
 
 const APP_NAME = "Taho Wallet"
 const CLIENT_STORAGE_KEY = "GRIDPLUS_CLIENT"
@@ -202,15 +214,30 @@ export default class GridplusService extends BaseService<Events> {
   async signTransaction(
     { address }: { address: HexString },
     transactionRequest: TransactionRequestWithNonce,
-  ) {
-    const ethersTx = ethersTransactionFromTransactionRequest({
+  ): Promise<SignedTransaction> {
+    let ethersTx = ethersTransactionFromTransactionRequest({
       ...transactionRequest,
       from: address,
     })
     const accounts = await this.readAddresses()
     const accountData = accounts.find((account) => account.address === address)
-    const txPayload = TransactionFactory.fromTxData(ethersTx as any)
-    const response = await sign(txPayload.getMessageToSign())
+    const txPayload = TransactionFactory.fromTxData(
+      ethersTx as FeeMarketEIP1559TxData,
+    )
+    const signPayload = {
+      data: {
+        signerPath: accountData?.path,
+        chain: ethersTx.chainId,
+        curveType: Constants.SIGNING.CURVES.SECP256K1,
+        hashType: Constants.SIGNING.HASHES.KECCAK256,
+        encodingType: Constants.SIGNING.ENCODINGS.EVM,
+        payload:
+          ethersTx.type === 2
+            ? txPayload.getMessageToSign()
+            : encode(txPayload.getMessageToSign()),
+      },
+    }
+    const response = await sign([], signPayload)
     const r = addHexPrefix(response.sig.r.toString("hex"))
     const s = addHexPrefix(response.sig.s.toString("hex"))
     const v = BigNumber.from(
@@ -228,7 +255,30 @@ export default class GridplusService extends BaseService<Events> {
           "Address not found on this wallet. Try another SafeCard or remove the SafeCard to use the wallet on your device.",
         )
       }
-      return serializedTransaction
+      return {
+        hash: parsedTx.hash ?? "",
+        from: parsedTx.from,
+        to: parsedTx.to,
+        nonce: parsedTx.nonce,
+        input: parsedTx.data,
+        value: parsedTx.value.toBigInt(),
+        type: (parsedTx.type ?? null) as never,
+        gasPrice: parsedTx.gasPrice ? parsedTx.gasPrice.toBigInt() : null,
+        maxFeePerGas: parsedTx.maxFeePerGas
+          ? parsedTx.maxFeePerGas.toBigInt()
+          : null,
+        maxPriorityFeePerGas: parsedTx.maxPriorityFeePerGas
+          ? parsedTx.maxPriorityFeePerGas.toBigInt()
+          : null,
+        gasLimit: parsedTx.gasLimit.toBigInt(),
+        r,
+        s,
+        v,
+        blockHash: null,
+        blockHeight: null,
+        asset: transactionRequest.network.baseAsset,
+        network: transactionRequest.network,
+      }
     } else {
       throw new Error("error signing transaction with gridplus")
     }
