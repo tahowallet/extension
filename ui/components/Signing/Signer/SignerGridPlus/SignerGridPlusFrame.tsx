@@ -1,26 +1,22 @@
-import React, { useCallback, useState } from "react"
+import React from "react"
 import type { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import type { GridPlusAccountSigner } from "@tallyho/tally-background/services/gridplus"
+import { t } from "i18next"
+import { useHistory } from "react-router-dom"
 import type { SignerFrameProps } from ".."
 import SignerBaseFrame from "../SignerBaseFrame"
-import { t } from "i18next"
 import { useBackgroundDispatch } from "../../../../hooks"
-import { useHistory } from "react-router-dom"
 
 export default function SignerGridPlusFrame<
   T extends SignOperationType,
   S extends GridPlusAccountSigner,
 >({
   children,
-  request,
-  signer,
-  signingAddress,
   signingActionLabelI18nKey,
   signActionCreator,
   rejectActionCreator,
   redirectToActivityPage,
 }: SignerFrameProps<T, S>) {
-  const [isSigning, setIsSigning] = useState(false)
   const history = useHistory()
   const dispatch = useBackgroundDispatch()
   const handleConfirm = () => {
@@ -30,7 +26,6 @@ export default function SignerGridPlusFrame<
         history.push("/", { goTo: "activity-page" })
       }
     })
-    setIsSigning(true)
   }
   return (
     <SignerBaseFrame

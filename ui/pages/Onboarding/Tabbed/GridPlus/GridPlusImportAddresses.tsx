@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react"
-import SharedButton from "../../../../components/Shared/SharedButton"
-import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import {
   fetchGridPlusAddresses,
   importGridPlusAddresses,
 } from "@tallyho/tally-background/redux-slices/gridplus"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
-import { useGridPlus } from "./GridPlus"
 import { GridPlusAddress } from "@tallyho/tally-background/services/gridplus"
+import SharedButton from "../../../../components/Shared/SharedButton"
+import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
+import { useGridPlus } from "../../../../utils/gridplusHooks"
 
 const useImportableAddresses = () =>
   useBackgroundSelector((state) => state.gridplus.importableAddresses)
@@ -36,7 +36,7 @@ export default function GridPlusImportAddresses() {
           (selectedAddress) => selectedAddress.address !== address,
         ),
       )
-    setSelectedAddresses([
+    return setSelectedAddresses([
       ...selectedAddresses,
       {
         address,
@@ -48,11 +48,11 @@ export default function GridPlusImportAddresses() {
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
     await dispatch(importGridPlusAddresses({ addresses: selectedAddresses }))
-    onImported()
+    return onImported()
   }
   useEffect(() => {
     dispatch(fetchGridPlusAddresses({}))
-  }, [])
+  }, [dispatch])
   return (
     <form onSubmit={onSubmit} className="form-container">
       <header>

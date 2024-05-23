@@ -1,5 +1,3 @@
-import BaseService from "../base"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { storage } from "webextension-polyfill"
 import {
   fetchAddresses,
@@ -9,31 +7,35 @@ import {
   sign,
   Constants,
 } from "gridplus-sdk"
-import {
-  TransactionFactory,
-  TypedTransaction,
-  FeeMarketEIP1559TxData,
-} from "@ethereumjs/tx"
-import { EIP712TypedData, HexString } from "../../types"
-import { getAddress, hexlify, joinSignature } from "ethers/lib/utils"
+import { TransactionFactory, type FeeMarketEIP1559TxData } from "@ethereumjs/tx"
+import { hexlify, joinSignature } from "ethers/lib/utils"
 import { BigNumber } from "ethers"
 import { TypedDataUtils, TypedMessage } from "@metamask/eth-sig-util"
-import {
-  SignedTransaction,
-  TransactionRequestWithNonce,
-  isEIP1559TransactionRequest,
-} from "../../networks"
-import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import {
   UnsignedTransaction,
   parse,
   serialize,
 } from "@ethersproject/transactions"
 import { encode } from "rlp"
+import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
+import { ethersTransactionFromTransactionRequest } from "../chain/utils"
+import { EIP712TypedData, HexString } from "../../types"
+import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import BaseService from "../base"
 
 const APP_NAME = "Taho Wallet"
 const CLIENT_STORAGE_KEY = "GRIDPLUS_CLIENT"
 const ADDRESSES_STORAGE_KEY = "GRIDPLUS_ADDRESSES"
+
+const writeClient = (client: GridplusClient) =>
+  storage.local.set({
+    [CLIENT_STORAGE_KEY]: client,
+  })
+
+const writeAddresses = (addresses: GridPlusAddress[]) =>
+  storage.local.set({
+    [ADDRESSES_STORAGE_KEY]: JSON.stringify(addresses),
+  })
 
 export type GridPlusAccountSigner = {
   type: "gridplus"
@@ -56,6 +58,7 @@ const addHexPrefix = (data: string) => `0x${data}`
 
 export default class GridplusService extends BaseService<Events> {
   activeAddresses: GridPlusAddress[] = []
+
   client: GridplusClient = null
 
   private constructor() {
@@ -74,24 +77,14 @@ export default class GridplusService extends BaseService<Events> {
     return this.client
   }
 
-  async writeClient(client: GridplusClient) {
-    return storage.local.set({
-      [CLIENT_STORAGE_KEY]: client,
-    })
-  }
-
   async readAddresses() {
-    const activeAddresses = JSON.parse(
-      (await storage.local.get(ADDRESSES_STORAGE_KEY))?.[ADDRESSES_STORAGE_KEY],
-    )
+    const persistedAddresses =
+      (await storage.local.get(ADDRESSES_STORAGE_KEY))?.[
+        ADDRESSES_STORAGE_KEY
+      ] ?? "[]"
+    const activeAddresses = JSON.parse(persistedAddresses)
     this.activeAddresses = activeAddresses
     return this.activeAddresses
-  }
-
-  async writeAddresses(addresses: GridPlusAddress[]) {
-    return storage.local.set({
-      [ADDRESSES_STORAGE_KEY]: JSON.stringify(addresses),
-    })
   }
 
   async setupClient({
@@ -106,7 +99,7 @@ export default class GridplusService extends BaseService<Events> {
       password,
       name: APP_NAME,
       getStoredClient: () => this.client ?? "",
-      setStoredClient: this.writeClient,
+      setStoredClient: writeClient,
     })
   }
 
@@ -128,7 +121,7 @@ export default class GridplusService extends BaseService<Events> {
 
   async importAddresses({ address }: { address: GridPlusAddress }) {
     this.activeAddresses.push(address)
-    await this.writeAddresses(this.activeAddresses)
+    await writeAddresses(this.activeAddresses)
     this.emitter.emit("address", {
       gridplusIndex: address.addressIndex,
       derivationPath: address.path,
@@ -179,7 +172,7 @@ export default class GridplusService extends BaseService<Events> {
     const accounts = await this.readAddresses()
     const accountData = accounts.find((account) => account.address === address)
     const { domain, types, primaryType, message } = TypedDataUtils.sanitizeData(
-      typedData as any,
+      typedData as TypedMessage<never>,
     )
     const eip712Data = {
       types,
@@ -215,7 +208,7 @@ export default class GridplusService extends BaseService<Events> {
     { address }: { address: HexString },
     transactionRequest: TransactionRequestWithNonce,
   ): Promise<SignedTransaction> {
-    let ethersTx = ethersTransactionFromTransactionRequest({
+    const ethersTx = ethersTransactionFromTransactionRequest({
       ...transactionRequest,
       from: address,
     })
@@ -279,8 +272,7 @@ export default class GridplusService extends BaseService<Events> {
         asset: transactionRequest.network.baseAsset,
         network: transactionRequest.network,
       }
-    } else {
-      throw new Error("error signing transaction with gridplus")
     }
+    throw new Error("error signing transaction with gridplus")
   }
 }

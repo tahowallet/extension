@@ -1,9 +1,9 @@
 import React, { useState } from "react"
+import { connectGridplus } from "@tallyho/tally-background/redux-slices/gridplus"
 import SharedInput from "../../../../components/Shared/SharedInput"
 import SharedButton from "../../../../components/Shared/SharedButton"
-import { useGridPlus } from "./GridPlus"
 import { useBackgroundDispatch } from "../../../../hooks"
-import { connectGridplus } from "@tallyho/tally-background/redux-slices/gridplus"
+import { useGridPlus } from "../../../../utils/gridplusHooks"
 
 const MOCKED_ONBOARDING = process.env.MOCKED_GRIDPLUS_ONBOARDING === "true"
 
@@ -20,7 +20,7 @@ export default function GridPlusCredentials() {
         password: formData.password,
       }),
     )
-    onSignedIn(permitted)
+    return onSignedIn(permitted)
   }
   return (
     <form onSubmit={onSubmit} className="form-container">

@@ -1,9 +1,9 @@
 import React, { useState } from "react"
+import { pairGridplusDevice } from "@tallyho/tally-background/redux-slices/gridplus"
 import SharedInput from "../../../../components/Shared/SharedInput"
 import SharedButton from "../../../../components/Shared/SharedButton"
-import { useGridPlus } from "./GridPlus"
 import { useBackgroundDispatch } from "../../../../hooks"
-import { pairGridplusDevice } from "@tallyho/tally-background/redux-slices/gridplus"
+import { useGridPlus } from "../../../../utils/gridplusHooks"
 
 export default function GridPlusPairingCode() {
   const dispatch = useBackgroundDispatch()
@@ -18,7 +18,7 @@ export default function GridPlusPairingCode() {
       }),
     )
     if (!correctCode) return setWrongCodeError(true)
-    onPaired()
+    return onPaired()
   }
   return (
     <form onSubmit={onSubmit} className="form-container">
@@ -35,6 +35,7 @@ export default function GridPlusPairingCode() {
           onChange={(value) => setFormData({ ...formData, pairingCode: value })}
           data-testid="gridplus-pairing-code"
         />
+        {wrongCodeError && <p>Wrong pairing code.</p>}
       </div>
       <SharedButton id="formSubmit" isFormSubmit type="primary" size="large">
         Pair Device

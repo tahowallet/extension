@@ -1,40 +1,35 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { Route, Switch, useRouteMatch, useHistory } from "react-router-dom"
+import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
+import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import GridPlusCredentials from "./GridPlusCredentials"
 import GridPlusPairingCode from "./GridPlusPairingCode"
 import GridPlusImportAddresses from "./GridPlusImportAddresses"
 import { useBackgroundDispatch } from "../../../../hooks"
-import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
-import { OneTimeAnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
 import OnboardingRoutes from "../Routes"
-
-type GridPlusContextProps = {
-  onSignedIn: (permitted: boolean) => void
-  onPaired: () => void
-  onImported: () => void
-}
-
-const GridPlusContext = React.createContext<GridPlusContextProps | undefined>(
-  undefined,
-)
-export const useGridPlus = () =>
-  React.useContext<GridPlusContextProps>(GridPlusContext as never)
+import {
+  GridPlusContextProps,
+  GridPlusContext,
+} from "../../../../utils/gridplusHooks"
 
 export default function GridPlus() {
   const { path } = useRouteMatch()
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
-  const gridPlusHandlers: GridPlusContextProps = {
-    onSignedIn: (permitted) => {
-      if (permitted) return history.push("/onboarding/gridplus/addresses")
-      history.push("/onboarding/gridplus/pairing")
-    },
-    onPaired: () => history.push("/onboarding/gridplus/addresses"),
-    onImported: () => {
-      dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
-      history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
-    },
-  }
+  const gridPlusHandlers: GridPlusContextProps = useMemo(
+    () => ({
+      onSignedIn: (permitted) => {
+        if (permitted) return history.push("/onboarding/gridplus/addresses")
+        return history.push("/onboarding/gridplus/pairing")
+      },
+      onPaired: () => history.push("/onboarding/gridplus/addresses"),
+      onImported: () => {
+        dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+        return history.push(OnboardingRoutes.ONBOARDING_COMPLETE)
+      },
+    }),
+    [dispatch, history],
+  )
   return (
     <GridPlusContext.Provider value={gridPlusHandlers}>
       <Switch>

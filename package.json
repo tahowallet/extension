@@ -22,9 +22,14 @@
       "jest-webextension-mock",
       "./setupJest.ts"
     ],
-    "setupFilesAfterEnv": ["./setupJest.env.ts", "./ui/setupJest.env.ts"],
+    "setupFilesAfterEnv": [
+      "./setupJest.env.ts",
+      "./ui/setupJest.env.ts"
+    ],
     "testEnvironment": "jsdom",
-    "transformIgnorePatterns": ["node_modules/(?!@walletconnect/)"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!@walletconnect/)"
+    ],
     "moduleNameMapper": {
       "^dexie$": "<rootDir>/node_modules/dexie",
       "^@walletconnect/utils$": "<rootDir>/node_modules/@walletconnect/utils",
@@ -44,8 +49,8 @@
   "scripts": {
     "start": "NODE_OPTIONS=--openssl-legacy-provider run-p -n -l devtools \"dev {@}\" --",
     "generate:validators": "ts-node background/generate-validators.ts",
-    "build": "webpack --mode=production",
-    "dev": "patch-package && webpack --mode=development --watch",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider webpack --mode=production",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider patch-package && webpack --mode=development --watch",
     "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",

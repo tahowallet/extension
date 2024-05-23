@@ -50,16 +50,13 @@ export const connectGridplus = createBackgroundAsyncThunk(
   async (
     { deviceId, password }: { deviceId?: string; password?: string },
     { extra: { main } },
-  ) => {
-    return main.connectGridplus({ deviceId, password })
-  },
+  ) => main.connectGridplus({ deviceId, password }),
 )
 
 export const pairGridplusDevice = createBackgroundAsyncThunk(
   "gridplus/pairDevice",
-  async ({ pairingCode }: { pairingCode: string }, { extra: { main } }) => {
-    return main.pairGridplusDevice({ pairingCode })
-  },
+  async ({ pairingCode }: { pairingCode: string }, { extra: { main } }) =>
+    main.pairGridplusDevice({ pairingCode }),
 )
 
 export const fetchGridPlusAddresses = createBackgroundAsyncThunk(
@@ -89,9 +86,7 @@ export const importGridPlusAddresses = createBackgroundAsyncThunk(
   async (
     { addresses }: { addresses: GridPlusAddress[] },
     { extra: { main } },
-  ) => {
-    return main.importGridPlusAddresses({ addresses })
-  },
+  ) => main.importGridPlusAddresses({ addresses }),
 )
 
 export const initializeActiveAddresses = createBackgroundAsyncThunk(
