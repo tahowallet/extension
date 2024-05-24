@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { connectGridplus } from "@tallyho/tally-background/redux-slices/gridplus"
+import { useTranslation } from "react-i18next"
 import SharedInput from "../../../../components/Shared/SharedInput"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import { useBackgroundDispatch } from "../../../../hooks"
@@ -11,6 +12,9 @@ export default function GridPlusCredentials() {
   const dispatch = useBackgroundDispatch()
   const [formData, setFormData] = useState({ deviceId: "", password: "" })
   const { onSignedIn } = useGridPlus()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "gridplus.onboarding",
+  })
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
     if (MOCKED_ONBOARDING) return onSignedIn(true)
@@ -25,14 +29,14 @@ export default function GridPlusCredentials() {
   return (
     <form onSubmit={onSubmit} className="form-container">
       <header>
-        <h1>Connect your Lattice1</h1>
-        <p>Connect your Lattice1 to Taho using the Connection Wizard.</p>
+        <h1>{t("credentialsTitle")}</h1>
+        <p>{t("credentialsDescription")}</p>
       </header>
       <div>
         <SharedInput
           id="deviceId"
-          label="Device ID"
-          warningMessage="Located on device's home screen."
+          label={t("deviceId")}
+          warningMessage={t("deviceIdHelper")}
           value={formData.deviceId}
           onChange={(value) => setFormData({ ...formData, deviceId: value })}
         />
@@ -41,14 +45,14 @@ export default function GridPlusCredentials() {
         <SharedInput
           id="password"
           type="password"
-          label="GridPlus Password"
-          warningMessage="If this is your first time logging in, create a new password."
+          label={t("password")}
+          warningMessage={t("passwordHelper")}
           value={formData.password}
           onChange={(value) => setFormData({ ...formData, password: value })}
         />
       </div>
       <SharedButton id="formSubmit" isFormSubmit type="primary" size="large">
-        Connect
+        {t("credentialsSubmit")}
       </SharedButton>
     </form>
   )

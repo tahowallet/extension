@@ -5,6 +5,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/gridplus"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import { GridPlusAddress } from "@tallyho/tally-background/services/gridplus"
+import { useTranslation } from "react-i18next"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
@@ -20,6 +21,9 @@ export default function GridPlusImportAddresses() {
   const importableAddresses = useImportableAddresses()
   const dispatch = useBackgroundDispatch()
   const { onImported } = useGridPlus()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "gridplus.onboarding",
+  })
   const toggleAddress = ({
     address,
     addressIndex,
@@ -56,8 +60,8 @@ export default function GridPlusImportAddresses() {
   return (
     <form onSubmit={onSubmit} className="form-container">
       <header>
-        <h1>Choose Addresses</h1>
-        <p>Addresses available for an import from your Lattice1.</p>
+        <h1>{t("importTitle")}</h1>
+        <p>{t("importDescription")}</p>
       </header>
       <div className="addresses-list">
         {importableAddresses.map((address, i) => (
@@ -78,7 +82,7 @@ export default function GridPlusImportAddresses() {
         isDisabled={selectedAddresses.length === 0}
         isFormSubmit
       >
-        Import Addresses
+        {t("importSubmit")}
       </SharedButton>
       <style jsx>{`
         .addresses-list {

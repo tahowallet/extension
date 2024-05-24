@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { pairGridplusDevice } from "@tallyho/tally-background/redux-slices/gridplus"
+import { useTranslation } from "react-i18next"
 import SharedInput from "../../../../components/Shared/SharedInput"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import { useBackgroundDispatch } from "../../../../hooks"
@@ -10,6 +11,9 @@ export default function GridPlusPairingCode() {
   const [formData, setFormData] = useState({ pairingCode: "" })
   const [wrongCodeError, setWrongCodeError] = useState(false)
   const { onPaired } = useGridPlus()
+  const { t } = useTranslation("translation", {
+    keyPrefix: "gridplus.onboarding",
+  })
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
     const correctCode = await dispatch(
@@ -23,22 +27,22 @@ export default function GridPlusPairingCode() {
   return (
     <form onSubmit={onSubmit} className="form-container">
       <header>
-        <h1>Pairing Code</h1>
-        <p>Check your Lattice1 device for the pairing secret.</p>
+        <h1>{t("pairingTitle")}</h1>
+        <p>{t("pairingDescription")}</p>
       </header>
       <div>
         <SharedInput
           id="pairingCode"
-          label="Pairing Code"
-          warningMessage="Pairing code displayed on your Lattice."
+          label={t("pairingCode")}
+          warningMessage={t("pairingCodeHelper")}
           value={formData.pairingCode}
           onChange={(value) => setFormData({ ...formData, pairingCode: value })}
           data-testid="gridplus-pairing-code"
         />
-        {wrongCodeError && <p>Wrong pairing code.</p>}
+        {wrongCodeError && <p>{t("pairingCodeError")}</p>}
       </div>
       <SharedButton id="formSubmit" isFormSubmit type="primary" size="large">
-        Pair Device
+        {t("pairingSubmit")}
       </SharedButton>
     </form>
   )

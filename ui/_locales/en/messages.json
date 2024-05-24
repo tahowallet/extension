@@ -238,6 +238,26 @@
       "rskTestnet": "Rootstock Testnet"
     }
   },
+  "gridplus": {
+    "onboarding": {
+      "credentialsTitle": "Connect your Lattice1",
+      "credentialsDescription": "Connect your Lattice1 to Taho using the Connection Wizard.",
+      "credentialsSubmit": "Connect",
+      "pairingTitle": "Pairing Code",
+      "pairingDescription": "Check your Lattice1 device for the pairing secret.",
+      "pairingSubmit": "Pair Device",
+      "importTitle": "Choose Addresses",
+      "importDescription": "Addresses available for an import from your Lattice1.",
+      "importSubmit": "Import Addresses",
+      "deviceId": "Device ID",
+      "deviceIdHelper": "Located on device's home screen.",
+      "password": "GridPlus Password",
+      "passwordHelper": "If this is your first time logging in, create a new password.",
+      "pairingCode": "Pairing Code",
+      "pairingCodeHelper": "Pairing code displayed on your Lattice.",
+      "pairingCodeError": "Wrong pairing code."
+    }
+  },
   "networkFees": {
     "unknownFee": "Unknown",
     "toBeDetermined": "TBD",
