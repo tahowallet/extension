@@ -1,3 +1,4 @@
+/* eslint-disable import/no-unresolved */
 import { HardhatUserConfig } from "hardhat/config"
 import "dotenv-defaults/config"
 

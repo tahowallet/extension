@@ -5,6 +5,7 @@ import SignerInternalFrame from "./SignerInternal/SignerInternalFrame"
 import SignerLedgerFrame from "./SignerLedger/SignerLedgerFrame"
 import SignerReadOnlyFrame from "./SignerReadOnly/SignerReadOnlyFrame"
 import { SignerFrameProps } from "."
+import SignerGridPlusFrame from "./SignerGridPlus/SignerGridPlusFrame"
 
 // SignerFrame acts as a dispatcher, so prop spreading is a good tradeoff.
 // The explicit prop and component types ease the linter rule's concern around
@@ -29,6 +30,8 @@ export default function SignerFrame<T extends SignOperationType>(
       // Below, we repeat `signer` so it is typed correctly, because the prop
       // spread passes it with a type that is not specific enough.
       return <SignerLedgerFrame {...props} signer={signer} />
+    case "gridplus":
+      return <SignerGridPlusFrame {...props} signer={signer} />
     case "read-only":
       return <SignerReadOnlyFrame {...props} />
     default:
