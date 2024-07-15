@@ -15,7 +15,6 @@ import {
 import {
   isEIP1559TransactionRequest,
   isKnownTxType,
-  sameNetwork,
   SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
@@ -25,7 +24,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
-import { NETWORK_FOR_LEDGER_SIGNING } from "../../constants"
+import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { AddressOnNetwork } from "../../accounts"
 
@@ -542,10 +541,14 @@ export default class LedgerService extends BaseService<Events> {
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString,
   ): Promise<string> {
+    // Currently the service assumes the Eth app, which requires a network that
+    // uses the same derivation path as Ethereum, or one that starts with the
+    // same components.
+    // FIXME This should take a `LedgerAccountSigner` and use `checkCanSign`
+    // FIXME like other signing methods.
     if (
-      !NETWORK_FOR_LEDGER_SIGNING.find((supportedNetwork) =>
-        sameNetwork(network, supportedNetwork),
-      )
+      network.derivationPath !== ETHEREUM.derivationPath &&
+      !network.derivationPath?.startsWith(ETHEREUM.derivationPath ?? "")
     ) {
       throw new Error("Unsupported network for Ledger signing")
     }
