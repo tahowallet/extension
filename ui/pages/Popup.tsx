@@ -132,7 +132,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {

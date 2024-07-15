@@ -18,6 +18,7 @@ export default function DAppConnectRequest(): ReactElement {
 
   const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
   const permission = useBackgroundSelector(selectCurrentPendingPermission)
+  console.log(permission)
 
   useEffect(() => {
     window.onbeforeunload = () => {

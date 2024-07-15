@@ -254,8 +254,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
         )) as string,
       ).toString()
 
-      // these params are taken directly from the dapp website
-      const [title, faviconUrl] = event.request.params as string[]
+      // these params are taken directly from the dapp website and injected by
+      // provider-bridge/index.ts .
+      const [title, faviconUrl] = (event.request.params as unknown[]).slice(
+        -2,
+        0,
+      ) as string[]
 
       const existingPermission = await this.checkPermission(origin, dAppChainID)
       if (
