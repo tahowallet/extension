@@ -268,7 +268,12 @@ export default function Send(): ReactElement {
               </button>
             )}
             {addressErrorMessage !== undefined && (
-              <p className="error">{addressErrorMessage}</p>
+              <p
+                className="error"
+                title="Note: UNS temporarily disabled for security reasons."
+              >
+                ⚠️ {addressErrorMessage}
+              </p>
             )}
           </div>
           <div className="send_footer standard_width_padded">

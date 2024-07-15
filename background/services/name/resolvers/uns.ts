@@ -70,6 +70,8 @@ const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
 /**
  * Lookup a UNS domain name and fetch the owners address
  */
+// FIXME UNS issues
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const lookupUNSDomain = async (domain: string) => {
   const response = await fetchJson({
     url: `https://resolve.unstoppabledomains.com/domains/${domain}`,
@@ -149,10 +151,13 @@ export default function unsResolver(): NameResolver<"UNS"> {
     },
 
     async lookUpAddressForName({
-      name,
-      network,
+      name: _,
+      network: __,
     }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
-      // We try to resolve the name using unstoppable domains resolution
+      // FIXME Restore body once UNS is back in action and we have a new API key.
+      return undefined
+
+      /* We try to resolve the name using unstoppable domains resolution
       const address = (await lookupUNSDomain(name))?.meta?.owner
 
       if (address === undefined || address === null) {
@@ -162,11 +167,13 @@ export default function unsResolver(): NameResolver<"UNS"> {
       return {
         address,
         network,
-      }
+      } */
     },
-    async lookUpAvatar(
-      addressOrNameOnNetwork: AddressOnNetwork | NameOnNetwork,
-    ) {
+    async lookUpAvatar(_: AddressOnNetwork | NameOnNetwork) {
+      // FIXME Restore body once UNS is back in action and we have a new API key.
+      return undefined
+
+      /*
       const { network } = addressOrNameOnNetwork
       const { address } =
         "address" in addressOrNameOnNetwork
@@ -200,12 +207,14 @@ export default function unsResolver(): NameResolver<"UNS"> {
       return {
         uri: avatarUrn,
         network,
-      }
+      } */
     },
     async lookUpNameForAddress({
       address,
       network,
     }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
+      return Promise.resolve(undefined)
+
       // Get all the records associated with the particular ETH address
       const data = (await reverseLookupAddress(address))?.data
       // Since for a given address you can have multiple UNS records, we just pick the first one
