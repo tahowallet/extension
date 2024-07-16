@@ -44,6 +44,7 @@ export type AssetMetadata = {
    * legitimate asset.
    */
   verified?: boolean
+  removed?: boolean
 }
 
 /**

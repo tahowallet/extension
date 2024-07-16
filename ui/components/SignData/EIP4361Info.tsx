@@ -8,7 +8,7 @@ type Props = {
   signingData: EIP4361Data
 }
 
-// this overides the type to expect EIP4361Data
+// this overrides the type to expect EIP4361Data
 export default function EIP4361Info({ signingData }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signing.EIP4361" })
 

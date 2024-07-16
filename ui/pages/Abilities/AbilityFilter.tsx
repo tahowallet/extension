@@ -25,7 +25,7 @@ import { i18n } from "../../_locales/i18n"
 import AbilityFilterCard from "./AbilityFilterCard"
 
 const RADIO_NAME = "sortType"
-const KEY_PREFIX = "abilities.filter"
+const KEY_PREFIX = "abilities.filters"
 
 const RADIO_BTNS: { value: State; label: string }[] = [
   {
@@ -65,7 +65,7 @@ const ABILITY_TYPE_DESC = {
 
 export default function AbilityFilter(): ReactElement {
   const { t } = useTranslation("translation", {
-    keyPrefix: "abilities.filter",
+    keyPrefix: "abilities.filters",
   })
   const state = useBackgroundSelector(selectAbilityFilterState)
   const types = useBackgroundSelector(selectAbilityFilterTypes)
@@ -170,7 +170,7 @@ export default function AbilityFilter(): ReactElement {
           display: flex;
           flex-direction: column;
           gap: 24px;
-          height: 456px;
+          height: 471px;
           overflow-y: scroll;
           padding: 0 24px 8px;
         }

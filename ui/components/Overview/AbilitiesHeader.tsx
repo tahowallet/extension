@@ -1,18 +1,18 @@
-import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
+/* import { toggleHideDescription } from "@tallyho/tally-background/redux-slices/abilities"
 import {
   selectDescriptionHidden,
   selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
-import React, { ReactElement } from "react"
+import React  , { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { useSelector } from "react-redux"
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
+import SharedButton from "../Shared/SharedButton" */
 
-export default function AbilitiesHeader(): ReactElement {
-  const { t } = useTranslation("translation", {
+export default function AbilitiesHeader(): null /* ReactElement */ {
+  /* const { t } = useTranslation("translation", {
     keyPrefix: "abilities",
   })
   const openAbilities = useSelector(selectOpenAbilityCount)
@@ -36,9 +36,10 @@ export default function AbilitiesHeader(): ReactElement {
     if (e.key === "Enter") {
       handleClick()
     }
-  }
+    } */
 
-  return (
+  return null
+  /* return (
     <div
       className={classNames("abilities_header", {
         small_banner: hideDescription,
@@ -198,5 +199,5 @@ export default function AbilitiesHeader(): ReactElement {
         }
       `}</style>
     </div>
-  )
+    ) */
 }

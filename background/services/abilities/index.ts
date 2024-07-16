@@ -5,7 +5,7 @@ import {
   createSpamReport,
   DaylightAbility,
   DaylightAbilityRequirement,
-  getDaylightAbilities,
+  // getDaylightAbilities,
 } from "../../lib/daylight"
 import { AbilitiesDatabase, getOrCreateDB } from "./db"
 import ChainService from "../chain"
@@ -149,7 +149,15 @@ export default class AbilitiesService extends BaseService<Events> {
     return this.db.getSortedAbilities()
   }
 
+  // Re-enable once polling is re-enabled.
+  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
   async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
+    // FIXME Disabled due to high usage on the Daylight side. UI should also be
+    // FIXME disconnected. Re-enabling should involve reconsidering our
+    // FIXME fetch/sync strategy to be based on user access/usage or other
+    // FIXME triggers, or be aggressively throttled when there is no direct
+    // FIXME user interaction.
+    /*
     const latestDaylightAbilities = await getDaylightAbilities(address)
     const latestAbilities = normalizeDaylightAbilities(
       latestDaylightAbilities,
@@ -162,6 +170,7 @@ export default class AbilitiesService extends BaseService<Events> {
       address,
       abilities: updatedAbilities,
     })
+    */
   }
 
   async markAbilityAsCompleted(

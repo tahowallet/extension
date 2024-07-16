@@ -23,6 +23,7 @@ export default function ContractInteractionSummary({
             t("newlyCreatedContract")
           ) : (
             <SharedAddress
+              id="recipientAddress"
               address={transactionRequest.to}
               name={
                 annotation !== undefined && "contractInfo" in annotation

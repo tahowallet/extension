@@ -4,6 +4,7 @@ import SharedCurrentAccountInformation from "../SharedCurrentAccountInformation"
 import { renderWithProviders } from "../../../tests/test-utils"
 
 const name = "Name"
+const address = "0x208e0000000000000000000000000000000090cd"
 const shortenedAddress = "0x208e…090cd"
 const keyringId = "lock"
 const lock = "lock"
@@ -14,6 +15,7 @@ describe("SharedCurrentAccountInformation", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
+        address=""
         shortenedAddress=""
         avatarURL={undefined}
       />,
@@ -26,6 +28,7 @@ describe("SharedCurrentAccountInformation", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={undefined}
+        address={address}
         shortenedAddress={shortenedAddress}
         avatarURL={undefined}
       />,
@@ -38,6 +41,7 @@ describe("SharedCurrentAccountInformation", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
+        address=""
         shortenedAddress=""
         avatarURL={undefined}
         showLockStatus={false}
@@ -52,6 +56,7 @@ describe("SharedCurrentAccountInformation", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
+        address=""
         shortenedAddress=""
         avatarURL={undefined}
         showLockStatus
@@ -68,6 +73,7 @@ describe("SharedCurrentAccountInformation", () => {
     const ui = renderWithProviders(
       <SharedCurrentAccountInformation
         name={name}
+        address=""
         shortenedAddress=""
         avatarURL={undefined}
         showLockStatus

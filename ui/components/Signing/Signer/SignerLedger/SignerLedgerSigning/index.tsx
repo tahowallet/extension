@@ -56,13 +56,21 @@ function SignerLedgerSigningTypedData({
   typedData: EIP712TypedData
 }): ReactElement {
   const { EIP712Domain: _, ...typesForSigning } = typedData.types
-  const domainHash = _TypedDataEncoder
+
+  // Below, we prefix the 0x so that we can uppercase the hex characters
+  // without uppercasing the X. This is because the Ledger displays hex
+  // characters all uppercase for this operation, but an uppercased X
+  // both makes our display and the Ledger's less accurate and makes it
+  // harder to scan the values.
+  const domainHash = `0x${_TypedDataEncoder
     .hashDomain(typedData.domain)
-    .toUpperCase()
-  const messageHash = _TypedDataEncoder
+    .substring(2)
+    .toUpperCase()}`
+  const messageHash = `0x${_TypedDataEncoder
     .from(typesForSigning)
     .hash(typedData.message)
-    .toUpperCase()
+    .substring(2)
+    .toUpperCase()}`
 
   return (
     <TransactionDetailContainer>
