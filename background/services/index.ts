@@ -18,6 +18,7 @@ export { default as InternalEthereumProviderService } from "./internal-ethereum-
 export { default as IslandService } from "./island"
 export { default as TelemetryService } from "./telemetry"
 export { default as LedgerService } from "./ledger"
+export { default as GridplusService } from "./gridplus"
 export { default as SigningService } from "./signing"
 export { default as AnalyticsService } from "./analytics"
 export { default as NFTsService } from "./nfts"

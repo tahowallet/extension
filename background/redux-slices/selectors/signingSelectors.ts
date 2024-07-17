@@ -13,6 +13,7 @@ import {
   selectPrivateKeyWalletsByAddress,
 } from "./internalSignerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
+import { GridPlusAccountSigner } from "../../services/gridplus"
 
 // FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
 const getAllAddresses = createSelector(
@@ -31,11 +32,13 @@ export const selectAccountSignersByAddress = createSelector(
   (state: RootState) => state.ledger.devices,
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,
+  (state: RootState) => state.gridplus.activeAddresses,
   (
     allAddresses,
     ledgerDevices,
     keyringsByAddress,
     privateKeyWalletsByAddress,
+    gridPlusAddresses,
   ) => {
     const allAccountsSeen = new Set<string>()
     const ledgerEntries = Object.values(ledgerDevices).flatMap((device) =>
@@ -101,10 +104,18 @@ export const selectAccountSignersByAddress = createSelector(
         .filter((address) => !allAccountsSeen.has(address))
         .map((address) => [address, ReadOnlyAccountSigner])
 
+    const gridPlusEntries = gridPlusAddresses.map(
+      (address): [HexString, GridPlusAccountSigner] => [
+        address.address,
+        { type: "gridplus", path: address.path },
+      ],
+    )
+
     const entriesByPriority: [string, AccountSigner][] = [
       ...readOnlyEntries,
       ...privateKeyEntries,
       ...ledgerEntries,
+      ...gridPlusEntries,
       // Give priority to keyring over Ledger and private key, if an address is signable by
       // both.
       ...keyringEntries,

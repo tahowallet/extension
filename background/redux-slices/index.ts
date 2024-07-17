@@ -16,6 +16,7 @@ import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
 import pricesReducer from "./prices"
+import gridplusReducer from "./gridplus"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
@@ -34,6 +35,7 @@ const mainReducer = combineReducers({
   abilities: abilitiesReducer,
   nfts: nftsReducer,
   prices: pricesReducer,
+  gridplus: gridplusReducer,
 })
 
 export default mainReducer

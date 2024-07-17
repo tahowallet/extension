@@ -24,8 +24,8 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
-    "@ethereumjs/common": "^2.4.0",
-    "@ethereumjs/tx": "^3.3.0",
+    "@ethereumjs/common": "^4.1.0",
+    "@ethereumjs/tx": "^5.0.0",
     "@ethersproject/abstract-provider": "5.7.0",
     "@ethersproject/abstract-signer": "5.7.0",
     "@ethersproject/networks": "5.7.1",
@@ -58,9 +58,11 @@
     "dexie": "^3.0.4",
     "emittery": "^0.9.2",
     "ethers": "5.7.2",
+    "gridplus-sdk": "^2.5.2",
     "immer": "^9.0.1",
     "jsondiffpatch": "^0.4.1",
     "lodash": "^4.17.21",
+    "rlp": "^3.0.0",
     "sinon": "^14.0.0",
     "siwe": "^1.1.0",
     "util": "^0.12.4",
