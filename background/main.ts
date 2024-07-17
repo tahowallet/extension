@@ -820,8 +820,8 @@ export default class Main extends BaseService<never> {
   }
 
   async fetchGridPlusAddresses({
-    n = 10,
-    startPath = [0x80000000 + 44, 0x80000000 + 60, 0x80000000, 0, 0],
+    n,
+    startPath,
   }: {
     n?: number
     startPath?: number[]

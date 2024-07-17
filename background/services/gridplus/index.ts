@@ -1,16 +1,8 @@
 import { storage } from "webextension-polyfill"
-import {
-  fetchAddresses,
-  pair,
-  setup,
-  signMessage,
-  sign,
-  Constants,
-} from "gridplus-sdk"
+import * as GridPlusSdk from "gridplus-sdk"
 import { TransactionFactory, type FeeMarketEIP1559TxData } from "@ethereumjs/tx"
 import { hexlify, joinSignature } from "ethers/lib/utils"
 import { BigNumber } from "ethers"
-import { TypedDataUtils, TypedMessage } from "@metamask/eth-sig-util"
 import {
   UnsignedTransaction,
   parse,
@@ -94,7 +86,7 @@ export default class GridplusService extends BaseService<Events> {
     deviceId?: string
     password?: string
   }) {
-    return setup({
+    return GridPlusSdk.setup({
       deviceId,
       password,
       name: APP_NAME,
@@ -105,7 +97,7 @@ export default class GridplusService extends BaseService<Events> {
 
   async pairDevice({ pairingCode }: { pairingCode: string }) {
     await this.readClient()
-    return pair(pairingCode)
+    return GridPlusSdk.pair(pairingCode)
   }
 
   async fetchAddresses({
@@ -116,7 +108,7 @@ export default class GridplusService extends BaseService<Events> {
     startPath?: number[]
   }) {
     await this.readClient()
-    return fetchAddresses({ n, startPath })
+    return GridPlusSdk.fetchAddresses({ n, startPath })
   }
 
   async importAddresses({ address }: { address: GridPlusAddress }) {
@@ -135,7 +127,7 @@ export default class GridplusService extends BaseService<Events> {
   ) {
     const accounts = await this.readAddresses()
     const accountData = accounts.find((account) => account.address === address)
-    const response = await signMessage(hexDataToSign, {
+    const response = await GridPlusSdk.signMessage(hexDataToSign, {
       signerPath: accountData?.path,
       payload: hexDataToSign,
       protocol: "signPersonal",
@@ -171,16 +163,13 @@ export default class GridplusService extends BaseService<Events> {
     }
     const accounts = await this.readAddresses()
     const accountData = accounts.find((account) => account.address === address)
-    const { domain, types, primaryType, message } = TypedDataUtils.sanitizeData(
-      typedData as TypedMessage<never>,
-    )
     const eip712Data = {
-      types,
-      primaryType,
-      domain,
-      message,
+      types: typedData.types,
+      primaryType: typedData.primaryType,
+      domain: typedData.domain,
+      message: typedData.message,
     }
-    const response = await signMessage(eip712Data, {
+    const response = await GridPlusSdk.signMessage(eip712Data, {
       signerPath: accountData?.path,
       protocol: "eip712",
       payload: eip712Data,
@@ -221,16 +210,16 @@ export default class GridplusService extends BaseService<Events> {
       data: {
         signerPath: accountData?.path,
         chain: ethersTx.chainId,
-        curveType: Constants.SIGNING.CURVES.SECP256K1,
-        hashType: Constants.SIGNING.HASHES.KECCAK256,
-        encodingType: Constants.SIGNING.ENCODINGS.EVM,
+        curveType: GridPlusSdk.Constants.SIGNING.CURVES.SECP256K1,
+        hashType: GridPlusSdk.Constants.SIGNING.HASHES.KECCAK256,
+        encodingType: GridPlusSdk.Constants.SIGNING.ENCODINGS.EVM,
         payload:
           ethersTx.type === 2
             ? txPayload.getMessageToSign()
             : encode(txPayload.getMessageToSign()),
       },
     }
-    const response = await sign([], signPayload)
+    const response = await GridPlusSdk.sign([], signPayload)
     const r = addHexPrefix(response.sig.r.toString("hex"))
     const s = addHexPrefix(response.sig.s.toString("hex"))
     const v = BigNumber.from(
