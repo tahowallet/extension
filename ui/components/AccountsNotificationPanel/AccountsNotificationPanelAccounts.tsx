@@ -86,6 +86,11 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     icon: "./images/ledger_icon.svg",
     category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
+  [AccountType.GridPlus]: {
+    title: i18n.t("accounts.notificationPanel.gridplus"),
+    icon: "./images/add_wallet/gridplus.svg",
+    category: i18n.t("accounts.notificationPanel.category.gridplus"),
+  },
 }
 
 const shouldAddHeader = (
@@ -97,6 +102,7 @@ const shouldAddHeader = (
   // only need to add that header once when we encounter such an account for the first time.
   switch (currentAccountType) {
     case AccountType.Ledger:
+    case AccountType.GridPlus:
     case AccountType.ReadOnly:
     case AccountType.Internal:
       return true
