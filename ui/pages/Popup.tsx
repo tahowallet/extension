@@ -33,7 +33,6 @@ import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
-import GlobalModal from "../components/GlobalModal/GlobalModal"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -132,7 +131,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {
