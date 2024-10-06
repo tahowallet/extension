@@ -503,13 +503,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     // Ethers does not want to see the EIP712Domain field, extract it.
     const { EIP712Domain, ...typesForSigning } = params.typedData.types
 
-    const { domain } = params.typedData
-    domain.chainId = params.account.network.chainID
-
     // Ask Ethers to give us a filtered payload that only includes types
     // specified in the `types` object.
     const filteredTypedDataPayload = _TypedDataEncoder.getPayload(
-      domain,
+      params.typedData.domain,
       typesForSigning,
       params.typedData.message,
     )
