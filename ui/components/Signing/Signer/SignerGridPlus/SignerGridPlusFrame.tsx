@@ -1,6 +1,6 @@
 import React from "react"
 import type { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
-import type { GridPlusAccountSigner } from "@tallyho/tally-background/services/gridplus"
+import type { GridPlusAccountSigner } from "@tallyho/tally-background/services/grid-plus"
 import { t } from "i18next"
 import { useHistory } from "react-router-dom"
 import type { SignerFrameProps } from ".."

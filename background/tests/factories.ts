@@ -41,7 +41,7 @@ import { AccountData, CompleteAssetAmount } from "../redux-slices/accounts"
 import {
   AnalyticsService,
   ChainService,
-  GridplusService,
+  GridPlusService,
   IndexingService,
   InternalEthereumProviderService,
   InternalSignerService,
@@ -121,14 +121,14 @@ export async function createIndexingService(overrides?: {
 export const createLedgerService = async (): Promise<LedgerService> =>
   LedgerService.create()
 
-export const createGridPlusService = async (): Promise<GridplusService> =>
-  GridplusService.create()
+export const createGridPlusService = async (): Promise<GridPlusService> =>
+  GridPlusService.create()
 
 type CreateSigningServiceOverrides = {
   internalSignerService?: Promise<InternalSignerService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
-  gridPlusService?: Promise<GridplusService>
+  gridPlusService?: Promise<GridPlusService>
 }
 
 type CreateAbilitiesServiceOverrides = {

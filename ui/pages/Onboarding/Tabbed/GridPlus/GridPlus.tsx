@@ -10,7 +10,7 @@ import OnboardingRoutes from "../Routes"
 import {
   GridPlusContextProps,
   GridPlusContext,
-} from "../../../../utils/gridplusHooks"
+} from "../../../../utils/gridPlusHooks"
 
 export default function GridPlus() {
   const { path } = useRouteMatch()
@@ -19,10 +19,10 @@ export default function GridPlus() {
   const gridPlusHandlers: GridPlusContextProps = useMemo(
     () => ({
       onSignedIn: (permitted) => {
-        if (permitted) return history.push("/onboarding/gridplus/addresses")
-        return history.push("/onboarding/gridplus/pairing")
+        if (permitted) return history.push("/onboarding/grid-plus/addresses")
+        return history.push("/onboarding/grid-plus/pairing")
       },
-      onPaired: () => history.push("/onboarding/gridplus/addresses"),
+      onPaired: () => history.push("/onboarding/grid-plus/addresses"),
       onImported: () => {
         dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
         return history.push(OnboardingRoutes.ONBOARDING_COMPLETE)

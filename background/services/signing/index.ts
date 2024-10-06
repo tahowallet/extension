@@ -15,7 +15,7 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import { AddressOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
-import GridplusService, { GridPlusAccountSigner } from "../gridplus"
+import GridPlusService, { GridPlusAccountSigner } from "../grid-plus"
 
 type SigningErrorReason = "userRejected" | "genericError"
 type ErrorResponse = {
@@ -100,26 +100,26 @@ export default class SigningService extends BaseService<Events> {
       Promise<InternalSignerService>,
       Promise<LedgerService>,
       Promise<ChainService>,
-      Promise<GridplusService>,
+      Promise<GridPlusService>,
     ]
   > = async (
     internalSignerService,
     ledgerService,
     chainService,
-    gridplusService,
+    gridPlusService,
   ) =>
     new this(
       await internalSignerService,
       await ledgerService,
       await chainService,
-      await gridplusService,
+      await gridPlusService,
     )
 
   private constructor(
     private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
     private chainService: ChainService,
-    private gridplusService: GridplusService,
+    private gridPlusService: GridPlusService,
   ) {
     super()
   }
@@ -150,8 +150,8 @@ export default class SigningService extends BaseService<Events> {
           transactionWithNonce,
           accountSigner,
         )
-      case "gridplus":
-        return this.gridplusService.signTransaction(
+      case "grid-plus":
+        return this.gridPlusService.signTransaction(
           { address: transactionWithNonce.from },
           transactionWithNonce,
         )
@@ -184,7 +184,7 @@ export default class SigningService extends BaseService<Events> {
         case "ledger":
           await this.ledgerService.removeAddress(address)
           break
-        case "gridplus":
+        case "grid-plus":
           // FIXME: implement
           break
         case "read-only":
@@ -284,8 +284,8 @@ export default class SigningService extends BaseService<Events> {
             accountSigner,
           )
           break
-        case "gridplus":
-          signedData = await this.gridplusService.signTypedData(
+        case "grid-plus":
+          signedData = await this.gridPlusService.signTypedData(
             { address: account.address },
             typedData,
           )
@@ -336,8 +336,8 @@ export default class SigningService extends BaseService<Events> {
             hexDataToSign,
           )
           break
-        case "gridplus":
-          signedData = await this.gridplusService.signMessage(
+        case "grid-plus":
+          signedData = await this.gridPlusService.signMessage(
             addressOnNetwork,
             hexDataToSign,
           )

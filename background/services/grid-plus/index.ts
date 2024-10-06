@@ -16,10 +16,10 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 
 const APP_NAME = "Taho Wallet"
-const CLIENT_STORAGE_KEY = "GRIDPLUS_CLIENT"
-const ADDRESSES_STORAGE_KEY = "GRIDPLUS_ADDRESSES"
+const CLIENT_STORAGE_KEY = "GRID_PLUS_CLIENT"
+const ADDRESSES_STORAGE_KEY = "GRID_PLUS_ADDRESSES"
 
-const writeClient = (client: GridplusClient) =>
+const writeClient = (client: GridPlusClient) =>
   storage.local.set({
     [CLIENT_STORAGE_KEY]: client,
   })
@@ -30,7 +30,7 @@ const writeAddresses = (addresses: GridPlusAddress[]) =>
   })
 
 export type GridPlusAccountSigner = {
-  type: "gridplus"
+  type: "grid-plus"
   path: number[]
 }
 
@@ -40,18 +40,18 @@ export type GridPlusAddress = {
   path: number[]
 }
 
-type GridplusClient = string | null
+type GridPlusClient = string | null
 
 interface Events extends ServiceLifecycleEvents {
-  address: { gridplusIndex: number; derivationPath: number[]; address: string }
+  address: { gridPlusIndex: number; derivationPath: number[]; address: string }
 }
 
 const addHexPrefix = (data: string) => `0x${data}`
 
-export default class GridplusService extends BaseService<Events> {
+export default class GridPlusService extends BaseService<Events> {
   activeAddresses: GridPlusAddress[] = []
 
-  client: GridplusClient = null
+  client: GridPlusClient = null
 
   private constructor() {
     super()
@@ -59,7 +59,7 @@ export default class GridplusService extends BaseService<Events> {
     this.readAddresses()
   }
 
-  static create: ServiceCreatorFunction<Events, GridplusService, []> =
+  static create: ServiceCreatorFunction<Events, GridPlusService, []> =
     async () => new this()
 
   async readClient() {
@@ -115,7 +115,7 @@ export default class GridplusService extends BaseService<Events> {
     this.activeAddresses.push(address)
     await writeAddresses(this.activeAddresses)
     this.emitter.emit("address", {
-      gridplusIndex: address.addressIndex,
+      gridPlusIndex: address.addressIndex,
       derivationPath: address.path,
       address: address.address,
     })
@@ -262,6 +262,6 @@ export default class GridplusService extends BaseService<Events> {
         network: transactionRequest.network,
       }
     }
-    throw new Error("error signing transaction with gridplus")
+    throw new Error("error signing transaction with GridPlus")
   }
 }

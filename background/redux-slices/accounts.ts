@@ -33,7 +33,7 @@ export const enum AccountType {
   PrivateKey = "private-key",
   Imported = "imported",
   Ledger = "ledger",
-  GridPlus = "gridplus",
+  GridPlus = "grid-plus",
   Internal = "internal",
 }
 

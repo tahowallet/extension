@@ -4,7 +4,7 @@ const OnboardingRoutes = {
   ONBOARDING_START: "/onboarding",
   ADD_WALLET: "/onboarding/add-wallet",
   LEDGER: "/onboarding/ledger",
-  GRIDPLUS: "/onboarding/gridplus",
+  GRID_PLUS: "/onboarding/grid-plus",
   SET_PASSWORD: "/onboarding/set-password",
   IMPORT_SEED: "/onboarding/import-seed",
   IMPORT_PRIVATE_KEY: "/onboarding/import-private-key",

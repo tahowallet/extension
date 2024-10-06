@@ -87,9 +87,9 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
     category: i18n.t("accounts.notificationPanel.category.ledger"),
   },
   [AccountType.GridPlus]: {
-    title: i18n.t("accounts.notificationPanel.gridplus"),
-    icon: "./images/add_wallet/gridplus.svg",
-    category: i18n.t("accounts.notificationPanel.category.gridplus"),
+    title: i18n.t("accounts.notificationPanel.grid-plus"),
+    icon: "./images/add_wallet/grid-plus.svg",
+    category: i18n.t("accounts.notificationPanel.category.grid-plus"),
   },
 }
 

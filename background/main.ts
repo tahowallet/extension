@@ -31,7 +31,7 @@ import {
   ServiceCreatorFunction,
   IslandService,
   LedgerService,
-  GridplusService,
+  GridPlusService,
   SigningService,
   NFTsService,
   WalletConnectService,
@@ -201,8 +201,8 @@ import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-p
 import { AnalyticsPreferences, DismissableItem } from "./services/preferences"
 import { newPricePoints } from "./redux-slices/prices"
 import NotificationsService from "./services/notifications"
-import { resetGridPlusState } from "./redux-slices/gridplus"
-import { GridPlusAddress } from "./services/gridplus"
+import { resetGridPlusState } from "./redux-slices/grid-plus"
+import { GridPlusAddress } from "./services/grid-plus"
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
@@ -340,13 +340,13 @@ export default class Main extends BaseService<never> {
 
     const ledgerService = LedgerService.create()
 
-    const gridplusService = GridplusService.create()
+    const gridPlusService = GridPlusService.create()
 
     const signingService = SigningService.create(
       internalSignerService,
       ledgerService,
       chainService,
-      gridplusService,
+      gridPlusService,
     )
 
     const analyticsService = AnalyticsService.create(
@@ -412,7 +412,7 @@ export default class Main extends BaseService<never> {
       await islandService,
       await telemetryService,
       await ledgerService,
-      await gridplusService,
+      await gridPlusService,
       await signingService,
       await analyticsService,
       await nftsService,
@@ -487,7 +487,7 @@ export default class Main extends BaseService<never> {
     /**
      * A promise to the GridPlus service, handling the communication
      */
-    private gridplusService: GridplusService,
+    private gridPlusService: GridPlusService,
 
     /**
      * A promise to the signing service which will route operations between the UI
@@ -627,7 +627,7 @@ export default class Main extends BaseService<never> {
       this.islandService.startService(),
       this.telemetryService.startService(),
       this.ledgerService.startService(),
-      this.gridplusService.startService(),
+      this.gridPlusService.startService(),
       this.signingService.startService(),
       this.analyticsService.startService(),
       this.nftsService.startService(),
@@ -652,7 +652,7 @@ export default class Main extends BaseService<never> {
       this.islandService.stopService(),
       this.telemetryService.stopService(),
       this.ledgerService.stopService(),
-      this.gridplusService.stopService(),
+      this.gridPlusService.stopService(),
       this.signingService.stopService(),
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
@@ -676,7 +676,7 @@ export default class Main extends BaseService<never> {
     this.connectIslandService()
     this.connectTelemetryService()
     this.connectLedgerService()
-    this.connectGridplusService()
+    this.connectGridPlusService()
     this.connectSigningService()
     this.connectAnalyticsService()
     this.connectWalletConnectService()
@@ -805,18 +805,18 @@ export default class Main extends BaseService<never> {
     return this.ledgerService.refreshConnectedLedger()
   }
 
-  async connectGridplus({
+  async connectGridPlus({
     deviceId,
     password,
   }: {
     deviceId?: string
     password?: string
   }) {
-    return this.gridplusService.setupClient({ deviceId, password })
+    return this.gridPlusService.setupClient({ deviceId, password })
   }
 
-  async pairGridplusDevice({ pairingCode }: { pairingCode: string }) {
-    return this.gridplusService.pairDevice({ pairingCode })
+  async pairGridPlusDevice({ pairingCode }: { pairingCode: string }) {
+    return this.gridPlusService.pairDevice({ pairingCode })
   }
 
   async fetchGridPlusAddresses({
@@ -826,7 +826,7 @@ export default class Main extends BaseService<never> {
     n?: number
     startPath?: number[]
   }) {
-    return this.gridplusService.fetchAddresses({ n, startPath })
+    return this.gridPlusService.fetchAddresses({ n, startPath })
   }
 
   async importGridPlusAddresses({
@@ -837,7 +837,7 @@ export default class Main extends BaseService<never> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
     await Promise.all(
       addresses.map(async (address) => {
-        await this.gridplusService.importAddresses({ address })
+        await this.gridPlusService.importAddresses({ address })
         await Promise.all(
           trackedNetworks.map(async (network) => {
             const addressNetwork = {
@@ -863,7 +863,7 @@ export default class Main extends BaseService<never> {
   }
 
   async readActiveGridPlusAddresses(): Promise<GridPlusAddress[]> {
-    return this.gridplusService.readAddresses()
+    return this.gridPlusService.readAddresses()
   }
 
   async getAccountEthBalanceUncached(
@@ -1242,8 +1242,8 @@ export default class Main extends BaseService<never> {
       this.signingService.addTrackedAddress(address, "ledger"),
     )
 
-    this.gridplusService.emitter.on("address", ({ address }) =>
-      this.signingService.addTrackedAddress(address, "gridplus"),
+    this.gridPlusService.emitter.on("address", ({ address }) =>
+      this.signingService.addTrackedAddress(address, "grid-plus"),
     )
   }
 
@@ -1277,7 +1277,7 @@ export default class Main extends BaseService<never> {
     })
   }
 
-  async connectGridplusService(): Promise<void> {
+  async connectGridPlusService(): Promise<void> {
     this.store.dispatch(resetGridPlusState())
   }
 

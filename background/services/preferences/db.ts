@@ -21,7 +21,7 @@ const getSignerRecordId = (signer: AccountSignerWithId): SignerRecordId => {
       return `${signer.type}/${signer.keyringID}`
     case "private-key":
       return `${signer.type}/${signer.walletID}`
-    case "gridplus":
+    case "grid-plus":
       return `${signer.type}/${signer.path}`
     default:
       return `${signer.type}/${signer.deviceID}`

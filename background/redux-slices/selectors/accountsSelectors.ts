@@ -352,7 +352,7 @@ function signerIdFor(accountSigner: AccountSigner): string | null {
       return accountSigner.keyringID
     case "ledger":
       return accountSigner.deviceID
-    case "gridplus":
+    case "grid-plus":
       return accountSigner.path.join("/")
     case "read-only":
       return null
@@ -367,7 +367,7 @@ const signerTypeToAccountType: Record<SignerType, AccountType> = {
   keyring: AccountType.Imported,
   "private-key": AccountType.PrivateKey,
   ledger: AccountType.Ledger,
-  gridplus: AccountType.GridPlus,
+  "grid-plus": AccountType.GridPlus,
   "read-only": AccountType.ReadOnly,
 }
 

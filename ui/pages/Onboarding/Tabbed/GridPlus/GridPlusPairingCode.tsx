@@ -1,10 +1,10 @@
 import React, { useState } from "react"
-import { pairGridplusDevice } from "@tallyho/tally-background/redux-slices/gridplus"
+import { pairGridPlusDevice } from "@tallyho/tally-background/redux-slices/grid-plus"
 import { useTranslation } from "react-i18next"
 import SharedInput from "../../../../components/Shared/SharedInput"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import { useBackgroundDispatch } from "../../../../hooks"
-import { useGridPlus } from "../../../../utils/gridplusHooks"
+import { useGridPlus } from "../../../../utils/gridPlusHooks"
 
 export default function GridPlusPairingCode() {
   const dispatch = useBackgroundDispatch()
@@ -12,12 +12,12 @@ export default function GridPlusPairingCode() {
   const [wrongCodeError, setWrongCodeError] = useState(false)
   const { onPaired } = useGridPlus()
   const { t } = useTranslation("translation", {
-    keyPrefix: "gridplus.onboarding",
+    keyPrefix: "grid-plus.onboarding",
   })
   const onSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault()
     const correctCode = await dispatch(
-      pairGridplusDevice({
+      pairGridPlusDevice({
         pairingCode: formData.pairingCode,
       }),
     )
@@ -37,7 +37,7 @@ export default function GridPlusPairingCode() {
           warningMessage={t("pairingCodeHelper")}
           value={formData.pairingCode}
           onChange={(value) => setFormData({ ...formData, pairingCode: value })}
-          data-testid="gridplus-pairing-code"
+          data-testid="grid-plus-pairing-code"
         />
         {wrongCodeError && <p>{t("pairingCodeError")}</p>}
       </div>

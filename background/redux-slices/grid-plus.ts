@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
-import { type GridPlusAddress } from "../services/gridplus"
+import { type GridPlusAddress } from "../services/grid-plus"
 
-const MOCKED_ONBOARDING = process.env.MOCKED_GRIDPLUS_ONBOARDING === "true"
+const MOCKED_ONBOARDING = process.env.MOCKED_GRID_PLUS_ONBOARDING === "true"
 
 export type GridPlusState = {
   importableAddresses: string[]
@@ -14,8 +14,8 @@ export const initialState: GridPlusState = {
   activeAddresses: [],
 }
 
-const gridplusSlice = createSlice({
-  name: "gridplus",
+const gridPlusSlice = createSlice({
+  name: "grid-plus",
   initialState,
   reducers: {
     resetGridPlusState: (immerState) => {
@@ -41,26 +41,26 @@ export const {
   resetGridPlusState,
   setImportableAddresses,
   setActiveAddresses,
-} = gridplusSlice.actions
+} = gridPlusSlice.actions
 
-export default gridplusSlice.reducer
+export default gridPlusSlice.reducer
 
-export const connectGridplus = createBackgroundAsyncThunk(
-  "gridplus/connect",
+export const connectGridPlus = createBackgroundAsyncThunk(
+  "grid-plus/connect",
   async (
     { deviceId, password }: { deviceId?: string; password?: string },
     { extra: { main } },
-  ) => main.connectGridplus({ deviceId, password }),
+  ) => main.connectGridPlus({ deviceId, password }),
 )
 
-export const pairGridplusDevice = createBackgroundAsyncThunk(
-  "gridplus/pairDevice",
+export const pairGridPlusDevice = createBackgroundAsyncThunk(
+  "grid-plus/pairDevice",
   async ({ pairingCode }: { pairingCode: string }, { extra: { main } }) =>
-    main.pairGridplusDevice({ pairingCode }),
+    main.pairGridPlusDevice({ pairingCode }),
 )
 
 export const fetchGridPlusAddresses = createBackgroundAsyncThunk(
-  "gridplus/fetchAddresses",
+  "grid-plus/fetchAddresses",
   async (
     {
       n = 10,
@@ -82,7 +82,7 @@ export const fetchGridPlusAddresses = createBackgroundAsyncThunk(
 )
 
 export const importGridPlusAddresses = createBackgroundAsyncThunk(
-  "gridplus/importAddresses",
+  "grid-plus/importAddresses",
   async (
     { addresses }: { addresses: GridPlusAddress[] },
     { extra: { main } },
@@ -90,7 +90,7 @@ export const importGridPlusAddresses = createBackgroundAsyncThunk(
 )
 
 export const initializeActiveAddresses = createBackgroundAsyncThunk(
-  "gridplus/initializeActiveAddresses",
+  "grid-plus/initializeActiveAddresses",
   async (_, { extra: { main }, dispatch }) => {
     const activeAddresses = await main.readActiveGridPlusAddresses()
     return dispatch(setActiveAddresses(activeAddresses))

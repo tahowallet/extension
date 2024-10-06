@@ -2,17 +2,17 @@ import React, { useEffect, useState } from "react"
 import {
   fetchGridPlusAddresses,
   importGridPlusAddresses,
-} from "@tallyho/tally-background/redux-slices/gridplus"
+} from "@tallyho/tally-background/redux-slices/grid-plus"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
-import { GridPlusAddress } from "@tallyho/tally-background/services/gridplus"
+import { GridPlusAddress } from "@tallyho/tally-background/services/grid-plus"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../../../components/Shared/SharedButton"
 import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
-import { useGridPlus } from "../../../../utils/gridplusHooks"
+import { useGridPlus } from "../../../../utils/gridPlusHooks"
 
 const useImportableAddresses = () =>
-  useBackgroundSelector((state) => state.gridplus.importableAddresses)
+  useBackgroundSelector((state) => state.gridPlus.importableAddresses)
 
 export default function GridPlusImportAddresses() {
   const [selectedAddresses, setSelectedAddresses] = useState<GridPlusAddress[]>(
@@ -22,7 +22,7 @@ export default function GridPlusImportAddresses() {
   const dispatch = useBackgroundDispatch()
   const { onImported } = useGridPlus()
   const { t } = useTranslation("translation", {
-    keyPrefix: "gridplus.onboarding",
+    keyPrefix: "grid-plus.onboarding",
   })
   const toggleAddress = ({
     address,

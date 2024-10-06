@@ -1,14 +1,14 @@
 import React from "react"
 import {
-  connectGridplus,
+  connectGridPlus,
   initializeActiveAddresses,
-} from "@tallyho/tally-background/redux-slices/gridplus"
+} from "@tallyho/tally-background/redux-slices/grid-plus"
 import { useBackgroundDispatch } from "../hooks"
 
 export const useGridPlusInit = () => {
   const dispatch = useBackgroundDispatch()
   React.useEffect(() => {
-    dispatch(connectGridplus({}))
+    dispatch(connectGridPlus({}))
     dispatch(initializeActiveAddresses())
   }, [dispatch])
 }

@@ -13,7 +13,7 @@ import {
   selectPrivateKeyWalletsByAddress,
 } from "./internalSignerSelectors"
 import { selectCurrentAccount } from "./uiSelectors"
-import { GridPlusAccountSigner } from "../../services/gridplus"
+import { GridPlusAccountSigner } from "../../services/grid-plus"
 
 // FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
 const getAllAddresses = createSelector(
@@ -32,7 +32,7 @@ export const selectAccountSignersByAddress = createSelector(
   (state: RootState) => state.ledger.devices,
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,
-  (state: RootState) => state.gridplus.activeAddresses,
+  (state: RootState) => state.gridPlus.activeAddresses,
   (
     allAddresses,
     ledgerDevices,
@@ -107,7 +107,7 @@ export const selectAccountSignersByAddress = createSelector(
     const gridPlusEntries = gridPlusAddresses.map(
       (address): [HexString, GridPlusAccountSigner] => [
         address.address,
-        { type: "gridplus", path: address.path },
+        { type: "grid-plus", path: address.path },
       ],
     )
 

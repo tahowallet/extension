@@ -238,7 +238,7 @@
       "rskTestnet": "Rootstock Testnet"
     }
   },
-  "gridplus": {
+  "grid-plus": {
     "onboarding": {
       "credentialsTitle": "Connect your Lattice1",
       "credentialsDescription": "Connect your Lattice1 to Taho using the Connection Wizard.",
@@ -413,7 +413,7 @@
           "importSeed": "Import recovery phrase",
           "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
-          "gridplus": "Connect to GridPlus",
+          "grid-plus": "Connect to GridPlus",
           "readOnly": "Read-only address",
           "createNew": "Create new wallet"
         },

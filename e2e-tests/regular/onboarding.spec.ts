@@ -155,7 +155,7 @@ test.describe("Onboarding", () => {
 
   test.describe("GridPlus onboarding", () => {
     test.beforeEach(() => {
-      if (process.env.MOCKED_GRIDPLUS_ONBOARDING !== "true") test.skip()
+      if (process.env.MOCKED_GRID_PLUS_ONBOARDING !== "true") test.skip()
     })
     test("Restores mocked GridPlus wallet", async ({ context }) => {
       const page = await getOnboardingPage(context)

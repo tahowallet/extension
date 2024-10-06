@@ -34,7 +34,7 @@ import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
 import GlobalModal from "../components/GlobalModal/GlobalModal"
-import { useGridPlusInit } from "../utils/gridplusHooks"
+import { useGridPlusInit } from "../utils/gridPlusHooks"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [

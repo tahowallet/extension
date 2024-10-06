@@ -171,7 +171,7 @@ export default function Root(): ReactElement {
         <Route path={OnboardingRoutes.LEDGER}>
           <Ledger />
         </Route>
-        <Route path={OnboardingRoutes.GRIDPLUS}>
+        <Route path={OnboardingRoutes.GRID_PLUS}>
           <GridPlus />
         </Route>
         <Route path={OnboardingRoutes.SET_PASSWORD}>
