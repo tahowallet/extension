@@ -20,6 +20,7 @@ import {
   toHexChainID,
   NetworkBaseAsset,
   sameChainID,
+  sameNetwork,
 } from "../../networks"
 import {
   AnyAssetAmount,
@@ -1262,6 +1263,18 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
+    // If we find ourselves having untracked this account for some reason and
+    // there's activity on it, track it.
+    if (
+      !(await this.getAccountsToTrack(false)).some(
+        (account) =>
+          sameEVMAddress(account.address, address) &&
+          sameNetwork(account.network, network),
+      )
+    ) {
+      await this.addAccountToTrack({ address, network })
+    }
+
     const addressWasInactive = this.addressIsInactive(address)
     const networkWasInactive = this.networkIsInactive(network.chainID)
     this.markNetworkActivity(network.chainID)
