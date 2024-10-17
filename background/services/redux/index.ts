@@ -42,6 +42,7 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
+  updateAssetReferences,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
 import {
@@ -926,9 +927,18 @@ export default class ReduxService extends BaseService<never> {
       },
     )
 
-    this.indexingService.emitter.on("assets", async (assets) => {
-      await this.store.dispatch(assetsLoaded(assets))
-    })
+    this.indexingService.emitter.on(
+      "assetsLoaded",
+      async ({ assets, loadingScope }) => {
+        await this.store.dispatch(assetsLoaded({ assets, loadingScope }))
+
+        assets.forEach((asset) => {
+          if (isSmartContractFungibleAsset(asset)) {
+            this.store.dispatch(updateAssetReferences(asset))
+          }
+        })
+      },
+    )
 
     this.indexingService.emitter.on("prices", (pricePoints) => {
       this.store.dispatch(newPricePoints(pricePoints))

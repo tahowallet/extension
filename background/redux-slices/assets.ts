@@ -30,30 +30,49 @@ const assetsSlice = createSlice({
   reducers: {
     assetsLoaded: (
       immerState,
-      { payload: newAssets }: { payload: AnyAsset[] },
-    ) => {
-      const mappedAssets: { [sym: string]: SingleAssetState[] } = {}
-      // bin existing known assets
-      immerState.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = []
+      {
+        payload: { assets: newAssets, loadingScope },
+      }: {
+        payload: {
+          assets: AnyAsset[]
+          loadingScope: "all" | "network" | "incremental"
         }
-        // if an asset is already in state, assume unique checks have been done
-        // no need to check network, contract address, etc
-        mappedAssets[asset.symbol].push(asset)
-      })
+      },
+    ) => {
+      // For loading scope `network`, any network mentioned in `newAssets` is a
+      // complete set and thus should replace data currently in the store.
+      const networksToReset =
+        loadingScope === "network"
+          ? newAssets.flatMap((asset) =>
+              "homeNetwork" in asset ? [asset.homeNetwork] : [],
+            )
+          : []
+
+      const existingAssetsBySymbol: { [sym: string]: SingleAssetState[] } = {}
+
+      // If loadingScope is `all`, mappedAssets is left empty as the incoming
+      // asset list is comprehensive. Otherwise, bin existing known assets so
+      // their data can be updated.
+      if (loadingScope !== "all") {
+        immerState.forEach((asset) => {
+          existingAssetsBySymbol[asset.symbol] ??= []
+
+          existingAssetsBySymbol[asset.symbol].push(asset)
+        })
+      }
+
       // merge in new assets
       newAssets.forEach((newAsset) => {
-        if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [
+        if (existingAssetsBySymbol[newAsset.symbol] === undefined) {
+          existingAssetsBySymbol[newAsset.symbol] = [
             {
               ...newAsset,
             },
           ]
         } else {
-          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
-            number[]
-          >((acc, existingAsset, id) => {
+          const duplicateIndexes = existingAssetsBySymbol[
+            newAsset.symbol
+          ].reduce<number[]>((acc, existingAsset, id) => {
             if (isSameAsset(newAsset, existingAsset)) {
               acc.push(id)
             }
@@ -62,15 +81,36 @@ const assetsSlice = createSlice({
 
           // if there aren't duplicates, add the asset
           if (duplicateIndexes.length === 0) {
-            mappedAssets[newAsset.symbol].push({
+            existingAssetsBySymbol[newAsset.symbol].push({
               ...newAsset,
+            })
+          } else if (
+            "homeNetwork" in newAsset &&
+            networksToReset.some(
+              (network) => newAsset.homeNetwork.chainID === network.chainID,
+            )
+          ) {
+            // When a network is being reset, replace all the data at all
+            // duplicate indices, but not the objects themselves, so that
+            // diffing continues to identify the objects in the array as
+            // unchanged (though their properties might be).
+            duplicateIndexes.forEach((id) => {
+              // Update only the metadata for the duplicate
+              Object.keys(newAsset).forEach((key) => {
+                ;(
+                  existingAssetsBySymbol[newAsset.symbol][id] as Record<
+                    string,
+                    unknown
+                  >
+                )[key] = (newAsset as Record<string, unknown>)[key]
+              })
             })
           } else {
             // TODO if there are duplicates... when should we replace assets?
             duplicateIndexes.forEach((id) => {
               // Update only the metadata for the duplicate
-              mappedAssets[newAsset.symbol][id] = {
-                ...mappedAssets[newAsset.symbol][id],
+              existingAssetsBySymbol[newAsset.symbol][id] = {
+                ...existingAssetsBySymbol[newAsset.symbol][id],
                 metadata: newAsset.metadata,
               }
             })
@@ -78,7 +118,7 @@ const assetsSlice = createSlice({
         }
       })
 
-      return Object.values(mappedAssets).flat()
+      return Object.values(existingAssetsBySymbol).flat()
     },
     removeAsset: (
       immerState,
@@ -118,7 +158,9 @@ export const refreshAsset = createBackgroundAsyncThunk(
     { dispatch },
   ) => {
     // Update assets slice
-    await dispatch(assetsLoaded([asset]))
+    await dispatch(
+      assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
+    )
     // Update accounts slice cached data about this asset
     await dispatch(updateAssetReferences(asset))
   },
