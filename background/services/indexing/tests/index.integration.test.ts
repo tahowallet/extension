@@ -161,7 +161,7 @@ describe("IndexingService", () => {
         indexingService.startService(),
       ])
 
-      await indexingService.emitter.once("assets").then(() => {
+      await indexingService.emitter.once("assetsLoaded").then(() => {
         expect(cacheSpy).toHaveBeenCalled()
 
         expect(
@@ -194,14 +194,14 @@ describe("IndexingService", () => {
       const trackedNetworks = await chainService.getTrackedNetworks()
       expect(trackedNetworks).toHaveLength(2)
       // We emit twice for every tracked network at service start
-      await indexingService.emitter.once("assets")
-      await indexingService.emitter.once("assets")
+      await indexingService.emitter.once("assetsLoaded")
+      await indexingService.emitter.once("assetsLoaded")
 
       // Resolve delay so fetchAndCacheTokenLists can continue
       delay.resolve(undefined)
 
-      await indexingService.emitter.once("assets")
-      await indexingService.emitter.once("assets").then(() => {
+      await indexingService.emitter.once("assetsLoaded")
+      await indexingService.emitter.once("assetsLoaded").then(() => {
         /**
          * Caches assets for every tracked network at service start and
          * for every supported network after tokenlist load
@@ -233,7 +233,7 @@ describe("IndexingService", () => {
         indexingService.startService(),
       ])
 
-      await indexingService.emitter.once("assets").then(() => {
+      await indexingService.emitter.once("assetsLoaded").then(() => {
         expect(
           indexingService
             .getCachedAssets(ETHEREUM)
@@ -276,7 +276,7 @@ describe("IndexingService", () => {
         indexingService.startService(),
       ])
 
-      await indexingService.emitter.once("assets")
+      await indexingService.emitter.once("assetsLoaded")
 
       expect(spy).toHaveBeenCalled()
 
