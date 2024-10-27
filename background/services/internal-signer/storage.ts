@@ -28,13 +28,13 @@ type SerializedEncryptedVaults = {
  */
 export async function getEncryptedVaults(): Promise<SerializedEncryptedVaults> {
   const data = await browser.storage.local.get("tallyVaults")
-  if (!("tallyVaults" in data)) {
+  if (!("tallyVaults" in data) || typeof data.tallyVaults !== "object") {
     return {
       version: VaultVersion.Argon2,
       vaults: [],
     }
   }
-  const { tallyVaults } = data
+  const { tallyVaults } = data as { tallyVaults: Record<string, unknown> }
   if (
     "version" in tallyVaults &&
     "vaults" in tallyVaults &&

@@ -103,7 +103,22 @@ export default class ProviderBridgeService extends BaseService<Events> {
     browser.runtime.onConnect.addListener(async (port) => {
       if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
         port.onMessage.addListener((event) => {
-          this.onMessageListener(port as Required<browser.Runtime.Port>, event)
+          if (
+            !event ||
+            typeof event !== "object" ||
+            !("id" in event) ||
+            typeof event.id !== "string" ||
+            !("request" in event) ||
+            typeof event.request !== "object"
+          ) {
+            logger.error("Unexpected event on port", event)
+            return
+          }
+
+          this.onMessageListener(
+            port as Required<browser.Runtime.Port>,
+            event as PortRequestEvent,
+          )
         })
         port.onDisconnect.addListener(() => {
           this.openPorts = this.openPorts.filter(

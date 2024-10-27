@@ -19,8 +19,8 @@ browser.runtime.onInstalled.addListener((obj) => {
     obj.reason === "update" &&
     !isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS)
   ) {
-    Object.keys(RuntimeFlag).forEach((flagName) =>
-      localStorage.removeItem(flagName),
+    Object.keys(RuntimeFlag).forEach(
+      (flagName) => "", // localStorage.removeItem(flagName),
     )
   }
 })

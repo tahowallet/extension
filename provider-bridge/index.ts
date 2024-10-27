@@ -60,9 +60,13 @@ export function connectProviderBridge(): void {
       `%c content: background > inpage: ${JSON.stringify(data)}`,
       "background: #222; color: #bada55",
     )
+    if (typeof data !== "object") {
+      // eslint-disable-next-line no-console
+      console.error("Unexpected message on port listener", data)
+    }
     window.postMessage(
       {
-        ...data,
+        ...(data as Record<string, unknown>),
         target: WINDOW_PROVIDER_TARGET,
       },
       windowOriginAtLoadTime,

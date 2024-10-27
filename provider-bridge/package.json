@@ -24,10 +24,10 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
-    "webextension-polyfill": "^0.8.0",
+    "webextension-polyfill": "^0.12.0",
     "@tallyho/provider-bridge-shared": "0.0.1"
   },
   "devDependencies": {
-    "@types/webextension-polyfill": "^0.8.0"
+    "@types/webextension-polyfill": "^0.12.0"
   }
 }

@@ -4,19 +4,30 @@
   "description": "The community owned and operated Web3 wallet.",
   "homepage_url": "https://taho.xyz",
   "author": "https://taho.xyz",
-  "manifest_version": 2,
-  "content_security_policy": "object-src 'self'; script-src 'self' 'wasm-eval';",
-  "web_accessible_resources": ["*.js", "*.json"],
+  "manifest_version": 3,
+  "content_security_policy": {
+    "extension_pages": "object-src 'self'; script-src 'self' 'wasm-unsafe-eval';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*.js", "*.json"],
+      "matches": ["https://*/*"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
-      "js": ["provider-bridge.js"],
+      "js": ["window-provider.js"],
       "run_at": "document_start",
+      "world": "MAIN",
       "all_frames": true
     }
   ],
+  "sandbox": {
+    "pages": ["provider-bridge.js"]
+  },
   "commands": {
-    "_execute_browser_action": {
+    "_execute_action": {
       "suggested_key": {
         "windows": "Alt+T",
         "mac": "Alt+T",
@@ -28,14 +39,13 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "browser_action": {
+  "action": {
     "default_title": "Taho",
     "default_popup": "popup.html"
   },
   "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
   "optional_permissions": ["notifications"],
   "background": {
-    "persistent": true,
-    "scripts": ["background.js", "background-ui.js"]
+    "service_worker": "background.js"
   }
 }

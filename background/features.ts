@@ -73,7 +73,7 @@ export function isEnabled(
   }
 
   if (checkBrowserStorage) {
-    const state = localStorage.getItem(flagName)
+    const state = "" as string // localStorage.getItem(flagName)
     return state !== null ? state === "true" : RuntimeFlag[flagName]
   }
 
