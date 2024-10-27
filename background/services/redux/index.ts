@@ -26,9 +26,7 @@ import {
   LedgerService,
   SigningService,
   NFTsService,
-  WalletConnectService,
   AnalyticsService,
-  getNoopService,
 } from ".."
 
 import { HexString, NormalizedEVMAddress } from "../../types"
@@ -161,7 +159,6 @@ import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { FeatureFlags, isEnabled } from "../../features"
 import { NFTCollection } from "../../nfts"
 import {
   initializeNFTs,
@@ -262,15 +259,6 @@ export default class ReduxService extends BaseService<never> {
       ledgerService,
     )
 
-    const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
-      ? WalletConnectService.create(
-          providerBridgeService,
-          internalEthereumProviderService,
-          preferenceService,
-          chainService,
-        )
-      : getNoopService<WalletConnectService>()
-
     const savedReduxState = readAndMigrateState()
 
     return new this(
@@ -289,7 +277,6 @@ export default class ReduxService extends BaseService<never> {
       await signingService,
       await analyticsService,
       await nftsService,
-      await walletConnectService,
       await abilitiesService,
       await notificationsService,
     )
@@ -376,12 +363,6 @@ export default class ReduxService extends BaseService<never> {
     private nftsService: NFTsService,
 
     /**
-     * A promise to the Wallet Connect service which takes care of handling wallet connect
-     * protocol and communication.
-     */
-    private walletConnectService: WalletConnectService,
-
-    /**
      * A promise to the Abilities service which takes care of fetching and storing abilities
      */
     private abilitiesService: AbilitiesService,
@@ -421,7 +402,6 @@ export default class ReduxService extends BaseService<never> {
       this.signingService.startService(),
       this.analyticsService.startService(),
       this.nftsService.startService(),
-      this.walletConnectService.startService(),
       this.abilitiesService.startService(),
       this.notificationsService.startService(),
     ]
@@ -445,7 +425,6 @@ export default class ReduxService extends BaseService<never> {
       this.signingService.stopService(),
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
-      this.walletConnectService.stopService(),
       this.abilitiesService.stopService(),
       this.notificationsService.stopService(),
     ]
@@ -467,7 +446,6 @@ export default class ReduxService extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
-    this.connectWalletConnectService()
     this.connectAbilitiesService()
     this.connectNFTsService()
     this.connectNotificationsService()
@@ -1547,11 +1525,6 @@ export default class ReduxService extends BaseService<never> {
     nftsSliceEmitter.on("refetchCollections", () =>
       this.nftsService.refreshCollections(),
     )
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  connectWalletConnectService(): void {
-    // TODO: here comes the glue between the UI and service layer
   }
 
   connectAbilitiesService(): void {

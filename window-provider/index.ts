@@ -15,7 +15,6 @@ import {
   isTahoAccountPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
-import monitorForWalletConnectionPrompts from "./wallet-connection-handlers"
 
 const METAMASK_STATE_MOCK = {
   accounts: null,
@@ -143,7 +142,6 @@ export default class TahoWindowProvider extends EventEmitter {
      * The request function should always have a provider object set.
      */
     this.request = this.request.bind(this)
-    monitorForWalletConnectionPrompts()
     this.transport.addEventListener(internalListener)
     this.transport.addEventListener(this.internalBridgeListener.bind(this))
   }

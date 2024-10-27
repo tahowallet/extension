@@ -30,7 +30,6 @@ const baseConfig: Configuration = {
     popup: "./src/popup.ts",
     tab: "./src/tab.ts",
     background: "./src/background.ts",
-    "background-ui": "./src/background-ui.ts",
     "window-provider": "./src/window-provider.ts",
     "provider-bridge": "./src/provider-bridge.ts",
   },
