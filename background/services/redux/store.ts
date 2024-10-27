@@ -2,7 +2,7 @@
 // restoring it from local storage, and connecting it efficiently to the popup
 // proxy stores.
 import browser from "webextension-polyfill"
-import { alias, wrapStore } from "webext-redux"
+import { alias, createWrapStore } from "webext-redux"
 import { Middleware, configureStore, isPlain } from "@reduxjs/toolkit"
 
 import { debounce } from "lodash"
@@ -18,6 +18,10 @@ import { allAliases } from "../../redux-slices/utils"
 
 import { diff as deepDiff, patch } from "./differ"
 import logger from "../../lib/logger"
+
+// Manifest v3/webext-redux v3 requirement, create at the top level to properly
+// attach to event handlers.
+const wrapStore = createWrapStore()
 
 // This sanitizer runs on store and action data before serializing for remote
 // redux devtools. The goal is to end up with an object that is directly
