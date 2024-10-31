@@ -48,77 +48,82 @@ const assetsSlice = createSlice({
             )
           : []
 
-      const existingAssetsBySymbol: { [sym: string]: SingleAssetState[] } = {}
+      type AssetEntry = { asset: SingleAssetState; stateIndex: number }
+
+      const existingAssetEntriesBySymbol: {
+        [assetSymbol: string]: AssetEntry[]
+      } = {}
 
       // If loadingScope is `all`, mappedAssets is left empty as the incoming
       // asset list is comprehensive. Otherwise, bin existing known assets so
       // their data can be updated.
       if (loadingScope !== "all") {
-        immerState.forEach((asset) => {
-          existingAssetsBySymbol[asset.symbol] ??= []
+        immerState.forEach((asset, i) => {
+          existingAssetEntriesBySymbol[asset.symbol] ??= []
 
-          existingAssetsBySymbol[asset.symbol].push(asset)
+          existingAssetEntriesBySymbol[asset.symbol].push({
+            asset,
+            stateIndex: i,
+          })
         })
+      } else {
+        immerState.splice(0, immerState.length)
       }
 
       // merge in new assets
       newAssets.forEach((newAsset) => {
-        if (existingAssetsBySymbol[newAsset.symbol] === undefined) {
-          existingAssetsBySymbol[newAsset.symbol] = [
-            {
-              ...newAsset,
-            },
-          ]
+        if (existingAssetEntriesBySymbol[newAsset.symbol] === undefined) {
+          // Unseen asset, add to the state.
+          immerState.push({ ...newAsset })
         } else {
-          const duplicateIndexes = existingAssetsBySymbol[
+          // We've got entries for the symbol, check for actual duplicates of
+          // the asset.
+          const duplicateIndexes = existingAssetEntriesBySymbol[
             newAsset.symbol
-          ].reduce<number[]>((acc, existingAsset, id) => {
-            if (isSameAsset(newAsset, existingAsset)) {
-              acc.push(id)
+          ].reduce<AssetEntry[]>((acc, existingAssetEntry) => {
+            if (isSameAsset(newAsset, existingAssetEntry.asset)) {
+              acc.push(existingAssetEntry)
             }
             return acc
           }, [])
 
-          // if there aren't duplicates, add the asset
           if (duplicateIndexes.length === 0) {
-            existingAssetsBySymbol[newAsset.symbol].push({
-              ...newAsset,
-            })
+            // If there aren't duplicates, add to the state.
+            immerState.push({ ...newAsset })
           } else if (
             "homeNetwork" in newAsset &&
             networksToReset.some(
               (network) => newAsset.homeNetwork.chainID === network.chainID,
             )
           ) {
-            // When a network is being reset, replace all the data at all
-            // duplicate indices, but not the objects themselves, so that
-            // diffing continues to identify the objects in the array as
-            // unchanged (though their properties might be).
-            duplicateIndexes.forEach((id) => {
-              // Update only the metadata for the duplicate
+            // If there are duplicates but the network is being reset, replace
+            // all the data at all duplicate indices, but not the objects
+            // themselves, so that diffing continues to identify the objects in
+            // the array as unchanged (though their properties might be).
+            //
+            // Do a property copy instead of an object replacement to maintain
+            // object identity for diffing purposes.
+            //
+            // NOTE: this doesn't delete properties!
+            duplicateIndexes.forEach(({ stateIndex }) => {
+              const existingAsset = immerState[stateIndex] as Record<
+                string,
+                unknown
+              >
+
               Object.keys(newAsset).forEach((key) => {
-                ;(
-                  existingAssetsBySymbol[newAsset.symbol][id] as Record<
-                    string,
-                    unknown
-                  >
-                )[key] = (newAsset as Record<string, unknown>)[key]
+                existingAsset[key] = (newAsset as Record<string, unknown>)[key]
               })
             })
           } else {
-            // TODO if there are duplicates... when should we replace assets?
-            duplicateIndexes.forEach((id) => {
-              // Update only the metadata for the duplicate
-              existingAssetsBySymbol[newAsset.symbol][id] = {
-                ...existingAssetsBySymbol[newAsset.symbol][id],
-                metadata: newAsset.metadata,
-              }
+            // If there are duplicates but we aren't resetting the network,
+            // only update metadata.
+            duplicateIndexes.forEach(({ stateIndex }) => {
+              immerState[stateIndex].metadata = newAsset.metadata
             })
           }
         }
       })
-
-      return Object.values(existingAssetsBySymbol).flat()
     },
     removeAsset: (
       immerState,
