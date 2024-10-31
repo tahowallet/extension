@@ -89,7 +89,7 @@
     "buffer": "^6.0.3",
     "react": "^18.2.0",
     "sinon": "^14.0.1",
-    "webext-redux": "^3.0.0",
+    "webext-redux": "^4.0.0",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {

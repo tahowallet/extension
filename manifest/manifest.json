@@ -10,37 +10,24 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "*.js",
-        "*.json"
-      ],
-      "matches": [
-        "https://*/*"
-      ]
+      "resources": ["*.js", "*.json"],
+      "matches": ["https://*/*"]
     }
   ],
   "content_scripts": [
     {
-      "matches": [
-        "file://*/*",
-        "http://localhost/*",
-        "https://*/*"
-      ],
-      "js": [
-        "window-provider.js"
-      ],
+      "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
+      "js": ["window-provider.js"],
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": true
     }
   ],
   "sandbox": {
-    "pages": [
-      "provider-bridge.js"
-    ]
+    "pages": ["provider-bridge.js"]
   },
   "commands": {
-    "_execute_browser_action": {
+    "_execute_action": {
       "suggested_key": {
         "windows": "Alt+T",
         "mac": "Alt+T",
@@ -52,19 +39,12 @@
   "icons": {
     "128": "icon-128.png"
   },
-  "browser_action": {
+  "action": {
     "default_title": "Taho",
     "default_popup": "popup.html"
   },
-  "permissions": [
-    "alarms",
-    "storage",
-    "unlimitedStorage",
-    "activeTab"
-  ],
-  "optional_permissions": [
-    "notifications"
-  ],
+  "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
+  "optional_permissions": ["notifications"],
   "background": {
     "service_worker": "background.js"
   }

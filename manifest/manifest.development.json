@@ -1,10 +1,5 @@
 {
   "content_security_policy": {
     "extension_pages": "object-src 'self'; script-src 'self' 'wasm-unsafe-eval' http://localhost:*;"
-  },
-  "background": {
-    "scripts": [
-      "dev-utils/extension-reload.js"
-    ]
   }
 }

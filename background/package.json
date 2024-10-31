@@ -80,6 +80,6 @@
     "redux": "^4.1.1",
     "sqlite3": "5.1.1",
     "ts-node": "^10.4.0",
-    "webext-redux": "^3.0.0"
+    "webext-redux": "^4.0.0"
   }
 }
