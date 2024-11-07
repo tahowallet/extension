@@ -19,16 +19,6 @@ export default class InjectWindowProvider {
             let windowProviderSource =
               assets[WINDOW_PROVIDER_FILENAME].source().toString()
 
-            // Insert assets for injected UI
-            const fontAsB64 = assets["fonts/segment-medium.woff2"]
-              .source()
-              .toString("base64")
-
-            windowProviderSource = windowProviderSource.replace(
-              "@@@SEGMENT_MEDIUM_BASE64@@@",
-              fontAsB64,
-            )
-
             // need to encode so it can be used as a string
             // in non optimised builds the source is a multi line string > `` needs to be used
             // but ${ needs to be escaped separatly otherwise it breaks the ``
