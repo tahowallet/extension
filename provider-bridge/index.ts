@@ -3,12 +3,12 @@ import {
   EXTERNAL_PORT_NAME,
   PROVIDER_BRIDGE_TARGET,
   WINDOW_PROVIDER_TARGET,
+  isObject,
 } from "@tallyho/provider-bridge-shared"
 
 const windowOriginAtLoadTime = window.location.origin
 
-const INJECTED_WINDOW_PROVIDER_SOURCE = "@@@WINDOW_PROVIDER@@@"
-
+// eslint-disable-next-line import/prefer-default-export
 export function connectProviderBridge(): void {
   const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
   window.addEventListener("message", (event) => {
@@ -54,6 +54,9 @@ export function connectProviderBridge(): void {
   })
 
   port.onMessage.addListener((data) => {
+    if (!isObject(data)) {
+      return
+    }
     // TODO: replace with better logging before v1. Now it's invaluable in debugging.
     // eslint-disable-next-line no-console
     console.log(
@@ -76,25 +79,4 @@ export function connectProviderBridge(): void {
   port.postMessage({
     request: { method: "tally_getConfig", origin: windowOriginAtLoadTime },
   })
-}
-
-export function injectTahoWindowProvider(): void {
-  if (document.contentType !== "text/html") return
-
-  try {
-    const container = document.head || document.documentElement
-    const scriptTag = document.createElement("script")
-    // this makes the script loading blocking which is good for us
-    // bc we want to load before anybody has a chance to temper w/ the window obj
-    scriptTag.setAttribute("async", "false")
-    scriptTag.textContent = INJECTED_WINDOW_PROVIDER_SOURCE
-
-    container.insertBefore(scriptTag, container.children[0])
-  } catch (e) {
-    throw new Error(
-      `Taho: oh nos the content-script failed to initilaize the Taho window provider.
-        ${e}
-        It's time for a seppuku...🗡`,
-    )
-  }
 }

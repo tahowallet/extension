@@ -1,4 +1,5 @@
 import { browser, startRedux } from "@tallyho/tally-background"
+import { SECOND } from "@tallyho/tally-background/constants"
 import {
   FeatureFlags,
   isEnabled,
@@ -26,3 +27,11 @@ browser.runtime.onInstalled.addListener((obj) => {
 })
 
 startRedux()
+
+// FIXME: Temporary workaround to prevent the service worker from being suspended
+// This ensures we keep state updates persisted to local storage as the extension
+// syncs chain data
+// https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers#keep_a_service_worker_alive_until_a_long-running_operation_is_finished
+setInterval(() => {
+  chrome.runtime.getPlatformInfo()
+}, 25 * SECOND)

@@ -17,15 +17,19 @@
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
-      "js": ["window-provider.js"],
+      "js": ["provider-injector.js"],
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": true
+    },
+    {
+      "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
+      "js": ["provider-bridge.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED",
+      "all_frames": true
     }
   ],
-  "sandbox": {
-    "pages": ["provider-bridge.js"]
-  },
   "commands": {
     "_execute_action": {
       "suggested_key": {
