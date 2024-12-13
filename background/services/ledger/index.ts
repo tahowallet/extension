@@ -32,6 +32,7 @@ enum LedgerType {
   UNKNOWN,
   LEDGER_NANO_S,
   LEDGER_NANO_X,
+  LEDGER_NANO_X_1,
   LEDGER_NANO_S_PLUS,
 }
 
@@ -46,6 +47,7 @@ export type LedgerAccountSigner = {
 export const LedgerProductDatabase = {
   LEDGER_NANO_S: { productId: 0x1015 },
   LEDGER_NANO_X: { productId: 0x4015 },
+  LEDGER_NANO_X_1: { productId: 0x4000 },
   LEDGER_NANO_S_PLUS: { productId: 0x5015 },
 }
 
@@ -71,6 +73,7 @@ const DisplayDetailsByLedgerType: {
   [LedgerType.UNKNOWN]: { messageSigningDisplayLength: 0 },
   [LedgerType.LEDGER_NANO_S]: { messageSigningDisplayLength: 99 },
   [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_NANO_X_1]: { messageSigningDisplayLength: 255 },
   [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
 }
 
