@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable import/no-unresolved */
 /* eslint-disable no-console */ // need logging
 /* eslint-disable no-await-in-loop  */ // need to process items in sequence
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
@@ -103,16 +104,16 @@ const syncGalxe = async () => {
     const payload = {
       operationName: "credentialItems",
       query: `
-      mutation credentialItems($credId: ID!, $operation: Operation!, $items: [String!]!) 
-        { 
-          credentialItems(input: { 
-            credId: $credId 
-            operation: $operation 
-            items: $items 
-          }) 
-          { 
-            name 
-          } 
+      mutation credentialItems($credId: ID!, $operation: Operation!, $items: [String!]!)
+        {
+          credentialItems(input: {
+            credId: $credId
+            operation: $operation
+            items: $items
+          })
+          {
+            name
+          }
         }
       `,
       variables: {

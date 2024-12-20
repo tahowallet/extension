@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable import/no-unresolved */
 /* eslint-disable no-console */ // need logging
 /* eslint-disable no-await-in-loop  */ // need to process items in sequence
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
