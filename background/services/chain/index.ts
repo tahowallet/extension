@@ -977,20 +977,32 @@ export default class ChainService extends BaseService<Events> {
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error subscribing to account transactions",
+        "chainService/addAccountToTrack: Error subscribing to account transactions for",
+        {
+          address: addressNetwork.address,
+          chainID: addressNetwork.network.chainID,
+        },
         e,
       )
     })
     this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance for",
+        {
+          address: addressNetwork.address,
+          chainID: addressNetwork.network.chainID,
+        },
         e,
       )
     })
     if (source !== SignerImportSource.internal) {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
-          "chainService/addAccountToTrack: Error loading historic asset transfers",
+          "chainService/addAccountToTrack: Error loading historic asset transfers for",
+          {
+            address: addressNetwork.address,
+            chainID: addressNetwork.network.chainID,
+          },
           e,
         )
       })

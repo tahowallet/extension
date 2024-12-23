@@ -453,6 +453,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         logger.debug(
           "Backing off for",
           backoff,
+          "on chain",
+          this.chainID,
           "and retrying: ",
           method,
           params,
@@ -463,7 +465,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             await this.reconnectProvider()
           }
 
-          logger.debug("Retrying", method, params)
+          logger.debug("Retrying", "on chain", this.chainID, method, params)
           return this.routeRpcCall(messageId)
         })
       }
@@ -473,6 +475,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         error,
         "for provider",
         this.currentProvider,
+        "on chain",
+        this.chainID,
       )
 
       delete this.messagesToSend[messageId]
@@ -709,7 +713,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           }
         } catch (innerError) {
           logger.error(
-            `Error handling incoming pending transaction hash: ${transactionHash}`,
+            "Error handling incoming pending transaction hash:",
+            transactionHash,
+            "on chain",
+            this.chainID,
+            ":",
             innerError,
           )
         }
@@ -803,6 +811,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     logger.debug(
       "Disconnecting current provider; websocket: ",
       this.currentProvider instanceof WebSocketProvider,
+      "on chain",
+      this.chainID,
       ".",
     )
     if (this.currentProvider instanceof WebSocketProvider) {
@@ -859,6 +869,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     logger.debug(
       "Reconnecting provider at index",
       this.currentProviderIndex,
+      "on chain",
+      this.chainID,
       "...",
     )
 
@@ -883,7 +895,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @returns A boolean indicating if websocket subscription was successful or not
    */
   private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
-    logger.debug("Resubscribing subscriptions...")
+    logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
 
     if (
       isClosedOrClosingWebSocketProvider(provider) ||
@@ -925,7 +937,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     })
 
-    logger.debug("Subscriptions resubscribed...")
+    logger.debug("Subscriptions resubscribed", "on chain", this.chainID, "...")
     return true
   }
 
@@ -1029,6 +1041,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           } catch (error) {
             logger.error(
               `Error handling incoming pending transaction: ${result}`,
+              "on chain",
+              this.chainID,
               error,
             )
           }
