@@ -910,11 +910,10 @@ export default class ReduxService extends BaseService<never> {
       async ({ assets, loadingScope }) => {
         await this.store.dispatch(assetsLoaded({ assets, loadingScope }))
 
-        assets.forEach((asset) => {
-          if (isSmartContractFungibleAsset(asset)) {
-            this.store.dispatch(updateAssetReferences(asset))
-          }
-        })
+        const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
+        if (smartContractAssets.length > 0) {
+          this.store.dispatch(updateAssetReferences(smartContractAssets))
+        }
       },
     )
 
