@@ -3,9 +3,6 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": ">=16.0.0 <17.0.0"
-  },
   "dependencies": {
     "firebase": "^9.9.0",
     "node-fetch": "3.3.1"
