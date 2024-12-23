@@ -99,7 +99,7 @@
     "@babel/preset-react": "^7.22.5",
     "@babel/preset-typescript": "^7.22.11",
     "@babel/register": "^7.22.5",
-    "@playwright/test": "^1.39",
+    "@playwright/test": "^1.48.0",
     "@redux-devtools/cli": "^2.0.0",
     "@thesis-co/eslint-config": "^0.6.1",
     "@types/archiver": "^5.1.0",
