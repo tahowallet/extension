@@ -508,7 +508,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
          * used for invalid responses from the server, which we can retry on
          */
         stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR/,
+          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR|call rate limit exhausted/,
         )
       ) {
         // If a new provider is already in the process of being tried, go ahead
