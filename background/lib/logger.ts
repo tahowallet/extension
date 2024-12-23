@@ -6,10 +6,10 @@ const HOUR = 1000 * 60 * 60
 
 const store = {
   get(key: string): string {
-    return window.localStorage.getItem(key) ?? ""
+    return "" // return window.localStorage.getItem(key) ?? ""
   },
   set(key: string, value: string): void {
-    window.localStorage.setItem(key, value)
+    // window.localStorage.setItem(key, value)
   },
 }
 

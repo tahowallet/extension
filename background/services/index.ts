@@ -21,7 +21,6 @@ export { default as LedgerService } from "./ledger"
 export { default as SigningService } from "./signing"
 export { default as AnalyticsService } from "./analytics"
 export { default as NFTsService } from "./nfts"
-export { default as WalletConnectService } from "./wallet-connect"
 
 export function getNoopService<T>(): T {
   return Promise.resolve({

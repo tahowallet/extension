@@ -161,7 +161,7 @@ export async function getTokenPrices(
     })
   } catch (err) {
     logger.error(
-      "Error fetching price for tokens on network.",
+      "Error fetching price for tokens on network from Coingecko",
       tokenAddresses,
       network,
       err,

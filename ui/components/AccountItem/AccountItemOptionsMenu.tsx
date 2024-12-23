@@ -3,12 +3,14 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AccountType } from "@tallyho/tally-background/redux-slices/accounts"
+import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedDropdown from "../Shared/SharedDropDown"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import AccountItemEditName from "./AccountItemEditName"
 import AccountItemRemovalConfirm from "./AccountItemRemovalConfirm"
 import ShowPrivateKey from "../AccountsBackup/ShowPrivateKey"
+import { blockExplorer } from "../../utils/constants"
 
 type AccountItemOptionsMenuProps = {
   accountTotal: AccountTotal
@@ -39,6 +41,10 @@ export default function AccountItemOptionsMenu({
     navigator.clipboard.writeText(address)
     dispatch(setSnackbarMessage("Address copied to clipboard"))
   }, [address, dispatch])
+
+  const blockExplorerURL = DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+    ? `${blockExplorer[network.chainID].url}/address/${address}`
+    : network.blockExplorerURL
 
   const canExportPrivateKey = allowExportPrivateKeys.includes(accountType)
 
@@ -129,6 +135,18 @@ export default function AccountItemOptionsMenu({
               copyAddress()
             },
           },
+          ...(blockExplorerURL
+            ? [
+                {
+                  key: "explorer",
+                  icon: "icons/s/new-tab.svg",
+                  label: t("openInExplorer"),
+                  onClick: () => {
+                    window.open(blockExplorerURL, "_blank")?.focus()
+                  },
+                },
+              ]
+            : []),
           ...(canExportPrivateKey
             ? [
                 {

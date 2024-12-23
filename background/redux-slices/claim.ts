@@ -17,7 +17,7 @@ import { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { DOGGO, HOUR } from "../constants"
-import { FeatureFlags, isEnabled } from "../features"
+import { FeatureFlags, isDisabled, isEnabled } from "../features"
 import { ERC2612_INTERFACE } from "../lib/erc20"
 import {
   ReferrerStats,
@@ -220,12 +220,12 @@ export default claimingSlice.reducer
 export const checkAlreadyClaimed = createBackgroundAsyncThunk(
   "claim/checkAlreadyClaimed",
   async ({ claimState }: { claimState: ClaimingState }, { dispatch }) => {
-    if (isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
+    if (isDisabled(FeatureFlags.SHOW_TOKEN_FEATURES)) {
       return false
     }
     const { eligibility } = claimState
     const distributorContract = await getDistributorContract()
-    if (!eligibility) {
+    if (!eligibility || !eligibility.index) {
       return false
     }
     const alreadyClaimed = await distributorContract.isClaimed(

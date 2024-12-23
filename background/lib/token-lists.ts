@@ -146,8 +146,12 @@ export function mergeAssets<T extends FungibleAsset>(
         metadata: {
           ...matchingAsset.metadata,
           ...asset.metadata,
-          tokenLists: (matchingAsset.metadata?.tokenLists || [])?.concat(
-            asset.metadata?.tokenLists ?? [],
+          tokenLists: Array.from(
+            new Set(
+              (matchingAsset.metadata?.tokenLists || [])?.concat(
+                asset.metadata?.tokenLists ?? [],
+              ),
+            ).values(),
           ),
         },
       }

@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from "react"
-import { FeatureFlags, isDisabled } from "@tallyho/tally-background/features"
+import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
@@ -60,7 +60,7 @@ export default function TopMenu(): ReactElement {
       <nav>
         <TopMenuProtocolSwitcher onClick={() => setIsProtocolListOpen(true)} />
         <div className="profile_group">
-          {isDisabled(FeatureFlags.HIDE_TOKEN_FEATURES) && (
+          {isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) && (
             <button
               type="button"
               aria-label={t("rewardsProgram")}

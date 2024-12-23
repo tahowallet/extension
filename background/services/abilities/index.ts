@@ -196,7 +196,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async fetchAbilities(): Promise<void> {
-    localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
+    // localStorage.setItem(this.ABILITY_TIME_KEY, Date.now().toString())
     const accountsToTrack = await this.chainService.getAccountsToTrack()
     const addresses = new Set(
       accountsToTrack.map((account) => normalizeEVMAddress(account.address)),
@@ -210,7 +210,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   async refreshAbilities(): Promise<void> {
-    const lastFetchTime = localStorage.getItem(this.ABILITY_TIME_KEY)
+    const lastFetchTime = Date.now() // localStorage.getItem(this.ABILITY_TIME_KEY)
 
     if (lastFetchTime && Number(lastFetchTime) + HOUR > Date.now()) {
       return

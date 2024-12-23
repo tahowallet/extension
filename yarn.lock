@@ -4489,10 +4489,10 @@
   resolved "https://registry.yarnpkg.com/@types/filewriter/-/filewriter-0.0.29.tgz#a48795ecadf957f6c0d10e0c34af86c098fa5bee"
   integrity sha512-BsPXH/irW0ht0Ji6iw/jJaK8Lj3FJemon2gvEqHKpCdDCeemHa+rI3WBGq5z7cDMZgoLjY40oninGxqk+8NzNQ==
 
-"@types/firefox-webext-browser@^82.0.0":
-  version "82.0.1"
-  resolved "https://registry.yarnpkg.com/@types/firefox-webext-browser/-/firefox-webext-browser-82.0.1.tgz#197dec1d175b099eb8dac92e9c9c9a5482a5dd8a"
-  integrity sha512-odcPKiJ34N8k53clIWen3hLvl09ja7SQ9NqtUbgmqeJ/a/ZRQiF665iXSFPcnl6cBn2XQgEg2lsUUApYNiyj+g==
+"@types/firefox-webext-browser@^120.0.4":
+  version "120.0.4"
+  resolved "https://registry.yarnpkg.com/@types/firefox-webext-browser/-/firefox-webext-browser-120.0.4.tgz#27eead781051b2e681a344dd2983735faadd4343"
+  integrity sha512-lBrpf08xhiZBigrtdQfUaqX1UauwZ+skbFiL8u2Tdra/rklkKadYmIzTwkNZSWtuZ7OKpFqbE2HHfDoFqvZf6w==
 
 "@types/geojson@*":
   version "7946.0.10"
@@ -4897,10 +4897,10 @@
   resolved "https://registry.yarnpkg.com/@types/w3c-web-usb/-/w3c-web-usb-1.0.5.tgz#90284d17f35de981670c85d29053ae8b88fa5543"
   integrity sha512-dYolx2XWesl1TMu+1BjtjU6eC6c2zZ2VDKhjU4f/mtR3+UBfMW6h1tPCQt7leY5Y8JBg0Fe/mMnoDMkPPNX9sw==
 
-"@types/webextension-polyfill@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@types/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#6c40740eec531de412f6ceba27bb2cad4a24907c"
-  integrity sha512-usmQx2snpNkVl2VoOGZCdrPnfHL+CjuSFy84ZdTwQ2b2cvyygF/zGW5YI6Zywk+bfq9zmYpORO9lmdN7DknpRw==
+"@types/webextension-polyfill@^0.12.0":
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/@types/webextension-polyfill/-/webextension-polyfill-0.12.1.tgz#8dae244fe094cbb541005362e8e22f16671f6054"
+  integrity sha512-xPTFWwQ8BxPevPF2IKsf4hpZNss4LxaOLZXypQH4E63BDLmcwX/RMGdI4tB4VO4Nb6xDBH3F/p4gz4wvof1o9w==
 
 "@types/webpack-livereload-plugin@^2.3.2":
   version "2.3.3"
@@ -15619,35 +15619,18 @@ wcwidth@^1.0.0:
   dependencies:
     defaults "^1.0.3"
 
-webext-detect-page@^2.0.5:
-  version "2.0.6"
-  resolved "https://registry.yarnpkg.com/webext-detect-page/-/webext-detect-page-2.0.6.tgz#dbad250de3b8e82cf694e684741d00e5ac5587ef"
-  integrity sha512-IGpAHdsHz9mwpT8nHyzbdVz1ArUnsRf3PNGMprk3MgEtyN+jhcV4JqkOjNiKIb3k9sZ4WKY4lCxi5MtV1MuTYg==
-
-webext-options-sync@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/webext-options-sync/-/webext-options-sync-2.0.1.tgz#4e00b624113be913f5691f1490b0f9542f998016"
-  integrity sha512-y7px8AfTrAMcIRxYcGEu2UVAj18C0H0SYNiF9orD9+p3Q8/r6wbUH0B/OU4g7v6DmvhNtg5XEO1ZUEr+XfYqCA==
-  dependencies:
-    webext-detect-page "^2.0.5"
-
-webext-redux@^2.1.7:
-  version "2.1.7"
-  resolved "https://registry.yarnpkg.com/webext-redux/-/webext-redux-2.1.7.tgz#b6bb0124b24912ad0b823d4c754eb72ef65d6186"
-  integrity sha512-BGWbr/jbZl26nGN3YpTjAC7cxERCbxSwx8les9mEBALNe+g9fm31Vi5miRpk0cqEo3aGKTQ++SZ9MpNHJWPpCw==
+webext-redux@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/webext-redux/-/webext-redux-4.0.0.tgz#5c4b9b9db3890d53f0f3db7098e45d20062b2029"
+  integrity sha512-pMyU0mWRz5umC5ISGG4H7src+bwgJUw3lYEtPm5gvJZILC2/ZrEE5mtqi3caSifet684kMtPse0uVyK/9bZMuA==
   dependencies:
     lodash.assignin "^4.2.0"
     lodash.clonedeep "^4.5.0"
 
-webextension-polyfill@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.7.0.tgz#0df1120ff0266056319ce1a622b09ad8d4a56505"
-  integrity sha512-su48BkMLxqzTTvPSE1eWxKToPS2Tv5DLGxKexLEVpwFd6Po6N8hhSLIvG6acPAg7qERoEaDL+Y5HQJeJeml5Aw==
-
-webextension-polyfill@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#f80e9f4b7f81820c420abd6ffbebfa838c60e041"
-  integrity sha512-a19+DzlT6Kp9/UI+mF9XQopeZ+n2ussjhxHJ4/pmIGge9ijCDz7Gn93mNnjpZAk95T4Tae8iHZ6sSf869txqiQ==
+webextension-polyfill@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.12.0.tgz#f62c57d2cd42524e9fbdcee494c034cae34a3d69"
+  integrity sha512-97TBmpoWJEE+3nFBQ4VocyCdLKfw54rFaJ6EVQYLBCXqCIpLSZkwGgASpv4oPt9gdKCJ80RJlcmNzNn008Ag6Q==
 
 webidl-conversions@^3.0.0:
   version "3.0.1"

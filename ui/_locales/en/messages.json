@@ -2,6 +2,7 @@
   "accounts": {
     "accountItem": {
       "noNameError": "Name is required",
+      "openInExplorer": "Open in explorer",
       "editName": "Edit name",
       "saveName": "Save name",
       "typeNewName": "Type new name",

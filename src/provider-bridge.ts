@@ -1,7 +1,3 @@
-import {
-  injectTahoWindowProvider,
-  connectProviderBridge,
-} from "@tallyho/provider-bridge"
+import connectProviderBridge from "@tallyho/provider-bridge"
 
-injectTahoWindowProvider()
 connectProviderBridge()

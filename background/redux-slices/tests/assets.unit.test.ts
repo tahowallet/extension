@@ -29,13 +29,19 @@ const pricesState: PricesState = {
 describe("Reducers", () => {
   describe("assetsLoaded", () => {
     test("updates cached asset metadata", () => {
-      const state = reducer([], assetsLoaded([asset]))
+      const state = reducer(
+        [],
+        assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
+      )
 
       expect(state[0].metadata?.verified).not.toBeDefined()
 
       const newState = reducer(
         state,
-        assetsLoaded([{ ...asset, metadata: { verified: true } }]),
+        assetsLoaded({
+          assets: [{ ...asset, metadata: { verified: true } }],
+          loadingScope: "incremental",
+        }),
       )
 
       expect(newState[0].metadata?.verified).toBeTruthy()

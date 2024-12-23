@@ -314,7 +314,7 @@ describe("Accounts redux slice", () => {
 
       const newState = reducer(
         secondAccountUpdate,
-        updateAssetReferences(updatedAsset),
+        updateAssetReferences([updatedAsset]),
       )
 
       const updatedFirstAccountData = newState.accountsData.evm[

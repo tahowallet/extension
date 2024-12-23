@@ -13,7 +13,14 @@ type SharedAddressProps = {
   name?: string | undefined
   elide: boolean
   nameResolverSystem?: NameResolverSystem
+  /**
+   * Always show the address, even if `name` is passed.
+   */
   alwaysShowAddress: boolean
+  /**
+   * Show a copy icon after the content text.
+   */
+  showCopyIcon?: boolean
 }
 
 /**
@@ -38,6 +45,7 @@ export default function SharedAddress({
   elide,
   nameResolverSystem,
   alwaysShowAddress,
+  showCopyIcon,
 }: SharedAddressProps): ReactElement {
   const dispatch = useBackgroundDispatch()
 
@@ -71,8 +79,11 @@ export default function SharedAddress({
       {alwaysShowAddress && name !== undefined && (
         <p className="detail">{truncateAddress(address)}</p>
       )}
+      {showCopyIcon === true && <span className="copy_icon" />}
       <style jsx>{`
         button {
+          display: flex;
+          white-space: nowrap;
           transition: 300ms color;
           max-width: 100%;
         }
@@ -81,6 +92,18 @@ export default function SharedAddress({
         }
         button:hover {
           color: var(--gold-80);
+        }
+        .copy_icon {
+          mask-image: url("./images/copy@2x.png");
+          mask-size: cover;
+          width: 24px;
+          height: 24px;
+          margin-left: 10px;
+          display: inline-block;
+          background-color: var(--green-5);
+        }
+        button:hover .copy_icon {
+          background-color: var(--trophy-gold);
         }
         .name_source_tooltip {
           margin: 0;

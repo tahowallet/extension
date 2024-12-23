@@ -30,55 +30,125 @@ const assetsSlice = createSlice({
   reducers: {
     assetsLoaded: (
       immerState,
-      { payload: newAssets }: { payload: AnyAsset[] },
-    ) => {
-      const mappedAssets: { [sym: string]: SingleAssetState[] } = {}
-      // bin existing known assets
-      immerState.forEach((asset) => {
-        if (mappedAssets[asset.symbol] === undefined) {
-          mappedAssets[asset.symbol] = []
+      {
+        payload: { assets: newAssets, loadingScope },
+      }: {
+        payload: {
+          assets: AnyAsset[]
+          loadingScope: "all" | "network" | "incremental"
         }
-        // if an asset is already in state, assume unique checks have been done
-        // no need to check network, contract address, etc
-        mappedAssets[asset.symbol].push(asset)
-      })
-      // merge in new assets
-      newAssets.forEach((newAsset) => {
-        if (mappedAssets[newAsset.symbol] === undefined) {
-          mappedAssets[newAsset.symbol] = [
-            {
-              ...newAsset,
-            },
-          ]
-        } else {
-          const duplicateIndexes = mappedAssets[newAsset.symbol].reduce<
-            number[]
-          >((acc, existingAsset, id) => {
-            if (isSameAsset(newAsset, existingAsset)) {
-              acc.push(id)
-            }
-            return acc
-          }, [])
+      },
+    ) => {
+      // For loading scope `network`, any network mentioned in `newAssets` is a
+      // complete set and thus should replace data currently in the store.
+      const networksToReset =
+        loadingScope === "network"
+          ? newAssets.flatMap((asset) =>
+              "homeNetwork" in asset ? [asset.homeNetwork] : [],
+            )
+          : []
 
-          // if there aren't duplicates, add the asset
-          if (duplicateIndexes.length === 0) {
-            mappedAssets[newAsset.symbol].push({
-              ...newAsset,
-            })
+      // The goal here is to update the Immer state in such a way that minimal
+      // object identity differences occur; this ensures that any diffing of
+      // the state will produce reduced differences. To do this, we iterate all
+      // existing assets, see if there is an update for those assets, and then
+      // update the asset's properties. New assets that are used to update
+      // existing assets in this way are deleted from the new asset list.
+      //
+      // When we are using a loading scope of `network` or `all`, we also mark
+      // any existing assets that are _not_ in the incoming set for deletion.
+      // We then delete everything at the end in batched `splice` operations.
+      //
+      // Finally, we insert any new assets that weren't used to update existing
+      // assets.
+
+      const newAssetsBySymbol: { [sym: string]: SingleAssetState[] } = {}
+
+      newAssets.forEach((asset) => {
+        newAssetsBySymbol[asset.symbol] ??= []
+
+        newAssetsBySymbol[asset.symbol].push(asset)
+      })
+
+      const pruneIndexes: number[] = []
+      immerState.forEach((existingAsset, i) => {
+        const matchingNewAssets = (
+          newAssetsBySymbol[existingAsset.symbol] ?? []
+        ).filter((newAsset) => isSameAsset(existingAsset, newAsset))
+
+        const assetOnAResettingNetwork =
+          loadingScope === "network" &&
+          networksToReset.some(
+            (network) =>
+              "homeNetwork" in existingAsset &&
+              sameNetwork(existingAsset.homeNetwork, network),
+          )
+
+        // If there are no matching new assets, then we have a couple of
+        // options.
+        if (matchingNewAssets.length === 0) {
+          // For network loads and full loads, no match means pruning if the
+          // asset is on one of the included networks.
+          if (
+            loadingScope === "all" ||
+            (loadingScope === "network" && assetOnAResettingNetwork)
+          ) {
+            pruneIndexes.push(i)
+            return
+          }
+          // For incremental loads, no match means no action.
+          return
+        }
+
+        // If there are matching new assets, then we have a couple of options.
+        if (
+          loadingScope === "all" ||
+          (loadingScope === "network" && assetOnAResettingNetwork)
+        ) {
+          // If we're replacing all assets or this network's asset, assign all
+          // data from the first matching new asset to the entry for the
+          // existing asset.
+          Object.assign(existingAsset, matchingNewAssets[0])
+        } else {
+          // If we're doing an incremental update, only update metadata from the
+          // duplicate.
+          immerState[i].metadata = matchingNewAssets[0].metadata
+        }
+
+        // Remove all matching assets from the matchingNewAssets list; for
+        // incremental updates, this just means not adding duplicates later,
+        // while for asset list replacements, this means any other duplicates
+        // in existing and new lists both will be pruned.
+        newAssetsBySymbol[existingAsset.symbol] = newAssetsBySymbol[
+          existingAsset.symbol
+        ].filter((newAsset) => !matchingNewAssets.includes(newAsset))
+      })
+
+      // Prune all indexes that were flagged for pruning.
+      if (pruneIndexes.length === 1) {
+        immerState.splice(pruneIndexes[0], 1)
+      } else if (pruneIndexes.length > 1) {
+        // Splice out contiguous index runs.
+        const currentRun = { runStart: pruneIndexes[0], runLength: 1 }
+        for (let i = 1; i < pruneIndexes.length; i += 1) {
+          if (pruneIndexes[i] === currentRun.runStart + currentRun.runLength) {
+            currentRun.runLength += 1
           } else {
-            // TODO if there are duplicates... when should we replace assets?
-            duplicateIndexes.forEach((id) => {
-              // Update only the metadata for the duplicate
-              mappedAssets[newAsset.symbol][id] = {
-                ...mappedAssets[newAsset.symbol][id],
-                metadata: newAsset.metadata,
-              }
-            })
+            immerState.splice(currentRun.runStart, currentRun.runLength)
+
+            currentRun.runStart = pruneIndexes[i]
+            currentRun.runLength = 1
           }
         }
-      })
+      }
 
-      return Object.values(mappedAssets).flat()
+      // Any remaining new assets had no duplicates in the existing asset list
+      // and can be safely added.
+      Object.values(newAssetsBySymbol)
+        .flat()
+        .forEach((newAsset) => {
+          immerState.push(newAsset)
+        })
     },
     removeAsset: (
       immerState,
@@ -118,9 +188,11 @@ export const refreshAsset = createBackgroundAsyncThunk(
     { dispatch },
   ) => {
     // Update assets slice
-    await dispatch(assetsLoaded([asset]))
+    await dispatch(
+      assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
+    )
     // Update accounts slice cached data about this asset
-    await dispatch(updateAssetReferences(asset))
+    await dispatch(updateAssetReferences([asset]))
   },
 )
 

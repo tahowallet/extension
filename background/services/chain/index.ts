@@ -20,6 +20,7 @@ import {
   toHexChainID,
   NetworkBaseAsset,
   sameChainID,
+  sameNetwork,
 } from "../../networks"
 import {
   AnyAssetAmount,
@@ -976,20 +977,32 @@ export default class ChainService extends BaseService<Events> {
     this.emitSavedTransactions(addressNetwork)
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error subscribing to account transactions",
+        "chainService/addAccountToTrack: Error subscribing to account transactions for",
+        {
+          address: addressNetwork.address,
+          chainID: addressNetwork.network.chainID,
+        },
         e,
       )
     })
     this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
       logger.error(
-        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance",
+        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance for",
+        {
+          address: addressNetwork.address,
+          chainID: addressNetwork.network.chainID,
+        },
         e,
       )
     })
     if (source !== SignerImportSource.internal) {
       this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
         logger.error(
-          "chainService/addAccountToTrack: Error loading historic asset transfers",
+          "chainService/addAccountToTrack: Error loading historic asset transfers for",
+          {
+            address: addressNetwork.address,
+            chainID: addressNetwork.network.chainID,
+          },
           e,
         )
       })
@@ -1262,6 +1275,18 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
+    // If we find ourselves having untracked this account for some reason and
+    // there's activity on it, track it.
+    if (
+      !(await this.getAccountsToTrack()).some(
+        (account) =>
+          sameEVMAddress(account.address, address) &&
+          sameNetwork(account.network, network),
+      )
+    ) {
+      await this.addAccountToTrack({ address, network })
+    }
+
     const addressWasInactive = this.addressIsInactive(address)
     const networkWasInactive = this.networkIsInactive(network.chainID)
     this.markNetworkActivity(network.chainID)
