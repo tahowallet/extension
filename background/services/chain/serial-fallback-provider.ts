@@ -383,6 +383,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           (this.currentProvider._pendingBatch as { length: number } | undefined)
         : undefined
     const pendingBatchSize = pendingBatch?.length
+    const existingProviderIndex = this.currentProviderIndex
 
     if (
       pendingBatch &&
@@ -510,6 +511,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR/,
         )
       ) {
+        // If a new provider is already in the process of being tried, go ahead
+        // and fire off into the new provider.
+        if (this.currentProviderIndex !== existingProviderIndex) {
+          logger.debug(
+            "Retrying on newly connected provider on chain",
+            this.chainID,
+            ": ",
+            method,
+            params,
+          )
+          return await this.routeRpcCall(messageId)
+        }
+
         // If there is another provider to try - try to send the message on that provider
         if (this.currentProviderIndex + 1 < this.providerCreators.length) {
           return await this.attemptToSendMessageOnNewProvider(messageId)
@@ -530,6 +544,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         stringifiedError.match(/bad result from backend/)
       ) {
         if (
+          // If the current provider is the one we tried with initially.
+          this.currentProviderIndex === existingProviderIndex &&
           // If there is another provider to try and we have exceeded the
           // number of retries try to send the message on that provider
           this.currentProviderIndex + 1 < this.providerCreators.length &&
@@ -697,7 +713,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // If every other provider failed and we're on the alchemy provider,
       // reconnect to the first provider once we've handled this request
       // as we should limit relying on alchemy as a fallback
-      if (isAlchemyFallback) {
+      if (isAlchemyFallback && this.currentProviderIndex !== 0) {
         this.currentProviderIndex = 0
         this.reconnectProvider()
       }
