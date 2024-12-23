@@ -1013,6 +1013,7 @@ export default class IndexingService extends BaseService<Events> {
           } catch (err) {
             logger.error(
               `Error fetching, validating, and saving token list ${url}`,
+              err,
             )
           }
         }
