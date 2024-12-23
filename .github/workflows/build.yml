@@ -8,6 +8,9 @@ on:
     tags:
       - v*
 
+env:
+  NODE_OPTIONS: --openssl-legacy-provider
+
 jobs:
   build:
     runs-on: ubuntu-latest
