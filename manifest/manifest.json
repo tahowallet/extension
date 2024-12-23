@@ -17,6 +17,13 @@
   "content_scripts": [
     {
       "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
+      "js": ["provider-bridge.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED",
+      "all_frames": true
+    },
+    {
+      "matches": ["file://*/*", "http://localhost/*", "https://*/*"],
       "js": ["window-provider.js"],
       "run_at": "document_start",
       "world": "MAIN",
