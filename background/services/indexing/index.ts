@@ -973,7 +973,7 @@ export default class IndexingService extends BaseService<Events> {
       this.emitter.emit("prices", pricePoints)
     } catch (err) {
       logger.error(
-        "Error getting token prices from coingecko",
+        "Error getting token prices from coingecko or chain",
         activeAssetsToTrack,
         err,
       )
