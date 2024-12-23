@@ -395,7 +395,9 @@ export default function AccountsNotificationPanelAccounts({
             )}
             {Object.values(accountTotalsByType).map(
               (accountTotalsBySignerId, idx) => (
-                <section key={accountType}>
+                <section
+                  key={`${accountType}-${accountTotalsBySignerId[0].signerId}`}
+                >
                   <WalletTypeHeader
                     accountType={accountType}
                     walletNumber={idx + 1}
