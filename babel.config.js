@@ -6,7 +6,7 @@ module.exports = {
       "@babel/env",
       {
         targets: {
-          browsers: ["chrome >= 90", "firefox >= 89"],
+          browsers: ["chrome >= 107", "firefox >= 107"],
         },
       },
     ],
