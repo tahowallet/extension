@@ -246,6 +246,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // for reconnects when relevant.
   private currentProviderIndex = 0
 
+  // If nonzero and the underlying provider is a batch provider, forces the
+  // batch size to be no more than this number, holding other requests until
+  // the existing batch has cleared.
+  private forcedBatchMaxSize: number = 0
+
+  // If this promise is set, new RPC calls will await on it before being
+  // processed. When forcedBatchMaxSize is nonzero and that number of RPC calls
+  // are pending, this promise will be set so subsequent requests will wait
+  // until the batch flushes.
+  private forcedBatchMaxPromise: Promise<void> | undefined = undefined
+
+  // During max size update, this value is set so that the value is not
+  // decreased by multiple failed requests.
+  private forcedBatchMaxPreviousSize: number = 0
+
   // TEMPORARY cache for latest account balances to reduce number of rpc calls
   // This is intended as a temporary fix to the burst of account enrichment that
   // happens when the extension is first loaded up as a result of activity emission
@@ -357,6 +372,44 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return cachedResult
     }
 
+    if (this.forcedBatchMaxPromise) {
+      await this.forcedBatchMaxPromise
+    }
+
+    const pendingBatch =
+      "_pendingBatch" in this.currentProvider
+        ? // Accessing ethers internals for forced max batch sizing.
+          // eslint-disable-next-line no-underscore-dangle
+          (this.currentProvider._pendingBatch as { length: number } | undefined)
+        : undefined
+    const pendingBatchSize = pendingBatch?.length
+
+    if (
+      pendingBatch &&
+      this.forcedBatchMaxSize &&
+      // Accessing ethers internals for forced max batch sizing.
+      // eslint-disable-next-line no-underscore-dangle
+      pendingBatch.length >= this.forcedBatchMaxSize
+    ) {
+      this.forcedBatchMaxPromise = new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          const latestPendingBatch =
+            "_pendingBatch" in this.currentProvider
+              ? // Accessing ethers internals for forced max batch sizing.
+                // eslint-disable-next-line no-underscore-dangle
+                (this.currentProvider._pendingBatch as
+                  | { length: number }
+                  | undefined)
+              : undefined
+
+          if ((latestPendingBatch?.length ?? 0) < this.forcedBatchMaxSize) {
+            resolve()
+            clearInterval(checkInterval)
+          }
+        }, 5)
+      })
+    }
+
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -397,6 +450,42 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     } catch (error) {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
+
+      if (
+        stringifiedError.match(/Batch size too large/) &&
+        (pendingBatchSize === undefined || pendingBatchSize === 0)
+      ) {
+        this.forcedBatchMaxPreviousSize =
+          pendingBatch?.length ?? pendingBatchSize ?? 1
+        this.forcedBatchMaxSize =
+          (pendingBatch?.length ?? pendingBatchSize ?? 2) / 2
+
+        logger.debug(
+          "Setting a max batch size of",
+          this.forcedBatchMaxSize,
+          "on chain",
+          this.chainID,
+          "and retrying: ",
+          method,
+          params,
+        )
+
+        return this.routeRpcCall(messageId)
+      }
+
+      if (stringifiedError.match(/Batch size too large/)) {
+        logger.debug(
+          "Using max batch size of",
+          this.forcedBatchMaxSize,
+          "on chain",
+          this.chainID,
+          "and retrying: ",
+          method,
+          params,
+        )
+
+        return this.routeRpcCall(messageId)
+      }
 
       if (
         /**
