@@ -163,7 +163,7 @@ export default class IslandService extends BaseService<Events> {
 
     const huntingGrounds = initialVaults
 
-    if (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES)) {
+    if (isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES)) {
       // Make sure the hunting ground assets are being tracked.
       huntingGrounds.forEach(({ network, asset }) => {
         this.indexingService.addAssetToTrack({

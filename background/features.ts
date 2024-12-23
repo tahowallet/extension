@@ -10,11 +10,11 @@ const BuildTimeFlag = {
  */
 export const RuntimeFlag = {
   USE_MAINNET_FORK: process.env.USE_MAINNET_FORK === "true",
-  HIDE_IMPORT_DERIVATION_PATH:
-    process.env.HIDE_IMPORT_DERIVATION_PATH === "true",
-  HIDE_SWAP_REWARDS: process.env.HIDE_SWAP_REWARDS === "true",
+  SHOW_IMPORT_DERIVATION_PATH:
+    process.env.SHOW_IMPORT_DERIVATION_PATH === "true",
+  SHOW_SWAP_REWARDS: process.env.SHOW_SWAP_REWARDS === "true",
   SUPPORT_MULTIPLE_LANGUAGES: process.env.SUPPORT_MULTIPLE_LANGUAGES === "true",
-  HIDE_TOKEN_FEATURES: process.env.HIDE_TOKEN_FEATURES === "true",
+  SHOW_TOKEN_FEATURES: process.env.SHOW_TOKEN_FEATURES === "true",
   SUPPORT_ARBITRUM_NOVA: process.env.SUPPORT_ARBITRUM_NOVA === "true",
   SUPPORT_ACHIEVEMENTS_BANNER:
     process.env.SUPPORT_ACHIEVEMENTS_BANNER === "true",
@@ -23,7 +23,7 @@ export const RuntimeFlag = {
   SUPPORT_SWAP_QUOTE_REFRESH: process.env.SUPPORT_SWAP_QUOTE_REFRESH === "true",
   SUPPORT_CUSTOM_NETWORKS: process.env.SUPPORT_CUSTOM_NETWORKS === "true",
   SUPPORT_CUSTOM_RPCS: process.env.SUPPORT_CUSTOM_RPCS === "true",
-  HIDE_ISLAND_UI: process.env.HIDE_ISLAND_UI === "true",
+  SHOW_ISLAND_UI: process.env.SHOW_ISLAND_UI === "true",
   SUPPORT_THE_ISLAND: process.env.SUPPORT_THE_ISLAND === "true",
   SUPPORT_THE_ISLAND_ON_TENDERLY:
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true",
