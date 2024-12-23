@@ -31,11 +31,12 @@ import {
 import { toFixedPoint } from "./fixed-point"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
+import logger from "./logger"
 
 // The size of a batch of on-chain price lookups. Too high and the request will
 // fail due to running out of gas, as eth_call is still subject to gas limits.
 // Too low and we will make additional unnecessary RPC requests.
-const BATCH_SIZE = 40
+const BATCH_SIZE = 20
 
 // Oracle Documentation and Address references can be found
 // at https://docs.1inch.io/docs/spot-price-aggregator/introduction/
@@ -220,6 +221,11 @@ export async function getUSDPriceForTokens(
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
   if (assets.length > BATCH_SIZE) {
+    logger.debug(
+      "Batching assets price lookup by length",
+      assets.length,
+      BATCH_SIZE,
+    )
     // Batch assets when we get to BATCH_SIZE so we're not trying to construct
     // megatransactions with 10s and 100s of assets that blow up RPC nodes.
     return (
