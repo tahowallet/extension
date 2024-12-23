@@ -308,10 +308,10 @@ export default class TahoWindowProvider extends EventEmitter {
   }
 
   override emit(event: string | symbol, ...args: unknown[]): boolean {
-    const hadAdditionalListeners = window.walletRouter?.reemitTahoEvent(
-      event,
-      ...args,
-    )
+    const hadAdditionalListeners =
+      typeof window === "undefined"
+        ? undefined
+        : window.walletRouter?.reemitTahoEvent(event, ...args)
 
     const hadDirectListeners = super.emit(event, ...args)
 

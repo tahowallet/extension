@@ -69,7 +69,8 @@ export function createPosthogPayload(
       $lib: USE_ANALYTICS_SOURCE,
       // properties[$current_url] is a convention used by posthog
       // Let's store the URL so we can differentiate between the sources later on.
-      $current_url: window.location.href,
+      $current_url:
+        typeof window !== "undefined" ? window.location.href : "service-worker",
       // Let's also send in anything that we might send with the event. Eg time
       ...payload,
     },
