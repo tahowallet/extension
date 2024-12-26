@@ -32,6 +32,7 @@ import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
+import { HexString } from "@tallyho/tally-background/types"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,
@@ -298,6 +299,99 @@ function WalletTypeHeader({
   )
 }
 
+function WalletSignerAccounts({
+  accountType,
+  walletNumber,
+  signerId,
+  signerAccountTotals,
+  onUpdatedAddressSelected,
+}: {
+  accountType: AccountType
+  walletNumber: number
+  signerId: string
+  signerAccountTotals: AccountTotal[]
+  onUpdatedAddressSelected: (address: HexString) => void
+}) {
+  const dispatch = useBackgroundDispatch()
+  const selectedAccountAddress =
+    useBackgroundSelector(selectCurrentAccount).address
+
+  const onClickAddAddress = useMemo(() => {
+    if (isAccountWithMnemonic(accountType)) {
+      return () => dispatch(deriveAddress(signerId))
+    }
+    return () => {}
+  }, [dispatch, accountType, signerId])
+
+  return (
+    <section key={`${accountType}-${signerId}`}>
+      <WalletTypeHeader
+        accountType={accountType}
+        walletNumber={walletNumber}
+        path={signerAccountTotals[0].path}
+        accountSigner={signerAccountTotals[0].accountSigner}
+        accountTotals={signerAccountTotals}
+        onClickAddAddress={onClickAddAddress}
+      />
+      <ul>
+        {signerAccountTotals.map((accountTotal) => {
+          const normalizedAddress = normalizeEVMAddress(accountTotal.address)
+
+          const isSelected = sameEVMAddress(
+            normalizedAddress,
+            selectedAccountAddress,
+          )
+
+          return (
+            <li
+              key={normalizedAddress}
+              // We use these event handlers in leiu of :hover so that we can prevent child hovering
+              // from affecting the hover state of this li.
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--hunter-green)"
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--hunter-green)"
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = ""
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.backgroundColor = ""
+              }}
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onUpdatedAddressSelected(normalizedAddress)
+                  }
+                }}
+                onClick={() => {
+                  dispatch(resetClaimFlow())
+                  onUpdatedAddressSelected(normalizedAddress)
+                }}
+              >
+                <SharedAccountItemSummary
+                  key={normalizedAddress}
+                  accountTotal={accountTotal}
+                  isSelected={isSelected}
+                >
+                  <AccountItemOptionsMenu
+                    accountTotal={accountTotal}
+                    accountType={accountType}
+                  />
+                </SharedAccountItemSummary>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 type Props = {
   onCurrentAddressChange: (newAddress: string) => void
 }
@@ -393,91 +487,17 @@ export default function AccountsNotificationPanelAccounts({
                 )}
               </div>
             )}
-            {Object.values(accountTotalsByType).map(
-              (accountTotalsBySignerId, idx) => (
-                <section
-                  key={`${accountType}-${accountTotalsBySignerId[0].signerId}`}
-                >
-                  <WalletTypeHeader
-                    accountType={accountType}
-                    walletNumber={idx + 1}
-                    path={accountTotalsBySignerId[0].path}
-                    accountSigner={accountTotalsBySignerId[0].accountSigner}
-                    accountTotals={accountTotalsBySignerId}
-                    onClickAddAddress={
-                      isAccountWithMnemonic(accountType)
-                        ? () => {
-                            if (accountTotalsBySignerId[0].signerId) {
-                              dispatch(
-                                deriveAddress(
-                                  accountTotalsBySignerId[0].signerId,
-                                ),
-                              )
-                            }
-                          }
-                        : undefined
-                    }
-                  />
-                  <ul>
-                    {accountTotalsBySignerId.map((accountTotal) => {
-                      const normalizedAddress = normalizeEVMAddress(
-                        accountTotal.address,
-                      )
-
-                      const isSelected = sameEVMAddress(
-                        normalizedAddress,
-                        selectedAccountAddress,
-                      )
-
-                      return (
-                        <li
-                          key={normalizedAddress}
-                          // We use these event handlers in leiu of :hover so that we can prevent child hovering
-                          // from affecting the hover state of this li.
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onFocus={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--hunter-green)"
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                          onBlur={(e) => {
-                            e.currentTarget.style.backgroundColor = ""
-                          }}
-                        >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateCurrentAccount(normalizedAddress)
-                              }
-                            }}
-                            onClick={() => {
-                              dispatch(resetClaimFlow())
-                              updateCurrentAccount(normalizedAddress)
-                            }}
-                          >
-                            <SharedAccountItemSummary
-                              key={normalizedAddress}
-                              accountTotal={accountTotal}
-                              isSelected={isSelected}
-                            >
-                              <AccountItemOptionsMenu
-                                accountTotal={accountTotal}
-                                accountType={accountType}
-                              />
-                            </SharedAccountItemSummary>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
+            {Object.entries(accountTotalsByType).map(
+              ([signerId, signerAccountTotals], idx) => (
+                <WalletSignerAccounts
+                  accountType={accountType}
+                  walletNumber={idx + 1}
+                  signerId={signerId}
+                  signerAccountTotals={signerAccountTotals}
+                  onUpdatedAddressSelected={(address) =>
+                    updateCurrentAccount(address)
+                  }
+                />
               ),
             )}
           </>
