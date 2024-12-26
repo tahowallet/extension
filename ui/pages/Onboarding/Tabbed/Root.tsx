@@ -70,12 +70,14 @@ function Navigation({
 
           .right_container {
             position: relative;
-            padding: 62px 80px 0;
+            display: flex
+            flex-direction: row;
+            padding: 42px 80px 0;
             width: 50%;
             height: 100%;
             box-sizing: border-box;
             background: #04141480;
-            overflow-y: hidden;
+            overflow-y: auto;
           }
 
           .route_based_content {

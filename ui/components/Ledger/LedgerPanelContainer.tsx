@@ -48,7 +48,7 @@ export default function LedgerPanelContainer({
 
         .indicator {
           align-self: center;
-          margin: 1rem 1rem 0;
+          margin: 0 1rem 0;
         }
 
         .heading {
