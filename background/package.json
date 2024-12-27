@@ -65,14 +65,14 @@
     "siwe": "^1.1.0",
     "util": "^0.12.4",
     "uuid": "^9.0.0",
-    "webextension-polyfill": "^0.8.0"
+    "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^1.9.4",
     "@types/argon2-browser": "^1.18.1",
     "@types/sinon": "^10.0.12",
     "@types/uuid": "^8.3.4",
-    "@types/webextension-polyfill": "^0.8.0",
+    "@types/webextension-polyfill": "^0.12.0",
     "@walletconnect/legacy-types": "^2.0.0",
     "@walletconnect/types": "^2.7.7",
     "crypto-browserify": "^3.12.0",
@@ -81,6 +81,6 @@
     "redux": "^4.1.1",
     "sqlite3": "5.1.1",
     "ts-node": "^10.4.0",
-    "webext-redux": "^2.1.7"
+    "webext-redux": "^4.0.0"
   }
 }

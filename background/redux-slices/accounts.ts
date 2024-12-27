@@ -422,24 +422,39 @@ const accountSlice = createSlice({
      */
     updateAssetReferences: (
       immerState,
-      { payload: asset }: { payload: SmartContractFungibleAsset },
+      { payload: assets }: { payload: SmartContractFungibleAsset[] },
     ) => {
-      const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
-      Object.keys(allAccounts ?? {}).forEach((address) => {
-        const account = allAccounts[address]
-        if (account !== "loading") {
-          Object.values(account.balances).forEach(({ assetAmount }) => {
-            if (
-              isSmartContractFungibleAsset(assetAmount.asset) &&
-              sameEVMAddress(
-                assetAmount.asset.contractAddress,
-                asset.contractAddress,
-              )
-            ) {
-              Object.assign(assetAmount.asset, asset)
-            }
-          })
-        }
+      const assetsByChainID: {
+        [chainID: string]: SmartContractFungibleAsset[]
+      } = {}
+      assets.forEach((asset) => {
+        assetsByChainID[asset.homeNetwork.chainID] ??= []
+        assetsByChainID[asset.homeNetwork.chainID].push(asset)
+      })
+
+      Object.keys(assetsByChainID).forEach((chainID) => {
+        const allAccounts = immerState.accountsData.evm[chainID]
+        Object.keys(allAccounts ?? {}).forEach((address) => {
+          const account = allAccounts[address]
+          if (account !== "loading") {
+            assetsByChainID[chainID].forEach((asset) => {
+              const { assetAmount } = account.balances[
+                getFullAssetID(asset)
+              ] ?? { assetAmount: undefined }
+
+              if (
+                assetAmount &&
+                isSmartContractFungibleAsset(assetAmount.asset) &&
+                sameEVMAddress(
+                  assetAmount.asset.contractAddress,
+                  asset.contractAddress,
+                )
+              ) {
+                Object.assign(assetAmount.asset, asset)
+              }
+            })
+          }
+        })
       })
 
       updateCombinedData(immerState)

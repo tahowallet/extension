@@ -1,21 +1,14 @@
-import browser, { runtime } from "webextension-polyfill"
-import { alias, wrapStore } from "webext-redux"
-import { configureStore, isPlain, Middleware } from "@reduxjs/toolkit"
-import { devToolsEnhancer } from "@redux-devtools/remote"
+import { runtime } from "webextension-polyfill"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
-import { debounce } from "lodash"
 import { utils } from "ethers"
 
-import { diff as deepDiff } from "./differ"
 import {
-  decodeJSON,
-  encodeJSON,
   getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
   sameEVMAddress,
   wait,
-} from "./lib/utils"
+} from "../../lib/utils"
 
 import {
   BaseService,
@@ -33,45 +26,43 @@ import {
   LedgerService,
   SigningService,
   NFTsService,
-  WalletConnectService,
   AnalyticsService,
-  getNoopService,
-} from "./services"
+} from ".."
 
-import { HexString, NormalizedEVMAddress } from "./types"
-import { SignedTransaction } from "./networks"
-import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "./accounts"
-import { Eligible, ReferrerStats } from "./services/island/types"
+import { HexString, NormalizedEVMAddress } from "../../types"
+import { SignedTransaction } from "../../networks"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import { Eligible, ReferrerStats } from "../island/types"
 
-import rootReducer from "./redux-slices"
 import {
   AccountType,
   deleteAccount,
   loadAccount,
   updateAccountBalance,
   updateAccountName,
+  updateAssetReferences,
   updateENSAvatar,
-} from "./redux-slices/accounts"
+} from "../../redux-slices/accounts"
 import {
   assetsLoaded,
   refreshAsset,
   removeAssetData,
-} from "./redux-slices/assets"
+} from "../../redux-slices/assets"
 import {
   addIslandAsset,
   setEligibility,
   setEligibilityLoading,
   setReferrer,
   setReferrerStats,
-} from "./redux-slices/claim"
+} from "../../redux-slices/claim"
 import {
   emitter as internalSignerSliceEmitter,
   internalSignerLocked,
   internalSignerUnlocked,
   updateInternalSigners,
   setKeyringToVerify,
-} from "./redux-slices/internal-signer"
-import { blockSeen, setEVMNetworks } from "./redux-slices/networks"
+} from "../../redux-slices/internal-signer"
+import { blockSeen, setEVMNetworks } from "../../redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -87,7 +78,7 @@ import {
   toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
-} from "./redux-slices/ui"
+} from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
   emitter as transactionConstructionSliceEmitter,
@@ -99,16 +90,15 @@ import {
   transactionSigned,
   clearCustomGas,
   updateRollupEstimates,
-} from "./redux-slices/transaction-construction"
-import { selectDefaultNetworkFeeSettings } from "./redux-slices/selectors/transactionConstructionSelectors"
-import { allAliases } from "./redux-slices/utils"
+} from "../../redux-slices/transaction-construction"
+import { selectDefaultNetworkFeeSettings } from "../../redux-slices/selectors/transactionConstructionSelectors"
 import {
   requestPermission,
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
   revokePermissionsForAddress,
-} from "./redux-slices/dapp"
-import logger from "./lib/logger"
+} from "../../redux-slices/dapp"
+import logger from "../../lib/logger"
 import {
   rejectDataSignature,
   clearSigningState,
@@ -117,52 +107,59 @@ import {
   signingSliceEmitter,
   typedDataRequest,
   signDataRequest,
-} from "./redux-slices/signing"
+} from "../../redux-slices/signing"
 
-import { SignTypedDataRequest, MessageSigningRequest } from "./utils/signing"
+import {
+  SignTypedDataRequest,
+  MessageSigningRequest,
+} from "../../utils/signing"
 import {
   emitter as earnSliceEmitter,
   setVaultsAsStale,
-} from "./redux-slices/earn"
+} from "../../redux-slices/earn"
 import {
   removeDevice,
   resetLedgerState,
   setDeviceConnectionStatus,
   setUsbDeviceCount,
-} from "./redux-slices/ledger"
-import { ETHEREUM, FLASHBOTS_RPC_URL, OPTIMISM, USD } from "./constants"
-import { clearApprovalInProgress, clearSwapQuote } from "./redux-slices/0x-swap"
+} from "../../redux-slices/ledger"
+import {
+  ETHEREUM,
+  FLASHBOTS_RPC_URL,
+  OPTIMISM,
+  POPUP_MONITOR_PORT_NAME,
+  USD,
+} from "../../constants"
+import {
+  clearApprovalInProgress,
+  clearSwapQuote,
+} from "../../redux-slices/0x-swap"
 import {
   AccountSigner,
   SignatureResponse,
   TXSignatureResponse,
-} from "./services/signing"
-import {
-  migrateReduxState,
-  REDUX_STATE_VERSION,
-} from "./redux-slices/migrations"
-import { PermissionMap } from "./services/provider-bridge/utils"
-import { TAHO_INTERNAL_ORIGIN } from "./services/internal-ethereum-provider/constants"
+} from "../signing"
+import { PermissionMap } from "../provider-bridge/utils"
+import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import {
   ActivityDetail,
   addActivity,
   initializeActivities,
   initializeActivitiesForAccount,
   removeActivities,
-} from "./redux-slices/activities"
-import { selectActivitesHashesForEnrichment } from "./redux-slices/selectors"
-import { getActivityDetails } from "./redux-slices/utils/activities-utils"
-import { getRelevantTransactionAddresses } from "./services/enrichment/utils"
-import { AccountSignerWithId } from "./signing"
+} from "../../redux-slices/activities"
+import { selectActivitesHashesForEnrichment } from "../../redux-slices/selectors"
+import { getActivityDetails } from "../../redux-slices/utils/activities-utils"
+import { getRelevantTransactionAddresses } from "../enrichment/utils"
+import { AccountSignerWithId } from "../../signing"
 import {
   AnyAssetMetadata,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
-} from "./assets"
-import { FeatureFlags, isEnabled } from "./features"
-import { NFTCollection } from "./nfts"
+} from "../../assets"
+import { NFTCollection } from "../../nfts"
 import {
   initializeNFTs,
   updateNFTsCollections,
@@ -171,8 +168,8 @@ import {
   deleteNFTsForAddress,
   updateIsReloading,
   deleteTransferredNFTs,
-} from "./redux-slices/nfts"
-import AbilitiesService from "./services/abilities"
+} from "../../redux-slices/nfts"
+import AbilitiesService from "../abilities"
 import {
   setAbilitiesForAddress,
   updateAbility,
@@ -180,120 +177,26 @@ import {
   deleteAccount as deleteAccountFilter,
   deleteAbilitiesForAccount,
   initAbilities,
-} from "./redux-slices/abilities"
-import { AddChainRequestData } from "./services/provider-bridge"
+} from "../../redux-slices/abilities"
+import { AddChainRequestData } from "../provider-bridge"
 import {
   AnalyticsEvent,
   isOneTimeAnalyticsEvent,
   OneTimeAnalyticsEvent,
-} from "./lib/posthog"
+} from "../../lib/posthog"
 import {
   isBaseAssetForNetwork,
   isSameAsset,
-} from "./redux-slices/utils/asset-utils"
-import {
-  SignerImportMetadata,
-  SignerInternalTypes,
-} from "./services/internal-signer"
-import { getPricePoint, getTokenPrices } from "./lib/prices"
-import { makeFlashbotsProviderCreator } from "./services/chain/serial-fallback-provider"
-import { AnalyticsPreferences, DismissableItem } from "./services/preferences"
-import { newPricePoints } from "./redux-slices/prices"
-import NotificationsService from "./services/notifications"
+} from "../../redux-slices/utils/asset-utils"
+import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
+import { getPricePoint, getTokenPrices } from "../../lib/prices"
+import { makeFlashbotsProviderCreator } from "../chain/serial-fallback-provider"
+import { AnalyticsPreferences, DismissableItem } from "../preferences"
+import { newPricePoints } from "../../redux-slices/prices"
+import NotificationsService from "../notifications"
+import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 
-// This sanitizer runs on store and action data before serializing for remote
-// redux devtools. The goal is to end up with an object that is directly
-// JSON-serializable and deserializable; the remote end will display the
-// resulting objects without additional processing or decoding logic.
-const devToolsSanitizer = (input: unknown) => {
-  switch (typeof input) {
-    // We can make use of encodeJSON instead of recursively looping through
-    // the input
-    case "bigint":
-    case "object":
-      return JSON.parse(encodeJSON(input))
-    // We only need to sanitize bigints and objects that may or may not contain
-    // them.
-    default:
-      return input
-  }
-}
-
-const persistStoreFn = <T>(state: T) => {
-  if (process.env.WRITE_REDUX_CACHE === "true") {
-    // Browser extension storage supports JSON natively, despite that we have
-    // to stringify to preserve BigInts
-    browser.storage.local.set({
-      state: encodeJSON(state),
-      version: REDUX_STATE_VERSION,
-    })
-  }
-}
-
-const persistStoreState = debounce(persistStoreFn, 50, {
-  trailing: true,
-  maxWait: 50,
-})
-
-const reduxCache: Middleware = (store) => (next) => (action) => {
-  const result = next(action)
-  const state = store.getState()
-
-  persistStoreState(state)
-  return result
-}
-
-// Declared out here so ReduxStoreType can be used in Main.store type
-// declaration.
-const initializeStore = (main: Main, preloadedState: object) =>
-  configureStore({
-    preloadedState,
-    reducer: rootReducer,
-    middleware: (getDefaultMiddleware) => {
-      const middleware = getDefaultMiddleware({
-        serializableCheck: {
-          isSerializable: (value: unknown) =>
-            isPlain(value) || typeof value === "bigint",
-        },
-        thunk: { extraArgument: { main } },
-      })
-
-      // It might be tempting to use an array with `...` destructuring, but
-      // unfortunately this fails to preserve important type information from
-      // `getDefaultMiddleware`. `push` and `pull` preserve the type
-      // information in `getDefaultMiddleware`, including adjustments to the
-      // dispatch function type, but as a tradeoff nothing added this way can
-      // further modify the type signature. For now, that's fine, as these
-      // middlewares don't change acceptable dispatch types.
-      //
-      // Process aliases before all other middleware, and cache the redux store
-      // after all middleware gets a chance to run.
-      middleware.unshift(alias(allAliases))
-      middleware.push(reduxCache)
-
-      return middleware
-    },
-    devTools: false,
-    enhancers:
-      process.env.NODE_ENV === "development"
-        ? [
-            devToolsEnhancer({
-              hostname: "localhost",
-              port: 8000,
-              realtime: true,
-              actionSanitizer: devToolsSanitizer,
-              stateSanitizer: devToolsSanitizer,
-            }),
-          ]
-        : [],
-  })
-
-type ReduxStoreType = ReturnType<typeof initializeStore>
-
-export const popupMonitorPortName = "popup-monitor"
-
-// TODO Rename ReduxService or CoordinationService, move to services/, etc.
-export default class Main extends BaseService<never> {
+export default class ReduxService extends BaseService<never> {
   /**
    * The redux store for the wallet core. Note that the redux store is used to
    * render the UI (via webext-redux), but it is _not_ the source of truth.
@@ -303,7 +206,7 @@ export default class Main extends BaseService<never> {
    */
   store: ReduxStoreType
 
-  static create: ServiceCreatorFunction<never, Main, []> = async () => {
+  static create: ServiceCreatorFunction<never, ReduxService, []> = async () => {
     const preferenceService = PreferenceService.create()
 
     const internalSignerService =
@@ -356,45 +259,10 @@ export default class Main extends BaseService<never> {
       ledgerService,
     )
 
-    const walletConnectService = isEnabled(FeatureFlags.SUPPORT_WALLET_CONNECT)
-      ? WalletConnectService.create(
-          providerBridgeService,
-          internalEthereumProviderService,
-          preferenceService,
-          chainService,
-        )
-      : getNoopService<WalletConnectService>()
-
-    let savedReduxState = {}
-    // Setting READ_REDUX_CACHE to false will start the extension with an empty
-    // initial state, which can be useful for development
-    if (process.env.READ_REDUX_CACHE === "true") {
-      const { state, version } = await browser.storage.local.get([
-        "state",
-        "version",
-      ])
-
-      if (state) {
-        const restoredState = decodeJSON(state)
-        if (typeof restoredState === "object" && restoredState !== null) {
-          // If someone managed to sneak JSON that decodes to typeof "object"
-          // but isn't a Record<string, unknown>, there is a very large
-          // problem...
-          savedReduxState = migrateReduxState(
-            restoredState as Record<string, unknown>,
-            version || undefined,
-          )
-        } else {
-          throw new Error(`Unexpected JSON persisted for state: ${state}`)
-        }
-      } else {
-        // Should be false if you don't want new users to see the modal
-        window.localStorage.setItem("modal_meet_taho", "false")
-      }
-    }
+    const savedReduxState = readAndMigrateState()
 
     return new this(
-      savedReduxState,
+      await savedReduxState,
       await preferenceService,
       await chainService,
       await enrichmentService,
@@ -409,7 +277,6 @@ export default class Main extends BaseService<never> {
       await signingService,
       await analyticsService,
       await nftsService,
-      await walletConnectService,
       await abilitiesService,
       await notificationsService,
     )
@@ -496,12 +363,6 @@ export default class Main extends BaseService<never> {
     private nftsService: NFTsService,
 
     /**
-     * A promise to the Wallet Connect service which takes care of handling wallet connect
-     * protocol and communication.
-     */
-    private walletConnectService: WalletConnectService,
-
-    /**
      * A promise to the Abilities service which takes care of fetching and storing abilities
      */
     private abilitiesService: AbilitiesService,
@@ -520,83 +381,6 @@ export default class Main extends BaseService<never> {
 
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(this, savedReduxState)
-
-    /**
-     * Tracks pending updates to the redux store. This is used to delay responding
-     * to dispatched thunks until the store has been updated in the UI. This is
-     * necessary to prevent race conditions where the UI expects the store to be
-     * updated before the thunk has finished dispatching.
-     */
-    let storeUpdateLock: Promise<void> | null
-    let releaseLock: () => void
-
-    const queueUpdate = debounce(
-      (lastState, newState, updateFn) => {
-        if (lastState !== newState) {
-          const diff = deepDiff(lastState, newState)
-
-          if (diff !== undefined) {
-            updateFn(newState, [diff])
-          }
-        }
-        releaseLock()
-      },
-      30,
-      { maxWait: 30, trailing: true },
-    )
-
-    wrapStore(this.store, {
-      serializer: encodeJSON,
-      deserializer: decodeJSON,
-      diffStrategy: (oldObj, newObj, forceUpdate) => {
-        if (!storeUpdateLock) {
-          storeUpdateLock = new Promise((resolve) => {
-            releaseLock = () => {
-              resolve()
-              storeUpdateLock = null
-            }
-          })
-        }
-
-        queueUpdate(oldObj, newObj, forceUpdate)
-
-        // Return no diffs as we're manually handling these inside `queueUpdate`
-        return []
-      },
-      dispatchResponder: async (
-        dispatchResult: Promise<unknown> | unknown,
-        send: (param: { error: string | null; value: unknown | null }) => void,
-      ) => {
-        try {
-          // if dispatch is a thunk, wait for the result
-          const result = await dispatchResult
-
-          // By this time, all pending updates should've been tracked.
-          // since we're dealing with a thunk, we need to wait for
-          // the store to be updated
-          await storeUpdateLock
-
-          send({
-            error: null,
-            value: encodeJSON(result),
-          })
-        } catch (error) {
-          logger.error(
-            "Error awaiting and dispatching redux store result: ",
-            error,
-          )
-
-          // Store could still have been updated if there was an error
-          await storeUpdateLock
-
-          send({
-            error: encodeJSON(error),
-            value: null,
-          })
-        }
-      },
-    })
-
     this.initializeRedux()
   }
 
@@ -618,7 +402,6 @@ export default class Main extends BaseService<never> {
       this.signingService.startService(),
       this.analyticsService.startService(),
       this.nftsService.startService(),
-      this.walletConnectService.startService(),
       this.abilitiesService.startService(),
       this.notificationsService.startService(),
     ]
@@ -642,7 +425,6 @@ export default class Main extends BaseService<never> {
       this.signingService.stopService(),
       this.analyticsService.stopService(),
       this.nftsService.stopService(),
-      this.walletConnectService.stopService(),
       this.abilitiesService.stopService(),
       this.notificationsService.stopService(),
     ]
@@ -664,7 +446,6 @@ export default class Main extends BaseService<never> {
     this.connectLedgerService()
     this.connectSigningService()
     this.connectAnalyticsService()
-    this.connectWalletConnectService()
     this.connectAbilitiesService()
     this.connectNFTsService()
     this.connectNotificationsService()
@@ -1124,9 +905,17 @@ export default class Main extends BaseService<never> {
       },
     )
 
-    this.indexingService.emitter.on("assets", async (assets) => {
-      await this.store.dispatch(assetsLoaded(assets))
-    })
+    this.indexingService.emitter.on(
+      "assetsLoaded",
+      async ({ assets, loadingScope }) => {
+        await this.store.dispatch(assetsLoaded({ assets, loadingScope }))
+
+        const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
+        if (smartContractAssets.length > 0) {
+          this.store.dispatch(updateAssetReferences(smartContractAssets))
+        }
+      },
+    )
 
     this.indexingService.emitter.on("prices", (pricePoints) => {
       this.store.dispatch(newPricePoints(pricePoints))
@@ -1737,11 +1526,6 @@ export default class Main extends BaseService<never> {
     )
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  connectWalletConnectService(): void {
-    // TODO: here comes the glue between the UI and service layer
-  }
-
   connectAbilitiesService(): void {
     this.abilitiesService.emitter.on("initAbilities", (address) => {
       this.store.dispatch(initAbilities(address))
@@ -2059,7 +1843,7 @@ export default class Main extends BaseService<never> {
 
   private connectPopupMonitor() {
     runtime.onConnect.addListener((port) => {
-      if (port.name !== popupMonitorPortName) return
+      if (port.name !== POPUP_MONITOR_PORT_NAME) return
 
       const openTime = Date.now()
 

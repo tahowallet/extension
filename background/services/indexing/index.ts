@@ -76,7 +76,21 @@ interface Events extends ServiceLifecycleEvents {
     addressOnNetwork: AddressOnNetwork
   }
   prices: PricePoint[]
-  assets: AnyAsset[]
+  assetsLoaded: {
+    assets: AnyAsset[]
+    /**
+     * Loading scope indicates what assets are represented in the payload:
+     * - `all`: the payload contains all tracked assets and should be used to
+     *          replace any lists of tracked assets elsewhere in the system.
+     * - `network`: the payload contains all tracked assets for the given
+     *              networks in the payload, and should be used to replace any
+     *              network-specific lists.
+     * - `incremental`: the payload makes no representation of completeness and
+     *                  should only be used to update or add assets from the
+     *                  payload.
+     */
+    loadingScope: "all" | "network" | "incremental"
+  }
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
 }
@@ -213,7 +227,10 @@ export default class IndexingService extends BaseService<Events> {
       Promise.allSettled(
         trackedNetworks.map(async (network) => {
           await this.cacheAssetsForNetwork(network)
-          this.emitter.emit("assets", this.getCachedAssets(network))
+          this.emitter.emit("assetsLoaded", {
+            assets: this.getCachedAssets(network),
+            loadingScope: "network",
+          })
         }),
         // Load balances after token lists load and after assets are cached, otherwise
         // we will not load balances on initial balance query
@@ -655,6 +672,7 @@ export default class IndexingService extends BaseService<Events> {
     }
 
     // The updated metadata should only be sent to the db
+    // FIXME Should untrack asset when hiding.
     await this.db.addOrUpdateCustomAsset({ ...asset, metadata })
     await this.cacheAssetsForNetwork(asset.homeNetwork)
     this.emitter.emit("removeAssetData", asset)
@@ -955,7 +973,7 @@ export default class IndexingService extends BaseService<Events> {
       this.emitter.emit("prices", pricePoints)
     } catch (err) {
       logger.error(
-        "Error getting token prices from coingecko",
+        "Error getting token prices from coingecko or chain",
         activeAssetsToTrack,
         err,
       )
@@ -995,6 +1013,7 @@ export default class IndexingService extends BaseService<Events> {
           } catch (err) {
             logger.error(
               `Error fetching, validating, and saving token list ${url}`,
+              err,
             )
           }
         }
@@ -1006,7 +1025,11 @@ export default class IndexingService extends BaseService<Events> {
     await Promise.allSettled(
       this.chainService.supportedNetworks.map(async (network) => {
         await this.cacheAssetsForNetwork(network)
-        this.emitter.emit("assets", this.getCachedAssets(network))
+
+        this.emitter.emit("assetsLoaded", {
+          assets: this.getCachedAssets(network),
+          loadingScope: "network",
+        })
       }),
     )
 

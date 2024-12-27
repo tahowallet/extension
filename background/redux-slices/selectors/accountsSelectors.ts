@@ -67,7 +67,7 @@ const shouldForciblyDisplayAsset = (
   assetAmount: CompleteAssetAmount<AnyAsset>,
 ) => {
   const isIslandRelated =
-    (!isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES) &&
+    (isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) &&
       assetAmount.asset.symbol === DOGGO.symbol) ||
     isSameAsset(assetAmount.asset, TESTNET_TAHO)
 

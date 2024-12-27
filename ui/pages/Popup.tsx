@@ -12,7 +12,7 @@ import { Provider } from "react-redux"
 import { TransitionGroup, CSSTransition } from "react-transition-group"
 import { isAllowedQueryParamPage } from "@tallyho/provider-bridge-shared"
 import { runtime } from "webextension-polyfill"
-import { popupMonitorPortName } from "@tallyho/tally-background/main"
+import { POPUP_MONITOR_PORT_NAME } from "@tallyho/tally-background/constants"
 import {
   getAddressCount,
   selectCurrentAddressNetwork,
@@ -33,7 +33,6 @@ import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
-import GlobalModal from "../components/GlobalModal/GlobalModal"
 
 const pagePreferences = Object.fromEntries(
   pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
@@ -73,7 +72,7 @@ function transformLocation(
 
 function useConnectPopupMonitor() {
   useEffect(() => {
-    const port = runtime.connect(undefined, { name: popupMonitorPortName })
+    const port = runtime.connect(undefined, { name: POPUP_MONITOR_PORT_NAME })
 
     return () => {
       port.disconnect()
@@ -132,7 +131,6 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <GlobalModal id="meet_taho" />
       <Router initialEntries={routeHistoryEntries}>
         <Route
           render={(routeProps) => {

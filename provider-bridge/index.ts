@@ -3,13 +3,12 @@ import {
   EXTERNAL_PORT_NAME,
   PROVIDER_BRIDGE_TARGET,
   WINDOW_PROVIDER_TARGET,
+  isObject,
 } from "@tallyho/provider-bridge-shared"
 
 const windowOriginAtLoadTime = window.location.origin
 
-const INJECTED_WINDOW_PROVIDER_SOURCE = "@@@WINDOW_PROVIDER@@@"
-
-export function connectProviderBridge(): void {
+export default function connectProviderBridge(): void {
   const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
   window.addEventListener("message", (event) => {
     if (
@@ -20,6 +19,7 @@ export function connectProviderBridge(): void {
       // if dapp wants to connect let's grab its details
       if (
         event.data.request.method === "eth_requestAccounts" ||
+        event.data.request.method === "wallet_requestPermissions" ||
         event.data.request.method === "wallet_addEthereumChain"
       ) {
         const faviconElements: NodeListOf<HTMLLinkElement> =
@@ -53,15 +53,23 @@ export function connectProviderBridge(): void {
   })
 
   port.onMessage.addListener((data) => {
+    if (!isObject(data)) {
+      return
+    }
+
     // TODO: replace with better logging before v1. Now it's invaluable in debugging.
     // eslint-disable-next-line no-console
     console.log(
       `%c content: background > inpage: ${JSON.stringify(data)}`,
       "background: #222; color: #bada55",
     )
+    if (typeof data !== "object") {
+      // eslint-disable-next-line no-console
+      console.error("Unexpected message on port listener", data)
+    }
     window.postMessage(
       {
-        ...data,
+        ...(data as Record<string, unknown>),
         target: WINDOW_PROVIDER_TARGET,
       },
       windowOriginAtLoadTime,
@@ -75,25 +83,4 @@ export function connectProviderBridge(): void {
   port.postMessage({
     request: { method: "tally_getConfig", origin: windowOriginAtLoadTime },
   })
-}
-
-export function injectTahoWindowProvider(): void {
-  if (document.contentType !== "text/html") return
-
-  try {
-    const container = document.head || document.documentElement
-    const scriptTag = document.createElement("script")
-    // this makes the script loading blocking which is good for us
-    // bc we want to load before anybody has a chance to temper w/ the window obj
-    scriptTag.setAttribute("async", "false")
-    scriptTag.textContent = INJECTED_WINDOW_PROVIDER_SOURCE
-
-    container.insertBefore(scriptTag, container.children[0])
-  } catch (e) {
-    throw new Error(
-      `Taho: oh nos the content-script failed to initilaize the Taho window provider.
-        ${e}
-        It's time for a seppuku...🗡`,
-    )
-  }
 }

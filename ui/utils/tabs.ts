@@ -30,7 +30,7 @@ const allTabs: (TabInfo & { visible?: boolean })[] = [
     path: "/earn",
     title: "tabs.earn",
     icon: "earn",
-    visible: !isEnabled(FeatureFlags.HIDE_TOKEN_FEATURES),
+    visible: isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES),
   },
   {
     path: "/settings",

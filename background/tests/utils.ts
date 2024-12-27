@@ -11,13 +11,15 @@ export function mockLocalStorage(): LocalStorageMock {
     }
     return Promise.resolve({})
   })
-  browser.storage.local.set = jest.fn((values) => {
-    localStorage = {
-      ...localStorage,
-      ...values,
-    }
-    return Promise.resolve()
-  })
+  browser.storage.local.set = jest.fn(
+    (values: Record<string, Record<string, unknown>>) => {
+      localStorage = {
+        ...localStorage,
+        ...values,
+      }
+      return Promise.resolve()
+    },
+  )
 
   return localStorage
 }
@@ -35,15 +37,17 @@ export function mockLocalStorageWithCalls(): {
     }
     return Promise.resolve({})
   })
-  browser.storage.local.set = jest.fn((values) => {
-    localStorage = {
-      ...localStorage,
-      ...values,
-    }
-    localStorageCalls.unshift(values)
+  browser.storage.local.set = jest.fn(
+    (values: Record<string, Record<string, unknown>>) => {
+      localStorage = {
+        ...localStorage,
+        ...values,
+      }
+      localStorageCalls.unshift(values)
 
-    return Promise.resolve()
-  })
+      return Promise.resolve()
+    },
+  )
 
   return { localStorage, localStorageCalls }
 }
