@@ -496,34 +496,12 @@ export default class IndexingService extends BaseService<Events> {
     this.chainService.emitter.on(
       "newAccountToTrack",
       async (addressOnNetwork) => {
-        // whenever a new account is added, get token balances from Alchemy's
-        // default list and add any non-zero tokens to the tracking list
-        const balances = await this.retrieveTokenBalances(addressOnNetwork)
+        // Load balances, which also performs token discovery on
+        // networks that support Alchemy, then update prices.
+        await this.loadAccountBalancesFor(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
         this.handlePriceAlarm()
-
-        // Every asset we have that hasn't already been balance checked and is
-        // on the currently selected network should be checked once.
-        //
-        // Note that we'll want to move this to a queuing system that can be
-        // easily rate-limited eventually.
-        const checkedContractAddresses = new Set(
-          balances.map(
-            ({ smartContract: { contractAddress } }) => contractAddress,
-          ),
-        )
-        const cachedAssets = this.getCachedAssets(addressOnNetwork.network)
-
-        const otherActiveAssets = cachedAssets
-          .filter(isSmartContractFungibleAsset)
-          .filter(
-            (a) =>
-              a.homeNetwork.chainID === addressOnNetwork.network.chainID &&
-              !checkedContractAddresses.has(a.contractAddress),
-          )
-
-        await this.retrieveTokenBalances(addressOnNetwork, otherActiveAssets)
       },
     )
 
@@ -886,18 +864,19 @@ export default class IndexingService extends BaseService<Events> {
    */
   private async getTrackedAssetsPrices() {
     // get the prices of all assets to track and save them
-    const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack.filter(
-      (asset) =>
-        isTrustedAsset(asset) &&
-        trackedNetworks.some((network) =>
-          sameNetwork(network, asset.homeNetwork),
-        ),
+    const assetsToTrack = trackedNetworks.flatMap((network) =>
+      this.getCachedAssets(network),
     )
+    // Filter all assets based on supported networks
+    const activeAssetsToTrack = assetsToTrack
+      .filter(isSmartContractFungibleAsset)
+      .filter(isTrustedAsset)
     try {
       // TODO only uses USD
+      // FIXME None of the below handles assets that exist on multiple
+      // FIXME networks; instead, the first listed network produces the
+      // FIXME final price in those cases.
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
 

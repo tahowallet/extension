@@ -329,10 +329,6 @@ export default class ChainService extends BaseService<Events> {
           this.subscribeToAccountTransactions(an).catch((e) => {
             logger.error(e)
           }),
-          // do a base-asset balance check for every account
-          this.getLatestBaseAccountBalance(an).catch((e) => {
-            logger.error(e)
-          }),
         ])
         .concat(
           // Schedule any stored unconfirmed transactions for
@@ -978,16 +974,6 @@ export default class ChainService extends BaseService<Events> {
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions for",
-        {
-          address: addressNetwork.address,
-          chainID: addressNetwork.network.chainID,
-        },
-        e,
-      )
-    })
-    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
-      logger.error(
-        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance for",
         {
           address: addressNetwork.address,
           chainID: addressNetwork.network.chainID,
