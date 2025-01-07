@@ -1002,7 +1002,7 @@ export default class IndexingService extends BaseService<Events> {
       await this.preferenceService.getTokenListPreferences()
 
     // load each token list in preferences
-    await Promise.allSettled(
+    const tokenListFetchResults = await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
         const cachedList = await this.db.getLatestTokenList(url)
         if (!cachedList) {
@@ -1019,10 +1019,15 @@ export default class IndexingService extends BaseService<Events> {
         }
       }),
     )
+    logger.errorLogRejectedPromises(
+      "Error fetching, validating, and saving token lists",
+      tokenListFetchResults,
+      tokenListPrefs.urls,
+    )
 
     // Cache assets across all supported networks even if a network
     // may be inactive.
-    await Promise.allSettled(
+    const assetCacheResults = await Promise.allSettled(
       this.chainService.supportedNetworks.map(async (network) => {
         await this.cacheAssetsForNetwork(network)
 
@@ -1031,6 +1036,11 @@ export default class IndexingService extends BaseService<Events> {
           loadingScope: "network",
         })
       }),
+    )
+    logger.errorLogRejectedPromises(
+      "Error caching network asset results",
+      assetCacheResults,
+      this.chainService.supportedNetworks,
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
@@ -1044,6 +1054,36 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
+  private async loadAccountBalancesFor(
+    addressOnNetwork: AddressOnNetwork,
+  ): Promise<[AccountBalance, SmartContractAmount[]]> {
+    const { network } = addressOnNetwork
+
+    const provider = this.chainService.providerForNetworkOrThrow(network)
+
+    const loadBaseAccountBalance =
+      this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
+
+    /**
+     * When the provider supports alchemy we can use alchemy_getTokenBalances
+     * to query all erc20 token balances without specifying which assets we
+     * need to check. When it does not, we try checking balances for every asset
+     * we've seen in the network.
+     */
+    const assetsToCheck = provider.supportsAlchemy
+      ? []
+      : // This doesn't pass assetsToTrack stored in the db as
+        // it assumes they've already been cached
+        this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
+
+    const loadTokenBalances = this.retrieveTokenBalances(
+      addressOnNetwork,
+      assetsToCheck,
+    )
+
+    return Promise.all([loadBaseAccountBalance, loadTokenBalances])
+  }
+
   private async loadAccountBalances(onlyActiveAccounts = false): Promise<void> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
@@ -1051,34 +1091,16 @@ export default class IndexingService extends BaseService<Events> {
     const accounts =
       await this.chainService.getAccountsToTrack(onlyActiveAccounts)
 
-    await Promise.allSettled(
-      accounts.map(async (addressOnNetwork) => {
-        const { network } = addressOnNetwork
+    const balanceLoadResults = await Promise.allSettled(
+      accounts.map((addressOnNetwork) =>
+        this.loadAccountBalancesFor(addressOnNetwork),
+      ),
+    )
 
-        const provider = this.chainService.providerForNetworkOrThrow(network)
-
-        const loadBaseAccountBalance =
-          this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
-
-        /**
-         * When the provider supports alchemy we can use alchemy_getTokenBalances
-         * to query all erc20 token balances without specifying which assets we
-         * need to check. When it does not, we try checking balances for every asset
-         * we've seen in the network.
-         */
-        const assetsToCheck = provider.supportsAlchemy
-          ? []
-          : // This doesn't pass assetsToTrack stored in the db as
-            // it assumes they've already been cached
-            this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
-
-        const loadTokenBalances = this.retrieveTokenBalances(
-          addressOnNetwork,
-          assetsToCheck,
-        )
-
-        return Promise.all([loadBaseAccountBalance, loadTokenBalances])
-      }),
+    logger.errorLogRejectedPromises(
+      "Account balances failed to load for",
+      balanceLoadResults,
+      accounts,
     )
   }
 

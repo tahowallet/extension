@@ -170,6 +170,35 @@ class Logger {
     this.logEvent(LogLevel.error, input)
   }
 
+  /**
+   * Helper for a common pattern where `Promise.allSettled` is used to
+   * run multiple promises in parallel to resolve data, and some of the
+   * promises may fail and should be logged as such.
+   *
+   * If no promises fail, nothing is logged. If promises fail, the
+   * promise is logged alongside the corresponding entry in
+   * `perResultData`, if any. This allows for `perResultData` to include
+   * additional information about the failed promise. For example, if the promises are resolving information about a set of addresses, the perResultData might include the address corresponding to each promise, so that a failure to resolve information about an address can include that address alongside the failure for further debugging.
+   *
+   */
+  errorLogRejectedPromises<T>(
+    logPrefix: string,
+    settledPromises: PromiseSettledResult<T>[],
+    perResultData: unknown[] = [],
+  ): void {
+    const rejectedLogData = settledPromises.reduce<unknown[]>(
+      (logData, settledPromise, i) =>
+        settledPromise.status === "rejected"
+          ? [...logData, settledPromise, ...perResultData.slice(i, i + 1)]
+          : logData,
+      [],
+    )
+
+    if (rejectedLogData.length > 0) {
+      this.error(logPrefix, rejectedLogData)
+    }
+  }
+
   buildError(...input: unknown[]): Error {
     this.error(...input)
     return new Error(input.join(" "))
