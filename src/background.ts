@@ -1,10 +1,10 @@
 import { browser, startRedux } from "@tallyho/tally-background"
-import { SECOND } from "@tallyho/tally-background/constants"
 import {
   FeatureFlags,
   isEnabled,
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
+import ReduxService from "@tallyho/tally-background/services/redux"
 import { ONBOARDING_ROOT } from "@tallyho/tally-ui/pages/Onboarding/Tabbed/Routes"
 
 browser.runtime.onInstalled.addListener((obj) => {
@@ -21,17 +21,17 @@ browser.runtime.onInstalled.addListener((obj) => {
     !isEnabled(FeatureFlags.SWITCH_RUNTIME_FLAGS)
   ) {
     Object.keys(RuntimeFlag).forEach(
+      // Holding until the approach can be reworked around browser.storage.local.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (flagName) => "", // localStorage.removeItem(flagName),
     )
   }
 })
 
-startRedux()
+let redux: Promise<ReduxService>
 
-// FIXME: Temporary workaround to prevent the service worker from being suspended
-// This ensures we keep state updates persisted to local storage as the extension
-// syncs chain data
-// https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers#keep_a_service_worker_alive_until_a_long-running_operation_is_finished
-setInterval(() => {
-  chrome.runtime.getPlatformInfo()
-}, 25 * SECOND)
+browser.runtime.onConnect.addListener(async (port) => {
+  ;(await redux).connectPort(port)
+})
+
+redux ??= startRedux()
