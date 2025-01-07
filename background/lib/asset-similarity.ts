@@ -90,22 +90,3 @@ export function findClosestAssetIndex(
 
   return undefined
 }
-
-/**
- * Merges the information about two assets. Mostly focused on merging metadata.
- */
-export function mergeAssets(asset1: AnyAsset, asset2: AnyAsset): AnyAsset {
-  return {
-    ...asset1,
-    ...("coinType" in asset1 ? { coinType: asset1.coinType } : {}),
-    ...("coinType" in asset2 ? { coinType: asset2.coinType } : {}),
-    metadata: {
-      ...asset1.metadata,
-      ...asset2.metadata,
-      tokenLists:
-        asset1.metadata?.tokenLists?.concat(
-          asset2.metadata?.tokenLists ?? [],
-        ) ?? [],
-    },
-  }
-}
