@@ -40,7 +40,7 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAssetReferences,
+  updateAccountAssetReferences,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
 import {
@@ -192,7 +192,10 @@ import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { makeFlashbotsProviderCreator } from "../chain/serial-fallback-provider"
 import { AnalyticsPreferences, DismissableItem } from "../preferences"
-import { newPricePoints } from "../../redux-slices/prices"
+import {
+  newPricePoints,
+  updatePriceAssetReferences,
+} from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 
@@ -912,7 +915,8 @@ export default class ReduxService extends BaseService<never> {
 
         const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
         if (smartContractAssets.length > 0) {
-          this.store.dispatch(updateAssetReferences(smartContractAssets))
+          this.store.dispatch(updateAccountAssetReferences(smartContractAssets))
+          this.store.dispatch(updatePriceAssetReferences(smartContractAssets))
         }
       },
     )

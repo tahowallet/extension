@@ -420,7 +420,7 @@ const accountSlice = createSlice({
     /**
      * Updates cached SmartContracts metadata
      */
-    updateAssetReferences: (
+    updateAccountAssetReferences: (
       immerState,
       { payload: assets }: { payload: SmartContractFungibleAsset[] },
     ) => {
@@ -492,7 +492,7 @@ export const {
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
-  updateAssetReferences,
+  updateAccountAssetReferences,
   removeAssetReferences,
   removeChainBalances,
 } = accountSlice.actions
