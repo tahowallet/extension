@@ -89,9 +89,8 @@ export default class AssetDataHelper {
       )
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances; network",
+        "Problem resolving asset balances; network may not support it",
         addressOnNetwork.network,
-        "may not support it.",
         error,
       )
     }
