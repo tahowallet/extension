@@ -178,8 +178,11 @@ class Logger {
    * If no promises fail, nothing is logged. If promises fail, the
    * promise is logged alongside the corresponding entry in
    * `perResultData`, if any. This allows for `perResultData` to include
-   * additional information about the failed promise. For example, if the promises are resolving information about a set of addresses, the perResultData might include the address corresponding to each promise, so that a failure to resolve information about an address can include that address alongside the failure for further debugging.
-   *
+   * additional information about the failed promise. For example, if the
+   * promises are resolving information about a set of addresses, the
+   * perResultData might include the address corresponding to each promise, so
+   * that a failure to resolve information about an address can include that
+   * address alongside the failure for further debugging.
    */
   errorLogRejectedPromises<T>(
     logPrefix: string,
@@ -355,6 +358,32 @@ class Logger {
 }
 
 const logger = new Logger()
+
+/**
+ * Takes the same parameters as `Logger.errorLogRejectedPromises` and logs any
+ * failed promises by calling that.
+ *
+ * This helper also unwraps all *fulfilled* promises and returns the results. That
+ * allows a caller who wants to log failures and then deal with successes in one
+ * step to call this function once with the `await Promise.allSettled` call as the
+ * second parameter, and assign the result directly to a variable that is used
+ * in downstream work.
+ */
+export function logRejectedAndReturnFulfilledResults<T>(
+  logPrefix: string,
+  settledPromises: PromiseSettledResult<T>[],
+  perResultData: unknown[] = [],
+): T[] {
+  logger.errorLogRejectedPromises(logPrefix, settledPromises, perResultData)
+
+  return settledPromises.reduce<T[]>(
+    (fulfilledResults, settledPromise) =>
+      settledPromise.status === "fulfilled"
+        ? [...fulfilledResults, settledPromise.value]
+        : fulfilledResults,
+    [],
+  )
+}
 
 export const serializeLogs = logger.serializeLogs.bind(logger)
 
