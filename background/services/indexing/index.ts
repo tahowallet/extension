@@ -1,4 +1,4 @@
-import logger from "../../lib/logger"
+import logger, { logRejectedAndReturnFulfilledResults } from "../../lib/logger"
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -896,28 +896,32 @@ export default class IndexingService extends BaseService<Events> {
       const measuredAt = Date.now()
 
       // @TODO consider allSettled here
-      const activeAssetPricesByNetwork = await Promise.all(
-        activeAssetsByNetwork.map(
-          async ({ activeAssetsByAddress, network }) => {
-            const coingeckoTokenPrices = await getTokenPrices(
-              Object.keys(activeAssetsByAddress),
-              USD,
-              network,
-            )
-            if (Object.keys(coingeckoTokenPrices).length) {
-              return coingeckoTokenPrices
-            }
+      const activeAssetPricesByNetwork = logRejectedAndReturnFulfilledResults(
+        "Failed to retrieve token prices for network",
+        await Promise.allSettled(
+          activeAssetsByNetwork.map(
+            async ({ activeAssetsByAddress, network }) => {
+              const coingeckoTokenPrices = await getTokenPrices(
+                Object.keys(activeAssetsByAddress),
+                USD,
+                network,
+              )
+              if (Object.keys(coingeckoTokenPrices).length) {
+                return coingeckoTokenPrices
+              }
 
-            const provider =
-              this.chainService.providerForNetworkOrThrow(network)
+              const provider =
+                this.chainService.providerForNetworkOrThrow(network)
 
-            return getUSDPriceForTokens(
-              Object.values(activeAssetsByAddress),
-              network,
-              provider,
-            )
-          },
+              return getUSDPriceForTokens(
+                Object.values(activeAssetsByAddress),
+                network,
+                provider,
+              )
+            },
+          ),
         ),
+        activeAssetsByNetwork,
       )
 
       const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
