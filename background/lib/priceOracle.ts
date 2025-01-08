@@ -31,7 +31,7 @@ import {
 import { toFixedPoint } from "./fixed-point"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
-import logger from "./logger"
+import logger, { logRejectedAndReturnFulfilledResults } from "./logger"
 
 // The size of a batch of on-chain price lookups. Too high and the request will
 // fail due to running out of gas, as eth_call is still subject to gas limits.
@@ -221,24 +221,29 @@ export async function getUSDPriceForTokens(
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
   if (assets.length > BATCH_SIZE) {
+    const batches = _.range(0, assets.length / BATCH_SIZE).map((batch) =>
+      assets.slice(batch * BATCH_SIZE, batch * BATCH_SIZE + BATCH_SIZE),
+    )
     logger.debug(
       "Batching assets price lookup by length",
       assets.length,
       BATCH_SIZE,
+      batches,
     )
     // Batch assets when we get to BATCH_SIZE so we're not trying to construct
     // megatransactions with 10s and 100s of assets that blow up RPC nodes.
-    return (
-      await Promise.all(
-        _.range(0, assets.length / BATCH_SIZE)
-          .map((batch) =>
-            assets.slice(0 + batch * BATCH_SIZE, batch * BATCH_SIZE),
-          )
-          .map((subAssets) =>
-            getUSDPriceForTokens(subAssets, network, provider),
-          ),
-      )
-    ).reduce((allPrices, pricesSubset) => ({ ...allPrices, ...pricesSubset }))
+    return logRejectedAndReturnFulfilledResults(
+      "Some batch asset price lookups failed",
+      await Promise.allSettled(
+        batches.map((subAssets) =>
+          getUSDPriceForTokens(subAssets, network, provider),
+        ),
+      ),
+      batches,
+    ).reduce(
+      (allPrices, pricesSubset) => ({ ...allPrices, ...pricesSubset }),
+      {},
+    )
   }
 
   const tokenRates = await getRatesForTokens(assets, provider, network)
