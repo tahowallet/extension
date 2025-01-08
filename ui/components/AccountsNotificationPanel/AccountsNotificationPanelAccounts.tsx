@@ -388,6 +388,23 @@ function WalletSignerAccounts({
           )
         })}
       </ul>
+      <style jsx>{`
+        ul {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          align-content: center;
+          margin-bottom: 8px;
+        }
+
+        li {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 8px 0px 8px 24px;
+          cursor: pointer;
+        }
+      `}</style>
     </section>
   )
 }
@@ -519,22 +536,8 @@ export default function AccountsNotificationPanelAccounts({
       </footer>
       <style jsx>
         {`
-          ul {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            align-content: center;
-            margin-bottom: 8px;
-          }
           section:last-of-type {
             margin-bottom: 16px;
-          }
-          li {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 0px 8px 24px;
-            cursor: pointer;
           }
           footer {
             width: 100%;
