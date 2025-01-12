@@ -1,4 +1,4 @@
-import logger from "../../lib/logger"
+import logger, { logRejectedAndReturnFulfilledResults } from "../../lib/logger"
 import { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -496,34 +496,12 @@ export default class IndexingService extends BaseService<Events> {
     this.chainService.emitter.on(
       "newAccountToTrack",
       async (addressOnNetwork) => {
-        // whenever a new account is added, get token balances from Alchemy's
-        // default list and add any non-zero tokens to the tracking list
-        const balances = await this.retrieveTokenBalances(addressOnNetwork)
+        // Load balances, which also performs token discovery on
+        // networks that support Alchemy, then update prices.
+        await this.loadAccountBalancesFor(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
         this.handlePriceAlarm()
-
-        // Every asset we have that hasn't already been balance checked and is
-        // on the currently selected network should be checked once.
-        //
-        // Note that we'll want to move this to a queuing system that can be
-        // easily rate-limited eventually.
-        const checkedContractAddresses = new Set(
-          balances.map(
-            ({ smartContract: { contractAddress } }) => contractAddress,
-          ),
-        )
-        const cachedAssets = this.getCachedAssets(addressOnNetwork.network)
-
-        const otherActiveAssets = cachedAssets
-          .filter(isSmartContractFungibleAsset)
-          .filter(
-            (a) =>
-              a.homeNetwork.chainID === addressOnNetwork.network.chainID &&
-              !checkedContractAddresses.has(a.contractAddress),
-          )
-
-        await this.retrieveTokenBalances(addressOnNetwork, otherActiveAssets)
       },
     )
 
@@ -886,18 +864,19 @@ export default class IndexingService extends BaseService<Events> {
    */
   private async getTrackedAssetsPrices() {
     // get the prices of all assets to track and save them
-    const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack.filter(
-      (asset) =>
-        isTrustedAsset(asset) &&
-        trackedNetworks.some((network) =>
-          sameNetwork(network, asset.homeNetwork),
-        ),
+    const assetsToTrack = trackedNetworks.flatMap((network) =>
+      this.getCachedAssets(network),
     )
+    // Filter all assets based on supported networks
+    const activeAssetsToTrack = assetsToTrack
+      .filter(isSmartContractFungibleAsset)
+      .filter(isTrustedAsset)
     try {
       // TODO only uses USD
+      // FIXME None of the below handles assets that exist on multiple
+      // FIXME networks; instead, the first listed network produces the
+      // FIXME final price in those cases.
 
       const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
 
@@ -917,28 +896,32 @@ export default class IndexingService extends BaseService<Events> {
       const measuredAt = Date.now()
 
       // @TODO consider allSettled here
-      const activeAssetPricesByNetwork = await Promise.all(
-        activeAssetsByNetwork.map(
-          async ({ activeAssetsByAddress, network }) => {
-            const coingeckoTokenPrices = await getTokenPrices(
-              Object.keys(activeAssetsByAddress),
-              USD,
-              network,
-            )
-            if (Object.keys(coingeckoTokenPrices).length) {
-              return coingeckoTokenPrices
-            }
+      const activeAssetPricesByNetwork = logRejectedAndReturnFulfilledResults(
+        "Failed to retrieve token prices for network",
+        await Promise.allSettled(
+          activeAssetsByNetwork.map(
+            async ({ activeAssetsByAddress, network }) => {
+              const coingeckoTokenPrices = await getTokenPrices(
+                Object.keys(activeAssetsByAddress),
+                USD,
+                network,
+              )
+              if (Object.keys(coingeckoTokenPrices).length) {
+                return coingeckoTokenPrices
+              }
 
-            const provider =
-              this.chainService.providerForNetworkOrThrow(network)
+              const provider =
+                this.chainService.providerForNetworkOrThrow(network)
 
-            return getUSDPriceForTokens(
-              Object.values(activeAssetsByAddress),
-              network,
-              provider,
-            )
-          },
+              return getUSDPriceForTokens(
+                Object.values(activeAssetsByAddress),
+                network,
+                provider,
+              )
+            },
+          ),
         ),
+        activeAssetsByNetwork,
       )
 
       const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
@@ -1002,7 +985,7 @@ export default class IndexingService extends BaseService<Events> {
       await this.preferenceService.getTokenListPreferences()
 
     // load each token list in preferences
-    await Promise.allSettled(
+    const tokenListFetchResults = await Promise.allSettled(
       tokenListPrefs.urls.map(async (url) => {
         const cachedList = await this.db.getLatestTokenList(url)
         if (!cachedList) {
@@ -1019,10 +1002,15 @@ export default class IndexingService extends BaseService<Events> {
         }
       }),
     )
+    logger.errorLogRejectedPromises(
+      "Error fetching, validating, and saving token lists",
+      tokenListFetchResults,
+      tokenListPrefs.urls,
+    )
 
     // Cache assets across all supported networks even if a network
     // may be inactive.
-    await Promise.allSettled(
+    const assetCacheResults = await Promise.allSettled(
       this.chainService.supportedNetworks.map(async (network) => {
         await this.cacheAssetsForNetwork(network)
 
@@ -1031,6 +1019,11 @@ export default class IndexingService extends BaseService<Events> {
           loadingScope: "network",
         })
       }),
+    )
+    logger.errorLogRejectedPromises(
+      "Error caching network asset results",
+      assetCacheResults,
+      this.chainService.supportedNetworks,
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
@@ -1044,6 +1037,36 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
+  private async loadAccountBalancesFor(
+    addressOnNetwork: AddressOnNetwork,
+  ): Promise<[AccountBalance, SmartContractAmount[]]> {
+    const { network } = addressOnNetwork
+
+    const provider = this.chainService.providerForNetworkOrThrow(network)
+
+    const loadBaseAccountBalance =
+      this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
+
+    /**
+     * When the provider supports alchemy we can use alchemy_getTokenBalances
+     * to query all erc20 token balances without specifying which assets we
+     * need to check. When it does not, we try checking balances for every asset
+     * we've seen in the network.
+     */
+    const assetsToCheck = provider.supportsAlchemy
+      ? []
+      : // This doesn't pass assetsToTrack stored in the db as
+        // it assumes they've already been cached
+        this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
+
+    const loadTokenBalances = this.retrieveTokenBalances(
+      addressOnNetwork,
+      assetsToCheck,
+    )
+
+    return Promise.all([loadBaseAccountBalance, loadTokenBalances])
+  }
+
   private async loadAccountBalances(onlyActiveAccounts = false): Promise<void> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
@@ -1051,34 +1074,16 @@ export default class IndexingService extends BaseService<Events> {
     const accounts =
       await this.chainService.getAccountsToTrack(onlyActiveAccounts)
 
-    await Promise.allSettled(
-      accounts.map(async (addressOnNetwork) => {
-        const { network } = addressOnNetwork
+    const balanceLoadResults = await Promise.allSettled(
+      accounts.map((addressOnNetwork) =>
+        this.loadAccountBalancesFor(addressOnNetwork),
+      ),
+    )
 
-        const provider = this.chainService.providerForNetworkOrThrow(network)
-
-        const loadBaseAccountBalance =
-          this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
-
-        /**
-         * When the provider supports alchemy we can use alchemy_getTokenBalances
-         * to query all erc20 token balances without specifying which assets we
-         * need to check. When it does not, we try checking balances for every asset
-         * we've seen in the network.
-         */
-        const assetsToCheck = provider.supportsAlchemy
-          ? []
-          : // This doesn't pass assetsToTrack stored in the db as
-            // it assumes they've already been cached
-            this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
-
-        const loadTokenBalances = this.retrieveTokenBalances(
-          addressOnNetwork,
-          assetsToCheck,
-        )
-
-        return Promise.all([loadBaseAccountBalance, loadTokenBalances])
-      }),
+    logger.errorLogRejectedPromises(
+      "Account balances failed to load for",
+      balanceLoadResults,
+      accounts,
     )
   }
 

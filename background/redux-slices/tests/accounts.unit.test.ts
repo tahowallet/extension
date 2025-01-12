@@ -13,7 +13,7 @@ import reducer, {
   AccountData,
   AccountState,
   updateAccountBalance,
-  updateAssetReferences,
+  updateAccountAssetReferences,
 } from "../accounts"
 import { getFullAssetID } from "../utils/asset-utils"
 import { determineAssetDisplayAndVerify } from "../selectors"
@@ -314,7 +314,7 @@ describe("Accounts redux slice", () => {
 
       const newState = reducer(
         secondAccountUpdate,
-        updateAssetReferences([updatedAsset]),
+        updateAccountAssetReferences([updatedAsset]),
       )
 
       const updatedFirstAccountData = newState.accountsData.evm[

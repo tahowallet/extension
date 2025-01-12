@@ -14,6 +14,7 @@ import {
   POLYGON,
 } from "../constants/networks"
 import { gweiToWei } from "./utils"
+import { MINUTE } from "../constants"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -142,26 +143,45 @@ const getLegacyGasPrices = async (
   dataSource: "local",
 })
 
+let lastSuccessfulBlocknativeAttempt: number = 0
+let lastFailedBlocknativeAttempt: number = 0
+const BLOCKNATIVE_RETRY_INTERVAL = 10 * MINUTE
+
 export default async function getBlockPrices(
   network: EVMNetwork,
   provider: Provider,
 ): Promise<BlockPrices> {
-  // if BlockNative is configured and we're on mainnet, prefer their gas service
+  // if BlockNative is configured and we're on mainnet, prefer their gas service.
   if (
     typeof BLOCKNATIVE_API_KEY !== "undefined" &&
     network.chainID === ETHEREUM.chainID
   ) {
-    try {
-      if (!blocknative) {
-        blocknative = Blocknative.connect(
-          BLOCKNATIVE_API_KEY,
-          BlocknativeNetworkIds.ethereum.mainnet,
-        )
+    // If the last attempt was a failure and we last succeeded less than
+    // BLOCKNATIVE_RETRY_INTERVAL ago, leave Blocknative alone and retry later.
+    if (
+      lastSuccessfulBlocknativeAttempt > lastFailedBlocknativeAttempt ||
+      lastFailedBlocknativeAttempt - lastSuccessfulBlocknativeAttempt >
+        BLOCKNATIVE_RETRY_INTERVAL
+    ) {
+      try {
+        if (!blocknative) {
+          blocknative = Blocknative.connect(
+            BLOCKNATIVE_API_KEY,
+            BlocknativeNetworkIds.ethereum.mainnet,
+          )
+        }
+        const prices = await blocknative.getBlockPrices()
+        lastSuccessfulBlocknativeAttempt = Date.now()
+
+        return prices
+      } catch (err) {
+        logger.error("Error getting block prices from BlockNative", err)
       }
-      return await blocknative.getBlockPrices()
-    } catch (err) {
-      logger.error("Error getting block prices from BlockNative", err)
     }
+
+    // If we fall through, treat it as a failure and increment the last failure
+    // timestamp.
+    lastFailedBlocknativeAttempt = Date.now()
   }
 
   const [currentBlock, feeData] = await Promise.all([

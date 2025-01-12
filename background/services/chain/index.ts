@@ -51,7 +51,11 @@ import {
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
 } from "./utils"
-import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import {
+  isProbablyEVMAddress,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import type {
   EnrichedEIP1559TransactionRequest,
   EnrichedEIP1559TransactionSignatureRequest,
@@ -313,7 +317,17 @@ export default class ChainService extends BaseService<Events> {
 
     await this.db.initialize()
     await this.initializeNetworks()
-    const accounts = await this.getAccountsToTrack()
+    const allAccounts = await this.getAccountsToTrack()
+    const accounts = allAccounts.filter(({ address }) =>
+      isProbablyEVMAddress(address),
+    )
+    const invalidAddresses = accounts.filter(
+      ({ address }) => !isProbablyEVMAddress(address),
+    )
+    logger.warn("Cleaning up invalid tracked addresses", invalidAddresses)
+    invalidAddresses.forEach(({ address }) =>
+      this.removeAccountToTrack(address),
+    )
     const trackedNetworks = await this.getTrackedNetworks()
 
     const transactions = await this.db.getAllTransactions()
@@ -327,10 +341,6 @@ export default class ChainService extends BaseService<Events> {
         .flatMap((an) => [
           // subscribe to all account transactions
           this.subscribeToAccountTransactions(an).catch((e) => {
-            logger.error(e)
-          }),
-          // do a base-asset balance check for every account
-          this.getLatestBaseAccountBalance(an).catch((e) => {
             logger.error(e)
           }),
         ])
@@ -964,6 +974,11 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
+    if (!isProbablyEVMAddress(addressNetwork.address)) {
+      logger.warn("Refusing to track invalid address", addressNetwork)
+      return
+    }
+
     const source = this.internalSignerService.getSignerSourceForAddress(
       addressNetwork.address,
     )
@@ -978,16 +993,6 @@ export default class ChainService extends BaseService<Events> {
     this.subscribeToAccountTransactions(addressNetwork).catch((e) => {
       logger.error(
         "chainService/addAccountToTrack: Error subscribing to account transactions for",
-        {
-          address: addressNetwork.address,
-          chainID: addressNetwork.network.chainID,
-        },
-        e,
-      )
-    })
-    this.getLatestBaseAccountBalance(addressNetwork).catch((e) => {
-      logger.error(
-        "chainService/addAccountToTrack: Error getting latestBaseAccountBalance for",
         {
           address: addressNetwork.address,
           chainID: addressNetwork.network.chainID,

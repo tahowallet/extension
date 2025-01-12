@@ -6,6 +6,7 @@ import {
   FungibleAsset,
   SmartContractFungibleAsset,
   TokenListAndReference,
+  TokenListCitation,
 } from "../assets"
 import { isValidUniswapTokenListResponse } from "./validate"
 import { EVMNetwork } from "../networks"
@@ -146,12 +147,27 @@ export function mergeAssets<T extends FungibleAsset>(
         metadata: {
           ...matchingAsset.metadata,
           ...asset.metadata,
-          tokenLists: Array.from(
-            new Set(
-              (matchingAsset.metadata?.tokenLists || [])?.concat(
-                asset.metadata?.tokenLists ?? [],
+          // Deduplicate token lists by first grouping by URL then
+          // choosing the first list with a given URL that also has a
+          // logoURL, or if no token list for that URL has a logoURL
+          // then the first token list that has that URL.
+          tokenLists: Object.values(
+            (matchingAsset.metadata?.tokenLists || [])
+              ?.concat(asset.metadata?.tokenLists ?? [])
+              .reduce<{ [url: string]: TokenListCitation[] }>(
+                (citations, tokenListCitation) => ({
+                  ...citations,
+                  [tokenListCitation.url]: [
+                    ...(citations[tokenListCitation.url] ?? []),
+                    tokenListCitation,
+                  ],
+                }),
+                {},
               ),
-            ).values(),
+          ).flatMap(
+            (duplicateList) =>
+              duplicateList.find((list) => list.logoURL !== undefined) ??
+              duplicateList[0],
           ),
         },
       }

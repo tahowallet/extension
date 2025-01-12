@@ -5,12 +5,14 @@ import {
   isFungibleAsset,
   isSmartContractFungibleAsset,
   PricePoint,
+  SmartContractFungibleAsset,
 } from "../assets"
 import { FIAT_CURRENCIES_SYMBOL } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import {
   FullAssetID,
   getFullAssetID,
+  isSameAsset,
   isTrustedAsset,
 } from "./utils/asset-utils"
 
@@ -49,10 +51,28 @@ const pricesSlice = createSlice({
         }
       })
     },
+    updatePriceAssetReferences: (
+      immerState,
+      { payload: assets }: { payload: SmartContractFungibleAsset[] },
+    ) => {
+      assets.forEach((asset) => {
+        const assetId = getFullAssetID(asset)
+
+        Object.values(immerState[assetId] ?? {}).forEach((immerPricePoint) => {
+          const updateIndex = immerPricePoint.pair.findIndex((priceAsset) =>
+            isSameAsset(asset, priceAsset),
+          )
+          if (updateIndex > -1) {
+            Object.assign(immerPricePoint.pair[updateIndex], asset)
+          }
+        })
+      })
+    },
   },
 })
 
-export const { newPricePoints } = pricesSlice.actions
+export const { newPricePoints, updatePriceAssetReferences } =
+  pricesSlice.actions
 
 export default pricesSlice.reducer
 

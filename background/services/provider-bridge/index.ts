@@ -99,48 +99,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
     private preferenceService: PreferenceService,
   ) {
     super()
-
-    browser.runtime.onConnect.addListener(async (port) => {
-      if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
-        port.onMessage.addListener((event) => {
-          if (
-            !event ||
-            typeof event !== "object" ||
-            !("id" in event) ||
-            typeof event.id !== "string" ||
-            !("request" in event) ||
-            typeof event.request !== "object"
-          ) {
-            logger.error("Unexpected event on port", event)
-            return
-          }
-
-          this.onMessageListener(
-            port as Required<browser.Runtime.Port>,
-            event as PortRequestEvent,
-          )
-        })
-        port.onDisconnect.addListener(() => {
-          this.openPorts = this.openPorts.filter(
-            (openPort) => openPort !== port,
-          )
-        })
-        this.openPorts.push(port)
-
-        // we need to send this info ASAP so it arrives before the webpage is initializing
-        // so we can set our provider into the correct state, BEFORE the page has a chance to
-        // to cache it, store it etc.
-        port.postMessage({
-          id: "tallyHo",
-          jsonrpc: "2.0",
-          result: {
-            method: "tally_getConfig",
-            defaultWallet: await this.preferenceService.getDefaultWallet(),
-          },
-        })
-      }
-      // TODO: on internal provider handlers connect, disconnect, account change, network change
-    })
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -691,5 +649,45 @@ export default class ProviderBridgeService extends BaseService<Events> {
     } else {
       request.reject()
     }
+  }
+
+  async connectPort(port: Runtime.Port) {
+    if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
+      port.onMessage.addListener((event) => {
+        if (
+          !event ||
+          typeof event !== "object" ||
+          !("id" in event) ||
+          typeof event.id !== "string" ||
+          !("request" in event) ||
+          typeof event.request !== "object"
+        ) {
+          logger.error("Unexpected event on port", event)
+          return
+        }
+
+        this.onMessageListener(
+          port as Required<browser.Runtime.Port>,
+          event as PortRequestEvent,
+        )
+      })
+      port.onDisconnect.addListener(() => {
+        this.openPorts = this.openPorts.filter((openPort) => openPort !== port)
+      })
+      this.openPorts.push(port)
+
+      // we need to send this info ASAP so it arrives before the webpage is initializing
+      // so we can set our provider into the correct state, BEFORE the page has a chance to
+      // to cache it, store it etc.
+      port.postMessage({
+        id: "tallyHo",
+        jsonrpc: "2.0",
+        result: {
+          method: "tally_getConfig",
+          defaultWallet: await this.preferenceService.getDefaultWallet(),
+        },
+      })
+    }
+    // TODO: on internal provider handlers connect, disconnect, account change, network change
   }
 }

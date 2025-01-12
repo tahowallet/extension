@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill"
+
 // Ignore the no-console lint rule since this file is meant to funnel output to
 // the console.
 /* eslint-disable no-console */
@@ -5,11 +7,25 @@
 const HOUR = 1000 * 60 * 60
 
 const store = {
-  get(key: string): string {
-    return "" // return window.localStorage.getItem(key) ?? ""
+  async get(key: string): Promise<string> {
+    const realKey = `logs-${key}`
+    return String((await browser.storage.local.get(realKey))[realKey]) ?? ""
   },
-  set(key: string, value: string): void {
-    // window.localStorage.setItem(key, value)
+  async getAll<T extends string[], Keys extends T[number]>(
+    ...keys: Keys[]
+  ): Promise<{ [key in Keys]: string }> {
+    const keyResults = await browser.storage.local.get(
+      keys.map((key) => `logs-${key}`),
+    )
+    return Object.fromEntries(
+      keys.map<[Keys, string]>((key) => [
+        key,
+        String(keyResults[`logs-${key}`]) ?? "",
+      ]),
+    ) as { [key in Keys]: string }
+  },
+  async set(key: string, value: string): Promise<void> {
+    browser.storage.local.set({ [`logs-${key}`]: value })
   },
 }
 
@@ -170,6 +186,38 @@ class Logger {
     this.logEvent(LogLevel.error, input)
   }
 
+  /**
+   * Helper for a common pattern where `Promise.allSettled` is used to
+   * run multiple promises in parallel to resolve data, and some of the
+   * promises may fail and should be logged as such.
+   *
+   * If no promises fail, nothing is logged. If promises fail, the
+   * promise is logged alongside the corresponding entry in
+   * `perResultData`, if any. This allows for `perResultData` to include
+   * additional information about the failed promise. For example, if the
+   * promises are resolving information about a set of addresses, the
+   * perResultData might include the address corresponding to each promise, so
+   * that a failure to resolve information about an address can include that
+   * address alongside the failure for further debugging.
+   */
+  errorLogRejectedPromises<T>(
+    logPrefix: string,
+    settledPromises: PromiseSettledResult<T>[],
+    perResultData: unknown[] = [],
+  ): void {
+    const rejectedLogData = settledPromises.reduce<unknown[]>(
+      (logData, settledPromise, i) =>
+        settledPromise.status === "rejected"
+          ? [...logData, settledPromise, ...perResultData.slice(i, i + 1)]
+          : logData,
+      [],
+    )
+
+    if (rejectedLogData.length > 0) {
+      this.error(logPrefix, rejectedLogData)
+    }
+  }
+
   buildError(...input: unknown[]): Error {
     this.error(...input)
     return new Error(input.join(" "))
@@ -218,7 +266,7 @@ class Logger {
     this.saveLog(level, isoDateString, logLabel, input, stackTrace)
   }
 
-  private saveLog(
+  private async saveLog(
     level: LogLevel,
     isoDateString: string,
     logLabel: string,
@@ -249,14 +297,13 @@ class Logger {
       .split("\n")
       .join("\n    ")
 
-    const logKey = `logs-${level}`
-    const existingLogs = this.store.get(logKey)
+    const existingLogs = await this.store.get(level)
 
     const fullPrefix = `[${isoDateString}] [${level.toUpperCase()}:${
       this.contextId
     }]`
 
-    // Note: we have to do everything from here to `storage.local.set`
+    // Note: we have to do everything from here to `store.set`
     // synchronously, i.e. no promises, otherwise we risk losing logs between
     // background and content/UI scripts.
     const purgedData = purgeSensitiveFailSafe(logData)
@@ -266,20 +313,20 @@ class Logger {
         // usage.
         .slice(-50000)
 
-    this.store.set(logKey, updatedLogs)
+    await this.store.set(level, updatedLogs)
   }
 
-  serializeLogs(): string {
+  async serializeLogs(): Promise<string> {
     type StoredLogData = {
       -readonly [level in Exclude<LogLevel, LogLevel.off>]: string
     }
 
-    const logs: StoredLogData = {
-      debug: this.store.get("logs-debug"),
-      info: this.store.get("logs-info"),
-      warn: this.store.get("logs-warn"),
-      error: this.store.get("logs-error"),
-    }
+    const logs: StoredLogData = await this.store.getAll(
+      "debug",
+      "info",
+      "warn",
+      "error",
+    )
 
     if (Object.values(logs).every((entry) => entry === "")) {
       return "[NO LOGS FOUND]"
@@ -326,6 +373,32 @@ class Logger {
 }
 
 const logger = new Logger()
+
+/**
+ * Takes the same parameters as `Logger.errorLogRejectedPromises` and logs any
+ * failed promises by calling that.
+ *
+ * This helper also unwraps all *fulfilled* promises and returns the results. That
+ * allows a caller who wants to log failures and then deal with successes in one
+ * step to call this function once with the `await Promise.allSettled` call as the
+ * second parameter, and assign the result directly to a variable that is used
+ * in downstream work.
+ */
+export function logRejectedAndReturnFulfilledResults<T>(
+  logPrefix: string,
+  settledPromises: PromiseSettledResult<T>[],
+  perResultData: unknown[] = [],
+): T[] {
+  logger.errorLogRejectedPromises(logPrefix, settledPromises, perResultData)
+
+  return settledPromises.reduce<T[]>(
+    (fulfilledResults, settledPromise) =>
+      settledPromise.status === "fulfilled"
+        ? [...fulfilledResults, settledPromise.value]
+        : fulfilledResults,
+    [],
+  )
+}
 
 export const serializeLogs = logger.serializeLogs.bind(logger)
 

@@ -180,6 +180,13 @@ export default class LedgerService extends BaseService<Events> {
 
   private constructor(private db: LedgerDatabase) {
     super()
+
+    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
+    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+
+    // Block serial oprations until the service is started, in case a
+    // connection or disconnection event occurs to soon.
+    this.#lastOperationPromise = this.started().then(() => {})
   }
 
   private runSerialized<T>(operation: () => Promise<T>) {
@@ -289,9 +296,6 @@ export default class LedgerService extends BaseService<Events> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
 
     this.refreshConnectedLedger()
-
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
   }
 
   protected override async internalStopService(): Promise<void> {

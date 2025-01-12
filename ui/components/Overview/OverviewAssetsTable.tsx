@@ -111,10 +111,12 @@ export default function OverviewAssetsTable(props: Props): ReactElement | null {
         td:nth-child(2) {
           width: 25%;
           text-align: right;
+          padding-left: 16px;
         }
         th:nth-child(3),
         td:nth-child(3) {
           text-align: right;
+          padding-left: 16px;
         }
         .asset_descriptor {
           display: flex;

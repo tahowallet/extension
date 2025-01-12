@@ -13,7 +13,7 @@ import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { NormalizedEVMAddress } from "../types"
-import { removeAssetReferences, updateAssetReferences } from "./accounts"
+import { removeAssetReferences, updateAccountAssetReferences } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
@@ -43,9 +43,16 @@ const assetsSlice = createSlice({
       // complete set and thus should replace data currently in the store.
       const networksToReset =
         loadingScope === "network"
-          ? newAssets.flatMap((asset) =>
-              "homeNetwork" in asset ? [asset.homeNetwork] : [],
-            )
+          ? newAssets.reduce<EVMNetwork[]>((uniqueNetworks, asset) => {
+              const lastNetwork = uniqueNetworks.at(-1)
+              return "homeNetwork" in asset &&
+                // Eliminate contiguous duplicates, which should generally be
+                // all duplicates.
+                (uniqueNetworks.length === 0 ||
+                  (lastNetwork && !sameNetwork(asset.homeNetwork, lastNetwork)))
+                ? [...uniqueNetworks, asset.homeNetwork]
+                : uniqueNetworks
+            }, [])
           : []
 
       // The goal here is to update the Immer state in such a way that minimal
@@ -192,7 +199,7 @@ export const refreshAsset = createBackgroundAsyncThunk(
       assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
     )
     // Update accounts slice cached data about this asset
-    await dispatch(updateAssetReferences([asset]))
+    await dispatch(updateAccountAssetReferences([asset]))
   },
 )
 

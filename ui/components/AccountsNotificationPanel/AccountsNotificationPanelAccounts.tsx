@@ -89,30 +89,6 @@ export const walletTypeDetails: { [key in AccountType]: WalletTypeInfo } = {
   },
 }
 
-const shouldAddHeader = (
-  existingAccountTypes: AccountType[],
-  currentAccountType: AccountType,
-): boolean => {
-  // Ledger and read-only accounts have their own sections.
-  // Internal accounts, imported with mnemonic or private key are in the same section so we
-  // only need to add that header once when we encounter such an account for the first time.
-  switch (currentAccountType) {
-    case AccountType.Ledger:
-    case AccountType.ReadOnly:
-    case AccountType.Internal:
-      return true
-    case AccountType.Imported:
-      return !existingAccountTypes.includes(AccountType.Internal)
-    case AccountType.PrivateKey:
-      return !(
-        existingAccountTypes.includes(AccountType.Internal) ||
-        existingAccountTypes.includes(AccountType.Imported)
-      )
-    default:
-      throw Error("Unknown account type")
-  }
-}
-
 function WalletTypeHeader({
   accountType,
   accountTotals,
@@ -300,13 +276,11 @@ function WalletTypeHeader({
 }
 
 function WalletSignerAccounts({
-  accountType,
   walletNumber,
   signerId,
   signerAccountTotals,
   onUpdatedAddressSelected,
 }: {
-  accountType: AccountType
   walletNumber: number
   signerId: string
   signerAccountTotals: AccountTotal[]
@@ -316,6 +290,8 @@ function WalletSignerAccounts({
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
+  const { accountType } = signerAccountTotals[0]
+
   const onClickAddAddress = useMemo(() => {
     if (isAccountWithMnemonic(accountType)) {
       return () => dispatch(deriveAddress(signerId))
@@ -324,9 +300,9 @@ function WalletSignerAccounts({
   }, [dispatch, accountType, signerId])
 
   return (
-    <section key={`${accountType}-${signerId}`}>
+    <section>
       <WalletTypeHeader
-        accountType={accountType}
+        accountType={signerAccountTotals[0].accountType}
         walletNumber={walletNumber}
         path={signerAccountTotals[0].path}
         accountSigner={signerAccountTotals[0].accountSigner}
@@ -388,6 +364,23 @@ function WalletSignerAccounts({
           )
         })}
       </ul>
+      <style jsx>{`
+        ul {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          align-content: center;
+          margin-bottom: 8px;
+        }
+
+        li {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 8px 0px 8px 24px;
+          cursor: pointer;
+        }
+      `}</style>
     </section>
   )
 }
@@ -445,22 +438,29 @@ export default function AccountsNotificationPanelAccounts({
     }
   }, [history, areInternalSignersUnlocked, dispatch, t])
 
-  const existingAccountTypes = accountTypes.filter(
-    (type) => (accountTotals[type]?.length ?? 0) > 0,
+  // Group account types by category, coalescing
+  const accountTotalsByCategory = useMemo(
+    () =>
+      accountTypes.reduce<{ [category: string]: AccountTotal[] }>(
+        (byCategory, accountType) => ({
+          ...byCategory,
+          [walletTypeDetails[accountType].category]: [
+            ...(byCategory[walletTypeDetails[accountType].category] ?? []),
+            ...(accountTotals[accountType] ?? []),
+          ],
+        }),
+        {},
+      ),
+    [accountTotals],
   )
 
   return (
     <div className="switcher_wrap">
-      {accountTypes.map((accountType) => {
-        const accountTypeTotals = accountTotals[accountType]
-
-        // If there are no account totals for the given type, skip the section.
-        if (accountTypeTotals === undefined || accountTypeTotals.length <= 0) {
-          return null
-        }
-
-        const accountTotalsByType = accountTypeTotals.reduce(
-          (acc, accountTypeTotal) => {
+      {Object.entries(accountTotalsByCategory).map(
+        ([category, accountTypeTotals]) => {
+          const accountTotalsBySignerId = accountTypeTotals.reduce<{
+            [signerId: string]: AccountTotal[]
+          }>((acc, accountTypeTotal) => {
             if (accountTypeTotal.signerId) {
               acc[accountTypeTotal.signerId] ??= []
               acc[accountTypeTotal.signerId].push(accountTypeTotal)
@@ -469,40 +469,40 @@ export default function AccountsNotificationPanelAccounts({
               acc.readOnly.push(accountTypeTotal)
             }
             return acc
-          },
-          {} as { [signerId: string]: AccountTotal[] },
-        )
+          }, {})
 
-        return (
-          <>
-            {shouldAddHeader(existingAccountTypes, accountType) && (
+          return (
+            <section key={category} className="account-category">
               <div className="category_wrap simple_text">
-                <p className="category_title">
-                  {walletTypeDetails[accountType].category}
-                </p>
-                {isAccountWithSecrets(accountType) && (
-                  <SigningButton
-                    onCurrentAddressChange={onCurrentAddressChange}
-                  />
-                )}
+                <p className="category_title">{category}</p>
+                {
+                  // We use the first total's account type because we happen to know
+                  // that there will be no category mixing between accounts with and
+                  // without secrets.
+                  isAccountWithSecrets(accountTypeTotals[0].accountType) && (
+                    <SigningButton
+                      onCurrentAddressChange={onCurrentAddressChange}
+                    />
+                  )
+                }
               </div>
-            )}
-            {Object.entries(accountTotalsByType).map(
-              ([signerId, signerAccountTotals], idx) => (
-                <WalletSignerAccounts
-                  accountType={accountType}
-                  walletNumber={idx + 1}
-                  signerId={signerId}
-                  signerAccountTotals={signerAccountTotals}
-                  onUpdatedAddressSelected={(address) =>
-                    updateCurrentAccount(address)
-                  }
-                />
-              ),
-            )}
-          </>
-        )
-      })}
+              {Object.entries(accountTotalsBySignerId).map(
+                ([signerId, signerAccountTotals], idx) => (
+                  <WalletSignerAccounts
+                    key={signerId}
+                    walletNumber={idx + 1}
+                    signerId={signerId}
+                    signerAccountTotals={signerAccountTotals}
+                    onUpdatedAddressSelected={(address) =>
+                      updateCurrentAccount(address)
+                    }
+                  />
+                ),
+              )}
+            </section>
+          )
+        },
+      )}
       <footer>
         <SharedButton
           type="tertiary"
@@ -519,22 +519,8 @@ export default function AccountsNotificationPanelAccounts({
       </footer>
       <style jsx>
         {`
-          ul {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            align-content: center;
-            margin-bottom: 8px;
-          }
           section:last-of-type {
             margin-bottom: 16px;
-          }
-          li {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 0px 8px 24px;
-            cursor: pointer;
           }
           footer {
             width: 100%;

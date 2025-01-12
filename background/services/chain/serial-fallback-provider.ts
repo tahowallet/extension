@@ -770,7 +770,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.subscriptions.push(subscription)
     } else {
       logger.warn(
-        "Current provider is not a WebSocket provider; subscription " +
+        "Current provider ",
+        this.currentProvider,
+        " for ",
+        this.network,
+        "is not a WebSocket provider; subscription " +
           "will not work until a WebSocket provider connects.",
       )
     }

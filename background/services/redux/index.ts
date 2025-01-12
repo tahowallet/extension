@@ -1,4 +1,4 @@
-import { runtime } from "webextension-polyfill"
+import { Runtime } from "webextension-polyfill"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
@@ -40,7 +40,7 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAssetReferences,
+  updateAccountAssetReferences,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
 import {
@@ -192,7 +192,10 @@ import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { makeFlashbotsProviderCreator } from "../chain/serial-fallback-provider"
 import { AnalyticsPreferences, DismissableItem } from "../preferences"
-import { newPricePoints } from "../../redux-slices/prices"
+import {
+  newPricePoints,
+  updatePriceAssetReferences,
+} from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 
@@ -459,8 +462,6 @@ export default class ReduxService extends BaseService<never> {
     )
 
     this.store.dispatch(clearApprovalInProgress())
-
-    this.connectPopupMonitor()
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -630,12 +631,9 @@ export default class ReduxService extends BaseService<never> {
 
       // Set up initial state.
       const existingAccounts = await this.chainService.getAccountsToTrack()
-      existingAccounts.forEach(async (addressNetwork) => {
+      existingAccounts.forEach((addressNetwork) => {
         // Mark as loading and wire things up.
         this.store.dispatch(loadAccount(addressNetwork))
-
-        // Force a refresh of the account balance to populate the store.
-        this.chainService.getLatestBaseAccountBalance(addressNetwork)
       })
 
       // Set up Island Monitoring
@@ -912,7 +910,8 @@ export default class ReduxService extends BaseService<never> {
 
         const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
         if (smartContractAssets.length > 0) {
-          this.store.dispatch(updateAssetReferences(smartContractAssets))
+          this.store.dispatch(updateAccountAssetReferences(smartContractAssets))
+          this.store.dispatch(updatePriceAssetReferences(smartContractAssets))
         }
       },
     )
@@ -1841,30 +1840,33 @@ export default class ReduxService extends BaseService<never> {
     return this.indexingService.importCustomToken(asset)
   }
 
-  private connectPopupMonitor() {
-    runtime.onConnect.addListener((port) => {
-      if (port.name !== POPUP_MONITOR_PORT_NAME) return
+  async connectPort(port: Runtime.Port) {
+    this.connectPopupMonitor(port)
+    this.providerBridgeService.connectPort(port)
+  }
 
-      const openTime = Date.now()
+  private connectPopupMonitor(port: Runtime.Port) {
+    if (port.name !== POPUP_MONITOR_PORT_NAME) return
 
-      const originalNetworkName =
+    const openTime = Date.now()
+
+    const originalNetworkName =
+      this.store.getState().ui.selectedAccount.network.name
+
+    port.onDisconnect.addListener(() => {
+      const networkNameAtClose =
         this.store.getState().ui.selectedAccount.network.name
-
-      port.onDisconnect.addListener(() => {
-        const networkNameAtClose =
-          this.store.getState().ui.selectedAccount.network.name
-        this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
-          openTime: new Date(openTime).toISOString(),
-          closeTime: new Date().toISOString(),
-          openLength: (Date.now() - openTime) / 1e3,
-          networkName:
-            originalNetworkName === networkNameAtClose
-              ? originalNetworkName
-              : "switched networks",
-          unit: "s",
-        })
-        this.onPopupDisconnected()
+      this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.UI_SHOWN, {
+        openTime: new Date(openTime).toISOString(),
+        closeTime: new Date().toISOString(),
+        openLength: (Date.now() - openTime) / 1e3,
+        networkName:
+          originalNetworkName === networkNameAtClose
+            ? originalNetworkName
+            : "switched networks",
+        unit: "s",
       })
+      this.onPopupDisconnected()
     })
   }
 
