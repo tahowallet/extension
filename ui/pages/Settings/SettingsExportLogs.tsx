@@ -1,4 +1,4 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import dayjs from "dayjs"
 import { serializeLogs } from "@tallyho/tally-background/lib/logger"
@@ -8,10 +8,17 @@ import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 export default function SettingsExportLogs(): ReactElement {
   const { t } = useTranslation()
 
-  const serializedLogs = serializeLogs()
-  const base64LogData = Buffer.from(
-    `${window.navigator.userAgent}\n\n\n${serializedLogs}` || "",
-  ).toString("base64")
+  const [base64LogData, setBase64LogData] = useState<string | undefined>()
+  useEffect(() => {
+    const resolveSerializedLogs = async () => {
+      setBase64LogData(
+        Buffer.from(
+          `${window.navigator.userAgent}\n\n\n${await serializeLogs()}` || "",
+        ).toString("base64"),
+      )
+    }
+    resolveSerializedLogs()
+  }, [])
 
   const logFileName = `logs_v${(process.env.VERSION || "").replace(
     /\./g,

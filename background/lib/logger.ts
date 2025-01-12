@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill"
+
 // Ignore the no-console lint rule since this file is meant to funnel output to
 // the console.
 /* eslint-disable no-console */
@@ -5,11 +7,25 @@
 const HOUR = 1000 * 60 * 60
 
 const store = {
-  get(key: string): string {
-    return "" // return window.localStorage.getItem(key) ?? ""
+  async get(key: string): Promise<string> {
+    const realKey = `logs-${key}`
+    return String((await browser.storage.local.get(realKey))[realKey]) ?? ""
   },
-  set(key: string, value: string): void {
-    // window.localStorage.setItem(key, value)
+  async getAll<T extends string[], Keys extends T[number]>(
+    ...keys: Keys[]
+  ): Promise<{ [key in Keys]: string }> {
+    const keyResults = await browser.storage.local.get(
+      keys.map((key) => `logs-${key}`),
+    )
+    return Object.fromEntries(
+      keys.map<[Keys, string]>((key) => [
+        key,
+        String(keyResults[`logs-${key}`]) ?? "",
+      ]),
+    ) as { [key in Keys]: string }
+  },
+  async set(key: string, value: string): Promise<void> {
+    browser.storage.local.set({ [`logs-${key}`]: value })
   },
 }
 
@@ -250,7 +266,7 @@ class Logger {
     this.saveLog(level, isoDateString, logLabel, input, stackTrace)
   }
 
-  private saveLog(
+  private async saveLog(
     level: LogLevel,
     isoDateString: string,
     logLabel: string,
@@ -281,14 +297,13 @@ class Logger {
       .split("\n")
       .join("\n    ")
 
-    const logKey = `logs-${level}`
-    const existingLogs = this.store.get(logKey)
+    const existingLogs = await this.store.get(level)
 
     const fullPrefix = `[${isoDateString}] [${level.toUpperCase()}:${
       this.contextId
     }]`
 
-    // Note: we have to do everything from here to `storage.local.set`
+    // Note: we have to do everything from here to `store.set`
     // synchronously, i.e. no promises, otherwise we risk losing logs between
     // background and content/UI scripts.
     const purgedData = purgeSensitiveFailSafe(logData)
@@ -298,20 +313,20 @@ class Logger {
         // usage.
         .slice(-50000)
 
-    this.store.set(logKey, updatedLogs)
+    await this.store.set(level, updatedLogs)
   }
 
-  serializeLogs(): string {
+  async serializeLogs(): Promise<string> {
     type StoredLogData = {
       -readonly [level in Exclude<LogLevel, LogLevel.off>]: string
     }
 
-    const logs: StoredLogData = {
-      debug: this.store.get("logs-debug"),
-      info: this.store.get("logs-info"),
-      warn: this.store.get("logs-warn"),
-      error: this.store.get("logs-error"),
-    }
+    const logs: StoredLogData = await this.store.getAll(
+      "debug",
+      "info",
+      "warn",
+      "error",
+    )
 
     if (Object.values(logs).every((entry) => entry === "")) {
       return "[NO LOGS FOUND]"
