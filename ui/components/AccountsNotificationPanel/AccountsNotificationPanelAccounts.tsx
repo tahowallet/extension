@@ -471,6 +471,10 @@ export default function AccountsNotificationPanelAccounts({
             return acc
           }, {})
 
+          if (accountTypeTotals.length < 1) {
+            return null
+          }
+
           return (
             <section key={category} className="account-category">
               <div className="category_wrap simple_text">
