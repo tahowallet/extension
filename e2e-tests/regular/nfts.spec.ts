@@ -5,15 +5,16 @@ import { account1 } from "../utils/onboarding"
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
     page,
-    backgroundPage,
+    context,
+    isExtensionRequest,
     walletPageHelper,
   }) => {
     await test.step("Shows loading state", async () => {
       let shouldInterceptRequests = true
 
       // Set a delay so we don't miss loading states
-      await backgroundPage.route(/api\.simplehash\.com/i, async (route) => {
-        if (!shouldInterceptRequests) {
+      await context.route(/api\.simplehash\.com/i, async (route, request) => {
+        if (!shouldInterceptRequests || !isExtensionRequest(request)) {
           route.continue()
           return
         }
@@ -32,7 +33,13 @@ test.describe("NFTs", () => {
         })
 
         if (response) {
-          await wait(800)
+          // Start fulfilling NFT requests once we're in the NFT's page
+          await page
+            .getByRole("link", { name: "NFTs" })
+            .locator(".active")
+            .waitFor({ state: "visible" })
+
+          await wait(5_000)
           await route.fulfill({ response })
         }
       })
@@ -51,6 +58,7 @@ test.describe("NFTs", () => {
       await walletPageHelper.navigateTo("NFTs")
 
       // Wait until load finishes
+      await expect(page.getByTestId("loading_doggo")).toBeVisible()
       await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
 
       shouldInterceptRequests = false
