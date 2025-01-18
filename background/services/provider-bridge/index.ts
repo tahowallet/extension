@@ -234,7 +234,6 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // methods).
       const [title, faviconUrl] = (event.request.params as unknown[]).slice(
         -2,
-        0,
       ) as string[]
 
       const existingPermission = await this.checkPermission(origin, dAppChainID)
