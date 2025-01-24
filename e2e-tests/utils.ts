@@ -1,6 +1,5 @@
 /* eslint-disable no-empty-pattern */
-import { test as base, chromium, Page } from "@playwright/test"
-import { FeatureFlagType, isEnabled } from "@tallyho/tally-background/features"
+import { test as base, chromium, Request, Worker } from "@playwright/test"
 import path from "path"
 import WalletPageHelper from "./utils/walletPageHelper"
 import AssetsHelper from "./utils/assets"
@@ -14,7 +13,8 @@ type WalletTestFixtures = {
   walletPageHelper: WalletPageHelper
   assetsHelper: AssetsHelper
   transactionsHelper: TransactionsHelper
-  backgroundPage: Page
+  backgroundPage: Worker
+  isExtensionRequest: (request: Request) => boolean
 }
 
 /**
@@ -35,26 +35,33 @@ export const test = base.extend<WalletTestFixtures>({
     await use(context)
     await context.close()
   },
-  backgroundPage: async ({ context }, use) => {
-    // for manifest v2:
-    let [background] = context.backgroundPages()
-    if (!background) background = await context.waitForEvent("backgroundpage")
+  backgroundPage: async ({ context, isExtensionRequest }, use) => {
+    let [background] = context.serviceWorkers()
+    if (!background) background = await context.waitForEvent("serviceworker")
 
-    await background.route(/app\.posthog\.com/i, async (route) =>
-      route.fulfill({ json: { status: 1 } }),
-    )
+    // Intercept all posthog requests from extension sources
+    await context.route(/app\.posthog\.com/i, async (route, request) => {
+      if (isExtensionRequest(request)) {
+        route.fulfill({ json: { status: 1 } })
+      }
+    })
 
-    await background.waitForResponse(/api\.coingecko\.com/i)
-
-    // // for manifest v3:
-    // let [background] = context.serviceWorkers();
-    // if (!background)
-    //   background = await context.waitForEvent("serviceworker");
     await use(background)
   },
   extensionId: async ({ backgroundPage }, use) => {
     const extensionId = backgroundPage.url().split("/")[2]
     await use(extensionId)
+  },
+  isExtensionRequest: async ({}, use) => {
+    const hasExtensionOrigin = (url: string) =>
+      /^chrome-extension:\/\//.test(url)
+
+    await use((request) => {
+      const worker = request.serviceWorker()
+      const isWorkerRequest = worker && hasExtensionOrigin(worker.url())
+
+      return isWorkerRequest || hasExtensionOrigin(request.frame().url())
+    })
   },
   walletPageHelper: async ({ page, context, extensionId }, use) => {
     const helper = new WalletPageHelper(page, context, extensionId)
@@ -69,9 +76,3 @@ export const test = base.extend<WalletTestFixtures>({
     await use(helper)
   },
 })
-
-export const skipIfFeatureFlagged = (featureFlag: FeatureFlagType): void =>
-  test.skip(
-    !isEnabled(featureFlag, false),
-    `Feature Flag: ${featureFlag} has not been turned on for this run`,
-  )
