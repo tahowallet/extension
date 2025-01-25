@@ -28,10 +28,12 @@ import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
 import TahoAlchemyProvider from "./taho-provider"
 
+type RPCProvider = WebSocketProvider | JsonRpcProvider | JsonRpcBatchProvider
+
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
   supportedMethods?: string[]
-  creator: () => WebSocketProvider | JsonRpcProvider
+  creator: () => RPCProvider
 }
 
 /**
@@ -107,9 +109,7 @@ function backedOffMs(): number {
  * either closing or already closed. Ethers does not provide direct access to
  * this information, nor does it attempt to reconnect in these cases.
  */
-function isClosedOrClosingWebSocketProvider(
-  provider: JsonRpcProvider,
-): boolean {
+function isClosedOrClosingWebSocketProvider(provider: RPCProvider): boolean {
   if (provider instanceof WebSocketProvider) {
     // Digging into the innards of Ethers here because there's no
     // other way to get access to the WebSocket connection situation.
@@ -129,7 +129,7 @@ function isClosedOrClosingWebSocketProvider(
  * Returns true if the given provider is using a WebSocket AND the WebSocket is
  * connecting. Ethers does not provide direct access to this information.
  */
-function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
+function isConnectingWebSocketProvider(provider: RPCProvider): boolean {
   if (provider instanceof WebSocketProvider) {
     // Digging into the innards of Ethers here because there's no
     // other way to get access to the WebSocket connection situation.
@@ -194,23 +194,19 @@ function customOrDefaultProvider(
 export default class SerialFallbackProvider extends JsonRpcProvider {
   // Functions that will create and initialize a new provider, in priority
   // order.
-  private providerCreators: [
-    () => WebSocketProvider | JsonRpcProvider,
-    ...(() => JsonRpcProvider)[],
-  ]
+  private providerCreators: (() => RPCProvider)[]
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  private currentProvider: JsonRpcProvider
+  private currentProvider: RPCProvider
 
-  private alchemyProvider: JsonRpcProvider | undefined
+  private alchemyProvider: RPCProvider | undefined
 
-  private customProvider: JsonRpcProvider | undefined
+  private customProvider: RPCProvider | undefined
 
   private customProviderSupportedMethods: string[] = []
 
-  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
-    {}
+  private cachedProvidersByIndex: Record<string, RPCProvider | undefined> = {}
 
   /**
    * This object holds all messages that are either being sent to a provider
@@ -226,13 +222,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
-  private alchemyProviderCreator:
-    | (() => WebSocketProvider | JsonRpcProvider)
-    | undefined
+  private alchemyProviderCreator: (() => RPCProvider) | undefined
 
   supportsAlchemy = false
 
-  private customProviderCreator: (() => JsonRpcProvider) | undefined
+  private customProviderCreator: (() => RPCProvider) | undefined
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -280,7 +274,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // reloaded and the property of having code updates quite rarely.
   private latestHasCodeCache: {
     [address: string]: {
-      hasCode: boolean
+      hasCode: string
     }
   } = {}
 
@@ -625,7 +619,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_getCode" && (params as string[])[1] === "latest") {
       const address = (params as string[])[0]
       this.latestHasCodeCache[address] = {
-        hasCode: result as boolean,
+        hasCode: result as string,
       }
     }
   }
@@ -835,7 +829,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Behaves the same as the `JsonRpcProvider` `on` method, but also trakcs the
+   * Behaves the same as the `JsonRpcProvider` `on` method, but also tracks the
    * event subscription so that an underlying provider failure will not prevent
    * it from firing.
    */
@@ -852,7 +846,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Behaves the same as the `JsonRpcProvider` `once` method, but also trakcs
+   * Behaves the same as the `JsonRpcProvider` `once` method, but also tracks
    * the event subscription so that an underlying provider failure will not
    * prevent it from firing.
    */
@@ -1003,7 +997,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @param provider The provider to use to resubscribe
    * @returns A boolean indicating if websocket subscription was successful or not
    */
-  private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
+  private async resubscribe(provider: RPCProvider): Promise<boolean> {
     logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
 
     if (
@@ -1170,9 +1164,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
-function getProviderCreator(
-  rpcUrl: string,
-): JsonRpcProvider | WebSocketProvider {
+function getProviderCreator(rpcUrl: string): RPCProvider {
   const url = new URL(rpcUrl)
   if (/^wss?/.test(url.protocol)) {
     return new WebSocketProvider(rpcUrl)
