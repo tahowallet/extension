@@ -34,6 +34,80 @@ export type ProviderCreator = {
   creator: () => WebSocketProvider | JsonRpcProvider
 }
 
+type RPCErrorType =
+  // Batch size too large
+  | "batch_limit_exceeded"
+  // Too many requests
+  | "rate_limit_error"
+  // Timeout and other network errors
+  | "network_error"
+  // Bad or missing response
+  | "response_error"
+  // Invalid result from RPC, can be retried
+  | "invalid_response_error"
+  // Uncaught, could be anything
+  | "unknown_error"
+
+const getErrorType = (error: string): RPCErrorType => {
+  /**
+   * Note: We can't use ether's generic SERVER_ERROR because it's also
+   * used for invalid responses from the server, which we can retry on
+   */
+
+  /**
+   * These are from geth, nethermind, and ankr
+   */
+  const BATCH_LIMIT_REGEXP =
+    /batch size (is )?too large|batch size limit exceeded|batch too large/i
+
+  /**
+   * - WebSocket is already in CLOSING
+   * We are reconnecting
+   * - TIMEOUT
+   * fetchJson timed out, we could retry but it's safer to just fail over
+   * - NETWORK_ERROR
+   * Any other network error, including no-network errors
+   */
+  const NETWORK_ERROR_REGEXP =
+    /WebSocket is already in CLOSING|TIMEOUT|NETWORK_ERROR/i
+
+  /**
+   * - missing response
+   * We might be disconnected due to network instability
+   * - failed response
+   * fetchJson default "fallback" error, generally thrown after 429s
+   * - we can't execute this request
+   * ankr rate limit hit / invalid response from some rpcs, generally ankr
+   */
+  const RESPONSE_ERROR_REGEXP =
+    /missing response|failed response|we can't execute this request/i
+
+  /**
+   * - bad response
+   * error on the endpoint provider's side
+   * - bad result from backend
+   * same as above, but comes from ethers trying to parse an invalid response
+   */
+  const INVALID_RESPONSE_REGEXP = /bad response|bad result from backend/i
+
+  const RATE_LIMIT_REGEXP = /too many requests|call rate limit exhausted/i
+
+  switch (true) {
+    case BATCH_LIMIT_REGEXP.test(error):
+      return "batch_limit_exceeded"
+    case NETWORK_ERROR_REGEXP.test(error):
+      return "network_error"
+    case RATE_LIMIT_REGEXP.test(error):
+      return "rate_limit_error"
+    case RESPONSE_ERROR_REGEXP.test(error):
+      return "response_error"
+    case INVALID_RESPONSE_REGEXP.test(error):
+      return "invalid_response_error"
+    default:
+      return "unknown_error"
+  }
+}
+
 /**
  * Method list, to describe which rpc method calls on which networks should
  * prefer alchemy provider over the generic ones.
@@ -452,8 +526,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
 
+      const errorType = getErrorType(stringifiedError)
+
       if (
-        stringifiedError.match(/Batch size too large/) &&
+        errorType === "batch_limit_exceeded" &&
         (pendingBatchSize === undefined || pendingBatchSize === 0)
       ) {
         this.forcedBatchMaxPreviousSize =
@@ -474,7 +550,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return this.routeRpcCall(messageId)
       }
 
-      if (stringifiedError.match(/Batch size too large/)) {
+      if (errorType === "batch_limit_exceeded") {
         logger.debug(
           "Using max batch size of",
           this.forcedBatchMaxSize,
@@ -489,27 +565,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        /**
-         * WebSocket is already in CLOSING - We are reconnecting
-         * - bad response
-         * error on the endpoint provider's side
-         * - missing response
-         * We might be disconnected due to network instability
-         * - we can't execute this request
-         * ankr rate limit hit / invalid response from some rpcs
-         * - failed response
-         * fetchJson default "fallback" error, generally thrown after 429s
-         * - TIMEOUT
-         * fetchJson timed out, we could retry but it's safer to just fail over
-         * - NETWORK_ERROR
-         * Any other network error, including no-network errors
-         *
-         * Note: We can't use ether's generic SERVER_ERROR because it's also
-         * used for invalid responses from the server, which we can retry on
-         */
-        stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR|call rate limit exhausted/,
-        )
+        errorType === "network_error" ||
+        errorType === "rate_limit_error" ||
+        errorType === "response_error"
       ) {
         // If a new provider is already in the process of being tried, go ahead
         // and fire off into the new provider.
@@ -539,10 +597,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.reconnectProvider()
         delete this.messagesToSend[messageId]
         throw error
-      } else if (
-        // If we received some bogus response, let's try again
-        stringifiedError.match(/bad result from backend/)
-      ) {
+      } else if (errorType === "invalid_response_error") {
         if (
           // If the current provider is the one we tried with initially.
           this.currentProviderIndex === existingProviderIndex &&
