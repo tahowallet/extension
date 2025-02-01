@@ -2,6 +2,7 @@ import { JsonRpcProvider, Networkish } from "@ethersproject/providers"
 import { deepCopy } from "@ethersproject/properties"
 import { ConnectionInfo, fetchJson } from "@ethersproject/web"
 import logger from "../../lib/logger"
+import { wait } from "../../lib/utils"
 
 type RPCPayload = {
   method: string
@@ -37,7 +38,7 @@ type RPCPendingRequest = {
 type RPCOptions = {
   /**
    * Maximum number of requests to be batched
-   * @default 20 requests
+   * @default 10 requests
    */
   maxBatchLength?: number
   /**
@@ -50,13 +51,18 @@ type RPCOptions = {
    * @default 100ms
    */
   batchStallTime?: number
+  /**
+   * How long to wait between each payload sent
+   */
+  delayBetweenRequests?: number
 }
 
 const defaultOptions = {
-  maxBatchLength: 20,
+  maxBatchLength: 10, // Seems to work fine for public rpcs
   // eslint-disable-next-line no-bitwise
   maxBatchSize: 1 << 20, // 1Mb
   batchStallTime: 100,
+  delayBetweenRequests: 500,
 }
 
 const makeSerializableError = (
@@ -70,8 +76,16 @@ const makeSerializableError = (
 }
 
 /**
- * TODO: This should be able to fallback into a standard rpc provider
- * if batches are unsupported
+ * Custom JSON-RPC provider that supports batching and optimized request handling
+ *
+ * This provider works similarly to ethers `JsonRpcBatchProvider` albeit with a
+ * few differences: It allows configuring maximum batch size and the time window
+ * to aggregate requests into a batch. Additionally, it also supports throttling
+ * between requests and can fallback to individual requests if necessary.
+ *
+ * It also features `disconnect`/`reconnect` methods to manage polling and clear
+ * pending requests in specific scenarios (e.g. network errors)
+ *
  */
 export default class TahoRPCProvider extends JsonRpcProvider {
   // Requests queued in this provider
@@ -85,6 +99,8 @@ export default class TahoRPCProvider extends JsonRpcProvider {
   #sendTimer: NodeJS.Timer | null = null
 
   #errorToBatch = new WeakMap<WeakKey, RPCPendingRequest[]>()
+
+  #sendBatchThrottle = Promise.resolve()
 
   constructor(
     url?: ConnectionInfo | string,
@@ -102,7 +118,7 @@ export default class TahoRPCProvider extends JsonRpcProvider {
       return
     }
 
-    this.#sendTimer = setTimeout(() => {
+    this.#sendTimer = setTimeout(async () => {
       this.#sendTimer = null
 
       const batch: RPCPendingRequest[] = []
@@ -133,9 +149,11 @@ export default class TahoRPCProvider extends JsonRpcProvider {
       }
 
       if (this.pending.length) {
-        // if there are still pending requests, schedule another batch for sending
+        // If there are still pending requests, start building another batch
         this.sendNextBatch()
       }
+
+      await this.#sendBatchThrottle
 
       const request = batch.map(({ payload }) => payload)
 
@@ -145,80 +163,94 @@ export default class TahoRPCProvider extends JsonRpcProvider {
         provider: this,
       })
 
-      fetchJson(
-        this.connection,
-        // Some RPCs will reject batch payloads even if they send a single
-        // request (e.g. flashbots)
-        JSON.stringify(request.length === 1 ? request[0] : request),
-      )
-        .then((response) => {
-          const wrappedResponse: RPCResponse[] = Array.isArray(response)
-            ? response
-            : [response]
+      this.#sendBatchThrottle = this.#sendBatchThrottle
+        .then(() =>
+          fetchJson(
+            this.connection,
+            // Some RPCs will reject batch payloads even if they send a single
+            // request (e.g. flashbots)
+            JSON.stringify(request.length === 1 ? request[0] : request),
+          )
+            .then((response) => {
+              const wrappedResponse: RPCResponse[] = Array.isArray(response)
+                ? response
+                : [response]
 
-          this.emit("debug", {
-            action: "response",
-            request,
-            response,
-            provider: this,
-          })
+              this.emit("debug", {
+                action: "response",
+                request,
+                response,
+                provider: this,
+              })
 
-          if (batch.length > 1 && !Array.isArray(response)) {
-            batch.forEach(({ reject }) => {
-              reject(
-                trackBatchError(
-                  makeSerializableError(
-                    response?.error?.message ?? "INVALID_RESPONSE",
-                    response?.error?.code,
-                    response,
-                  ),
-                ),
-              )
+              // For cases where a batch is sent and a single error object is returned
+              // e.g. batch size exceeded
+              if (batch.length > 1 && !Array.isArray(response)) {
+                batch.forEach(({ reject }) => {
+                  reject(
+                    trackBatchError(
+                      makeSerializableError(
+                        response?.error?.message ?? "INVALID_RESPONSE",
+                        response?.error?.code,
+                        { response, batch },
+                      ),
+                    ),
+                  )
+                })
+              }
+
+              batch.forEach(({ payload: { id }, reject, resolve }) => {
+                const match = wrappedResponse.find((resp) => id === resp.id)
+
+                if (!match) {
+                  reject(
+                    trackBatchError(
+                      makeSerializableError("bad response", -32000, {
+                        response,
+                        batch,
+                      }),
+                    ),
+                  )
+                  return
+                }
+
+                if ("error" in match) {
+                  reject(
+                    trackBatchError(
+                      makeSerializableError(
+                        match.error.message,
+                        match.error.code,
+                        {
+                          response: match,
+                          batch,
+                        },
+                      ),
+                    ),
+                  )
+                } else {
+                  resolve(match.result)
+                }
+              })
             })
-          }
+            .catch((error) => {
+              this.emit("debug", {
+                action: "response",
+                error,
+                request,
+                provider: this,
+              })
 
-          batch.forEach(({ payload: { id }, reject, resolve }) => {
-            const match = wrappedResponse.find((resp) => id === resp.id)
-
-            if (!match) {
-              reject(
-                trackBatchError(makeSerializableError("bad response", -32000)),
-              )
-              return
-            }
-
-            if ("error" in match) {
-              reject(
-                trackBatchError(
-                  makeSerializableError(
-                    match.error.message,
-                    match.error.code,
-                    match.error.data,
-                  ),
-                ),
-              )
-            } else {
-              resolve(match.result)
-            }
-          })
-        })
-        .catch((error) => {
-          this.emit("debug", {
-            action: "response",
-            error,
-            request,
-            provider: this,
-          })
-
-          // Any other error during fetch should propagate
-          batch.forEach(({ reject }) => reject(trackBatchError(error)))
-        })
+              // Any other error during fetch should propagate
+              batch.forEach(({ reject }) => reject(trackBatchError(error)))
+            }),
+        )
+        .then(() => wait(this.#options.delayBetweenRequests))
     }, this.#options.batchStallTime)
   }
 
   override send(method: string, params: unknown[]): Promise<unknown> {
     if (this.#destroyed) {
-      return Promise.reject(new Error("PROVIDER_DESTROYED"))
+      return Promise.reject(new Error("NETWORK_ERROR"))
     }
 
     const promise = new Promise((resolve, reject) => {
@@ -235,15 +267,16 @@ export default class TahoRPCProvider extends JsonRpcProvider {
   }
 
   /**
-   * Drops any pending requests
+   * Drops any pending requests and disables polling
    */
-  async destroy() {
+  disconnect() {
     this.#destroyed = true
-
+    this.polling = false
     if (this.#sendTimer) clearTimeout(this.#sendTimer)
 
     this.pending.forEach((request) =>
-      request.reject(new Error("PROVIDER_DESTROYED")),
+      // This error will increase retry count, even though request hasn't been sent
+      request.reject(new Error("NETWORK_ERROR")),
     )
 
     this.pending = []
@@ -251,6 +284,7 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
   async reconnect() {
     this.#destroyed = false
+    this.polling = true
   }
 
   setOptions(settings: RPCOptions): void {
