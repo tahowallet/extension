@@ -4,6 +4,10 @@ global.chrome.runtime.id = "mocked-extension-runtime-id"
 
 Object.assign(global.chrome, {
   ...global.chrome,
+  runtime: {
+    ...global.chrome.runtime,
+    setUninstallURL: jest.fn(),
+  },
   windows: {
     ...global.chrome.windows,
     getCurrent: jest.fn(),
