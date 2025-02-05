@@ -6,7 +6,7 @@ import {
   TransactionResponse,
 } from "@ethersproject/abstract-provider"
 import { DexieOptions } from "dexie"
-import { BigNumber } from "ethers"
+import { BigNumber, Wallet } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
 import { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
@@ -27,7 +27,6 @@ import {
   USD,
 } from "../constants"
 import { DaylightAbility } from "../lib/daylight"
-import { normalizeEVMAddress } from "../lib/utils"
 import {
   AnyEVMTransaction,
   LegacyEVMTransactionRequest,
@@ -56,12 +55,16 @@ import {
   QueuedTxToRetrieve,
 } from "../services/chain"
 import { EIP712TypedData } from "../types"
+import { normalizeEVMAddress } from "../lib/utils"
 
 // We don't want the chain service to use a real provider in tests
 jest.mock("../services/chain/serial-fallback-provider")
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
+
+export const createRandomAddress = () =>
+  normalizeEVMAddress(Wallet.createRandom().address)
 
 export const createPreferenceService = async (): Promise<PreferenceService> =>
   PreferenceService.create()
@@ -309,7 +312,7 @@ export const createAnyEVMBlock = (
 export const createAccountBalance = (
   overrides: Partial<AccountBalance> = {},
 ): AccountBalance => ({
-  address: createRandom0xHash(),
+  address: createRandomAddress(),
   assetAmount: {
     asset: {
       metadata: {
@@ -333,7 +336,7 @@ export const createAccountBalance = (
 export const createAddressOnNetwork = (
   overrides: Partial<AddressOnNetwork> = {},
 ): AddressOnNetwork => ({
-  address: normalizeEVMAddress(createRandom0xHash()),
+  address: createRandomAddress(),
   network: ETHEREUM,
   ...overrides,
 })
@@ -400,7 +403,7 @@ export const createTransactionResponse = (
   blockHash: createRandom0xHash(),
   timestamp: Date.now(),
   confirmations: 0,
-  from: createRandom0xHash(),
+  from: createRandomAddress(),
   nonce: 570,
   gasLimit: BigNumber.from(15000000),
   data: "...",
@@ -468,7 +471,7 @@ export const createSmartContractAsset = (
     symbol,
     decimals: 18,
     homeNetwork: ETHEREUM,
-    contractAddress: createRandom0xHash(),
+    contractAddress: createRandomAddress(),
   }
 
   return {
@@ -492,7 +495,7 @@ export const createNetworkBaseAsset = (
     decimals: 18,
     coinType: 60,
     chainID: "1",
-    contractAddress: createRandom0xHash(),
+    contractAddress: createRandomAddress(),
   }
 
   return {
