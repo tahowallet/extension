@@ -360,7 +360,7 @@ export default class IndexingService extends BaseService<Events> {
    ******************* */
 
   private acceleratedTokenRefresh: {
-    timeout: number | undefined
+    timeout: ReturnType<typeof setTimeout> | undefined
     assetLookups: {
       asset: SmartContractFungibleAsset
       addressOnNetwork: AddressOnNetwork
@@ -430,7 +430,7 @@ export default class IndexingService extends BaseService<Events> {
           )
 
           this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
-          this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
+          this.acceleratedTokenRefresh.timeout ??= setTimeout(
             this.handleAcceleratedTokenRefresh.bind(this),
             ACCELERATED_TOKEN_REFRESH_TIMEOUT,
           )
