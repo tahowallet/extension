@@ -12,6 +12,7 @@ import SharedBanner from "../Shared/SharedBanner"
 import NFTList from "./NFTList"
 import NFTsExploreBanner from "./NFTsExploreBanner"
 import NoMatchingNFTs from "./NoMatchingNFTs"
+import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
 
 export default function NFTListPortfolio(props: {
   type: "badge" | "nfts"
@@ -34,7 +35,18 @@ export default function NFTListPortfolio(props: {
   const isLoading = useBackgroundSelector(selectIsReloadingNFTs)
 
   if (isEmptyPortfolio) {
-    return <NFTsExploreBanner type={type} />
+    return (
+      <>
+        {isLoading && (
+          <SharedLoadingDoggo
+            size={78}
+            message="Fetching NFTs"
+            padding="20px 0"
+          />
+        )}
+        <NFTsExploreBanner type={type} />
+      </>
+    )
   }
 
   return (
