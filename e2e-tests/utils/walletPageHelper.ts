@@ -309,8 +309,8 @@ export default class WalletPageHelper {
     const dappPage = await this.context.newPage()
     await dappPage.goto("https://swap.cow.fi/")
     await dappPage
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
     const [popupPage] = await Promise.all([
@@ -325,7 +325,9 @@ export default class WalletPageHelper {
     })
     if ((await connectingPopupTitle.count()) > 0) {
       await expect(connectingPopupTitle).toBeVisible()
-      const bgLocator = popupPage.locator(".bg")
+      const bgLocator = popupPage
+        .locator(".bg")
+        .getByRole("button", { name: "Close" })
 
       await bgLocator.click()
       await bgLocator.waitFor({ state: "detached", timeout: 1000 })

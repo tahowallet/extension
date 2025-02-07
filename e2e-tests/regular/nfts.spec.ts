@@ -141,6 +141,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_collection_filters")
         .getByTestId("toggle_item")
         .filter({ hasText: "POAP" })
+        .first()
         .getByRole("checkbox")
         .click()
 
@@ -161,6 +162,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_collection_filters")
         .getByTestId("toggle_item")
         .filter({ hasText: "POAP" })
+        .first()
         .getByRole("checkbox")
         .click()
 
@@ -188,7 +190,7 @@ test.describe("NFTs", () => {
         const nftCollection = page
           .getByTestId("nft_list_item")
           .filter({ has: page.getByTestId("nft_list_item_collection") })
-          .filter({ hasText: "Notable Punks" })
+          .filter({ hasText: "Notable Crypto Punks" })
           .first()
 
         await nftCollection.hover()
