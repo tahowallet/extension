@@ -35,6 +35,7 @@ export default class WalletPageHelper {
     await this.popup
       .getByRole("navigation", { name: "Main" })
       .getByRole("link", { name: tab })
+      .first()
       .click()
   }
 

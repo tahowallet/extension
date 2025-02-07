@@ -221,6 +221,9 @@ jobs:
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      # https://playwright.dev/docs/service-workers-experimental
+      PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS: 1
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
