@@ -10,8 +10,8 @@ test.describe("dApp Connections", () => {
     const dappPage = await context.newPage()
     await dappPage.goto("https://swap.cow.fi/")
     await dappPage
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
     // Get page after a specific action (e.g. clicking a link)
@@ -44,8 +44,8 @@ test.describe("dApp Connections", () => {
     const dappPage2 = await context.newPage()
     await dappPage2.goto("https://swap.cow.fi/")
     await dappPage2
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
     // Get page after a specific action (e.g. clicking a link)
@@ -73,8 +73,8 @@ test.describe("dApp Connections", () => {
     const dappPage = await context.newPage()
     await dappPage.goto("https://swap.cow.fi/")
     await dappPage
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
     // Get page after a specific action (e.g. clicking a link)

@@ -14,7 +14,7 @@ test.describe("Signing", () => {
     await siwe.getByRole("button", { name: "SIGN-IN WITH ETHEREUM" }).click()
 
     const connectPopupOpens = context.waitForEvent("page")
-    await siwe.getByText("Connect to your Web3 Wallet").click()
+    await siwe.getByTestId("component-wallet-button-taho").click()
 
     await connectPopupOpens.then(async (popup) => {
       await popup.waitForLoadState()
