@@ -1,8 +1,27 @@
 diff --git a/node_modules/webext-redux/dist/webext-redux.js b/node_modules/webext-redux/dist/webext-redux.js
-index cdb02b9..1bed757 100644
+index cdb02b9..ccdaec9 100644
 --- a/node_modules/webext-redux/dist/webext-redux.js
 +++ b/node_modules/webext-redux/dist/webext-redux.js
-@@ -1082,6 +1082,10 @@ var Store = /*#__PURE__*/function () {
+@@ -1020,10 +1020,17 @@ var Store = /*#__PURE__*/function () {
+     var shouldDeserialize = function shouldDeserialize(message) {
+       return Boolean(message) && typeof message.type === "string" && message.channelName === _this.channelName;
+     };
++
++    // Should clear automatically every time popup starts
++    const messagesReceived = new Set()
++
+     this.serializedPortListener(function (message) {
+-      if (!message || message.channelName !== _this.channelName) {
++      if (!message || message.channelName !== _this.channelName || messagesReceived.has(message.messageId)) {
+         return;
+       }
++
++      messagesReceived.add(message.messageId)
++
+       switch (message.type) {
+         case STATE_TYPE:
+           _this.replaceState(message.payload);
+@@ -1082,6 +1089,10 @@ var Store = /*#__PURE__*/function () {
    }, {
      key: "patchState",
      value: function patchState(difference) {
@@ -13,7 +32,7 @@ index cdb02b9..1bed757 100644
        this.state = this.patchStrategy(this.state, difference);
        this.listeners.forEach(function (l) {
          return l();
-@@ -1141,8 +1145,14 @@ var Store = /*#__PURE__*/function () {
+@@ -1141,8 +1152,14 @@ var Store = /*#__PURE__*/function () {
              reject(lodash_assignin(bgErr, _error));
              return;
            }
@@ -30,7 +49,7 @@ index cdb02b9..1bed757 100644
            if (error) {
              var _bgErr = new Error("".concat(backgroundErrPrefix).concat(error));
              reject(lodash_assignin(_bgErr, error));
-@@ -1156,7 +1166,7 @@ var Store = /*#__PURE__*/function () {
+@@ -1156,7 +1173,7 @@ var Store = /*#__PURE__*/function () {
      key: "initializeStore",
      value: function initializeStore(message) {
        if (message && message.type === FETCH_STATE_TYPE) {
@@ -39,7 +58,7 @@ index cdb02b9..1bed757 100644
  
          // Resolve if readyPromise has not been resolved.
          if (!this.readyResolved) {
-@@ -1425,9 +1435,17 @@ var wrapStore = (function () {
+@@ -1425,15 +1442,25 @@ var wrapStore = (function () {
        });
      });
      var currentState = store.getState();
@@ -48,7 +67,8 @@ index cdb02b9..1bed757 100644
 +      serializedMessagePoster({
 +        type: PATCH_STATE_TYPE,
 +        payload: diff,
-+        channelName: channelName // Notifying what store is broadcasting the state changes
++        channelName: channelName, // Notifying what store is broadcasting the state changes
++        messageId: crypto.randomUUID()
 +      });
 +    };
      var patchState = function patchState() {
@@ -58,7 +78,25 @@ index cdb02b9..1bed757 100644
        if (diff.length) {
          currentState = newState;
          serializedMessagePoster({
-@@ -1456,7 +1474,7 @@ var wrapStore = (function () {
+           type: PATCH_STATE_TYPE,
+           payload: diff,
+-          channelName: channelName // Notifying what store is broadcasting the state changes
++          channelName: channelName, // Notifying what store is broadcasting the state changes
++          messageId: crypto.randomUUID()
+         });
+       }
+     };
+@@ -1445,7 +1472,8 @@ var wrapStore = (function () {
+     serializedMessagePoster({
+       type: STATE_TYPE,
+       payload: currentState,
+-      channelName: channelName // Notifying what store is broadcasting the state changes
++      channelName: channelName, // Notifying what store is broadcasting the state changes
++      messageId: crypto.randomUUID()
+     });
+ 
+     /**
+@@ -1456,7 +1484,7 @@ var wrapStore = (function () {
        var state = store.getState();
        sendResponse({
          type: FETCH_STATE_TYPE,
@@ -87,10 +125,29 @@ index 1f475d5..c466c9e 100644
  
  export class Store<S = any, A extends redux.Action = redux.AnyAction> {
 diff --git a/node_modules/webext-redux/lib/store/Store.js b/node_modules/webext-redux/lib/store/Store.js
-index 38aee1d..049430c 100644
+index 38aee1d..d232cb1 100644
 --- a/node_modules/webext-redux/lib/store/Store.js
 +++ b/node_modules/webext-redux/lib/store/Store.js
-@@ -164,6 +164,10 @@ var Store = /*#__PURE__*/function () {
+@@ -101,10 +101,17 @@ var Store = /*#__PURE__*/function () {
+     var shouldDeserialize = function shouldDeserialize(message) {
+       return Boolean(message) && typeof message.type === "string" && message.channelName === _this.channelName;
+     };
++
++    // Should clear automatically every time popup starts
++    const messagesReceived = new Set()
++
+     this.serializedPortListener(function (message) {
+-      if (!message || message.channelName !== _this.channelName) {
++      if (!message || message.channelName !== _this.channelName || messagesReceived.has(message.messageId)) {
+         return;
+       }
++
++      messagesReceived.add(message.messageId)
++
+       switch (message.type) {
+         case _constants.STATE_TYPE:
+           _this.replaceState(message.payload);
+@@ -164,6 +171,10 @@ var Store = /*#__PURE__*/function () {
    }, {
      key: "patchState",
      value: function patchState(difference) {
@@ -101,7 +158,7 @@ index 38aee1d..049430c 100644
        this.state = this.patchStrategy(this.state, difference);
        this.listeners.forEach(function (l) {
          return l();
-@@ -223,8 +227,14 @@ var Store = /*#__PURE__*/function () {
+@@ -223,8 +234,14 @@ var Store = /*#__PURE__*/function () {
              reject((0, _lodash["default"])(bgErr, _error));
              return;
            }
@@ -118,7 +175,7 @@ index 38aee1d..049430c 100644
            if (error) {
              var _bgErr = new Error("".concat(backgroundErrPrefix).concat(error));
              reject((0, _lodash["default"])(_bgErr, error));
-@@ -238,7 +248,7 @@ var Store = /*#__PURE__*/function () {
+@@ -238,7 +255,7 @@ var Store = /*#__PURE__*/function () {
      key: "initializeStore",
      value: function initializeStore(message) {
        if (message && message.type === _constants.FETCH_STATE_TYPE) {
@@ -128,10 +185,10 @@ index 38aee1d..049430c 100644
          // Resolve if readyPromise has not been resolved.
          if (!this.readyResolved) {
 diff --git a/node_modules/webext-redux/lib/wrap-store/wrapStore.js b/node_modules/webext-redux/lib/wrap-store/wrapStore.js
-index 69de40f..5ea4e4b 100644
+index 69de40f..df8d166 100644
 --- a/node_modules/webext-redux/lib/wrap-store/wrapStore.js
 +++ b/node_modules/webext-redux/lib/wrap-store/wrapStore.js
-@@ -154,9 +154,17 @@ var _default = exports["default"] = function _default() {
+@@ -154,15 +154,25 @@ var _default = exports["default"] = function _default() {
        });
      });
      var currentState = store.getState();
@@ -140,7 +197,8 @@ index 69de40f..5ea4e4b 100644
 +      serializedMessagePoster({
 +        type: _constants.PATCH_STATE_TYPE,
 +        payload: diff,
-+        channelName: channelName // Notifying what store is broadcasting the state changes
++        channelName: channelName, // Notifying what store is broadcasting the state changes
++        messageId: crypto.randomUUID()
 +      });
 +    };
      var patchState = function patchState() {
@@ -150,7 +208,25 @@ index 69de40f..5ea4e4b 100644
        if (diff.length) {
          currentState = newState;
          serializedMessagePoster({
-@@ -185,7 +193,7 @@ var _default = exports["default"] = function _default() {
+           type: _constants.PATCH_STATE_TYPE,
+           payload: diff,
+-          channelName: channelName // Notifying what store is broadcasting the state changes
++          channelName: channelName, // Notifying what store is broadcasting the state changes
++          messageId: crypto.randomUUID()
+         });
+       }
+     };
+@@ -174,7 +184,8 @@ var _default = exports["default"] = function _default() {
+     serializedMessagePoster({
+       type: _constants.STATE_TYPE,
+       payload: currentState,
+-      channelName: channelName // Notifying what store is broadcasting the state changes
++      channelName: channelName, // Notifying what store is broadcasting the state changes
++      messageId: crypto.randomUUID()
+     });
+ 
+     /**
+@@ -185,7 +196,7 @@ var _default = exports["default"] = function _default() {
        var state = store.getState();
        sendResponse({
          type: _constants.FETCH_STATE_TYPE,
