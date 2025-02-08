@@ -69,6 +69,7 @@ export default class OnboardingHelper {
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
+      await page.close()
     })
   }
 
@@ -104,6 +105,7 @@ export default class OnboardingHelper {
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
+      await page.close()
     })
   }
 
@@ -163,6 +165,7 @@ export default class OnboardingHelper {
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
       ).toBeVisible()
+      await page.close()
     })
   }
 
@@ -227,5 +230,6 @@ export default class OnboardingHelper {
     await expect(
       page.getByRole("heading", { name: "Welcome to Taho" }),
     ).toBeVisible()
+    await page.close()
   }
 }
