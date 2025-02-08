@@ -206,7 +206,7 @@ jobs:
           TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep @expensive
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         with:
           name: debug-output
           path: |
@@ -221,6 +221,9 @@ jobs:
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      # https://playwright.dev/docs/service-workers-experimental
+      PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS: 1
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
@@ -269,7 +272,7 @@ jobs:
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         with:
           name: fork-debug-output
           path: |

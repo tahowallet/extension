@@ -1,6 +1,19 @@
-import { wait } from "@tallyho/tally-background/lib/utils"
 import { test, expect } from "../utils"
 import { account1 } from "../utils/onboarding"
+
+const makeStall = (label?: string) => {
+  let end: () => void = () => {
+    throw new Error(`Unable to set stall "${label}"`)
+  }
+
+  const stall = new Promise<void>((resolve) => {
+    end = resolve
+  }) as Promise<void> & { end: (label?: string) => void }
+
+  stall.end = end
+
+  return stall
+}
 
 test.describe("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
@@ -10,11 +23,11 @@ test.describe("NFTs", () => {
     walletPageHelper,
   }) => {
     await test.step("Shows loading state", async () => {
-      let shouldInterceptRequests = true
+      const stall = makeStall("Stall simplehash requests")
 
       // Set a delay so we don't miss loading states
       await context.route(/api\.simplehash\.com/i, async (route, request) => {
-        if (!shouldInterceptRequests || !isExtensionRequest(request)) {
+        if (!isExtensionRequest(request)) {
           route.continue()
           return
         }
@@ -39,7 +52,7 @@ test.describe("NFTs", () => {
             .locator(".active")
             .waitFor({ state: "visible" })
 
-          await wait(5_000)
+          await stall
           await route.fulfill({ response })
         }
       })
@@ -59,9 +72,8 @@ test.describe("NFTs", () => {
 
       // Wait until load finishes
       await expect(page.getByTestId("loading_doggo")).toBeVisible()
+      stall.end("Stop stalling simplehash")
       await expect(page.getByTestId("loading_doggo")).not.toBeVisible()
-
-      shouldInterceptRequests = false
     })
 
     // Header stats locators
@@ -141,6 +153,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_collection_filters")
         .getByTestId("toggle_item")
         .filter({ hasText: "POAP" })
+        .first()
         .getByRole("checkbox")
         .click()
 
@@ -161,6 +174,7 @@ test.describe("NFTs", () => {
         .getByTestId("nft_collection_filters")
         .getByTestId("toggle_item")
         .filter({ hasText: "POAP" })
+        .first()
         .getByRole("checkbox")
         .click()
 
@@ -188,7 +202,7 @@ test.describe("NFTs", () => {
         const nftCollection = page
           .getByTestId("nft_list_item")
           .filter({ has: page.getByTestId("nft_list_item_collection") })
-          .filter({ hasText: "Notable Punks" })
+          .filter({ hasText: "Notable Crypto Punks" })
           .first()
 
         await nftCollection.hover()
