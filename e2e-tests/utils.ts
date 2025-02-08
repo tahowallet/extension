@@ -1,5 +1,5 @@
 /* eslint-disable no-empty-pattern */
-import { test as base, chromium, Request, Worker } from "@playwright/test"
+import { test as base, chromium, Page, Request, Worker } from "@playwright/test"
 import path from "path"
 import WalletPageHelper from "./utils/walletPageHelper"
 import AssetsHelper from "./utils/assets"
@@ -15,6 +15,7 @@ type WalletTestFixtures = {
   transactionsHelper: TransactionsHelper
   backgroundPage: Worker
   isExtensionRequest: (request: Request) => boolean
+  waitForExtensionPage: () => Promise<Page>
 }
 
 /**
@@ -51,6 +52,11 @@ export const test = base.extend<WalletTestFixtures>({
   extensionId: async ({ backgroundPage }, use) => {
     const extensionId = backgroundPage.url().split("/")[2]
     await use(extensionId)
+  },
+  waitForExtensionPage: async ({ context, extensionId }, use) => {
+    await use(async () =>
+      context.waitForEvent("page", (page) => page.url().includes(extensionId)),
+    )
   },
   isExtensionRequest: async ({}, use) => {
     const hasExtensionOrigin = (url: string) =>
