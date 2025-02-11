@@ -108,6 +108,33 @@ export default class WalletPageHelper {
     fs.unlinkSync(filePath)
   }
 
+  /**
+   * Changes the first account name
+   */
+  async changeAccountName(newName: string) {
+    await this.popup
+      .getByTestId("top_menu_profile_button")
+      .getByRole("button")
+      .click()
+
+    await this.popup.getByRole("menu").first().click()
+    await this.popup.getByRole("button", { name: "Edit name" }).click()
+    await this.popup.getByRole("textbox", { name: "Type new name" }).click()
+    await this.popup
+      .getByRole("textbox", { name: "Type new name" })
+      .fill(newName)
+
+    await this.popup
+      .getByRole("button", { name: "Save name", exact: true })
+      .click()
+
+    await this.popup
+      .getByTestId("accounts_list_slide_up")
+      .getByRole("button", { name: "Close menu" })
+      .first()
+      .click()
+  }
+
   async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
