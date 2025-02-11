@@ -4,6 +4,7 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 
 import { useTranslation } from "react-i18next"
 import {
+  getFullAssetID,
   isTrustedAsset,
   isUntrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
@@ -72,7 +73,10 @@ export default function CommonAssetListItem(
         state: assetAmount.asset,
       }}
     >
-      <div className="asset_list_item" data-testid="asset_list_item">
+      <div
+        className="asset_list_item"
+        data-testid={`asset_list_item-${getFullAssetID(assetAmount.asset)}`}
+      >
         <div className="asset_left">
           <SharedAssetIcon
             logoURL={assetAmount?.asset?.metadata?.logoURL}
