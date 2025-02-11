@@ -95,7 +95,7 @@ interface Events extends ServiceLifecycleEvents {
   removeAssetData: SmartContractFungibleAsset
 }
 
-const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
+const indexAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
   const activeAssetsByAddress = assets.reduce(
     (agg, t) => {
       const newAgg = {
@@ -108,17 +108,6 @@ const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
   )
 
   return activeAssetsByAddress
-}
-
-const getActiveAssetsByAddressForNetwork = (
-  network: EVMNetwork,
-  activeAssetsToTrack: SmartContractFungibleAsset[],
-) => {
-  const networkActiveAssets = activeAssetsToTrack.filter(
-    (asset) => asset.homeNetwork.chainID === network.chainID,
-  )
-
-  return getAssetsByAddress(networkActiveAssets)
 }
 
 function allowVerifyAssetByManualImport(
@@ -863,28 +852,34 @@ export default class IndexingService extends BaseService<Events> {
    * Loads prices for all tracked assets except untrusted/custom network assets
    */
   private async getTrackedAssetsPrices() {
+    logger.debug("Fetching tracked asset prices...")
     // get the prices of all assets to track and save them
+    const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    const assetsToTrack = trackedNetworks.flatMap((network) =>
-      this.getCachedAssets(network),
-    )
+
     // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack
-      .filter(isSmartContractFungibleAsset)
-      .filter(isTrustedAsset)
+    const activeAssetsToTrack = assetsToTrack.filter(
+      (asset) =>
+        isTrustedAsset(asset) &&
+        trackedNetworks.some((network) =>
+          sameNetwork(network, asset.homeNetwork),
+        ),
+    )
+
     try {
       // TODO only uses USD
       // FIXME None of the below handles assets that exist on multiple
       // FIXME networks; instead, the first listed network produces the
       // FIXME final price in those cases.
 
-      const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
+      const allActiveAssetsByAddress = indexAssetsByAddress(activeAssetsToTrack)
 
       const activeAssetsByNetwork = trackedNetworks
         .map((network) => ({
-          activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
-            network,
-            activeAssetsToTrack,
+          activeAssetsByAddress: indexAssetsByAddress(
+            activeAssetsToTrack.filter(({ homeNetwork }) =>
+              sameNetwork(homeNetwork, network),
+            ),
           ),
           network,
         }))
