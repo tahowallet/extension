@@ -266,10 +266,9 @@ describe("IndexingService", () => {
 
       await indexingDb.addAssetToTrack(smartContractAsset)
 
-      const spy = getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
-        indexingService,
-        "handlePriceAlarm",
-      )
+      const spy = getPrivateMethodSpy<
+        IndexingService["scheduleUpdateAssetsPrices"]
+      >(indexingService, "scheduleUpdateAssetsPrices")
 
       await Promise.all([
         chainService.startService(),
@@ -306,9 +305,9 @@ describe("IndexingService", () => {
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init
-      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+      getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
         indexingService,
-        "handlePriceAlarm",
+        "scheduleUpdateAssetsPrices",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([
@@ -359,9 +358,9 @@ describe("IndexingService", () => {
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init
-      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+      getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
         indexingService,
-        "handlePriceAlarm",
+        "scheduleUpdateAssetsPrices",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([
