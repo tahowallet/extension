@@ -1,7 +1,7 @@
 import { test, expect } from "../utils"
 import { account2 } from "../utils/onboarding"
 
-test.describe("Transactions", () => {
+test.describe("Transactions @fork", () => {
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
