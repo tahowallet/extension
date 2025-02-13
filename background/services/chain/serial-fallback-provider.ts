@@ -93,14 +93,21 @@ function waitAnd<T, E extends Promise<T>>(
   })
 }
 
-function getCacheKey(method: string, params: unknown) {
+/**
+ * Generates a unique cache key given a method and parameters. This key is
+ * not safe to deserialize and is designed explicitly for Ethereum JSON-RPC
+ * requests.
+ */
+function getRPCCacheKey(method: string, params: unknown) {
+  // Transform and sort values so two calls with the same JSON payload
+  // return the same key
   return `${method}::${JSON.stringify(params, (_k, val) => {
     if (val === null) {
       return null
     }
 
     if (typeof val === "bigint") {
-      return `bigint:${val}`
+      return `${val}n`
     }
 
     if (typeof val === "string") {
@@ -260,7 +267,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // This cache will get reset every time the service worker reactivates and the property of having code update is quite rare.
 
       eth_getCode: 600 * SECOND,
-      eth_blockNumber: 10 * SECOND,
       eth_chainId: 3600 * SECOND,
     }),
   )
@@ -644,7 +650,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     { method, params }: { method: string; params: unknown },
   ): void {
     if (this.#cacheSettings.has(method)) {
-      this.#sendCache.set(getCacheKey(method, params), {
+      this.#sendCache.set(getRPCCacheKey(method, params), {
         updatedAt: Date.now(),
         result,
       })
@@ -666,7 +672,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     const ttl = this.#cacheSettings.get(method)
 
     if (typeof ttl !== "undefined") {
-      const entry = this.#sendCache.get(getCacheKey(method, params))
+      const entry = this.#sendCache.get(getRPCCacheKey(method, params))
 
       if (entry && ttl + entry.updatedAt > Date.now()) {
         return entry
