@@ -176,7 +176,7 @@ describe("Chain Service", () => {
         .stub(chainService, "markNetworkActivity")
         .callsFake(async () => {})
 
-      chainService.markAccountActivity(
+      await chainService.markAccountActivity(
         createAddressOnNetwork({ network: ETHEREUM }),
       )
 

@@ -11,7 +11,7 @@ const IS_CI = process.env.CI === "true"
 // CI workflows to get an overview of both failed expectations and possible errors.
 // This is not the case during development, hence, we set the minimum log level to warning
 // as it helps with debugging while writing new tests.
-logger.logLevel = IS_CI ? LogLevel.error : LogLevel.warn
+logger.logLevel = IS_CI ? LogLevel.off : LogLevel.warn
 
 // ref: https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
 // ref: https://github.com/jsdom/jsdom/issues/2524
