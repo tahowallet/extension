@@ -7,6 +7,7 @@ import {
   TransactionRequestWithNonce,
 } from "../../../networks"
 import {
+  createAddressOnNetwork,
   createAnyEVMTransaction,
   createChainService,
   createLegacyTransactionRequest,
@@ -449,6 +450,8 @@ describe("ChainService", () => {
 
   describe("getNetworksToTrack", () => {
     it("Should fetch built-in and custom networks to track", async () => {
+      const account = createAddressOnNetwork()
+
       await chainService.addCustomChain({
         chainName: "Foo",
         chainId: "12345",
@@ -462,7 +465,7 @@ describe("ChainService", () => {
       })
 
       await chainService.addAccountToTrack({
-        address: "0x123",
+        address: account.address,
         network: {
           name: "Foo",
           chainID: "12345",
@@ -477,7 +480,7 @@ describe("ChainService", () => {
       })
 
       await chainService.addAccountToTrack({
-        address: "0x123",
+        address: account.address,
         network: ETHEREUM,
       })
       const networksToTrack = await chainService.getNetworksToTrack()
