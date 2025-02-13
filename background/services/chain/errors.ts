@@ -1,36 +1,50 @@
 /**
- * These are from geth, nethermind, and ankr
+ *  Batch request issues
+ *
+ *  These are typically due to length or size in bytes of the payload and match
+ *  errors from geth, nethermind, and ankr
  */
 const BATCH_LIMIT_REGEXP =
   /batch size (is )?too large|batch size limit exceeded|batch too large/i
 
 /**
- * - WebSocket is already in CLOSING
- * We are reconnecting
- * - TIMEOUT
- * fetchJson timed out, we could retry but it's safer to just fail over
- * - NETWORK_ERROR
- * Any other network error, including no-network errors
+ *  Network related issues
+ *
+ * - `WebSocket is already in CLOSING`:
+ *   We are reconnecting
+ *
+ * - `TIMEOUT`:
+ *   fetchJson timed out, we could retry but it's safer to just fail over
+ *
+ * - `NETWORK_ERROR`:
+ *   Any other network error, including no-network errors
  */
 const NETWORK_ERROR_REGEXP =
   /WebSocket is already in CLOSING|TIMEOUT|NETWORK_ERROR/i
 
 /**
- * - missing response
- * We might be disconnected due to network instability
- * - failed response
- * fetchJson default "fallback" error, generally thrown after 429s
- * - we can't execute this request
- * ankr rate limit hit / invalid response from some rpcs, generally ankr
+ *  Response errors from the remote RPC
+ *
+ * - `missing response`:
+ *   We might be disconnected due to network instability
+ *
+ * - `failed response`:
+ *   fetchJson default "fallback" error, generally thrown after 429s
+ *
+ * - `we can't execute this request`:
+ *   Ankr rate limit hit / invalid response from some rpcs, generally ankr
  */
 const RESPONSE_ERROR_REGEXP =
   /missing response|failed response|we can't execute this request/i
 
 /**
- * - bad response
- * error on the endpoint provider's side
- * - bad result from backend
- * same as above, but comes from ethers trying to parse an invalid response
+ *  Invalid responses that could be retried on
+ *
+ * - `bad response`:
+ *   Error on the endpoint provider's side
+ *
+ * - `bad result from backend`:
+ *   Same as above, but comes from ethers trying to parse an invalid response
  */
 const INVALID_RESPONSE_REGEXP = /bad response|bad result from backend/i
 
@@ -41,19 +55,19 @@ const GAS_LIMIT_REGEXP = /out of gas/i
 
 export type RPCErrorType =
   // Batch size too large
-  | "batch_limit_exceeded"
+  | "batch-limit-exceeded"
   // Too many requests
-  | "rate_limit_error"
+  | "rate-limit-error"
   // Timeout and other network errors
-  | "network_error"
+  | "network-error"
   // Bad or missing response
-  | "response_error"
+  | "response-error"
   // Invalid result from RPC, can be retried
-  | "invalid_response_error"
+  | "invalid-response-error"
   // Request likely failed due to RPC gas limit, try on different provider
-  | "eth_call_gas_error"
+  | "eth-call-gas-error"
   // Uncaught, could be anything
-  | "unknown_error"
+  | "unknown-error"
 
 /**
  * 
@@ -74,18 +88,18 @@ export const getErrorType = (error: string, method: string): RPCErrorType => {
 
   switch (true) {
     case BATCH_LIMIT_REGEXP.test(error):
-      return "batch_limit_exceeded"
+      return "batch-limit-exceeded"
     case NETWORK_ERROR_REGEXP.test(error):
-      return "network_error"
+      return "network-error"
     case RATE_LIMIT_REGEXP.test(error):
-      return "rate_limit_error"
+      return "rate-limit-error"
     case RESPONSE_ERROR_REGEXP.test(error):
-      return "response_error"
+      return "response-error"
     case GAS_LIMIT_REGEXP.test(error) && method === "eth_call":
-      return "eth_call_gas_error"
+      return "eth-call-gas-error"
     case INVALID_RESPONSE_REGEXP.test(error):
-      return "invalid_response_error"
+      return "invalid-response-error"
     default:
-      return "unknown_error"
+      return "unknown-error"
   }
 }

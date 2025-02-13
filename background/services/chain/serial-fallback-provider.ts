@@ -456,7 +456,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       const errorType = getErrorType(stringifiedError, method)
 
       if (
-        errorType === "batch_limit_exceeded" &&
+        errorType === "batch-limit-exceeded" &&
         (pendingBatchSize === undefined || pendingBatchSize === 0)
       ) {
         this.forcedBatchMaxPreviousSize =
@@ -477,7 +477,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return this.routeRpcCall(messageId)
       }
 
-      if (errorType === "batch_limit_exceeded") {
+      if (errorType === "batch-limit-exceeded") {
         logger.debug(
           "Using max batch size of",
           this.forcedBatchMaxSize,
@@ -492,9 +492,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        errorType === "network_error" ||
-        errorType === "rate_limit_error" ||
-        errorType === "response_error"
+        errorType === "network-error" ||
+        errorType === "rate-limit-error" ||
+        errorType === "response-error"
       ) {
         // If a new provider is already in the process of being tried, go ahead
         // and fire off into the new provider.
@@ -524,7 +524,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.reconnectProvider()
         delete this.messagesToSend[messageId]
         throw error
-      } else if (errorType === "invalid_response_error") {
+      } else if (errorType === "invalid-response-error") {
         if (
           // If the current provider is the one we tried with initially.
           this.currentProviderIndex === existingProviderIndex &&
