@@ -525,13 +525,23 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         delete this.messagesToSend[messageId]
         throw error
       } else if (errorType === "invalid-response-error") {
+        // Check if we're already retrying this on a different provider
+        if (
+          this.hasExceededRetryLimit(messageId) &&
+          this.currentProviderIndex !==
+            // Initial provider index this message was first send on
+            this.messagesToSend[messageId].providerIndex
+        ) {
+          throw error
+        }
+
         if (
           // If the current provider is the one we tried with initially.
           this.currentProviderIndex === existingProviderIndex &&
           // If there is another provider to try and we have exceeded the
           // number of retries try to send the message on that provider
           this.currentProviderIndex + 1 < this.providerCreators.length &&
-          this.shouldSendMessageOnNextProvider(messageId)
+          this.hasExceededRetryLimit(messageId)
         ) {
           return await this.attemptToSendMessageOnNewProvider(messageId)
         }
@@ -1095,7 +1105,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @param messageId The unique identifier of a given message
    * @returns true if a message should be sent on the next provider, false otherwise
    */
-  private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
+  private hasExceededRetryLimit(messageId: symbol): boolean {
     const { backoffCount } = this.messagesToSend[messageId]
     if (backoffCount && backoffCount >= MAX_RETRIES_PER_PROVIDER) {
       return true
