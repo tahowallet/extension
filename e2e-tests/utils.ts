@@ -16,12 +16,19 @@ type WalletTestFixtures = {
   backgroundPage: Worker
   isExtensionRequest: (request: Request) => boolean
   waitForExtensionPage: () => Promise<Page>
+  localNodeAlive: boolean
 }
 
 /**
  * Extended instance of playwright's `test` with our fixtures
  */
 export const test = base.extend<WalletTestFixtures>({
+  localNodeAlive: async ({ request }, use) => {
+    const alive = await request.get("http://127.0.0.1:8545").catch(() => false)
+
+    await use(!!alive)
+  },
+
   context: async ({}, use) => {
     const pathToExtension = path.resolve(__dirname, "../dist/chrome")
     const context = await chromium.launchPersistentContext("", {

@@ -123,6 +123,7 @@
     "dotenv-defaults": "^2.0.2",
     "dotenv-webpack": "^7.0.3",
     "eslint": "^8.48.0",
+    "ethers": "5.7.2",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
     "install": "^0.13.0",
     "jest": "^29.5.0",

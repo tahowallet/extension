@@ -153,7 +153,7 @@ export default class WalletPageHelper {
 
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last(),
-    ).toHaveText(accountLabel, { timeout: 240000 })
+    ).toHaveText(accountLabel)
     await this.popup
       .getByTestId("top_menu_profile_button")
       .last()
@@ -188,9 +188,7 @@ export default class WalletPageHelper {
     testnet: boolean,
     accountLabel: RegExp,
   ): Promise<void> {
-    await expect(this.popup.getByText("Total account balance")).toBeVisible({
-      timeout: 240000,
-    }) // we need longer timeout, because on fork it often takes long to load this section
+    await expect(this.popup.getByText("Total account balance")).toBeVisible()
     await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
       /^\$(\d|,)+(\.\d{1,2})*$/,
     )
@@ -206,12 +204,14 @@ export default class WalletPageHelper {
     await this.popup
       .getByRole("button", { name: "Receive", exact: true })
       .click({ trial: true })
+
     if (testnet === false) {
       await this.popup
         .getByTestId("panel_switcher")
         .getByText("NFTs", { exact: true })
         .click({ trial: true })
     }
+
     await this.popup
       .getByTestId("panel_switcher")
       .getByText("Assets", { exact: true })
@@ -220,6 +220,7 @@ export default class WalletPageHelper {
       .getByTestId("panel_switcher")
       .getByText("Activity", { exact: true })
       .click({ trial: true })
+
     await this.assertBottomWrap()
   }
 

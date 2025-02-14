@@ -242,33 +242,32 @@ jobs:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome-fork.zip -d dist/chrome
-      - name: Restore Hardhat cache
-        uses: actions/cache/restore@v3
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
         with:
-          path: ci/cache
-          # 18291960 is a forking block used in the tests.
-          key: hardhat-18291960-${{ github.ref_name }}
-          restore-keys: |
-            hardhat-18291960-
-            hardhat-
-      - name: Run Hardhat
+          cache-key: anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
+          cache-restore-keys: |
+            anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
+            anvil-21802314-${{ github.ref_name }}-
+            anvil-21802314-
+      - name: Run Anvil
         env:
           CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
           MAINNET_FORK_CHAIN_ID: 1337
           # We're using a fixed block number as a start of the fork to get
-          # consistent behavior in tests. The `18291960` block is a block at
-          # which the wallet used in tests (`testertesting.eth`) had the two
-          # assets used in e2e tests.
-          FORKING_BLOCK: 18291960
+          # consistent behavior in tests. The `21802314` block is a block at
+          # which the state of the chain allows the tests to pass
+          FORKING_BLOCK: 21802314
         run: |
-          cd ci
-          yarn install
-          npx hardhat node --network hardhat &
-          sleep 20
+          anvil -q --chain-id $MAINNET_FORK_CHAIN_ID --port 8545 \
+          --fork-block-number $FORKING_BLOCK --fork-url $CHAIN_API_URL \
+          --preserve-historical-states --fork-chain-id 1 \
+          --gas-limit 65000000 &
+          sleep 10
       - name: Run Playwright tests designed for fork
         env:
-          TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
-          TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
+          FORK_TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
+          FORK_TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
       - uses: actions/upload-artifact@v4
@@ -279,12 +278,3 @@ jobs:
             test-results/
             #videos/
           retention-days: 30
-      - name: Save Hardhat cache
-        uses: actions/cache/save@v3
-        # We want to save the cache even if the tests failed. Without the cache
-        # the tests almost always fail, so without `if: always()` we would have
-        # problem with creating the first cache.
-        if: always()
-        with:
-          path: ci/cache
-          key: hardhat-18291960-${{ github.ref_name }}-${{ hashFiles('ci/cache/**/*.json') }}
