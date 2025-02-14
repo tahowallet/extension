@@ -14,7 +14,15 @@ type Props = {
   symbol: string
 }
 
-const hardcodedIcons = new Set(["ETH", "MATIC", "DOGGO", "RBTC", "AVAX", "BNB"])
+const hardcodedIcons = new Set([
+  "ETH",
+  "MATIC",
+  "DOGGO",
+  "RBTC",
+  "AVAX",
+  "BNB",
+  "BTC",
+])
 
 // Passes IPFS and Arweave through HTTP gateway
 function getAsHttpURL(anyURL: string) {
