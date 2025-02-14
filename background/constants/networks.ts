@@ -12,6 +12,7 @@ import {
   OPTIMISTIC_ETH,
   RBTC,
   ZK_SYNC_ETH,
+  MEZO_BTC,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -102,8 +103,16 @@ export const ZK_SYNC: EVMNetwork = {
   family: "EVM",
 }
 
+export const MEZO_TESTNET: EVMNetwork = {
+  name: "Matsnet",
+  baseAsset: MEZO_BTC,
+  chainID: "31611",
+  family: "EVM",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
+  ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   POLYGON,
   OPTIMISM,
   SEPOLIA,
@@ -156,6 +165,7 @@ export const NETWORK_BY_CHAIN_ID = {
   [ARBITRUM_SEPOLIA.chainID]: ARBITRUM_SEPOLIA,
   [FORK.chainID]: FORK,
   [ZK_SYNC.chainID]: ZK_SYNC,
+  [MEZO_TESTNET.chainID]: MEZO_TESTNET,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
@@ -195,6 +205,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: string[]
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
+  [MEZO_TESTNET.chainID]: ["https://rpc.test.mezo.org"],
   [POLYGON.chainID]: [
     // This one sometimes returns 0 for eth_getBalance
     "https://polygon-rpc.com",
