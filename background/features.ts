@@ -27,6 +27,7 @@ export const RuntimeFlag = {
   SUPPORT_THE_ISLAND: process.env.SUPPORT_THE_ISLAND === "true",
   SUPPORT_THE_ISLAND_ON_TENDERLY:
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true",
+  SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag

@@ -544,6 +544,7 @@
   "popupEdition": "Community Edition",
   "protocol": {
     "mainnet": "Mainnet",
+    "mezoTestnet": "Mezo testnet",
     "beta": "Mainnet (beta)",
     "testnet": "Test Network",
     "l2": "L2 scaling solution",

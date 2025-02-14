@@ -1,3 +1,4 @@
+import { CoinGeckoAsset } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 
 const ETH: NetworkBaseAsset = {
@@ -108,9 +109,21 @@ const ZK_SYNC_ETH: NetworkBaseAsset = {
   chainID: "324",
 }
 
+const MEZO_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  chainID: "31611",
+  name: "Bitcoin",
+  symbol: "BTC",
+  decimals: 18,
+  metadata: {
+    coinGeckoID: "bitcoin",
+    tokenLists: [],
+  },
+}
+
 export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
   MATIC,
+  MEZO_BTC,
   RBTC,
   AVAX,
   BNB,
