@@ -1,3 +1,4 @@
+import { keyBy } from "lodash"
 import { TokenList } from "@uniswap/token-lists"
 import { UNIXTime, HexString } from "./types"
 import {
@@ -7,6 +8,7 @@ import {
   NetworkBaseAsset,
 } from "./networks"
 import { fromFixedPoint } from "./lib/fixed-point"
+import { normalizeEVMAddress } from "./lib/utils"
 
 /**
  * A reference to a token list, with the name, URL, and potentially logo of the
@@ -224,6 +226,12 @@ export function isSmartContractFungibleAsset<T extends AnyAsset>(
   asset: T,
 ): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
+}
+
+export function keyAssetsByAddress(assets: SmartContractFungibleAsset[]) {
+  return keyBy(assets, (asset: SmartContractFungibleAsset) =>
+    normalizeEVMAddress(asset.contractAddress),
+  )
 }
 
 /**
