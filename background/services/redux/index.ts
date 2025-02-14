@@ -3,7 +3,6 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
 import {
-  getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
   sameEVMAddress,
@@ -1273,7 +1272,7 @@ export default class ReduxService extends BaseService<never> {
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
-        const network = getEthereumNetwork()
+        const network = ETHEREUM
         const ensName = isAddress
           ? (
               await this.nameService.lookUpName({
