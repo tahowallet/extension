@@ -1,3 +1,4 @@
+import { keyBy } from "lodash"
 import { TokenList } from "@uniswap/token-lists"
 import { UNIXTime, HexString } from "./types"
 import {
@@ -224,6 +225,11 @@ export function isSmartContractFungibleAsset<T extends AnyAsset>(
   asset: T,
 ): asset is T & SmartContractFungibleAsset {
   return "homeNetwork" in asset && isFungibleAsset(asset)
+}
+
+export function keyAssetsByAddress(assets: SmartContractFungibleAsset[]) {
+  const key: keyof SmartContractFungibleAsset = "contractAddress"
+  return keyBy(assets, key)
 }
 
 /**

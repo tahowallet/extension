@@ -7,6 +7,7 @@ import {
   AnyAssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
+  keyAssetsByAddress,
   PricePoint,
   SmartContractAmount,
   SmartContractFungibleAsset,
@@ -93,21 +94,6 @@ interface Events extends ServiceLifecycleEvents {
   }
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
-}
-
-const indexAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
-  const activeAssetsByAddress = assets.reduce(
-    (agg, t) => {
-      const newAgg = {
-        ...agg,
-      }
-      newAgg[t.contractAddress.toLowerCase()] = t
-      return newAgg
-    },
-    {} as { [address: string]: SmartContractFungibleAsset },
-  )
-
-  return activeAssetsByAddress
 }
 
 function allowVerifyAssetByManualImport(
@@ -540,12 +526,7 @@ export default class IndexingService extends BaseService<Events> {
       smartContractAssets?.map(({ contractAddress }) => contractAddress),
     )
 
-    const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
-      [contractAddress: string]: SmartContractFungibleAsset
-    }>((acc, asset) => {
-      acc[normalizeEVMAddress(asset.contractAddress)] = asset
-      return acc
-    }, {})
+    const listedAssetByAddress = keyAssetsByAddress(smartContractAssets ?? [])
 
     const removedCustomAssets = await this.db.getRemovedCustomAssetsByNetworks([
       addressNetwork.network,
@@ -872,11 +853,11 @@ export default class IndexingService extends BaseService<Events> {
       // FIXME networks; instead, the first listed network produces the
       // FIXME final price in those cases.
 
-      const allActiveAssetsByAddress = indexAssetsByAddress(activeAssetsToTrack)
+      const allActiveAssetsByAddress = keyAssetsByAddress(activeAssetsToTrack)
 
       const activeAssetsByNetwork = trackedNetworks
         .map((network) => ({
-          activeAssetsByAddress: indexAssetsByAddress(
+          activeAssetsByAddress: keyAssetsByAddress(
             activeAssetsToTrack.filter(({ homeNetwork }) =>
               sameNetwork(homeNetwork, network),
             ),
