@@ -1,4 +1,4 @@
-import { AnyAssetAmount, SmartContractFungibleAsset } from "./assets"
+import type { AnyAssetAmount, SmartContractFungibleAsset } from "./assets"
 import { EVMNetwork, NetworkBaseAsset } from "./networks"
 import { HexString } from "./types"
 
