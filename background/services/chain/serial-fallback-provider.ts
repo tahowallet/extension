@@ -1,6 +1,5 @@
 import {
   EventType,
-  JsonRpcBatchProvider,
   JsonRpcProvider,
   Listener,
   WebSocketProvider,
@@ -27,12 +26,23 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
 import TahoAlchemyProvider from "./taho-provider"
+import TahoRPCProvider from "./taho-rpc-provider"
+
+type RPCProvider = WebSocketProvider | JsonRpcProvider | TahoRPCProvider
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
   supportedMethods?: string[]
-  creator: () => WebSocketProvider | JsonRpcProvider
+  creator: () => RPCProvider
 }
+
+const isWebSocketProvider = (
+  provider: RPCProvider,
+): provider is WebSocketProvider => provider instanceof WebSocketProvider
+
+const isJsonRpcProvider = (
+  provider: RPCProvider,
+): provider is TahoRPCProvider => provider instanceof TahoRPCProvider
 
 /**
  * Method list, to describe which rpc method calls on which networks should
@@ -107,14 +117,9 @@ function backedOffMs(): number {
  * either closing or already closed. Ethers does not provide direct access to
  * this information, nor does it attempt to reconnect in these cases.
  */
-function isClosedOrClosingWebSocketProvider(
-  provider: JsonRpcProvider,
-): boolean {
-  if (provider instanceof WebSocketProvider) {
-    // Digging into the innards of Ethers here because there's no
-    // other way to get access to the WebSocket connection situation.
-    // eslint-disable-next-line no-underscore-dangle
-    const webSocket = provider._websocket as WebSocket
+function isClosedOrClosingWebSocketProvider(provider: RPCProvider): boolean {
+  if (isWebSocketProvider(provider)) {
+    const webSocket = provider.websocket
 
     return (
       webSocket.readyState === WebSocket.CLOSING ||
@@ -129,12 +134,9 @@ function isClosedOrClosingWebSocketProvider(
  * Returns true if the given provider is using a WebSocket AND the WebSocket is
  * connecting. Ethers does not provide direct access to this information.
  */
-function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
-  if (provider instanceof WebSocketProvider) {
-    // Digging into the innards of Ethers here because there's no
-    // other way to get access to the WebSocket connection situation.
-    // eslint-disable-next-line no-underscore-dangle
-    const webSocket = provider._websocket as WebSocket
+function isConnectingWebSocketProvider(provider: RPCProvider): boolean {
+  if (isWebSocketProvider(provider)) {
+    const webSocket = provider.websocket
     return webSocket.readyState === WebSocket.CONNECTING
   }
 
@@ -194,23 +196,19 @@ function customOrDefaultProvider(
 export default class SerialFallbackProvider extends JsonRpcProvider {
   // Functions that will create and initialize a new provider, in priority
   // order.
-  private providerCreators: [
-    () => WebSocketProvider | JsonRpcProvider,
-    ...(() => JsonRpcProvider)[],
-  ]
+  private providerCreators: (() => RPCProvider)[]
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  private currentProvider: JsonRpcProvider
+  private currentProvider: RPCProvider
 
-  private alchemyProvider: JsonRpcProvider | undefined
+  private alchemyProvider: RPCProvider | undefined
 
-  private customProvider: JsonRpcProvider | undefined
+  private customProvider: RPCProvider | undefined
 
   private customProviderSupportedMethods: string[] = []
 
-  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
-    {}
+  private cachedProvidersByIndex: Record<string, RPCProvider | undefined> = {}
 
   /**
    * This object holds all messages that are either being sent to a provider
@@ -226,13 +224,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
-  private alchemyProviderCreator:
-    | (() => WebSocketProvider | JsonRpcProvider)
-    | undefined
+  private alchemyProviderCreator: (() => RPCProvider) | undefined
 
   supportsAlchemy = false
 
-  private customProviderCreator: (() => JsonRpcProvider) | undefined
+  private customProviderCreator: (() => RPCProvider) | undefined
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -245,21 +241,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // The index of the provider creator that created the current provider. Used
   // for reconnects when relevant.
   private currentProviderIndex = 0
-
-  // If nonzero and the underlying provider is a batch provider, forces the
-  // batch size to be no more than this number, holding other requests until
-  // the existing batch has cleared.
-  private forcedBatchMaxSize: number = 0
-
-  // If this promise is set, new RPC calls will await on it before being
-  // processed. When forcedBatchMaxSize is nonzero and that number of RPC calls
-  // are pending, this promise will be set so subsequent requests will wait
-  // until the batch flushes.
-  private forcedBatchMaxPromise: Promise<void> | undefined = undefined
-
-  // During max size update, this value is set so that the value is not
-  // decreased by multiple failed requests.
-  private forcedBatchMaxPreviousSize: number = 0
 
   // TEMPORARY cache for latest account balances to reduce number of rpc calls
   // This is intended as a temporary fix to the burst of account enrichment that
@@ -280,7 +261,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // reloaded and the property of having code updates quite rarely.
   private latestHasCodeCache: {
     [address: string]: {
-      hasCode: boolean
+      hasCode: string
     }
   } = {}
 
@@ -371,46 +352,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       delete this.messagesToSend[messageId]
       return cachedResult
     }
-
-    if (this.forcedBatchMaxPromise) {
-      await this.forcedBatchMaxPromise
-    }
-
-    const pendingBatch =
-      "_pendingBatch" in this.currentProvider
-        ? // Accessing ethers internals for forced max batch sizing.
-          // eslint-disable-next-line no-underscore-dangle
-          (this.currentProvider._pendingBatch as { length: number } | undefined)
-        : undefined
-    const pendingBatchSize = pendingBatch?.length
     const existingProviderIndex = this.currentProviderIndex
-
-    if (
-      pendingBatch &&
-      this.forcedBatchMaxSize &&
-      // Accessing ethers internals for forced max batch sizing.
-      // eslint-disable-next-line no-underscore-dangle
-      pendingBatch.length >= this.forcedBatchMaxSize
-    ) {
-      this.forcedBatchMaxPromise = new Promise((resolve) => {
-        const checkInterval = setInterval(() => {
-          const latestPendingBatch =
-            "_pendingBatch" in this.currentProvider
-              ? // Accessing ethers internals for forced max batch sizing.
-                // eslint-disable-next-line no-underscore-dangle
-                (this.currentProvider._pendingBatch as
-                  | { length: number }
-                  | undefined)
-              : undefined
-
-          if ((latestPendingBatch?.length ?? 0) < this.forcedBatchMaxSize) {
-            resolve()
-            clearInterval(checkInterval)
-          }
-        }, 5)
-      })
-    }
-
     try {
       if (isClosedOrClosingWebSocketProvider(this.currentProvider)) {
         // Detect disconnected WebSocket and immediately throw.
@@ -450,42 +392,35 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return result
     } catch (error) {
       // Awful, but what can ya do.
+
       const stringifiedError = String(error)
 
       if (
-        stringifiedError.match(/Batch size too large/) &&
-        (pendingBatchSize === undefined || pendingBatchSize === 0)
+        stringifiedError.match(/Batch size too large/i) &&
+        isJsonRpcProvider(this.currentProvider)
       ) {
-        this.forcedBatchMaxPreviousSize =
-          pendingBatch?.length ?? pendingBatchSize ?? 1
-        this.forcedBatchMaxSize =
-          (pendingBatch?.length ?? pendingBatchSize ?? 2) / 2
+        const requestBatch = this.currentProvider.getBatchFromError(error)
 
-        logger.debug(
-          "Setting a max batch size of",
-          this.forcedBatchMaxSize,
-          "on chain",
-          this.chainID,
-          "and retrying: ",
-          method,
-          params,
-        )
+        const batchLen = requestBatch.length
 
-        return this.routeRpcCall(messageId)
-      }
+        // Note that every other request in the batch will set the length to
+        // the same value
+        if (batchLen <= this.currentProvider.getOptions().maxBatchLength) {
+          const newMaxBatchLen = Math.max(Math.floor(batchLen / 2), 1)
 
-      if (stringifiedError.match(/Batch size too large/)) {
-        logger.debug(
-          "Using max batch size of",
-          this.forcedBatchMaxSize,
-          "on chain",
-          this.chainID,
-          "and retrying: ",
-          method,
-          params,
-        )
+          this.currentProvider.setOptions({
+            maxBatchLength: newMaxBatchLen,
+          })
 
-        return this.routeRpcCall(messageId)
+          logger.debug(
+            "Setting a max batch size of",
+            newMaxBatchLen,
+            "for rpc",
+            this.currentProvider.connection.url,
+          )
+        }
+        // Retry with a new limit on batch length
+        return waitAnd(500, () => this.routeRpcCall(messageId))
       }
 
       if (
@@ -625,7 +560,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     if (method === "eth_getCode" && (params as string[])[1] === "latest") {
       const address = (params as string[])[0]
       this.latestHasCodeCache[address] = {
-        hasCode: result as boolean,
+        hasCode: result as string,
       }
     }
   }
@@ -764,7 +699,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   ): Promise<void> {
     const subscription = { tag, param, processFunc }
 
-    if (this.currentProvider instanceof WebSocketProvider) {
+    if (isWebSocketProvider(this.currentProvider)) {
       // eslint-disable-next-line no-underscore-dangle
       await this.currentProvider._subscribe(tag, param, processFunc)
       this.subscriptions.push(subscription)
@@ -835,7 +770,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Behaves the same as the `JsonRpcProvider` `on` method, but also trakcs the
+   * Behaves the same as the `JsonRpcProvider` `on` method, but also tracks the
    * event subscription so that an underlying provider failure will not prevent
    * it from firing.
    */
@@ -852,7 +787,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Behaves the same as the `JsonRpcProvider` `once` method, but also trakcs
+   * Behaves the same as the `JsonRpcProvider` `once` method, but also tracks
    * the event subscription so that an underlying provider failure will not
    * prevent it from firing.
    */
@@ -919,12 +854,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private disconnectCurrentProvider() {
     logger.debug(
       "Disconnecting current provider; websocket: ",
-      this.currentProvider instanceof WebSocketProvider,
+      isWebSocketProvider(this.currentProvider),
       "on chain",
       this.chainID,
       ".",
     )
-    if (this.currentProvider instanceof WebSocketProvider) {
+    if (isWebSocketProvider(this.currentProvider)) {
       this.currentProvider.destroy()
     } else {
       // For non-WebSocket providers, kill all subscriptions so the listeners
@@ -1003,7 +938,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @param provider The provider to use to resubscribe
    * @returns A boolean indicating if websocket subscription was successful or not
    */
-  private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
+  private async resubscribe(provider: RPCProvider): Promise<boolean> {
     logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
 
     if (
@@ -1017,9 +952,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return false
     }
 
-    if (provider instanceof WebSocketProvider) {
-      const websocketProvider = provider as WebSocketProvider
-
+    if (isWebSocketProvider(provider)) {
       // Chain promises to serially resubscribe.
       //
       // TODO If anything fails along the way, it should yield the same kind of
@@ -1031,7 +964,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
               // eslint-disable-next-line no-underscore-dangle
-              websocketProvider._subscribe(tag, param, processFunc),
+              provider._subscribe(tag, param, processFunc),
             ),
           ),
         Promise.resolve(),
@@ -1170,23 +1103,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
-function getProviderCreator(
-  rpcUrl: string,
-): JsonRpcProvider | WebSocketProvider {
+function getProviderCreator(rpcUrl: string): RPCProvider {
   const url = new URL(rpcUrl)
   if (/^wss?/.test(url.protocol)) {
     return new WebSocketProvider(rpcUrl)
   }
 
-  if (/rpc\.ankr\.com|1rpc\.io|polygon-rpc\.com/.test(url.href)) {
-    return new JsonRpcBatchProvider({
-      url: rpcUrl,
-      throttleLimit: 1,
-      timeout: PROVIDER_REQUEST_TIMEOUT,
-    })
-  }
-
-  return new JsonRpcProvider({
+  return new TahoRPCProvider({
     url: rpcUrl,
     throttleLimit: 1,
     timeout: PROVIDER_REQUEST_TIMEOUT,
@@ -1197,7 +1120,8 @@ export function makeFlashbotsProviderCreator(): ProviderCreator {
   return {
     type: "custom",
     supportedMethods: ["eth_sendRawTransaction"],
-    creator: () => getProviderCreator(FLASHBOTS_RPC_URL),
+    creator: () =>
+      new TahoRPCProvider(FLASHBOTS_RPC_URL, undefined, { maxBatchSize: 1 }),
   }
 }
 
@@ -1210,7 +1134,7 @@ export function makeSerialFallbackProvider(
     return new SerialFallbackProvider(FORK.chainID, [
       {
         type: "generic" as const,
-        creator: () => new JsonRpcProvider(process.env.MAINNET_FORK_URL),
+        creator: () => new TahoRPCProvider(process.env.MAINNET_FORK_URL),
       },
     ])
   }
@@ -1229,7 +1153,7 @@ export function makeSerialFallbackProvider(
     return new SerialFallbackProvider(ARBITRUM_SEPOLIA.chainID, [
       {
         type: "generic" as const,
-        creator: () => new JsonRpcBatchProvider(process.env.ARBITRUM_FORK_RPC),
+        creator: () => new TahoRPCProvider(process.env.ARBITRUM_FORK_RPC),
       },
     ])
   }
