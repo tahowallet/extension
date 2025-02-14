@@ -9,6 +9,7 @@ import {
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
+  MEZO_TESTNET,
 } from "@tallyho/tally-background/constants"
 import { NetworkFeeTypeChosen } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { i18n } from "../_locales/i18n"
@@ -17,6 +18,10 @@ export const doggoTokenDecimalDigits = 18
 
 export const blockExplorer = {
   [ETHEREUM.chainID]: { title: "Etherscan", url: "https://etherscan.io" },
+  [MEZO_TESTNET.chainID]: {
+    title: "Mezo explorer",
+    url: "https://explorer.test.mezo.org",
+  },
   [ROOTSTOCK.chainID]: { title: "RSKExplorer", url: "https://explorer.rsk.co" },
   [OPTIMISM.chainID]: {
     title: "Etherscan",

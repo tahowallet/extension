@@ -101,7 +101,13 @@ export const BNB: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   },
 }
 
+export const MEZO_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.MEZO_BTC,
+  coinType: 0,
+}
+
 export const BUILT_IN_NETWORK_BASE_ASSETS = [
+  MEZO_BTC,
   ETH,
   MATIC,
   RBTC,
