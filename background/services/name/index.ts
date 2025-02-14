@@ -18,9 +18,11 @@ import {
   ensResolverFor,
   unsResolver,
   rnsResolver,
+  mezoResolver,
 } from "./resolvers"
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
+import { wrapIfEnabled } from "../../features"
 
 export { NameResolverSystem }
 
@@ -123,6 +125,7 @@ export default class NameService extends BaseService<Events> {
       ensResolverFor(chainService),
       unsResolver(),
       rnsResolver(),
+      ...wrapIfEnabled("SUPPORT_MEZO_NETWORK", mezoResolver()),
     ]
 
     preferenceService.emitter.on(
