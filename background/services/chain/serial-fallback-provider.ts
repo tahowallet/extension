@@ -27,6 +27,7 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
 import TahoAlchemyProvider from "./taho-provider"
+import { getErrorType } from "./errors"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -452,8 +453,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // Awful, but what can ya do.
       const stringifiedError = String(error)
 
+      const errorType = getErrorType(stringifiedError, method)
+
       if (
-        stringifiedError.match(/Batch size too large/) &&
+        errorType === "batch-limit-exceeded" &&
         (pendingBatchSize === undefined || pendingBatchSize === 0)
       ) {
         this.forcedBatchMaxPreviousSize =
@@ -474,7 +477,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return this.routeRpcCall(messageId)
       }
 
-      if (stringifiedError.match(/Batch size too large/)) {
+      if (errorType === "batch-limit-exceeded") {
         logger.debug(
           "Using max batch size of",
           this.forcedBatchMaxSize,
@@ -489,27 +492,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        /**
-         * WebSocket is already in CLOSING - We are reconnecting
-         * - bad response
-         * error on the endpoint provider's side
-         * - missing response
-         * We might be disconnected due to network instability
-         * - we can't execute this request
-         * ankr rate limit hit / invalid response from some rpcs
-         * - failed response
-         * fetchJson default "fallback" error, generally thrown after 429s
-         * - TIMEOUT
-         * fetchJson timed out, we could retry but it's safer to just fail over
-         * - NETWORK_ERROR
-         * Any other network error, including no-network errors
-         *
-         * Note: We can't use ether's generic SERVER_ERROR because it's also
-         * used for invalid responses from the server, which we can retry on
-         */
-        stringifiedError.match(
-          /WebSocket is already in CLOSING|bad response|missing response|we can't execute this request|failed response|TIMEOUT|NETWORK_ERROR|call rate limit exhausted/,
-        )
+        errorType === "network-error" ||
+        errorType === "rate-limit-error" ||
+        errorType === "response-error"
       ) {
         // If a new provider is already in the process of being tried, go ahead
         // and fire off into the new provider.
@@ -539,17 +524,24 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.reconnectProvider()
         delete this.messagesToSend[messageId]
         throw error
-      } else if (
-        // If we received some bogus response, let's try again
-        stringifiedError.match(/bad result from backend/)
-      ) {
+      } else if (errorType === "invalid-response-error") {
+        // Check if we're already retrying this on a different provider
+        if (
+          this.hasExceededRetryLimit(messageId) &&
+          this.currentProviderIndex !==
+            // Initial provider index this message was first send on
+            this.messagesToSend[messageId].providerIndex
+        ) {
+          throw error
+        }
+
         if (
           // If the current provider is the one we tried with initially.
           this.currentProviderIndex === existingProviderIndex &&
           // If there is another provider to try and we have exceeded the
           // number of retries try to send the message on that provider
           this.currentProviderIndex + 1 < this.providerCreators.length &&
-          this.shouldSendMessageOnNextProvider(messageId)
+          this.hasExceededRetryLimit(messageId)
         ) {
           return await this.attemptToSendMessageOnNewProvider(messageId)
         }
@@ -1113,7 +1105,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @param messageId The unique identifier of a given message
    * @returns true if a message should be sent on the next provider, false otherwise
    */
-  private shouldSendMessageOnNextProvider(messageId: symbol): boolean {
+  private hasExceededRetryLimit(messageId: symbol): boolean {
     const { backoffCount } = this.messagesToSend[messageId]
     if (backoffCount && backoffCount >= MAX_RETRIES_PER_PROVIDER) {
       return true
