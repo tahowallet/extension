@@ -29,21 +29,15 @@ import TahoAlchemyProvider from "./taho-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
 
-type RPCProvider = WebSocketProvider | JsonRpcProvider | TahoRPCProvider
-
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
   supportedMethods?: string[]
-  creator: () => RPCProvider
+  creator: () => JsonRpcProvider
 }
 
 const isWebSocketProvider = (
-  provider: RPCProvider,
+  provider: JsonRpcProvider,
 ): provider is WebSocketProvider => provider instanceof WebSocketProvider
-
-const isJsonRpcProvider = (
-  provider: RPCProvider,
-): provider is TahoRPCProvider => provider instanceof TahoRPCProvider
 
 /**
  * Method list, to describe which rpc method calls on which networks should
@@ -118,7 +112,9 @@ function backedOffMs(): number {
  * either closing or already closed. Ethers does not provide direct access to
  * this information, nor does it attempt to reconnect in these cases.
  */
-function isClosedOrClosingWebSocketProvider(provider: RPCProvider): boolean {
+function isClosedOrClosingWebSocketProvider(
+  provider: JsonRpcProvider,
+): boolean {
   if (isWebSocketProvider(provider)) {
     const webSocket = provider.websocket
 
@@ -135,7 +131,7 @@ function isClosedOrClosingWebSocketProvider(provider: RPCProvider): boolean {
  * Returns true if the given provider is using a WebSocket AND the WebSocket is
  * connecting. Ethers does not provide direct access to this information.
  */
-function isConnectingWebSocketProvider(provider: RPCProvider): boolean {
+function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
   if (isWebSocketProvider(provider)) {
     const webSocket = provider.websocket
     return webSocket.readyState === WebSocket.CONNECTING
@@ -197,19 +193,20 @@ function customOrDefaultProvider(
 export default class SerialFallbackProvider extends JsonRpcProvider {
   // Functions that will create and initialize a new provider, in priority
   // order.
-  private providerCreators: (() => RPCProvider)[]
+  private providerCreators: (() => JsonRpcProvider)[]
 
   // The currently-used provider, produced by the provider-creator at
   // currentProviderIndex.
-  private currentProvider: RPCProvider
+  private currentProvider: JsonRpcProvider
 
-  private alchemyProvider: RPCProvider | undefined
+  private alchemyProvider: JsonRpcProvider | undefined
 
-  private customProvider: RPCProvider | undefined
+  private customProvider: JsonRpcProvider | undefined
 
   private customProviderSupportedMethods: string[] = []
 
-  private cachedProvidersByIndex: Record<string, RPCProvider | undefined> = {}
+  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
+    {}
 
   /**
    * This object holds all messages that are either being sent to a provider
@@ -225,11 +222,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
-  private alchemyProviderCreator: (() => RPCProvider) | undefined
+  private alchemyProviderCreator: (() => JsonRpcProvider) | undefined
 
   supportsAlchemy = false
 
-  private customProviderCreator: (() => RPCProvider) | undefined
+  private customProviderCreator: (() => JsonRpcProvider) | undefined
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -400,16 +397,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       if (
         errorType === "batch-limit-exceeded" &&
-        isJsonRpcProvider(this.currentProvider)
+        this.currentProvider instanceof TahoRPCProvider
       ) {
         const requestBatch = this.currentProvider.getBatchFromError(error)
 
-        const batchLen = requestBatch.length
-
         // Note that every other request in the batch will set the length to
         // the same value
-        if (batchLen <= this.currentProvider.getOptions().maxBatchLength) {
-          const newMaxBatchLen = Math.max(Math.floor(batchLen / 2), 1)
+        if (
+          requestBatch.length <=
+          this.currentProvider.getOptions().maxBatchLength
+        ) {
+          const newMaxBatchLen = Math.max(
+            Math.floor(requestBatch.length / 2),
+            1,
+          )
 
           this.currentProvider.setOptions({
             maxBatchLength: newMaxBatchLen,
@@ -930,7 +931,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @param provider The provider to use to resubscribe
    * @returns A boolean indicating if websocket subscription was successful or not
    */
-  private async resubscribe(provider: RPCProvider): Promise<boolean> {
+  private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
     logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
 
     if (
@@ -1095,7 +1096,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
-function getProviderCreator(rpcUrl: string): RPCProvider {
+function getProviderCreator(rpcUrl: string): JsonRpcProvider {
   const url = new URL(rpcUrl)
   if (/^wss?/.test(url.protocol)) {
     return new WebSocketProvider(rpcUrl)
@@ -1113,7 +1114,7 @@ export function makeFlashbotsProviderCreator(): ProviderCreator {
     type: "custom",
     supportedMethods: ["eth_sendRawTransaction"],
     creator: () =>
-      new TahoRPCProvider(FLASHBOTS_RPC_URL, undefined, { maxBatchSize: 1 }),
+      new TahoRPCProvider(FLASHBOTS_RPC_URL, undefined, { maxBatchLength: 1 }),
   }
 }
 
