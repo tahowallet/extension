@@ -1631,20 +1631,28 @@ export default class ReduxService extends BaseService<never> {
 
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
-      async (analyticsPreferences: AnalyticsPreferences) => {
+      async ({ isEnabled }: AnalyticsPreferences) => {
+        const currentValue = this.store.getState().ui.settings.collectAnalytics
+
+        // Check if this value has been updated so we prevent dispatching unnecessary
+        // analytics events during initialization
+        if (currentValue === isEnabled) {
+          return
+        }
+
         // This event is used on initialization and data change
         this.store.dispatch(
           toggleCollectAnalytics(
             // we are using only this field on the UI atm
             // it's expected that more detailed analytics settings will come
-            analyticsPreferences.isEnabled,
+            isEnabled,
           ),
         )
 
         this.analyticsService.sendAnalyticsEvent(
           AnalyticsEvent.ANALYTICS_TOGGLED,
           {
-            analyticsEnabled: analyticsPreferences.isEnabled,
+            analyticsEnabled: isEnabled,
           },
         )
       },
