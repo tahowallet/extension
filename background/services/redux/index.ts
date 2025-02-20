@@ -202,6 +202,7 @@ import {
 } from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
+import { checkIsBorrowingTx } from "../../lib/mezo"
 import { isDisabled } from "../../features"
 
 dayjs.extend(isBetween)
@@ -463,6 +464,7 @@ export default class ReduxService extends BaseService<never> {
     this.connectAbilitiesService()
     this.connectNFTsService()
     this.connectNotificationsService()
+    this.connectMezoCampaignListeners()
 
     await this.connectChainService()
 
@@ -1720,6 +1722,23 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
     })
+  }
+
+  async connectMezoCampaignListeners() {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransaction",
+      ({ transaction }) => {
+        if (checkIsBorrowingTx(transaction)) {
+          this.store.dispatch(
+            updateCampaignState(["mezo-claim", { state: "campaign-complete" }]),
+          )
+        }
+      },
+    )
   }
 
   async checkMezoCampaignState() {
