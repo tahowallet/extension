@@ -130,6 +130,7 @@ export default class NotificationsService extends BaseService<Events> {
       message: string
       contextMessage?: string
       type?: browser.Notifications.TemplateType
+      onDismiss?: () => void
     }
     callback?: () => void
   }) {
@@ -141,6 +142,7 @@ export default class NotificationsService extends BaseService<Events> {
     const notificationOptions = {
       type: "basic" as browser.Notifications.TemplateType,
       iconUrl: TAHO_ICON_URL,
+      onDismiss: () => {},
       ...options,
     }
 
@@ -149,6 +151,12 @@ export default class NotificationsService extends BaseService<Events> {
     }
 
     browser.notifications.create(notificationId, notificationOptions)
+
+    browser.notifications.onClosed.addListener((id, byUser) => {
+      if (id === notificationId && byUser) {
+        notificationOptions.onDismiss()
+      }
+    })
   }
 
   public notifyXPDrop(callback?: () => void): void {
