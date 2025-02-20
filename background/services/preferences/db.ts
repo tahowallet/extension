@@ -76,12 +76,16 @@ export type ManuallyDismissableItem =
   | "analytics-enabled-banner"
   | "copy-sensitive-material-warning"
   | "testnet-portal-is-open-banner"
+
 /**
  * Items that the user will see once and will not be auto-displayed again. Can
  * be used for tours, or for popups that can be retriggered but will not
  * auto-display more than once.
  */
-export type SingleShotItem = "default-connection-popover"
+export type SingleShotItem =
+  | "default-connection-popover"
+  | "mezo-eligible-notification"
+  | "mezo-borrow-notification"
 
 /**
  * Items that the user will view one time and either manually dismiss or that

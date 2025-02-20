@@ -2,6 +2,9 @@ import { Runtime } from "webextension-polyfill"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
+import isBetween from "dayjs/plugin/isBetween"
+import dayjs from "dayjs"
+
 import {
   isProbablyEVMAddress,
   normalizeEVMAddress,
@@ -77,6 +80,8 @@ import {
   toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
+  MezoClaimStatus,
+  updateCampaignState,
 } from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -197,6 +202,9 @@ import {
 } from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
+import { isDisabled } from "../../features"
+
+dayjs.extend(isBetween)
 
 export default class ReduxService extends BaseService<never> {
   /**
@@ -378,6 +386,10 @@ export default class ReduxService extends BaseService<never> {
       initialLoadWaitExpired: {
         schedule: { delayInMinutes: 1.5 },
         handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
+      },
+      checkMezoEligibility: {
+        schedule: { delayInMinutes: 1, periodInMinutes: 60 },
+        handler: () => this.checkMezoCampaignState(),
       },
     })
 
@@ -1708,6 +1720,95 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
     })
+  }
+
+  async checkMezoCampaignState() {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
+    await this.started()
+    const accounts = await this.chainService.getAccountsToTrack()
+    const lastKnownState =
+      this.store.getState().ui.activeCampaigns?.["mezo-claim"]?.state
+
+    if (
+      !accounts.length ||
+      lastKnownState === "campaign-complete" ||
+      lastKnownState === "not-eligible"
+    ) {
+      return
+    }
+
+    const shownItems = new Set(
+      await this.preferenceService.getShownDismissableItems(),
+    )
+
+    // const uuid = this.analyticsService.analyticsUUID
+    const hasSeenEligibilityPush = shownItems.has("mezo-eligible-notification")
+    const hasSeenBorrowPush = shownItems.has("mezo-borrow-notification")
+
+    // fetch with uuid
+    const campaignData = {
+      dateFrom: "2025-02-21",
+      dateTo: "2025-02-28",
+      state: "eligible" as MezoClaimStatus,
+    }
+
+    const isActiveCampaign = dayjs().isBetween(
+      campaignData.dateFrom,
+      campaignData.dateTo,
+      "day",
+      "[]",
+    )
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "eligible" &&
+      !hasSeenEligibilityPush
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title: "Claim sats",
+          message: "Connect to mezo and get rewarded",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-eligible-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-eligible-notification",
+          )
+        },
+      })
+    }
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "claimed-sats" &&
+      !hasSeenBorrowPush
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title: "Borrow now",
+          message: "Try borrowing and get an exclusive NFT",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-borrow-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-borrow-notification",
+          )
+        },
+      })
+    }
+
+    this.store.dispatch(updateCampaignState(["mezo-claim", campaignData]))
   }
 
   async updateAssetMetadata(
