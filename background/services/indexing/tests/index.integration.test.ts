@@ -286,7 +286,9 @@ describe("IndexingService", () => {
         fetchJsonStub
           .getCalls()
           .toString()
-          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i),
+          .match(
+            /ethereum,matic-network,rootstock,bitcoin,avalanche-2,binancecoin/i,
+          ),
       ).toBeTruthy()
     })
   })
