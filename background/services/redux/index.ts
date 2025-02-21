@@ -1,4 +1,4 @@
-import { Runtime } from "webextension-polyfill"
+import browser, { Runtime } from "webextension-polyfill"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
@@ -1690,11 +1690,10 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on(
       "shouldShowNotifications",
       async (shouldShowNotifications: boolean) => {
-        const isPermissionGranted =
-          await this.preferenceService.setShouldShowNotifications(
-            shouldShowNotifications,
-          )
-        this.store.dispatch(toggleNotifications(isPermissionGranted))
+        await this.preferenceService.setShouldShowNotifications(
+          shouldShowNotifications,
+        )
+        this.store.dispatch(toggleNotifications(shouldShowNotifications))
       },
     )
 

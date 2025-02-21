@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Trans, useTranslation } from "react-i18next"
@@ -176,7 +177,13 @@ export default function Settings(): ReactElement {
   }
 
   const toggleNotifications = (toggleValue: boolean) => {
-    dispatch(setShouldShowNotifications(toggleValue))
+    browser.permissions
+      .request({
+        permissions: ["notifications"],
+      })
+      .then((hasPermission) =>
+        dispatch(setShouldShowNotifications(hasPermission && toggleValue)),
+      )
   }
 
   const toggleShowTestNetworks = (defaultWalletValue: boolean) => {

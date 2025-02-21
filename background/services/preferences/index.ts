@@ -1,4 +1,3 @@
-import browser from "webextension-polyfill"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
@@ -277,18 +276,10 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async setShouldShowNotifications(shouldShowNotifications: boolean) {
-    if (shouldShowNotifications) {
-      const granted = await browser.permissions.request({
-        permissions: ["notifications"],
-      })
+    await this.db.setShouldShowNotifications(shouldShowNotifications)
+    this.emitter.emit("setNotificationsPermission", shouldShowNotifications)
 
-      await this.db.setShouldShowNotifications(granted)
-      this.emitter.emit("setNotificationsPermission", granted)
-
-      return granted
-    }
-
-    return false
+    return shouldShowNotifications
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
