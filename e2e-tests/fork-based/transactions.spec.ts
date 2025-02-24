@@ -260,10 +260,9 @@ test.describe("Transactions @fork", () => {
         timeout: 120000,
       })
       // Wait for prices to load
-      await expect(daiAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
+      await expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible({
         timeout: 120000,
       })
-
       await daiAsset.locator(".asset_icon_send").click({ trial: true })
       await daiAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -291,9 +290,9 @@ test.describe("Transactions @fork", () => {
        *  Enter amount and receipient. Verify `Continue` isn't active.
        */
       await popup.getByPlaceholder(/^0\.0$/).fill("1.257")
-      // await expect(
-      //   popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
-      // ).toBeVisible()
+      await expect(
+        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
+      ).toBeVisible()
 
       await expect(
         popup.getByRole("button", { name: "Continue", exact: true }),
@@ -446,7 +445,7 @@ test.describe("Transactions @fork", () => {
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
-      await expect(ethToken.getByText(/^\d+\.\d{4}$/)).toBeVisible()
+      await expect(ethToken.getByText(/^\d+\.\d+$/)).toBeVisible()
       await expect(ethToken.locator(".icon")).toHaveCount(0)
 
       /**

@@ -105,7 +105,9 @@ export default function CommonAssetListItem(
                     {isMissingLocalizedUserValue ? (
                       <SharedLoadingSpinner size="small" />
                     ) : (
-                      `$${assetAmount.localizedMainCurrencyAmount}`
+                      <span data-testid="resolved_asset_price">
+                        {`$${assetAmount.localizedMainCurrencyAmount}`}
+                      </span>
                     )}
                   </div>
                 )
