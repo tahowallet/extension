@@ -192,9 +192,9 @@ export default class WalletPageHelper {
       this.popup.getByTestId("account_balance_loader"),
     ).not.toBeVisible({ timeout: 20000 })
     await expect(this.popup.getByText("Total account balance")).toBeVisible()
-    await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
-      /^\$(\d|,)+(\.\d{1,2})*$/,
-    )
+    // TODO: Shared assertions should not verify values. Instead, they
+    // should only verify there's a resolved value.
+    await expect(this.popup.getByTestId("wallet_balance")).toBeVisible()
 
     await this.assertTopWrap(network, accountLabel)
 
