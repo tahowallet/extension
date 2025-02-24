@@ -37,6 +37,7 @@ export default class TransactionsHelper {
     const assetBalance = await this.popup.locator(".available")
     const balanceRegEx = new RegExp(`^Balance: ${regexAssetBalance}$`)
     expect(assetBalance).toHaveText(balanceRegEx)
+
     if (baseAsset) {
       expect(
         await this.popup.getByRole("button", { name: "Max" }).count(),
@@ -45,10 +46,12 @@ export default class TransactionsHelper {
       await expect(
         this.popup.getByRole("button", { name: "Max" }),
       ).toBeVisible()
+
       await this.popup
         .getByRole("button", { name: "Max" })
         .click({ trial: true })
     }
+
     await expect(this.popup.getByPlaceholder(/^0\.0$/)).toBeVisible()
     await expect(this.popup.getByText(/^\$-$/)).toBeVisible()
 

@@ -124,7 +124,7 @@ export default class IndexingService extends BaseService<Events> {
    */
   private scheduledTokenRefresh = false
 
-  private lastPriceAlarmTime = 0
+  #pricesUpdateTimer: NodeJS.Timer | null = null
 
   private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
@@ -178,9 +178,9 @@ export default class IndexingService extends BaseService<Events> {
       prices: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 10,
+          periodInMinutes: 1,
         },
-        handler: () => this.handlePriceAlarm(),
+        handler: () => this.scheduleUpdateAssetsPrices(),
       },
     })
   }
@@ -194,7 +194,7 @@ export default class IndexingService extends BaseService<Events> {
     const tokenListLoad = this.fetchAndCacheTokenLists()
 
     this.chainService.emitter.once("serviceStarted").then(async () => {
-      this.handlePriceAlarm()
+      this.scheduleUpdateAssetsPrices()
 
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
@@ -476,7 +476,7 @@ export default class IndexingService extends BaseService<Events> {
         await this.loadAccountBalancesFor(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
-        this.handlePriceAlarm()
+        this.scheduleUpdateAssetsPrices()
       },
     )
 
@@ -939,21 +939,20 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  private async handlePriceAlarm(): Promise<void> {
-    if (Date.now() < this.lastPriceAlarmTime + 5 * SECOND) {
-      // If this is quickly called multiple times (for example when
-      // using a network for the first time with a wallet loaded
-      // with many accounts) only fetch prices once.
+  private async scheduleUpdateAssetsPrices(): Promise<void> {
+    // If there's a pending update do nothing
+    if (this.#pricesUpdateTimer) {
       return
     }
 
-    this.lastPriceAlarmTime = Date.now()
-
-    // Avoid awaiting here so price fetching can happen in the background
-    // and the extension can go on doing whatever it needs to do while waiting
-    // for prices to come back.
-    this.getBaseAssetsPrices()
-    this.getTrackedAssetsPrices()
+    this.#pricesUpdateTimer = setTimeout(() => {
+      this.#pricesUpdateTimer = null
+      // Avoid awaiting here so price fetching can happen in the background
+      // and the extension can go on doing whatever it needs to do while waiting
+      // for prices to come back.
+      this.getBaseAssetsPrices()
+      this.getTrackedAssetsPrices()
+    }, 5 * SECOND)
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {

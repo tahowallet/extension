@@ -214,7 +214,9 @@ const computeCombinedAssetAmountsData = (
   combinedAssetAmounts.forEach((assetAmount) => {
     if (typeof assetAmount.mainCurrencyAmount !== "undefined") {
       totalMainCurrencyAmount ??= 0 // initialize if needed
-      totalMainCurrencyAmount += assetAmount.mainCurrencyAmount
+      if (Number.isFinite(assetAmount.mainCurrencyAmount)) {
+        totalMainCurrencyAmount += assetAmount.mainCurrencyAmount
+      }
     }
   })
 
