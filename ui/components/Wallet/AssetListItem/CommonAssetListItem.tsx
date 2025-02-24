@@ -75,7 +75,8 @@ export default function CommonAssetListItem(
     >
       <div
         className="asset_list_item"
-        data-testid={`asset_list_item-${getFullAssetID(assetAmount.asset)}`}
+        data-testid="asset_list_item"
+        data-assetid={getFullAssetID(assetAmount.asset)}
       >
         <div className="asset_left">
           <SharedAssetIcon
