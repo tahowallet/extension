@@ -63,55 +63,6 @@ const addActivityToState =
     }
   }
 
-const initializeActivitiesFromTransactions = ({
-  transactions,
-  accounts,
-}: {
-  transactions: Transaction[]
-  accounts: AddressOnNetwork[]
-}): Activities => {
-  const activities: {
-    [address: string]: {
-      [chainID: string]: Activity[]
-    }
-  } = {}
-
-  const addActivity = addActivityToState(activities)
-
-  const normalizedAccounts = accounts.map((account) =>
-    normalizeAddressOnNetwork(account),
-  )
-
-  // Add transactions
-  transactions.forEach((transaction) => {
-    const { to, from, network } = transaction
-    const isTrackedTo = normalizedAccounts.some(
-      ({ address, network: activeNetwork }) =>
-        network.chainID === activeNetwork.chainID &&
-        sameEVMAddress(to, address),
-    )
-    const isTrackedFrom = normalizedAccounts.some(
-      ({ address, network: activeNetwork }) =>
-        network.chainID === activeNetwork.chainID &&
-        sameEVMAddress(from, address),
-    )
-
-    if (to && isTrackedTo) {
-      addActivity(to, network.chainID, transaction)
-    }
-    if (from && isTrackedFrom) {
-      addActivity(from, network.chainID, transaction)
-    }
-  })
-
-  // Sort and reduce # of transactions
-  normalizedAccounts.forEach(({ address, network }) =>
-    cleanActivitiesArray(activities[address]?.[network.chainID]),
-  )
-
-  return activities
-}
-
 const initialState: ActivitiesState = {
   activities: {},
 }
@@ -123,13 +74,59 @@ const activitiesSlice = createSlice({
     initializeActivities: (
       immerState,
       {
-        payload,
+        payload: { transactions, accounts },
       }: {
         payload: { transactions: Transaction[]; accounts: AddressOnNetwork[] }
       },
-    ) => ({
-      activities: initializeActivitiesFromTransactions(payload),
-    }),
+    ) => {
+      const activities: {
+        [address: string]: {
+          [chainID: string]: Activity[]
+        }
+      } = {}
+
+      const { activities: existingActivities } = immerState
+
+      const addActivity = addActivityToState(activities)
+
+      const normalizedAccounts = accounts.map((account) =>
+        normalizeAddressOnNetwork(account),
+      )
+
+      // Add transactions
+      transactions.forEach((transaction) => {
+        const { to, from, network } = transaction
+
+        const trackedAccounts = normalizedAccounts.filter(
+          ({ address, network: activeNetwork }) =>
+            network.chainID === activeNetwork.chainID &&
+            (sameEVMAddress(to, address) || sameEVMAddress(from, address)),
+        )
+
+        trackedAccounts.forEach(({ address, network: { chainID } }) => {
+          const accountData = existingActivities?.[address]?.[chainID] ?? []
+          const activityExists = accountData.find(
+            ({ hash }) => hash === transaction.hash,
+          )
+
+          // if activity transaction has finalized, reuse existing data
+          if (activityExists && activityExists.blockHeight) {
+            activities[address] ??= {}
+            activities[address][chainID] ??= []
+            activities[address][chainID].push(activityExists)
+          } else {
+            addActivity(address, chainID, transaction)
+          }
+        })
+      })
+
+      // Sort and reduce # of transactions
+      normalizedAccounts.forEach(({ address, network }) =>
+        cleanActivitiesArray(activities[address]?.[network.chainID]),
+      )
+
+      immerState.activities = activities
+    },
     initializeActivitiesForAccount: (
       immerState,
       {
