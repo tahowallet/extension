@@ -283,3 +283,16 @@ jobs:
             test-results/
             #videos/
           retention-days: 30
+      # Wait for anvil to finish and save its cache to disk
+      - name: Stop Anvil
+        if: ${{ !cancelled() }}
+        run: sh ./ci/stop-anvil.sh
+      - name: Save Anvil Cache
+        uses: actions/cache/save@v3
+        # We want to save the cache even if the tests failed. Without the cache
+        # the tests almost always fail, so without `if: always()` we would have
+        # problem with creating the first cache.
+        if: always()
+        with:
+          path: /home/runner/.foundry/cache
+          key: anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
