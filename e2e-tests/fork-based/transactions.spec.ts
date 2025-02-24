@@ -23,14 +23,18 @@ test.describe("Transactions @fork", () => {
     const wallet = Wallet.fromEncryptedJsonSync(WALLET_JSON!, WALLET_PASSWORD!)
 
     const forkEnv = new ForkEnvHelper(context)
-    await forkEnv.setBalance(wallet.address, utils.parseUnits("20", "ether"))
 
+    await forkEnv.setBalance(wallet.address, utils.parseUnits("1", "ether"))
+    await forkEnv.emptyERC20Balance(USDC_CONTRACT, wallet.address)
+    await forkEnv.emptyERC20Balance(DAI_CONTRACT, wallet.address)
+
+    await forkEnv.setBalance(ERC20_ASSET_WALLET, utils.parseUnits("1", "ether"))
     await forkEnv.impersonateAccount(ERC20_ASSET_WALLET)
-
     await forkEnv.transferERC20(DAI_CONTRACT, wallet.address, "2.62")
     await forkEnv.transferERC20(USDC_CONTRACT, wallet.address, "2.62", 6)
-
     await forkEnv.stopImpersonating(ERC20_ASSET_WALLET)
+
+    await forkEnv.setBalance(wallet.address, utils.parseUnits("20", "ether"))
   })
 
   test("User can send base asset", async ({

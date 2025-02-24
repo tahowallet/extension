@@ -27,15 +27,19 @@ export default class ForkEnvHelper {
   async send(method: string, params: unknown[]) {
     this.#request_id += 1
 
-    return this.context.request.post(this.url, {
-      data: JSON.stringify({
-        id: this.#request_id,
-        jsonrpc: "2.0",
-        method,
-        params,
-      }),
-      headers: { "Content-Type": "application/json" },
+    const payload = JSON.stringify({
+      id: this.#request_id,
+      jsonrpc: "2.0",
+      method,
+      params,
     })
+
+    return this.context.request
+      .post(this.url, {
+        data: payload,
+        headers: { "Content-Type": "application/json" },
+      })
+      .then((resp) => resp.json())
   }
 
   impersonateAccount(addr: string) {
@@ -52,25 +56,51 @@ export default class ForkEnvHelper {
     return this.send("hardhat_setBalance", [address, amount.toHexString()])
   }
 
+  async getERC20Balance(contract: string, address: string): Promise<BigNumber> {
+    const iface = new Interface([
+      "function balanceOf(address addr) view returns (uint256)",
+    ])
+
+    const amount = await this.send("eth_call", [
+      {
+        to: contract,
+        data: iface.encodeFunctionData("balanceOf", [address]),
+      },
+    ])
+
+    return iface.decodeFunctionResult("balanceOf", amount.result)[0]
+  }
+
+  async emptyERC20Balance(contract: string, address: string) {
+    const balance = await this.getERC20Balance(contract, address)
+    if (balance.gt(0n)) {
+      await this.impersonateAccount(address)
+      await this.transferERC20(contract, this.defaultAccounts[0], balance)
+      await this.stopImpersonating(address)
+    }
+  }
+
   transferERC20(
     contract: string,
     addressTo: string,
-    amount: string,
+    amount: string | BigNumber | bigint,
     decimals = 18,
   ) {
     if (this.emulatedAccount === null) {
       throw new Error("Must call impersonateAccount first")
     }
 
-    this.setBalance(this.emulatedAccount, utils.parseUnits("10.0"))
-
     const fragment = FunctionFragment.from("transfer(address to, uint amount)")
 
     const iface = new Interface([fragment])
 
-    const balance = utils.parseUnits(amount, decimals)
+    const transferValue =
+      typeof amount === "string" ? utils.parseUnits(amount, decimals) : amount
 
-    const data = iface.encodeFunctionData("transfer", [addressTo, balance])
+    const data = iface.encodeFunctionData("transfer", [
+      addressTo,
+      transferValue,
+    ])
 
     return this.send("eth_sendTransaction", [
       { from: this.emulatedAccount, to: contract, data },
