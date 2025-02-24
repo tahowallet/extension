@@ -20,6 +20,7 @@ test.describe("Onboarding", () => {
       ).toHaveText(readOnlyAddress)
     }).toPass()
 
+    await expect(popup.getByTestId("account_balance_loader")).not.toBeVisible()
     expect(popup.getByTestId("wallet_balance").innerText()).not.toContain("$0")
   })
 
