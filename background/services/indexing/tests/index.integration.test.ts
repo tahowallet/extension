@@ -255,6 +255,8 @@ describe("IndexingService", () => {
     // Check that we're using proper token ids for built in network assets
     // TODO: Remove once we add an e2e test for balances
     it("should query builtin network asset prices", async () => {
+      jest.useFakeTimers()
+
       const indexingDb = await getIndexingDB()
 
       const smartContractAsset = createSmartContractAsset()
@@ -279,7 +281,9 @@ describe("IndexingService", () => {
 
       expect(spy).toHaveBeenCalled()
 
-      await spy.mock.results[0].value
+      jest.advanceTimersByTime(5000)
+      await jest.advanceTimersToNextTimerAsync()
+      jest.useRealTimers()
 
       expect(
         fetchJsonStub
