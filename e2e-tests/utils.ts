@@ -62,7 +62,10 @@ export const test = base.extend<WalletTestFixtures>({
   },
   waitForExtensionPage: async ({ context, extensionId }, use) => {
     await use(async () =>
-      context.waitForEvent("page", (page) => page.url().includes(extensionId)),
+      context.waitForEvent("page", {
+        predicate: (page) => page.url().includes(extensionId),
+        timeout: 10_000,
+      }),
     )
   },
   isExtensionRequest: async ({}, use) => {
