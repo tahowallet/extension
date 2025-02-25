@@ -4,7 +4,6 @@ import {
   isEnabled,
   RuntimeFlag,
 } from "@tallyho/tally-background/features"
-import ReduxService from "@tallyho/tally-background/services/redux"
 import { ONBOARDING_ROOT } from "@tallyho/tally-ui/pages/Onboarding/Tabbed/Routes"
 
 browser.runtime.onInstalled.addListener((obj) => {
@@ -28,10 +27,9 @@ browser.runtime.onInstalled.addListener((obj) => {
   }
 })
 
-let redux: Promise<ReduxService>
+const redux = startRedux()
 
 browser.runtime.onConnect.addListener(async (port) => {
-  ;(await redux).connectPort(port)
+  const service = await redux
+  service.connectPort(port)
 })
-
-redux ??= startRedux()

@@ -1,8 +1,6 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
 import { NormalizedEVMAddress, UNIXTime } from "../../types"
-import { EVMNetwork } from "../../networks"
-import { ETHEREUM, SEPOLIA } from "../../constants"
 import { AddressOnNetwork } from "../../accounts"
 
 export function isValidChecksumAddress(
@@ -149,20 +147,6 @@ export function decodeJSON(input: string): unknown {
       ? BigInt(value.B_I_G_I_N_T)
       : value,
   )
-}
-
-/**
- * Determine which Ethereum network should be used based on the .env file
- */
-export function getEthereumNetwork(): EVMNetwork {
-  const ethereumNetwork = process.env.ETHEREUM_NETWORK?.toUpperCase()
-
-  if (ethereumNetwork === "SEPOLIA") {
-    return SEPOLIA
-  }
-
-  // Default to mainnet
-  return ETHEREUM
 }
 
 export function isProbablyEVMAddress(str: string): boolean {

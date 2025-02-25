@@ -3,7 +3,6 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
 import {
-  getEthereumNetwork,
   isProbablyEVMAddress,
   normalizeEVMAddress,
   sameEVMAddress,
@@ -377,7 +376,7 @@ export default class ReduxService extends BaseService<never> {
   ) {
     super({
       initialLoadWaitExpired: {
-        schedule: { delayInMinutes: 2.5 },
+        schedule: { delayInMinutes: 1.5 },
         handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
       },
     })
@@ -590,6 +589,7 @@ export default class ReduxService extends BaseService<never> {
 
   async enrichActivities(addressNetwork: AddressOnNetwork): Promise<void> {
     const accountsToTrack = await this.chainService.getAccountsToTrack()
+
     const activitiesToEnrich = selectActivitesHashesForEnrichment(
       this.store.getState(),
     )
@@ -1273,7 +1273,7 @@ export default class ReduxService extends BaseService<never> {
       "setClaimReferrer",
       async (referral: string) => {
         const isAddress = isProbablyEVMAddress(referral)
-        const network = getEthereumNetwork()
+        const network = ETHEREUM
         const ensName = isAddress
           ? (
               await this.nameService.lookUpName({
@@ -1632,20 +1632,28 @@ export default class ReduxService extends BaseService<never> {
 
     this.preferenceService.emitter.on(
       "updateAnalyticsPreferences",
-      async (analyticsPreferences: AnalyticsPreferences) => {
+      async ({ isEnabled }: AnalyticsPreferences) => {
+        const currentValue = this.store.getState().ui.settings.collectAnalytics
+
+        // Check if this value has been updated so we prevent dispatching unnecessary
+        // analytics events during initialization
+        if (currentValue === isEnabled) {
+          return
+        }
+
         // This event is used on initialization and data change
         this.store.dispatch(
           toggleCollectAnalytics(
             // we are using only this field on the UI atm
             // it's expected that more detailed analytics settings will come
-            analyticsPreferences.isEnabled,
+            isEnabled,
           ),
         )
 
         this.analyticsService.sendAnalyticsEvent(
           AnalyticsEvent.ANALYTICS_TOGGLED,
           {
-            analyticsEnabled: analyticsPreferences.isEnabled,
+            analyticsEnabled: isEnabled,
           },
         )
       },

@@ -10,53 +10,38 @@ test.describe("dApp Connections", () => {
     const dappPage = await context.newPage()
     await dappPage.goto("https://swap.cow.fi/")
     await dappPage
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
+    const popupPage = walletPageHelper.getConnectPopup()
     // Get page after a specific action (e.g. clicking a link)
-    const [popupPage] = await Promise.all([
-      context.waitForEvent("page"),
-      await dappPage.locator("text=Injected").click(), // Opens a new tab
-    ])
-    await popupPage.waitForLoadState()
+    await dappPage.locator("text=Injected").click() // Opens a new tab
 
-    // Clear the one-time informational popup, if present.
-    const connectingPopupTitle = popupPage.locator("h3", {
-      hasText: "Connecting with Taho",
-    })
+    await popupPage.ready()
 
-    expect(await connectingPopupTitle.count()).toBe(1)
-    await expect(connectingPopupTitle).toBeVisible()
+    await popupPage.hideDappConnectPopup()
 
-    // Clear the popover.
-    const popupCloseLocator = popupPage.getByRole("button", {
-      name: "Background close",
-    })
-
-    await popupCloseLocator.click()
-    await popupCloseLocator.waitFor({ state: "detached", timeout: 1000 })
-
-    await popupPage.locator("button", { hasText: "Reject" }).click()
+    await popupPage.rejectConnection()
 
     await dappPage.close()
 
     const dappPage2 = await context.newPage()
     await dappPage2.goto("https://swap.cow.fi/")
     await dappPage2
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
+    const popup2 = walletPageHelper.getConnectPopup()
+
+    await dappPage2.locator("text=Injected").click() // Opens a new tab
     // Get page after a specific action (e.g. clicking a link)
-    const [popupPage2] = await Promise.all([
-      context.waitForEvent("page"),
-      await dappPage2.locator("text=Injected").click(), // Opens a new tab
-    ])
-    await popupPage2.waitForLoadState()
+
+    await popup2.ready()
 
     // Check that the popup is no longer displayed.
-    const connectingPopupTitle2 = popupPage2.locator("h3", {
+    const connectingPopupTitle2 = popup2.page.locator("h3", {
       hasText: "Connecting with Taho",
     })
     expect(await connectingPopupTitle2.count()).toBe(0)
@@ -68,23 +53,23 @@ test.describe("dApp Connections", () => {
     walletPageHelper,
   }) => {
     await walletPageHelper.onboarding.addReadOnlyAccount("testertesting.eth")
-    await walletPageHelper.hideDappConnectPopup()
 
     const dappPage = await context.newPage()
     await dappPage.goto("https://swap.cow.fi/")
+
+    const popup = walletPageHelper.getConnectPopup()
+
     await dappPage
-      .locator("#swap-button")
       .getByRole("button", { name: "Connect Wallet" })
+      .first()
       .click()
 
     // Get page after a specific action (e.g. clicking a link)
-    const [popupPage] = await Promise.all([
-      context.waitForEvent("page"),
-      await dappPage.locator("text=Injected").click(), // Opens a new tab
-    ])
-    await popupPage.waitForLoadState()
+    await dappPage.locator("text=Injected").click() // Opens a new tab
 
-    await popupPage.locator("button", { hasText: "Connect" }).click()
+    await popup.ready()
+    await popup.hideDappConnectPopup()
+    await popup.acceptConnection()
 
     await walletPageHelper.goToStartPage()
 
