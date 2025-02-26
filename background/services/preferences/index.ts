@@ -321,7 +321,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getSelectedAccount(): Promise<AddressOnNetwork> {
-    return (await this.db.getPreferences())?.selectedAccount
+    return (await this.db.getPreferences()).selectedAccount
   }
 
   async setSelectedAccount(addressNetwork: AddressOnNetwork): Promise<void> {

@@ -205,7 +205,11 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: string[]
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
-  [MEZO_TESTNET.chainID]: ["https://rpc.test.mezo.org"],
+  [MEZO_TESTNET.chainID]: [
+    "https://rpc.test.mezo.org",
+    "https://mezo-testnet.drpc.org",
+    "wss://mezo-testnet.drpc.org",
+  ],
   [POLYGON.chainID]: [
     // This one sometimes returns 0 for eth_getBalance
     "https://polygon-rpc.com",
