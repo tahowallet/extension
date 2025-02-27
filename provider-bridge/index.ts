@@ -81,6 +81,7 @@ export default function connectProviderBridge(): void {
   // be as fast as possible, so we omit the chainId information
   // from that payload to save the service call
   port.postMessage({
+    id: "-1",
     request: { method: "tally_getConfig", origin: windowOriginAtLoadTime },
   })
 }
