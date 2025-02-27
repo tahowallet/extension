@@ -44,7 +44,7 @@ import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import { AccountSigner, SignerType } from "../../services/signing"
 import { SignerImportSource } from "../../services/internal-signer"
-import { assertUnreachable } from "../../lib/utils/type-guards"
+import { assertUnreachable, isDefined } from "../../lib/utils/type-guards"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import { TESTNET_TAHO } from "../../services/island"
 
@@ -264,7 +264,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
     return {
       combinedData: {
         assets: combinedAssetAmounts,
-        totalMainCurrencyValue: totalMainCurrencyAmount
+        totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
           ? formatCurrencyAmount(
               mainCurrencySymbol,
               totalMainCurrencyAmount,
@@ -317,7 +317,7 @@ export const selectCurrentAccountBalances = createSelector(
       allAssetAmounts,
       assetAmounts: combinedAssetAmounts,
       unverifiedAssetAmounts,
-      totalMainCurrencyValue: totalMainCurrencyAmount
+      totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
         ? formatCurrencyAmount(
             mainCurrencySymbol,
             totalMainCurrencyAmount,
