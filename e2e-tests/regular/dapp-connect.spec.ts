@@ -16,7 +16,7 @@ test.describe("dApp Connections", () => {
 
     const popupPage = walletPageHelper.getConnectPopup()
     // Get page after a specific action (e.g. clicking a link)
-    await dappPage.locator("text=Injected").click() // Opens a new tab
+    await dappPage.locator("text=Taho").click() // Opens a new tab
 
     await popupPage.ready()
 
@@ -35,7 +35,7 @@ test.describe("dApp Connections", () => {
 
     const popup2 = walletPageHelper.getConnectPopup()
 
-    await dappPage2.locator("text=Injected").click() // Opens a new tab
+    await dappPage2.locator("text=Taho").click() // Opens a new tab
     // Get page after a specific action (e.g. clicking a link)
 
     await popup2.ready()
@@ -65,7 +65,7 @@ test.describe("dApp Connections", () => {
       .click()
 
     // Get page after a specific action (e.g. clicking a link)
-    await dappPage.locator("text=Injected").click() // Opens a new tab
+    await dappPage.locator("text=Taho").click() // Opens a new tab
 
     await popup.ready()
     await popup.hideDappConnectPopup()
