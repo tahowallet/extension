@@ -86,6 +86,7 @@ export type SingleShotItem =
   | "default-connection-popover"
   | "mezo-eligible-notification"
   | "mezo-borrow-notification"
+  | "mezo-nft-notification"
 
 /**
  * Items that the user will view one time and either manually dismiss or that

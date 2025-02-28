@@ -1765,6 +1765,7 @@ export default class ReduxService extends BaseService<never> {
     // const uuid = this.analyticsService.analyticsUUID
     const hasSeenEligibilityPush = shownItems.has("mezo-eligible-notification")
     const hasSeenBorrowPush = shownItems.has("mezo-borrow-notification")
+    const hasSeenNFTNotification = shownItems.has("mezo-nft-notification")
 
     // fetch with uuid
     const campaignData = {
@@ -1787,8 +1788,9 @@ export default class ReduxService extends BaseService<never> {
     ) {
       this.notificationsService.notify({
         options: {
-          title: "Claim sats",
-          message: "Connect to mezo and get rewarded",
+          title:
+            "Enjoy 20,000 sats on Mezo testnet. Try borrow for an exclusive Mezo NFT!",
+          message: "Login to Mezo to claim",
           onDismiss: () =>
             this.preferenceService.markDismissableItemAsShown(
               "mezo-eligible-notification",
@@ -1810,8 +1812,32 @@ export default class ReduxService extends BaseService<never> {
     ) {
       this.notificationsService.notify({
         options: {
-          title: "Borrow now",
-          message: "Try borrowing and get an exclusive NFT",
+          title: "Borrow mUSD with testnet sats for an exclusive Mezo NFT!",
+          message: "Click to borrow mUSD ",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-borrow-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-borrow-notification",
+          )
+        },
+      })
+    }
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "borrowed" &&
+      !hasSeenNFTNotification
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title:
+            "Spend testnet mUSD in the Mezo store for an exclusive Mezo NFT!",
+          message: "Click to visit the Mezo Store",
           onDismiss: () =>
             this.preferenceService.markDismissableItemAsShown(
               "mezo-borrow-notification",

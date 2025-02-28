@@ -29,6 +29,7 @@ export type MezoClaimStatus =
   | "not-eligible"
   | "eligible"
   | "claimed-sats"
+  | "borrowed"
   | "campaign-complete"
 
 export type UIState = {

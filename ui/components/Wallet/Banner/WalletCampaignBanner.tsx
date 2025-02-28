@@ -6,14 +6,15 @@ import SharedIcon from "../../Shared/SharedIcon"
 import SharedBanner from "../../Shared/SharedBanner"
 
 const claimStateToBannerId = {
-  eligible: "mezo-claim-banner",
-  "claimed-sats": "mezo-borrow-banner",
+  eligible: "mezo-1-claim-banner",
+  "claimed-sats": "mezo-1-borrow-banner",
+  borrowed: "mezo-1-nft-banner",
 } as const
 
 export default function MezoWalletCampaignBanner({
   state,
 }: {
-  state: Extract<MezoClaimStatus, "eligible" | "claimed-sats">
+  state: Extract<MezoClaimStatus, "eligible" | "claimed-sats" | "borrowed">
 }): ReactElement {
   const onClick = () => {
     browser.permissions.request({ permissions: ["notifications"] })
