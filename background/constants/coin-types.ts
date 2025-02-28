@@ -5,6 +5,7 @@
  * Limited extension-specific list of coin types by asset symbol.
  */
 export const coinTypesByAssetSymbol = {
+  BTC: 0,
   ETH: 60,
   RBTC: 137,
   MATIC: 966,

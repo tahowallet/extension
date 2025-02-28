@@ -29,7 +29,7 @@ import {
 } from ".."
 
 import { HexString, NormalizedEVMAddress } from "../../types"
-import { SignedTransaction } from "../../networks"
+import { SignedTransaction, sameNetwork } from "../../networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { Eligible, ReferrerStats } from "../island/types"
 
@@ -1344,11 +1344,25 @@ export default class ReduxService extends BaseService<never> {
       "initializeSelectedAccount",
       async (dbAddressNetwork: AddressOnNetwork) => {
         if (dbAddressNetwork) {
+          // Wait until chain service starts and populates supported networks
+          await this.chainService.started()
           // TBD: naming the normal reducer and async thunks
           // Initialize redux from the db
           // !!! Important: this action belongs to a regular reducer.
           // NOT to be confused with the setNewCurrentAddress asyncThunk
-          this.store.dispatch(setSelectedAccount(dbAddressNetwork))
+          const { address, network } = dbAddressNetwork
+          let supportedNetwork = this.chainService.supportedNetworks.find(
+            (net) => sameNetwork(network, net),
+          )
+
+          if (!supportedNetwork) {
+            // eslint-disable-next-line prefer-destructuring
+            supportedNetwork = this.chainService.supportedNetworks[0]
+          }
+
+          this.store.dispatch(
+            setSelectedAccount({ address, network: supportedNetwork }),
+          )
         } else {
           // Update currentAddress in db if it's not set but it is in the store
           // should run only one time
