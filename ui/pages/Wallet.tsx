@@ -1,5 +1,9 @@
 import React, { ReactElement, useEffect, useMemo, useState } from "react"
+import dayjs from "dayjs"
+import isBetween from "dayjs/plugin/isBetween"
+
 import {
+  selectActiveCampaigns,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -28,6 +32,9 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
+import MezoWalletCampaignBanner from "../components/Wallet/Banner/WalletCampaignBanner"
+
+dayjs.extend(isBetween)
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
@@ -41,6 +48,7 @@ export default function Wallet(): ReactElement {
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
+  const activeCampaigns = useBackgroundSelector(selectActiveCampaigns)
 
   useEffect(() => {
     dispatch(
@@ -99,6 +107,20 @@ export default function Wallet(): ReactElement {
 
   panelNames.push(t("wallet.pages.activity"))
 
+  const renderMezoCampaignBanner = () => {
+    const campaign = activeCampaigns?.["mezo-claim"]
+    if (
+      !campaign ||
+      campaign.state === "not-eligible" ||
+      campaign.state === "campaign-complete" ||
+      !dayjs().isBetween(campaign.dateFrom, campaign.dateTo, "day", "[]")
+    ) {
+      return null
+    }
+
+    return <MezoWalletCampaignBanner state={campaign.state} />
+  }
+
   return (
     <>
       <div className="page_content">
@@ -116,6 +138,8 @@ export default function Wallet(): ReactElement {
         {isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
+        {isEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK) &&
+          renderMezoCampaignBanner()}
         {isEnabled(FeatureFlags.SHOW_ISLAND_UI) && <PortalBanner />}
         <div className="section">
           <SharedPanelSwitcher

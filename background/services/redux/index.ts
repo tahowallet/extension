@@ -1,6 +1,9 @@
-import { Runtime } from "webextension-polyfill"
+import browser, { Runtime } from "webextension-polyfill"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
+
+import isBetween from "dayjs/plugin/isBetween"
+import dayjs from "dayjs"
 
 import {
   isProbablyEVMAddress,
@@ -77,6 +80,8 @@ import {
   toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
+  MezoClaimStatus,
+  updateCampaignState,
 } from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -197,6 +202,10 @@ import {
 } from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
+import { checkIsBorrowingTx } from "../../lib/mezo"
+import { isDisabled } from "../../features"
+
+dayjs.extend(isBetween)
 
 export default class ReduxService extends BaseService<never> {
   /**
@@ -379,6 +388,10 @@ export default class ReduxService extends BaseService<never> {
         schedule: { delayInMinutes: 1.5 },
         handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
       },
+      checkMezoEligibility: {
+        schedule: { delayInMinutes: 1, periodInMinutes: 60 },
+        handler: () => this.checkMezoCampaignState(),
+      },
     })
 
     // Start up the redux store and set it up for proxying.
@@ -451,6 +464,7 @@ export default class ReduxService extends BaseService<never> {
     this.connectAbilitiesService()
     this.connectNFTsService()
     this.connectNotificationsService()
+    this.connectMezoCampaignListeners()
 
     await this.connectChainService()
 
@@ -1676,11 +1690,10 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on(
       "shouldShowNotifications",
       async (shouldShowNotifications: boolean) => {
-        const isPermissionGranted =
-          await this.preferenceService.setShouldShowNotifications(
-            shouldShowNotifications,
-          )
-        this.store.dispatch(toggleNotifications(isPermissionGranted))
+        await this.preferenceService.setShouldShowNotifications(
+          shouldShowNotifications,
+        )
+        this.store.dispatch(toggleNotifications(shouldShowNotifications))
       },
     )
 
@@ -1708,6 +1721,138 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
     })
+  }
+
+  async connectMezoCampaignListeners() {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
+    this.enrichmentService.emitter.on(
+      "enrichedEVMTransaction",
+      ({ transaction }) => {
+        if (checkIsBorrowingTx(transaction)) {
+          this.store.dispatch(
+            updateCampaignState(["mezo-claim", { state: "campaign-complete" }]),
+          )
+        }
+      },
+    )
+  }
+
+  async checkMezoCampaignState() {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
+    await this.started()
+    const accounts = await this.chainService.getAccountsToTrack()
+    const lastKnownState =
+      this.store.getState().ui.activeCampaigns?.["mezo-claim"]?.state
+
+    if (
+      !accounts.length ||
+      lastKnownState === "campaign-complete" ||
+      lastKnownState === "not-eligible"
+    ) {
+      return
+    }
+
+    const shownItems = new Set(
+      await this.preferenceService.getShownDismissableItems(),
+    )
+
+    // const uuid = this.analyticsService.analyticsUUID
+    const hasSeenEligibilityPush = shownItems.has("mezo-eligible-notification")
+    const hasSeenBorrowPush = shownItems.has("mezo-borrow-notification")
+    const hasSeenNFTNotification = shownItems.has("mezo-nft-notification")
+
+    // fetch with uuid
+    const campaignData = {
+      dateFrom: "2025-02-21",
+      dateTo: "2025-02-28",
+      state: "eligible" as MezoClaimStatus,
+    }
+
+    const isActiveCampaign = dayjs().isBetween(
+      campaignData.dateFrom,
+      campaignData.dateTo,
+      "day",
+      "[]",
+    )
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "eligible" &&
+      !hasSeenEligibilityPush
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title:
+            "Enjoy 20,000 sats on Mezo testnet. Try borrow for an exclusive Mezo NFT!",
+          message: "Login to Mezo to claim",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-eligible-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-eligible-notification",
+          )
+        },
+      })
+    }
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "claimed-sats" &&
+      !hasSeenBorrowPush
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title: "Borrow mUSD with testnet sats for an exclusive Mezo NFT!",
+          message: "Click to borrow mUSD ",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-borrow-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-borrow-notification",
+          )
+        },
+      })
+    }
+
+    if (
+      isActiveCampaign &&
+      campaignData.state === "borrowed" &&
+      !hasSeenNFTNotification
+    ) {
+      this.notificationsService.notify({
+        options: {
+          title:
+            "Spend testnet mUSD in the Mezo store for an exclusive Mezo NFT!",
+          message: "Click to visit the Mezo Store",
+          onDismiss: () =>
+            this.preferenceService.markDismissableItemAsShown(
+              "mezo-borrow-notification",
+            ),
+        },
+        callback: () => {
+          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.preferenceService.markDismissableItemAsShown(
+            "mezo-borrow-notification",
+          )
+        },
+      })
+    }
+
+    this.store.dispatch(updateCampaignState(["mezo-claim", campaignData]))
   }
 
   async updateAssetMetadata(

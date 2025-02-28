@@ -25,6 +25,13 @@ export const defaultSettings = {
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
 }
 
+export type MezoClaimStatus =
+  | "not-eligible"
+  | "eligible"
+  | "claimed-sats"
+  | "borrowed"
+  | "campaign-complete"
+
 export type UIState = {
   selectedAccount: AddressOnNetwork
   showingActivityDetailID: string | null
@@ -47,6 +54,13 @@ export type UIState = {
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
   accountSignerSettings: AccountSignerSettings[]
+  activeCampaigns: {
+    "mezo-claim"?: {
+      dateFrom: string
+      dateTo: string
+      state: MezoClaimStatus
+    }
+  }
 }
 
 export type Events = {
@@ -78,6 +92,7 @@ export const initialState: UIState = {
   snackbarMessage: "",
   slippageTolerance: 0.01,
   accountSignerSettings: [],
+  activeCampaigns: {},
 }
 
 const uiSlice = createSlice({
@@ -222,6 +237,22 @@ const uiSlice = createSlice({
       ...state,
       settings: { ...state.settings, autoLockInterval: payload },
     }),
+    updateCampaignState: <T extends keyof UIState["activeCampaigns"]>(
+      immerState: UIState,
+      {
+        payload,
+      }: {
+        payload: [T, Partial<UIState["activeCampaigns"][T]>]
+      },
+    ) => {
+      const [campaignId, update] = payload
+
+      immerState.activeCampaigns ??= {}
+      immerState.activeCampaigns[campaignId] = {
+        ...immerState.activeCampaigns[campaignId],
+        ...update,
+      }
+    },
   },
 })
 
@@ -246,6 +277,7 @@ export const {
   setSlippageTolerance,
   setAccountsSignerSettings,
   setAutoLockInterval,
+  updateCampaignState,
 } = uiSlice.actions
 
 export default uiSlice.reducer

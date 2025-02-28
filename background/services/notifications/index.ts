@@ -68,12 +68,8 @@ export default class NotificationsService extends BaseService<Events> {
     // does guard this, but if that ends up not being true, browser.notifications
     // will be undefined and all of this will explode.
 
-    this.preferenceService.emitter.on(
-      "initializeNotificationsPreferences",
-      async (isPermissionGranted) => {
-        this.isPermissionGranted = isPermissionGranted
-      },
-    )
+    this.isPermissionGranted =
+      await this.preferenceService.getShouldShowNotificationsPreferences()
 
     this.preferenceService.emitter.on(
       "setNotificationsPermission",
@@ -130,6 +126,7 @@ export default class NotificationsService extends BaseService<Events> {
       message: string
       contextMessage?: string
       type?: browser.Notifications.TemplateType
+      onDismiss?: () => void
     }
     callback?: () => void
   }) {
@@ -138,10 +135,12 @@ export default class NotificationsService extends BaseService<Events> {
     }
     const notificationId = uniqueId("notification-")
 
+    const { onDismiss = () => {}, ...createNotificationOptions } = options
+
     const notificationOptions = {
       type: "basic" as browser.Notifications.TemplateType,
       iconUrl: TAHO_ICON_URL,
-      ...options,
+      ...createNotificationOptions,
     }
 
     if (typeof callback === "function") {
@@ -149,6 +148,12 @@ export default class NotificationsService extends BaseService<Events> {
     }
 
     browser.notifications.create(notificationId, notificationOptions)
+
+    browser.notifications.onClosed.addListener((id, byUser) => {
+      if (id === notificationId && byUser) {
+        onDismiss()
+      }
+    })
   }
 
   public notifyXPDrop(callback?: () => void): void {
