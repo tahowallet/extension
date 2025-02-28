@@ -1,14 +1,33 @@
 import browser from "webextension-polyfill"
 import React, { ReactElement } from "react"
+import classNames from "classnames"
+
 import { MezoClaimStatus } from "@tallyho/tally-background/redux-slices/ui"
+import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
+
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
 import SharedBanner from "../../Shared/SharedBanner"
 
-const claimStateToBannerId = {
-  eligible: "mezo-1-claim-banner",
-  "claimed-sats": "mezo-1-borrow-banner",
-  borrowed: "mezo-1-nft-banner",
+const claimStateBanners = {
+  eligible: {
+    bannerId: "mezo-1-claim-banner",
+    title: "Get the gift of sats",
+    body: "Enjoy 20,000 sats on the Mezo testnet. Try borrow and get an exclusive Taho x Mezo NFT.",
+    action: "Login to claim",
+  },
+  "claimed-sats": {
+    bannerId: "mezo-1-borrow-banner",
+    title: "Bank on yourself",
+    body: "Use testnet sats to borrow mUSD and spend in the Mezo store. An exclusive NFT awaits.",
+    action: "Borrow mUSD",
+  },
+  borrowed: {
+    bannerId: "mezo-1-nft-banner",
+    title: "Treat yourself with mUSD",
+    body: "Spend testnet mUSD in the Mezo store. How about an exclusive Taho x Mezo NFT?",
+    action: "Visit the Mezo Store",
+  },
 } as const
 
 export default function MezoWalletCampaignBanner({
@@ -18,62 +37,109 @@ export default function MezoWalletCampaignBanner({
 }): ReactElement {
   const onClick = () => {
     browser.permissions.request({ permissions: ["notifications"] })
-    if (state === "eligible") {
-      browser.tabs.create({ url: "https://mezo.org/matsnet" })
-    } else {
-      browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+    switch (state) {
+      case "eligible":
+        browser.tabs.create({ url: "https://mezo.org/matsnet" })
+        break
+      case "claimed-sats":
+        browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+        break
+      case "borrowed":
+        browser.tabs.create({ url: "https://mezo.org/matsnet/store" })
+        break
+      default:
+        assertUnreachable(state)
+        break
     }
   }
 
   return (
     <SharedBanner
-      id={claimStateToBannerId[state]}
+      id={claimStateBanners[state].bannerId}
       canBeClosed
       style={{
-        padding: "8px 11px 0 0",
+        padding: 0,
         marginBottom: 18,
-        background:
-          "var(--gradients-bg-cards, radial-gradient(57.41% 54.95% at 64.58% 47.64%,rgba(27, 97, 94, 0.00) 0%,rgba(27, 97, 94, 0.20) 100%),linear-gradient(156deg,rgba(26, 94, 91, 0.90) 5.26%,rgba(26, 106, 103, 0.00) 71.95%),rgba(6, 48, 46, 0.50))",
+        background: "url('images/banner-bg.svg') center/cover no-repeat",
       }}
     >
-      <i className="portal_open_title_image" />
-      <h2 className="serif_header">Mezo.org</h2>
-      <p>Get rewarded</p>
-      <SharedButton
-        type="primary"
-        size="medium"
-        onClick={onClick}
-        style={{ marginTop: "5px" }}
-      >
-        {state === "eligible" ? "Claim sats" : "Try borrowing"}
-        <SharedIcon
-          icon="new_tab@2x.png"
-          width={16}
-          color="var(--castle-black)"
-          style={{ marginLeft: 5 }}
+      <div className="inner">
+        <i
+          className={classNames({
+            "banner-img-eligible": state === "eligible",
+            "banner-img-claimed-sats": state === "claimed-sats",
+            "banner-img-borrowed": state === "borrowed",
+          })}
         />
-      </SharedButton>
+        <h2 className="serif_header">{claimStateBanners[state].title}</h2>
+        <p
+          style={{
+            // Text should wrap earlier in this banner
+            maxWidth: state === "claimed-sats" ? "200" : undefined,
+          }}
+        >
+          {claimStateBanners[state].body}
+        </p>
+        <SharedButton type="tertiary" size="medium" onClick={onClick}>
+          {claimStateBanners[state].action}
+          <SharedIcon
+            icon="new_tab@2x.png"
+            width={16}
+            color="var(--trophy-gold)"
+            style={{ marginLeft: 5, marginBottom: 4 }}
+          />
+        </SharedButton>
+      </div>
       <style jsx>
         {`
-          .portal_open_title_image {
-            float: left;
-            width: 120px;
-            height: 117px;
-            background: url("./images/island/portal-image-title@2x.png");
-            background-size: cover;
-            margin-right: 10px;
+          .inner {
+            padding: 12px 0 0 22px;
+          }
+          .banner-img-eligible {
+            position: absolute;
+            right: 0;
+            width: 82px;
+            height: 126px;
+            background: url("./images/mezo-1.png") center/contain no-repeat;
+            margin-right: 21px;
+            margin-bottom: 9px;
+          }
+
+          .banner-img-claimed-sats {
+            position: absolute;
+            right: 0;
+            width: 82px;
+            height: 126px;
+            background: url("./images/mezo-2.png") center/contain no-repeat;
+            margin-right: 21px;
             margin-bottom: 12px;
+          }
+
+          .banner-img-borrowed {
+            display: block;
+            position: absolute;
+            right: 0;
+            width: 84px;
+            height: 92px;
+            background: url("./images/mezo-3.png") center/contain no-repeat;
+            margin-right: 5px;
+            margin-top: 28px;
           }
 
           h2 {
             font-size: 22px;
             line-height: 32px;
-            margin: 0 0 5px;
+            margin: 0 0;
+            color: var(--subscape);
           }
 
           p {
-            margin: 0 0 16px;
-            color: var(--green-40);
+            margin: 0;
+            max-width: 220px;
+            font-weight: 500;
+            font-size: 15px;
+            line-height: 18px;
+            color: #81aba8;
           }
         `}
       </style>
