@@ -42,7 +42,7 @@ const POPUP_HEIGHT = 600
 
 /**
  * Because browser.windows.create(...) takes a height and width that includes
- * the native browser window frame, some popups end up slighty smaller than
+ * the native browser window frame, some popups end up slightly smaller than
  * the popup triggered by the Tally toolbar icon. To fix this we resize the
  * window by the window frame's size.
  */
