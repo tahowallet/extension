@@ -11,6 +11,7 @@ import {
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
+  MEZO_TESTNET,
 } from "@tallyho/tally-background/constants"
 import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -24,6 +25,7 @@ import { i18n } from "../../_locales/i18n"
 
 export const productionNetworkInfo = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
+  [MEZO_TESTNET.chainID]: i18n.t("protocol.mezoTestnet"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
   [ARBITRUM_ONE.chainID]: i18n.t("protocol.l2"),
@@ -52,6 +54,23 @@ type TopMenuProtocolListProps = {
   onProtocolChange: (network: EVMNetwork) => void
 }
 
+/**
+ * Places Ethereum and Mezo network above other networks
+ */
+const sortByNetworkPriority = (a: EVMNetwork, b: EVMNetwork) => {
+  const getPriority = (network: EVMNetwork) => {
+    switch (true) {
+      case sameNetwork(ETHEREUM, network):
+        return 0
+      case sameNetwork(MEZO_TESTNET, network):
+        return 1
+      default:
+        return 2
+    }
+  }
+  return getPriority(a) - getPriority(b)
+}
+
 export default function TopMenuProtocolList({
   onProtocolChange,
 }: TopMenuProtocolListProps): ReactElement {
@@ -60,7 +79,10 @@ export default function TopMenuProtocolList({
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
 
-  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+  const builtinNetworks = productionNetworks
+    .filter(isBuiltInNetwork)
+    .sort(sortByNetworkPriority)
+
   const customNetworks = productionNetworks.filter(
     (network) => !isBuiltInNetwork(network),
   )
