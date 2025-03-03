@@ -104,7 +104,7 @@ export const ZK_SYNC: EVMNetwork = {
 }
 
 export const MEZO_TESTNET: EVMNetwork = {
-  name: "Matsnet",
+  name: "Mezo Testnet",
   baseAsset: MEZO_BTC,
   chainID: "31611",
   family: "EVM",

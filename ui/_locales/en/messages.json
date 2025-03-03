@@ -550,7 +550,8 @@
     "l2": "L2 scaling solution",
     "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
-    "connected": "Connected"
+    "connected": "Connected",
+    "featuredNetwork": "new"
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
