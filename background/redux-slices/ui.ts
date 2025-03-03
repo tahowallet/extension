@@ -15,7 +15,7 @@ import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
-  showTestNetworks: false,
+  showTestNetworks: true,
   showNotifications: undefined,
   collectAnalytics: false,
   showAnalyticsNotification: false,
@@ -77,6 +77,7 @@ export type Events = {
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
+  toggleShowTestNetworks: boolean
 }
 
 export const emitter = new Emittery<Events>()
@@ -362,6 +363,13 @@ export const updateAutoLockInterval = createBackgroundAsyncThunk(
     }
 
     emitter.emit("updateAutoLockInterval", parsedValue)
+  },
+)
+
+export const toggleShowTestNetworks = createBackgroundAsyncThunk(
+  "ui/toggleShowTestNetworks",
+  async (value: boolean) => {
+    await emitter.emit("toggleShowTestNetworks", value)
   },
 )
 

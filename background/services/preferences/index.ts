@@ -109,6 +109,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeSelectedAccount: AddressOnNetwork
   initializeShownDismissableItems: DismissableItem[]
   initializeNotificationsPreferences: boolean
+  initializeShowTestNetworks: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
@@ -161,6 +162,11 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit(
       "initializeNotificationsPreferences",
       await this.getShouldShowNotificationsPreferences(),
+    )
+
+    this.emitter.emit(
+      "initializeShowTestNetworks",
+      await this.getShowTestNetworks(),
     )
   }
 
@@ -288,6 +294,14 @@ export default class PreferenceService extends BaseService<Events> {
 
   async getCurrency(): Promise<FiatCurrency> {
     return (await this.db.getPreferences())?.currency
+  }
+
+  async setShowTestNetworks(value: boolean): Promise<void> {
+    await this.db.setShowTestNetworks(value)
+  }
+
+  async getShowTestNetworks(): Promise<boolean> {
+    return (await this.db.getPreferences()).showTestNetworks
   }
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {
