@@ -1360,10 +1360,7 @@ export default class ReduxService extends BaseService<never> {
         if (dbAddressNetwork) {
           // Wait until chain service starts and populates supported networks
           await this.chainService.started()
-          // TBD: naming the normal reducer and async thunks
-          // Initialize redux from the db
-          // !!! Important: this action belongs to a regular reducer.
-          // NOT to be confused with the setNewCurrentAddress asyncThunk
+
           const { address, network } = dbAddressNetwork
           let supportedNetwork = this.chainService.supportedNetworks.find(
             (net) => sameNetwork(network, net),
