@@ -72,21 +72,16 @@ export default function MezoWalletCampaignBanner({
           })}
         />
         <h2 className="serif_header">{claimStateBanners[state].title}</h2>
-        <p
-          style={{
-            // Text should wrap earlier in this banner
-            maxWidth: state === "claimed-sats" ? "200" : undefined,
-          }}
-        >
-          {claimStateBanners[state].body}
-        </p>
+        <p>{claimStateBanners[state].body}</p>
         <SharedButton type="tertiary" size="medium" onClick={onClick}>
           {claimStateBanners[state].action}
           <SharedIcon
             icon="new_tab@2x.png"
             width={16}
-            color="var(--trophy-gold)"
-            style={{ marginLeft: 5, marginBottom: 4 }}
+            color="currentColor"
+            style={{
+              marginLeft: 4,
+            }}
           />
         </SharedButton>
       </div>

@@ -1770,7 +1770,7 @@ export default class ReduxService extends BaseService<never> {
     // fetch with uuid
     const campaignData = {
       dateFrom: "2025-02-21",
-      dateTo: "2025-02-28",
+      dateTo: "2025-03-28",
       state: "eligible" as MezoClaimStatus,
     }
 
