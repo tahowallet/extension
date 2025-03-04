@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
-import { ETHEREUM } from "../constants"
+import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
@@ -11,6 +11,7 @@ import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { UNIXTime } from "../types"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
+import type { RootState } from "."
 
 export const defaultSettings = {
   hideDust: false,
@@ -366,13 +367,6 @@ export const updateAutoLockInterval = createBackgroundAsyncThunk(
   },
 )
 
-export const toggleShowTestNetworks = createBackgroundAsyncThunk(
-  "ui/toggleShowTestNetworks",
-  async (value: boolean) => {
-    await emitter.emit("toggleShowTestNetworks", value)
-  },
-)
-
 export const userActivityEncountered = createBackgroundAsyncThunk(
   "ui/userActivityEncountered",
   async (addressNetwork: AddressOnNetwork) => {
@@ -397,6 +391,22 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
       },
     )
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
+  },
+)
+
+export const toggleShowTestNetworks = createBackgroundAsyncThunk(
+  "ui/toggleShowTestNetworks",
+  async (value: boolean, { dispatch, getState }) => {
+    const state = getState() as RootState
+
+    const currentNetwork = state.ui.selectedAccount.network
+
+    // If user is on one of the built-in test networks, don't leave them stranded
+    if (TEST_NETWORK_BY_CHAIN_ID.has(currentNetwork.chainID)) {
+      dispatch(setSelectedNetwork(ETHEREUM))
+    }
+
+    await emitter.emit("toggleShowTestNetworks", value)
   },
 )
 
