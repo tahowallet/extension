@@ -1,4 +1,3 @@
-import browser from "webextension-polyfill"
 import { FiatCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
@@ -110,6 +109,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeSelectedAccount: AddressOnNetwork
   initializeShownDismissableItems: DismissableItem[]
   initializeNotificationsPreferences: boolean
+  initializeShowTestNetworks: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
@@ -162,6 +162,11 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit(
       "initializeNotificationsPreferences",
       await this.getShouldShowNotificationsPreferences(),
+    )
+
+    this.emitter.emit(
+      "initializeShowTestNetworks",
+      await this.getShowTestNetworks(),
     )
   }
 
@@ -277,18 +282,10 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async setShouldShowNotifications(shouldShowNotifications: boolean) {
-    if (shouldShowNotifications) {
-      const granted = await browser.permissions.request({
-        permissions: ["notifications"],
-      })
+    await this.db.setShouldShowNotifications(shouldShowNotifications)
+    this.emitter.emit("setNotificationsPermission", shouldShowNotifications)
 
-      await this.db.setShouldShowNotifications(granted)
-      this.emitter.emit("setNotificationsPermission", granted)
-
-      return granted
-    }
-
-    return false
+    return shouldShowNotifications
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
@@ -297,6 +294,14 @@ export default class PreferenceService extends BaseService<Events> {
 
   async getCurrency(): Promise<FiatCurrency> {
     return (await this.db.getPreferences())?.currency
+  }
+
+  async setShowTestNetworks(value: boolean): Promise<void> {
+    await this.db.setShowTestNetworks(value)
+  }
+
+  async getShowTestNetworks(): Promise<boolean> {
+    return (await this.db.getPreferences()).showTestNetworks
   }
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {

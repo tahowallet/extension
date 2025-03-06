@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Trans, useTranslation } from "react-i18next"
@@ -7,8 +8,8 @@ import {
   selectShowNotifications,
   setShouldShowNotifications,
   selectShowTestNetworks,
-  toggleTestNetworks,
   toggleHideBanners,
+  toggleShowTestNetworks,
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
@@ -176,11 +177,17 @@ export default function Settings(): ReactElement {
   }
 
   const toggleNotifications = (toggleValue: boolean) => {
-    dispatch(setShouldShowNotifications(toggleValue))
+    browser.permissions
+      .request({
+        permissions: ["notifications"],
+      })
+      .then((hasPermission) =>
+        dispatch(setShouldShowNotifications(hasPermission && toggleValue)),
+      )
   }
 
-  const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
-    dispatch(toggleTestNetworks(defaultWalletValue))
+  const toggleShowTestnets = (defaultWalletValue: boolean) => {
+    dispatch(toggleShowTestNetworks(defaultWalletValue))
   }
 
   const toggleShowUnverified = (toggleValue: boolean) => {
@@ -236,7 +243,7 @@ export default function Settings(): ReactElement {
     title: t("settings.enableTestNetworks"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => toggleShowTestNetworks(toggleValue)}
+        onChange={(toggleValue) => toggleShowTestnets(toggleValue)}
         value={showTestNetworks}
       />
     ),
