@@ -8,8 +8,8 @@ import {
   selectShowNotifications,
   setShouldShowNotifications,
   selectShowTestNetworks,
-  toggleTestNetworks,
   toggleHideBanners,
+  toggleShowTestNetworks,
   selectHideBanners,
   selectShowUnverifiedAssets,
   toggleShowUnverifiedAssets,
@@ -186,8 +186,8 @@ export default function Settings(): ReactElement {
       )
   }
 
-  const toggleShowTestNetworks = (defaultWalletValue: boolean) => {
-    dispatch(toggleTestNetworks(defaultWalletValue))
+  const toggleShowTestnets = (defaultWalletValue: boolean) => {
+    dispatch(toggleShowTestNetworks(defaultWalletValue))
   }
 
   const toggleShowUnverified = (toggleValue: boolean) => {
@@ -243,7 +243,7 @@ export default function Settings(): ReactElement {
     title: t("settings.enableTestNetworks"),
     component: () => (
       <SharedToggleButton
-        onChange={(toggleValue) => toggleShowTestNetworks(toggleValue)}
+        onChange={(toggleValue) => toggleShowTestnets(toggleValue)}
         value={showTestNetworks}
       />
     ),

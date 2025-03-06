@@ -65,6 +65,7 @@ export type Preferences = {
   analytics: AnalyticsPreferences
   autoLockInterval: UNIXTime
   shouldShowNotifications: boolean
+  showTestNetworks: boolean
 }
 
 /**
@@ -439,6 +440,19 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    this.version(22).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Omit<Preferences, "showTestNetworks">) => {
+          const update: Partial<Preferences> = {
+            showTestNetworks: true,
+          }
+
+          Object.assign(storedPreferences, update)
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -463,6 +477,16 @@ export class PreferenceDatabase extends Dexie {
       .toCollection()
       .modify((storedPreferences: Preferences) => {
         const update: Partial<Preferences> = { autoLockInterval: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
+  }
+
+  async setShowTestNetworks(newValue: boolean): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = { showTestNetworks: newValue }
 
         Object.assign(storedPreferences, update)
       })
