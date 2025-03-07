@@ -37,7 +37,7 @@ export const selectShowingActivityDetail = createSelector(
 )
 
 export const selectActiveCampaigns = createSelector(
-  (state: RootState) => state.ui.activeCampaigns,
+  (state: RootState) => state.ui.campaigns,
   (campaigns) => campaigns,
 )
 
