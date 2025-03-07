@@ -10,7 +10,8 @@ const windowOriginAtLoadTime = window.location.origin
 
 export default function connectProviderBridge(): void {
   const port = browser.runtime.connect({ name: EXTERNAL_PORT_NAME })
-  window.addEventListener("message", (event) => {
+
+  const onWindowMessageListener = (event: MessageEvent): void => {
     if (
       event.origin === windowOriginAtLoadTime && // we want to recieve msgs only from the in-page script
       event.source === window && // we want to recieve msgs only from the in-page script
@@ -50,9 +51,9 @@ export default function connectProviderBridge(): void {
 
       port.postMessage(event.data)
     }
-  })
+  }
 
-  port.onMessage.addListener((data) => {
+  const onPortMessageListener = (data: unknown): void => {
     if (!isObject(data)) {
       return
     }
@@ -74,8 +75,22 @@ export default function connectProviderBridge(): void {
       },
       windowOriginAtLoadTime,
     )
-  })
+  }
 
+  window.addEventListener("message", onWindowMessageListener)
+
+  port.onMessage.addListener(onPortMessageListener)
+
+  port.onDisconnect.addListener(() => {
+    window.removeEventListener("message", onWindowMessageListener)
+    port.onMessage.removeListener(onPortMessageListener)
+
+    // Log this for debugging
+    // eslint-disable-next-line no-console
+    console.log("Reconnecting port from contentScript")
+    connectProviderBridge()
+    window.dispatchEvent(new Event("tally:reconnectProvider"))
+  })
   // let's grab the internal config that also has chainId info
   // we send the config on port initialization, but that needs to
   // be as fast as possible, so we omit the chainId information
