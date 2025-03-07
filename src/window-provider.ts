@@ -531,5 +531,19 @@ function injectProvider(): void {
 }
 
 injectProvider()
+
 window.addEventListener("eip6963:requestProvider", announceProvider)
+
+window.addEventListener("tally:reconnectProvider", () => {
+  // Log this for debugging
+  // eslint-disable-next-line no-console
+  console.debug("Reconnecting window provider")
+  if (!window.ethereum) {
+    // Log this for debugging
+    // eslint-disable-next-line no-console
+    console.debug("Setting taho on window object")
+    injectProvider()
+  }
+})
+
 announceProvider()
