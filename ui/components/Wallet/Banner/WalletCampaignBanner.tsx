@@ -2,28 +2,32 @@ import browser from "webextension-polyfill"
 import React, { ReactElement } from "react"
 import classNames from "classnames"
 
-import { MezoClaimStatus } from "@tallyho/tally-background/redux-slices/ui"
+import MEZO_CAMPAIGN, {
+  MezoClaimStatus,
+} from "@tallyho/tally-background/services/campaign/matsnet-nft"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
+import { markDismissableItemAsShown } from "@tallyho/tally-background/redux-slices/ui"
 
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
 import SharedBanner from "../../Shared/SharedBanner"
+import { useBackgroundDispatch } from "../../../hooks"
 
 const claimStateBanners = {
   eligible: {
-    bannerId: "mezo-1-claim-banner",
+    bannerId: MEZO_CAMPAIGN.bannerIds.eligible,
     title: "Get the gift of sats",
     body: "Enjoy 20,000 sats on the Mezo testnet. Try borrow and get an exclusive Taho x Mezo NFT.",
     action: "Login to claim",
   },
-  "claimed-sats": {
-    bannerId: "mezo-1-borrow-banner",
+  "can-borrow": {
+    bannerId: MEZO_CAMPAIGN.bannerIds.canBorrow,
     title: "Bank on yourself",
     body: "Use testnet sats to borrow mUSD and spend in the Mezo store. An exclusive NFT awaits.",
     action: "Borrow mUSD",
   },
-  borrowed: {
-    bannerId: "mezo-1-nft-banner",
+  "can-claim-nft": {
+    bannerId: MEZO_CAMPAIGN.bannerIds.canClaimNFT,
     title: "Treat yourself with mUSD",
     body: "Spend testnet mUSD in the Mezo store. How about an exclusive Taho x Mezo NFT?",
     action: "Visit the Mezo Store",
@@ -33,23 +37,47 @@ const claimStateBanners = {
 export default function MezoWalletCampaignBanner({
   state,
 }: {
-  state: Extract<MezoClaimStatus, "eligible" | "claimed-sats" | "borrowed">
+  state: Extract<MezoClaimStatus, "eligible" | "can-borrow" | "can-claim-nft">
 }): ReactElement {
+  const dispatch = useBackgroundDispatch()
+
   const onClick = () => {
     browser.permissions.request({ permissions: ["notifications"] })
     switch (state) {
       case "eligible":
-        browser.tabs.create({ url: "https://mezo.org/matsnet" })
-        break
-      case "claimed-sats":
         browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
         break
-      case "borrowed":
+      case "can-borrow":
+        browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+        break
+      case "can-claim-nft":
         browser.tabs.create({ url: "https://mezo.org/matsnet/store" })
         break
       default:
         assertUnreachable(state)
+    }
+  }
+
+  // Turn off related notifications
+  const handleBannerDismiss = () => {
+    switch (state) {
+      case "eligible":
+        dispatch(
+          markDismissableItemAsShown(MEZO_CAMPAIGN.notificationIds.eligible),
+        )
         break
+      case "can-borrow":
+        dispatch(
+          markDismissableItemAsShown(MEZO_CAMPAIGN.notificationIds.canBorrow),
+        )
+        break
+      case "can-claim-nft":
+        dispatch(
+          markDismissableItemAsShown(MEZO_CAMPAIGN.notificationIds.canBorrow),
+        )
+        break
+      default:
+        assertUnreachable(state)
     }
   }
 
@@ -57,6 +85,7 @@ export default function MezoWalletCampaignBanner({
     <SharedBanner
       id={claimStateBanners[state].bannerId}
       canBeClosed
+      onDismiss={() => handleBannerDismiss()}
       style={{
         padding: 0,
         marginBottom: 18,
@@ -67,8 +96,8 @@ export default function MezoWalletCampaignBanner({
         <i
           className={classNames({
             "banner-img-eligible": state === "eligible",
-            "banner-img-claimed-sats": state === "claimed-sats",
-            "banner-img-borrowed": state === "borrowed",
+            "banner-img-claimed-sats": state === "can-borrow",
+            "banner-img-borrowed": state === "can-claim-nft",
           })}
         />
         <h2 className="serif_header">{claimStateBanners[state].title}</h2>
@@ -81,6 +110,7 @@ export default function MezoWalletCampaignBanner({
             color="currentColor"
             style={{
               marginLeft: 4,
+              marginTop: 1,
             }}
           />
         </SharedButton>

@@ -17,6 +17,8 @@ import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
+import MATSNET_NFT_CAMPAIGN from "@tallyho/tally-background/services/campaign/matsnet-nft"
+
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -108,7 +110,7 @@ export default function Wallet(): ReactElement {
   panelNames.push(t("wallet.pages.activity"))
 
   const renderMezoCampaignBanner = () => {
-    const campaign = activeCampaigns?.["mezo-claim"]
+    const campaign = activeCampaigns?.[MATSNET_NFT_CAMPAIGN.id]
     if (
       !campaign ||
       campaign.state === "not-eligible" ||

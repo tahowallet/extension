@@ -12,6 +12,11 @@ import { createBackgroundAsyncThunk } from "./utils"
 import { UNIXTime } from "../types"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
 import type { RootState } from "."
+import {
+  CampaignIds,
+  Campaigns,
+  FilterCampaignsById,
+} from "../services/campaign/types"
 
 export const defaultSettings = {
   hideDust: false,
@@ -24,14 +29,8 @@ export const defaultSettings = {
   hideBanners: false,
   useFlashbots: false,
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+  campaigns: {},
 }
-
-export type MezoClaimStatus =
-  | "not-eligible"
-  | "eligible"
-  | "claimed-sats"
-  | "borrowed"
-  | "campaign-complete"
 
 export type UIState = {
   selectedAccount: AddressOnNetwork
@@ -55,12 +54,15 @@ export type UIState = {
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
   accountSignerSettings: AccountSignerSettings[]
-  activeCampaigns: {
-    "mezo-claim"?: {
-      dateFrom: string
-      dateTo: string
-      state: MezoClaimStatus
-    }
+  // Active user campaigns
+  campaigns: {
+    /**
+     * Some hash used to invalidate cached data and update UI
+     */
+    [campaignId in CampaignIds]?: FilterCampaignsById<
+      Campaigns,
+      campaignId
+    >["data"]
   }
 }
 
@@ -79,6 +81,7 @@ export type Events = {
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
   toggleShowTestNetworks: boolean
+  clearNotification: string
 }
 
 export const emitter = new Emittery<Events>()
@@ -94,7 +97,7 @@ export const initialState: UIState = {
   snackbarMessage: "",
   slippageTolerance: 0.01,
   accountSignerSettings: [],
-  activeCampaigns: {},
+  campaigns: {},
 }
 
 const uiSlice = createSlice({
@@ -239,21 +242,15 @@ const uiSlice = createSlice({
       ...state,
       settings: { ...state.settings, autoLockInterval: payload },
     }),
-    updateCampaignState: <T extends keyof UIState["activeCampaigns"]>(
+    updateCampaignsState: (
       immerState: UIState,
       {
         payload,
       }: {
-        payload: [T, Partial<UIState["activeCampaigns"][T]>]
+        payload: UIState["campaigns"]
       },
     ) => {
-      const [campaignId, update] = payload
-
-      immerState.activeCampaigns ??= {}
-      immerState.activeCampaigns[campaignId] = {
-        ...immerState.activeCampaigns[campaignId],
-        ...update,
-      }
+      immerState.campaigns = payload
     },
   },
 })
@@ -279,7 +276,7 @@ export const {
   setSlippageTolerance,
   setAccountsSignerSettings,
   setAutoLockInterval,
-  updateCampaignState,
+  updateCampaignsState,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -304,6 +301,13 @@ export const deleteAnalyticsData = createBackgroundAsyncThunk(
   "ui/deleteAnalyticsData",
   async () => {
     await emitter.emit("deleteAnalyticsData")
+  },
+)
+
+export const clearNotification = createBackgroundAsyncThunk(
+  "ui/clearNotification",
+  async (id: string) => {
+    await emitter.emit("clearNotification", id)
   },
 )
 
