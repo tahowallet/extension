@@ -81,6 +81,7 @@ export type Events = {
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
   toggleShowTestNetworks: boolean
+  clearNotification: string
 }
 
 export const emitter = new Emittery<Events>()
@@ -300,6 +301,13 @@ export const deleteAnalyticsData = createBackgroundAsyncThunk(
   "ui/deleteAnalyticsData",
   async () => {
     await emitter.emit("deleteAnalyticsData")
+  },
+)
+
+export const clearNotification = createBackgroundAsyncThunk(
+  "ui/clearNotification",
+  async (id: string) => {
+    await emitter.emit("clearNotification", id)
   },
 )
 

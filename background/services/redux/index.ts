@@ -1596,6 +1596,10 @@ export default class ReduxService extends BaseService<never> {
     this.islandService.emitter.on("newXpDrop", () => {
       this.notificationsService.notifyXPDrop()
     })
+
+    uiSliceEmitter.on("clearNotification", (id: string) =>
+      this.notificationsService.clearNotification(id),
+    )
   }
 
   async unlockInternalSigners(password: string): Promise<boolean> {
