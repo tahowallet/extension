@@ -1709,10 +1709,12 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on(
       "shouldShowNotifications",
       async (shouldShowNotifications: boolean) => {
-        await this.preferenceService.setShouldShowNotifications(
-          shouldShowNotifications,
-        )
-        this.store.dispatch(toggleNotifications(shouldShowNotifications))
+        const notificationsEnabled =
+          await this.preferenceService.setShouldShowNotifications(
+            shouldShowNotifications,
+          )
+
+        this.store.dispatch(toggleNotifications(notificationsEnabled))
       },
     )
 
