@@ -16,7 +16,7 @@ type Props = {
 
 const isFeaturedNetwork = (network: EVMNetwork) => {
   if (sameNetwork(network, MEZO_TESTNET)) {
-    return Date.now() < new Date("2025-04-10").getTime()
+    return Date.now() < new Date("2025-04-17").getTime()
   }
   return false
 }
@@ -50,7 +50,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="title">
           {network.name}
           {isFeaturedNetwork(network) && (
-            <span className="featured">{t("protocol.featuredNetwork")}</span>
+            <span className="featured">{t("protocol.newNetwork")}</span>
           )}
         </div>
         <div className="sub_title">

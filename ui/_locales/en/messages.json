@@ -551,7 +551,7 @@
     "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected",
-    "featuredNetwork": "new"
+    "newNetwork": "new"
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
