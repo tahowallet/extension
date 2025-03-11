@@ -12,6 +12,7 @@ import {
   POLYGON,
   ROOTSTOCK,
   MEZO_TESTNET,
+  TEST_NETWORK_BY_CHAIN_ID,
 } from "@tallyho/tally-background/constants"
 import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
@@ -26,7 +27,7 @@ import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
 
-export const productionNetworkInfo = {
+export const productionNetworkDescription = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
@@ -39,7 +40,7 @@ export const productionNetworkInfo = {
 
 const disabledChainIDs = [ARBITRUM_NOVA.chainID]
 
-const testNetworkInfo = {
+const testNetworkDescription = {
   [MEZO_TESTNET.chainID]: i18n.t("protocol.mezoTestnet"),
   [SEPOLIA.chainID]: i18n.t("protocol.testnet"),
   [ARBITRUM_SEPOLIA.chainID]: i18n.t("protocol.testnet"),
@@ -47,21 +48,6 @@ const testNetworkInfo = {
 
 type TopMenuProtocolListProps = {
   onProtocolChange: (network: EVMNetwork) => void
-}
-
-/**
- * Places Mezo network above other networks
- */
-const sortByNetworkPriority = (a: EVMNetwork, b: EVMNetwork) => {
-  const getPriority = (network: EVMNetwork) => {
-    switch (true) {
-      case sameNetwork(MEZO_TESTNET, network):
-        return 0
-      default:
-        return 1
-    }
-  }
-  return getPriority(a) - getPriority(b)
 }
 
 export default function TopMenuProtocolList({
@@ -79,7 +65,10 @@ export default function TopMenuProtocolList({
     (network) => !isBuiltInNetwork(network),
   )
 
-  const testNetworks = testnetNetworks.sort(sortByNetworkPriority)
+  const testNetworks = [...TEST_NETWORK_BY_CHAIN_ID].flatMap(
+    (chainId) =>
+      testnetNetworks.find((network) => network.chainID === chainId) ?? [],
+  )
 
   return (
     <div className="container">
@@ -91,7 +80,7 @@ export default function TopMenuProtocolList({
               key={network.name}
               network={network}
               info={
-                productionNetworkInfo[network.chainID] ||
+                productionNetworkDescription[network.chainID] ||
                 t("protocol.compatibleChain")
               }
               onSelect={onProtocolChange}
@@ -130,7 +119,7 @@ export default function TopMenuProtocolList({
                   isSelected={sameNetwork(currentNetwork, network)}
                   key={network.name}
                   network={network}
-                  info={testNetworkInfo[network.chainID]}
+                  info={testNetworkDescription[network.chainID]}
                   onSelect={onProtocolChange}
                 />
               ))}
