@@ -3,7 +3,7 @@ import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 
 import {
-  selectActiveCampaigns,
+  selectCampaigns,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -50,7 +50,7 @@ export default function Wallet(): ReactElement {
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
-  const activeCampaigns = useBackgroundSelector(selectActiveCampaigns)
+  const activeCampaigns = useBackgroundSelector(selectCampaigns)
 
   useEffect(() => {
     dispatch(
