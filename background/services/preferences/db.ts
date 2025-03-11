@@ -83,17 +83,22 @@ export type ManuallyDismissableItem =
  * be used for tours, or for popups that can be retriggered but will not
  * auto-display more than once.
  */
-export type SingleShotItem =
-  | "default-connection-popover"
-  | "mezo-eligible-notification"
-  | "mezo-borrow-notification"
-  | "mezo-nft-notification"
+export type SingleShotItem = "default-connection-popover"
 
+/**
+ * Items that the user might see only during campaigns.
+ * These are prefixed to distinguish them from common UI
+ * dismissable items
+ */
+export type CampaignDismissableItem = `campaign::${string}`
 /**
  * Items that the user will view one time and either manually dismiss or that
  * will remain auto-collapsed after first view.
  */
-export type DismissableItem = ManuallyDismissableItem | SingleShotItem
+export type DismissableItem =
+  | ManuallyDismissableItem
+  | SingleShotItem
+  | CampaignDismissableItem
 
 type DismissableItemEntry = {
   id: DismissableItem

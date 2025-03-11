@@ -37,6 +37,10 @@ export default class NotificationsService extends BaseService<Events> {
     [notificationId: string]: NotificationClickHandler
   } = {}
 
+  private dismissHandlers: {
+    [notificationId: string]: (id: string, byUser: boolean) => void
+  } = {}
+
   private lastXpDropNotificationInMs?: number
 
   /*
@@ -59,8 +63,7 @@ export default class NotificationsService extends BaseService<Events> {
     const boundHandleNotificationClicks =
       this.handleNotificationClicks.bind(this)
 
-    const boundCleanUpNotificationClickHandler =
-      this.cleanUpNotificationClickHandler.bind(this)
+    const boundHandleNotificationClose = this.handleNotificationClose.bind(this)
 
     // Preference and listener setup.
     // NOTE: Below, we assume if we got `shouldShowNotifications` as true, the
@@ -73,22 +76,31 @@ export default class NotificationsService extends BaseService<Events> {
 
     this.preferenceService.emitter.on(
       "setNotificationsPermission",
-      (isPermissionGranted) => {
+      async (isPermissionGranted) => {
         this.isPermissionGranted = isPermissionGranted
 
         if (this.isPermissionGranted) {
           browser.notifications.onClicked.addListener(
             boundHandleNotificationClicks,
           )
+
           browser.notifications.onClosed.addListener(
-            boundCleanUpNotificationClickHandler,
+            boundHandleNotificationClose,
           )
         } else {
+          // CLear up notifications
+          const notifications = await browser.notifications.getAll()
+
+          Object.keys(notifications).forEach((id) => {
+            this.clearNotification(id)
+          })
+
           browser.notifications.onClicked.removeListener(
             boundHandleNotificationClicks,
           )
+
           browser.notifications.onClosed.removeListener(
-            boundCleanUpNotificationClickHandler,
+            boundHandleNotificationClose,
           )
         }
       },
@@ -96,9 +108,7 @@ export default class NotificationsService extends BaseService<Events> {
 
     if (this.isPermissionGranted) {
       browser.notifications.onClicked.addListener(boundHandleNotificationClicks)
-      browser.notifications.onClosed.addListener(
-        boundCleanUpNotificationClickHandler,
-      )
+      browser.notifications.onClosed.addListener(boundHandleNotificationClose)
     }
   }
 
@@ -108,8 +118,22 @@ export default class NotificationsService extends BaseService<Events> {
   }
 
   // Clears the click handler for the given notification id.
-  protected cleanUpNotificationClickHandler(notificationId: string): void {
+  protected handleNotificationClose(
+    notificationId: string,
+    byUser: boolean,
+  ): void {
     delete this.clickHandlers?.[notificationId]
+
+    this.dismissHandlers?.[notificationId]?.(notificationId, byUser)
+
+    delete this.dismissHandlers?.[notificationId]
+  }
+
+  clearNotification(id: string) {
+    browser.notifications.clear(id)
+
+    delete this.clickHandlers?.[id]
+    delete this.dismissHandlers?.[id]
   }
 
   /**
@@ -127,15 +151,21 @@ export default class NotificationsService extends BaseService<Events> {
       contextMessage?: string
       type?: browser.Notifications.TemplateType
       onDismiss?: () => void
+      customId?: string
     }
     callback?: () => void
   }) {
     if (!this.isPermissionGranted) {
       return
     }
-    const notificationId = uniqueId("notification-")
 
-    const { onDismiss = () => {}, ...createNotificationOptions } = options
+    const {
+      onDismiss = () => {},
+      customId,
+      ...createNotificationOptions
+    } = options
+
+    const notificationId = customId ?? uniqueId("notification-")
 
     const notificationOptions = {
       type: "basic" as browser.Notifications.TemplateType,
@@ -147,13 +177,9 @@ export default class NotificationsService extends BaseService<Events> {
       this.clickHandlers[notificationId] = callback
     }
 
-    browser.notifications.create(notificationId, notificationOptions)
+    this.dismissHandlers[notificationId] = onDismiss
 
-    browser.notifications.onClosed.addListener((id, byUser) => {
-      if (id === notificationId && byUser) {
-        onDismiss()
-      }
-    })
+    browser.notifications.create(notificationId, notificationOptions)
   }
 
   public notifyXPDrop(callback?: () => void): void {
