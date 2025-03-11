@@ -142,7 +142,8 @@ export default class CampaignService extends BaseService<Events> {
       MEZO_CAMPAIGN.notificationIds.canClaimNFT,
     )
 
-    const BASE_URL = "http://localhost:8787/api/v2/external/mezoification"
+    const BASE_URL =
+      "https://ps5ymo.tunnel.pyjam.as/api/v2/external/mezoification"
     // fetch with uuid
     const campaignData: MezoCampaignState = await fetchJson(
       `${BASE_URL}?id=${installId}`,
