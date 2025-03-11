@@ -398,6 +398,23 @@ export default class ReduxService extends BaseService<never> {
       },
     })
 
+    const checkCampaign = () => this.campaignService.checkMezoCampaignState()
+
+    const getInstallId = () => this.analyticsService.analyticsUUID
+
+    const setInstallId = async (uuid: string) => {
+      await this.analyticsService.setAnalyticsUUID(uuid)
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      await this.campaignService["db"]["campaigns"].delete("mezo-nft-claim")
+    }
+
+    // eslint-disable-next-line no-restricted-globals
+    Object.assign(self, {
+      checkCampaign,
+      getInstallId,
+      setInstallId,
+    })
+
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(this, savedReduxState)
     this.initializeRedux()

@@ -33,6 +33,11 @@ interface Events extends ServiceLifecycleEvents {
 export default class AnalyticsService extends BaseService<Events> {
   #analyticsUUID: string | undefined = undefined
 
+  async setAnalyticsUUID(uuid: string) {
+    await this.db.setAnalyticsUUID(uuid)
+    this.#analyticsUUID = uuid
+  }
+
   /*
    * Create a new AnalyticsService. The service isn't initialized until
    * startService() is called and resolved.

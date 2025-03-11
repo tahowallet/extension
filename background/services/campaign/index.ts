@@ -1,8 +1,10 @@
+import { fetchJson } from "@ethersproject/web"
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import browser from "webextension-polyfill"
 import { isDisabled } from "../../features"
 import { checkIsBorrowingTx } from "../../lib/mezo"
+import { isConfirmedEVMTransaction } from "../../networks"
 import AnalyticsService from "../analytics"
 import BaseService from "../base"
 import ChainService from "../chain"
@@ -11,8 +13,7 @@ import NotificationsService from "../notifications"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CampaignDatabase, getOrCreateDB } from "./db"
-import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
-import { isConfirmedEVMTransaction } from "../../networks"
+import MEZO_CAMPAIGN, { MezoCampaignState } from "./matsnet-nft"
 import { Campaigns } from "./types"
 import { AnalyticsEvent } from "../../lib/posthog"
 
@@ -111,7 +112,7 @@ export default class CampaignService extends BaseService<Events> {
     await this.started()
     const accounts = await this.chainService.getAccountsToTrack()
     // TODO: needs to be sent to API
-    // const installId = await this.analyticsService.analyticsUUID
+    const installId = this.analyticsService.analyticsUUID
 
     const campaign = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
     const lastKnownState = campaign?.data?.state
@@ -141,12 +142,11 @@ export default class CampaignService extends BaseService<Events> {
       MEZO_CAMPAIGN.notificationIds.canClaimNFT,
     )
 
+    const BASE_URL = "http://localhost:8787/api/v2/external/mezoification"
     // fetch with uuid
-    const campaignData = {
-      dateFrom: "2025-02-21",
-      dateTo: "2025-03-28",
-      state: "eligible" as MezoClaimStatus,
-    }
+    const campaignData: MezoCampaignState = await fetchJson(
+      `${BASE_URL}?id=${installId}`,
+    )
 
     if (campaignData.state === "not-eligible") {
       await this.db.upsertCampaign({
