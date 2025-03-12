@@ -16,6 +16,7 @@ import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
 import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
 import logger from "../../lib/logger"
+import { SECOND } from "../../constants"
 
 dayjs.extend(isBetween)
 
@@ -24,9 +25,15 @@ interface Events extends ServiceLifecycleEvents {
    * Replaces UI state with active campaigns data
    */
   campaignStatusUpdate: Campaigns[]
+  /**
+   * Emitted after a campaign status is checked
+   */
+  campaignChecked: string
 }
 
 export default class CampaignService extends BaseService<Events> {
+  #checkCampaignStateTimer: ReturnType<typeof setTimeout> | null = null
+
   static create: ServiceCreatorFunction<
     Events,
     CampaignService,
@@ -64,9 +71,22 @@ export default class CampaignService extends BaseService<Events> {
     super({
       checkMezoEligibility: {
         schedule: { delayInMinutes: 1, periodInMinutes: 60 },
-        handler: () => this.checkMezoCampaignState(),
+        handler: () => this.queuedMezoCampaignCheck(),
       },
     })
+  }
+
+  private queuedMezoCampaignCheck() {
+    // If there's already a queued check do nothing
+    if (this.#checkCampaignStateTimer) return
+
+    this.#checkCampaignStateTimer = setTimeout(() => {
+      this.#checkCampaignStateTimer = null
+
+      this.checkMezoCampaignState().then(() => {
+        this.emitter.emit("campaignChecked", MEZO_CAMPAIGN.id)
+      })
+    }, 10 * SECOND)
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -74,6 +94,16 @@ export default class CampaignService extends BaseService<Events> {
     if (isDisabled("SUPPORT_MEZO_NETWORK")) {
       return
     }
+
+    // If it's the first account the user onboards queue a campaign status check
+    // Note: This could happen if user has an eligible wallet install but
+    // removed all accounts
+    this.chainService.emitter.on("newAccountToTrack", async () => {
+      const trackedAccounts = await this.chainService.getAccountsToTrack()
+      if (trackedAccounts.length === 1) {
+        this.queuedMezoCampaignCheck()
+      }
+    })
 
     this.enrichmentService.emitter.on(
       "enrichedEVMTransaction",
@@ -108,6 +138,20 @@ export default class CampaignService extends BaseService<Events> {
   async checkMezoSatsDrop(address: string) {
     const campaign = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
 
+    // if the wallet has just initialized and we haven't had a chance to fetch campaign state
+    // queue a status check and retry after it completes
+    if (!campaign) {
+      this.queuedMezoCampaignCheck()
+
+      this.emitter.once("campaignChecked").then((campaignId) => {
+        if (campaignId === MEZO_CAMPAIGN.id) {
+          this.checkMezoSatsDrop(address)
+        }
+      })
+
+      return
+    }
+
     const lastKnownState = campaign?.data?.state
 
     // Only check sats drop if wallet is at 'eligible' state
@@ -124,10 +168,15 @@ export default class CampaignService extends BaseService<Events> {
       await fetchJson(uri.toString()).catch((error) =>
         logger.error("Error while checking Mezo sats drop", error),
       )
+
+      // Queue another status check so we update the campaign state
+      // API will check if user has already borrowed
+      this.queuedMezoCampaignCheck()
     }
   }
 
-  async checkMezoCampaignState() {
+  // This isn't meant to be called directly but rather, through queuedMezoCampaignCheck
+  private async checkMezoCampaignState() {
     if (isDisabled("SUPPORT_MEZO_NETWORK")) {
       return
     }
