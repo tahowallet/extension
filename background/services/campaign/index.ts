@@ -1,6 +1,7 @@
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import browser from "webextension-polyfill"
+import { fetchJson } from "@ethersproject/web"
 import { isDisabled } from "../../features"
 import { checkIsBorrowingTx } from "../../lib/mezo"
 import AnalyticsService from "../analytics"
@@ -14,6 +15,7 @@ import { CampaignDatabase, getOrCreateDB } from "./db"
 import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
 import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
+import logger from "../../lib/logger"
 
 dayjs.extend(isBetween)
 
@@ -100,6 +102,29 @@ export default class CampaignService extends BaseService<Events> {
 
     const campaigns = await this.db.getActiveCampaigns()
     this.emitter.emit("campaignStatusUpdate", campaigns)
+  }
+
+  // This should only be called during dapp connection
+  async checkMezoSatsDrop(address: string) {
+    const campaign = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
+
+    const lastKnownState = campaign?.data?.state
+
+    // Only check sats drop if wallet is at 'eligible' state
+    if (lastKnownState === "eligible") {
+      const uri = new URL(
+        "https://portal.api.test.mezo.org/api/v2/external/campaigns/mezoification/check-drop",
+      )
+
+      const installId = this.analyticsService.analyticsUUID
+
+      uri.searchParams.set("id", installId)
+      uri.searchParams.set("address", address)
+
+      await fetchJson(uri.toString()).catch((error) =>
+        logger.error("Error while checking Mezo sats drop", error),
+      )
+    }
   }
 
   async checkMezoCampaignState() {
