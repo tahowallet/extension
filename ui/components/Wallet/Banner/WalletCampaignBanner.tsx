@@ -17,19 +17,19 @@ const claimStateBanners = {
   eligible: {
     bannerId: MEZO_CAMPAIGN.bannerIds.eligible,
     title: "Get the gift of sats",
-    body: "Enjoy 20,000 sats on the Mezo testnet. Try borrow and get an exclusive Taho x Mezo NFT.",
+    body: "Enjoy 20,000 sats on the Mezo testnet. Try Mezo borrow and get an exclusive Taho x Mezo NFT.",
     action: "Login to claim",
   },
   "can-borrow": {
     bannerId: MEZO_CAMPAIGN.bannerIds.canBorrow,
-    title: "Bank on yourself",
-    body: "Use testnet sats to borrow mUSD and spend in the Mezo store. An exclusive NFT awaits.",
+    title: "Put those sats to work",
+    body: "Use testnet sats to borrow mUSD and spend it in the Mezo Market. The exclusive NFT awaits.",
     action: "Borrow mUSD",
   },
   "can-claim-nft": {
     bannerId: MEZO_CAMPAIGN.bannerIds.canClaimNFT,
-    title: "Treat yourself with mUSD",
-    body: "Spend testnet mUSD in the Mezo store. How about an exclusive Taho x Mezo NFT?",
+    title: "The exclusive NFT awaits",
+    body: "Spend testnet mUSD in the Mezo Market. How about an exclusive Taho x Mezo NFT?",
     action: "Visit the Mezo Store",
   },
 } as const

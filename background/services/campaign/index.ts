@@ -12,7 +12,7 @@ import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CampaignDatabase, getOrCreateDB } from "./db"
 import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
-import { isTransactionWithReceipt } from "../../networks"
+import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
 
 dayjs.extend(isBetween)
@@ -83,7 +83,7 @@ export default class CampaignService extends BaseService<Events> {
         }
 
         if (
-          isTransactionWithReceipt(transaction) &&
+          isConfirmedEVMTransaction(transaction) &&
           checkIsBorrowingTx(transaction)
         ) {
           await this.db.updateCampaignData(MEZO_CAMPAIGN.id, {

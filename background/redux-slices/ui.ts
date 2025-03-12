@@ -400,17 +400,17 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
 
 export const toggleShowTestNetworks = createBackgroundAsyncThunk(
   "ui/toggleShowTestNetworks",
-  async (value: boolean, { dispatch, getState }) => {
+  async (updatedValue: boolean, { dispatch, getState }) => {
     const state = getState() as RootState
 
     const currentNetwork = state.ui.selectedAccount.network
 
     // If user is on one of the built-in test networks, don't leave them stranded
-    if (TEST_NETWORK_BY_CHAIN_ID.has(currentNetwork.chainID)) {
+    if (!updatedValue && TEST_NETWORK_BY_CHAIN_ID.has(currentNetwork.chainID)) {
       dispatch(setSelectedNetwork(ETHEREUM))
     }
 
-    await emitter.emit("toggleShowTestNetworks", value)
+    await emitter.emit("toggleShowTestNetworks", updatedValue)
   },
 )
 
