@@ -1745,6 +1745,13 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async connectCampaignService() {
+    this.providerBridgeService.emitter.on("getMezoClaimData", async () =>
+      this.providerBridgeService.emitter.emit(
+        "mezoClaimData",
+        this.analyticsService.analyticsUUID,
+      ),
+    )
+
     this.campaignService.emitter.on("campaignStatusUpdate", (campaigns) => {
       this.store.dispatch(
         updateCampaignsState(
