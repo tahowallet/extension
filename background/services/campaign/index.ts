@@ -180,7 +180,9 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet" })
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.eligible,
           )
@@ -203,7 +205,9 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canBorrow,
           )
@@ -227,7 +231,9 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canClaimNFT,
           )
