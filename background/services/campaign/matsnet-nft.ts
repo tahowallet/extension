@@ -22,6 +22,8 @@ export type MezoCampaign = {
 const prefixWithCampaignId = (str: string): `campaign::${string}` =>
   `campaign::${CAMPAIGN_ID}-${str}`
 
+export const NFT_COLLECTION_ID = prefixWithCampaignId("nft-collection")
+
 export const IS_ELIGIBLE_NOTIFICATION_ID = prefixWithCampaignId(
   "eligible-notification",
 )
