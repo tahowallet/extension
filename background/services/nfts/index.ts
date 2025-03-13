@@ -13,7 +13,11 @@ import { getOrCreateDB, NFTsDatabase, FreshCollectionsMap } from "./db"
 import { getUNIXTimestamp, normalizeEVMAddress } from "../../lib/utils"
 import { MEZO_TESTNET, MINUTE } from "../../constants"
 import { sameNetwork } from "../../networks"
-import { NFT_COLLECTION_ID } from "../campaign/matsnet-nft"
+import {
+  NFT_COLLECTION_ID,
+  NFT_CONTRACT_ADDRESS,
+} from "../campaign/matsnet-nft"
+import { isDisabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   isReloadingNFTs: boolean
@@ -179,9 +183,13 @@ export default class NFTsService extends BaseService<Events> {
   }
 
   async fetchCampaignNFTs(accounts: AddressOnNetwork[]): Promise<void> {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
     const provider = this.chainService.providerForNetworkOrThrow(MEZO_TESTNET)
     const contract = new Contract(
-      "0x2A22371b53E6070AF6e38dfFC4228496b469D7FA",
+      NFT_CONTRACT_ADDRESS,
       [
         "function balanceOf(address, uint256) view returns (uint256)",
         "function uri(uint256) view returns (string)",
