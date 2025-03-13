@@ -15,7 +15,7 @@ import {
   SwapQuoteRequest,
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import { debounce, DebouncedFunc } from "lodash"
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   isSameAsset,
@@ -24,7 +24,9 @@ import {
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
-const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 500
+// Added a more appropriate debounce time based on UX best practices
+// 300ms is more responsive while still preventing excessive API calls
+const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 300
 
 export type QuoteUpdate = {
   type: QuoteType
@@ -41,6 +43,8 @@ export type QuoteUpdate = {
   quoteRequest: SwapQuoteRequest
   timestamp: number
   amount: string
+  // Added error property to better handle and display error states
+  error?: string
 }
 
 export const fetchQuote = async ({
@@ -137,9 +141,15 @@ type RequestQuoteUpdateConfig = {
   transactionSettings?: QuoteUpdate["swapTransactionSettings"]
 }
 
+// Added retry functionality and improved error handling
 export function useSwapQuote(useSwapConfig: {
   savedQuoteRequest?: SwapQuoteRequest
   initialSwapSettings: QuoteUpdate["swapTransactionSettings"]
+  // Added optional retry configuration
+  retryOptions?: {
+    maxRetries: number
+    retryInterval: number
+  }
 }): {
   quote: QuoteUpdate | null
   loading: boolean
@@ -148,11 +158,19 @@ export function useSwapQuote(useSwapConfig: {
   requestQuoteUpdate: DebouncedFunc<
     (config: RequestQuoteUpdateConfig) => Promise<void>
   >
+  // Added reset function to clear current quote
+  resetQuote: () => void
 } {
   const dispatch = useBackgroundDispatch()
   const [initialTransactionSettings] = useState(
     useSwapConfig.initialSwapSettings,
   )
+
+  // Default retry options
+  const retryOptions = useSwapConfig.retryOptions || {
+    maxRetries: 3,
+    retryInterval: 1000,
+  }
 
   // Quoted amounts
   const [quoteRequestState, setQuoteRequestState] = useSetState<{
@@ -174,6 +192,43 @@ export function useSwapQuote(useSwapConfig: {
   const mountedRef = useIsMounted()
 
   const requestId = useRef(0)
+  const retryCount = useRef(0)
+
+  // Added reset quote function
+  const resetQuote = useCallback(() => {
+    setQuoteRequestState({
+      quote: null,
+      loading: false,
+      loadingType: undefined,
+    })
+  }, [setQuoteRequestState])
+
+  // Auto-refresh quote every 30 seconds to ensure it doesn't get stale
+  useEffect(() => {
+    let refreshInterval: NodeJS.Timeout | undefined
+
+    if (quoteRequestState.quote && !quoteRequestState.loading) {
+      refreshInterval = setInterval(() => {
+        const currentQuote = quoteRequestState.quote
+
+        if (currentQuote) {
+          requestQuoteUpdate({
+            type: currentQuote.type,
+            amount: currentQuote.amount,
+            sellAsset: currentQuote.sellAsset,
+            buyAsset: currentQuote.buyAsset,
+            transactionSettings: currentQuote.swapTransactionSettings,
+          })
+        }
+      }, 30000) // Refresh every 30 seconds
+    }
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval)
+      }
+    }
+  }, [quoteRequestState.quote, quoteRequestState.loading])
 
   const requestQuoteUpdate = useCallback(
     async (config: RequestQuoteUpdateConfig) => {
@@ -204,21 +259,61 @@ export function useSwapQuote(useSwapConfig: {
 
       try {
         requestId.current = id
+        retryCount.current = 0
 
-        result = await fetchQuote({
+        const attemptFetch = async (attempt: number): Promise<QuoteUpdate> => {
+          try {
+            return await fetchQuote({
+              type,
+              amount,
+              sellAsset,
+              buyAsset,
+              getQuoteFn: (quoteRequest) =>
+                dispatch(
+                  fetchSwapPrice({ quoteRequest }),
+                ) as unknown as Promise<
+                  AsyncThunkFulfillmentType<typeof fetchSwapPrice>
+                >,
+              network: requestContext.network,
+              settings: transactionSettings,
+            })
+          } catch (error) {
+            if (attempt < retryOptions.maxRetries) {
+              // Exponential backoff for retries
+              const backoffTime =
+                retryOptions.retryInterval * Math.pow(2, attempt - 1)
+              await new Promise((resolve) => setTimeout(resolve, backoffTime))
+              return attemptFetch(attempt + 1)
+            }
+            throw error
+          }
+        }
+
+        result = await attemptFetch(1)
+      } catch (error) {
+        logger.error("Error fetching quote!", error)
+        // Set error state in the quote result
+        result = {
           type,
           amount,
           sellAsset,
           buyAsset,
-          getQuoteFn: (quoteRequest) =>
-            dispatch(fetchSwapPrice({ quoteRequest })) as unknown as Promise<
-              AsyncThunkFulfillmentType<typeof fetchSwapPrice>
-            >,
-          network: requestContext.network,
-          settings: transactionSettings,
-        })
-      } catch (error) {
-        logger.error("Error fetching quote!", error)
+          needsApproval: false,
+          swapTransactionSettings: transactionSettings,
+          quoteRequest: {
+            assets: { sellAsset, buyAsset },
+            amount:
+              type === "getSellAmount"
+                ? { buyAmount: amount }
+                : { sellAmount: amount },
+            slippageTolerance: transactionSettings.slippageTolerance,
+            network: requestContext.network,
+            gasPrice: 0n,
+          },
+          timestamp: Date.now(),
+          error:
+            error instanceof Error ? error.message : "Failed to fetch quote",
+        }
       } finally {
         const hasPendingRequests = requestId.current !== id
 
@@ -231,7 +326,13 @@ export function useSwapQuote(useSwapConfig: {
         })
       }
     },
-    [dispatch, requestContextRef, mountedRef, setQuoteRequestState],
+    [
+      dispatch,
+      requestContextRef,
+      mountedRef,
+      setQuoteRequestState,
+      retryOptions,
+    ],
   )
 
   const [debouncedRequest] = useState(() => {
@@ -256,6 +357,7 @@ export function useSwapQuote(useSwapConfig: {
     loadingSellAmount,
     loadingBuyAmount,
     requestQuoteUpdate: debouncedRequest,
+    resetQuote,
   }
 }
 
