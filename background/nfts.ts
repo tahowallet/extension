@@ -6,12 +6,13 @@ import {
   AVALANCHE,
   BINANCE_SMART_CHAIN,
   ZK_SYNC,
+  MEZO_TESTNET,
 } from "./constants"
 import { EVMNetwork } from "./networks"
 // Networks that are not added to this struct will
 // not have an in-wallet NFT tab
 export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
-  [chainID: string]: ("simplehash" | "poap")[]
+  [chainID: string]: ("simplehash" | "poap" | "campaign")[]
 } = {
   [ETHEREUM.chainID]: ["simplehash", "poap"],
   [POLYGON.chainID]: ["simplehash"],
@@ -20,10 +21,12 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
   [AVALANCHE.chainID]: ["simplehash"],
   [BINANCE_SMART_CHAIN.chainID]: ["simplehash"],
   [ZK_SYNC.chainID]: ["simplehash"],
+  [MEZO_TESTNET.chainID]: ["campaign"],
 }
 
 export const NFT_PROVIDER_TO_CHAIN = {
   poap: [ETHEREUM.chainID],
+  campaign: [MEZO_TESTNET.chainID],
   simplehash: [
     ETHEREUM.chainID,
     POLYGON.chainID,

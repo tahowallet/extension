@@ -16,6 +16,7 @@ import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
 import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
 import logger from "../../lib/logger"
+import { AnalyticsEvent } from "../../lib/posthog"
 import { SECOND } from "../../constants"
 
 dayjs.extend(isBetween)
@@ -254,7 +255,12 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet" })
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER,
+          )
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.eligible,
           )
@@ -277,7 +283,12 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.CAMPAIGN_MEZO_NFT_BORROW_BANNER,
+          )
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canBorrow,
           )
@@ -301,7 +312,12 @@ export default class CampaignService extends BaseService<Events> {
             ),
         },
         callback: () => {
-          browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+          this.analyticsService.sendAnalyticsEvent(
+            AnalyticsEvent.CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER,
+          )
+          browser.tabs.create({
+            url: "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+          })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canClaimNFT,
           )
