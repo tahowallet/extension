@@ -77,6 +77,8 @@ import {
   toggleNotifications,
   setShownDismissableItems,
   dismissableItemMarkedAsShown,
+  toggleTestNetworks,
+  updateCampaignsState,
 } from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -197,6 +199,7 @@ import {
 } from "../../redux-slices/prices"
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
+import CampaignService from "../campaign"
 
 export default class ReduxService extends BaseService<never> {
   /**
@@ -261,6 +264,14 @@ export default class ReduxService extends BaseService<never> {
       ledgerService,
     )
 
+    const campaignService = CampaignService.create(
+      chainService,
+      analyticsService,
+      preferenceService,
+      enrichmentService,
+      notificationsService,
+    )
+
     const savedReduxState = readAndMigrateState()
 
     return new this(
@@ -281,6 +292,7 @@ export default class ReduxService extends BaseService<never> {
       await nftsService,
       await abilitiesService,
       await notificationsService,
+      await campaignService,
     )
   }
 
@@ -373,6 +385,11 @@ export default class ReduxService extends BaseService<never> {
      * A promise to the Notifications service which takes care of observing and delivering notifications
      */
     private notificationsService: NotificationsService,
+
+    /**
+     * A promise to the Campaign service which takes care of managing current and upcoming campaigns
+     */
+    private campaignService: CampaignService,
   ) {
     super({
       initialLoadWaitExpired: {
@@ -406,6 +423,7 @@ export default class ReduxService extends BaseService<never> {
       this.nftsService.startService(),
       this.abilitiesService.startService(),
       this.notificationsService.startService(),
+      this.campaignService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -429,6 +447,7 @@ export default class ReduxService extends BaseService<never> {
       this.nftsService.stopService(),
       this.abilitiesService.stopService(),
       this.notificationsService.stopService(),
+      this.campaignService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -451,6 +470,7 @@ export default class ReduxService extends BaseService<never> {
     this.connectAbilitiesService()
     this.connectNFTsService()
     this.connectNotificationsService()
+    this.connectCampaignService()
 
     await this.connectChainService()
 
@@ -1341,15 +1361,24 @@ export default class ReduxService extends BaseService<never> {
     )
 
     this.preferenceService.emitter.on(
+      "initializeShowTestNetworks",
+      async (showTestNetworks: boolean) => {
+        await this.store.dispatch(toggleTestNetworks(showTestNetworks))
+      },
+    )
+
+    uiSliceEmitter.on("toggleShowTestNetworks", async (value) => {
+      await this.preferenceService.setShowTestNetworks(value)
+      await this.store.dispatch(toggleTestNetworks(value))
+    })
+
+    this.preferenceService.emitter.on(
       "initializeSelectedAccount",
       async (dbAddressNetwork: AddressOnNetwork) => {
         if (dbAddressNetwork) {
           // Wait until chain service starts and populates supported networks
           await this.chainService.started()
-          // TBD: naming the normal reducer and async thunks
-          // Initialize redux from the db
-          // !!! Important: this action belongs to a regular reducer.
-          // NOT to be confused with the setNewCurrentAddress asyncThunk
+
           const { address, network } = dbAddressNetwork
           let supportedNetwork = this.chainService.supportedNetworks.find(
             (net) => sameNetwork(network, net),
@@ -1567,6 +1596,10 @@ export default class ReduxService extends BaseService<never> {
     this.islandService.emitter.on("newXpDrop", () => {
       this.notificationsService.notifyXPDrop()
     })
+
+    uiSliceEmitter.on("clearNotification", (id: string) =>
+      this.notificationsService.clearNotification(id),
+    )
   }
 
   async unlockInternalSigners(password: string): Promise<boolean> {
@@ -1676,11 +1709,12 @@ export default class ReduxService extends BaseService<never> {
     uiSliceEmitter.on(
       "shouldShowNotifications",
       async (shouldShowNotifications: boolean) => {
-        const isPermissionGranted =
+        const notificationsEnabled =
           await this.preferenceService.setShouldShowNotifications(
             shouldShowNotifications,
           )
-        this.store.dispatch(toggleNotifications(isPermissionGranted))
+
+        this.store.dispatch(toggleNotifications(notificationsEnabled))
       },
     )
 
@@ -1707,6 +1741,25 @@ export default class ReduxService extends BaseService<never> {
 
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
+    })
+  }
+
+  async connectCampaignService() {
+    this.providerBridgeService.emitter.on("getMezoClaimData", async () =>
+      this.providerBridgeService.emitter.emit(
+        "mezoClaimData",
+        this.analyticsService.analyticsUUID,
+      ),
+    )
+
+    this.campaignService.emitter.on("campaignStatusUpdate", (campaigns) => {
+      this.store.dispatch(
+        updateCampaignsState(
+          Object.fromEntries(
+            campaigns.map((campaign) => [campaign.id, campaign.data]),
+          ),
+        ),
+      )
     })
   }
 
