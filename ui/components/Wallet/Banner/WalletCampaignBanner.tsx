@@ -6,7 +6,11 @@ import MEZO_CAMPAIGN, {
   MezoClaimStatus,
 } from "@tallyho/tally-background/services/campaign/matsnet-nft"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
-import { markDismissableItemAsShown } from "@tallyho/tally-background/redux-slices/ui"
+import { AnalyticsEvent } from "@tallyho/tally-background/lib/posthog"
+import {
+  markDismissableItemAsShown,
+  sendEvent,
+} from "@tallyho/tally-background/redux-slices/ui"
 
 import SharedButton from "../../Shared/SharedButton"
 import SharedIcon from "../../Shared/SharedIcon"
@@ -45,13 +49,22 @@ export default function MezoWalletCampaignBanner({
     browser.permissions.request({ permissions: ["notifications"] })
     switch (state) {
       case "eligible":
-        browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+        dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER))
+        browser.tabs.create({
+          url: "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+        })
         break
       case "can-borrow":
-        browser.tabs.create({ url: "https://mezo.org/matsnet/borrow" })
+        dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_BORROW_BANNER))
+        browser.tabs.create({
+          url: "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+        })
         break
       case "can-claim-nft":
-        browser.tabs.create({ url: "https://mezo.org/matsnet/store" })
+        dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER))
+        browser.tabs.create({
+          url: "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+        })
         break
       default:
         assertUnreachable(state)
