@@ -12,7 +12,7 @@ import NotificationsService from "../notifications"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CampaignDatabase, getOrCreateDB } from "./db"
-import MEZO_CAMPAIGN, { MezoClaimStatus } from "./matsnet-nft"
+import MEZO_CAMPAIGN, { MezoCampaignState } from "./matsnet-nft"
 import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
 import logger from "../../lib/logger"
@@ -177,9 +177,7 @@ export default class CampaignService extends BaseService<Events> {
 
     // Only check sats drop if wallet is at 'eligible' state
     if (lastKnownState === "eligible") {
-      const uri = new URL(
-        "https://portal.api.test.mezo.org/api/v2/external/campaigns/mezoification/check-drop",
-      )
+      const uri = new URL(MEZO_CAMPAIGN.apiUrls.checkDrop)
 
       const installId = this.analyticsService.analyticsUUID
 
@@ -204,8 +202,7 @@ export default class CampaignService extends BaseService<Events> {
 
     await this.started()
     const accounts = await this.chainService.getAccountsToTrack()
-    // TODO: needs to be sent to API
-    // const installId = await this.analyticsService.analyticsUUID
+    const installId = this.analyticsService.analyticsUUID
 
     const campaign = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
     const lastKnownState = campaign?.data?.state
@@ -236,11 +233,9 @@ export default class CampaignService extends BaseService<Events> {
     )
 
     // fetch with uuid
-    const campaignData = {
-      dateFrom: "2025-02-21",
-      dateTo: "2025-03-28",
-      state: "eligible" as MezoClaimStatus,
-    }
+    const campaignData: MezoCampaignState = await fetchJson(
+      `${MEZO_CAMPAIGN.apiUrls.status}?id=${installId}`,
+    )
 
     if (campaignData.state === "not-eligible") {
       await this.db.upsertCampaign({
@@ -279,7 +274,7 @@ export default class CampaignService extends BaseService<Events> {
             AnalyticsEvent.CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER,
           )
           browser.tabs.create({
-            url: "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+            url: MEZO_CAMPAIGN.bannerUrls.eligible,
           })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.eligible,
@@ -307,7 +302,7 @@ export default class CampaignService extends BaseService<Events> {
             AnalyticsEvent.CAMPAIGN_MEZO_NFT_BORROW_BANNER,
           )
           browser.tabs.create({
-            url: "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+            url: MEZO_CAMPAIGN.bannerUrls.canBorrow,
           })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canBorrow,
@@ -336,7 +331,7 @@ export default class CampaignService extends BaseService<Events> {
             AnalyticsEvent.CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER,
           )
           browser.tabs.create({
-            url: "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+            url: MEZO_CAMPAIGN.bannerUrls.canClaimNFT,
           })
           this.preferenceService.markDismissableItemAsShown(
             MEZO_CAMPAIGN.notificationIds.canClaimNFT,
