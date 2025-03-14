@@ -1,3 +1,5 @@
+import { getDynamicSettingValue } from "../../features"
+
 export type MezoClaimStatus =
   | "not-eligible"
   | "eligible"
@@ -11,7 +13,9 @@ export type MezoCampaignState = {
   state: MezoClaimStatus
 }
 
-export const NFT_CONTRACT_ADDRESS = "0x2A22371b53E6070AF6e38dfFC4228496b469D7FA"
+export const NFT_CONTRACT_ADDRESS = getDynamicSettingValue(
+  "USE_CAMPAIGN_NFT_CONTRACT",
+)
 
 export const CAMPAIGN_ID = "mezo-nft-claim"
 

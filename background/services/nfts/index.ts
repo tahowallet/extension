@@ -183,7 +183,7 @@ export default class NFTsService extends BaseService<Events> {
   }
 
   async fetchCampaignNFTs(accounts: AddressOnNetwork[]): Promise<void> {
-    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+    if (isDisabled("SUPPORT_MEZO_NETWORK") || !NFT_CONTRACT_ADDRESS) {
       return
     }
 
