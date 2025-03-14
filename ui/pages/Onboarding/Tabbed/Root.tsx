@@ -55,6 +55,7 @@ function Navigation({
           gap: 8,
           border: "1px dashed white",
           padding: 4,
+          zIndex: 10000,
         }}
       >
         <textarea
