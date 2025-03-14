@@ -1323,10 +1323,17 @@ export default class ReduxService extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      if (permission.origin === "https://mezo.org") {
+        this.campaignService.checkMezoSatsDrop(permission.accountAddress)
+      }
+    })
+
+    providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
         origin: permission.origin,
         chainId: permission.chainID,
       })
+
       await Promise.all(
         this.chainService.supportedNetworks.map(async (network) => {
           await this.providerBridgeService.grantPermission({
