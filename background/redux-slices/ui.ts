@@ -524,3 +524,11 @@ export function selectShouldShowDismissableItem(
     return !itemWasShown
   }
 }
+
+export const demoSetInstallid = createBackgroundAsyncThunk(
+  "demo/changeInstallId",
+  (someid: string) => {
+    // eslint-disable-next-line  no-restricted-globals, @typescript-eslint/no-explicit-any
+    ;(self as any)?.setInstallId(someid)
+  },
+)

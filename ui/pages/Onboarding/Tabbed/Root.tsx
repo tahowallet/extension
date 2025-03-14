@@ -9,6 +9,7 @@ import {
 } from "react-router-dom"
 
 import classNames from "classnames"
+import { demoSetInstallid } from "@tallyho/tally-background/redux-slices/ui"
 
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
@@ -21,7 +22,7 @@ import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
-import { useIsOnboarding } from "../../../hooks"
+import { useBackgroundDispatch, useIsOnboarding } from "../../../hooks"
 import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
 function Navigation({
@@ -40,8 +41,54 @@ function Navigation({
     !isOnboarding && OnboardingRoutes.ADD_WALLET,
   ].filter((path): path is Exclude<typeof path, false> => !!path)
 
+  const dispatch = useBackgroundDispatch()
+
   return (
     <section className="onboarding_container">
+      <div
+        style={{
+          position: "absolute",
+          left: 20,
+          top: 20,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          border: "1px dashed white",
+          padding: 4,
+        }}
+      >
+        <textarea
+          style={{
+            background: "white",
+            color: "black",
+            fontSize: "small",
+            width: 350,
+          }}
+          id="installId"
+          placeholder="put install id here"
+        />
+        <button
+          type="button"
+          style={{
+            border: "1px solid red",
+            borderRadius: 4,
+            padding: "8px 4px",
+          }}
+          onClick={() => {
+            const textArea: HTMLTextAreaElement | null =
+              document.getElementById("installId") as HTMLTextAreaElement
+
+            if (textArea) {
+              dispatch(demoSetInstallid(textArea.value.trim())).then(() =>
+                // eslint-disable-next-line no-alert
+                alert("done!"),
+              )
+            }
+          }}
+        >
+          change install id
+        </button>
+      </div>
       <style jsx>
         {`
           section {
