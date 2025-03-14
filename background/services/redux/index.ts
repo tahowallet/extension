@@ -398,7 +398,7 @@ export default class ReduxService extends BaseService<never> {
       },
     })
 
-    const checkCampaign = () => this.campaignService.checkMezoCampaignState()
+    const checkCampaign = () => this.campaignService.queueMezoCampaignCheck()
 
     const getInstallId = () => this.analyticsService.analyticsUUID
 
