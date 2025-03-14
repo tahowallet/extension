@@ -208,6 +208,8 @@ export const getFilteredCollections = (
   return collections
     .filter(
       (collection) =>
+        collection.nftCount &&
+        collection.nftCount > 0 &&
         isEnabledFilter(collection.id, filters.collections) &&
         isEnabledFilter(collection.owner, filters.accounts),
     )
