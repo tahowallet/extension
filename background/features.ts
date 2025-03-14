@@ -1,9 +1,40 @@
 /**
+ * Used to keep in memory feature settings that were asynchronously
+ * resolved during extension startup.
+ */
+export const storage = new Map<string, string>()
+
+export const DynamicSettingsStorageKey = "tally-dynamic-settings"
+
+/**
  * Feature flags which are set at build time.
  */
 const BuildTimeFlag = {
   SWITCH_RUNTIME_FLAGS: process.env.SWITCH_RUNTIME_FLAGS === "true",
 } as const
+
+/**
+ * Build time settings that can be overriden with in memory values.
+ * These settings must not be modified during runtime as it could cause
+ * unexpected behaviour.
+ */
+export const DynamicSettings = {
+  USE_CAMPAIGN_NFT_CONTRACT: process.env.USE_CAMPAIGN_NFT_CONTRACT,
+  SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK,
+}
+
+type DynamicSettingType = keyof typeof DynamicSettings
+
+type DynamicFlagType = Extract<DynamicSettingType, "SUPPORT_MEZO_NETWORK">
+
+export const getDynamicSettingValue = <K extends DynamicSettingType>(
+  flag: K,
+) => {
+  const initialValue = DynamicSettings[flag]
+  const storedValue = storage.get(flag)
+
+  return storedValue ?? initialValue
+}
 
 /**
  * Feature flags which are set at runtime.
@@ -27,14 +58,16 @@ export const RuntimeFlag = {
   SUPPORT_THE_ISLAND: process.env.SUPPORT_THE_ISLAND === "true",
   SUPPORT_THE_ISLAND_ON_TENDERLY:
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true",
-  SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK === "true",
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag
 
 export type RuntimeFlagType = keyof typeof RuntimeFlag
 
-export type FeatureFlagType = RuntimeFlagType | BuildTimeFlagType
+export type FeatureFlagType =
+  | RuntimeFlagType
+  | BuildTimeFlagType
+  | DynamicFlagType
 
 /**
  * Object with all feature flags. The key is the same as the value.
@@ -69,8 +102,15 @@ export function isEnabled(
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
     flag in BuildTimeFlag
 
+  const isDynamicSetting = (flag: string): flag is DynamicFlagType =>
+    flag in DynamicSettings
+
   if (isBuildTimeFlag(flagName)) {
     return BuildTimeFlag[flagName]
+  }
+
+  if (isDynamicSetting(flagName)) {
+    return getDynamicSettingValue(flagName) === "true"
   }
 
   if (checkBrowserStorage) {
