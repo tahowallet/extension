@@ -46,8 +46,31 @@ export const isActiveCampaign = (state: MezoClaimStatus) => {
   return activeStates.some((value) => value === state)
 }
 
+const API_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_API_ORIGIN
+const DAPP_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_DAPP_ORIGIN
+
+const STORE_BASE_URL = DAPP_URL_OVERRIDE || "https://mezo.org"
+
+const API_BASE_URL = API_URL_OVERRIDE || "https://portal.api.mezo.org"
+
+/**
+ * Changes the origin of one URL to the origin of another
+ */
+const adjustURLOrigin = (url: string, baseURL: string) =>
+  new URL(new URL(url).pathname, baseURL).toString()
+
 const MATSNET_NFT_CAMPAIGN = {
   id: CAMPAIGN_ID,
+  api: {
+    checkDrop: adjustURLOrigin(
+      "https://portal.api.mezo.org/api/v2/external/campaigns/mezoification/check-drop",
+      API_BASE_URL,
+    ),
+    status: adjustURLOrigin(
+      "https://portal.api.mezo.org/api/v2/external/campaigns/mezoification",
+      API_BASE_URL,
+    ),
+  },
   notificationIds: {
     eligible: IS_ELIGIBLE_NOTIFICATION_ID,
     canBorrow: BORROW_AD_NOTIFICATION_ID,
@@ -57,6 +80,20 @@ const MATSNET_NFT_CAMPAIGN = {
     eligible: prefixWithCampaignId("eligible-banner"),
     canBorrow: prefixWithCampaignId("borrow-banner"),
     canClaimNFT: prefixWithCampaignId("claim-nft-banner"),
+  },
+  bannerUrls: {
+    eligible: adjustURLOrigin(
+      "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+      STORE_BASE_URL,
+    ),
+    canBorrow: adjustURLOrigin(
+      "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+      STORE_BASE_URL,
+    ),
+    canClaimNFT: adjustURLOrigin(
+      "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+      STORE_BASE_URL,
+    ),
   },
   isActive: isActiveCampaign,
 } as const

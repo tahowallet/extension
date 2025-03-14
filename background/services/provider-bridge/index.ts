@@ -181,14 +181,23 @@ export default class ProviderBridgeService extends BaseService<Events> {
           break
         }
         case "tally_getMezoClaimData":
-          if (origin === "https://mezo.org") {
-            // This is a hack, but we have no other way of accessing this data
-            // though it should probably be set post install on the Preference
-            // service
-            const installId = this.emitter.once("mezoClaimData")
+          {
+            const skipOriginChecks = true
 
-            this.emitter.emit("getMezoClaimData", undefined)
-            response.result = [await installId]
+            if (
+              skipOriginChecks ||
+              origin === "https://mezo.org" ||
+              new URL(url).hostname === "localhost"
+            ) {
+              // chrome.runtime.onConnect.addListener(port => port.onMessage.)
+              // This is a hack, but we have no other way of accessing this data
+              // though it should probably be set post install on the Preference
+              // service
+              const installId = this.emitter.once("mezoClaimData")
+
+              this.emitter.emit("getMezoClaimData", undefined)
+              response.result = [await installId]
+            }
           }
           break
         default:

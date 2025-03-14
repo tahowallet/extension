@@ -398,6 +398,23 @@ export default class ReduxService extends BaseService<never> {
       },
     })
 
+    const checkCampaign = () => this.campaignService.queueMezoCampaignCheck()
+
+    const getInstallId = () => this.analyticsService.analyticsUUID
+
+    const setInstallId = async (uuid: string) => {
+      await this.analyticsService.setAnalyticsUUID(uuid)
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      await this.campaignService["db"]["campaigns"].delete("mezo-nft-claim")
+    }
+
+    // eslint-disable-next-line no-restricted-globals
+    Object.assign(self, {
+      checkCampaign,
+      getInstallId,
+      setInstallId,
+    })
+
     // Start up the redux store and set it up for proxying.
     this.store = initializeStore(this, savedReduxState)
     this.initializeRedux()
@@ -1323,10 +1340,17 @@ export default class ReduxService extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
+      if (/mezo-dapp/i.test(permission.origin)) {
+        this.campaignService.checkMezoSatsDrop(permission.accountAddress)
+      }
+    })
+
+    providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
         origin: permission.origin,
         chainId: permission.chainID,
       })
+
       await Promise.all(
         this.chainService.supportedNetworks.map(async (network) => {
           await this.providerBridgeService.grantPermission({

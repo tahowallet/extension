@@ -51,19 +51,19 @@ export default function MezoWalletCampaignBanner({
       case "eligible":
         dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER))
         browser.tabs.create({
-          url: "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
+          url: MEZO_CAMPAIGN.bannerUrls.eligible,
         })
         break
       case "can-borrow":
         dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_BORROW_BANNER))
         browser.tabs.create({
-          url: "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
+          url: MEZO_CAMPAIGN.bannerUrls.canBorrow,
         })
         break
       case "can-claim-nft":
         dispatch(sendEvent(AnalyticsEvent.CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER))
         browser.tabs.create({
-          url: "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
+          url: MEZO_CAMPAIGN.bannerUrls.canClaimNFT,
         })
         break
       default:
