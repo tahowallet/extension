@@ -1,3 +1,5 @@
+import { fetchJson } from "@ethersproject/web"
+import { Contract } from "ethers"
 import { AddressOnNetwork } from "../../accounts"
 import { getNFTCollections, getNFTs, getNFTsTransfers } from "../../lib/nfts"
 import { getSimpleHashNFTs } from "../../lib/simple-hash"
@@ -9,7 +11,13 @@ import ChainService from "../chain"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase, FreshCollectionsMap } from "./db"
 import { getUNIXTimestamp, normalizeEVMAddress } from "../../lib/utils"
-import { MINUTE } from "../../constants"
+import { MEZO_TESTNET, MINUTE } from "../../constants"
+import { sameNetwork } from "../../networks"
+import {
+  NFT_COLLECTION_ID,
+  NFT_CONTRACT_ADDRESS,
+} from "../campaign/matsnet-nft"
+import { isDisabled } from "../../features"
 
 interface Events extends ServiceLifecycleEvents {
   isReloadingNFTs: boolean
@@ -103,6 +111,7 @@ export default class NFTsService extends BaseService<Events> {
     if (accountsToFetch.length) {
       await this.fetchCollections(accountsToFetch)
       await this.fetchPOAPs(accountsToFetch)
+      await this.fetchCampaignNFTs(accountsToFetch)
     }
   }
 
@@ -118,6 +127,7 @@ export default class NFTsService extends BaseService<Events> {
       await this.fetchCollections(accountsToFetch) // refetch only if there are some transfers
     }
     await this.fetchPOAPs(accountsToFetch)
+    await this.fetchCampaignNFTs(accountsToFetch)
   }
 
   async fetchCollections(accounts: AddressOnNetwork[]): Promise<void> {
@@ -169,6 +179,59 @@ export default class NFTsService extends BaseService<Events> {
       accounts.map((account) =>
         this.fetchNFTsFromCollection(POAP_COLLECTION_ID, account),
       ),
+    )
+  }
+
+  async fetchCampaignNFTs(accounts: AddressOnNetwork[]): Promise<void> {
+    if (isDisabled("SUPPORT_MEZO_NETWORK")) {
+      return
+    }
+
+    const provider = this.chainService.providerForNetworkOrThrow(MEZO_TESTNET)
+    const contract = new Contract(
+      NFT_CONTRACT_ADDRESS,
+      [
+        "function balanceOf(address, uint256) view returns (uint256)",
+        "function uri(uint256) view returns (string)",
+      ],
+      provider,
+    )
+
+    await Promise.allSettled(
+      accounts
+        .filter(({ network }) => sameNetwork(network, MEZO_TESTNET))
+        .map(async (account) => {
+          const { address } = account
+
+          const hasTahoNFT =
+            (await contract.callStatic.balanceOf(address, 1)) > 0n
+
+          const nfts: NFT[] = []
+
+          if (hasTahoNFT) {
+            const metadataURI = await contract.callStatic.uri(1)
+
+            const details = await fetchJson(metadataURI)
+
+            nfts.push({
+              collectionID: NFT_COLLECTION_ID,
+              id: `CAMPAIGN.${contract.address}.${address}`,
+              previewURL: details.image,
+              thumbnailURL: details.image,
+              name: details.name,
+              description: details.description,
+              tokenId: "1",
+              contract: contract.address,
+              owner: address,
+              isBadge: false,
+              network: MEZO_TESTNET,
+              attributes: [],
+              rarity: {},
+            })
+
+            await this.updateSavedNFTs(NFT_COLLECTION_ID, account, nfts, {})
+          }
+        }),
     )
   }
 
@@ -224,7 +287,10 @@ export default class NFTsService extends BaseService<Events> {
 
     let updatedCollection: NFTCollection | undefined
 
-    if (collectionID === POAP_COLLECTION_ID) {
+    if (
+      collectionID === POAP_COLLECTION_ID ||
+      collectionID.startsWith("campaign::")
+    ) {
       // update number of poaps
       updatedCollection = await this.db.updateCollectionData(
         collectionID,

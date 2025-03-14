@@ -11,6 +11,8 @@ export type MezoCampaignState = {
   state: MezoClaimStatus
 }
 
+export const NFT_CONTRACT_ADDRESS = "0x2A22371b53E6070AF6e38dfFC4228496b469D7FA"
+
 export const CAMPAIGN_ID = "mezo-nft-claim"
 
 export type MezoCampaign = {
@@ -21,6 +23,8 @@ export type MezoCampaign = {
 
 const prefixWithCampaignId = (str: string): `campaign::${string}` =>
   `campaign::${CAMPAIGN_ID}-${str}`
+
+export const NFT_COLLECTION_ID = prefixWithCampaignId("nft-collection")
 
 export const IS_ELIGIBLE_NOTIFICATION_ID = prefixWithCampaignId(
   "eligible-notification",
