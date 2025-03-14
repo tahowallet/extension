@@ -45,7 +45,7 @@ const tryUpdateCampaignSettings = async () => {
       await browser.storage.local.set({
         [DynamicSettingsStorageKey]: {
           USE_CAMPAIGN_NFT_CONTRACT: json.MEZOXTAHO.contractAddress,
-          SUPPORT_MEZO_NETWORK: "true",
+          SUPPORT_MEZO_NETWORK: true,
         },
       })
     }

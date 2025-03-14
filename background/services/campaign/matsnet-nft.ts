@@ -1,4 +1,4 @@
-import { getDynamicSettingValue } from "../../features"
+import { getRuntimeFlagValue } from "../../features"
 
 export type MezoClaimStatus =
   | "not-eligible"
@@ -13,7 +13,7 @@ export type MezoCampaignState = {
   state: MezoClaimStatus
 }
 
-export const NFT_CONTRACT_ADDRESS = getDynamicSettingValue(
+export const NFT_CONTRACT_ADDRESS = getRuntimeFlagValue(
   "USE_CAMPAIGN_NFT_CONTRACT",
 )
 
