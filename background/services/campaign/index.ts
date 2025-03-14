@@ -216,7 +216,7 @@ export default class CampaignService extends BaseService<Events> {
     )
 
     const BASE_URL =
-      "https://ps5ymo.tunnel.pyjam.as/api/v2/external/mezoification"
+      "https://portal.api.test.mezo.org/api/v2/external/campaigns/mezoification"
     // fetch with uuid
     const campaignData: MezoCampaignState = await fetchJson(
       `${BASE_URL}?id=${installId}`,
