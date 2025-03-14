@@ -19,40 +19,21 @@ const BuildTimeFlag = {
  * unexpected behaviour.
  */
 export const DynamicSettings = {
-  USE_CAMPAIGN_NFT_CONTRACT: {
-    initialValue: process.env.USE_CAMPAIGN_NFT_CONTRACT,
-    resolver: (v) => v,
-  },
-  SUPPORT_MEZO_NETWORK: {
-    initialValue: process.env.SUPPORT_MEZO_NETWORK,
-    resolver: (v) => v === "true",
-  },
-} satisfies {
-  [key: string]: {
-    initialValue: string | undefined
-    resolver?: (v: string | undefined) => unknown
-  }
+  USE_CAMPAIGN_NFT_CONTRACT: process.env.USE_CAMPAIGN_NFT_CONTRACT,
+  SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK,
 }
 
 type DynamicSettingType = keyof typeof DynamicSettings
 
-type DynamicFlagType = {
-  [k in DynamicSettingType]: ReturnType<
-    (typeof DynamicSettings)[k]["resolver"]
-  > extends boolean
-    ? k
-    : never
-}[DynamicSettingType]
+type DynamicFlagType = Extract<DynamicSettingType, "SUPPORT_MEZO_NETWORK">
 
 export const getDynamicSettingValue = <K extends DynamicSettingType>(
   flag: K,
 ) => {
-  const { initialValue, resolver } = DynamicSettings[flag]
+  const initialValue = DynamicSettings[flag]
   const storedValue = storage.get(flag)
 
-  return resolver(storedValue ?? initialValue) as ReturnType<
-    (typeof DynamicSettings)[K]["resolver"]
-  >
+  return storedValue ?? initialValue
 }
 
 /**
@@ -129,7 +110,7 @@ export function isEnabled(
   }
 
   if (isDynamicSetting(flagName)) {
-    return getDynamicSettingValue(flagName)
+    return getDynamicSettingValue(flagName) === "true"
   }
 
   if (checkBrowserStorage) {
