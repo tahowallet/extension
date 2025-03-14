@@ -1340,7 +1340,7 @@ export default class ReduxService extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
-      if (permission.origin === "https://mezo.org") {
+      if (/mezo-dapp/i.test(permission.origin)) {
         this.campaignService.checkMezoSatsDrop(permission.accountAddress)
       }
     })
