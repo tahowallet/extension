@@ -56,8 +56,13 @@ const API_BASE_URL = API_URL_OVERRIDE || "https://portal.api.mezo.org"
 /**
  * Changes the origin of one URL to the origin of another
  */
-const adjustURLOrigin = (url: string, baseURL: string) =>
-  new URL(new URL(url).pathname, baseURL).toString()
+const adjustURLOrigin = (url: string, baseURL: string) => {
+  const target = new URL(baseURL)
+  const copy = new URL(url, baseURL)
+  copy.host = target.host
+  copy.protocol = target.protocol
+  return copy.toString()
+}
 
 const MATSNET_NFT_CAMPAIGN = {
   id: CAMPAIGN_ID,
