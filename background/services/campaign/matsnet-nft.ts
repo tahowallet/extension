@@ -53,7 +53,7 @@ export const isActiveCampaign = (state: MezoClaimStatus) => {
 const API_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_API_ORIGIN
 const DAPP_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_DAPP_ORIGIN
 
-const DAPP_BASE_URL = DAPP_URL_OVERRIDE || "https://mezo.org"
+export const DAPP_BASE_URL = DAPP_URL_OVERRIDE || "https://mezo.org"
 
 const API_BASE_URL = API_URL_OVERRIDE || "https://portal.api.mezo.org"
 
