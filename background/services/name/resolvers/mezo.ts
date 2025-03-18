@@ -36,7 +36,7 @@ export default function mezoResolver(): NameResolver<"MEZO"> {
       }
 
       const data: ResolveNameData = await fetchJson(
-        `https://portal.api.mezo.org/api/v2/external/accounts?mezoId=${name}`,
+        `https://api.mezo.org/accounts/${name}`,
       )
 
       return {
@@ -47,11 +47,26 @@ export default function mezoResolver(): NameResolver<"MEZO"> {
     async lookUpAvatar() {
       return undefined
     },
-    async lookUpNameForAddress(
-      _: AddressOnNetwork,
-    ): Promise<NameOnNetwork | undefined> {
-      // FIXME: Missing endpoint
-      return undefined
+    async lookUpNameForAddress({
+      address,
+      network,
+    }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
+      type ReverseLookupData = {
+        mezoId: string
+        linkedAccounts: {
+          type: string
+          evmAddress: string
+        }[]
+      }
+
+      const data: ReverseLookupData = await fetchJson(
+        `https://api.mezo.org/accounts/${address}`,
+      )
+
+      return {
+        name: data.mezoId,
+        network,
+      }
     },
   }
 }
