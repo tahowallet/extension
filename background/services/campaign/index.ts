@@ -3,7 +3,7 @@ import isBetween from "dayjs/plugin/isBetween"
 import browser from "webextension-polyfill"
 import { fetchJson } from "@ethersproject/web"
 import { isDisabled } from "../../features"
-import { checkIsBorrowingTx } from "../../lib/mezo"
+import { checkIsBorrowingTx, checkIsMintTx } from "../../lib/mezo"
 import AnalyticsService from "../analytics"
 import BaseService from "../base"
 import ChainService from "../chain"
@@ -111,16 +111,36 @@ export default class CampaignService extends BaseService<Events> {
       async ({ transaction }) => {
         const campaignData = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
         // Before snooping, check if we're at the right campaign state
-        if (!campaignData || campaignData?.data?.state !== "can-borrow") {
+        if (
+          !campaignData ||
+          (campaignData?.data?.state !== "can-borrow" &&
+            campaignData?.data?.state !== "can-claim-nft")
+        ) {
           return
         }
 
         if (
+          campaignData.data.state === "can-borrow" &&
           isConfirmedEVMTransaction(transaction) &&
           checkIsBorrowingTx(transaction)
         ) {
           await this.db.updateCampaignData(MEZO_CAMPAIGN.id, {
             state: "can-claim-nft",
+          })
+
+          this.emitter.emit(
+            "campaignStatusUpdate",
+            await this.db.getActiveCampaigns(),
+          )
+        }
+
+        if (
+          campaignData.data.state === "can-claim-nft" &&
+          isConfirmedEVMTransaction(transaction) &&
+          checkIsMintTx(transaction)
+        ) {
+          await this.db.updateCampaignData(MEZO_CAMPAIGN.id, {
+            state: "campaign-complete",
           })
 
           this.emitter.emit(
