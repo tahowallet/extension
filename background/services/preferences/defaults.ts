@@ -35,6 +35,7 @@ const defaultPreferences = {
   },
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
   shouldShowNotifications: false,
+  showTestNetworks: true,
 }
 
 export default defaultPreferences

@@ -104,7 +104,7 @@ export const ZK_SYNC: EVMNetwork = {
 }
 
 export const MEZO_TESTNET: EVMNetwork = {
-  name: "Matsnet",
+  name: "Mezo matsnet",
   baseAsset: MEZO_BTC,
   chainID: "31611",
   family: "EVM",
@@ -169,7 +169,7 @@ export const NETWORK_BY_CHAIN_ID = {
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
-  [SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
+  [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
 // Networks that are not added to this struct will

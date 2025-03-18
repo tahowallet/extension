@@ -31,6 +31,8 @@ interface Events extends ServiceLifecycleEvents {
  * handling sending and persistance concerns.
  */
 export default class AnalyticsService extends BaseService<Events> {
+  #analyticsUUID: string | undefined = undefined
+
   /*
    * Create a new AnalyticsService. The service isn't initialized until
    * startService() is called and resolved.
@@ -93,6 +95,7 @@ export default class AnalyticsService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
+    const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
     let { isEnabled, hasDefaultOnBeenTurnedOn } =
       await this.preferenceService.getAnalyticsPreferences()
@@ -114,8 +117,6 @@ export default class AnalyticsService extends BaseService<Events> {
     }
 
     if (isEnabled) {
-      const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
-
       browser.runtime.setUninstallURL(
         process.env.NODE_ENV === "development"
           ? "about:blank"
@@ -126,12 +127,23 @@ export default class AnalyticsService extends BaseService<Events> {
         await this.sendAnalyticsEvent(AnalyticsEvent.NEW_INSTALL)
       }
     }
+
+    this.#analyticsUUID = uuid
   }
 
   protected override async internalStopService(): Promise<void> {
     this.db.close()
 
     await super.internalStopService()
+  }
+
+  get analyticsUUID() {
+    if (!this.#analyticsUUID) {
+      throw new Error(
+        "Attempted to access analytics UUID before service started",
+      )
+    }
+    return this.#analyticsUUID
   }
 
   async sendAnalyticsEvent(
