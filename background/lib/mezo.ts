@@ -2,7 +2,7 @@ import { Interface } from "ethers/lib/utils"
 import { ConfirmedEVMTransaction, sameNetwork } from "../networks"
 import { MEZO_TESTNET } from "../constants"
 import { sameEVMAddress } from "./utils"
-import { NFT_CONTRACT_ADDRESS } from "../services/campaign/matsnet-nft"
+import MATSNET_NFT_CAMPAIGN from "../services/campaign/matsnet-nft"
 
 const BORROWER_CONTRACT_ADDRESS = "0x20fAeA18B6a1D0FCDBCcFfFe3d164314744baF30"
 
@@ -37,7 +37,7 @@ export const checkIsMintTx = (tx: ConfirmedEVMTransaction) => {
   if (
     !sameNetwork(tx.network, MEZO_TESTNET) ||
     !tx.blockHash ||
-    !sameEVMAddress(tx.to, NFT_CONTRACT_ADDRESS) ||
+    !sameEVMAddress(tx.to, MATSNET_NFT_CAMPAIGN.nftContract) ||
     tx.status === 0
   ) {
     return false

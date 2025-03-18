@@ -13,10 +13,6 @@ export type MezoCampaignState = {
   state: MezoClaimStatus
 }
 
-export const NFT_CONTRACT_ADDRESS = getRuntimeFlagValue(
-  "USE_CAMPAIGN_NFT_CONTRACT",
-)
-
 export const CAMPAIGN_ID = "mezo-nft-claim"
 
 export type MezoCampaign = {
@@ -70,6 +66,9 @@ const adjustURLOrigin = (url: string, baseURL: string) => {
 
 const MATSNET_NFT_CAMPAIGN = {
   id: CAMPAIGN_ID,
+  get nftContract() {
+    return getRuntimeFlagValue("USE_CAMPAIGN_NFT_CONTRACT")
+  },
   apiUrls: {
     checkDrop: adjustURLOrigin(
       "https://portal.api.mezo.org/api/v2/external/campaigns/mezoification/check-drop",
