@@ -87,7 +87,10 @@ export default function connectProviderBridge(): void {
 
     // Log this for debugging
     // eslint-disable-next-line no-console
-    console.log("Reconnecting port from contentScript")
+    console.log(
+      "%c Reconnecting port from contentScript",
+      "background: #bada55; color: #222",
+    )
     connectProviderBridge()
     window.dispatchEvent(new Event("tally:reconnectProvider"))
   })
