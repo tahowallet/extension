@@ -36,6 +36,7 @@ import {
 } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -181,7 +182,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           break
         }
         case "tally_getMezoClaimData":
-          if (origin === "https://mezo.org") {
+          if (origin === new URL(MEZO_DAPP_BASE_URL).origin) {
             // This is a hack, but we have no other way of accessing this data
             // though it should probably be set post install on the Preference
             // service
