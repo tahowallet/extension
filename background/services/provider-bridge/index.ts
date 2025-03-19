@@ -36,6 +36,7 @@ import {
 } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -181,23 +182,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
           break
         }
         case "tally_getMezoClaimData":
-          {
-            const skipOriginChecks = true
+          if (origin === new URL(MEZO_DAPP_BASE_URL).origin) {
+            // This is a hack, but we have no other way of accessing this data
+            // though it should probably be set post install on the Preference
+            // service
+            const installId = this.emitter.once("mezoClaimData")
 
-            if (
-              skipOriginChecks ||
-              origin === "https://mezo.org" ||
-              new URL(url).hostname === "localhost"
-            ) {
-              // chrome.runtime.onConnect.addListener(port => port.onMessage.)
-              // This is a hack, but we have no other way of accessing this data
-              // though it should probably be set post install on the Preference
-              // service
-              const installId = this.emitter.once("mezoClaimData")
-
-              this.emitter.emit("getMezoClaimData", undefined)
-              response.result = [await installId]
-            }
+            this.emitter.emit("getMezoClaimData", undefined)
+            response.result = [await installId]
           }
           break
         default:

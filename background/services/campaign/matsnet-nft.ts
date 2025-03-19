@@ -1,3 +1,5 @@
+import { getRuntimeFlagValue } from "../../features"
+
 export type MezoClaimStatus =
   | "not-eligible"
   | "eligible"
@@ -10,8 +12,6 @@ export type MezoCampaignState = {
   dateTo: string
   state: MezoClaimStatus
 }
-
-export const NFT_CONTRACT_ADDRESS = "0x2A22371b53E6070AF6e38dfFC4228496b469D7FA"
 
 export const CAMPAIGN_ID = "mezo-nft-claim"
 
@@ -49,7 +49,7 @@ export const isActiveCampaign = (state: MezoClaimStatus) => {
 const API_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_API_ORIGIN
 const DAPP_URL_OVERRIDE = process.env.USE_CUSTOM_MEZO_DAPP_ORIGIN
 
-const STORE_BASE_URL = DAPP_URL_OVERRIDE || "https://mezo.org"
+export const DAPP_BASE_URL = DAPP_URL_OVERRIDE || "https://mezo.org"
 
 const API_BASE_URL = API_URL_OVERRIDE || "https://portal.api.mezo.org"
 
@@ -66,7 +66,10 @@ const adjustURLOrigin = (url: string, baseURL: string) => {
 
 const MATSNET_NFT_CAMPAIGN = {
   id: CAMPAIGN_ID,
-  api: {
+  get nftContract() {
+    return getRuntimeFlagValue("USE_CAMPAIGN_NFT_CONTRACT")
+  },
+  apiUrls: {
     checkDrop: adjustURLOrigin(
       "https://portal.api.mezo.org/api/v2/external/campaigns/mezoification/check-drop",
       API_BASE_URL,
@@ -89,15 +92,15 @@ const MATSNET_NFT_CAMPAIGN = {
   bannerUrls: {
     eligible: adjustURLOrigin(
       "https://mezo.org/matsnet/borrow?src=taho-claim-sats-banner",
-      STORE_BASE_URL,
+      DAPP_BASE_URL,
     ),
     canBorrow: adjustURLOrigin(
       "https://mezo.org/matsnet/borrow?src=taho-borrow-banner",
-      STORE_BASE_URL,
+      DAPP_BASE_URL,
     ),
     canClaimNFT: adjustURLOrigin(
       "https://mezo.org/matsnet/store?src=taho-claim-nft-banner",
-      STORE_BASE_URL,
+      DAPP_BASE_URL,
     ),
   },
   isActive: isActiveCampaign,

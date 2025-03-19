@@ -2,8 +2,11 @@ import { fetchJson } from "@ethersproject/web"
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import browser from "webextension-polyfill"
+import { SECOND } from "../../constants"
 import { isDisabled } from "../../features"
-import { checkIsBorrowingTx } from "../../lib/mezo"
+import logger from "../../lib/logger"
+import { checkIsBorrowingTx, checkIsMintTx } from "../../lib/mezo"
+import { AnalyticsEvent } from "../../lib/posthog"
 import { isConfirmedEVMTransaction } from "../../networks"
 import AnalyticsService from "../analytics"
 import BaseService from "../base"
@@ -15,9 +18,6 @@ import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CampaignDatabase, getOrCreateDB } from "./db"
 import MEZO_CAMPAIGN, { MezoCampaignState } from "./matsnet-nft"
 import { Campaigns } from "./types"
-import { AnalyticsEvent } from "../../lib/posthog"
-import logger from "../../lib/logger"
-import { SECOND } from "../../constants"
 
 dayjs.extend(isBetween)
 
@@ -111,16 +111,36 @@ export default class CampaignService extends BaseService<Events> {
       async ({ transaction }) => {
         const campaignData = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
         // Before snooping, check if we're at the right campaign state
-        if (!campaignData || campaignData?.data?.state !== "can-borrow") {
+        if (
+          !campaignData ||
+          (campaignData?.data?.state !== "can-borrow" &&
+            campaignData?.data?.state !== "can-claim-nft")
+        ) {
           return
         }
 
         if (
+          campaignData.data.state === "can-borrow" &&
           isConfirmedEVMTransaction(transaction) &&
           checkIsBorrowingTx(transaction)
         ) {
           await this.db.updateCampaignData(MEZO_CAMPAIGN.id, {
             state: "can-claim-nft",
+          })
+
+          this.emitter.emit(
+            "campaignStatusUpdate",
+            await this.db.getActiveCampaigns(),
+          )
+        }
+
+        if (
+          campaignData.data.state === "can-claim-nft" &&
+          isConfirmedEVMTransaction(transaction) &&
+          checkIsMintTx(transaction)
+        ) {
+          await this.db.updateCampaignData(MEZO_CAMPAIGN.id, {
+            state: "campaign-complete",
           })
 
           this.emitter.emit(
@@ -157,7 +177,7 @@ export default class CampaignService extends BaseService<Events> {
 
     // Only check sats drop if wallet is at 'eligible' state
     if (lastKnownState === "eligible") {
-      const uri = new URL(MEZO_CAMPAIGN.api.checkDrop)
+      const uri = new URL(MEZO_CAMPAIGN.apiUrls.checkDrop)
 
       const installId = this.analyticsService.analyticsUUID
 
@@ -182,7 +202,6 @@ export default class CampaignService extends BaseService<Events> {
 
     await this.started()
     const accounts = await this.chainService.getAccountsToTrack()
-    // TODO: needs to be sent to API
     const installId = this.analyticsService.analyticsUUID
 
     const campaign = await this.db.getCampaignData(MEZO_CAMPAIGN.id)
@@ -213,10 +232,8 @@ export default class CampaignService extends BaseService<Events> {
       MEZO_CAMPAIGN.notificationIds.canClaimNFT,
     )
 
-    const BASE_URL = MEZO_CAMPAIGN.api.status
-    // fetch with uuid
     const campaignData: MezoCampaignState = await fetchJson(
-      `${BASE_URL}?id=${installId}`,
+      `${MEZO_CAMPAIGN.apiUrls.status}?id=${installId}`,
     )
 
     if (campaignData.state === "not-eligible") {
