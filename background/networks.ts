@@ -422,3 +422,7 @@ export const isEnrichedEVMTransactionRequest = (
   transactionRequest: TransactionRequest,
 ): transactionRequest is EnrichedEVMTransactionRequest =>
   "annotation" in transactionRequest
+
+export const isConfirmedEVMTransaction = (
+  transaction: AnyEVMTransaction,
+): transaction is ConfirmedEVMTransaction => "status" in transaction
