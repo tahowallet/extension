@@ -11,6 +11,7 @@ import {
 import classNames from "classnames"
 import { demoSetInstallid } from "@tallyho/tally-background/redux-slices/ui"
 
+import MATSNET_NFT_CAMPAIGN from "@tallyho/tally-background/services/campaign/matsnet-nft"
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
@@ -80,10 +81,29 @@ function Navigation({
               document.getElementById("installId") as HTMLTextAreaElement
 
             if (textArea) {
-              dispatch(demoSetInstallid(textArea.value.trim())).then(() =>
-                // eslint-disable-next-line no-alert
-                alert("done!"),
-              )
+              const installId = textArea.value.trim()
+
+              dispatch(demoSetInstallid(installId)).then(() => {
+                textArea.disabled = true
+                fetch(`${MATSNET_NFT_CAMPAIGN.apiUrls.status}?id=${installId}`)
+                  .then((resp) => resp.json())
+                  .then((data) => {
+                    const isValidId = data.state !== "not-eligible"
+                    // eslint-disable-next-line no-alert
+                    alert(
+                      `done! valid: ${isValidId} used for testing: ${
+                        isValidId && data.state !== "eligible"
+                      }`,
+                    )
+                  })
+                  .catch(() => {
+                    // eslint-disable-next-line no-alert
+                    alert("Error checking")
+                  })
+                  .finally(() => {
+                    textArea.disabled = false
+                  })
+              })
             }
           }}
         >
