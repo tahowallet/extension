@@ -514,7 +514,14 @@ function setupProviderWrapper() {
     "eip6963:announceProvider",
     (event) => {
       if (
-        "detail" in event &&
+        !("detail" in event) ||
+        typeof event.detail !== "object" ||
+        !event.detail
+      ) {
+        return
+      }
+
+      if (
         "provider" in event.detail &&
         (event.detail.provider === window.ethereum ||
           event.detail.provider === window.taho)
@@ -523,11 +530,19 @@ function setupProviderWrapper() {
       }
 
       if (
-        "detail" in event &&
         "info" in event.detail &&
+        typeof event.detail.info === "object" &&
+        event.detail.info &&
         "name" in event.detail.info &&
         event.detail.info.name === "MetaMask"
       ) {
+        const eip6963Info = event.detail.info as {
+          uuid?: string | null
+          name: string | null
+          icon?: string | null
+          rdns?: string | null
+        }
+
         event.preventDefault()
         event.stopImmediatePropagation()
 
@@ -535,10 +550,10 @@ function setupProviderWrapper() {
           new CustomEvent("eip6963:announceProvider", {
             detail: Object.freeze({
               info: {
-                uuid: event.detail.info.uuid,
-                name: event.detail.info.name,
-                icon: event.detail.info.icon,
-                rdns: event.detail.info.rdns,
+                uuid: eip6963Info.uuid,
+                name: eip6963Info.name,
+                icon: eip6963Info.icon,
+                rdns: eip6963Info.rdns,
               },
               provider: window.ethereum,
             }),
