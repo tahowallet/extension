@@ -12,7 +12,7 @@ export default function SignerReadOnlyFrame<T extends SignOperationType>({
 
   return (
     <>
-      {children}
+      <div className="signature-details">{children}</div>
       <footer>
         <SharedButton
           size="large"
@@ -24,6 +24,11 @@ export default function SignerReadOnlyFrame<T extends SignOperationType>({
 
         <span className="no-signing">Read-only accounts cannot sign</span>
       </footer>
+      <style jsx>{`
+        .signature-details {
+          margin-bottom: 84px;
+        }
+      `}</style>
     </>
   )
 }
