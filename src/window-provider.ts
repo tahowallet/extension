@@ -503,6 +503,51 @@ function setupProviderWrapper() {
     },
     configurable: false,
   })
+
+  // Allow for replacing EIP6963 MetaMask as well.
+  //
+  // Note that EIP6963 should remove the need to do this, but instead sites
+  // like Etherscan still only present MetaMask as an option despite using a
+  // EIP6963-aware library under the covers. Malice, incompetence, or dirty
+  // dealings? That is left as an exercise for the reader.
+  window.addEventListener(
+    "eip6963:announceProvider",
+    (event) => {
+      if (
+        "detail" in event &&
+        "provider" in event.detail &&
+        (event.detail.provider === window.ethereum ||
+          event.detail.provider === window.taho)
+      ) {
+        return
+      }
+
+      if (
+        "detail" in event &&
+        "info" in event.detail &&
+        "name" in event.detail.info &&
+        event.detail.info.name === "MetaMask"
+      ) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+
+        window.dispatchEvent(
+          new CustomEvent("eip6963:announceProvider", {
+            detail: Object.freeze({
+              info: {
+                uuid: event.detail.info.uuid,
+                name: event.detail.info.name,
+                icon: event.detail.info.icon,
+                rdns: event.detail.info.rdns,
+              },
+              provider: window.ethereum,
+            }),
+          }),
+        )
+      }
+    },
+    true,
+  )
 }
 
 function announceProvider() {
