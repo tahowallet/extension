@@ -14,7 +14,7 @@ export default class AssetsHelper {
    * In case of situation where there are multiple assets with the same name, it
    * verifies that all of those assets except of one are hidden.
    * The function then verifies that the not hidden asset has a balance (and a
-   * USD value, when aplicable) displayed and there are options to Send and
+   * USD value, when applicable) displayed and there are options to Send and
    * Swap.
    */
   async assertVerifiedAssetOnWalletPage(
