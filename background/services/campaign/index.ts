@@ -1,9 +1,13 @@
+import { fetchJson } from "@ethersproject/web"
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 import browser from "webextension-polyfill"
-import { fetchJson } from "@ethersproject/web"
+import { SECOND } from "../../constants"
 import { isDisabled } from "../../features"
+import logger from "../../lib/logger"
 import { checkIsBorrowingTx, checkIsMintTx } from "../../lib/mezo"
+import { AnalyticsEvent } from "../../lib/posthog"
+import { isConfirmedEVMTransaction } from "../../networks"
 import AnalyticsService from "../analytics"
 import BaseService from "../base"
 import ChainService from "../chain"
@@ -13,11 +17,7 @@ import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { CampaignDatabase, getOrCreateDB } from "./db"
 import MEZO_CAMPAIGN, { MezoCampaignState } from "./matsnet-nft"
-import { isConfirmedEVMTransaction } from "../../networks"
 import { Campaigns } from "./types"
-import logger from "../../lib/logger"
-import { AnalyticsEvent } from "../../lib/posthog"
-import { SECOND } from "../../constants"
 
 dayjs.extend(isBetween)
 
@@ -72,12 +72,12 @@ export default class CampaignService extends BaseService<Events> {
     super({
       checkMezoEligibility: {
         schedule: { delayInMinutes: 1, periodInMinutes: 60 },
-        handler: () => this.queuedMezoCampaignCheck(),
+        handler: () => this.queueMezoCampaignCheck(),
       },
     })
   }
 
-  private queuedMezoCampaignCheck() {
+  async queueMezoCampaignCheck() {
     // If there's already a queued check do nothing
     if (this.#checkCampaignStateTimer) return
 
@@ -102,7 +102,7 @@ export default class CampaignService extends BaseService<Events> {
     this.chainService.emitter.on("newAccountToTrack", async () => {
       const trackedAccounts = await this.chainService.getAccountsToTrack()
       if (trackedAccounts.length === 1) {
-        this.queuedMezoCampaignCheck()
+        this.queueMezoCampaignCheck()
       }
     })
 
@@ -162,7 +162,7 @@ export default class CampaignService extends BaseService<Events> {
     // if the wallet has just initialized and we haven't had a chance to fetch campaign state
     // queue a status check and retry after it completes
     if (!campaign) {
-      this.queuedMezoCampaignCheck()
+      this.queueMezoCampaignCheck()
 
       this.emitter.once("campaignChecked").then((campaignId) => {
         if (campaignId === MEZO_CAMPAIGN.id) {
@@ -190,7 +190,7 @@ export default class CampaignService extends BaseService<Events> {
 
       // Queue another status check so we update the campaign state
       // API will check if user has already borrowed
-      this.queuedMezoCampaignCheck()
+      this.queueMezoCampaignCheck()
     }
   }
 
@@ -232,7 +232,6 @@ export default class CampaignService extends BaseService<Events> {
       MEZO_CAMPAIGN.notificationIds.canClaimNFT,
     )
 
-    // fetch with uuid
     const campaignData: MezoCampaignState = await fetchJson(
       `${MEZO_CAMPAIGN.apiUrls.status}?id=${installId}`,
     )

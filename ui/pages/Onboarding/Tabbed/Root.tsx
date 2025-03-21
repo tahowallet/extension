@@ -9,7 +9,9 @@ import {
 } from "react-router-dom"
 
 import classNames from "classnames"
+import { demoSetInstallid } from "@tallyho/tally-background/redux-slices/ui"
 
+import MATSNET_NFT_CAMPAIGN from "@tallyho/tally-background/services/campaign/matsnet-nft"
 import SharedBackButton from "../../../components/Shared/SharedBackButton"
 import AddWallet from "./AddWallet"
 import Done from "./Done"
@@ -21,7 +23,7 @@ import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
-import { useIsOnboarding } from "../../../hooks"
+import { useBackgroundDispatch, useIsOnboarding } from "../../../hooks"
 import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
 function Navigation({
@@ -40,8 +42,74 @@ function Navigation({
     !isOnboarding && OnboardingRoutes.ADD_WALLET,
   ].filter((path): path is Exclude<typeof path, false> => !!path)
 
+  const dispatch = useBackgroundDispatch()
+
   return (
     <section className="onboarding_container">
+      <div
+        style={{
+          position: "absolute",
+          left: 20,
+          top: 20,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          border: "1px dashed white",
+          padding: 4,
+          zIndex: 10000,
+        }}
+      >
+        <textarea
+          style={{
+            background: "white",
+            color: "black",
+            fontSize: "small",
+            width: 350,
+          }}
+          id="installId"
+          placeholder="put install id here"
+        />
+        <button
+          type="button"
+          style={{
+            border: "1px solid red",
+            borderRadius: 4,
+            padding: "8px 4px",
+          }}
+          onClick={() => {
+            const textArea: HTMLTextAreaElement | null =
+              document.getElementById("installId") as HTMLTextAreaElement
+
+            if (textArea) {
+              const installId = textArea.value.trim()
+
+              dispatch(demoSetInstallid(installId)).then(() => {
+                textArea.disabled = true
+                fetch(`${MATSNET_NFT_CAMPAIGN.apiUrls.status}?id=${installId}`)
+                  .then((resp) => resp.json())
+                  .then((data) => {
+                    const isValidId = data.state !== "not-eligible"
+                    // eslint-disable-next-line no-alert
+                    alert(
+                      `done! valid: ${isValidId} used for testing: ${
+                        isValidId && data.state !== "eligible"
+                      }`,
+                    )
+                  })
+                  .catch(() => {
+                    // eslint-disable-next-line no-alert
+                    alert("Error checking")
+                  })
+                  .finally(() => {
+                    textArea.disabled = false
+                  })
+              })
+            }
+          }}
+        >
+          change install id
+        </button>
+      </div>
       <style jsx>
         {`
           section {
