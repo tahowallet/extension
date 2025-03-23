@@ -1,0 +1,16 @@
+<!-- MEZO BANNER BACKGROUND SVG -->
+<svg width="352" height="147" viewBox="0 0 352 147" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="352" height="147" rx="12" fill="#06302E" fill-opacity="0.5"/>
+<rect width="352" height="147" rx="12" fill="url(#paint0_linear_20967_21)" fill-opacity="0.9"/>
+<rect width="352" height="147" rx="12" fill="url(#paint1_radial_20967_21)" fill-opacity="0.2"/>
+<defs>
+<linearGradient id="paint0_linear_20967_21" x1="33.5238" y1="4.87967" x2="59.6683" y2="142.529" gradientUnits="userSpaceOnUse">
+<stop stop-color="#1A5E5B"/>
+<stop offset="1" stop-color="#1A6A67" stop-opacity="0"/>
+</linearGradient>
+<radialGradient id="paint1_radial_20967_21" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(227.333 70.0377) rotate(39.7896) scale(112.84 144.223)">
+<stop stop-color="#1B615E" stop-opacity="0"/>
+<stop offset="1" stop-color="#1B615E"/>
+</radialGradient>
+</defs>
+</svg>

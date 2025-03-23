@@ -34,7 +34,7 @@ import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import SharedTooltip from "../../components/Shared/SharedTooltip"
-import { productionNetworkInfo } from "../../components/TopMenu/TopMenuProtocolList"
+import { productionNetworkDescription } from "../../components/TopMenu/TopMenuProtocolList"
 import TopMenuProtocolListItem from "../../components/TopMenu/TopMenuProtocolListItem"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
@@ -270,7 +270,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
                 }}
                 showSelectedText={false}
                 info={
-                  productionNetworkInfo[network.chainID] ||
+                  productionNetworkDescription[network.chainID] ||
                   sharedT("protocol.compatibleChain")
                 }
               />

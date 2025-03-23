@@ -13,7 +13,7 @@ type BannerProps = {
 }
 
 export type CanBeClosedProps =
-  | { canBeClosed: true; id: string }
+  | { canBeClosed: true; id: string; onDismiss?: (id: string) => void }
   | { canBeClosed?: false; id?: never }
 
 function Banner(props: BannerProps): ReactElement {
@@ -72,10 +72,18 @@ function Banner(props: BannerProps): ReactElement {
 }
 
 function BannerWithClose(
-  props: BannerProps & { id: string },
+  props: BannerProps & { id: string; onDismiss?: (id: string) => void },
 ): ReactElement | null {
-  const { id, children, icon, iconColor, style, iconAriaLabel, hasShadow } =
-    props
+  const {
+    id,
+    children,
+    icon,
+    iconColor,
+    style,
+    iconAriaLabel,
+    hasShadow,
+    onDismiss,
+  } = props
   const [isVisible, setIsVisible] = useLocalStorage(`banner_${id}`, "true")
 
   if (isVisible === "false") return null
@@ -89,7 +97,10 @@ function BannerWithClose(
       hasShadow={hasShadow}
     >
       <SharedIcon
-        onClick={() => setIsVisible("false")}
+        onClick={() => {
+          setIsVisible("false")
+          onDismiss?.(id)
+        }}
         icon="icons/s/close.svg"
         ariaLabel="close"
         width={16}

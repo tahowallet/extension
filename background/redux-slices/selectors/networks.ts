@@ -28,3 +28,11 @@ export const selectCustomNetworks = createSelector(
       (network) => !DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID),
     ),
 )
+
+export const selectTestnetNetworks = createSelector(
+  selectEVMNetworks,
+  (evmNetworks) =>
+    evmNetworks.filter((network) =>
+      TEST_NETWORK_BY_CHAIN_ID.has(network.chainID),
+    ),
+)

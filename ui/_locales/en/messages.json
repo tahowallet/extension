@@ -550,7 +550,8 @@
     "l2": "L2 scaling solution",
     "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
-    "connected": "Connected"
+    "connected": "Connected",
+    "newNetwork": "new"
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
@@ -562,7 +563,7 @@
     },
     "mainMenu": "Settings",
     "signing": "Signing",
-    "showNotifications": "Show Subscape notifications",
+    "showNotifications": "Show notifications",
     "hideSmallAssetBalance": "Hide asset balances under {{sign}}{{amount}}",
     "setAsDefault": "Use Taho as default wallet",
     "enableTestNetworks": "Show testnet networks",
