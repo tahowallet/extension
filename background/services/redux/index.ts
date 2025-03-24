@@ -200,6 +200,7 @@ import {
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 import CampaignService from "../campaign"
+import { DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 export default class ReduxService extends BaseService<never> {
   /**
@@ -1323,7 +1324,7 @@ export default class ReduxService extends BaseService<never> {
     )
 
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
-      if (permission.origin === "https://mezo.org") {
+      if (permission.origin === new URL(DAPP_BASE_URL).origin) {
         this.campaignService.checkMezoSatsDrop(permission.accountAddress)
       }
     })

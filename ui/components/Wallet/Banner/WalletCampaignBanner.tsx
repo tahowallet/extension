@@ -21,7 +21,7 @@ const claimStateBanners = {
   eligible: {
     bannerId: MEZO_CAMPAIGN.bannerIds.eligible,
     title: "Get the gift of sats",
-    body: "Enjoy 20,000 sats on the Mezo testnet. Try Mezo borrow and get an exclusive Taho x Mezo NFT.",
+    body: "Enjoy 20,000 testnet sats. Try Mezo Borrow and get an exclusive Taho x Mezo NFT (code\u00A0XTAHO).",
     action: "Login to claim",
   },
   "can-borrow": {
@@ -176,6 +176,7 @@ export default function MezoWalletCampaignBanner({
             max-width: 220px;
             font-weight: 500;
             font-size: 15px;
+            letter-spacing: -0.02em;
             line-height: 18px;
             color: #81aba8;
           }
