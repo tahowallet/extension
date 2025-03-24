@@ -25,7 +25,9 @@ type AbilitiesServiceExternalized = Omit<AbilitiesService, "db"> & {
   db: AbilitiesDatabase
 }
 
-describe("AbilitiesService", () => {
+it.todo("Abilities has been disabled")
+
+describe.skip("AbilitiesService", () => {
   const sandbox = sinon.createSandbox()
   let abilitiesService: AbilitiesService
   let chainService: ChainService

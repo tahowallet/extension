@@ -75,7 +75,11 @@ export default function CommonAssetListItem(
       <div className="asset_list_item" data-testid="asset_list_item">
         <div className="asset_left">
           <SharedAssetIcon
-            logoURL={assetAmount?.asset?.metadata?.logoURL}
+            logoURL={
+              isTrustedAsset(assetAmount.asset)
+                ? assetAmount?.asset?.metadata?.logoURL
+                : undefined
+            }
             symbol={assetAmount?.asset?.symbol}
           />
           <div className="asset_left_content">

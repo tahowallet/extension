@@ -255,6 +255,8 @@ describe("IndexingService", () => {
     // Check that we're using proper token ids for built in network assets
     // TODO: Remove once we add an e2e test for balances
     it("should query builtin network asset prices", async () => {
+      jest.useFakeTimers()
+
       const indexingDb = await getIndexingDB()
 
       const smartContractAsset = createSmartContractAsset()
@@ -266,10 +268,9 @@ describe("IndexingService", () => {
 
       await indexingDb.addAssetToTrack(smartContractAsset)
 
-      const spy = getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
-        indexingService,
-        "handlePriceAlarm",
-      )
+      const spy = getPrivateMethodSpy<
+        IndexingService["scheduleUpdateAssetsPrices"]
+      >(indexingService, "scheduleUpdateAssetsPrices")
 
       await Promise.all([
         chainService.startService(),
@@ -280,13 +281,17 @@ describe("IndexingService", () => {
 
       expect(spy).toHaveBeenCalled()
 
-      await spy.mock.results[0].value
+      jest.advanceTimersByTime(6000)
+      await jest.advanceTimersToNextTimerAsync()
+      jest.useRealTimers()
 
       expect(
         fetchJsonStub
           .getCalls()
           .toString()
-          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i),
+          .match(
+            /ethereum,matic-network,rootstock,bitcoin,avalanche-2,binancecoin/i,
+          ),
       ).toBeTruthy()
     })
   })
@@ -306,9 +311,9 @@ describe("IndexingService", () => {
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init
-      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+      getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
         indexingService,
-        "handlePriceAlarm",
+        "scheduleUpdateAssetsPrices",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([
@@ -359,9 +364,9 @@ describe("IndexingService", () => {
       await indexingDb.addAssetToTrack(smartContractAsset)
 
       // Skip loading prices at service init
-      getPrivateMethodSpy<IndexingService["handlePriceAlarm"]>(
+      getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
         indexingService,
-        "handlePriceAlarm",
+        "scheduleUpdateAssetsPrices",
       ).mockResolvedValue(Promise.resolve())
 
       await Promise.all([

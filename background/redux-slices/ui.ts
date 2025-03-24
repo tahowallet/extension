@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
-import { ETHEREUM } from "../constants"
+import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
@@ -11,11 +11,17 @@ import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { UNIXTime } from "../types"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
+import type { RootState } from "."
+import {
+  CampaignIds,
+  Campaigns,
+  FilterCampaignsById,
+} from "../services/campaign/types"
 
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
-  showTestNetworks: false,
+  showTestNetworks: true,
   showNotifications: undefined,
   collectAnalytics: false,
   showAnalyticsNotification: false,
@@ -23,6 +29,7 @@ export const defaultSettings = {
   hideBanners: false,
   useFlashbots: false,
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+  campaigns: {},
 }
 
 export type UIState = {
@@ -47,6 +54,16 @@ export type UIState = {
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
   accountSignerSettings: AccountSignerSettings[]
+  // Active user campaigns
+  campaigns: {
+    /**
+     * Some hash used to invalidate cached data and update UI
+     */
+    [campaignId in CampaignIds]?: FilterCampaignsById<
+      Campaigns,
+      campaignId
+    >["data"]
+  }
 }
 
 export type Events = {
@@ -63,6 +80,8 @@ export type Events = {
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
+  toggleShowTestNetworks: boolean
+  clearNotification: string
 }
 
 export const emitter = new Emittery<Events>()
@@ -78,6 +97,7 @@ export const initialState: UIState = {
   snackbarMessage: "",
   slippageTolerance: 0.01,
   accountSignerSettings: [],
+  campaigns: {},
 }
 
 const uiSlice = createSlice({
@@ -222,6 +242,16 @@ const uiSlice = createSlice({
       ...state,
       settings: { ...state.settings, autoLockInterval: payload },
     }),
+    updateCampaignsState: (
+      immerState: UIState,
+      {
+        payload,
+      }: {
+        payload: UIState["campaigns"]
+      },
+    ) => {
+      immerState.campaigns = payload
+    },
   },
 })
 
@@ -246,6 +276,7 @@ export const {
   setSlippageTolerance,
   setAccountsSignerSettings,
   setAutoLockInterval,
+  updateCampaignsState,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -270,6 +301,13 @@ export const deleteAnalyticsData = createBackgroundAsyncThunk(
   "ui/deleteAnalyticsData",
   async () => {
     await emitter.emit("deleteAnalyticsData")
+  },
+)
+
+export const clearNotification = createBackgroundAsyncThunk(
+  "ui/clearNotification",
+  async (id: string) => {
+    await emitter.emit("clearNotification", id)
   },
 )
 
@@ -357,6 +395,22 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
       },
     )
     dispatch(setNewSelectedAccount({ ...ui.selectedAccount, network }))
+  },
+)
+
+export const toggleShowTestNetworks = createBackgroundAsyncThunk(
+  "ui/toggleShowTestNetworks",
+  async (updatedValue: boolean, { dispatch, getState }) => {
+    const state = getState() as RootState
+
+    const currentNetwork = state.ui.selectedAccount.network
+
+    // If user is on one of the built-in test networks, don't leave them stranded
+    if (!updatedValue && TEST_NETWORK_BY_CHAIN_ID.has(currentNetwork.chainID)) {
+      dispatch(setSelectedNetwork(ETHEREUM))
+    }
+
+    await emitter.emit("toggleShowTestNetworks", updatedValue)
   },
 )
 

@@ -7,6 +7,7 @@ import {
   AnyAssetMetadata,
   FungibleAsset,
   isSmartContractFungibleAsset,
+  keyAssetsByAddress,
   PricePoint,
   SmartContractAmount,
   SmartContractFungibleAsset,
@@ -19,6 +20,7 @@ import {
   ETHEREUM,
   FIAT_CURRENCIES,
   HOUR,
+  MEZO_TESTNET,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
   OPTIMISM,
@@ -54,6 +56,7 @@ import {
   isTrustedAsset,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
+import { wrapIfEnabled } from "../../features"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -95,32 +98,6 @@ interface Events extends ServiceLifecycleEvents {
   removeAssetData: SmartContractFungibleAsset
 }
 
-const getAssetsByAddress = (assets: SmartContractFungibleAsset[]) => {
-  const activeAssetsByAddress = assets.reduce(
-    (agg, t) => {
-      const newAgg = {
-        ...agg,
-      }
-      newAgg[t.contractAddress.toLowerCase()] = t
-      return newAgg
-    },
-    {} as { [address: string]: SmartContractFungibleAsset },
-  )
-
-  return activeAssetsByAddress
-}
-
-const getActiveAssetsByAddressForNetwork = (
-  network: EVMNetwork,
-  activeAssetsToTrack: SmartContractFungibleAsset[],
-) => {
-  const networkActiveAssets = activeAssetsToTrack.filter(
-    (asset) => asset.homeNetwork.chainID === network.chainID,
-  )
-
-  return getAssetsByAddress(networkActiveAssets)
-}
-
 function allowVerifyAssetByManualImport(
   asset: SmartContractFungibleAsset,
   verified?: boolean,
@@ -149,7 +126,7 @@ export default class IndexingService extends BaseService<Events> {
    */
   private scheduledTokenRefresh = false
 
-  private lastPriceAlarmTime = 0
+  #pricesUpdateTimer: NodeJS.Timer | null = null
 
   private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
@@ -205,7 +182,7 @@ export default class IndexingService extends BaseService<Events> {
           delayInMinutes: 1,
           periodInMinutes: 10,
         },
-        handler: () => this.handlePriceAlarm(),
+        handler: () => this.scheduleUpdateAssetsPrices(),
       },
     })
   }
@@ -219,7 +196,7 @@ export default class IndexingService extends BaseService<Events> {
     const tokenListLoad = this.fetchAndCacheTokenLists()
 
     this.chainService.emitter.once("serviceStarted").then(async () => {
-      this.handlePriceAlarm()
+      this.scheduleUpdateAssetsPrices()
 
       const trackedNetworks = await this.chainService.getTrackedNetworks()
 
@@ -360,7 +337,7 @@ export default class IndexingService extends BaseService<Events> {
    ******************* */
 
   private acceleratedTokenRefresh: {
-    timeout: number | undefined
+    timeout: ReturnType<typeof setTimeout> | undefined
     assetLookups: {
       asset: SmartContractFungibleAsset
       addressOnNetwork: AddressOnNetwork
@@ -430,7 +407,7 @@ export default class IndexingService extends BaseService<Events> {
           )
 
           this.acceleratedTokenRefresh.assetLookups.push(...assetLookups)
-          this.acceleratedTokenRefresh.timeout ??= window.setTimeout(
+          this.acceleratedTokenRefresh.timeout ??= setTimeout(
             this.handleAcceleratedTokenRefresh.bind(this),
             ACCELERATED_TOKEN_REFRESH_TIMEOUT,
           )
@@ -501,7 +478,7 @@ export default class IndexingService extends BaseService<Events> {
         await this.loadAccountBalancesFor(addressOnNetwork)
 
         // FIXME Refactor this to only update prices for tokens with balances.
-        this.handlePriceAlarm()
+        this.scheduleUpdateAssetsPrices()
       },
     )
 
@@ -551,12 +528,7 @@ export default class IndexingService extends BaseService<Events> {
       smartContractAssets?.map(({ contractAddress }) => contractAddress),
     )
 
-    const listedAssetByAddress = (smartContractAssets ?? []).reduce<{
-      [contractAddress: string]: SmartContractFungibleAsset
-    }>((acc, asset) => {
-      acc[normalizeEVMAddress(asset.contractAddress)] = asset
-      return acc
-    }, {})
+    const listedAssetByAddress = keyAssetsByAddress(smartContractAssets ?? [])
 
     const removedCustomAssets = await this.db.getRemovedCustomAssetsByNetworks([
       addressNetwork.network,
@@ -821,6 +793,7 @@ export default class IndexingService extends BaseService<Events> {
         basicPrices = await Promise.all(
           [
             ETHEREUM,
+            ...wrapIfEnabled("SUPPORT_MEZO_NETWORK", MEZO_TESTNET),
             ARBITRUM_ONE,
             OPTIMISM,
             BINANCE_SMART_CHAIN,
@@ -829,6 +802,33 @@ export default class IndexingService extends BaseService<Events> {
           ].map(async (network: EVMNetwork) => {
             const provider =
               this.chainService.providerForNetworkOrThrow(network)
+
+            const TBTC: SmartContractFungibleAsset = {
+              name: "tBTC v2",
+              symbol: "tBTC",
+              decimals: 18,
+              homeNetwork: ETHEREUM,
+              contractAddress: "0x18084fba666a33d37592fa2633fd49a74dd93a88",
+            }
+
+            if (network === MEZO_TESTNET) {
+              const ethProvider =
+                this.chainService.providerForNetworkOrThrow(ETHEREUM)
+
+              const pricePoint = await getUSDPriceForTokens(
+                [TBTC],
+                ETHEREUM,
+                ethProvider,
+              ).then((pricePoints) =>
+                getPricePoint(
+                  MEZO_TESTNET.baseAsset,
+                  pricePoints[TBTC.contractAddress],
+                ),
+              )
+
+              return pricePoint
+            }
+
             return getUSDPriceForBaseAsset(network, provider)
           }),
         )
@@ -863,28 +863,34 @@ export default class IndexingService extends BaseService<Events> {
    * Loads prices for all tracked assets except untrusted/custom network assets
    */
   private async getTrackedAssetsPrices() {
+    logger.debug("Fetching tracked asset prices...")
     // get the prices of all assets to track and save them
+    const assetsToTrack = await this.db.getAssetsToTrack()
     const trackedNetworks = await this.chainService.getTrackedNetworks()
-    const assetsToTrack = trackedNetworks.flatMap((network) =>
-      this.getCachedAssets(network),
-    )
+
     // Filter all assets based on supported networks
-    const activeAssetsToTrack = assetsToTrack
-      .filter(isSmartContractFungibleAsset)
-      .filter(isTrustedAsset)
+    const activeAssetsToTrack = assetsToTrack.filter(
+      (asset) =>
+        isTrustedAsset(asset) &&
+        trackedNetworks.some((network) =>
+          sameNetwork(network, asset.homeNetwork),
+        ),
+    )
+
     try {
       // TODO only uses USD
       // FIXME None of the below handles assets that exist on multiple
       // FIXME networks; instead, the first listed network produces the
       // FIXME final price in those cases.
 
-      const allActiveAssetsByAddress = getAssetsByAddress(activeAssetsToTrack)
+      const allActiveAssetsByAddress = keyAssetsByAddress(activeAssetsToTrack)
 
       const activeAssetsByNetwork = trackedNetworks
         .map((network) => ({
-          activeAssetsByAddress: getActiveAssetsByAddressForNetwork(
-            network,
-            activeAssetsToTrack,
+          activeAssetsByAddress: keyAssetsByAddress(
+            activeAssetsToTrack.filter(({ homeNetwork }) =>
+              sameNetwork(homeNetwork, network),
+            ),
           ),
           network,
         }))
@@ -963,21 +969,20 @@ export default class IndexingService extends BaseService<Events> {
     }
   }
 
-  private async handlePriceAlarm(): Promise<void> {
-    if (Date.now() < this.lastPriceAlarmTime + 5 * SECOND) {
-      // If this is quickly called multiple times (for example when
-      // using a network for the first time with a wallet loaded
-      // with many accounts) only fetch prices once.
+  private async scheduleUpdateAssetsPrices(): Promise<void> {
+    // If there's a pending update do nothing
+    if (this.#pricesUpdateTimer) {
       return
     }
 
-    this.lastPriceAlarmTime = Date.now()
-
-    // Avoid awaiting here so price fetching can happen in the background
-    // and the extension can go on doing whatever it needs to do while waiting
-    // for prices to come back.
-    this.getBaseAssetsPrices()
-    this.getTrackedAssetsPrices()
+    this.#pricesUpdateTimer = setTimeout(() => {
+      this.#pricesUpdateTimer = null
+      // Avoid awaiting here so price fetching can happen in the background
+      // and the extension can go on doing whatever it needs to do while waiting
+      // for prices to come back.
+      this.getBaseAssetsPrices()
+      this.getTrackedAssetsPrices()
+    }, 5 * SECOND)
   }
 
   private async fetchAndCacheTokenLists(): Promise<void> {

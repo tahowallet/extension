@@ -71,7 +71,7 @@ jobs:
           prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
@@ -106,7 +106,7 @@ jobs:
           USE_MAINNET_FORK: true
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
@@ -179,7 +179,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
@@ -205,8 +205,8 @@ jobs:
           TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
           TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run npx playwright test --grep @expensive
-      - uses: actions/upload-artifact@v3
-        if: failure()
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() || cancelled() }}
         with:
           name: debug-output
           path: |
@@ -221,6 +221,9 @@ jobs:
     needs: [build, detect-if-flag-changed]
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      # https://playwright.dev/docs/service-workers-experimental
+      PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS: 1
     steps:
       - uses: actions/checkout@v3
       - name: Read .nvmrc
@@ -234,7 +237,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
@@ -268,8 +271,8 @@ jobs:
           TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run npx playwright test
-      - uses: actions/upload-artifact@v3
-        if: failure()
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() || cancelled() }}
         with:
           name: fork-debug-output
           path: |

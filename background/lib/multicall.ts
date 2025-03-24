@@ -15,6 +15,7 @@ export const MULTICALL_CONTRACT_ADDRESS =
 
 export const CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES = {
   "324": "0x47898B2C52C957663aE9AB46922dCec150a2272c", // zksync era
+  "31611": "0xBB4A6fb567ac8aA20503D3a6964d655439aa1F12", // Mezo testnet
 } as { [chainId: string]: string }
 
 export const MULTICALL_ABI = [
