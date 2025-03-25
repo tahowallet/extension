@@ -29,9 +29,7 @@ import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signin
 import {
   NETWORKS_SUPPORTING_SWAPS,
   OPTIMISM,
-  SECOND,
 } from "@tallyho/tally-background/constants"
-
 import {
   selectLatestQuoteRequest,
   selectSwapBuyAssets,
@@ -52,11 +50,9 @@ import {
   getSellAssetAmounts,
   getOwnedSellAssetAmounts,
 } from "../utils/swap"
-import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
+import { useOnMount, usePrevious } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 import SharedBackButton from "../components/Shared/SharedBackButton"
-
-const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -103,7 +99,6 @@ export default function Swap(): ReactElement {
     assets: { sellAsset: savedSellAsset, buyAsset: savedBuyAsset },
     amount: savedSwapAmount,
   } = (!locationAsset && savedQuoteRequest) || {
-    // ^ If coming from an asset item swap button, let the UI start fresh
     assets: { sellAsset: locationAsset },
   }
 
@@ -214,8 +209,6 @@ export default function Swap(): ReactElement {
       setSellAsset(newSellAsset)
       setSellAmount("")
 
-      // Updating the source asset quotes the new source asset against the existing
-      // target amount.
       if (newSellAsset && buyAsset && buyAmount) {
         requestQuoteUpdate({
           type: "getSellAmount",
@@ -234,8 +227,6 @@ export default function Swap(): ReactElement {
       setBuyAsset(newBuyAsset)
       setBuyAmount("")
 
-      // Updating the target asset quotes the new target asset against the existing
-      // source amount.
       if (sellAsset && newBuyAsset && sellAmount) {
         requestQuoteUpdate({
           type: "getBuyAmount",
@@ -280,8 +271,6 @@ export default function Swap(): ReactElement {
     isSameAsset(quote.sellAsset, sellAsset) &&
     isSameAsset(quote.buyAsset, buyAsset)
 
-  // Update if quote changes
-
   const prevQuoteTimestamp = usePrevious(quote?.timestamp)
 
   if (
@@ -300,40 +289,7 @@ export default function Swap(): ReactElement {
     }
   }
 
-  const [amountInputHasFocus, setAmountInputHasFocus] = useState(false)
-
-  useInterval(() => {
-    if (!isEnabled(FeatureFlags.SUPPORT_SWAP_QUOTE_REFRESH)) return
-
-    const isRecentQuote =
-      quote &&
-      // Time passed since last quote
-      Date.now() - quote.timestamp <= 3 * SECOND
-
-    const skipRefresh =
-      loadingQuote || (isRecentQuote && quoteAppliesToCurrentAssets)
-
-    if (
-      !skipRefresh &&
-      !amountInputHasFocus &&
-      sellAsset &&
-      buyAsset &&
-      (sellAmount || buyAmount)
-    ) {
-      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
-      const amount = sellAmount || buyAmount
-
-      requestQuoteUpdate({
-        type,
-        amount,
-        sellAsset,
-        buyAsset,
-      })
-    }
-  }, REFRESH_QUOTE_INTERVAL)
-
   useOnMount(() => {
-    // Request a quote on mount
     if (sellAsset && buyAsset && sellAmount) {
       requestQuoteUpdate({
         type: "getBuyAmount",
@@ -357,8 +313,6 @@ export default function Swap(): ReactElement {
             sellAsset,
             buyAsset,
             gasPrice:
-              // Let's use the gas price from 0x API for Optimism
-              // to avoid problems with gas price on Optimism Bedrock.
               currentNetwork.chainID === OPTIMISM.chainID
                 ? gasPrice
                 : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
@@ -393,7 +347,6 @@ export default function Swap(): ReactElement {
           <ReadOnlyNotice isLite />
           {isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) &&
             isEnabled(FeatureFlags.SHOW_SWAP_REWARDS) && (
-              // TODO: Add onClick function after design is ready
               <SharedIcon
                 icon="cog@2x.png"
                 width={20}
@@ -429,13 +382,10 @@ export default function Swap(): ReactElement {
               selectedAsset={sellAsset}
               isDisabled={loadingSellAmount}
               onAssetSelect={updateSellAsset}
-              onFocus={() => setAmountInputHasFocus(true)}
-              onBlur={() => setAmountInputHasFocus(false)}
               onErrorMessageChange={(error) => setHasError(!!error)}
               mainCurrencySign={mainCurrencySign}
               onAmountChange={(newAmount, error) => {
                 setSellAmount(newAmount)
-
                 if (!error) {
                   requestQuoteUpdate({
                     type: "getBuyAmount",
@@ -466,12 +416,9 @@ export default function Swap(): ReactElement {
               priceImpact={quote?.priceDetails?.priceImpact}
               isPriceDetailsLoading={isLoadingPriceDetails}
               showPriceDetails
-              // FIXME: Merge master asset list with account balances.
               assetsAndAmounts={buyAssets.map((asset) => ({ asset }))}
               selectedAsset={buyAsset}
               isDisabled={loadingBuyAmount}
-              onFocus={() => setAmountInputHasFocus(true)}
-              onBlur={() => setAmountInputHasFocus(false)}
               showMaxButton={false}
               mainCurrencySign={mainCurrencySign}
               onAssetSelect={updateBuyAsset}
@@ -568,12 +515,10 @@ export default function Swap(): ReactElement {
             font-weight: 500;
             line-height: 32px;
           }
-
           .loading_wrapper {
             min-height: 73.5px;
             margin: 7px 0 10px;
           }
-
           .footer {
             display: flex;
             justify-content: center;

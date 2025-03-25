@@ -15,7 +15,7 @@ import {
   SwapQuoteRequest,
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import { debounce, DebouncedFunc } from "lodash"
-import { useState, useRef, useCallback, useEffect } from "react"
+import { useState, useRef, useCallback } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   isSameAsset,
@@ -43,8 +43,32 @@ export type QuoteUpdate = {
   quoteRequest: SwapQuoteRequest
   timestamp: number
   amount: string
-  // Added error property to better handle and display error states
-  error?: string
+}
+
+export type QuoteUpdateResult =
+  | QuoteUpdate
+  | { error: string; previousQuote?: QuoteUpdate }
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: { maxRetries: number; retryInterval: number },
+): Promise<T> {
+  const attemptFn = async (attempt: number): Promise<T> => {
+    try {
+      return await fn()
+    } catch (error) {
+      if (attempt < options.maxRetries) {
+        const backoffTime = options.retryInterval * 2 ** (attempt - 1)
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, backoffTime)
+        })
+        return attemptFn(attempt + 1)
+      }
+      throw error
+    }
+  }
+
+  return attemptFn(1)
 }
 
 export const fetchQuote = async ({
@@ -166,12 +190,6 @@ export function useSwapQuote(useSwapConfig: {
     useSwapConfig.initialSwapSettings,
   )
 
-  // Default retry options
-  const retryOptions = useSwapConfig.retryOptions || {
-    maxRetries: 3,
-    retryInterval: 1000,
-  }
-
   // Quoted amounts
   const [quoteRequestState, setQuoteRequestState] = useSetState<{
     quote: QuoteUpdate | null
@@ -192,47 +210,15 @@ export function useSwapQuote(useSwapConfig: {
   const mountedRef = useIsMounted()
 
   const requestId = useRef(0)
-  const retryCount = useRef(0)
-
-  // Added reset quote function
-  const resetQuote = useCallback(() => {
-    setQuoteRequestState({
-      quote: null,
-      loading: false,
-      loadingType: undefined,
-    })
-  }, [setQuoteRequestState])
-
-  // Auto-refresh quote every 30 seconds to ensure it doesn't get stale
-  useEffect(() => {
-    let refreshInterval: NodeJS.Timeout | undefined
-
-    if (quoteRequestState.quote && !quoteRequestState.loading) {
-      refreshInterval = setInterval(() => {
-        const currentQuote = quoteRequestState.quote
-
-        if (currentQuote) {
-          requestQuoteUpdate({
-            type: currentQuote.type,
-            amount: currentQuote.amount,
-            sellAsset: currentQuote.sellAsset,
-            buyAsset: currentQuote.buyAsset,
-            transactionSettings: currentQuote.swapTransactionSettings,
-          })
-        }
-      }, 30000) // Refresh every 30 seconds
-    }
-
-    return () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval)
-      }
-    }
-  }, [quoteRequestState.quote, quoteRequestState.loading])
 
   const requestQuoteUpdate = useCallback(
     async (config: RequestQuoteUpdateConfig) => {
       if (!mountedRef.current) return
+
+      const retryOptions = useSwapConfig.retryOptions || {
+        maxRetries: 3,
+        retryInterval: 1000,
+      }
 
       const { type, amount, sellAsset, buyAsset } = config
 
@@ -327,26 +313,20 @@ export function useSwapQuote(useSwapConfig: {
       }
     },
     [
-      dispatch,
-      requestContextRef,
       mountedRef,
+      useSwapConfig.retryOptions,
+      requestContextRef,
       setQuoteRequestState,
-      retryOptions,
+      dispatch,
     ],
   )
 
-  const [debouncedRequest] = useState(() => {
-    const debouncedFn = debounce(
-      requestQuoteUpdate,
-      UPDATE_SWAP_QUOTE_DEBOUNCE_TIME,
-      {
-        leading: false,
-        trailing: true,
-      },
-    )
-
-    return debouncedFn
-  })
+  const [debouncedRequest] = useState(() =>
+    debounce(requestQuoteUpdate, UPDATE_SWAP_QUOTE_DEBOUNCE_TIME, {
+      leading: false,
+      trailing: true,
+    }),
+  )
 
   const loadingSellAmount = quoteRequestState.loadingType === "getSellAmount"
   const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
