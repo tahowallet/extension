@@ -458,6 +458,28 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    this.version(23).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const newURLs = getNewUrlsForTokenList(
+            storedPreferences,
+            // Old path
+            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka",
+            // New path
+            "bafkreidtegyj34mqah5ejveukif5ht5quddggv2gcb5yfthj5zw43um3y4",
+          )
+
+          // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.tokenLists = {
+            ...storedPreferences.tokenLists,
+            urls: newURLs,
+          }
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
