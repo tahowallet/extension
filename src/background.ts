@@ -37,6 +37,12 @@ type CampaignsJson = {
 }
 
 const tryUpdateCampaignSettings = async () => {
+  const noop = true
+
+  if (noop) {
+    return
+  }
+
   try {
     const response = await fetch("https://taho.xyz/campaigns.json")
     const json: CampaignsJson = await response.json()
