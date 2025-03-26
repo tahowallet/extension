@@ -209,6 +209,8 @@ export default function Swap(): ReactElement {
       setSellAsset(newSellAsset)
       setSellAmount("")
 
+      // Updating the source asset quotes the new source asset against the existing
+      // target amount.
       if (newSellAsset && buyAsset && buyAmount) {
         requestQuoteUpdate({
           type: "getSellAmount",
@@ -227,6 +229,8 @@ export default function Swap(): ReactElement {
       setBuyAsset(newBuyAsset)
       setBuyAmount("")
 
+      // Updating the target asset quotes the new target asset against the existing
+      // source amount.
       if (sellAsset && newBuyAsset && sellAmount) {
         requestQuoteUpdate({
           type: "getBuyAmount",
@@ -313,6 +317,7 @@ export default function Swap(): ReactElement {
             sellAsset,
             buyAsset,
             gasPrice:
+              // Let's use the gas price from 0x API for Optimism to avoid problems with gas price on Optimism Bedrock.
               currentNetwork.chainID === OPTIMISM.chainID
                 ? gasPrice
                 : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
