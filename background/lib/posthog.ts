@@ -16,6 +16,10 @@ export enum AnalyticsEvent {
   DAPP_CONNECTED = "Dapp Connected",
   VAULT_MIGRATION = "Migrate to newer vault version",
   VAULT_MIGRATION_FAILED = "Vault version migration failed",
+  // Campaign events
+  CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER = "in_wallet-claim_sats",
+  CAMPAIGN_MEZO_NFT_BORROW_BANNER = "in_wallet-borrow_musd",
+  CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER = "in_wallet-visit_store",
 }
 
 export enum OneTimeAnalyticsEvent {

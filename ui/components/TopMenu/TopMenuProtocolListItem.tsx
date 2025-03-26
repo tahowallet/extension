@@ -1,7 +1,8 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
+import { MEZO_TESTNET } from "@tallyho/tally-background/constants"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
@@ -11,6 +12,13 @@ type Props = {
   isDisabled: boolean
   onSelect: (network: EVMNetwork) => void
   showSelectedText?: boolean
+}
+
+const isFeaturedNetwork = (network: EVMNetwork) => {
+  if (sameNetwork(network, MEZO_TESTNET)) {
+    return Date.now() < new Date("2025-04-17").getTime()
+  }
+  return false
 }
 
 export default function TopMenuProtocolListItem(props: Props): ReactElement {
@@ -39,7 +47,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         </div>
       </div>
       <div className="right">
-        <div className="title">{network.name}</div>
+        <div className="title">
+          {network.name}
+          {isFeaturedNetwork(network) && (
+            <span className="featured">{t("protocol.newNetwork")}</span>
+          )}
+        </div>
         <div className="sub_title">
           {info}
           {isSelected && showSelectedText && (
@@ -49,6 +62,25 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
       </div>
       <style jsx>
         {`
+          .featured {
+            display: inline-block;
+            box-sizing: border-box;
+            vertical-align: top;
+            padding: 2px 8px; 
+            border-radius: 16px;
+            width: 45px;
+            height: 20px;
+            text-transform: uppercase;
+            color: var(--green-95);
+            background-color: var(--success);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            line-height: 16px;
+            text-align: center;
+            margin-left: 10px;
+          }
+
           li {
             display: flex;
             margin-bottom: 15px;

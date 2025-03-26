@@ -36,6 +36,7 @@ import {
 } from "./utils"
 import { toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -45,6 +46,11 @@ type Events = ServiceLifecycleEvents & {
    * Contains the Wallet Connect URI required to pair/connect
    */
   walletConnectInit: string
+  /**
+   * Contains claimer id
+   */
+  mezoClaimData: string
+  getMezoClaimData: void
 }
 
 export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
@@ -147,6 +153,8 @@ export default class ProviderBridgeService extends BaseService<Events> {
         chainId: toHexChainID(network.chainID),
       }
     } else if (event.request.method.startsWith("tally_")) {
+      response.result = null
+
       switch (event.request.method) {
         case "tally_setClaimReferrer":
           if (origin !== WEBSITE_ORIGIN) {
@@ -173,13 +181,22 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
           break
         }
+        case "tally_getMezoClaimData":
+          if (origin === new URL(MEZO_DAPP_BASE_URL).origin) {
+            // This is a hack, but we have no other way of accessing this data
+            // though it should probably be set post install on the Preference
+            // service
+            const installId = this.emitter.once("mezoClaimData")
+
+            this.emitter.emit("getMezoClaimData", undefined)
+            response.result = [await installId]
+          }
+          break
         default:
           logger.debug(
             `Unknown method ${event.request.method} in 'ProviderBridgeService'`,
           )
       }
-
-      response.result = null
     } else if (
       event.request.method === "eth_chainId" ||
       event.request.method === "net_version"

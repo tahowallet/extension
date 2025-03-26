@@ -65,6 +65,7 @@ export type Preferences = {
   analytics: AnalyticsPreferences
   autoLockInterval: UNIXTime
   shouldShowNotifications: boolean
+  showTestNetworks: boolean
 }
 
 /**
@@ -76,6 +77,7 @@ export type ManuallyDismissableItem =
   | "analytics-enabled-banner"
   | "copy-sensitive-material-warning"
   | "testnet-portal-is-open-banner"
+
 /**
  * Items that the user will see once and will not be auto-displayed again. Can
  * be used for tours, or for popups that can be retriggered but will not
@@ -84,10 +86,19 @@ export type ManuallyDismissableItem =
 export type SingleShotItem = "default-connection-popover"
 
 /**
+ * Items that the user might see only during campaigns.
+ * These are prefixed to distinguish them from common UI
+ * dismissable items
+ */
+export type CampaignDismissableItem = `campaign::${string}`
+/**
  * Items that the user will view one time and either manually dismiss or that
  * will remain auto-collapsed after first view.
  */
-export type DismissableItem = ManuallyDismissableItem | SingleShotItem
+export type DismissableItem =
+  | ManuallyDismissableItem
+  | SingleShotItem
+  | CampaignDismissableItem
 
 type DismissableItemEntry = {
   id: DismissableItem
@@ -434,6 +445,41 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    this.version(22).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Omit<Preferences, "showTestNetworks">) => {
+          const update: Partial<Preferences> = {
+            showTestNetworks: true,
+          }
+
+          Object.assign(storedPreferences, update)
+        }),
+    )
+
+    this.version(23).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const newURLs = getNewUrlsForTokenList(
+            storedPreferences,
+            // Old path
+            "bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka",
+            // New path
+            "bafkreidtegyj34mqah5ejveukif5ht5quddggv2gcb5yfthj5zw43um3y4",
+          )
+
+          // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
+          // eslint-disable-next-line no-param-reassign
+          storedPreferences.tokenLists = {
+            ...storedPreferences.tokenLists,
+            urls: newURLs,
+          }
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -458,6 +504,16 @@ export class PreferenceDatabase extends Dexie {
       .toCollection()
       .modify((storedPreferences: Preferences) => {
         const update: Partial<Preferences> = { autoLockInterval: newValue }
+
+        Object.assign(storedPreferences, update)
+      })
+  }
+
+  async setShowTestNetworks(newValue: boolean): Promise<void> {
+    await this.preferences
+      .toCollection()
+      .modify((storedPreferences: Preferences) => {
+        const update: Partial<Preferences> = { showTestNetworks: newValue }
 
         Object.assign(storedPreferences, update)
       })

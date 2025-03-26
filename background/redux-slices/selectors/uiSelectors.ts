@@ -36,6 +36,11 @@ export const selectShowingActivityDetail = createSelector(
   },
 )
 
+export const selectCampaigns = createSelector(
+  (state: RootState) => state.ui.campaigns,
+  (campaigns) => campaigns,
+)
+
 export const selectCurrentAddressNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount,
   (selectedAccount) => selectedAccount,
