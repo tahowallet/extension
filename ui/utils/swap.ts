@@ -24,7 +24,7 @@ import {
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
-const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 500
+const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 300
 
 export type QuoteUpdate = {
   type: QuoteType
@@ -41,6 +41,32 @@ export type QuoteUpdate = {
   quoteRequest: SwapQuoteRequest
   timestamp: number
   amount: string
+}
+
+export type QuoteUpdateResult =
+  | QuoteUpdate
+  | { error: string; previousQuote?: QuoteUpdate }
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: { maxRetries: number; retryInterval: number },
+): Promise<T> {
+  const attemptFn = async (attempt: number): Promise<T> => {
+    try {
+      return await fn()
+    } catch (error) {
+      if (attempt < options.maxRetries) {
+        const backoffTime = options.retryInterval * 2 ** (attempt - 1)
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, backoffTime)
+        })
+        return attemptFn(attempt + 1)
+      }
+      throw error
+    }
+  }
+
+  return attemptFn(1)
 }
 
 export const fetchQuote = async ({
@@ -140,6 +166,10 @@ type RequestQuoteUpdateConfig = {
 export function useSwapQuote(useSwapConfig: {
   savedQuoteRequest?: SwapQuoteRequest
   initialSwapSettings: QuoteUpdate["swapTransactionSettings"]
+  retryOptions?: {
+    maxRetries: number
+    retryInterval: number
+  }
 }): {
   quote: QuoteUpdate | null
   loading: boolean
@@ -154,11 +184,11 @@ export function useSwapQuote(useSwapConfig: {
     useSwapConfig.initialSwapSettings,
   )
 
-  // Quoted amounts
   const [quoteRequestState, setQuoteRequestState] = useSetState<{
     quote: QuoteUpdate | null
     loading: boolean
     loadingType?: QuoteType
+    lastError?: string
   }>({
     quote: null,
     loading: false,
@@ -179,73 +209,90 @@ export function useSwapQuote(useSwapConfig: {
     async (config: RequestQuoteUpdateConfig) => {
       if (!mountedRef.current) return
 
+      const retryOptions = useSwapConfig.retryOptions || {
+        maxRetries: 3,
+        retryInterval: 1000,
+      }
+
       const { type, amount, sellAsset, buyAsset } = config
 
       const requestContext = requestContextRef.current
       const transactionSettings =
         config.transactionSettings ?? requestContext.initialTransactionSettings
 
-      // Swap amounts can't update unless both sell and buy assets are specified.
       if (
         !sellAsset ||
         !buyAsset ||
         amount.trim() === "" ||
         Number(amount) === 0
       ) {
-        // noop
         return
       }
 
       setQuoteRequestState({ loading: true, loadingType: type })
 
       const id = requestId.current + 1
-
-      let result: QuoteUpdate | null = null
+      requestId.current = id
 
       try {
-        requestId.current = id
+        const result = await withRetry(
+          () =>
+            fetchQuote({
+              type,
+              amount,
+              sellAsset,
+              buyAsset,
+              getQuoteFn: (quoteRequest) =>
+                dispatch(
+                  fetchSwapPrice({ quoteRequest }),
+                ) as unknown as Promise<
+                  AsyncThunkFulfillmentType<typeof fetchSwapPrice>
+                >,
+              network: requestContext.network,
+              settings: transactionSettings,
+            }),
+          retryOptions,
+        )
 
-        result = await fetchQuote({
-          type,
-          amount,
-          sellAsset,
-          buyAsset,
-          getQuoteFn: (quoteRequest) =>
-            dispatch(fetchSwapPrice({ quoteRequest })) as unknown as Promise<
-              AsyncThunkFulfillmentType<typeof fetchSwapPrice>
-            >,
-          network: requestContext.network,
-          settings: transactionSettings,
-        })
-      } catch (error) {
-        logger.error("Error fetching quote!", error)
-      } finally {
         const hasPendingRequests = requestId.current !== id
 
         setQuoteRequestState({
           quote: result,
-          // Finish loading once the last quote is fulfilled
+          lastError: undefined,
           ...(hasPendingRequests
             ? { loading: true }
             : { loading: false, loadingType: undefined }),
         })
+      } catch (error) {
+        logger.error("Error fetching quote!", error)
+
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to fetch quote"
+
+        if (requestId.current === id) {
+          setQuoteRequestState({
+            lastError: errorMessage,
+            loading: false,
+            loadingType: undefined,
+          })
+        }
       }
     },
-    [dispatch, requestContextRef, mountedRef, setQuoteRequestState],
+    [
+      mountedRef,
+      useSwapConfig.retryOptions,
+      requestContextRef,
+      setQuoteRequestState,
+      dispatch,
+    ],
   )
 
-  const [debouncedRequest] = useState(() => {
-    const debouncedFn = debounce(
-      requestQuoteUpdate,
-      UPDATE_SWAP_QUOTE_DEBOUNCE_TIME,
-      {
-        leading: false,
-        trailing: true,
-      },
-    )
-
-    return debouncedFn
-  })
+  const [debouncedRequest] = useState(() =>
+    debounce(requestQuoteUpdate, UPDATE_SWAP_QUOTE_DEBOUNCE_TIME, {
+      leading: false,
+      trailing: true,
+    }),
+  )
 
   const loadingSellAmount = quoteRequestState.loadingType === "getSellAmount"
   const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
