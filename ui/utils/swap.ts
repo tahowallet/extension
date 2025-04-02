@@ -140,6 +140,7 @@ type RequestQuoteUpdateConfig = {
 export function useSwapQuote(useSwapConfig: {
   savedQuoteRequest?: SwapQuoteRequest
   initialSwapSettings: QuoteUpdate["swapTransactionSettings"]
+  pauseAutoRefresh?: boolean
 }): {
   quote: QuoteUpdate | null
   loading: boolean
@@ -248,6 +249,8 @@ export function useSwapQuote(useSwapConfig: {
   const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
 
   useEffect(() => {
+    if (useSwapConfig.pauseAutoRefresh) return undefined
+
     const interval = setInterval(() => {
       if (quoteRequestState.quote) {
         requestQuoteUpdate({
@@ -261,7 +264,11 @@ export function useSwapQuote(useSwapConfig: {
     }, 10000)
 
     return () => clearInterval(interval)
-  }, [quoteRequestState.quote, requestQuoteUpdate])
+  }, [
+    quoteRequestState.quote,
+    requestQuoteUpdate,
+    useSwapConfig.pauseAutoRefresh,
+  ])
 
   return {
     quote: quoteRequestState.quote,

@@ -29,7 +29,6 @@ import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signin
 import {
   NETWORKS_SUPPORTING_SWAPS,
   OPTIMISM,
-  SECOND,
 } from "@tallyho/tally-background/constants"
 
 import {
@@ -52,11 +51,9 @@ import {
   getSellAssetAmounts,
   getOwnedSellAssetAmounts,
 } from "../utils/swap"
-import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
+import { useOnMount, usePrevious } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 import SharedBackButton from "../components/Shared/SharedBackButton"
-
-const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
 export default function Swap(): ReactElement {
   const { t } = useTranslation()
@@ -163,6 +160,8 @@ export default function Swap(): ReactElement {
     }
   }, [sellAsset, sellAssetAmounts])
 
+  const [amountInputHasFocus, setAmountInputHasFocus] = useState(false)
+
   const {
     loading: loadingQuote,
     loadingSellAmount,
@@ -174,6 +173,7 @@ export default function Swap(): ReactElement {
       slippageTolerance: useBackgroundSelector(selectSlippageTolerance),
       networkSettings: useBackgroundSelector(selectDefaultNetworkFeeSettings),
     },
+    pauseAutoRefresh: amountInputHasFocus,
   })
 
   const inProgressApprovalContract = useBackgroundSelector(
@@ -299,38 +299,6 @@ export default function Swap(): ReactElement {
       setBuyAmount(newAmount)
     }
   }
-
-  const [amountInputHasFocus, setAmountInputHasFocus] = useState(false)
-
-  useInterval(() => {
-    if (!isEnabled(FeatureFlags.SUPPORT_SWAP_QUOTE_REFRESH)) return
-
-    const isRecentQuote =
-      quote &&
-      // Time passed since last quote
-      Date.now() - quote.timestamp <= 3 * SECOND
-
-    const skipRefresh =
-      loadingQuote || (isRecentQuote && quoteAppliesToCurrentAssets)
-
-    if (
-      !skipRefresh &&
-      !amountInputHasFocus &&
-      sellAsset &&
-      buyAsset &&
-      (sellAmount || buyAmount)
-    ) {
-      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
-      const amount = sellAmount || buyAmount
-
-      requestQuoteUpdate({
-        type,
-        amount,
-        sellAsset,
-        buyAsset,
-      })
-    }
-  }, REFRESH_QUOTE_INTERVAL)
 
   useOnMount(() => {
     // Request a quote on mount
