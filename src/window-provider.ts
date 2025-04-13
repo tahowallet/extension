@@ -503,6 +503,66 @@ function setupProviderWrapper() {
     },
     configurable: false,
   })
+
+  // Allow for replacing EIP6963 MetaMask as well.
+  //
+  // Note that EIP6963 should remove the need to do this, but instead sites
+  // like Etherscan still only present MetaMask as an option despite using a
+  // EIP6963-aware library under the covers. Malice, incompetence, or dirty
+  // dealings? That is left as an exercise for the reader.
+  window.addEventListener(
+    "eip6963:announceProvider",
+    (event) => {
+      if (
+        !("detail" in event) ||
+        typeof event.detail !== "object" ||
+        !event.detail
+      ) {
+        return
+      }
+
+      if (
+        "provider" in event.detail &&
+        (event.detail.provider === window.ethereum ||
+          event.detail.provider === window.taho)
+      ) {
+        return
+      }
+
+      if (
+        "info" in event.detail &&
+        typeof event.detail.info === "object" &&
+        event.detail.info &&
+        "name" in event.detail.info &&
+        event.detail.info.name === "MetaMask"
+      ) {
+        const eip6963Info = event.detail.info as {
+          uuid?: string | null
+          name: string | null
+          icon?: string | null
+          rdns?: string | null
+        }
+
+        event.preventDefault()
+        event.stopImmediatePropagation()
+
+        window.dispatchEvent(
+          new CustomEvent("eip6963:announceProvider", {
+            detail: Object.freeze({
+              info: {
+                uuid: eip6963Info.uuid,
+                name: eip6963Info.name,
+                icon: eip6963Info.icon,
+                rdns: eip6963Info.rdns,
+              },
+              provider: window.ethereum,
+            }),
+          }),
+        )
+      }
+    },
+    true,
+  )
 }
 
 function announceProvider() {
@@ -531,5 +591,25 @@ function injectProvider(): void {
 }
 
 injectProvider()
+
 window.addEventListener("eip6963:requestProvider", announceProvider)
+
+window.addEventListener("tally:reconnectProvider", () => {
+  // Log this for debugging
+  // eslint-disable-next-line no-console
+  console.debug(
+    "%c Reconnecting window provider",
+    "background: #bada55; color: #222",
+  )
+  if (!window.ethereum) {
+    // Log this for debugging
+    // eslint-disable-next-line no-console
+    console.debug(
+      "Setting taho on window object",
+      "background: #bada55; color: #222",
+    )
+    injectProvider()
+  }
+})
+
 announceProvider()

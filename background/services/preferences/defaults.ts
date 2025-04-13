@@ -8,7 +8,7 @@ const defaultPreferences = {
     autoUpdate: false,
     urls: [
       storageGatewayURL(
-        "ipfs://bafybeihufwj43zej34itf66qyguq35k4f6s4ual4uk3iy643wn3xnff2ka",
+        "ipfs://bafkreidtegyj34mqah5ejveukif5ht5quddggv2gcb5yfthj5zw43um3y4",
       ).href, // the Taho community-curated list
       "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
@@ -35,6 +35,7 @@ const defaultPreferences = {
   },
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
   shouldShowNotifications: false,
+  showTestNetworks: true,
 }
 
 export default defaultPreferences
