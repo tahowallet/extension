@@ -249,7 +249,9 @@ export function useSwapQuote(useSwapConfig: {
   const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
 
   useEffect(() => {
-    if (useSwapConfig.pauseAutoRefresh) return undefined
+    if (useSwapConfig.pauseAutoRefresh) {
+      return
+    }
 
     const interval = setInterval(() => {
       if (quoteRequestState.quote) {
