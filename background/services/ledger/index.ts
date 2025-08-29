@@ -154,6 +154,29 @@ async function generateLedgerId(
 }
 
 /**
+ * This prevents an issue with MV3 and event handlers registered async during
+ * service start by setting up proxy listeners at worker script evaluation
+ */
+
+const connectListeners: ((ev: USBConnectionEvent) => void | Promise<void>)[] =
+  []
+
+const disconnectListeners: ((
+  ev: USBConnectionEvent,
+) => void | Promise<void>)[] = []
+
+const runConnectHandlers = (ev: USBConnectionEvent) => {
+  connectListeners.forEach((fn) => fn(ev))
+}
+
+const runDisconnectHandlers = (ev: USBConnectionEvent) => {
+  disconnectListeners.forEach((fn) => fn(ev))
+}
+
+navigator.usb.addEventListener("connect", runConnectHandlers)
+navigator.usb.addEventListener("disconnect", runDisconnectHandlers)
+
+/**
  * The LedgerService is responsible for exposing the functionality of
  * Ledger devices in a digestible form by other services
  *
@@ -183,8 +206,8 @@ export default class LedgerService extends BaseService<Events> {
   private constructor(private db: LedgerDatabase) {
     super()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    connectListeners.push(this.#handleUSBConnect)
+    disconnectListeners.push(this.#handleUSBDisconnect)
 
     // Block serial oprations until the service is started, in case a
     // connection or disconnection event occurs to soon.
