@@ -8,8 +8,8 @@ import {
   TransactionConstruction,
   NetworkFeeSettings,
 } from "../transaction-construction"
-import { selectMainCurrencySymbol } from "./uiSelectors"
 import { selectAssetPricePoint } from "../prices"
+import { USD } from "../../constants"
 
 export const selectTransactionNetwork = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
@@ -78,23 +78,17 @@ export const selectBaseAsset = createSelector(
   (baseAsset) => baseAsset,
 )
 
-export const selectTransactionMainCurrencyPricePoint = createSelector(
+export const selectTransactionBaseAssetPricePoint = createSelector(
   [
     selectBaseAsset, // Base asset for transaction
     getPricesState,
-    (state) => selectMainCurrencySymbol(state),
     selectCurrentNetwork,
   ],
-  (
-    baseAsset,
-    prices,
-    mainCurrencySymbol,
-    currentNetwork,
-  ): PricePoint | undefined =>
+  (baseAsset, prices, currentNetwork): PricePoint | undefined =>
     selectAssetPricePoint(
       prices,
       baseAsset ?? currentNetwork.baseAsset, // Fallback to current network's base asset
-      mainCurrencySymbol,
+      USD.symbol,
     ),
 )
 

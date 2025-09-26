@@ -21,7 +21,7 @@ import {
 import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
-  selectMainCurrencySign,
+  selectDisplayCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -170,7 +170,7 @@ export default function Settings(): ReactElement {
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const shouldShowNotifications = useSelector(selectShowNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))

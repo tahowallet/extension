@@ -7,14 +7,18 @@ import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/trans
 import {
   heuristicDesiredDecimalsForUnitPrice,
   enrichAssetAmountWithMainCurrencyValues,
+  convertUSDAmountToCurrency,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
-  selectTransactionMainCurrencyPricePoint,
+  selectTransactionBaseAssetPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectDisplayCurrency,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ARBITRUM_ONE,
   BINANCE_SMART_CHAIN,
@@ -32,23 +36,25 @@ import {
   PricePoint,
   unitPricePointForPricePoint,
   assetAmountToDesiredDecimals,
+  DisplayCurrency,
 } from "@tallyho/tally-background/assets"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useBackgroundSelector } from "../../hooks"
 
-const getFeeDollarValue = (
-  currencyPrice: PricePoint | undefined,
+const getFeeFiatValue = (
+  feePricePoint: PricePoint | undefined,
+  currency: DisplayCurrency,
   gasLimit?: bigint,
   estimatedSpendPerGas?: bigint,
   estimatedL1RollupFee?: bigint,
 ): string | undefined => {
   if (estimatedSpendPerGas) {
-    if (!gasLimit || !currencyPrice) return undefined
+    if (!gasLimit || !feePricePoint) return undefined
 
-    const [asset] = currencyPrice.pair
+    const [asset] = feePricePoint.pair
 
     let currencyCostPerBaseAsset
-    const unitPricePoint = unitPricePointForPricePoint(currencyPrice)
+    const unitPricePoint = unitPricePointForPricePoint(feePricePoint)
 
     if (unitPricePoint) {
       currencyCostPerBaseAsset = assetAmountToDesiredDecimals(
@@ -57,15 +63,23 @@ const getFeeDollarValue = (
       )
     }
 
+    const usdAmount = {
+      asset,
+      amount: estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
+    }
+
+    const currencyAmount = convertUSDAmountToCurrency(usdAmount, currency)
+
+    if (!currencyAmount) {
+      return undefined
+    }
+
     const { localizedMainCurrencyAmount } =
       enrichAssetAmountWithMainCurrencyValues(
-        {
-          asset,
-          amount:
-            estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
-        },
-        currencyPrice,
+        currencyAmount,
+        feePricePoint,
         currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2,
+        currency,
       )
     return localizedMainCurrencyAmount
   }
@@ -144,8 +158,11 @@ export default function FeeSettingsText({
     0n
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint,
+    selectTransactionBaseAssetPricePoint,
   )
+
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
   const estimatedGweiAmount = estimateGweiAmount({
     baseFeePerGas,
     networkSettings,
@@ -169,8 +186,9 @@ export default function FeeSettingsText({
       : 0n
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
-  const dollarValue = getFeeDollarValue(
+  const dollarValue = getFeeFiatValue(
     mainCurrencyPricePoint,
+    displayCurrency,
     gasLimit,
     estimatedSpendPerGas,
     estimatedRollupFee,
@@ -184,6 +202,7 @@ export default function FeeSettingsText({
         <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
+          {/* TODO: Add proper currency formatting */}
           {networkIsBuiltIn && <span>~${dollarValue}</span>}
           <span className="fee_gwei">({gweiValue})</span>
         </>

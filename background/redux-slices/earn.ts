@@ -19,11 +19,12 @@ import {
   getSignerAddress,
 } from "./utils/contract-utils"
 import { enrichAssetAmountWithMainCurrencyValues } from "./utils/asset-utils"
+import { selectDisplayCurrency } from "./selectors/uiSelectors"
 import { ETHEREUM } from "../constants"
 import { EVMNetwork } from "../networks"
 import YEARN_VAULT_ABI from "../lib/yearnVault"
 import { getPoolAPR, getTokenPrice, tokenIcons } from "./earn-utils"
-import { PricesState } from "./prices"
+import type { RootState } from "."
 
 export type ApprovalTargetAllowance = {
   contractAddress: HexString
@@ -407,14 +408,14 @@ export default earnSlice.reducer
 export const updateVaults = createBackgroundAsyncThunk(
   "earn/updateLockedValues",
   async (vaultsToUpdate: AvailableVault[], { getState, dispatch }) => {
-    const currentState = getState()
-    const { prices } = currentState as {
-      earn: EarnState
-      prices: PricesState
-    }
+    const currentState = getState() as RootState
+
+    const { prices } = currentState
+
     const provider = getProvider()
     const signer = provider.getSigner()
     const account = await signer.getAddress()
+    const displayCurrency = selectDisplayCurrency(currentState)
 
     const vaultsWithNewValues = vaultsToUpdate.map(async (vault) => {
       const vaultContract = await getContract(vault.vaultAddress, VAULT_ABI)
@@ -446,11 +447,13 @@ export const updateVaults = createBackgroundAsyncThunk(
         { amount: newUserLockedValue.toBigInt(), asset: vault.asset },
         pricePoint,
         2,
+        displayCurrency,
       )
       const totalTVL = enrichAssetAmountWithMainCurrencyValues(
         { amount: newTotalTVL.toBigInt(), asset: vault.asset },
         pricePoint,
         2,
+        displayCurrency,
       )
 
       // TODO Check if management fee can change, if not => hardcode it

@@ -99,7 +99,18 @@ export type FungibleAsset = Asset & {
  * would give this some more teeth. Right now, any `FiatCurrency` can be assigned
  * to any `FungibleAsset` and vice versa.
  */
-export type FiatCurrency = FungibleAsset
+
+export type FiatCurrency = FungibleAsset & {
+  sign: string
+}
+
+// Used for displaying balances and values in the user selected currency
+export type DisplayCurrency = FiatCurrency & {
+  /**
+   * Conversion rate for 1 usd
+   */
+  rate: bigint
+}
 
 /**
  * Any asset that exists on a particular network; see {@link NetworkSpecific)

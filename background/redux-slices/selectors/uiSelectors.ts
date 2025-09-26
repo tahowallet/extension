@@ -1,9 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
 import type { RootState } from ".."
-import {
-  hardcodedMainCurrencySign,
-  hardcodedMainCurrencySymbol,
-} from "../utils/constants"
 
 export const selectCurrentNetwork = createSelector(
   (state: RootState) => state.ui.selectedAccount.network,
@@ -46,20 +42,12 @@ export const selectCurrentAddressNetwork = createSelector(
   (selectedAccount) => selectedAccount,
 )
 
-export const selectMainCurrencySymbol = createSelector(
-  (_: RootState) => null,
-  () => hardcodedMainCurrencySymbol,
-)
-
-export const selectMainCurrencySign = createSelector(
-  (_: RootState) => null,
-  () => hardcodedMainCurrencySign,
-)
-
-export const selectMainCurrency = createSelector(
+export const selectDisplayCurrency = createSelector(
   (state: RootState) => state.ui,
-  (state: RootState) => state.assets,
-  (state: RootState) => selectMainCurrencySymbol(state),
-  (_, assets, mainCurrencySymbol) =>
-    assets.find((asset) => asset.symbol === mainCurrencySymbol),
+  (ui) => ui.displayCurrency,
+)
+
+export const selectDisplayCurrencySign = createSelector(
+  selectDisplayCurrency,
+  (currency) => currency.sign,
 )

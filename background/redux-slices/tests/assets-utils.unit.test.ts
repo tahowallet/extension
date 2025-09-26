@@ -1,4 +1,4 @@
-import { MATIC, OPTIMISTIC_ETH, AVAX, ETH, BNB } from "../../constants"
+import { MATIC, OPTIMISTIC_ETH, AVAX, ETH, BNB, USD } from "../../constants"
 import {
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
@@ -56,6 +56,7 @@ describe(enrichAssetAmountWithMainCurrencyValues, () => {
       assetAmount,
       pricePoint,
       2,
+      USD,
     )
 
     expect(result).toMatchObject({

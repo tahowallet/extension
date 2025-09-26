@@ -12,7 +12,7 @@ import {
   selectCurrentAccountNFTs,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   FungibleAsset,
@@ -36,6 +36,8 @@ import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
+import { USD } from "@tallyho/tally-background/constants"
+
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -94,7 +96,8 @@ export default function Send(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
   const balanceData = useBackgroundSelector(selectCurrentAccountBalances)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
   const nftCollections = useBackgroundSelector((state) => {
     if (isEnabled(FeatureFlags.SUPPORT_NFT_SEND)) {
       return selectCurrentAccountNFTs(state)
@@ -113,7 +116,7 @@ export default function Send(): ReactElement {
         isTrustedAsset(assetAmount.asset),
     )
   const assetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.prices, selectedAsset, mainCurrencySymbol),
+    selectAssetPricePoint(state.prices, selectedAsset, USD.symbol),
   )
 
   const assetAmountFromForm = () => {
@@ -134,6 +137,7 @@ export default function Send(): ReactElement {
       },
       assetPricePoint,
       2,
+      displayCurrency,
     )
   }
 
@@ -231,7 +235,9 @@ export default function Send(): ReactElement {
             />
             {assetType === "token" && !hasError && (
               <div className="value">
-                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+                {/* TODO: Add proper currency formatting */}
+                {displayCurrency.sign}
+                {assetAmount?.localizedMainCurrencyAmount ?? "-"}
               </div>
             )}
           </div>

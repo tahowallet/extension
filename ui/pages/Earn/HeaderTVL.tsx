@@ -1,15 +1,19 @@
 import React, { ReactElement } from "react"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
+import { useBackgroundSelector } from "../../hooks"
 
 export default function HeaderTVL({
   balance,
 }: {
   balance: string
 }): ReactElement {
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
   return (
     <header>
       <div className="header_subtitle">Total value locked</div>
       <div className="header_balance">
-        <span className="currency_sign">$</span>
+        {/* TODO: Add proper currency formatting */}
+        <span className="currency_sign">{displayCurrency.sign}</span>
         {balance}
       </div>
       <style jsx>{`

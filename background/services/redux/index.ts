@@ -79,6 +79,7 @@ import {
   dismissableItemMarkedAsShown,
   toggleTestNetworks,
   updateCampaignsState,
+  setDisplayCurrency,
 } from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -939,6 +940,17 @@ export default class ReduxService extends BaseService<never> {
 
     this.indexingService.emitter.on("prices", (pricePoints) => {
       this.store.dispatch(newPricePoints(pricePoints))
+    })
+
+    // TODO: Pending migration
+    if (!this.store.getState().ui.displayCurrency) {
+      this.store.dispatch(setDisplayCurrency(USD))
+    }
+
+    this.indexingService.emitter.on("updatedCurrencyRates", async (rates) => {
+      // const currency = await this.preferenceService.getCurrency()
+
+      this.store.dispatch(setDisplayCurrency(rates[1]))
     })
 
     this.indexingService.emitter.on("refreshAsset", (asset) => {

@@ -5,7 +5,7 @@ import {
   DAO,
 } from "@tallyho/tally-background/redux-slices/claim"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
 import { HexString } from "@tallyho/tally-background/types"
 import ClaimAmountBanner from "./ClaimAmountBanner"
@@ -89,9 +89,9 @@ export default function ClaimReferral(props: {
   const dispatch = useBackgroundDispatch()
   const { DAOs, claimAmount } = props
   const { selectedForBonus } = useBackgroundSelector(selectClaimSelections)
-  const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
+  const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
   const amountWithBonus = formatCurrencyAmount(
-    mainCurrency,
+    mainCurrency.symbol,
     claimAmount * 0.05,
     2,
   )

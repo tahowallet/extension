@@ -14,7 +14,7 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
-  selectMainCurrencySign,
+  selectDisplayCurrencySign,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   isSmartContractFungibleAsset,
@@ -67,7 +67,7 @@ export default function Swap(): ReactElement {
 
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const isReadOnlyAccount = currentAccountSigner === ReadOnlyAccountSigner

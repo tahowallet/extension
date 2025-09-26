@@ -9,10 +9,10 @@ import { useTranslation } from "react-i18next"
 import { truncateDecimalAmount } from "@tallyho/tally-background/lib/utils"
 import {
   getPricesState,
-  selectMainCurrencySign,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
+import { USD } from "@tallyho/tally-background/constants"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import { useBackgroundSelector } from "../../hooks"
 import PriceDetails from "../Shared/PriceDetails"
@@ -28,8 +28,7 @@ export default function SwapQuoteBalanceChange(
   const { fromAsset, toAsset, priceImpact } = props
   const { t } = useTranslation()
   const prices = useBackgroundSelector(getPricesState)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
 
   const rawFromAmount = formatUnits(fromAsset.amount, fromAsset.asset.decimals)
   const fromAmount = truncateDecimalAmount(rawFromAmount, 2, 8)
@@ -39,23 +38,25 @@ export default function SwapQuoteBalanceChange(
   const fromAssetPricePoint = selectAssetPricePoint(
     prices,
     fromAsset.asset,
-    mainCurrencySymbol,
+    USD.symbol,
   )
   const toAssetPricePoint = selectAssetPricePoint(
     prices,
     toAsset.asset,
-    mainCurrencySymbol,
+    USD.symbol,
   )
 
   const fromAssetMainCurrencyAmount = enrichAssetAmountWithMainCurrencyValues(
     fromAsset,
     fromAssetPricePoint,
     2,
+    displayCurrency,
   ).localizedMainCurrencyAmount
   const toAssetMainCurrencyAmount = enrichAssetAmountWithMainCurrencyValues(
     toAsset,
     toAssetPricePoint,
     2,
+    displayCurrency,
   ).localizedMainCurrencyAmount
 
   return (
@@ -83,7 +84,7 @@ export default function SwapQuoteBalanceChange(
           <div className="balance_token_price">
             <PriceDetails
               amountMainCurrency={fromAssetMainCurrencyAmount}
-              mainCurrencySign={mainCurrencySign}
+              mainCurrencySign={displayCurrency.sign}
               isLoading={false}
             />
           </div>
@@ -107,7 +108,7 @@ export default function SwapQuoteBalanceChange(
           <div className="balance_token_price">
             <PriceDetails
               amountMainCurrency={toAssetMainCurrencyAmount}
-              mainCurrencySign={mainCurrencySign}
+              mainCurrencySign={displayCurrency.sign}
               isLoading={false}
               priceImpact={priceImpact}
             />

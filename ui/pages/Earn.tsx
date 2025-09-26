@@ -3,7 +3,7 @@ import {
   selectIsVaultDataStale,
 } from "@tallyho/tally-background/redux-slices/earn"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import { DOGGO, EarnStages } from "@tallyho/tally-background/constants"
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 
@@ -26,7 +26,7 @@ export default function Earn(): ReactElement {
   const vaultsWithLockedValues = useAllEarnVaults()
 
   const dispatch = useBackgroundDispatch()
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+  const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
 
   const [stage] = useState(EarnStages.Live) // TODO
 
@@ -69,7 +69,7 @@ export default function Earn(): ReactElement {
       {stage === EarnStages.Deploying && <HeaderDeploy />}
       {stage !== EarnStages.ComingSoon && stage !== EarnStages.Deploying && (
         <HeaderTVL
-          balance={formatCurrencyAmount(mainCurrencySymbol, totalTVL || 0, 2)}
+          balance={formatCurrencyAmount(mainCurrency.symbol, totalTVL || 0, 2)}
         />
       )}
       <SharedPanelSwitcher
@@ -94,7 +94,9 @@ export default function Earn(): ReactElement {
                 <div className="label">Total deposits</div>
                 <SharedSkeletonLoader isLoaded={!isValutDataStale} height={24}>
                   <div className="amount">
-                    ${formatCurrencyAmount(mainCurrencySymbol, userTVL || 0, 2)}
+                    {/* TODO: Add proper currency formatting */}
+                    {mainCurrency.sign}
+                    {formatCurrencyAmount(mainCurrency.symbol, userTVL || 0, 2)}
                   </div>
                 </SharedSkeletonLoader>
               </div>

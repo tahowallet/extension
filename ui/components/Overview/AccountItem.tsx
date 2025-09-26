@@ -1,4 +1,4 @@
-import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundSelector } from "../../hooks"
@@ -15,8 +15,8 @@ export default function AccountItem({
   percent: number
   total: number
 }): ReactElement {
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
-  const balance = formatCurrencyAmount(mainCurrencySymbol, total, 2)
+  const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
+  const balance = formatCurrencyAmount(mainCurrency.symbol, total, 2)
   const percentText = `${percent}%`
   return (
     <>
@@ -25,8 +25,12 @@ export default function AccountItem({
         <span className="account_value ellipsis" title={percentText}>
           {percentText}
         </span>
-        <span className="account_value ellipsis" title={`$${balance}`}>
-          ${balance}
+        {/* TODO: Add proper currency formatting */}
+        <span
+          className="account_value ellipsis"
+          title={`${mainCurrency.symbol} ${balance}`}
+        >
+          {mainCurrency.symbol} {balance}
         </span>
       </div>
       <style jsx>{`

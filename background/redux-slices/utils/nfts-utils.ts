@@ -1,4 +1,4 @@
-import { BUILT_IN_NETWORK_BASE_ASSETS } from "../../constants"
+import { BUILT_IN_NETWORK_BASE_ASSETS, USD } from "../../constants"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import {
   Filter,
@@ -9,12 +9,14 @@ import {
 } from "../nfts"
 import { AccountTotal } from "../selectors/accountsSelectors"
 import { enrichAssetAmountWithMainCurrencyValues } from "./asset-utils"
+import { DisplayCurrency } from "../../assets"
 
 const ETH_SYMBOLS = ["ETH", "WETH"]
 
 type NFTCollectionEnriched = NFTCollectionCached & {
   floorPrice?: {
     value: number
+    // TODO: Rename this? <displayCurrencyValue>
     valueUSD?: number
     tokenSymbol: string
   }
@@ -155,10 +157,10 @@ export const getTotalFloorPrice = (
 export const getNFTsCount = (collections: NFTCollectionCached[]): number =>
   collections.reduce((sum, collection) => sum + (collection.nftCount ?? 0), 0)
 
-export function enrichCollectionWithUSDFloorPrice(
+export function enrichCollectionWithCurrencyFloorPrice(
   collection: NFTCollectionCached,
   prices: PricesState,
-  mainCurrencySymbol: string,
+  displayCurrency: DisplayCurrency,
 ): NFTCollectionEnriched {
   if (!collection.floorPrice) return collection
 
@@ -171,13 +173,9 @@ export function enrichCollectionWithUSDFloorPrice(
 
   if (!baseAsset) return collection
 
-  const pricePoint = selectAssetPricePoint(
-    prices,
-    baseAsset,
-    mainCurrencySymbol,
-  )
+  const pricePoint = selectAssetPricePoint(prices, baseAsset, USD.symbol)
 
-  const valueUSD =
+  const displayCurrencyValue =
     enrichAssetAmountWithMainCurrencyValues(
       {
         asset: baseAsset,
@@ -185,13 +183,14 @@ export function enrichCollectionWithUSDFloorPrice(
       },
       pricePoint,
       2,
+      displayCurrency,
     ).mainCurrencyAmount ?? 0
 
   return {
     ...collection,
     floorPrice: {
       value,
-      valueUSD,
+      valueUSD: displayCurrencyValue,
       tokenSymbol,
     },
   }
@@ -201,7 +200,7 @@ export const getFilteredCollections = (
   collections: NFTCollectionCached[],
   filters: FiltersState,
   prices: PricesState,
-  mainCurrencySymbol: string,
+  displayCurrency: DisplayCurrency,
 ): NFTCollectionCached[] => {
   const applyPriceSort = filters.type === "asc" || filters.type === "desc"
 
@@ -217,10 +216,10 @@ export const getFilteredCollections = (
       const collectionWithSortedNFTs = sortNFTs(collection, filters.type)
 
       return applyPriceSort
-        ? enrichCollectionWithUSDFloorPrice(
+        ? enrichCollectionWithCurrencyFloorPrice(
             collectionWithSortedNFTs,
             prices,
-            mainCurrencySymbol,
+            displayCurrency,
           )
         : collectionWithSortedNFTs
     })

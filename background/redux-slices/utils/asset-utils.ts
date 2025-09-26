@@ -12,16 +12,17 @@ import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
   AssetMetadata,
+  DisplayCurrency,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
   OPTIMISM,
   POLYGON,
+  USD,
 } from "../../constants"
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import { hardcodedMainCurrencySign } from "./constants"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -184,18 +185,51 @@ export function formatCurrencyAmount(
   currencyAmount: number,
   desiredDecimals: number,
 ): string {
-  return (
-    new Intl.NumberFormat("default", {
-      style: "currency",
-      currency: currencySymbol,
-      minimumFractionDigits: desiredDecimals,
-      maximumFractionDigits: desiredDecimals,
-    })
-      .format(currencyAmount)
-      // FIXME This assumes the assetSymbol passed is USD
-      // FIXME Instead, we should use formatToParts.
-      .split(hardcodedMainCurrencySign)[1]
-  )
+  const fmt = new Intl.NumberFormat("default", {
+    style: "currency",
+    currency: currencySymbol,
+    minimumFractionDigits: desiredDecimals,
+    maximumFractionDigits: desiredDecimals,
+  })
+
+  return fmt
+    .formatToParts(currencyAmount)
+    .filter((part) => part.type !== "currency")
+    .map((part) => part.value)
+    .join("")
+    .trim()
+}
+
+export function convertUSDPricePointToCurrency(
+  pricePoint: PricePoint,
+  currency: DisplayCurrency,
+): PricePoint {
+  const { pair, amounts, time } = pricePoint
+  const idx = pricePoint.pair.findIndex((asset) => asset.symbol === "USD")
+
+  const newPricePoint: PricePoint = {
+    pair: [...pair],
+    amounts: [...amounts],
+    time,
+  }
+
+  newPricePoint.pair[idx] = currency
+  newPricePoint.amounts[idx] *= currency.rate
+
+  return newPricePoint
+}
+
+export function convertUSDAmountToCurrency(
+  assetAmount: AnyAssetAmount,
+  currency: DisplayCurrency,
+) {
+  const pricePoint: PricePoint = {
+    pair: [USD, currency],
+    amounts: [1n * 10n ** BigInt(USD.decimals), currency.rate],
+    time: Date.now(),
+  }
+
+  return convertAssetAmountViaPricePoint(assetAmount, pricePoint)
 }
 
 /**
@@ -214,6 +248,9 @@ export function formatCurrencyAmount(
  *        converting from fixed point to floating point. Also the number of
  *        decimals rendered in the localized form.
  *
+ * @param displayCurrency The currency in which to express and localize values.
+ *        Used for converting amounts (via its exchange rate) and for formatting
+ *        according to the user’s locale.
  * @return The existing `assetAmount` with four additional fields,
  *         `mainCurrencyValue`, `localizedMainCurrencyValue`, `unitPrice` and
  *         `localizedUnitPrice`. The first is the value of the asset in the
@@ -230,8 +267,10 @@ export function enrichAssetAmountWithMainCurrencyValues<
   assetAmount: T,
   assetPricePoint: PricePoint | undefined,
   desiredDecimals: number,
+  displayCurrency: DisplayCurrency,
 ): T & AssetMainCurrencyAmount {
-  const convertedAssetAmount = convertAssetAmountViaPricePoint(
+  // Converts to USD as price points are in USD
+  const assetAmountInUSD = convertAssetAmountViaPricePoint(
     assetAmount,
     assetPricePoint,
   )
@@ -239,9 +278,14 @@ export function enrichAssetAmountWithMainCurrencyValues<
     unitPrice: undefined,
   }
 
-  if (typeof convertedAssetAmount !== "undefined") {
+  if (typeof assetAmountInUSD !== "undefined") {
+    const assetAmountInFiatCurrency = convertUSDAmountToCurrency(
+      assetAmountInUSD,
+      displayCurrency,
+    )!
+
     const convertedDecimalValue = assetAmountToDesiredDecimals(
-      convertedAssetAmount,
+      assetAmountInFiatCurrency,
       desiredDecimals,
     )
     const unitPriceDecimalValue =
@@ -253,7 +297,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
       ...assetAmount,
       mainCurrencyAmount: convertedDecimalValue,
       localizedMainCurrencyAmount: formatCurrencyAmount(
-        convertedAssetAmount.asset.symbol,
+        displayCurrency.symbol,
         convertedDecimalValue,
         desiredDecimals,
       ),
@@ -262,7 +306,7 @@ export function enrichAssetAmountWithMainCurrencyValues<
         typeof unitPriceDecimalValue === "undefined"
           ? undefined
           : formatCurrencyAmount(
-              convertedAssetAmount.asset.symbol,
+              assetAmountInUSD.asset.symbol,
               unitPriceDecimalValue,
               desiredDecimals,
             ),

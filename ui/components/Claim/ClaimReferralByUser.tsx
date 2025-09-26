@@ -2,7 +2,7 @@ import {
   Referrer,
   resetReferrer,
 } from "@tallyho/tally-background/redux-slices/claim"
-import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
@@ -15,9 +15,9 @@ export default function ClaimReferralByUser({
   claimAmount: number
 }): ReactElement | null {
   const dispatch = useBackgroundDispatch()
-  const mainCurrency = useBackgroundSelector(selectMainCurrencySymbol)
+  const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
   const amountWithBonus = formatCurrencyAmount(
-    mainCurrency,
+    mainCurrency.symbol,
     claimAmount * 0.05,
     2,
   )

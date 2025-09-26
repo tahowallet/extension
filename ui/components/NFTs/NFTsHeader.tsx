@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectAllNFTsCount,
   selectIsReloadingNFTs,
-  selectMainCurrencySign,
+  selectDisplayCurrencySign,
   selectFilteredNFTBadgesCount,
   selectFilteredNFTCollectionsCount,
   selectFilteredNFTsCount,
@@ -30,7 +30,7 @@ export default function NFTsHeader(): ReactElement {
     selectFilteredNFTCollectionsCount,
   )
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
     useTotalNFTsFloorPrice()
@@ -67,6 +67,7 @@ export default function NFTsHeader(): ReactElement {
             />
           )}
           <div className="stats_totals">
+            {/* TODO: Add proper currency formatting */}
             <span className="currency_sign">{mainCurrencySign}</span>
             <span
               className="currency_total"

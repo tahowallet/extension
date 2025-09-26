@@ -1,10 +1,14 @@
 import React, { ReactElement } from "react"
 
-import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  AccountTotal,
+  selectDisplayCurrency,
+} from "@tallyho/tally-background/redux-slices/selectors"
 
 import { useTranslation } from "react-i18next"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import SharedAvatar from "./SharedAvatar"
+import { useBackgroundSelector } from "../../hooks"
 
 function Avatar({ avatarURL }: { avatarURL?: string }) {
   return (
@@ -26,6 +30,7 @@ interface Props {
 export default function SharedAccountItemSummary(props: Props): ReactElement {
   const { isSelected, accountTotal, children, style } = props
   const { t } = useTranslation()
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
   const {
     address,
     shortenedAddress,
@@ -70,7 +75,11 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
             {typeof localizedTotalMainCurrencyAmount === "undefined" ? (
               <SharedLoadingSpinner size="small" />
             ) : (
-              <div className="balance">${localizedTotalMainCurrencyAmount}</div>
+              <div className="balance">
+                {/* TODO: Add proper currency formatting */}
+                {displayCurrency.sign}
+                {localizedTotalMainCurrencyAmount}
+              </div>
             )}
             {isSelected ? (
               <div className="connected_status">

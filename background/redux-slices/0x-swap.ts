@@ -23,13 +23,13 @@ import {
 import { EVMNetwork } from "../networks"
 import { setSnackbarMessage } from "./ui"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
-import { AssetsState } from "./assets"
+import { selectDisplayCurrency } from "./selectors/uiSelectors"
 import {
   checkCurrencyAmount,
   PriceDetails,
   SwapQuoteRequest,
 } from "./utils/0x-swap-utils"
-import { PricesState } from "./prices"
+import type { RootState } from "."
 
 // This is how 0x represents native token addresses
 const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
@@ -318,10 +318,10 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
   > => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
-    const { assets, prices } = getState() as {
-      assets: AssetsState
-      prices: PricesState
-    }
+    const state = getState() as RootState
+    const { assets, prices } = state
+
+    const displayCurrency = selectDisplayCurrency(state)
 
     const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
       takerAddress: tradeAddress,
@@ -378,6 +378,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           prices,
           quote.buyAmount,
           quoteRequest.network,
+          displayCurrency,
         ),
         sellCurrencyAmount: await checkCurrencyAmount(
           Number(quote.sellTokenToEthRate),
@@ -386,6 +387,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           prices,
           quote.sellAmount,
           quoteRequest.network,
+          displayCurrency,
         ),
       }
 

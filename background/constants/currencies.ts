@@ -1,18 +1,27 @@
-import { CoinGeckoAsset, FiatCurrency } from "../assets"
+import { CoinGeckoAsset, DisplayCurrency } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 import { BASE_ASSETS_BY_CUSTOM_NAME } from "./base-assets"
 import { coinTypesByAssetSymbol } from "./coin-types"
 
-export const USD: FiatCurrency = {
+export const USD: DisplayCurrency = {
   name: "United States Dollar",
   symbol: "USD",
   decimals: 10,
+  rate: 1_000_000_0000n, // 1 USD = 1 USD
+  sign: "$",
 }
 
-export const FIAT_CURRENCIES = [USD]
-export const FIAT_CURRENCIES_SYMBOL = FIAT_CURRENCIES.map(
-  (currency) => currency.symbol,
-)
+/**
+ * The default currency used for pricing assets in fiat money.
+ *
+ * This setting also depends on the available price sources. Changing it will
+ * have no effect unless price points can be retrieved for the new currency.
+ *
+ * Currently, price points are fetched from:
+ * - A price oracle using the asset USDC pair.
+ * - CoinGecko query using USD (currently disabled due to new limits).
+ */
+export const DEFAULT_DISPLAY_CURRENCY = USD
 
 export const ETH_DATA = {
   coinType: coinTypesByAssetSymbol.ETH,

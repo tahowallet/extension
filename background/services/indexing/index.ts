@@ -5,6 +5,7 @@ import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
   AnyAssetMetadata,
+  DisplayCurrency,
   FungibleAsset,
   isSmartContractFungibleAsset,
   keyAssetsByAddress,
@@ -15,10 +16,10 @@ import {
 import {
   ARBITRUM_ONE,
   AVALANCHE,
+  DEFAULT_DISPLAY_CURRENCY,
   BINANCE_SMART_CHAIN,
   BUILT_IN_NETWORK_BASE_ASSETS,
   ETHEREUM,
-  FIAT_CURRENCIES,
   HOUR,
   MEZO_TESTNET,
   MINUTE,
@@ -96,6 +97,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
+  updatedCurrencyRates: DisplayCurrency[]
 }
 
 function allowVerifyAssetByManualImport(
@@ -164,6 +166,13 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 1,
         },
         handler: () => this.handleBalanceAlarm(),
+      },
+      currencyData: {
+        schedule: {
+          delayInMinutes: 0.5,
+          periodInMinutes: (12 * HOUR) / MINUTE,
+        },
+        handler: () => this.handleCurrencyRatesAlarm(),
       },
       forceBalance: {
         schedule: {
@@ -780,14 +789,14 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Loads prices for base network assets
+   * Loads prices for base network assets against USD
    */
   private async getBaseAssetsPrices() {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const baseAssets = await this.chainService.getNetworkBaseAssets()
-      let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+      let basicPrices = await getPrices(baseAssets, [DEFAULT_DISPLAY_CURRENCY])
 
       if (basicPrices.length === 0) {
         basicPrices = await Promise.all(
@@ -854,7 +863,6 @@ export default class IndexingService extends BaseService<Events> {
       logger.error(
         "Error getting base asset prices from coingecko",
         BUILT_IN_NETWORK_BASE_ASSETS,
-        FIAT_CURRENCIES,
       )
     }
   }
@@ -1096,5 +1104,24 @@ export default class IndexingService extends BaseService<Events> {
     await this.fetchAndCacheTokenLists().then(() =>
       this.loadAccountBalances(true),
     )
+  }
+
+  private async handleCurrencyRatesAlarm(): Promise<void> {
+    logger.info("Syncing currency rates...")
+    // doesn't do anything yet
+
+    const EUR: DisplayCurrency = {
+      ...USD,
+      symbol: "EUR",
+      sign: "€",
+      decimals: 10,
+      // Sample response: 8 decimals bigint
+      // Rate: BigInt("0x06f9d7c8") * 100n,
+      rate:
+        (1n * 10n ** BigInt(USD.decimals + 10)) / (BigInt("0x06f9d7c8") * 100n),
+    }
+
+    const currencyRates = [USD, EUR]
+    this.emitter.emit("updatedCurrencyRates", currencyRates)
   }
 }

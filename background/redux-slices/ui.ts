@@ -1,7 +1,11 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
-import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
+import {
+  DEFAULT_DISPLAY_CURRENCY,
+  ETHEREUM,
+  TEST_NETWORK_BY_CHAIN_ID,
+} from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
@@ -17,6 +21,7 @@ import {
   Campaigns,
   FilterCampaignsById,
 } from "../services/campaign/types"
+import { DisplayCurrency } from "../assets"
 
 export const defaultSettings = {
   hideDust: false,
@@ -37,6 +42,7 @@ export type UIState = {
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   shownDismissableItems?: DismissableItem[]
+  displayCurrency: DisplayCurrency
   // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
@@ -53,6 +59,7 @@ export type UIState = {
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
+  // FIXME: This should be populated from db on startup?
   accountSignerSettings: AccountSignerSettings[]
   // Active user campaigns
   campaigns: {
@@ -92,6 +99,7 @@ export const initialState: UIState = {
     address: "",
     network: ETHEREUM,
   },
+  displayCurrency: DEFAULT_DISPLAY_CURRENCY,
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",
@@ -238,6 +246,10 @@ const uiSlice = createSlice({
       state,
       { payload }: { payload: AccountSignerSettings[] },
     ) => ({ ...state, accountSignerSettings: payload }),
+    setDisplayCurrency: (state, { payload }: { payload: DisplayCurrency }) => ({
+      ...state,
+      displayCurrency: payload,
+    }),
     setAutoLockInterval: (state, { payload }: { payload: number }) => ({
       ...state,
       settings: { ...state.settings, autoLockInterval: payload },
@@ -277,6 +289,7 @@ export const {
   setAccountsSignerSettings,
   setAutoLockInterval,
   updateCampaignsState,
+  setDisplayCurrency,
 } = uiSlice.actions
 
 export default uiSlice.reducer
