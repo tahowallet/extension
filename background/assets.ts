@@ -1,5 +1,6 @@
 import { keyBy } from "lodash"
 import { TokenList } from "@uniswap/token-lists"
+import { FixedPoint } from "@thesis-co/cent/dist/types"
 import { UNIXTime, HexString } from "./types"
 import {
   NetworkSpecific,
@@ -100,16 +101,15 @@ export type FungibleAsset = Asset & {
  * to any `FungibleAsset` and vice versa.
  */
 
-export type FiatCurrency = FungibleAsset & {
-  sign: string
-}
+export type FiatCurrency = FungibleAsset
 
 // Used for displaying balances and values in the user selected currency
-export type DisplayCurrency = FiatCurrency & {
+export type DisplayCurrency = {
+  code: string
   /**
    * Conversion rate for 1 usd
    */
-  rate: bigint
+  rate: FixedPoint
 }
 
 /**

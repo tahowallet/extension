@@ -13,6 +13,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import { USD } from "@tallyho/tally-background/constants"
+import { currencies } from "@thesis-co/cent"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import { useBackgroundSelector } from "../../hooks"
 import PriceDetails from "../Shared/PriceDetails"
@@ -84,7 +85,7 @@ export default function SwapQuoteBalanceChange(
           <div className="balance_token_price">
             <PriceDetails
               amountMainCurrency={fromAssetMainCurrencyAmount}
-              mainCurrencySign={displayCurrency.sign}
+              mainCurrencySign={currencies[displayCurrency.code].symbol}
               isLoading={false}
             />
           </div>
@@ -108,7 +109,7 @@ export default function SwapQuoteBalanceChange(
           <div className="balance_token_price">
             <PriceDetails
               amountMainCurrency={toAssetMainCurrencyAmount}
-              mainCurrencySign={displayCurrency.sign}
+              mainCurrencySign={currencies[displayCurrency.code].symbol}
               isLoading={false}
               priceImpact={priceImpact}
             />

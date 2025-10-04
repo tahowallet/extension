@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 
 import { useTranslation } from "react-i18next"
+import { currencies } from "@thesis-co/cent"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import SharedAvatar from "./SharedAvatar"
 import { useBackgroundSelector } from "../../hooks"
@@ -77,7 +78,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
             ) : (
               <div className="balance">
                 {/* TODO: Add proper currency formatting */}
-                {displayCurrency.sign}
+                {currencies[displayCurrency.code].symbol}
                 {localizedTotalMainCurrencyAmount}
               </div>
             )}

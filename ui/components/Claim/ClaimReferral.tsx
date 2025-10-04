@@ -91,7 +91,7 @@ export default function ClaimReferral(props: {
   const { selectedForBonus } = useBackgroundSelector(selectClaimSelections)
   const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
   const amountWithBonus = formatCurrencyAmount(
-    mainCurrency.symbol,
+    mainCurrency.code,
     claimAmount * 0.05,
     2,
   )

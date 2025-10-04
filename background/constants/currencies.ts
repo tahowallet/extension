@@ -1,15 +1,7 @@
-import { CoinGeckoAsset, DisplayCurrency } from "../assets"
+import { CoinGeckoAsset, FiatCurrency } from "../assets"
 import { NetworkBaseAsset } from "../networks"
 import { BASE_ASSETS_BY_CUSTOM_NAME } from "./base-assets"
 import { coinTypesByAssetSymbol } from "./coin-types"
-
-export const USD: DisplayCurrency = {
-  name: "United States Dollar",
-  symbol: "USD",
-  decimals: 10,
-  rate: 1_000_000_0000n, // 1 USD = 1 USD
-  sign: "$",
-}
 
 /**
  * The default currency used for pricing assets in fiat money.
@@ -21,7 +13,11 @@ export const USD: DisplayCurrency = {
  * - A price oracle using the asset USDC pair.
  * - CoinGecko query using USD (currently disabled due to new limits).
  */
-export const DEFAULT_DISPLAY_CURRENCY = USD
+export const USD: FiatCurrency = {
+  name: "United States Dollar",
+  symbol: "USD",
+  decimals: 10,
+}
 
 export const ETH_DATA = {
   coinType: coinTypesByAssetSymbol.ETH,

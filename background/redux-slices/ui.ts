@@ -1,11 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import { AddressOnNetwork } from "../accounts"
-import {
-  DEFAULT_DISPLAY_CURRENCY,
-  ETHEREUM,
-  TEST_NETWORK_BY_CHAIN_ID,
-} from "../constants"
+import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
 import { AnalyticsEvent, OneTimeAnalyticsEvent } from "../lib/posthog"
 import { EVMNetwork } from "../networks"
 import { AnalyticsPreferences, DismissableItem } from "../services/preferences"
@@ -99,7 +95,10 @@ export const initialState: UIState = {
     address: "",
     network: ETHEREUM,
   },
-  displayCurrency: DEFAULT_DISPLAY_CURRENCY,
+  displayCurrency: {
+    code: "USD",
+    rate: { amount: 1_000_000_000_0n, decimals: 10n },
+  },
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
   snackbarMessage: "",

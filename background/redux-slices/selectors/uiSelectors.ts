@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
+import { currencies } from "@thesis-co/cent"
 import type { RootState } from ".."
 
 export const selectCurrentNetwork = createSelector(
@@ -49,5 +50,5 @@ export const selectDisplayCurrency = createSelector(
 
 export const selectDisplayCurrencySign = createSelector(
   selectDisplayCurrency,
-  (currency) => currency.sign,
+  (currency) => currencies[currency.code].symbol,
 )

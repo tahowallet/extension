@@ -14,6 +14,7 @@ import { AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { HexString } from "@tallyho/tally-background/types"
 import { USD } from "@tallyho/tally-background/constants"
 
+import { currencies } from "@thesis-co/cent"
 import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
@@ -75,7 +76,8 @@ export function TransferSummaryBase({
           </span>
           {/* TODO: Add proper currency formatting */}
           <span className="label">
-            {displayCurrency.symbol} {`${localizedMainCurrencyAmount}`}
+            {currencies[displayCurrency.code].symbol}{" "}
+            {`${localizedMainCurrencyAmount}`}
           </span>
         </div>
 

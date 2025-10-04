@@ -38,6 +38,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
 import { USD } from "@tallyho/tally-background/constants"
 
+import { currencies } from "@thesis-co/cent"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedButton from "../components/Shared/SharedButton"
@@ -236,7 +237,7 @@ export default function Send(): ReactElement {
             {assetType === "token" && !hasError && (
               <div className="value">
                 {/* TODO: Add proper currency formatting */}
-                {displayCurrency.sign}
+                {currencies[displayCurrency.code].symbol}
                 {assetAmount?.localizedMainCurrencyAmount ?? "-"}
               </div>
             )}

@@ -7,7 +7,7 @@ import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/trans
 import {
   heuristicDesiredDecimalsForUnitPrice,
   enrichAssetAmountWithMainCurrencyValues,
-  convertUSDAmountToCurrency,
+  convertUSDPricePointToCurrency,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   selectDefaultNetworkFeeSettings,
@@ -39,6 +39,7 @@ import {
   DisplayCurrency,
 } from "@tallyho/tally-background/assets"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
+import { currencies } from "@thesis-co/cent"
 import { useBackgroundSelector } from "../../hooks"
 
 const getFeeFiatValue = (
@@ -63,20 +64,14 @@ const getFeeFiatValue = (
       )
     }
 
-    const usdAmount = {
+    const assetAmount = {
       asset,
       amount: estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
     }
 
-    const currencyAmount = convertUSDAmountToCurrency(usdAmount, currency)
-
-    if (!currencyAmount) {
-      return undefined
-    }
-
     const { localizedMainCurrencyAmount } =
       enrichAssetAmountWithMainCurrencyValues(
-        currencyAmount,
+        assetAmount,
         feePricePoint,
         currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2,
         currency,
@@ -157,11 +152,14 @@ export default function FeeSettingsText({
     networkSettings.values?.baseFeePerGas ??
     0n
 
-  const mainCurrencyPricePoint = useBackgroundSelector(
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
+  const baseAssetPricePoint = useBackgroundSelector(
     selectTransactionBaseAssetPricePoint,
   )
-
-  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+  const mainCurrencyPricePoint = baseAssetPricePoint
+    ? convertUSDPricePointToCurrency(baseAssetPricePoint, displayCurrency)
+    : undefined
 
   const estimatedGweiAmount = estimateGweiAmount({
     baseFeePerGas,
@@ -186,7 +184,7 @@ export default function FeeSettingsText({
       : 0n
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
-  const dollarValue = getFeeFiatValue(
+  const currencyValue = getFeeFiatValue(
     mainCurrencyPricePoint,
     displayCurrency,
     gasLimit,
@@ -194,7 +192,7 @@ export default function FeeSettingsText({
     estimatedRollupFee,
   )
 
-  if (!dollarValue) return <div>~{gweiValue}</div>
+  if (!currencyValue) return <div>~{gweiValue}</div>
 
   return (
     <div className="fee_settings_text_container">
@@ -203,7 +201,12 @@ export default function FeeSettingsText({
       ) : (
         <>
           {/* TODO: Add proper currency formatting */}
-          {networkIsBuiltIn && <span>~${dollarValue}</span>}
+          {networkIsBuiltIn && (
+            <span>
+              ~{currencies[displayCurrency.code].symbol}
+              {currencyValue}
+            </span>
+          )}
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}

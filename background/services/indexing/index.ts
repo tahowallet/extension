@@ -16,7 +16,6 @@ import {
 import {
   ARBITRUM_ONE,
   AVALANCHE,
-  DEFAULT_DISPLAY_CURRENCY,
   BINANCE_SMART_CHAIN,
   BUILT_IN_NETWORK_BASE_ASSETS,
   ETHEREUM,
@@ -796,7 +795,7 @@ export default class IndexingService extends BaseService<Events> {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const baseAssets = await this.chainService.getNetworkBaseAssets()
-      let basicPrices = await getPrices(baseAssets, [DEFAULT_DISPLAY_CURRENCY])
+      let basicPrices = await getPrices(baseAssets, [USD])
 
       if (basicPrices.length === 0) {
         basicPrices = await Promise.all(
@@ -1108,20 +1107,12 @@ export default class IndexingService extends BaseService<Events> {
 
   private async handleCurrencyRatesAlarm(): Promise<void> {
     logger.info("Syncing currency rates...")
-    // doesn't do anything yet
 
-    const EUR: DisplayCurrency = {
-      ...USD,
-      symbol: "EUR",
-      sign: "€",
-      decimals: 10,
-      // Sample response: 8 decimals bigint
-      // Rate: BigInt("0x06f9d7c8") * 100n,
-      rate:
-        (1n * 10n ** BigInt(USD.decimals + 10)) / (BigInt("0x06f9d7c8") * 100n),
+    const rate = {
+      code: "EUR",
+      rate: { amount: BigInt("0x06f9d7c8"), decimals: 8n },
     }
 
-    const currencyRates = [USD, EUR]
-    this.emitter.emit("updatedCurrencyRates", currencyRates)
+    this.emitter.emit("updatedCurrencyRates", [rate])
   }
 }

@@ -17,6 +17,7 @@ import {
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import { currencies } from "@thesis-co/cent"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -109,7 +110,9 @@ export default function CommonAssetListItem(
                     {isMissingLocalizedUserValue ? (
                       <SharedLoadingSpinner size="small" />
                     ) : (
-                      `${displayCurrency.sign}${assetAmount.localizedMainCurrencyAmount}`
+                      `${currencies[displayCurrency.code].symbol}${
+                        assetAmount.localizedMainCurrencyAmount
+                      }`
                     )}
                   </div>
                 )

@@ -8,6 +8,7 @@ import {
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useHistory } from "react-router-dom"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { currencies } from "@thesis-co/cent"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -168,7 +169,9 @@ export default function WalletAccountBalanceControl(
           <span className="balance_area">
             <span className="balance" data-testid="wallet_balance">
               {/* TODO: Add proper currency formatting */}
-              <span className="currency_sign">{currency.sign}</span>
+              <span className="currency_sign">
+                {currencies[currency.code].symbol}
+              </span>
               {balance ?? 0}
             </span>
           </span>

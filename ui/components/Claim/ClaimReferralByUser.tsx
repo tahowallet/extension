@@ -17,7 +17,7 @@ export default function ClaimReferralByUser({
   const dispatch = useBackgroundDispatch()
   const mainCurrency = useBackgroundSelector(selectDisplayCurrency)
   const amountWithBonus = formatCurrencyAmount(
-    mainCurrency.symbol,
+    mainCurrency.code,
     claimAmount * 0.05,
     2,
   )

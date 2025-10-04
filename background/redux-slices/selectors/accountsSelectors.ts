@@ -8,7 +8,7 @@ import {
 } from "../accounts"
 import { AssetsState } from "../assets"
 import {
-  convertUSDAmountToCurrency,
+  convertUSDPricePointToCurrency,
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
@@ -273,7 +273,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
         assets: combinedAssetAmounts,
         totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
           ? formatCurrencyAmount(
-              displayCurrency.symbol,
+              displayCurrency.code,
               totalMainCurrencyAmount,
               desiredDecimals.default,
             )
@@ -326,7 +326,7 @@ export const selectCurrentAccountBalances = createSelector(
       unverifiedAssetAmounts,
       totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
         ? formatCurrencyAmount(
-            displayCurrency.symbol,
+            displayCurrency.code,
             totalMainCurrencyAmount,
             desiredDecimals.default,
           )
@@ -411,28 +411,18 @@ const getTotalBalance = (
         return 0
       }
 
-      const usdAmount = convertAssetAmountViaPricePoint(
-        assetAmount,
+      const pricePoint = convertUSDPricePointToCurrency(
         assetPricePoint,
-      )
-
-      if (!usdAmount) {
-        return 0
-      }
-
-      const convertedAmount = convertUSDAmountToCurrency(
-        usdAmount,
         displayCurrency,
       )
 
-      if (typeof convertedAmount === "undefined") {
+      const amount = convertAssetAmountViaPricePoint(assetAmount, pricePoint)
+
+      if (typeof amount === "undefined") {
         return 0
       }
 
-      return assetAmountToDesiredDecimals(
-        convertedAmount,
-        desiredDecimals.default,
-      )
+      return assetAmountToDesiredDecimals(amount, desiredDecimals.default)
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
 
@@ -487,7 +477,7 @@ function getNetworkAccountTotalsByCategory(
         name: name ?? accountData.defaultName,
         avatarURL: avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
-          displayCurrency.symbol,
+          displayCurrency.code,
           getTotalBalance(accountData.balances, prices, displayCurrency),
           desiredDecimals.default,
         ),
@@ -655,7 +645,7 @@ export const getTotalBalanceForOverview = createSelector(
   selectDisplayCurrency,
   (accountsTotal, displayCurrency) =>
     formatCurrencyAmount(
-      displayCurrency.symbol,
+      displayCurrency.code,
       Object.values(accountsTotal).reduce(
         (total, { totals }) =>
           Object.values(totals).reduce((sum, balance) => sum + balance) + total,

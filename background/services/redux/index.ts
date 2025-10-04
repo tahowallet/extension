@@ -943,14 +943,19 @@ export default class ReduxService extends BaseService<never> {
     })
 
     // TODO: Pending migration
-    if (!this.store.getState().ui.displayCurrency) {
-      this.store.dispatch(setDisplayCurrency(USD))
+    if (!this.store.getState().ui.displayCurrency?.code) {
+      this.store.dispatch(
+        setDisplayCurrency({
+          code: "USD",
+          rate: { amount: 1000000n, decimals: 6n },
+        }),
+      )
     }
 
     this.indexingService.emitter.on("updatedCurrencyRates", async (rates) => {
       // const currency = await this.preferenceService.getCurrency()
 
-      this.store.dispatch(setDisplayCurrency(rates[1]))
+      this.store.dispatch(setDisplayCurrency(rates[0]))
     })
 
     this.indexingService.emitter.on("refreshAsset", (asset) => {

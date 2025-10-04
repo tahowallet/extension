@@ -7,7 +7,7 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../assets"
-import { DEFAULT_DISPLAY_CURRENCY } from "../constants"
+import { USD } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import {
   FullAssetID,
@@ -40,7 +40,7 @@ const pricesSlice = createSlice({
       pricePoints.forEach((pricePoint) => {
         const fiatCurrency = pricePoint.pair.find(
           // FIXME: What if we have price points not in USD?
-          (asset) => asset.symbol === DEFAULT_DISPLAY_CURRENCY.symbol,
+          (asset) => asset.symbol === USD.symbol,
         )
 
         const [pricedAsset] = pricePoint.pair.filter(
