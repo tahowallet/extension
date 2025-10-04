@@ -205,6 +205,10 @@ export function convertUSDPricePointToCurrency(
   pricePoint: PricePoint,
   currency: DisplayCurrency,
 ) {
+  if (currency.code === "USD") {
+    // noop
+    return pricePoint
+  }
   const { pair, amounts, time } = pricePoint
   const idx = pricePoint.pair.findIndex((asset) => asset.symbol === "USD")
 
@@ -225,7 +229,7 @@ export function convertUSDPricePointToCurrency(
   const rate = new ExchangeRate({
     // Keeping 10 decimals ensures we don't lose precision during conversion
     baseCurrency: { ...currencies[currency.code], decimals: 10n },
-    quoteCurrency: currencies.USD,
+    quoteCurrency: { ...currencies.USD, decimals: 10n },
     rate: FixedPoint(currency.rate),
   })
 

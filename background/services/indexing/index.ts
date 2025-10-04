@@ -57,6 +57,7 @@ import {
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
 import { wrapIfEnabled } from "../../features"
+import fetchRatesFromPriceFeeds from "./price-feeds"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -1108,11 +1109,32 @@ export default class IndexingService extends BaseService<Events> {
   private async handleCurrencyRatesAlarm(): Promise<void> {
     logger.info("Syncing currency rates...")
 
-    const rate = {
-      code: "EUR",
-      rate: { amount: BigInt("0x06f9d7c8"), decimals: 8n },
-    }
+    const rates = await fetchRatesFromPriceFeeds(this.chainService)
 
-    this.emitter.emit("updatedCurrencyRates", [rate])
+    this.db.saveCurrencyRates(Object.values(rates))
+
+    const currencies = Object.keys(rates).map((id) => {
+      const currencyCode = id.split("/")[0]
+
+      return {
+        code: currencyCode,
+        rate: { amount: rates[id].value, decimals: rates[id].decimals },
+      }
+    })
+
+    this.emitter.emit("updatedCurrencyRates", currencies)
+  }
+
+  async getCurrencyRates() {
+    const rates = await this.db.getCurrencyRates()
+
+    return rates.map((rate) => {
+      const currencyCode = rate.id.split("/")[0]
+
+      return {
+        code: currencyCode,
+        rate: { amount: rate.value, decimals: rate.decimals },
+      }
+    })
   }
 }

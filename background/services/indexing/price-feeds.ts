@@ -22,6 +22,7 @@ type FeedRate = {
   id: string
   value: bigint
   decimals: bigint
+  time: number
 }
 
 export default async function fetchRatesFromPriceFeeds(
@@ -40,10 +41,14 @@ export default async function fetchRatesFromPriceFeeds(
         provider,
       )
 
+      const decimals = contract.callStatic.decimals()
+      const roundData = await contract.callStatic.latestRoundData()
+
       return {
         id,
-        value: (await contract.callStatic.latestRoundData()) as BigNumber,
-        decimals: (await contract.callStatic.decimals()) as number,
+        value: roundData.answer as BigNumber,
+        decimals: (await decimals) as number,
+        time: Date.now(),
       }
     }),
   )
@@ -55,6 +60,7 @@ export default async function fetchRatesFromPriceFeeds(
         id: feed.id,
         value: feed.value.toBigInt(),
         decimals: BigInt(feed.decimals),
+        time: feed.time,
       },
     ]),
   )

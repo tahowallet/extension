@@ -83,6 +83,7 @@ export type Events = {
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
+  updateDisplayCurrency: string
   toggleShowTestNetworks: boolean
   clearNotification: string
 }
@@ -380,6 +381,13 @@ export const updateAutoLockInterval = createBackgroundAsyncThunk(
     }
 
     emitter.emit("updateAutoLockInterval", parsedValue)
+  },
+)
+
+export const updateDisplayCurrency = createBackgroundAsyncThunk(
+  "ui/updateDisplayCurrency",
+  async (newValue: string) => {
+    emitter.emit("updateDisplayCurrency", newValue)
   },
 )
 

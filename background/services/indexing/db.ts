@@ -121,6 +121,13 @@ function numberArrayCompare(arr1: number[], arr2: number[]) {
   return 0
 }
 
+type FeedRate = {
+  id: string
+  value: bigint
+  decimals: bigint
+  time: number
+}
+
 export class IndexingDatabase extends Dexie {
   private prices!: Dexie.Table<PriceMeasurement, number>
 
@@ -138,6 +145,11 @@ export class IndexingDatabase extends Dexie {
    * User- and contract-supplied fungible asset metadata.
    */
   private customAssets!: Dexie.Table<CustomAsset, number>
+
+  /**
+   * Currency exchange rates
+   */
+  private currencyRates!: Dexie.Table<FeedRate, "id">
 
   /*
    * Tokens whose balances should be checked periodically. It might make sense
@@ -256,6 +268,8 @@ export class IndexingDatabase extends Dexie {
           delete customAsset.metadata?.discoveryTxHash
         }),
     )
+
+    this.version(7).stores({ currencyRates: "&id" })
   }
 
   async savePriceMeasurement(
@@ -428,6 +442,14 @@ export class IndexingDatabase extends Dexie {
       url: k,
       tokenList: v as TokenList,
     }))
+  }
+
+  async getCurrencyRates(): Promise<FeedRate[]> {
+    return this.currencyRates.toArray()
+  }
+
+  async saveCurrencyRates(rates: FeedRate[]): Promise<void> {
+    await this.currencyRates.bulkPut(rates)
   }
 }
 

@@ -480,6 +480,27 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    this.version(24).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const USD: DisplayCurrency = {
+            code: "USD",
+            rate: {
+              amount: 1_000_000_0000n, // 1 USD = 1 USD
+              decimals: 10n,
+            },
+          }
+
+          const update: Partial<Preferences> = {
+            currency: USD,
+          }
+
+          Object.assign(storedPreferences, update)
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works

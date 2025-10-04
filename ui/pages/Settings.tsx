@@ -17,10 +17,12 @@ import {
   selectUseFlashbots,
   selectAutoLockTimer as selectAutoLockInterval,
   updateAutoLockInterval,
+  updateDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
+  selectDisplayCurrency,
   selectDisplayCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -62,6 +64,13 @@ const AUTO_LOCK_OPTIONS = [
   { label: "15", value: String(15 * MINUTE) },
   { label: "30", value: String(30 * MINUTE) },
   { label: "60", value: String(60 * MINUTE) },
+]
+
+const CURRENCY_OPTIONS = [
+  { label: "USD", value: "USD" },
+  { label: "EUR", value: "EUR" },
+  { label: "AUD", value: "AUD" },
+  { label: "JPY", value: "JPY" },
 ]
 
 const FOOTER_ACTIONS = [
@@ -361,6 +370,24 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
+  const currencySettings = {
+    title: "Currency",
+    component: () => (
+      <SharedSelect
+        width={194}
+        options={CURRENCY_OPTIONS}
+        onChange={(currencyCode) =>
+          dispatch(updateDisplayCurrency(currencyCode))
+        }
+        defaultIndex={CURRENCY_OPTIONS.findIndex(
+          (option) => option.value === displayCurrency.code,
+        )}
+      />
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -415,6 +442,7 @@ export default function Settings(): ReactElement {
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
+        currencySettings,
         ...wrapIfEnabled(
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
           notificationBanner,

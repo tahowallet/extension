@@ -947,16 +947,24 @@ export default class ReduxService extends BaseService<never> {
       this.store.dispatch(
         setDisplayCurrency({
           code: "USD",
-          rate: { amount: 1000000n, decimals: 6n },
+          rate: { amount: 1_000_000_000_0n, decimals: 10n },
         }),
       )
     }
 
-    this.indexingService.emitter.on("updatedCurrencyRates", async (rates) => {
-      // const currency = await this.preferenceService.getCurrency()
+    this.indexingService.emitter.on(
+      "updatedCurrencyRates",
+      async (currencies) => {
+        const currency = await this.preferenceService.getCurrency()
 
-      this.store.dispatch(setDisplayCurrency(rates[0]))
-    })
+        const update = currencies.find((rate) => rate.code === currency.code)
+
+        // Only update if we successfully received an updated rate
+        if (update) {
+          await this.store.dispatch(setDisplayCurrency(update))
+        }
+      },
+    )
 
     this.indexingService.emitter.on("refreshAsset", (asset) => {
       this.store.dispatch(
@@ -1766,6 +1774,24 @@ export default class ReduxService extends BaseService<never> {
 
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
+    })
+
+    uiSliceEmitter.on("updateDisplayCurrency", async (currencyCode) => {
+      const rates = await this.indexingService.getCurrencyRates()
+
+      const fallback = {
+        code: "USD",
+        rate: { amount: 1_000_000_000_0n, decimals: 10n },
+      }
+
+      const currency =
+        // FIXME: Currency won't update if there's no exchange rate available.
+        // This may confuse the user, as it may seem the dropdown did nothing.
+        rates.find((rate) => rate.code === currencyCode) ?? fallback
+
+      // TODO: dispatch preferences db update
+
+      this.store.dispatch(setDisplayCurrency(currency))
     })
   }
 
