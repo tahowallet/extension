@@ -1,7 +1,7 @@
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
 import {
   getPricesState,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   AssetDecimalAmount,
@@ -12,6 +12,9 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { HexString } from "@tallyho/tally-background/types"
+import { USD } from "@tallyho/tally-background/constants"
+
+import { currencies } from "@thesis-co/cent"
 import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
@@ -34,15 +37,22 @@ export function TransferSummaryBase({
     keyPrefix: "signTransaction.assetTransfer",
   })
   const prices = useBackgroundSelector(getPricesState)
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
+
   const assetPricePoint = selectAssetPricePoint(
     prices,
     assetAmount.asset,
-    mainCurrencySymbol,
+    USD.symbol,
   )
+
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
   const localizedMainCurrencyAmount =
-    enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
-      .localizedMainCurrencyAmount ?? "-"
+    enrichAssetAmountWithMainCurrencyValues(
+      assetAmount,
+      assetPricePoint,
+      2,
+      displayCurrency,
+    ).localizedMainCurrencyAmount ?? "-"
 
   return (
     <>
@@ -64,7 +74,11 @@ export function TransferSummaryBase({
           <span className="spend_amount">
             {assetAmount.localizedDecimalAmount} {assetAmount.asset.symbol}
           </span>
-          <span className="label">${`${localizedMainCurrencyAmount}`}</span>
+          {/* TODO: Add proper currency formatting */}
+          <span className="label">
+            {currencies[displayCurrency.code].symbol}{" "}
+            {`${localizedMainCurrencyAmount}`}
+          </span>
         </div>
 
         <style jsx>

@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccountSigner,
   selectCurrentNetwork,
+  selectDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useHistory } from "react-router-dom"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { currencies } from "@thesis-co/cent"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -141,6 +143,7 @@ export default function WalletAccountBalanceControl(
   const hasSavedSeed = true
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const currency = useBackgroundSelector(selectDisplayCurrency)
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -165,7 +168,10 @@ export default function WalletAccountBalanceControl(
           <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance" data-testid="wallet_balance">
-              <span className="dollar_sign">$</span>
+              {/* TODO: Add proper currency formatting */}
+              <span className="currency_sign">
+                {currencies[currency.code].symbol}
+              </span>
               {balance ?? 0}
             </span>
           </span>

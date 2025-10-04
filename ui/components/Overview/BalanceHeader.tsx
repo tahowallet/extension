@@ -1,6 +1,8 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import { selectDisplayCurrencySign } from "@tallyho/tally-background/redux-slices/selectors"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import { useBackgroundSelector } from "../../hooks"
 
 export default function BalanceHeader({
   balance,
@@ -10,6 +12,7 @@ export default function BalanceHeader({
   initializationTimeExpired: boolean
 }): ReactElement {
   const { t } = useTranslation()
+  const displayCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   return (
     <>
@@ -20,7 +23,7 @@ export default function BalanceHeader({
         <div className="balance_value">
           {initializationTimeExpired || balance ? (
             <>
-              <span className="balance_sign">$</span>
+              <span className="balance_sign">{displayCurrencySign}</span>
               {balance ?? "0"}
             </>
           ) : (

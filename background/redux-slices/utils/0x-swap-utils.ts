@@ -1,4 +1,4 @@
-import { PricePoint, SwappableAsset } from "../../assets"
+import { DisplayCurrency, PricePoint, SwappableAsset } from "../../assets"
 import { USD } from "../../constants"
 import {
   convertFixedPointNumber,
@@ -13,7 +13,6 @@ import {
   AssetMainCurrencyAmount,
   enrichAssetAmountWithMainCurrencyValues,
 } from "./asset-utils"
-import { hardcodedMainCurrencySymbol } from "./constants"
 
 type SwapAssets = {
   sellAsset: SwappableAsset
@@ -47,7 +46,6 @@ export async function getAssetPricePoint(
   assets: AssetsState,
   network: EVMNetwork,
 ): Promise<PricePoint | undefined> {
-  // FIXME: review
   const assetPricesNetworks = assets
     .filter(
       (assetItem) =>
@@ -62,6 +60,7 @@ export async function getAssetPricePoint(
       return contractAddress
     })
 
+  // FIXME: Prices here shouldnt rely on coingecko API
   const [unitPricePoint] = Object.values(
     await getTokenPrices(assetPricesNetworks, USD, network),
   )
@@ -77,6 +76,7 @@ export async function getAssetAmount(
   asset: SwappableAsset,
   amount: string,
   network: EVMNetwork,
+  displayCurrency: DisplayCurrency,
 ): Promise<
   | ({
       asset: SwappableAsset
@@ -93,11 +93,7 @@ export async function getAssetAmount(
     asset.decimals,
   )
 
-  const assetPricePoint = selectAssetPricePoint(
-    prices,
-    asset,
-    hardcodedMainCurrencySymbol,
-  )
+  const assetPricePoint = selectAssetPricePoint(prices, asset, USD.symbol)
 
   return enrichAssetAmountWithMainCurrencyValues(
     {
@@ -106,6 +102,7 @@ export async function getAssetAmount(
     },
     assetPricePoint ?? (await getAssetPricePoint(asset, assets, network)),
     2,
+    displayCurrency,
   )
 }
 
@@ -121,6 +118,7 @@ export async function checkCurrencyAmount(
   prices: PricesState,
   amount: string,
   network: EVMNetwork,
+  displayCurrency: DisplayCurrency,
 ): Promise<string | undefined> {
   const currencyAmount =
     tokenToEthRate >= 0.1
@@ -134,6 +132,7 @@ export async function checkCurrencyAmount(
               decimals: asset.decimals,
             }),
             network,
+            displayCurrency,
           )
         )?.localizedMainCurrencyAmount
       : undefined

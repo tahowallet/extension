@@ -7,13 +7,17 @@ import {
   isTrustedAsset,
   isUntrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectDisplayCurrency,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
 import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
+import { currencies } from "@thesis-co/cent"
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
@@ -47,6 +51,7 @@ export default function CommonAssetListItem(
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
 
   const contractAddress =
     "contractAddress" in assetAmount.asset
@@ -101,10 +106,13 @@ export default function CommonAssetListItem(
                   isMissingLocalizedUserValue
                 ) && (
                   <div className="price">
+                    {/* TODO: Add proper currency formatting */}
                     {isMissingLocalizedUserValue ? (
                       <SharedLoadingSpinner size="small" />
                     ) : (
-                      `$${assetAmount.localizedMainCurrencyAmount}`
+                      `${currencies[displayCurrency.code].symbol}${
+                        assetAmount.localizedMainCurrencyAmount
+                      }`
                     )}
                   </div>
                 )

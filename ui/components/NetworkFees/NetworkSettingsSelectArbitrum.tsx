@@ -1,5 +1,5 @@
 import { BlockEstimate } from "@tallyho/tally-background/networks"
-import { selectTransactionMainCurrencyPricePoint } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import { selectTransactionBaseAssetPricePoint } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import {
   EstimatedFeesPerGas,
   NetworkFeeSettings,
@@ -8,8 +8,9 @@ import {
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
-import { PricePoint } from "@tallyho/tally-background/assets"
+import { DisplayCurrency, PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundSelector } from "../../hooks"
 import { capitalize } from "../../utils/textUtils"
@@ -37,6 +38,7 @@ const gasOptionFromEstimate = (
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
   { confidence, price }: BlockEstimate,
+  displayCurrency: DisplayCurrency,
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -55,6 +57,7 @@ const gasOptionFromEstimate = (
           },
           mainCurrencyPricePoint,
           2,
+          displayCurrency,
         )
       : undefined
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
@@ -83,8 +86,10 @@ export default function NetworkSettingsSelectArbitrum({
   )
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint,
+    selectTransactionBaseAssetPricePoint,
   )
+
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
 
   // Select activeFeeIndex to regular option once gasOptions load
   useEffect(() => {
@@ -142,6 +147,7 @@ export default function NetworkSettingsSelectArbitrum({
             option.price ?? 0n,
             gasLimit,
             option,
+            displayCurrency,
           ),
         )
         const selectedGasFeeIndex = updatedGasOptions.findIndex(
@@ -160,6 +166,7 @@ export default function NetworkSettingsSelectArbitrum({
     networkSettings.gasLimit,
     mainCurrencyPricePoint,
     currentlySelectedType,
+    displayCurrency,
   ])
 
   useEffect(() => {

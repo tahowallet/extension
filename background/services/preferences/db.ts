@@ -1,6 +1,6 @@
 import Dexie, { Transaction } from "dexie"
 
-import { FiatCurrency } from "../../assets"
+import { DisplayCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
@@ -58,7 +58,7 @@ export type Preferences = {
   id?: number
   savedAt: number
   tokenLists: TokenListPreferences
-  currency: FiatCurrency
+  currency: DisplayCurrency
   defaultWallet: boolean
   selectedAccount: AddressOnNetwork
   accountSignersSettings: AccountSignerSettings[]

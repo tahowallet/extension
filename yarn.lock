@@ -4048,6 +4048,13 @@
   resolved "https://registry.yarnpkg.com/@testing-library/user-event/-/user-event-14.4.3.tgz#af975e367743fa91989cd666666aec31a8f50591"
   integrity sha512-kCUc5MEwaEMakkO5x7aoD+DLi02ehmEM2QCGWvNqAS1dV/fAvORWEjnjsEIvml59M7Y5kCkWN6fCCyPOe8OL6Q==
 
+"@thesis-co/cent@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@thesis-co/cent/-/cent-0.0.4.tgz#aaf774533acb9095f7e9050cc92f2267d63bdd01"
+  integrity sha512-jLDHzSW9tD+Yf0q+9VUVu0q7D21juQrBXsW/17+eG8JRBF0RH5IFpjU5hFMsvN5zYnfKasF0L1r16UiZJNMGaA==
+  dependencies:
+    zod "^3.25.67"
+
 "@thesis-co/eslint-config@^0.6.1":
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/@thesis-co/eslint-config/-/eslint-config-0.6.1.tgz#70e419cd02b271ae447eebdefaa5359dca301285"
@@ -16075,6 +16082,11 @@ zip-stream@^4.1.0:
     archiver-utils "^2.1.0"
     compress-commons "^4.1.0"
     readable-stream "^3.6.0"
+
+zod@^3.25.67:
+  version "3.25.76"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.25.76.tgz#26841c3f6fd22a6a2760e7ccb719179768471e34"
+  integrity sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==
 
 zxcvbn@^4.4.2:
   version "4.4.2"
