@@ -947,16 +947,27 @@ export default class ReduxService extends BaseService<never> {
       this.store.dispatch(
         setDisplayCurrency({
           code: "USD",
-          rate: { amount: 1000000n, decimals: 6n },
+          rate: { amount: 1000000n, decimals: 10n },
         }),
       )
     }
 
-    this.indexingService.emitter.on("updatedCurrencyRates", async (rates) => {
-      // const currency = await this.preferenceService.getCurrency()
+    this.indexingService.emitter.on(
+      "updatedCurrencyRates",
+      async (currencies) => {
+        const currency = await this.preferenceService.getCurrency()
 
-      this.store.dispatch(setDisplayCurrency(rates[0]))
-    })
+        const fallback = {
+          code: currency.code,
+          rate: { amount: 1000000n, decimals: 10n },
+        }
+
+        const update =
+          currencies.find((rate) => rate.code === currency.code) ?? fallback
+
+        this.store.dispatch(setDisplayCurrency(update))
+      },
+    )
 
     this.indexingService.emitter.on("refreshAsset", (asset) => {
       this.store.dispatch(
