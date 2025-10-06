@@ -56,7 +56,7 @@ import {
   isTrustedAsset,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
-import { wrapIfEnabled } from "../../features"
+import { FeatureFlags, isDisabled, wrapIfEnabled } from "../../features"
 import fetchRatesFromPriceFeeds from "./price-feeds"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -1107,6 +1107,10 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async handleCurrencyRatesAlarm(): Promise<void> {
+    if (isDisabled(FeatureFlags.SUPPORT_MULTIPLE_CURRENCIES)) {
+      return
+    }
+
     logger.info("Syncing currency rates...")
 
     const rates = await fetchRatesFromPriceFeeds(this.chainService)

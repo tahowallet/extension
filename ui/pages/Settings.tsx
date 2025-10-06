@@ -442,7 +442,10 @@ export default function Settings(): ReactElement {
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
-        currencySettings,
+        ...wrapIfEnabled(
+          FeatureFlags.SUPPORT_MULTIPLE_CURRENCIES,
+          currencySettings,
+        ),
         ...wrapIfEnabled(
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
           notificationBanner,
