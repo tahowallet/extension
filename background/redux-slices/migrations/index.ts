@@ -32,6 +32,7 @@ import to32 from "./to-32"
 import to33 from "./to-33"
 import to34 from "./to-34"
 import to35 from "./to-35"
+import to36 from "./to-36"
 
 /**
  * The version of persisted Redux state the extension is expecting. Any previous
@@ -82,6 +83,7 @@ const allMigrations: { [targetVersion: string]: Migration } = {
   33: to33,
   34: to34,
   35: to35,
+  36: to36,
 }
 
 /**

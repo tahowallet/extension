@@ -942,16 +942,6 @@ export default class ReduxService extends BaseService<never> {
       this.store.dispatch(newPricePoints(pricePoints))
     })
 
-    // TODO: Pending migration
-    if (!this.store.getState().ui.displayCurrency?.code) {
-      this.store.dispatch(
-        setDisplayCurrency({
-          code: "USD",
-          rate: { amount: 1_000_000_000_0n, decimals: 10n },
-        }),
-      )
-    }
-
     this.indexingService.emitter.on(
       "updatedCurrencyRates",
       async (currencies) => {
