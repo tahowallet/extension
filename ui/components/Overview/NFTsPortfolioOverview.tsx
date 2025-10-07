@@ -19,7 +19,7 @@ export default function NFTsPortfolioOverview(): ReactElement {
   )
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
 
-  const { totalFloorPriceInUSD } = useTotalNFTsFloorPrice()
+  const { totalFloorPriceInCurrency } = useTotalNFTsFloorPrice()
   return (
     <section>
       <header>
@@ -29,7 +29,7 @@ export default function NFTsPortfolioOverview(): ReactElement {
         </SharedTooltip>
         <span className="estimate">
           ~{currencySign}
-          {totalFloorPriceInUSD}
+          {totalFloorPriceInCurrency}
         </span>
       </header>
       <div>

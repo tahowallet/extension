@@ -32,7 +32,7 @@ export default function NFTsHeader(): ReactElement {
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
   const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
-  const { totalFloorPriceInETH, totalFloorPriceInUSD } =
+  const { totalFloorPriceInETH, totalFloorPriceInCurrency } =
     useTotalNFTsFloorPrice()
 
   const handleToggleClick = useCallback(() => {
@@ -73,7 +73,7 @@ export default function NFTsHeader(): ReactElement {
               className="currency_total"
               data-testid="nft_header_currency_total"
             >
-              {totalFloorPriceInUSD ?? "0"}
+              {totalFloorPriceInCurrency ?? "0"}
             </span>
             {isLoading && (
               <SharedLoadingSpinner size="small" variant="transparent" />

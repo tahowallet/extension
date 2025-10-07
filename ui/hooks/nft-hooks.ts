@@ -29,7 +29,7 @@ import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 export const useTotalNFTsFloorPrice = (): {
   totalFloorPriceInETH: string
-  totalFloorPriceInUSD: string
+  totalFloorPriceInCurrency: string
 } => {
   const totalFloorPrice = useBackgroundSelector(selectFilteredTotalFloorPrice)
   const allPrices = useBackgroundSelector(getPricesState)
@@ -61,8 +61,6 @@ export const useTotalNFTsFloorPrice = (): {
         2,
         displayCurrency,
       )
-
-      // TODO: Refactor this to aggregate a usd asset amount
 
       return acc + (enrichedPrice.mainCurrencyAmount ?? 0)
     },
@@ -97,7 +95,7 @@ export const useTotalNFTsFloorPrice = (): {
 
   return {
     totalFloorPriceInETH: totalFloorPriceInETH?.toLocaleString(),
-    totalFloorPriceInUSD: totalFloorPriceValue.toString(),
+    totalFloorPriceInCurrency: totalFloorPriceValue.toString(),
   }
 }
 
