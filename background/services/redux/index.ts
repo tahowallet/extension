@@ -1779,8 +1779,7 @@ export default class ReduxService extends BaseService<never> {
         // This may confuse the user, as it may seem the dropdown did nothing.
         rates.find((rate) => rate.code === currencyCode) ?? fallback
 
-      // TODO: dispatch preferences db update
-
+      this.preferenceService.setCurrency(currency)
       this.store.dispatch(setDisplayCurrency(currency))
     })
   }

@@ -307,6 +307,10 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getPreferences())?.currency
   }
 
+  async setCurrency(currency: DisplayCurrency): Promise<void> {
+    await this.db.setCurrency(currency)
+  }
+
   async setShowTestNetworks(value: boolean): Promise<void> {
     await this.db.setShowTestNetworks(value)
   }

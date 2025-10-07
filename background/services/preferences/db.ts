@@ -575,6 +575,10 @@ export class PreferenceDatabase extends Dexie {
       .modify({ selectedAccount: addressNetwork })
   }
 
+  async setCurrency(currency: DisplayCurrency): Promise<void> {
+    await this.preferences.toCollection().modify({ currency })
+  }
+
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
     return this.signersSettings.toArray()
   }
