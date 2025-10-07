@@ -348,6 +348,7 @@ describe("Utilities", () => {
         {
           hideDust: true,
           showUnverifiedAssets: false,
+          dustThreshold: 2,
         },
       )
       expect(displayAsset).toBe(true)
@@ -363,6 +364,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -378,6 +380,7 @@ describe("Utilities", () => {
           {
             hideDust: false,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -393,6 +396,7 @@ describe("Utilities", () => {
           {
             hideDust: false,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -408,6 +412,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -429,6 +434,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -448,6 +454,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: true,
+            dustThreshold: 2,
           },
         )
 
@@ -467,6 +474,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -486,6 +494,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 
@@ -505,6 +514,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: true,
+            dustThreshold: 2,
           },
         )
 
@@ -524,6 +534,7 @@ describe("Utilities", () => {
           {
             hideDust: true,
             showUnverifiedAssets: false,
+            dustThreshold: 2,
           },
         )
 

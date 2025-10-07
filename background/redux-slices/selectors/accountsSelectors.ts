@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
+import { FixedPoint } from "@thesis-co/cent"
 import { selectHideDust, selectShowUnverifiedAssets } from "../ui"
 import { RootState } from ".."
 import {
@@ -66,7 +67,7 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
   (symbol) => symbol.toUpperCase(),
 )
 
-// TODO Make this a setting.
+// TODO: Make this a setting.
 export const userValueDustThreshold = 2
 
 const shouldForciblyDisplayAsset = (
@@ -85,7 +86,12 @@ export function determineAssetDisplayAndVerify(
   {
     hideDust,
     showUnverifiedAssets,
-  }: { hideDust: boolean; showUnverifiedAssets: boolean },
+    dustThreshold,
+  }: {
+    hideDust: boolean
+    showUnverifiedAssets: boolean
+    dustThreshold: number
+  },
 ): { displayAsset: boolean; trustedAsset: boolean } {
   const isTrusted = isTrustedAsset(assetAmount.asset)
 
@@ -96,7 +102,8 @@ export function determineAssetDisplayAndVerify(
   const isNotDust =
     typeof assetAmount.mainCurrencyAmount === "undefined"
       ? true
-      : assetAmount.mainCurrencyAmount > userValueDustThreshold
+      : assetAmount.mainCurrencyAmount > dustThreshold
+
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
@@ -123,6 +130,13 @@ const computeCombinedAssetAmountsData = (
   unverifiedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
+  // TODO: Make dust threshold configurable
+  const dustThreshold = Number(
+    FixedPoint(displayCurrency.rate)
+      .multiply(BigInt(userValueDustThreshold))
+      .toString(),
+  )
+
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
   const allAssetAmounts = assetAmounts
@@ -200,7 +214,11 @@ const computeCombinedAssetAmountsData = (
       (acc, assetAmount) => {
         const { displayAsset, trustedAsset } = determineAssetDisplayAndVerify(
           assetAmount,
-          { hideDust, showUnverifiedAssets },
+          {
+            hideDust,
+            showUnverifiedAssets,
+            dustThreshold,
+          },
         )
 
         if (displayAsset) {

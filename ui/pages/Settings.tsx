@@ -23,7 +23,6 @@ import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
   selectDisplayCurrency,
-  selectDisplayCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -181,7 +180,6 @@ export default function Settings(): ReactElement {
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const shouldShowNotifications = useSelector(selectShowNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
-  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -215,7 +213,8 @@ export default function Settings(): ReactElement {
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
       amount: userValueDustThreshold,
-      sign: mainCurrencySign,
+      // TODO: Make dust threshold configurable
+      sign: "$",
     }),
     component: () => (
       <SharedToggleButton
