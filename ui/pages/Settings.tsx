@@ -31,6 +31,7 @@ import {
   isEnabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
+import { SUPPORTED_CURRENCIES } from "@tallyho/tally-background/services/indexing/price-feeds"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -68,9 +69,10 @@ const AUTO_LOCK_OPTIONS = [
 
 const CURRENCY_OPTIONS = [
   { label: "USD", value: "USD" },
-  { label: "EUR", value: "EUR" },
-  { label: "AUD", value: "AUD" },
-  { label: "JPY", value: "JPY" },
+  ...Array.from(SUPPORTED_CURRENCIES.keys()).map((symbol) => ({
+    label: symbol,
+    value: symbol,
+  })),
 ]
 
 const FOOTER_ACTIONS = [
