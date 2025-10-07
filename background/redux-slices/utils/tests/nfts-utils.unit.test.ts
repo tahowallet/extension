@@ -158,7 +158,7 @@ describe("NFTs utils", () => {
         ).floorPrice,
       ).toMatchObject({
         value: 1,
-        valueUSD: 2000,
+        displayCurrencyValue: 2000,
         tokenSymbol: "ETH",
       })
     })
@@ -179,7 +179,7 @@ describe("NFTs utils", () => {
         ).floorPrice,
       ).toMatchObject({
         value: 0.5,
-        valueUSD: 1000,
+        displayCurrencyValue: 1000,
         tokenSymbol: "WETH",
       })
     })
@@ -200,7 +200,7 @@ describe("NFTs utils", () => {
         ).floorPrice,
       ).toMatchObject({
         value: 2,
-        valueUSD: 30,
+        displayCurrencyValue: 30,
         tokenSymbol: "AVAX",
       })
     })
@@ -221,7 +221,7 @@ describe("NFTs utils", () => {
         ).floorPrice,
       ).toMatchObject({
         value: 0.5,
-        valueUSD: 25,
+        displayCurrencyValue: 25,
         tokenSymbol: "BNB",
       })
     })
@@ -282,17 +282,21 @@ describe("NFTs utils", () => {
       {
         ...COLLECTION_MOCK,
         id: "cheap",
-        floorPrice: { value: 1, valueUSD: 1, tokenSymbol: "USDT" },
+        floorPrice: { value: 1, displayCurrencyValue: 1, tokenSymbol: "USDT" },
       },
       {
         ...COLLECTION_MOCK,
         id: "expensive",
-        floorPrice: { value: 100, valueUSD: 100, tokenSymbol: "USDT" },
+        floorPrice: {
+          value: 100,
+          displayCurrencyValue: 100,
+          tokenSymbol: "USDT",
+        },
       },
       {
         ...COLLECTION_MOCK,
         id: "zero",
-        floorPrice: { value: 0, valueUSD: 0, tokenSymbol: "USDT" },
+        floorPrice: { value: 0, displayCurrencyValue: 0, tokenSymbol: "USDT" },
       },
       {
         ...COLLECTION_MOCK,

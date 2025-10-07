@@ -16,8 +16,7 @@ const ETH_SYMBOLS = ["ETH", "WETH"]
 type NFTCollectionEnriched = NFTCollectionCached & {
   floorPrice?: {
     value: number
-    // TODO: Rename this? <displayCurrencyValue>
-    valueUSD?: number
+    displayCurrencyValue?: number
     tokenSymbol: string
   }
 }
@@ -42,13 +41,19 @@ export const sortByPrice = (
   collection1: NFTCollectionEnriched,
   collection2: NFTCollectionEnriched,
 ): number => {
-  if (collection1.floorPrice?.valueUSD === undefined) return 1
-  if (collection2.floorPrice?.valueUSD === undefined) return -1
+  if (collection1.floorPrice?.displayCurrencyValue === undefined) return 1
+  if (collection2.floorPrice?.displayCurrencyValue === undefined) return -1
 
   if (type === "asc") {
-    return collection1.floorPrice.valueUSD - collection2.floorPrice.valueUSD
+    return (
+      collection1.floorPrice.displayCurrencyValue -
+      collection2.floorPrice.displayCurrencyValue
+    )
   }
-  return collection2.floorPrice.valueUSD - collection1.floorPrice.valueUSD
+  return (
+    collection2.floorPrice.displayCurrencyValue -
+    collection1.floorPrice.displayCurrencyValue
+  )
 }
 
 const sortByDate = (
@@ -190,7 +195,7 @@ export function enrichCollectionWithCurrencyFloorPrice(
     ...collection,
     floorPrice: {
       value,
-      valueUSD: displayCurrencyValue,
+      displayCurrencyValue,
       tokenSymbol,
     },
   }
