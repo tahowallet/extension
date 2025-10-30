@@ -58,7 +58,7 @@ export function prioritizedAssetSimilarityKeys(asset: AnyAsset): string[] {
 
 /**
  * Score a set of assets by similarity to a search asset, returning the most
- * similiar asset to the search asset as long as it is above a base similiarity
+ * similar asset to the search asset as long as it is above a base similarity
  * score, or null.
  *
  * @see scoreAssetSimilarity The way asset similarity is computed.

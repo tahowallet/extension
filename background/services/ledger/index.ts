@@ -463,7 +463,7 @@ export default class LedgerService extends BaseService<Events> {
           blockHeight: null,
           asset: transactionRequest.network.baseAsset,
           network: transactionRequest.network,
-        } as const // narrow types for compatiblity with our internal ones
+        } as const // narrow types for compatibility with our internal ones
 
         return signedTx
       } catch (err) {
