@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
+import { FixedPoint } from "@thesis-co/cent"
 import { selectHideDust, selectShowUnverifiedAssets } from "../ui"
 import { RootState } from ".."
 import {
@@ -8,6 +9,7 @@ import {
 } from "../accounts"
 import { AssetsState } from "../assets"
 import {
+  convertUSDPricePointToCurrency,
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
@@ -19,13 +21,14 @@ import {
 import {
   AnyAsset,
   AnyAssetAmount,
+  DisplayCurrency,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
 } from "../../assets"
 import {
   selectCurrentAccount,
   selectCurrentNetwork,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
 } from "./uiSelectors"
 import {
   normalizeEVMAddress,
@@ -39,7 +42,11 @@ import {
 } from "./internalSignerSelectors"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, sameNetwork } from "../../networks"
-import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
+import {
+  NETWORK_BY_CHAIN_ID,
+  TEST_NETWORK_BY_CHAIN_ID,
+  USD,
+} from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
 import { AccountSigner, SignerType } from "../../services/signing"
@@ -60,7 +67,7 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
   (symbol) => symbol.toUpperCase(),
 )
 
-// TODO Make this a setting.
+// TODO: Make this a setting.
 export const userValueDustThreshold = 2
 
 const shouldForciblyDisplayAsset = (
@@ -79,7 +86,12 @@ export function determineAssetDisplayAndVerify(
   {
     hideDust,
     showUnverifiedAssets,
-  }: { hideDust: boolean; showUnverifiedAssets: boolean },
+    dustThreshold,
+  }: {
+    hideDust: boolean
+    showUnverifiedAssets: boolean
+    dustThreshold: number
+  },
 ): { displayAsset: boolean; trustedAsset: boolean } {
   const isTrusted = isTrustedAsset(assetAmount.asset)
 
@@ -90,7 +102,8 @@ export function determineAssetDisplayAndVerify(
   const isNotDust =
     typeof assetAmount.mainCurrencyAmount === "undefined"
       ? true
-      : assetAmount.mainCurrencyAmount > userValueDustThreshold
+      : assetAmount.mainCurrencyAmount > dustThreshold
+
   const isPresent = assetAmount.decimalAmount > 0
   const showDust = !hideDust
 
@@ -107,7 +120,7 @@ export function determineAssetDisplayAndVerify(
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
   assets: AssetsState,
-  mainCurrencySymbol: string,
+  displayCurrency: DisplayCurrency,
   hideDust: boolean,
   showUnverifiedAssets: boolean,
   prices: PricesState,
@@ -117,6 +130,13 @@ const computeCombinedAssetAmountsData = (
   unverifiedAssetAmounts: CompleteAssetAmount[]
   totalMainCurrencyAmount: number | undefined
 } => {
+  // TODO: Make dust threshold configurable
+  const dustThreshold = Number(
+    FixedPoint(displayCurrency.rate)
+      .multiply(BigInt(userValueDustThreshold))
+      .toString(),
+  )
+
   // Derive account "assets"/assetAmount which include USD values using
   // data from the assets slice
   const allAssetAmounts = assetAmounts
@@ -124,7 +144,7 @@ const computeCombinedAssetAmountsData = (
       const assetPricePoint = selectAssetPricePoint(
         prices,
         assetAmount.asset,
-        mainCurrencySymbol,
+        USD.symbol,
       )
 
       const mainCurrencyEnrichedAssetAmount =
@@ -132,6 +152,7 @@ const computeCombinedAssetAmountsData = (
           assetAmount,
           assetPricePoint,
           desiredDecimals.default,
+          displayCurrency,
         )
 
       const fullyEnrichedAssetAmount = enrichAssetAmountWithDecimalValues(
@@ -193,7 +214,11 @@ const computeCombinedAssetAmountsData = (
       (acc, assetAmount) => {
         const { displayAsset, trustedAsset } = determineAssetDisplayAndVerify(
           assetAmount,
-          { hideDust, showUnverifiedAssets },
+          {
+            hideDust,
+            showUnverifiedAssets,
+            dustThreshold,
+          },
         )
 
         if (displayAsset) {
@@ -242,20 +267,20 @@ export const selectAccountAndTimestampedActivities = createSelector(
   getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
   (
     account,
     assets,
     prices,
     hideDust,
     showUnverifiedAssets,
-    mainCurrencySymbol,
+    displayCurrency,
   ) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
         account.combinedData.assets,
         assets,
-        mainCurrencySymbol,
+        displayCurrency,
         hideDust,
         showUnverifiedAssets,
         prices,
@@ -266,7 +291,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
         assets: combinedAssetAmounts,
         totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
           ? formatCurrencyAmount(
-              mainCurrencySymbol,
+              displayCurrency.code,
               totalMainCurrencyAmount,
               desiredDecimals.default,
             )
@@ -282,14 +307,14 @@ export const selectCurrentAccountBalances = createSelector(
   getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
-  selectMainCurrencySymbol,
+  selectDisplayCurrency,
   (
     currentAccount,
     assets,
     prices,
     hideDust,
     showUnverifiedAssets,
-    mainCurrencySymbol,
+    displayCurrency,
   ) => {
     if (typeof currentAccount === "undefined" || currentAccount === "loading") {
       return undefined
@@ -307,7 +332,7 @@ export const selectCurrentAccountBalances = createSelector(
     } = computeCombinedAssetAmountsData(
       assetAmounts,
       assets,
-      mainCurrencySymbol,
+      displayCurrency,
       hideDust,
       showUnverifiedAssets,
       prices,
@@ -319,7 +344,7 @@ export const selectCurrentAccountBalances = createSelector(
       unverifiedAssetAmounts,
       totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
         ? formatCurrencyAmount(
-            mainCurrencySymbol,
+            displayCurrency.code,
             totalMainCurrencyAmount,
             desiredDecimals.default,
           )
@@ -390,33 +415,32 @@ const getAccountType = (
 const getTotalBalance = (
   accountBalances: { [assetSymbol: string]: AccountBalance },
   prices: PricesState,
-  mainCurrencySymbol: string,
+  displayCurrency: DisplayCurrency,
 ) =>
   Object.values(accountBalances)
     .map(({ assetAmount }) => {
       const assetPricePoint = selectAssetPricePoint(
         prices,
         assetAmount.asset,
-        mainCurrencySymbol,
+        USD.symbol,
       )
 
       if (typeof assetPricePoint === "undefined") {
         return 0
       }
 
-      const convertedAmount = convertAssetAmountViaPricePoint(
-        assetAmount,
+      const pricePoint = convertUSDPricePointToCurrency(
         assetPricePoint,
+        displayCurrency,
       )
 
-      if (typeof convertedAmount === "undefined") {
+      const amount = convertAssetAmountViaPricePoint(assetAmount, pricePoint)
+
+      if (typeof amount === "undefined") {
         return 0
       }
 
-      return assetAmountToDesiredDecimals(
-        convertedAmount,
-        desiredDecimals.default,
-      )
+      return assetAmountToDesiredDecimals(amount, desiredDecimals.default)
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
 
@@ -429,7 +453,7 @@ function getNetworkAccountTotalsByCategory(
   const accountSignersByAddress = selectAccountSignersByAddress(state)
   const keyringsByAddresses = selectKeyringsByAddresses(state)
   const sourcesByAddress = selectSourcesByAddress(state)
-  const mainCurrencySymbol = selectMainCurrencySymbol(state)
+  const displayCurrency = selectDisplayCurrency(state)
 
   return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
     .filter(([, accountData]) => typeof accountData !== "undefined")
@@ -471,8 +495,8 @@ function getNetworkAccountTotalsByCategory(
         name: name ?? accountData.defaultName,
         avatarURL: avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
-          mainCurrencySymbol,
-          getTotalBalance(accountData.balances, prices, mainCurrencySymbol),
+          displayCurrency.code,
+          getTotalBalance(accountData.balances, prices, displayCurrency),
           desiredDecimals.default,
         ),
       }
@@ -525,8 +549,8 @@ export const selectAccountTotalsForOverview = createSelector(
   getAccountState,
   getAssetsState,
   getPricesState,
-  selectMainCurrencySymbol,
-  (accountsState, assetsState, pricesState, mainCurrencySymbol) => {
+  selectDisplayCurrency,
+  (accountsState, assetsState, pricesState, displayCurrency) => {
     const accountsTotal: AccountTotalList = {}
 
     Object.entries(accountsState.accountsData.evm)
@@ -549,7 +573,7 @@ export const selectAccountTotalsForOverview = createSelector(
           accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
             accountData.balances,
             pricesState,
-            mainCurrencySymbol,
+            displayCurrency,
           )
         }),
       )
@@ -636,10 +660,10 @@ export const getNetworkCountForOverview = createSelector(
 
 export const getTotalBalanceForOverview = createSelector(
   selectAccountTotalsForOverview,
-  selectMainCurrencySymbol,
-  (accountsTotal, currencySymbol) =>
+  selectDisplayCurrency,
+  (accountsTotal, displayCurrency) =>
     formatCurrencyAmount(
-      currencySymbol,
+      displayCurrency.code,
       Object.values(accountsTotal).reduce(
         (total, { totals }) =>
           Object.values(totals).reduce((sum, balance) => sum + balance) + total,

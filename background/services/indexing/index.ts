@@ -5,6 +5,7 @@ import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
   AnyAssetMetadata,
+  DisplayCurrency,
   FungibleAsset,
   isSmartContractFungibleAsset,
   keyAssetsByAddress,
@@ -18,7 +19,6 @@ import {
   BINANCE_SMART_CHAIN,
   BUILT_IN_NETWORK_BASE_ASSETS,
   ETHEREUM,
-  FIAT_CURRENCIES,
   HOUR,
   MEZO_TESTNET,
   MINUTE,
@@ -56,7 +56,8 @@ import {
   isTrustedAsset,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
-import { wrapIfEnabled } from "../../features"
+import { FeatureFlags, isDisabled, wrapIfEnabled } from "../../features"
+import fetchRatesFromPriceFeeds from "./price-feeds"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -96,6 +97,7 @@ interface Events extends ServiceLifecycleEvents {
   }
   refreshAsset: SmartContractFungibleAsset
   removeAssetData: SmartContractFungibleAsset
+  updatedCurrencyRates: DisplayCurrency[]
 }
 
 function allowVerifyAssetByManualImport(
@@ -164,6 +166,13 @@ export default class IndexingService extends BaseService<Events> {
           periodInMinutes: 1,
         },
         handler: () => this.handleBalanceAlarm(),
+      },
+      currencyData: {
+        schedule: {
+          delayInMinutes: 0.5,
+          periodInMinutes: (12 * HOUR) / MINUTE,
+        },
+        handler: () => this.handleCurrencyRatesAlarm(),
       },
       forceBalance: {
         schedule: {
@@ -780,14 +789,14 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Loads prices for base network assets
+   * Loads prices for base network assets against USD
    */
   private async getBaseAssetsPrices() {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
       const baseAssets = await this.chainService.getNetworkBaseAssets()
-      let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
+      let basicPrices = await getPrices(baseAssets, [USD])
 
       if (basicPrices.length === 0) {
         basicPrices = await Promise.all(
@@ -854,7 +863,6 @@ export default class IndexingService extends BaseService<Events> {
       logger.error(
         "Error getting base asset prices from coingecko",
         BUILT_IN_NETWORK_BASE_ASSETS,
-        FIAT_CURRENCIES,
       )
     }
   }
@@ -1096,5 +1104,41 @@ export default class IndexingService extends BaseService<Events> {
     await this.fetchAndCacheTokenLists().then(() =>
       this.loadAccountBalances(true),
     )
+  }
+
+  private async handleCurrencyRatesAlarm(): Promise<void> {
+    if (isDisabled(FeatureFlags.SUPPORT_MULTIPLE_CURRENCIES)) {
+      return
+    }
+
+    logger.info("Syncing currency rates...")
+
+    const rates = await fetchRatesFromPriceFeeds(this.chainService)
+
+    this.db.saveCurrencyRates(Object.values(rates))
+
+    const currencies = Object.keys(rates).map((id) => {
+      const currencyCode = id.split("/")[0]
+
+      return {
+        code: currencyCode,
+        rate: { amount: rates[id].value, decimals: rates[id].decimals },
+      }
+    })
+
+    this.emitter.emit("updatedCurrencyRates", currencies)
+  }
+
+  async getCurrencyRates() {
+    const rates = await this.db.getCurrencyRates()
+
+    return rates.map((rate) => {
+      const currencyCode = rate.id.split("/")[0]
+
+      return {
+        code: currencyCode,
+        rate: { amount: rate.value, decimals: rate.decimals },
+      }
+    })
   }
 }

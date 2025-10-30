@@ -1,17 +1,20 @@
+import { ExchangeRate, FixedPoint, Money, currencies } from "@thesis-co/cent"
 import {
+  AnyAsset,
   AnyAssetAmount,
+  AssetMetadata,
+  CoinGeckoAsset,
+  DisplayCurrency,
+  FiatCurrency,
+  FungibleAsset,
+  PricePoint,
+  SmartContractFungibleAsset,
+  UnitPricePoint,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
-  unitPricePointForPricePoint,
   isFungibleAssetAmount,
-  PricePoint,
-  FungibleAsset,
-  UnitPricePoint,
-  AnyAsset,
-  CoinGeckoAsset,
   isSmartContractFungibleAsset,
-  SmartContractFungibleAsset,
-  AssetMetadata,
+  unitPricePointForPricePoint,
 } from "../../assets"
 import {
   BUILT_IN_NETWORK_BASE_ASSETS,
@@ -21,7 +24,6 @@ import {
 import { fromFixedPointNumber } from "../../lib/fixed-point"
 import { sameEVMAddress } from "../../lib/utils"
 import { AnyNetwork, NetworkBaseAsset, sameNetwork } from "../../networks"
-import { hardcodedMainCurrencySign } from "./constants"
 
 /**
  * Adds user-specific amounts based on preferences. This is the combination of
@@ -184,18 +186,67 @@ export function formatCurrencyAmount(
   currencyAmount: number,
   desiredDecimals: number,
 ): string {
-  return (
-    new Intl.NumberFormat("default", {
-      style: "currency",
-      currency: currencySymbol,
-      minimumFractionDigits: desiredDecimals,
-      maximumFractionDigits: desiredDecimals,
-    })
-      .format(currencyAmount)
-      // FIXME This assumes the assetSymbol passed is USD
-      // FIXME Instead, we should use formatToParts.
-      .split(hardcodedMainCurrencySign)[1]
-  )
+  const fmt = new Intl.NumberFormat("default", {
+    style: "currency",
+    currency: currencySymbol,
+    minimumFractionDigits: desiredDecimals,
+    maximumFractionDigits: desiredDecimals,
+  })
+
+  return fmt
+    .formatToParts(currencyAmount)
+    .filter((part) => part.type !== "currency")
+    .map((part) => part.value)
+    .join("")
+    .trim()
+}
+
+export function convertUSDPricePointToCurrency(
+  pricePoint: PricePoint,
+  currency: DisplayCurrency,
+) {
+  if (currency.code === "USD") {
+    // noop
+    return pricePoint
+  }
+  const { pair, amounts, time } = pricePoint
+  const idx = pricePoint.pair.findIndex((asset) => asset.symbol === "USD")
+
+  const newPricePoint: PricePoint = {
+    pair: [...pair],
+    amounts: [...amounts],
+    time,
+  }
+
+  const { name, code } = currencies[currency.code]
+
+  const asset: FiatCurrency = {
+    name,
+    symbol: code,
+    decimals: 10,
+  }
+
+  const rate = new ExchangeRate({
+    // Keeping 10 decimals ensures we don't lose precision during conversion
+    baseCurrency: { ...currencies[currency.code], decimals: 10n },
+    quoteCurrency: { ...currencies.USD, decimals: 10n },
+    rate: FixedPoint(currency.rate),
+  })
+
+  newPricePoint.pair[idx] = asset
+  newPricePoint.amounts[idx] = rate
+    .convert(
+      Money({
+        asset: currencies.USD,
+        amount: FixedPoint({
+          amount: newPricePoint.amounts[idx],
+          decimals: 10n,
+        }),
+      }),
+    )
+    .concretize()[0].balance.amount.amount
+
+  return newPricePoint
 }
 
 /**
@@ -214,6 +265,9 @@ export function formatCurrencyAmount(
  *        converting from fixed point to floating point. Also the number of
  *        decimals rendered in the localized form.
  *
+ * @param displayCurrency The currency in which to express and localize values.
+ *        Used for converting amounts (via its exchange rate) and for formatting
+ *        according to the user’s locale.
  * @return The existing `assetAmount` with four additional fields,
  *         `mainCurrencyValue`, `localizedMainCurrencyValue`, `unitPrice` and
  *         `localizedUnitPrice`. The first is the value of the asset in the
@@ -230,42 +284,51 @@ export function enrichAssetAmountWithMainCurrencyValues<
   assetAmount: T,
   assetPricePoint: PricePoint | undefined,
   desiredDecimals: number,
+  displayCurrency: DisplayCurrency,
 ): T & AssetMainCurrencyAmount {
-  const convertedAssetAmount = convertAssetAmountViaPricePoint(
-    assetAmount,
-    assetPricePoint,
-  )
-  const { unitPrice } = unitPricePointForPricePoint(assetPricePoint) ?? {
-    unitPrice: undefined,
-  }
-
-  if (typeof convertedAssetAmount !== "undefined") {
-    const convertedDecimalValue = assetAmountToDesiredDecimals(
-      convertedAssetAmount,
-      desiredDecimals,
+  if (assetPricePoint) {
+    // Create a temporary pricepoint in the target user currency
+    const currencyPricePoint = convertUSDPricePointToCurrency(
+      assetPricePoint,
+      displayCurrency,
     )
-    const unitPriceDecimalValue =
-      typeof unitPrice === "undefined"
-        ? undefined
-        : assetAmountToDesiredDecimals(unitPrice, desiredDecimals)
 
-    return {
-      ...assetAmount,
-      mainCurrencyAmount: convertedDecimalValue,
-      localizedMainCurrencyAmount: formatCurrencyAmount(
-        convertedAssetAmount.asset.symbol,
-        convertedDecimalValue,
+    const assetAmountInCurrency = convertAssetAmountViaPricePoint(
+      assetAmount,
+      currencyPricePoint,
+    )
+    const { unitPrice } = unitPricePointForPricePoint(currencyPricePoint) ?? {
+      unitPrice: undefined,
+    }
+
+    if (typeof assetAmountInCurrency !== "undefined") {
+      const convertedDecimalValue = assetAmountToDesiredDecimals(
+        assetAmountInCurrency,
         desiredDecimals,
-      ),
-      unitPrice: unitPriceDecimalValue,
-      localizedUnitPrice:
-        typeof unitPriceDecimalValue === "undefined"
+      )
+      const unitPriceDecimalValue =
+        typeof unitPrice === "undefined"
           ? undefined
-          : formatCurrencyAmount(
-              convertedAssetAmount.asset.symbol,
-              unitPriceDecimalValue,
-              desiredDecimals,
-            ),
+          : assetAmountToDesiredDecimals(unitPrice, desiredDecimals)
+
+      return {
+        ...assetAmount,
+        mainCurrencyAmount: convertedDecimalValue,
+        localizedMainCurrencyAmount: formatCurrencyAmount(
+          displayCurrency.code,
+          convertedDecimalValue,
+          desiredDecimals,
+        ),
+        unitPrice: unitPriceDecimalValue,
+        localizedUnitPrice:
+          typeof unitPriceDecimalValue === "undefined"
+            ? undefined
+            : formatCurrencyAmount(
+                assetAmountInCurrency.asset.symbol,
+                unitPriceDecimalValue,
+                desiredDecimals,
+              ),
+      }
     }
   }
 

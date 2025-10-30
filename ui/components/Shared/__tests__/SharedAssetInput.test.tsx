@@ -2,7 +2,6 @@ import React, { useState } from "react"
 import userEvent from "@testing-library/user-event"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import { FungibleAsset } from "@tallyho/tally-background/assets"
-import { hardcodedMainCurrencySign } from "@tallyho/tally-background/redux-slices/utils/constants"
 import SharedAssetInput from "../SharedAssetInput"
 import { renderWithProviders } from "../../../tests/test-utils"
 
@@ -83,7 +82,7 @@ function SharedAssetInputWithState({
       onAmountChange={(value) => setAmount(value)}
       showMaxButton
       showPriceDetails
-      mainCurrencySign={hardcodedMainCurrencySign}
+      mainCurrencySign="$"
       amountMainCurrency="1"
       onAssetSelect={(value) => setCurrent(value)}
     />

@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill"
-import { FiatCurrency } from "../../assets"
+import { DisplayCurrency } from "../../assets"
 import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
@@ -303,8 +303,12 @@ export default class PreferenceService extends BaseService<Events> {
     return this.db.getAccountSignerSettings()
   }
 
-  async getCurrency(): Promise<FiatCurrency> {
+  async getCurrency(): Promise<DisplayCurrency> {
     return (await this.db.getPreferences())?.currency
+  }
+
+  async setCurrency(currency: DisplayCurrency): Promise<void> {
+    await this.db.setCurrency(currency)
   }
 
   async setShowTestNetworks(value: boolean): Promise<void> {

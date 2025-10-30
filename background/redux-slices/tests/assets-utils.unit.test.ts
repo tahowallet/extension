@@ -56,6 +56,7 @@ describe(enrichAssetAmountWithMainCurrencyValues, () => {
       assetAmount,
       pricePoint,
       2,
+      { code: "USD", rate: { amount: 1000000n, decimals: 6n } },
     )
 
     expect(result).toMatchObject({

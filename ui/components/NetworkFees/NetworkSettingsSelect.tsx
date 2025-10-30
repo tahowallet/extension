@@ -12,13 +12,14 @@ import {
 
 import { weiToGwei } from "@tallyho/tally-background/lib/utils"
 import { ETH } from "@tallyho/tally-background/constants"
-import { PricePoint } from "@tallyho/tally-background/assets"
+import { DisplayCurrency, PricePoint } from "@tallyho/tally-background/assets"
 import { enrichAssetAmountWithMainCurrencyValues } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   selectTransactionData,
-  selectTransactionMainCurrencyPricePoint,
+  selectTransactionBaseAssetPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useTranslation } from "react-i18next"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
 import { SharedTypedInput } from "../Shared/SharedInput"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
@@ -43,6 +44,7 @@ const gasOptionFromEstimate = (
   baseFeePerGas: bigint,
   gasLimit: bigint | undefined,
   { confidence, maxFeePerGas, maxPriorityFeePerGas, price }: BlockEstimate,
+  displayCurrency: DisplayCurrency,
 ): GasOption => {
   const feeOptionData: {
     [confidence: number]: NetworkFeeTypeChosen
@@ -62,8 +64,10 @@ const gasOptionFromEstimate = (
           },
           mainCurrencyPricePoint,
           2,
+          displayCurrency,
         )
       : undefined
+
   const dollarValue = feeAssetAmount?.localizedMainCurrencyAmount
   return {
     confidence: `${confidence}`,
@@ -111,8 +115,10 @@ export default function NetworkSettingsSelect({
   const transactionDetails = useBackgroundSelector(selectTransactionData)
 
   const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint,
+    selectTransactionBaseAssetPricePoint,
   )
+
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
 
   // Select activeFeeIndex to regular option once gasOptions load
   useEffect(() => {
@@ -168,6 +174,7 @@ export default function NetworkSettingsSelect({
                 estimatedFeesPerGas.baseFeePerGas ?? 0n,
                 gasLimit,
                 option,
+                displayCurrency,
               ),
             )
           }
@@ -180,6 +187,7 @@ export default function NetworkSettingsSelect({
               estimatedFeesPerGas.baseFeePerGas ?? 0n,
               gasLimit,
               customGas,
+              displayCurrency,
             ),
           )
         }
@@ -201,6 +209,7 @@ export default function NetworkSettingsSelect({
     mainCurrencyPricePoint,
     customGas,
     currentlySelectedType,
+    displayCurrency,
   ])
 
   useEffect(() => {

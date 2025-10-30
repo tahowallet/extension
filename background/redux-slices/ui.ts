@@ -17,6 +17,7 @@ import {
   Campaigns,
   FilterCampaignsById,
 } from "../services/campaign/types"
+import { DisplayCurrency } from "../assets"
 
 export const defaultSettings = {
   hideDust: false,
@@ -37,6 +38,7 @@ export type UIState = {
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   shownDismissableItems?: DismissableItem[]
+  displayCurrency: DisplayCurrency
   // FIXME: Move these settings to preferences service db
   settings: {
     hideDust: boolean
@@ -53,6 +55,7 @@ export type UIState = {
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
   slippageTolerance: number
+  // FIXME: This should be populated from db on startup?
   accountSignerSettings: AccountSignerSettings[]
   // Active user campaigns
   campaigns: {
@@ -80,6 +83,7 @@ export type Events = {
   updateAnalyticsPreferences: Partial<AnalyticsPreferences>
   addCustomNetworkResponse: [string, boolean]
   updateAutoLockInterval: number
+  updateDisplayCurrency: string
   toggleShowTestNetworks: boolean
   clearNotification: string
 }
@@ -91,6 +95,10 @@ export const initialState: UIState = {
   selectedAccount: {
     address: "",
     network: ETHEREUM,
+  },
+  displayCurrency: {
+    code: "USD",
+    rate: { amount: 1_000_000_000_0n, decimals: 10n },
   },
   initializationLoadingTimeExpired: false,
   settings: defaultSettings,
@@ -238,6 +246,10 @@ const uiSlice = createSlice({
       state,
       { payload }: { payload: AccountSignerSettings[] },
     ) => ({ ...state, accountSignerSettings: payload }),
+    setDisplayCurrency: (state, { payload }: { payload: DisplayCurrency }) => ({
+      ...state,
+      displayCurrency: payload,
+    }),
     setAutoLockInterval: (state, { payload }: { payload: number }) => ({
       ...state,
       settings: { ...state.settings, autoLockInterval: payload },
@@ -277,6 +289,7 @@ export const {
   setAccountsSignerSettings,
   setAutoLockInterval,
   updateCampaignsState,
+  setDisplayCurrency,
 } = uiSlice.actions
 
 export default uiSlice.reducer
@@ -368,6 +381,13 @@ export const updateAutoLockInterval = createBackgroundAsyncThunk(
     }
 
     emitter.emit("updateAutoLockInterval", parsedValue)
+  },
+)
+
+export const updateDisplayCurrency = createBackgroundAsyncThunk(
+  "ui/updateDisplayCurrency",
+  async (newValue: string) => {
+    emitter.emit("updateDisplayCurrency", newValue)
   },
 )
 

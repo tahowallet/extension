@@ -64,6 +64,7 @@ export default function PriceDetails(props: PriceDetailsProps): ReactElement {
       ) : (
         <>
           {amountMainCurrency === "0.00" && "<"}
+          {/* TODO: Add proper currency formatting */}
           {mainCurrencySign}
           {amountMainCurrency || "0.00"}
           {!isLoading && !!priceImpact && priceImpact > 1 && (

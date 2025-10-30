@@ -1,5 +1,4 @@
 import React from "react"
-import { hardcodedMainCurrencySign } from "@tallyho/tally-background/redux-slices/utils/constants"
 import { render } from "@testing-library/react"
 import PriceDetails from "../PriceDetails"
 
@@ -11,10 +10,10 @@ describe("PriceDetails", () => {
         amountMainCurrency={amount}
         priceImpact={undefined}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
-    expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
+    expect(ui.getByText(`$${amount}`)).toBeVisible()
   })
 
   test("should display that amount is lower than 0", () => {
@@ -24,10 +23,10 @@ describe("PriceDetails", () => {
         amountMainCurrency={amount}
         priceImpact={undefined}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
-    expect(ui.getByText(`<${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
+    expect(ui.getByText(`<$${amount}`)).toBeVisible()
   })
 
   test("should display 0.00 when price is loading", () => {
@@ -37,11 +36,11 @@ describe("PriceDetails", () => {
         amountMainCurrency={undefined}
         priceImpact={undefined}
         isLoading
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
       {},
     )
-    expect(ui.getByText(`${hardcodedMainCurrencySign}${amount}`)).toBeVisible()
+    expect(ui.getByText(`$${amount}`)).toBeVisible()
     expect(ui.queryByTestId("price_impact_percent")).not.toBeInTheDocument()
   })
 
@@ -53,7 +52,7 @@ describe("PriceDetails", () => {
         amountMainCurrency="1"
         priceImpact={priceImpact}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
 
@@ -66,7 +65,7 @@ describe("PriceDetails", () => {
         amountMainCurrency={undefined}
         priceImpact={undefined}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
 
@@ -79,7 +78,7 @@ describe("PriceDetails", () => {
         amountMainCurrency={undefined}
         priceImpact={0}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
 
@@ -92,7 +91,7 @@ describe("PriceDetails", () => {
         amountMainCurrency={undefined}
         priceImpact={0}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
 
@@ -108,7 +107,7 @@ describe("PriceDetails", () => {
         amountMainCurrency="1"
         priceImpact={priceImpact}
         isLoading={false}
-        mainCurrencySign={hardcodedMainCurrencySign}
+        mainCurrencySign="$"
       />,
     )
 

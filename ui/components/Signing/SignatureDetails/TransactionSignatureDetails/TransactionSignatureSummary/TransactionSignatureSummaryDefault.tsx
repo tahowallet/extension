@@ -1,12 +1,12 @@
 import { unitPricePointForPricePoint } from "@tallyho/tally-background/assets"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
-import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   enrichAssetAmountWithDecimalValues,
   heuristicDesiredDecimalsForUnitPrice,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
+import { USD } from "@tallyho/tally-background/constants"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
 import { TransferSummaryBase } from "./TransferSummary"
@@ -28,10 +28,10 @@ export default function TransactionSignatureSummaryDefault({
   })
   const { network } = transactionRequest
 
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const baseAssetPricePoint = useBackgroundSelector((state) =>
-    selectAssetPricePoint(state.prices, network.baseAsset, mainCurrencySymbol),
+    selectAssetPricePoint(state.prices, network.baseAsset, USD.symbol),
   )
+
   const transactionAssetAmount = enrichAssetAmountWithDecimalValues(
     {
       asset: network.baseAsset,

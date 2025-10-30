@@ -1,9 +1,10 @@
 import {
   getPricesState,
+  selectDisplayCurrency,
   selectFilteredTotalFloorPrice,
-  selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
+  convertUSDPricePointToCurrency,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
@@ -23,20 +24,22 @@ import {
   convertAssetAmountViaPricePoint,
   flipPricePoint,
 } from "@tallyho/tally-background/assets"
+import { currencies } from "@thesis-co/cent"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 export const useTotalNFTsFloorPrice = (): {
   totalFloorPriceInETH: string
-  totalFloorPriceInUSD: string
+  totalFloorPriceInCurrency: string
 } => {
-  const mainCurrencySymbol = useBackgroundSelector(selectMainCurrencySymbol)
   const totalFloorPrice = useBackgroundSelector(selectFilteredTotalFloorPrice)
   const allPrices = useBackgroundSelector(getPricesState)
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
 
-  const ETHPricePoint = selectAssetPricePoint(
-    allPrices,
-    ETH,
-    mainCurrencySymbol,
+  const usdPricePoint = selectAssetPricePoint(allPrices, ETH, USD.symbol)!
+
+  const ETHPricePoint = convertUSDPricePointToCurrency(
+    usdPricePoint,
+    displayCurrency,
   )
 
   const mainCurrencyTotalPrice = Object.entries(totalFloorPrice).reduce(
@@ -47,11 +50,7 @@ export const useTotalNFTsFloorPrice = (): {
 
       if (!baseAsset) return acc
 
-      const pricePoint = selectAssetPricePoint(
-        allPrices,
-        baseAsset,
-        mainCurrencySymbol,
-      )
+      const pricePoint = selectAssetPricePoint(allPrices, baseAsset, USD.symbol)
 
       const enrichedPrice = enrichAssetAmountWithMainCurrencyValues(
         {
@@ -60,6 +59,7 @@ export const useTotalNFTsFloorPrice = (): {
         },
         pricePoint,
         2,
+        displayCurrency,
       )
 
       return acc + (enrichedPrice.mainCurrencyAmount ?? 0)
@@ -67,8 +67,8 @@ export const useTotalNFTsFloorPrice = (): {
     0,
   )
 
-  const totalFloorPriceInUSD = formatCurrencyAmount(
-    mainCurrencySymbol,
+  const totalFloorPriceValue = formatCurrencyAmount(
+    displayCurrency.code,
     mainCurrencyTotalPrice,
     2,
   )
@@ -77,8 +77,13 @@ export const useTotalNFTsFloorPrice = (): {
     ETHPricePoint &&
     convertAssetAmountViaPricePoint(
       {
-        asset: USD,
-        amount: BigInt(Math.round(mainCurrencyTotalPrice * 10 ** USD.decimals)),
+        asset: currencies[displayCurrency.code],
+        amount: BigInt(
+          Math.round(
+            mainCurrencyTotalPrice *
+              10 ** Number(currencies[displayCurrency.code].decimals),
+          ),
+        ),
       },
       flipPricePoint(ETHPricePoint),
     )
@@ -90,7 +95,7 @@ export const useTotalNFTsFloorPrice = (): {
 
   return {
     totalFloorPriceInETH: totalFloorPriceInETH?.toLocaleString(),
-    totalFloorPriceInUSD,
+    totalFloorPriceInCurrency: totalFloorPriceValue.toString(),
   }
 }
 

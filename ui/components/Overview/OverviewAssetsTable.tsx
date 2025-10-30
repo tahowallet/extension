@@ -1,8 +1,11 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
+import { selectDisplayCurrency } from "@tallyho/tally-background/redux-slices/selectors"
+import { currencies } from "@thesis-co/cent"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import { useBackgroundSelector } from "../../hooks"
 
 interface Props {
   assets: CompleteAssetAmount[]
@@ -12,6 +15,8 @@ interface Props {
 export default function OverviewAssetsTable(props: Props): ReactElement | null {
   const { t } = useTranslation()
   const { assets, initializationLoadingTimeExpired } = props
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
   if (!assets) return null
 
   function assetSortCompare(a: CompleteAssetAmount, b: CompleteAssetAmount) {
@@ -57,7 +62,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement | null {
               </td>
               <td>
                 {asset.localizedUnitPrice ? (
-                  <div>${asset.localizedUnitPrice}</div>
+                  <div>
+                    {currencies[displayCurrency.code].symbol}
+                    {asset.localizedUnitPrice}
+                  </div>
                 ) : (
                   <div className="loading_wrap">
                     {!initializationLoadingTimeExpired && (
@@ -68,7 +76,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement | null {
               </td>
               <td>
                 {asset.localizedMainCurrencyAmount && (
-                  <div>${asset.localizedMainCurrencyAmount}</div>
+                  <div>
+                    {currencies[displayCurrency.code].symbol}
+                    {asset.localizedMainCurrencyAmount}
+                  </div>
                 )}
                 <div className="balance_token_amount">
                   {asset.localizedDecimalAmount}

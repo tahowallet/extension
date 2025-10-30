@@ -1,4 +1,4 @@
-import { ETHEREUM, MINUTE, USD } from "../../constants"
+import { ETHEREUM, MINUTE } from "../../constants"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
 export const DEFAULT_AUTOLOCK_INTERVAL = 60 * MINUTE
@@ -22,7 +22,7 @@ const defaultPreferences = {
       "https://tokens.pancakeswap.finance/pancakeswap-default.json", // PancakeSwap Default List
     ],
   },
-  currency: USD,
+  currency: { code: "USD", rate: { amount: 1_000_000_000_0n, decimals: 10n } },
   defaultWallet: false,
   selectedAccount: {
     address: "",

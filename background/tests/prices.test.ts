@@ -2,7 +2,7 @@
 import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
 
 import logger from "../lib/logger"
-import { ETH, FIAT_CURRENCIES, USD } from "../constants"
+import { ETH, USD } from "../constants"
 import { getPrices } from "../lib/prices"
 import { isValidCoinGeckoPriceResponse } from "../lib/validate"
 
@@ -167,9 +167,7 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
 
-      await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual(
-        getPricesResponse,
-      )
+      await expect(getPrices([ETH], [USD])).resolves.toEqual(getPricesResponse)
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
     it("should filter out invalid pairs if the data DOESN'T exist", async () => {
@@ -178,9 +176,12 @@ describe("lib/prices.ts", () => {
         {
           name: "Fake Currency",
           symbol: "FAK",
+          sign: "F$",
           decimals: 10,
+          rate: 1_200_000_0000n,
         },
       ]
+
       const FAKE_COIN = {
         name: "FakeCoin",
         symbol: "qwerqwer",
@@ -219,7 +220,7 @@ describe("lib/prices.ts", () => {
 
       jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
 
-      await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual([])
+      await expect(getPrices([ETH], [USD])).resolves.toEqual([])
       expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
     })
   })

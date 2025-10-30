@@ -10,7 +10,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/assets"
 import {
   selectCurrentNetwork,
-  selectMainCurrencySign,
+  selectDisplayCurrencySign,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
@@ -100,7 +100,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
   const networks = allNetworks.filter(
     (network) =>

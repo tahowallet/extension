@@ -88,6 +88,7 @@
     "@tallyho/tally-background": "0.0.1",
     "@tallyho/tally-ui": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
+    "@thesis-co/cent": "0.0.4",
     "buffer": "^6.0.3",
     "react": "^18.2.0",
     "sinon": "^14.0.1",

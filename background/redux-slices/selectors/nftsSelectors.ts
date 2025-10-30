@@ -9,7 +9,7 @@ import {
   getTotalFloorPrice,
 } from "../utils/nfts-utils"
 import { selectAccountTotals, getPricesState } from "./accountsSelectors"
-import { selectCurrentAccount, selectMainCurrencySymbol } from "./uiSelectors"
+import { selectCurrentAccount, selectDisplayCurrency } from "./uiSelectors"
 
 const selectNFTs = createSelector(
   (state: RootState) => state.nfts,
@@ -95,18 +95,18 @@ export const selectFilteredNFTCollections = createSelector(
   selectAllNFTCollections,
   selectNFTFilters,
   getPricesState,
-  selectMainCurrencySymbol,
-  (collections, filters, prices, mainCurrencySymbol) =>
-    getFilteredCollections(collections, filters, prices, mainCurrencySymbol),
+  selectDisplayCurrency,
+  (collections, filters, prices, displayCurrency) =>
+    getFilteredCollections(collections, filters, prices, displayCurrency),
 )
 
 export const selectFilteredNFTBadgesCollections = createSelector(
   selectAllNFTBadgesCollections,
   selectNFTFilters,
   getPricesState,
-  selectMainCurrencySymbol,
-  (collections, filters, prices, mainCurrencySymbol) =>
-    getFilteredCollections(collections, filters, prices, mainCurrencySymbol),
+  selectDisplayCurrency,
+  (collections, filters, prices, displayCurrency) =>
+    getFilteredCollections(collections, filters, prices, displayCurrency),
 )
 
 /* Counting selectors  */

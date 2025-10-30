@@ -1,6 +1,6 @@
 import Dexie, { Transaction } from "dexie"
 
-import { FiatCurrency } from "../../assets"
+import { DisplayCurrency } from "../../assets"
 import { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
@@ -58,7 +58,7 @@ export type Preferences = {
   id?: number
   savedAt: number
   tokenLists: TokenListPreferences
-  currency: FiatCurrency
+  currency: DisplayCurrency
   defaultWallet: boolean
   selectedAccount: AddressOnNetwork
   accountSignersSettings: AccountSignerSettings[]
@@ -480,6 +480,27 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    this.version(24).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Preferences) => {
+          const USD: DisplayCurrency = {
+            code: "USD",
+            rate: {
+              amount: 1_000_000_0000n, // 1 USD = 1 USD
+              decimals: 10n,
+            },
+          }
+
+          const update: Partial<Preferences> = {
+            currency: USD,
+          }
+
+          Object.assign(storedPreferences, update)
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works
@@ -552,6 +573,10 @@ export class PreferenceDatabase extends Dexie {
     await this.preferences
       .toCollection()
       .modify({ selectedAccount: addressNetwork })
+  }
+
+  async setCurrency(currency: DisplayCurrency): Promise<void> {
+    await this.preferences.toCollection().modify({ currency })
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
