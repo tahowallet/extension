@@ -342,7 +342,7 @@ export function transactionFromEthersTransaction(
     blockHeight: tx.blockNumber || null,
     network,
     asset: network.baseAsset,
-  } as const // narrow types for compatiblity with our internal ones
+  } as const // narrow types for compatibility with our internal ones
 
   if (tx.r && tx.s && tx.v) {
     const signedTx: SignedTransaction = {
