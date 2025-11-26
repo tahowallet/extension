@@ -181,7 +181,7 @@ test.describe("Transactions", () => {
       await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
       /**
-       * Open latest transaction and verify it's deatils
+       * Open latest transaction and verify it's details
        */
       await latestSentTx.click()
 
@@ -214,7 +214,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertAnalyticsBanner()
 
       /**
-       * Open latest transaction and verify it's deatils
+       * Open latest transaction and verify it's details
        */
       const latestSentTx = popup.getByTestId("activity_list_item").first()
 
