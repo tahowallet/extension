@@ -240,7 +240,10 @@ export const getTokenBalances = async (
         }
 
         return {
-          amount: BigInt(BigNumber.from(data.returnData).toString()),
+          amount: ERC20_INTERFACE.decodeFunctionResult(
+            "balanceOf",
+            data.returnData,
+          )[0].toBigInt(),
           smartContract: {
             contractAddress: batch[i],
             homeNetwork: network,
