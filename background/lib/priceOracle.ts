@@ -32,14 +32,14 @@ import { toFixedPoint } from "./fixed-point"
 import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
 import logger, { logRejectedAndReturnFulfilledResults } from "./logger"
-import { FeatureFlags } from "../features"
 
 // The size of a batch of on-chain price lookups. Too high and the request will
 // fail due to running out of gas, as eth_call is still subject to gas limits.
 // Too low and we will make additional unnecessary RPC requests.
-// On mainnet fork, even though the node caches evm states, local execution
-// creates a strict limit on gas per call
-const BATCH_SIZE = FeatureFlags.USE_MAINNET_FORK ? 2 : 20
+//
+// Some public RPCS (such as ankr) have stricter limits on gas for eth_calls
+// for now, this size appears to work fine
+const BATCH_SIZE = 5
 
 // Oracle Documentation and Address references can be found
 // at https://docs.1inch.io/docs/spot-price-aggregator/introduction/

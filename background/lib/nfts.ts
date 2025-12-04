@@ -13,6 +13,8 @@ import {
   TransferredNFT,
 } from "../nfts"
 import { UNIXTime } from "../types"
+import { MEZO_TESTNET } from "../constants"
+import { NFT_COLLECTION_ID } from "../services/campaign/matsnet-nft"
 
 function groupChainsByAddress(accounts: AddressOnNetwork[]) {
   return accounts.reduce<{ [address: string]: string[] }>((acc, account) => {
@@ -98,6 +100,23 @@ export function getNFTCollections(
 
       if (poapChains.length) {
         collections.push(await getPoapCollections(address))
+      }
+
+      const campaignChains = chainIDs.filter((chainID) =>
+        NFT_PROVIDER_TO_CHAIN.campaign.includes(chainID),
+      )
+
+      if (campaignChains.length) {
+        collections.push({
+          id: NFT_COLLECTION_ID,
+          name: "TahoXMezo",
+          nftCount: undefined,
+          owner: address,
+          hasBadges: false,
+          network: MEZO_TESTNET,
+          floorPrice: undefined,
+          thumbnailURL: undefined,
+        })
       }
 
       const simpleHashChains = chainIDs.filter((chainID) =>

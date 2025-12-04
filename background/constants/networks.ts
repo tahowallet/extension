@@ -12,6 +12,7 @@ import {
   OPTIMISTIC_ETH,
   RBTC,
   ZK_SYNC_ETH,
+  MEZO_BTC,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -102,8 +103,16 @@ export const ZK_SYNC: EVMNetwork = {
   family: "EVM",
 }
 
+export const MEZO_TESTNET: EVMNetwork = {
+  name: "Mezo matsnet",
+  baseAsset: MEZO_BTC,
+  chainID: "31611",
+  family: "EVM",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
+  ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   POLYGON,
   OPTIMISM,
   SEPOLIA,
@@ -156,10 +165,11 @@ export const NETWORK_BY_CHAIN_ID = {
   [ARBITRUM_SEPOLIA.chainID]: ARBITRUM_SEPOLIA,
   [FORK.chainID]: FORK,
   [ZK_SYNC.chainID]: ZK_SYNC,
+  [MEZO_TESTNET.chainID]: MEZO_TESTNET,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
-  [SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
+  [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
 // Networks that are not added to this struct will
@@ -195,31 +205,34 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: string[]
 } = {
   [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
+  [MEZO_TESTNET.chainID]: [
+    "https://rpc.test.mezo.org",
+    "https://mezo-testnet.drpc.org",
+    "wss://mezo-testnet.drpc.org",
+  ],
   [POLYGON.chainID]: [
     // This one sometimes returns 0 for eth_getBalance
     "https://polygon-rpc.com",
+    "https://polygon.drpc.org",
     "https://1rpc.io/matic",
   ],
   [OPTIMISM.chainID]: [
-    "https://rpc.ankr.com/optimism",
+    "https://optimism.drpc.org",
     "https://1rpc.io/op",
     "https://optimism-mainnet.public.blastapi.io",
   ],
-  [ETHEREUM.chainID]: ["https://rpc.ankr.com/eth", "https://1rpc.io/eth"],
-  [ARBITRUM_ONE.chainID]: [
-    "https://rpc.ankr.com/arbitrum",
-    "https://1rpc.io/arb",
-  ],
+  [ETHEREUM.chainID]: ["https://eth.drpc.org", "https://1rpc.io/eth"],
+  [ARBITRUM_ONE.chainID]: ["https://arbitrum.drpc.org", "https://1rpc.io/arb"],
   [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
   [SEPOLIA.chainID]: ["https://endpoints.omniatech.io/v1/eth/sepolia/public"],
   [ARBITRUM_SEPOLIA.chainID]: ["https://sepolia-rollup.arbitrum.io/rpc"],
   [AVALANCHE.chainID]: [
     "https://api.avax.network/ext/bc/C/rpc",
     "https://1rpc.io/avax/c",
-    "https://rpc.ankr.com/avalanche",
+    "https://avalanche.drpc.org",
   ],
   [BINANCE_SMART_CHAIN.chainID]: [
-    "https://rpc.ankr.com/bsc",
+    "https://bsc.drpc.org",
     "https://bsc-dataseed.binance.org",
   ],
 }

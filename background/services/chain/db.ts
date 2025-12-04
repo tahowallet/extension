@@ -8,7 +8,6 @@ import {
   EVMNetwork,
   Network,
   NetworkBaseAsset,
-  sameNetwork,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import {
@@ -211,6 +210,28 @@ export class ChainDatabase extends Dexie {
       .stores({
         rpcUrls: null,
       })
+
+    this.version(10).upgrade(async (tx) =>
+      tx
+        .table<RpcConfig>("rpcConfig")
+        .toCollection()
+        .modify((rpcConfig) => {
+          const { chainID, rpcUrls } = rpcConfig
+          // If it's a built in network
+          if (chainID in CHAIN_ID_TO_RPC_URLS) {
+            const removedAnkrUrls = rpcUrls.filter(
+              (url) => !/ankr\.com/i.test(url),
+            )
+
+            const newBuiltInRPCUrls = new Set([
+              ...CHAIN_ID_TO_RPC_URLS[chainID],
+              ...removedAnkrUrls,
+            ])
+
+            Object.assign(rpcConfig, { rpcUrls: [...newBuiltInRPCUrls] })
+          }
+        }),
+    )
   }
 
   async initialize(): Promise<void> {
@@ -369,17 +390,10 @@ export class ChainDatabase extends Dexie {
   }
 
   private async initializeEVMNetworks(): Promise<void> {
-    const existingNetworks = await this.getAllEVMNetworks()
     await Promise.all(
       ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
         async (defaultNetwork) => {
-          if (
-            !existingNetworks.some((network) =>
-              sameNetwork(network, defaultNetwork),
-            )
-          ) {
-            await this.networks.put(defaultNetwork)
-          }
+          await this.networks.put(defaultNetwork)
         },
       ),
     )

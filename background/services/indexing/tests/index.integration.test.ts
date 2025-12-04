@@ -281,7 +281,7 @@ describe("IndexingService", () => {
 
       expect(spy).toHaveBeenCalled()
 
-      jest.advanceTimersByTime(5000)
+      jest.advanceTimersByTime(6000)
       await jest.advanceTimersToNextTimerAsync()
       jest.useRealTimers()
 
@@ -289,7 +289,9 @@ describe("IndexingService", () => {
         fetchJsonStub
           .getCalls()
           .toString()
-          .match(/ethereum,matic-network,rootstock,avalanche-2,binancecoin/i),
+          .match(
+            /ethereum,matic-network,rootstock,bitcoin,avalanche-2,binancecoin/i,
+          ),
       ).toBeTruthy()
     })
   })

@@ -11,18 +11,23 @@ import {
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
+  MEZO_TESTNET,
+  TEST_NETWORK_BY_CHAIN_ID,
 } from "@tallyho/tally-background/constants"
 import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
-import { selectProductionEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import {
+  selectProductionEVMNetworks,
+  selectTestnetNetworks,
+} from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useTranslation } from "react-i18next"
 import { useBackgroundSelector } from "../../hooks"
 import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import TopMenuProtocolListFooter from "./TopMenuProtocolListFooter"
 import { i18n } from "../../_locales/i18n"
 
-export const productionNetworkInfo = {
+export const productionNetworkDescription = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
@@ -35,18 +40,11 @@ export const productionNetworkInfo = {
 
 const disabledChainIDs = [ARBITRUM_NOVA.chainID]
 
-const testNetworks = [
-  {
-    network: SEPOLIA,
-    info: i18n.t("protocol.testnet"),
-    isDisabled: false,
-  },
-  {
-    network: ARBITRUM_SEPOLIA,
-    info: i18n.t("protocol.testnet"),
-    isDisabled: false,
-  },
-]
+const testNetworkDescription = {
+  [MEZO_TESTNET.chainID]: i18n.t("protocol.mezoTestnet"),
+  [SEPOLIA.chainID]: i18n.t("protocol.testnet"),
+  [ARBITRUM_SEPOLIA.chainID]: i18n.t("protocol.testnet"),
+}
 
 type TopMenuProtocolListProps = {
   onProtocolChange: (network: EVMNetwork) => void
@@ -59,10 +57,17 @@ export default function TopMenuProtocolList({
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
+  const testnetNetworks = useBackgroundSelector(selectTestnetNetworks)
 
   const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+
   const customNetworks = productionNetworks.filter(
     (network) => !isBuiltInNetwork(network),
+  )
+
+  const testNetworks = [...TEST_NETWORK_BY_CHAIN_ID].flatMap(
+    (chainId) =>
+      testnetNetworks.find((network) => network.chainID === chainId) ?? [],
   )
 
   return (
@@ -75,7 +80,7 @@ export default function TopMenuProtocolList({
               key={network.name}
               network={network}
               info={
-                productionNetworkInfo[network.chainID] ||
+                productionNetworkDescription[network.chainID] ||
                 t("protocol.compatibleChain")
               }
               onSelect={onProtocolChange}
@@ -109,14 +114,13 @@ export default function TopMenuProtocolList({
                 </div>
                 <div className="divider_line" />
               </li>
-              {testNetworks.map((info) => (
+              {testNetworks.map((network) => (
                 <TopMenuProtocolListItem
-                  isSelected={sameNetwork(currentNetwork, info.network)}
-                  key={info.network.name}
-                  network={info.network}
-                  info={info.info}
+                  isSelected={sameNetwork(currentNetwork, network)}
+                  key={network.name}
+                  network={network}
+                  info={testNetworkDescription[network.chainID]}
                   onSelect={onProtocolChange}
-                  isDisabled={info.isDisabled ?? false}
                 />
               ))}
             </>

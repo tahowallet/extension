@@ -110,6 +110,7 @@ interface Events extends ServiceLifecycleEvents {
   initializeSelectedAccount: AddressOnNetwork
   initializeShownDismissableItems: DismissableItem[]
   initializeNotificationsPreferences: boolean
+  initializeShowTestNetworks: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
   addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
@@ -162,6 +163,11 @@ export default class PreferenceService extends BaseService<Events> {
     this.emitter.emit(
       "initializeNotificationsPreferences",
       await this.getShouldShowNotificationsPreferences(),
+    )
+
+    this.emitter.emit(
+      "initializeShowTestNetworks",
+      await this.getShowTestNetworks(),
     )
   }
 
@@ -276,19 +282,21 @@ export default class PreferenceService extends BaseService<Events> {
     return (await this.db.getPreferences()).shouldShowNotifications
   }
 
+  /**
+   * This guards against invalid state by checking if permissions have
+   * been granted by the browser
+   */
   async setShouldShowNotifications(shouldShowNotifications: boolean) {
-    if (shouldShowNotifications) {
-      const granted = await browser.permissions.request({
-        permissions: ["notifications"],
-      })
+    const hasBrowserPermissions = await browser.permissions.contains({
+      permissions: ["notifications"],
+    })
 
-      await this.db.setShouldShowNotifications(granted)
-      this.emitter.emit("setNotificationsPermission", granted)
+    const updatedValue = hasBrowserPermissions && shouldShowNotifications
 
-      return granted
-    }
+    await this.db.setShouldShowNotifications(updatedValue)
+    this.emitter.emit("setNotificationsPermission", updatedValue)
 
-    return false
+    return updatedValue
   }
 
   async getAccountSignerSettings(): Promise<AccountSignerSettings[]> {
@@ -297,6 +305,14 @@ export default class PreferenceService extends BaseService<Events> {
 
   async getCurrency(): Promise<FiatCurrency> {
     return (await this.db.getPreferences())?.currency
+  }
+
+  async setShowTestNetworks(value: boolean): Promise<void> {
+    await this.db.setShowTestNetworks(value)
+  }
+
+  async getShowTestNetworks(): Promise<boolean> {
+    return (await this.db.getPreferences()).showTestNetworks
   }
 
   async getTokenListPreferences(): Promise<TokenListPreferences> {
@@ -321,7 +337,7 @@ export default class PreferenceService extends BaseService<Events> {
   }
 
   async getSelectedAccount(): Promise<AddressOnNetwork> {
-    return (await this.db.getPreferences())?.selectedAccount
+    return (await this.db.getPreferences()).selectedAccount
   }
 
   async setSelectedAccount(addressNetwork: AddressOnNetwork): Promise<void> {

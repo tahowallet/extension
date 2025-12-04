@@ -1,4 +1,12 @@
 /**
+ * Used to keep in memory feature settings that were asynchronously
+ * resolved during extension startup.
+ */
+export const storage = new Map<string, string>()
+
+export const DynamicSettingsStorageKey = "tally-dynamic-settings"
+
+/**
  * Feature flags which are set at build time.
  */
 const BuildTimeFlag = {
@@ -27,6 +35,8 @@ export const RuntimeFlag = {
   SUPPORT_THE_ISLAND: process.env.SUPPORT_THE_ISLAND === "true",
   SUPPORT_THE_ISLAND_ON_TENDERLY:
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true",
+  SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK === "true",
+  USE_CAMPAIGN_NFT_CONTRACT: process.env.USE_CAMPAIGN_NFT_CONTRACT,
 } as const
 
 type BuildTimeFlagType = keyof typeof BuildTimeFlag
@@ -34,6 +44,17 @@ type BuildTimeFlagType = keyof typeof BuildTimeFlag
 export type RuntimeFlagType = keyof typeof RuntimeFlag
 
 export type FeatureFlagType = RuntimeFlagType | BuildTimeFlagType
+
+/**
+ * Resolves runtime flag values by overriding them with in memory values
+ * set during extension startup
+ */
+export const getRuntimeFlagValue = <K extends RuntimeFlagType>(flag: K) => {
+  const initialValue = RuntimeFlag[flag]
+  const storedValue = storage.get(flag)
+
+  return (storedValue ?? initialValue) as (typeof RuntimeFlag)[K]
+}
 
 /**
  * Object with all feature flags. The key is the same as the value.
@@ -72,12 +93,19 @@ export function isEnabled(
     return BuildTimeFlag[flagName]
   }
 
-  if (checkBrowserStorage) {
-    const state = "" as string // localStorage.getItem(flagName)
-    return state !== null ? state === "true" : RuntimeFlag[flagName]
+  const flagValue = getRuntimeFlagValue(flagName)
+
+  // Non boolean flags
+  if (typeof flagValue === "string" || typeof flagValue === "undefined") {
+    return flagValue === "true"
   }
 
-  return RuntimeFlag[flagName]
+  if (checkBrowserStorage) {
+    const state = "" as string // localStorage.getItem(flagName)
+    return state !== null ? state === "true" : flagValue
+  }
+
+  return flagValue
 }
 
 /**

@@ -1,5 +1,9 @@
 import React, { ReactElement, useEffect, useMemo, useState } from "react"
+import dayjs from "dayjs"
+import isBetween from "dayjs/plugin/isBetween"
+
 import {
+  selectCampaigns,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
   selectCurrentNetwork,
@@ -13,6 +17,8 @@ import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
+import MATSNET_NFT_CAMPAIGN from "@tallyho/tally-background/services/campaign/matsnet-nft"
+
 import { useHistory } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import SharedPanelSwitcher from "../components/Shared/SharedPanelSwitcher"
@@ -28,6 +34,9 @@ import SharedButton from "../components/Shared/SharedButton"
 import SharedIcon from "../components/Shared/SharedIcon"
 import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
+import MezoWalletCampaignBanner from "../components/Wallet/Banner/WalletCampaignBanner"
+
+dayjs.extend(isBetween)
 
 export default function Wallet(): ReactElement {
   const { t } = useTranslation()
@@ -41,6 +50,7 @@ export default function Wallet(): ReactElement {
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
+  const activeCampaigns = useBackgroundSelector(selectCampaigns)
 
   useEffect(() => {
     dispatch(
@@ -99,6 +109,20 @@ export default function Wallet(): ReactElement {
 
   panelNames.push(t("wallet.pages.activity"))
 
+  const renderMezoCampaignBanner = () => {
+    const campaign = activeCampaigns?.[MATSNET_NFT_CAMPAIGN.id]
+    if (
+      !campaign ||
+      campaign.state === "not-eligible" ||
+      campaign.state === "campaign-complete" ||
+      !dayjs().isBetween(campaign.dateFrom, campaign.dateTo, "day", "[]")
+    ) {
+      return null
+    }
+
+    return <MezoWalletCampaignBanner state={campaign.state} />
+  }
+
   return (
     <>
       <div className="page_content">
@@ -116,6 +140,8 @@ export default function Wallet(): ReactElement {
         {isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) && (
           <OnboardingOpenClaimFlowBanner />
         )}
+        {isEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK) &&
+          renderMezoCampaignBanner()}
         {isEnabled(FeatureFlags.SHOW_ISLAND_UI) && <PortalBanner />}
         <div className="section">
           <SharedPanelSwitcher
