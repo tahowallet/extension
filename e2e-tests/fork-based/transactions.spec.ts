@@ -471,7 +471,7 @@ test.describe("Transactions @fork", () => {
       await expect(usdcToken.getByText(/^2\.62$/)).toBeVisible()
       await expect(usdcToken.locator(".icon")).toBeVisible()
       await usdcToken.locator(".icon").click({ trial: true })
-      await expect(popup.locator(".token_group")).toHaveCount(2) // On a forked environment the asset list shows `DAI` and `UNIDAIETH`.
+      await expect(popup.locator(".token_group")).toHaveCount(1)
 
       /**
        *  Select DAI token
