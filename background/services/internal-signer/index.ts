@@ -715,7 +715,7 @@ export default class InternalSignerService extends BaseService<Events> {
   }
 
   /**
-   * Export private key - supprts exporting from both private key wallet signers and
+   * Export private key - supports exporting from both private key wallet signers and
    * HD Wallet's specific accounts
    *
    * @param address

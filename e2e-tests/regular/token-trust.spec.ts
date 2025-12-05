@@ -1,7 +1,7 @@
 import { test, expect } from "../utils"
 import { account1 } from "../utils/onboarding"
 
-// This test verifies functionalites of verified/unverified tokens using a
+// This test verifies functionalities of verified/unverified tokens using a
 // wallet address that control: `e2e.testertesting.eth`
 // (`0x9d373acbe8540895fa1752ab463ab31bbab2b38f`).
 // The wallet at the moment of writing the test owns several trusted and

@@ -1,4 +1,4 @@
-// This migration adds timestamps for activites directly to the activity
+// This migration adds timestamps for activities directly to the activity
 // objects, then deletes the `blocks` key from the networks slice to save on
 // space.
 

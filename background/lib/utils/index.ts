@@ -175,7 +175,7 @@ export const isMaxUint256 = (amount: BigNumber | bigint | string): boolean =>
   ethers.BigNumber.from(amount).eq(ethers.constants.MaxUint256)
 
 /**
- * Converts a string of hexidecimals bytes to ascii text
+ * Converts a string of hexadecimals bytes to ascii text
  */
 export const hexToAscii = (hex_: string): string => {
   const hex = hex_.toString() // force conversion
