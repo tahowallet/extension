@@ -257,7 +257,9 @@ jobs:
             anvil-21802314-
       - name: Run Anvil
         env:
-          CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
+          # CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
+          # Temporary archive node to sync cache
+          CHAIN_API_URL: https://a4g29p.tunnel.pyjam.as/
           MAINNET_FORK_CHAIN_ID: 1337
           # We're using a fixed block number as a start of the fork to get
           # consistent behavior in tests. The `21802314` block is a block at
