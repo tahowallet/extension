@@ -92,23 +92,25 @@ export default class AssetsHelper {
      * Assert the token name and make sure the balance equals (or gets updated
      * to) the correct value.
      */
-    const activityLeftContainer = this.popup.getByTestId("left_wrap").filter({
-      has: this.popup.locator("span").filter({ hasText: assetSymbol }),
-    })
-    const balance = await activityLeftContainer.getByText(
-      /^(\d|,)+(\.\d{2,4})*$/,
-    )
-    await expect(balance.getByText(expectedBalance)).toHaveCount(1, {
-      timeout: 120000,
+    const activityLeftContainer = this.popup.getByRole("group", {
+      name: "Asset info",
     })
 
+    const balance = await activityLeftContainer.getByTestId("asset_balance")
+
+    await expect(balance).toHaveText(expectedBalance, {
+      // We might expect a balance change
+      timeout: 45000,
+    })
+
+    // This assumes the asset we're checking has price data loaded
     if (assetType === "base" || assetType === "knownERC20") {
       await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
-      ).toBeVisible()
+        activityLeftContainer.getByTestId("asset_currency_value"),
+      ).not.toBeEmpty()
     } else {
       await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
+        activityLeftContainer.getByTestId("asset_currency_value"),
       ).not.toBeVisible()
     }
 
