@@ -79,6 +79,7 @@ import {
   dismissableItemMarkedAsShown,
   toggleTestNetworks,
   updateCampaignsState,
+  setDisplayCurrency,
 } from "../../redux-slices/ui"
 import {
   estimatedFeesPerGas,
@@ -941,6 +942,20 @@ export default class ReduxService extends BaseService<never> {
       this.store.dispatch(newPricePoints(pricePoints))
     })
 
+    this.indexingService.emitter.on(
+      "updatedCurrencyRates",
+      async (currencies) => {
+        const currency = await this.preferenceService.getCurrency()
+
+        const update = currencies.find((rate) => rate.code === currency.code)
+
+        // Only update if we successfully received an updated rate
+        if (update) {
+          await this.store.dispatch(setDisplayCurrency(update))
+        }
+      },
+    )
+
     this.indexingService.emitter.on("refreshAsset", (asset) => {
       this.store.dispatch(
         refreshAsset({
@@ -1749,6 +1764,23 @@ export default class ReduxService extends BaseService<never> {
 
     uiSliceEmitter.on("updateAutoLockInterval", async (newTimerValue) => {
       await this.preferenceService.updateAutoLockInterval(newTimerValue)
+    })
+
+    uiSliceEmitter.on("updateDisplayCurrency", async (currencyCode) => {
+      const rates = await this.indexingService.getCurrencyRates()
+
+      const fallback = {
+        code: "USD",
+        rate: { amount: 1_000_000_000_0n, decimals: 10n },
+      }
+
+      const currency =
+        // FIXME: Currency won't update if there's no exchange rate available.
+        // This may confuse the user, as it may seem the dropdown did nothing.
+        rates.find((rate) => rate.code === currencyCode) ?? fallback
+
+      this.preferenceService.setCurrency(currency)
+      this.store.dispatch(setDisplayCurrency(currency))
     })
   }
 

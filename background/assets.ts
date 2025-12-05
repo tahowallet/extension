@@ -1,5 +1,6 @@
 import { keyBy } from "lodash"
 import { TokenList } from "@uniswap/token-lists"
+import { FixedPoint } from "@thesis-co/cent/dist/types"
 import { UNIXTime, HexString } from "./types"
 import {
   NetworkSpecific,
@@ -99,7 +100,17 @@ export type FungibleAsset = Asset & {
  * would give this some more teeth. Right now, any `FiatCurrency` can be assigned
  * to any `FungibleAsset` and vice versa.
  */
+
 export type FiatCurrency = FungibleAsset
+
+// Used for displaying balances and values in the user selected currency
+export type DisplayCurrency = {
+  code: string
+  /**
+   * Conversion rate for 1 usd
+   */
+  rate: FixedPoint
+}
 
 /**
  * Any asset that exists on a particular network; see {@link NetworkSpecific)

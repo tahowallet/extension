@@ -7,14 +7,18 @@ import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/trans
 import {
   heuristicDesiredDecimalsForUnitPrice,
   enrichAssetAmountWithMainCurrencyValues,
+  convertUSDPricePointToCurrency,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   selectDefaultNetworkFeeSettings,
   selectEstimatedFeesPerGas,
   selectTransactionData,
-  selectTransactionMainCurrencyPricePoint,
+  selectTransactionBaseAssetPricePoint,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectCurrentNetwork,
+  selectDisplayCurrency,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ARBITRUM_ONE,
   BINANCE_SMART_CHAIN,
@@ -32,23 +36,26 @@ import {
   PricePoint,
   unitPricePointForPricePoint,
   assetAmountToDesiredDecimals,
+  DisplayCurrency,
 } from "@tallyho/tally-background/assets"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
+import { currencies } from "@thesis-co/cent"
 import { useBackgroundSelector } from "../../hooks"
 
-const getFeeDollarValue = (
-  currencyPrice: PricePoint | undefined,
+const getFeeFiatValue = (
+  feePricePoint: PricePoint | undefined,
+  currency: DisplayCurrency,
   gasLimit?: bigint,
   estimatedSpendPerGas?: bigint,
   estimatedL1RollupFee?: bigint,
 ): string | undefined => {
   if (estimatedSpendPerGas) {
-    if (!gasLimit || !currencyPrice) return undefined
+    if (!gasLimit || !feePricePoint) return undefined
 
-    const [asset] = currencyPrice.pair
+    const [asset] = feePricePoint.pair
 
     let currencyCostPerBaseAsset
-    const unitPricePoint = unitPricePointForPricePoint(currencyPrice)
+    const unitPricePoint = unitPricePointForPricePoint(feePricePoint)
 
     if (unitPricePoint) {
       currencyCostPerBaseAsset = assetAmountToDesiredDecimals(
@@ -57,15 +64,17 @@ const getFeeDollarValue = (
       )
     }
 
+    const assetAmount = {
+      asset,
+      amount: estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
+    }
+
     const { localizedMainCurrencyAmount } =
       enrichAssetAmountWithMainCurrencyValues(
-        {
-          asset,
-          amount:
-            estimatedSpendPerGas * gasLimit + (estimatedL1RollupFee ?? 0n),
-        },
-        currencyPrice,
+        assetAmount,
+        feePricePoint,
         currencyCostPerBaseAsset && currencyCostPerBaseAsset < 1 ? 4 : 2,
+        currency,
       )
     return localizedMainCurrencyAmount
   }
@@ -143,9 +152,15 @@ export default function FeeSettingsText({
     networkSettings.values?.baseFeePerGas ??
     0n
 
-  const mainCurrencyPricePoint = useBackgroundSelector(
-    selectTransactionMainCurrencyPricePoint,
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
+  const baseAssetPricePoint = useBackgroundSelector(
+    selectTransactionBaseAssetPricePoint,
   )
+  const mainCurrencyPricePoint = baseAssetPricePoint
+    ? convertUSDPricePointToCurrency(baseAssetPricePoint, displayCurrency)
+    : undefined
+
   const estimatedGweiAmount = estimateGweiAmount({
     baseFeePerGas,
     networkSettings,
@@ -169,14 +184,15 @@ export default function FeeSettingsText({
       : 0n
 
   const gweiValue = `${estimatedGweiAmount} Gwei`
-  const dollarValue = getFeeDollarValue(
+  const currencyValue = getFeeFiatValue(
     mainCurrencyPricePoint,
+    displayCurrency,
     gasLimit,
     estimatedSpendPerGas,
     estimatedRollupFee,
   )
 
-  if (!dollarValue) return <div>~{gweiValue}</div>
+  if (!currencyValue) return <div>~{gweiValue}</div>
 
   return (
     <div className="fee_settings_text_container">
@@ -184,7 +200,13 @@ export default function FeeSettingsText({
         <>{t("networkFees.toBeDetermined")}</>
       ) : (
         <>
-          {networkIsBuiltIn && <span>~${dollarValue}</span>}
+          {/* TODO: Add proper currency formatting */}
+          {networkIsBuiltIn && (
+            <span>
+              ~{currencies[displayCurrency.code].symbol}
+              {currencyValue}
+            </span>
+          )}
           <span className="fee_gwei">({gweiValue})</span>
         </>
       )}

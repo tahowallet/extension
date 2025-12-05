@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectAllNFTsCount,
   selectIsReloadingNFTs,
-  selectMainCurrencySign,
+  selectDisplayCurrencySign,
   selectFilteredNFTBadgesCount,
   selectFilteredNFTCollectionsCount,
   selectFilteredNFTsCount,
@@ -30,9 +30,9 @@ export default function NFTsHeader(): ReactElement {
     selectFilteredNFTCollectionsCount,
   )
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const mainCurrencySign = useBackgroundSelector(selectDisplayCurrencySign)
 
-  const { totalFloorPriceInETH, totalFloorPriceInUSD } =
+  const { totalFloorPriceInETH, totalFloorPriceInCurrency } =
     useTotalNFTsFloorPrice()
 
   const handleToggleClick = useCallback(() => {
@@ -67,12 +67,13 @@ export default function NFTsHeader(): ReactElement {
             />
           )}
           <div className="stats_totals">
+            {/* TODO: Add proper currency formatting */}
             <span className="currency_sign">{mainCurrencySign}</span>
             <span
               className="currency_total"
               data-testid="nft_header_currency_total"
             >
-              {totalFloorPriceInUSD ?? "0"}
+              {totalFloorPriceInCurrency ?? "0"}
             </span>
             {isLoading && (
               <SharedLoadingSpinner size="small" variant="transparent" />

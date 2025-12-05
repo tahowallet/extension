@@ -42,6 +42,7 @@
     "@tallyho/hd-keyring": "0.5.0",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",
+    "@thesis-co/cent": "0.0.4",
     "@testing-library/dom": "^9.3.1",
     "@types/w3c-web-usb": "^1.0.5",
     "@uniswap/token-lists": "^1.0.0-beta.30",

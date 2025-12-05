@@ -7,7 +7,7 @@ import {
   PricePoint,
   SmartContractFungibleAsset,
 } from "../assets"
-import { FIAT_CURRENCIES_SYMBOL } from "../constants"
+import { USD } from "../constants"
 import { convertFixedPoint } from "../lib/fixed-point"
 import {
   FullAssetID,
@@ -26,6 +26,9 @@ export type PricesState = {
 
 export const initialState: PricesState = {}
 
+/**
+ * Stores price data for trusted assets
+ */
 const pricesSlice = createSlice({
   name: "prices",
   initialState,
@@ -35,8 +38,9 @@ const pricesSlice = createSlice({
       { payload: pricePoints }: { payload: PricePoint[] },
     ) => {
       pricePoints.forEach((pricePoint) => {
-        const fiatCurrency = pricePoint.pair.find((asset) =>
-          FIAT_CURRENCIES_SYMBOL.includes(asset.symbol),
+        const fiatCurrency = pricePoint.pair.find(
+          // FIXME: What if we have price points not in USD?
+          (asset) => asset.symbol === USD.symbol,
         )
 
         const [pricedAsset] = pricePoint.pair.filter(
@@ -98,10 +102,15 @@ const selectPairedAssetSymbol = (
 export const selectAssetPricePoint = createSelector(
   [selectPricesState, selectAsset, selectPairedAssetSymbol],
   (prices, assetToFind, pairedAssetSymbol) => {
+    /* Don't do anything if this is an unverified asset */
+    if (!isTrustedAsset(assetToFind)) {
+      return undefined
+    }
+
     const getTargetAssetFromPricePoint = (pricePoint: PricePoint) =>
       pricePoint.pair.filter(({ symbol }) => symbol !== pairedAssetSymbol)[0]
 
-    const hasRecentPriceData = (
+    const hasPriceData = (
       assetPriceData: AssetPricesMap | undefined,
     ): boolean => !!assetPriceData?.[pairedAssetSymbol]
 
@@ -111,24 +120,21 @@ export const selectAssetPricePoint = createSelector(
     if (isSmartContractFungibleAsset(assetToFind)) {
       const assetID = getFullAssetID(assetToFind)
 
-      if (hasRecentPriceData(prices[assetID])) {
+      if (hasPriceData(prices[assetID])) {
         pricedAsset = prices[assetID]
-      }
-
-      /* Don't do anything else if this is an unverified asset and there's no exact match */
-      if (!isTrustedAsset(assetToFind)) {
-        return undefined
       }
     }
 
     /* Otherwise, find a best-effort match by looking for assets with the same symbol  */
     if (!pricedAsset) {
-      pricedAsset = Object.values(prices).find(
-        (assetPriceData) =>
-          hasRecentPriceData(assetPriceData) &&
+      pricedAsset = Object.values(prices).find((assetPriceData) => {
+        if (!hasPriceData(assetPriceData)) return false
+
+        return (
           getTargetAssetFromPricePoint(assetPriceData[pairedAssetSymbol])
-            .symbol === assetToFind.symbol,
-      )
+            .symbol === assetToFind.symbol
+        )
+      })
     }
 
     if (pricedAsset) {

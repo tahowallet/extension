@@ -17,11 +17,12 @@ import {
   selectUseFlashbots,
   selectAutoLockTimer as selectAutoLockInterval,
   updateAutoLockInterval,
+  updateDisplayCurrency,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
 import {
-  selectMainCurrencySign,
+  selectDisplayCurrency,
   userValueDustThreshold,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -29,6 +30,7 @@ import {
   isEnabled,
   wrapIfEnabled,
 } from "@tallyho/tally-background/features"
+import { SUPPORTED_CURRENCIES } from "@tallyho/tally-background/services/indexing/price-feeds"
 import SharedToggleButton from "../components/Shared/SharedToggleButton"
 import SharedSelect from "../components/Shared/SharedSelect"
 import { getLanguageIndex, getAvalableLanguages } from "../_locales"
@@ -62,6 +64,14 @@ const AUTO_LOCK_OPTIONS = [
   { label: "15", value: String(15 * MINUTE) },
   { label: "30", value: String(30 * MINUTE) },
   { label: "60", value: String(60 * MINUTE) },
+]
+
+const CURRENCY_OPTIONS = [
+  { label: "USD", value: "USD" },
+  ...Array.from(SUPPORTED_CURRENCIES.keys()).map((symbol) => ({
+    label: symbol,
+    value: symbol,
+  })),
 ]
 
 const FOOTER_ACTIONS = [
@@ -170,7 +180,6 @@ export default function Settings(): ReactElement {
   const showUnverifiedAssets = useSelector(selectShowUnverifiedAssets)
   const shouldShowNotifications = useSelector(selectShowNotifications)
   const useFlashbots = useSelector(selectUseFlashbots)
-  const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
 
   const toggleHideDustAssets = (toggleValue: boolean) => {
     dispatch(toggleHideDust(toggleValue))
@@ -204,7 +213,8 @@ export default function Settings(): ReactElement {
   const hideSmallAssetBalance = {
     title: t("settings.hideSmallAssetBalance", {
       amount: userValueDustThreshold,
-      sign: mainCurrencySign,
+      // TODO: Make dust threshold configurable
+      sign: "$",
     }),
     component: () => (
       <SharedToggleButton
@@ -361,6 +371,24 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const displayCurrency = useBackgroundSelector(selectDisplayCurrency)
+
+  const currencySettings = {
+    title: "Currency",
+    component: () => (
+      <SharedSelect
+        width={194}
+        options={CURRENCY_OPTIONS}
+        onChange={(currencyCode) =>
+          dispatch(updateDisplayCurrency(currencyCode))
+        }
+        defaultIndex={CURRENCY_OPTIONS.findIndex(
+          (option) => option.value === displayCurrency.code,
+        )}
+      />
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -415,6 +443,10 @@ export default function Settings(): ReactElement {
         dAppsSettings,
         analytics,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
+        ...wrapIfEnabled(
+          FeatureFlags.SUPPORT_MULTIPLE_CURRENCIES,
+          currencySettings,
+        ),
         ...wrapIfEnabled(
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
           notificationBanner,
