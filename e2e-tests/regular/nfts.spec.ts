@@ -15,7 +15,8 @@ const makeStall = (label?: string) => {
   return stall
 }
 
-test.describe("NFTs", () => {
+// Simple hash shutdown
+test.fixme("NFTs", () => {
   test("User can view nft collections, poaps and badges", async ({
     page,
     context,
