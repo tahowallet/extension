@@ -82,6 +82,15 @@ export default class AssetDataHelper {
       if (provider.supportsAlchemy) {
         return await getAlchemyTokenBalances(provider, addressOnNetwork)
       }
+    } catch (error) {
+      logger.debug(
+        "Problem resolving asset balances on Alchemy supported network",
+        addressOnNetwork.network,
+        error,
+      )
+    }
+
+    try {
       return await getTokenBalances(
         addressOnNetwork,
         smartContractAddresses || [],
