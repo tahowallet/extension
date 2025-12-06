@@ -2,6 +2,7 @@ import { TokenList } from "@uniswap/token-lists"
 
 import { memoize } from "lodash"
 import { fetchJson } from "@ethersproject/web"
+import { utils } from "ethers"
 import {
   FungibleAsset,
   SmartContractFungibleAsset,
@@ -38,6 +39,16 @@ const cleanTokenListResponse = (json: any, url: string) => {
       return token
     })
     return { ...json, tokens }
+  }
+
+  if (json && Array.isArray(json?.tokens)) {
+    // Uniswap new token list format allows solana token addresses
+    return {
+      ...json,
+      tokens: json.tokens.filter((token: { address: string }) =>
+        utils.isAddress(token.address),
+      ),
+    }
   }
 
   return json
