@@ -15,7 +15,7 @@ const CI_ENV = typeof process.env.CI === "string"
 const config: PlaywrightTestConfig = {
   testDir: "./e2e-tests/",
   /* Maximum time one test can run for. */
-  timeout: 240 * SECOND,
+  timeout: 180 * SECOND,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -28,7 +28,7 @@ const config: PlaywrightTestConfig = {
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: CI_ENV,
   /* Retry on CI only */
-  retries: CI_ENV ? 2 : 0,
+  retries: CI_ENV ? 1 : 0,
   /**
    * Opt out of parallel tests since we interact with real APIs during testing
    */

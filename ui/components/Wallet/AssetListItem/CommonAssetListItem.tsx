@@ -77,6 +77,7 @@ export default function CommonAssetListItem(
         className="asset_list_item"
         data-testid="asset_list_item"
         data-assetid={getFullAssetID(assetAmount.asset)}
+        data-trusted={isTrustedAsset(assetAmount.asset)}
       >
         <div className="asset_left">
           <SharedAssetIcon
@@ -89,7 +90,7 @@ export default function CommonAssetListItem(
           />
           <div className="asset_left_content">
             <div className="asset_amount">
-              <span className="bold_amount_count">
+              <span className="bold_amount_count" data-testid="asset_amount">
                 {assetAmount.localizedDecimalAmount}
               </span>
               <span title={assetAmount.asset.symbol} data-testid="asset_symbol">

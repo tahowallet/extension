@@ -146,22 +146,19 @@ test.describe("Transactions @fork", () => {
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
 
-      // This assertion is setup here since the toast might pop immediately
-      // after clicking the sign button
-      const successToast = expect(
-        popup.getByText("Transaction signed, broadcasting...").first(),
-      ).toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-
       /**
        * Sign.
        */
       await popup.getByRole("button", { name: "Sign" }).click()
 
-      await successToast
-
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await Promise.race([
+        expect(
+          popup.getByText("Transaction signed, broadcasting...").first(),
+        ).toBeVisible(), // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
+        expect(popup.getByText("Transaction failed to broadcast.")).toHaveCount(
+          0,
+        ),
+      ])
     })
 
     await test.step("Verify asset activity screen and transaction status", async () => {

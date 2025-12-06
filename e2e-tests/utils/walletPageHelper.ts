@@ -135,6 +135,18 @@ export default class WalletPageHelper {
       .click()
   }
 
+  async assertNetworkName(name: string): Promise<void> {
+    await expect(
+      this.popup.getByTestId("top_menu_network_switcher"),
+    ).toContainText(name)
+  }
+
+  async assertAccountName(name: string): Promise<void> {
+    await expect(
+      this.popup.getByTestId("top_menu_profile_button").last(),
+    ).toHaveText(name)
+  }
+
   async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
