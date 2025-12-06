@@ -2,7 +2,7 @@ import { test, expect } from "../utils"
 import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
-  test("User can send base asset (on Sepolia testnet) @expensive", async ({
+  test("User can send base asset (on Sepolia testnet) @testnet", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,

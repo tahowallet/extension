@@ -124,13 +124,13 @@ export default function SingleAsset(): ReactElement {
       </div>
       {asset && (
         <div className="header standard_width_padded">
-          <div className="left" data-testid="left_wrap">
+          <div className="left" role="group" aria-label="Asset info">
             <div className="asset_wrap">
               <SharedAssetIcon
                 logoURL={asset?.metadata?.logoURL}
                 symbol={asset?.symbol}
               />
-              <span className="asset_name">
+              <span className="asset_name" data-testid="asset_symbol">
                 {trimWithEllipsis(symbol, MAX_SYMBOL_LENGTH)}
               </span>
               {contractAddress && (
@@ -161,9 +161,13 @@ export default function SingleAsset(): ReactElement {
                 </SharedTooltip>
               )}
             </div>
-            <div className="balance">{localizedDecimalAmount}</div>
+            <div className="balance" data-testid="asset_balance">
+              {localizedDecimalAmount}
+            </div>
             {localizedMainCurrencyAmount && (
-              <div className="usd_value">${localizedMainCurrencyAmount}</div>
+              <div className="usd_value" data-testid="asset_currency_value">
+                ${localizedMainCurrencyAmount}
+              </div>
             )}
           </div>
           <div className="right">

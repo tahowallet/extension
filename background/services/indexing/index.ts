@@ -180,7 +180,7 @@ export default class IndexingService extends BaseService<Events> {
       prices: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 10,
+          periodInMinutes: 1,
         },
         handler: () => this.scheduleUpdateAssetsPrices(),
       },

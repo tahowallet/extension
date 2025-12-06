@@ -159,6 +159,7 @@ export default function WalletAccountBalanceControl(
           height={48}
           width={250}
           borderRadius={14}
+          testId="account_balance_loader"
           style={{ margin: "12px 0" }}
           isLoaded={!shouldIndicateLoading}
         >

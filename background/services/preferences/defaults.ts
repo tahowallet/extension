@@ -10,7 +10,7 @@ const defaultPreferences = {
       storageGatewayURL(
         "ipfs://bafkreidtegyj34mqah5ejveukif5ht5quddggv2gcb5yfthj5zw43um3y4",
       ).href, // the Taho community-curated list
-      "https://gateway.ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
+      "http://ipfs.io/ipns/tokens.uniswap.org", // the Uniswap default list
       "https://messari.io/tokenlist/messari-verified", // Messari-verified projects
       "https://wrapped.tokensoft.eth.limo", // Wrapped tokens
       "https://tokenlist.aave.eth.limo", // Aave-listed tokens and interest-bearing assets

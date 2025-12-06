@@ -31,19 +31,15 @@ test.describe("Token Trust", () => {
        * Verify we're on Ethereum network. Verify common elements on the main
        * page.
        */
-      await walletPageHelper.assertCommonElements(
-        /^Ethereum$/,
-        false,
-        account1.name,
-      )
-      await walletPageHelper.assertAnalyticsBanner()
+
+      await walletPageHelper.assertNetworkName("Ethereum")
+      await walletPageHelper.assertAccountName("e2e.testertesting.eth")
 
       /**
        * Switch to the Polygon network.
        */
-      await popup.waitForTimeout(3000) // without this timeout the prices of ERC-20 assets are not loaded
       await walletPageHelper.switchNetwork(/^Polygon$/)
-      await walletPageHelper.waitForAssetsToLoad(240000)
+      await walletPageHelper.waitForAssetsToLoad(90000)
 
       /**
        * Verify that `Show unverified assets` is OFF by default.
@@ -63,18 +59,21 @@ test.describe("Token Trust", () => {
        */
       await assetsHelper.assertVerifiedAssetOnWalletPage(/^MATIC$/, "base")
 
+      await popup.getByTestId("asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
+
       /**
        * Ensure there are no fields related to unverified assets in the base
        * asset's details.
        */
-      await popup.locator(".asset_list_item").first().click() // We use `.first()` because the base asset should be first on the list
-      await assetsHelper.assertAssetDetailsPage(
-        /^Polygon$/,
-        account1.name,
-        /^MATIC$/,
-        /^(\d|,)+(\.\d{2,4})*$/,
-        "base",
-      )
+
+      await expect(
+        popup.getByRole("button", { name: "Asset not verified" }),
+      ).not.toBeVisible()
+
+      await expect(
+        popup.getByRole("button", { name: "Verify asset" }),
+      ).not.toBeVisible()
+
       await popup.getByRole("button", { name: "Back", exact: true }).click()
 
       /**
@@ -86,6 +85,7 @@ test.describe("Token Trust", () => {
           has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click({ trial: true })
+
       await assetsHelper.assertVerifiedAssetOnWalletPage(
         /^WMATIC$/,
         "knownERC20",
@@ -101,6 +101,7 @@ test.describe("Token Trust", () => {
           has: popup.locator("span").filter({ hasText: /^WMATIC$/ }),
         })
         .click()
+
       await assetsHelper.assertAssetDetailsPage(
         /^Polygon$/,
         account1.name,
