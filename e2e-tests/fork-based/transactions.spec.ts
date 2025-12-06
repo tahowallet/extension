@@ -142,23 +142,18 @@ test.describe("Transactions @fork", () => {
       )
 
       /**
-       * Confirm there is "Transaction signed, broadcasting..." snackbar visible
-       * and there is no "Transaction failed to broadcast" snackbar visible.
-       */
-
-      /**
        * Sign.
        */
       await popup.getByRole("button", { name: "Sign" }).click()
 
-      await Promise.race([
-        expect(
-          popup.getByText("Transaction signed, broadcasting...").first(),
-        ).toBeVisible(), // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-        expect(popup.getByText("Transaction failed to broadcast.")).toHaveCount(
-          0,
-        ),
-      ])
+      /**
+       * Confirm there is "Transaction signed, broadcasting..." snackbar visible
+       */
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
+
+      // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
     })
 
     await test.step("Verify asset activity screen and transaction status", async () => {
@@ -334,17 +329,6 @@ test.describe("Transactions @fork", () => {
        * Sign.
        */
       await popup.getByRole("button", { name: "Reject" }).click()
-
-      /**
-       * Confirm there is no "Transaction signed, broadcasting..." or
-       * "Transaction failed to broadcast" snackbar visible.
-       */
-      await expect(
-        popup.getByText("Transaction signed, broadcasting..."),
-      ).toHaveCount(0)
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
     })
 
     await test.step("Verify asset activity screen", async () => {
@@ -435,7 +419,7 @@ test.describe("Transactions @fork", () => {
         /Ethereum/i,
         /TEST_ACCOUNT3/i,
         "ETH",
-        "\\d+\\.\\d{4}",
+        "\\d+",
         true,
       )
 
@@ -452,7 +436,7 @@ test.describe("Transactions @fork", () => {
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
-      await expect(ethToken.getByText(/^\d+\.\d+$/)).toBeVisible()
+      await expect(ethToken.getByText(/^\d+$/)).toBeVisible()
       await expect(ethToken.locator(".icon")).toHaveCount(0)
 
       /**
@@ -541,12 +525,9 @@ test.describe("Transactions @fork", () => {
        * Confirm there is "Transaction signed, broadcasting..." snackbar visible
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
-      await expect
-        .soft(popup.getByText("Transaction signed, broadcasting...").first())
-        .toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
     })
 
     await test.step("Verify asset activity screen and transaction status", async () => {

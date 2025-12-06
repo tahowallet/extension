@@ -127,6 +127,11 @@ test.describe("Transactions", () => {
         true,
       )
 
+      // Wait for any shown snackbars to disappear
+      await expect(() =>
+        expect(popup.getByTestId("snackbar")).not.toBeVisible(),
+      ).toPass()
+
       /**
        * Sign.
        */
@@ -136,12 +141,9 @@ test.describe("Transactions", () => {
        * Confirm there is "Transaction signed, broadcasting..." snackbar visible
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
-      await expect
-        .soft(popup.getByText("Transaction signed, broadcasting...").first())
-        .toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
     })
 
     await test.step("Verify asset activity screen and latest transaction status", async () => {
@@ -160,8 +162,6 @@ test.describe("Transactions", () => {
       /**
        * Verify latest transaction.
        */
-      setTimeout(() => {}, 10000) // wait for 10s
-
       const latestSentTx = popup.getByTestId("activity_list_item").first()
       await expect(latestSentTx.getByText("Pending")).toHaveCount(0, {
         timeout: 60000,

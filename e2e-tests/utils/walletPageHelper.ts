@@ -147,6 +147,12 @@ export default class WalletPageHelper {
     ).toHaveText(name)
   }
 
+  async assertSnackBar(text: string): Promise<void> {
+    await expect(async () => {
+      await expect(this.popup.getByTestId("snackbar")).toContainText(text)
+    }).toPass()
+  }
+
   async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
