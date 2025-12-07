@@ -259,8 +259,12 @@ test.describe("Transactions @fork", () => {
         .filter({ has: popup.locator("span").filter({ hasText: /^DAI$/ }) })
       // Wait for asset to load
       await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible()
+
       // Wait for prices to load
-      await expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible()
+      await expect(() =>
+        expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible(),
+      ).toPass()
+
       await daiAsset.locator(".asset_icon_send").click({ trial: true })
       await daiAsset.locator(".asset_icon_swap").click({ trial: true })
 
