@@ -28,23 +28,6 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertAnalyticsBanner()
 
       /**
-       * Enable test networks
-       */
-      await popup
-        .getByLabel("Main")
-        .getByText("Settings", { exact: true })
-        .click()
-      const enableTestNetworksSetting = popup.locator("li").filter({
-        hasText: /^Show testnet networks$/,
-      })
-      await enableTestNetworksSetting.locator(".bulb").click()
-      await popup
-        .getByLabel("Main")
-        .getByText("Wallet", { exact: true })
-        .first()
-        .click()
-
-      /**
        * Switch to Sepolia testnet.
        */
       await popup.getByTestId("top_menu_network_switcher").last().click()
