@@ -143,7 +143,9 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, SEPOLIA, AVALANCHE].map((network) => network.chainID),
+  [ETHEREUM, POLYGON, SEPOLIA, AVALANCHE, SEPOLIA].map(
+    (network) => network.chainID,
+  ),
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
