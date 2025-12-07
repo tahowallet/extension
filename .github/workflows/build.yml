@@ -196,7 +196,7 @@ jobs:
         run: xvfb-run yarn e2e:regular
         #env:
         # DEBUG: pw:api*
-      - name: Run costing Playwright tests
+      - name: Run testnet Playwright tests
         if: |
           github.ref == 'refs/heads/main'
             || contains(github.head_ref, 'e2e')
@@ -264,11 +264,11 @@ jobs:
           # which the state of the chain allows the tests to pass
           FORKING_BLOCK: 21802314
         run: |
-          anvil -q --chain-id $MAINNET_FORK_CHAIN_ID --port 8545 \
+          anvil -q -s 10 --chain-id $MAINNET_FORK_CHAIN_ID --port 8545 \
           --fork-block-number $FORKING_BLOCK --fork-url $CHAIN_API_URL \
-          --preserve-historical-states --fork-chain-id 1 \
+          --fork-chain-id 1 --fork-retry-backoff 100 --timeout 40000 \
           --gas-limit 65000000 &
-          sleep 10
+          sleep 5
       - name: Run Playwright tests designed for fork
         env:
           FORK_TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
