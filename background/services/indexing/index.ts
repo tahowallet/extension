@@ -1141,11 +1141,19 @@ export default class IndexingService extends BaseService<Events> {
     const accounts =
       await this.chainService.getAccountsToTrack(onlyActiveAccounts)
 
+    const prevTrackedAssets = await this.getAssetsToTrack()
+
     const balanceLoadResults = await Promise.allSettled(
       accounts.map((addressOnNetwork) =>
         this.loadAccountBalancesFor(addressOnNetwork),
       ),
     )
+
+    const newTrackedAssets = await this.getAssetsToTrack()
+
+    if (prevTrackedAssets.length !== newTrackedAssets.length) {
+      this.scheduleUpdateAssetsPrices()
+    }
 
     logger.errorLogRejectedPromises(
       "Account balances failed to load for",
