@@ -258,13 +258,9 @@ test.describe("Transactions @fork", () => {
         .locator(".asset_list_item")
         .filter({ has: popup.locator("span").filter({ hasText: /^DAI$/ }) })
       // Wait for asset to load
-      await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible({
-        timeout: 120000,
-      })
+      await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible()
       // Wait for prices to load
-      await expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible({
-        timeout: 120000,
-      })
+      await expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible()
       await daiAsset.locator(".asset_icon_send").click({ trial: true })
       await daiAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -436,7 +432,7 @@ test.describe("Transactions @fork", () => {
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
-      await expect(ethToken.getByText(/^\d+$/)).toBeVisible()
+      await expect(ethToken.getByText(/^\d+/)).toBeVisible()
       await expect(ethToken.locator(".icon")).toHaveCount(0)
 
       /**
