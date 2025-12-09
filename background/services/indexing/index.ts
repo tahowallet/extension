@@ -551,7 +551,7 @@ export default class IndexingService extends BaseService<Events> {
     // look up all assets and set balances
     const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
-        const knownAsset =
+        let knownAsset: SmartContractFungibleAsset | undefined =
           listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
           this.getKnownSmartContractAsset(
             addressNetwork.network,
@@ -562,7 +562,7 @@ export default class IndexingService extends BaseService<Events> {
           if (knownAsset) {
             await this.addAssetToTrack(knownAsset)
           } else {
-            await this.addTokenToTrackByContract(
+            knownAsset ??= await this.addTokenToTrackByContract(
               addressNetwork.network,
               contractAddress,
             )
@@ -577,6 +577,7 @@ export default class IndexingService extends BaseService<Events> {
               amount,
             },
             retrievedAt: Date.now(),
+            // FIXME: Not accurate
             dataSource: "alchemy",
           } as const
 
