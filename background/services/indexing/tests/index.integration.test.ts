@@ -297,60 +297,7 @@ describe("IndexingService", () => {
   })
 
   describe("loading account balances", () => {
-    it("should query erc20 balances without specifying token addresses when provider supports alchemy", async () => {
-      const indexingDb = await getIndexingDB()
-
-      const smartContractAsset = createSmartContractAsset()
-
-      await indexingDb.saveTokenList(
-        "https://gateway.ipfs.io/ipns/tokens.uniswap.org",
-        tokenList,
-      )
-
-      await indexingService.addOrUpdateCustomAsset(smartContractAsset)
-      await indexingDb.addAssetToTrack(smartContractAsset)
-
-      // Skip loading prices at service init
-      getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
-        indexingService,
-        "scheduleUpdateAssetsPrices",
-      ).mockResolvedValue(Promise.resolve())
-
-      await Promise.all([
-        chainService.startService(),
-        indexingService.startService(),
-      ])
-
-      const account = createAddressOnNetwork()
-
-      const provider = chainService.providerForNetworkOrThrow(ETHEREUM)
-      provider.supportsAlchemy = true
-
-      jest
-        .spyOn(chainService, "getAccountsToTrack")
-        .mockResolvedValue([account])
-
-      // We don't care about the return value for these calls
-      const baseBalanceSpy = jest
-        .spyOn(chainService, "getLatestBaseAccountBalance")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .mockImplementation(() => Promise.resolve({} as any))
-
-      const tokenBalanceSpy = getPrivateMethodSpy<
-        IndexingService["retrieveTokenBalances"]
-      >(indexingService, "retrieveTokenBalances").mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        () => Promise.resolve({}) as any,
-      )
-
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      await indexingService["loadAccountBalances"]()
-
-      expect(baseBalanceSpy).toHaveBeenCalledWith(account)
-      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [])
-    })
-
-    it("should query erc20 balances specifying token addresses when provider doesn't support alchemy", async () => {
+    it("should query erc20 balances specifying token addresses", async () => {
       const indexingDb = await getIndexingDB()
 
       const smartContractAsset = createSmartContractAsset()
