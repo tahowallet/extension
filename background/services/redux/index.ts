@@ -394,7 +394,7 @@ export default class ReduxService extends BaseService<never> {
   ) {
     super({
       initialLoadWaitExpired: {
-        schedule: { delayInMinutes: 1.5 },
+        schedule: { delayInMinutes: 1 },
         handler: () => this.store.dispatch(initializationLoadingTimeHitLimit()),
       },
     })

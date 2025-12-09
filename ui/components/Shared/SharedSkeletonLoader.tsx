@@ -6,10 +6,19 @@ export default function SharedSkeletonLoader(props: {
   height?: number
   borderRadius?: number
   children?: ReactNode
+  testId?: string
   isLoaded?: boolean
   style?: CSSProperties
 }): ReactElement {
-  const { width, height, borderRadius, isLoaded, style, children } = props
+  const {
+    width,
+    height,
+    borderRadius,
+    isLoaded,
+    testId = "loading_skeleton",
+    style,
+    children,
+  } = props
 
   // Want to return a ReactElement to make this maximally easy to integrate,
   // whereas children can be a ReactNode; Fragment will let us achieve that.
@@ -17,11 +26,7 @@ export default function SharedSkeletonLoader(props: {
   if (isLoaded) return <>{children}</>
 
   return (
-    <div
-      className={classNames("skeleton")}
-      data-testid="loading_skeleton"
-      style={style}
-    >
+    <div className={classNames("skeleton")} data-testid={testId} style={style}>
       <style jsx>
         {`
           .skeleton {

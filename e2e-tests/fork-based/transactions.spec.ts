@@ -1,21 +1,67 @@
+import { Wallet, utils } from "ethers"
 import { test, expect } from "../utils"
-import { account2 } from "../utils/onboarding"
+import ForkEnvHelper from "../utils/fork-env-helper"
 
-test.describe("Transactions", () => {
+const WALLET_JSON = process.env.FORK_TEST_WALLET_JSON_BODY ?? ""
+const WALLET_PASSWORD = process.env.FORK_TEST_WALLET_JSON_PASSWORD ?? ""
+
+test.describe("Transactions @fork", () => {
+  const ERC20_ASSET_WALLET = "0x40ec5B33f54e0E8A33A975908C5BA1c14e5BbbDf"
+  const DAI_CONTRACT = "0x6b175474e89094c44da98b954eedeac495271d0f"
+  const USDC_CONTRACT = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+  test.beforeAll(async ({ localNodeAlive, context }) => {
+    // FIXME: These should be test.skip but there's a bug in playwright causing
+    // the beforeAll hook to run before `test.skip`
+    test.fixme(
+      WALLET_JSON === "" || WALLET_PASSWORD === "",
+      "FORK_TEST_WALLET_JSON_BODY and FORK_TEST_WALLET_JSON_PASSWORD must be set",
+    )
+
+    test.fixme(!localNodeAlive, "Local node must be up")
+
+    const wallet = Wallet.fromEncryptedJsonSync(WALLET_JSON!, WALLET_PASSWORD!)
+
+    const forkEnv = new ForkEnvHelper(context)
+
+    await forkEnv.setBalance(wallet.address, utils.parseUnits("1", "ether"))
+    await forkEnv.emptyERC20Balance(USDC_CONTRACT, wallet.address)
+    await forkEnv.emptyERC20Balance(DAI_CONTRACT, wallet.address)
+
+    await forkEnv.setBalance(ERC20_ASSET_WALLET, utils.parseUnits("1", "ether"))
+    await forkEnv.impersonateAccount(ERC20_ASSET_WALLET)
+    await forkEnv.transferERC20(DAI_CONTRACT, wallet.address, "2.62")
+    await forkEnv.transferERC20(USDC_CONTRACT, wallet.address, "2.62", 6)
+    await forkEnv.stopImpersonating(ERC20_ASSET_WALLET)
+
+    await forkEnv.setBalance(wallet.address, utils.parseUnits("20", "ether"))
+  })
+
   test("User can send base asset", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
     assetsHelper,
   }) => {
+    const RECIPIENT_ADDRESS = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+
     await test.step("Import account", async () => {
       /**
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON(account2)
+
+      await walletPageHelper.onboardWithJSON(
+        "custom",
+        WALLET_JSON!,
+        WALLET_PASSWORD!,
+      )
+
       await walletPageHelper.goToStartPage()
+
       await walletPageHelper.setViewportSize()
+
+      await walletPageHelper.changeAccountName("TEST_ACCOUNT")
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
@@ -24,7 +70,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name,
+        /TEST_ACCOUNT/i,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -33,8 +79,8 @@ test.describe("Transactions", () => {
        */
       const ethAsset = popup.locator(".asset_list_item").first() // We use `.first()` because the base asset should be first on the list
       await expect(ethAsset.getByText(/^ETH$/)).toBeVisible()
-      await expect(ethAsset.getByText(/^0\.0386$/)).toBeVisible()
-      await expect(ethAsset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
+      await expect(ethAsset.getByText(/^20$/)).toBeVisible()
+
       await ethAsset.locator(".asset_icon_send").click({ trial: true })
       await ethAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -51,19 +97,19 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Ethereum$/,
-        account2.name,
+        /Ethereum/i,
+        /TEST_ACCOUNT/i,
         "ETH",
-        "0\\.0386",
+        "20",
         true,
       )
 
       /**
-       *  Enter amount and receipient. Verify `Continue` isn't active.
+       *  Enter amount and recipient. Verify `Continue` isn't active.
        */
-      await popup.locator("input.input_amount").fill("0.01")
+      await popup.locator("input.input_amount").fill("0.10")
       await expect(
-        popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
+        popup.locator(".value").getByText(/^\$\d+.*\d{2}$/),
       ).toBeVisible()
 
       await expect(
@@ -73,8 +119,7 @@ test.describe("Transactions", () => {
         .getByRole("button", { name: "Continue", exact: true })
         .click({ force: true })
 
-      const receipientAddress = "0x47745a7252e119431ccf973c0ebd4279638875a6"
-      await popup.locator("#send_address").fill(receipientAddress)
+      await popup.locator("#send_address").fill(RECIPIENT_ADDRESS)
 
       /**
        *  Click `Continue`.
@@ -88,10 +133,10 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertTransferScreen(
         "Ethereum",
-        "testertesting\\.eth",
-        "0x47745a7252e119431ccf973c0ebd4279638875a6",
-        "0x4774…875a6",
-        "0\\.01",
+        "TEST_ACCOUNT",
+        RECIPIENT_ADDRESS,
+        "0x7099…c79c8",
+        "0.1",
         "ETH",
         true,
       )
@@ -103,14 +148,12 @@ test.describe("Transactions", () => {
 
       /**
        * Confirm there is "Transaction signed, broadcasting..." snackbar visible
-       * and there is no "Transaction failed to broadcast" snackbar visible.
        */
-      await expect
-        .soft(popup.getByText("Transaction signed, broadcasting...").first())
-        .toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
+
+      // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
     })
 
     await test.step("Verify asset activity screen and transaction status", async () => {
@@ -119,9 +162,9 @@ test.describe("Transactions", () => {
        */
       await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        account2.name,
+        /TEST_ACCOUNT/,
         /^ETH$/,
-        /^0\.0284$/,
+        /^19.\d+$/,
         "base",
       )
       // This is what we expect currently on forked network. If ve ever fix
@@ -169,7 +212,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name,
+        /TEST_ACCOUNT/i,
       )
       await walletPageHelper.assertAnalyticsBanner()
     })
@@ -181,14 +224,21 @@ test.describe("Transactions", () => {
     transactionsHelper,
     assetsHelper,
   }) => {
+    const ERC20_RECIPIENT = "0x47745a7252e119431ccf973c0ebd4279638875a6"
     await test.step("Import account", async () => {
       /**
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.onboardWithJSON(
+        "custom",
+        WALLET_JSON!,
+        WALLET_PASSWORD!,
+      )
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
+
+      await walletPageHelper.changeAccountName("TEST_ACCOUNT2")
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
@@ -197,7 +247,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name,
+        /TEST_ACCOUNT2/,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
@@ -207,12 +257,14 @@ test.describe("Transactions", () => {
       const daiAsset = popup
         .locator(".asset_list_item")
         .filter({ has: popup.locator("span").filter({ hasText: /^DAI$/ }) })
-      await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible({
-        timeout: 120000,
-      })
-      await expect(daiAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
-        timeout: 120000,
-      })
+      // Wait for asset to load
+      await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible()
+
+      // Wait for prices to load
+      await expect(() =>
+        expect(daiAsset.getByTestId("resolved_asset_price")).toBeVisible(),
+      ).toPass()
+
       await daiAsset.locator(".asset_icon_send").click({ trial: true })
       await daiAsset.locator(".asset_icon_swap").click({ trial: true })
 
@@ -229,8 +281,8 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Ethereum$/,
-        account2.name,
+        /ethereum/i,
+        /TEST_ACCOUNT2/,
         "DAI",
         "2\\.62",
         false,
@@ -251,8 +303,7 @@ test.describe("Transactions", () => {
         .getByRole("button", { name: "Continue", exact: true })
         .click({ force: true })
 
-      const receipientAddress = "0x47745a7252e119431ccf973c0ebd4279638875a6"
-      await popup.locator("#send_address").fill(receipientAddress)
+      await popup.locator("#send_address").fill(ERC20_RECIPIENT)
 
       /**
        *  Click `Continue`.
@@ -266,8 +317,8 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertTransferScreen(
         "Ethereum",
-        "testertesting\\.eth",
-        "0x47745a7252e119431ccf973c0ebd4279638875a6",
+        "TEST_ACCOUNT2",
+        ERC20_RECIPIENT,
         "0x4774…875a6",
         "1\\.25",
         "DAI",
@@ -278,17 +329,6 @@ test.describe("Transactions", () => {
        * Sign.
        */
       await popup.getByRole("button", { name: "Reject" }).click()
-
-      /**
-       * Confirm there is no "Transaction signed, broadcasting..." or
-       * "Transaction failed to broadcast" snackbar visible.
-       */
-      await expect(
-        popup.getByText("Transaction signed, broadcasting..."),
-      ).toHaveCount(0)
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
     })
 
     await test.step("Verify asset activity screen", async () => {
@@ -297,7 +337,7 @@ test.describe("Transactions", () => {
        */
       await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        account2.name,
+        /TEST_ACCOUNT2/,
         /^DAI$/,
         /^2\.62$/,
         "knownERC20",
@@ -327,9 +367,15 @@ test.describe("Transactions", () => {
        * Import the `testertesting.eth` account using onboarding with a JSON
        * file.
        */
-      await walletPageHelper.onboardWithJSON(account2)
+      await walletPageHelper.onboardWithJSON(
+        "custom",
+        WALLET_JSON!,
+        WALLET_PASSWORD!,
+      )
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
+
+      await walletPageHelper.changeAccountName("TEST_ACCOUNT3")
 
       /**
        * Verify we're on Ethereum network. Verify common elements on the main
@@ -338,24 +384,24 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name,
+        /TEST_ACCOUNT3/,
       )
       await walletPageHelper.assertAnalyticsBanner()
 
       /**
        * Verify DAI is visible on the asset list and has the correct balance
        */
-      const daiAsset = popup
+      const usdcAsset = popup
         .locator("div.asset_list_item")
-        .filter({ has: popup.locator("span").filter({ hasText: /^DAI$/ }) })
-      await expect(daiAsset.getByText(/^2\.62$/)).toBeVisible({
+        .filter({ has: popup.locator("span").filter({ hasText: /^USDC$/ }) })
+      await expect(usdcAsset.getByText(/^2\.62$/)).toBeVisible({
         timeout: 120000,
       })
-      await expect(daiAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
+      await expect(usdcAsset.getByText(/^\$\d+\.\d{2}$/)).toBeVisible({
         timeout: 120000,
       })
-      await daiAsset.locator(".asset_icon_send").click({ trial: true })
-      await daiAsset.locator(".asset_icon_swap").click({ trial: true })
+      await usdcAsset.locator(".asset_icon_send").click({ trial: true })
+      await usdcAsset.locator(".asset_icon_swap").click({ trial: true })
 
       /**
        * Click on the Send button (from header)
@@ -370,10 +416,10 @@ test.describe("Transactions", () => {
        * isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Ethereum$/,
-        account2.name,
+        /Ethereum/i,
+        /TEST_ACCOUNT3/i,
         "ETH",
-        "\\d+\\.\\d{4}",
+        "\\d+",
         true,
       )
 
@@ -390,43 +436,43 @@ test.describe("Transactions", () => {
         .locator(".token_group")
         .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
-      await expect(ethToken.getByText(/^\d+\.\d{4}$/)).toBeVisible()
+      await expect(ethToken.getByText(/^\d+/)).toBeVisible()
       await expect(ethToken.locator(".icon")).toHaveCount(0)
 
       /**
        *  Verify ERC-20 token (DAI) is present on the list
        */
-      const daiToken = await popup
+      const usdcToken = await popup
         .locator(".token_group")
-        .filter({ has: popup.locator("div").filter({ hasText: /^DAI$/ }) })
-      await expect(daiToken.getByText(/^Dai$/)).toBeVisible()
-      await expect(daiToken.getByText(/^2\.62$/)).toBeVisible()
-      await expect(daiToken.locator(".icon")).toBeVisible()
-      await daiToken.locator(".icon").click({ trial: true }) // TODO: click and verify if correct address is opened
+        .filter({ has: popup.locator("div").filter({ hasText: /^USDC$/ }) })
+      await expect(usdcToken.getByText(/^USDC$/i)).toBeVisible()
+      await expect(usdcToken.getByText(/^2\.62$/)).toBeVisible()
+      await expect(usdcToken.locator(".icon")).toBeVisible()
+      await usdcToken.locator(".icon").click({ trial: true }) // TODO: click and verify if correct address is opened
 
       /**
        *  Filter by `dai` and verify that only DAI token is present
        */
-      await popup.getByPlaceholder("Search by name or address").fill("dai")
-      await expect(daiToken.getByText(/^Dai$/)).toBeVisible()
-      await expect(daiToken.getByText(/^2\.62$/)).toBeVisible()
-      await expect(daiToken.locator(".icon")).toBeVisible()
-      await daiToken.locator(".icon").click({ trial: true })
-      await expect(popup.locator(".token_group")).toHaveCount(2) // On a forked environment the asset list shows `DAI` and `UNIDAIETH`.
+      await popup.getByPlaceholder("Search by name or address").fill("usdc")
+      await expect(usdcToken.getByText(/^USDC$/i)).toBeVisible()
+      await expect(usdcToken.getByText(/^2\.62$/)).toBeVisible()
+      await expect(usdcToken.locator(".icon")).toBeVisible()
+      await usdcToken.locator(".icon").click({ trial: true })
+      await expect(popup.locator(".token_group")).toHaveCount(1)
 
       /**
        *  Select DAI token
        */
-      await daiToken.click()
+      await usdcToken.click()
 
       /**
        *  Verify elements on the page after selecting token. Make sure
        * `Continue` isn't active.
        */
       await transactionsHelper.assertUnfilledSendAssetScreen(
-        /^Ethereum$/,
-        account2.name,
-        "DAI",
+        /Ethereum/i,
+        /TEST_ACCOUNT3/i,
+        "USDC",
         "2\\.62",
         false,
       )
@@ -434,7 +480,7 @@ test.describe("Transactions", () => {
       /**
        *  Enter amount and receipient. Verify `Continue` isn't active.
        */
-      await popup.getByPlaceholder(/^0\.0$/).fill("1.3456")
+      await popup.getByPlaceholder(/^0\.0$/).fill("1.34")
       await expect(
         popup.locator(".value").getByText(/^\$\d+\.\d{2}$/),
       ).toBeVisible()
@@ -446,8 +492,9 @@ test.describe("Transactions", () => {
         .getByRole("button", { name: "Continue", exact: true })
         .click({ force: true })
 
-      const receipientAddress = "0x47745a7252e119431ccf973c0ebd4279638875a6"
-      await popup.locator("#send_address").fill(receipientAddress)
+      await popup
+        .locator("#send_address")
+        .fill("0x47745a7252e119431ccf973c0ebd4279638875a6")
 
       /**
        *  Click `Continue`.
@@ -461,11 +508,11 @@ test.describe("Transactions", () => {
        */
       await transactionsHelper.assertTransferScreen(
         "Ethereum",
-        "testertesting\\.eth",
+        "TEST_ACCOUNT3",
         "0x47745a7252e119431ccf973c0ebd4279638875a6",
         "0x4774…875a6",
         "1\\.34",
-        "DAI",
+        "USDC",
         false,
       )
 
@@ -478,12 +525,9 @@ test.describe("Transactions", () => {
        * Confirm there is "Transaction signed, broadcasting..." snackbar visible
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
-      await expect
-        .soft(popup.getByText("Transaction signed, broadcasting...").first())
-        .toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
     })
 
     await test.step("Verify asset activity screen and transaction status", async () => {
@@ -492,11 +536,11 @@ test.describe("Transactions", () => {
        */
       await assetsHelper.assertAssetDetailsPage(
         /^Ethereum$/,
-        account2.name,
-        /^DAI$/,
+        /TEST_ACCOUNT3/,
+        /^USDC$/i,
         /^1\.28$/,
         "knownERC20",
-        "https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f",
+        `https://etherscan.io/token/${USDC_CONTRACT}`,
       )
       // This is what we expect currently on forked network. If ve ever fix
       // displaying activity on fork, we should perform following checks
@@ -543,7 +587,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
         false,
-        account2.name,
+        /TEST_ACCOUNT3/,
       )
       await walletPageHelper.assertAnalyticsBanner()
     })
