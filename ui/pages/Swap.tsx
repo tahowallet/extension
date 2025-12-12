@@ -26,11 +26,7 @@ import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
-import {
-  NETWORKS_SUPPORTING_SWAPS,
-  OPTIMISM,
-  SECOND,
-} from "@tallyho/tally-background/constants"
+import { OPTIMISM, SECOND } from "@tallyho/tally-background/constants"
 
 import {
   selectLatestQuoteRequest,
@@ -38,6 +34,8 @@ import {
   selectInProgressApprovalContract,
 } from "@tallyho/tally-background/redux-slices/selectors/0xSwapSelectors"
 import { isSameAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
+
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedButton from "../components/Shared/SharedButton"
 import SharedActivityHeader from "../components/Shared/SharedActivityHeader"
@@ -348,28 +346,32 @@ export default function Swap(): ReactElement {
     if (sellAsset && buyAsset && quote) {
       const finalQuote = await dispatch(fetchSwapQuote(quote.quoteRequest))
 
-      if (finalQuote) {
-        const { gasPrice, ...quoteWithoutGasPrice } = finalQuote
+      if (finalQuote?.liquidityAvailable) {
+        const { transaction } = finalQuote
 
         await dispatch(
           executeSwap({
-            ...quoteWithoutGasPrice,
+            ...finalQuote,
+            transaction: {
+              ...transaction,
+              gasPrice:
+                // Let's use the gas price from 0x API for Optimism
+                // to avoid problems with gas price on Optimism Bedrock.
+                currentNetwork.chainID === OPTIMISM.chainID
+                  ? transaction.gasPrice
+                  : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+                    transaction.gasPrice,
+            },
             sellAsset,
             buyAsset,
-            gasPrice:
-              // Let's use the gas price from 0x API for Optimism
-              // to avoid problems with gas price on Optimism Bedrock.
-              currentNetwork.chainID === OPTIMISM.chainID
-                ? gasPrice
-                : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
-                  gasPrice,
+            chainId: currentNetwork.chainID,
           }),
         )
       }
     }
   }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
-  if (!NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID)) {
+  if (!networkSupportsSwaps(currentNetwork.chainID)) {
     return <Redirect to="/" />
   }
 

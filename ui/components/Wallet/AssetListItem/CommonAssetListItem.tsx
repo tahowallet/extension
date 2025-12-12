@@ -9,7 +9,7 @@ import {
   isUntrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
@@ -137,7 +137,7 @@ export default function CommonAssetListItem(
                 isTooltip
                 tooltipText="Send"
               />
-              {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
+              {networkSupportsSwaps(selectedNetwork.chainID) ? (
                 <SharedIconRouterLink
                   path="/swap"
                   state={{

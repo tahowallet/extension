@@ -5,7 +5,10 @@ import { writeFileSync } from "fs"
 import path from "path"
 import { schema } from "@uniswap/token-lists"
 
-import { swapPriceJTD, swapQuoteJTD } from "./lib/validate/0x-swap"
+import {
+  swapPriceJsonSchema,
+  swapQuoteJSONSchema,
+} from "./lib/validate/0x-swap"
 import {
   alchemyGetAssetTransfersJTD,
   alchemyTokenBalanceJTD,
@@ -22,8 +25,6 @@ const ajvJTD = new AjvJTD({
   .addSchema(alchemyGetAssetTransfersJTD, "isValidAlchemyAssetTransferResponse")
   .addSchema(alchemyTokenBalanceJTD, "isValidAlchemyTokenBalanceResponse")
   .addSchema(alchemyTokenMetadataJTD, "isValidAlchemyTokenMetadataResponse")
-  .addSchema(swapPriceJTD, "isValidSwapPriceResponse")
-  .addSchema(swapQuoteJTD, "isValidSwapQuoteResponse")
 
 const ajvJSON = new AjvJSON({
   allErrors: true,
@@ -32,6 +33,8 @@ const ajvJSON = new AjvJSON({
 })
   .addSchema(coingeckoPriceSchema, "isValidCoinGeckoPriceResponse")
   .addSchema(schema, "isValidUniswapTokenListResponse")
+  .addSchema(swapPriceJsonSchema, "isValid0xSwapPriceResponse")
+  .addSchema(swapQuoteJSONSchema, "isValid0xSwapQuoteResponse")
 
 const jtdModuleCode = standaloneCode(ajvJTD).replace(
   '/*# sourceURL="https://uniswap.org/tokenlist.schema.json" */',

@@ -5,7 +5,7 @@ import {
   selectCurrentNetwork,
   // selectOpenAbilityCount,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants/networks"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useTranslation } from "react-i18next"
 import TabBarIconButton from "./TabBarIconButton"
@@ -15,7 +15,7 @@ import { useBackgroundSelector } from "../../hooks"
 const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
   switch (tab.path) {
     case "/swap":
-      return NETWORKS_SUPPORTING_SWAPS.has(network.chainID)
+      return networkSupportsSwaps(network.chainID)
     default:
       return true
   }

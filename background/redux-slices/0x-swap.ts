@@ -1,59 +1,31 @@
-import { AnyAction, createSlice, ThunkDispatch } from "@reduxjs/toolkit"
-import { fetchJson } from "@ethersproject/web"
-import { BigNumber, ethers, utils } from "ethers"
+import { createSlice } from "@reduxjs/toolkit"
+import { BigNumber, ethers } from "ethers"
 
-import { createBackgroundAsyncThunk } from "./utils"
-import { SwappableAsset } from "../assets"
-import logger from "../lib/logger"
 import {
-  isValidSwapPriceResponse,
-  isValidSwapQuoteResponse,
-  ValidatedType,
-} from "../lib/validate"
-import { getProvider } from "./utils/contract-utils"
+  isSmartContractFungibleAsset,
+  PricePoint,
+  SwappableAsset,
+} from "../assets"
+import { getPrice, getQuote } from "../lib/0x-swap"
+import { SwapPriceResponse, SwapQuoteResponse } from "../lib/0x-swap-types"
 import { ERC20_ABI } from "../lib/erc20"
-import {
-  CHAIN_ID_TO_0X_API_BASE,
-  COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID,
-  DEFAULT_COMMUNITY_MULTISIG_ADDRESS,
-  ETHEREUM,
-  OPTIMISM,
-  OPTIMISTIC_ETH,
-} from "../constants"
-import { EVMNetwork } from "../networks"
+import logger from "../lib/logger"
+import { getUSDPriceForTokens } from "../lib/priceOracle"
+import { getPricePoint } from "../lib/prices"
+import { PricesState, selectAssetPricePoint } from "./prices"
 import { setSnackbarMessage } from "./ui"
-import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
-import { AssetsState } from "./assets"
+import { createBackgroundAsyncThunk } from "./utils"
+import { PriceDetails, SwapQuoteRequest } from "./utils/0x-swap-utils"
 import {
-  checkCurrencyAmount,
-  PriceDetails,
-  SwapQuoteRequest,
-} from "./utils/0x-swap-utils"
-import { PricesState } from "./prices"
-
-// This is how 0x represents native token addresses
-const ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS =
-  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-
-// @TODO Use ajv validators in conjunction with these types
-type ZeroExErrorResponse = {
-  code: number
-  reason: string
-  validationErrors: ZeroExValidationError[]
-}
-
-type ZeroExValidationError = {
-  field: string
-  code: number
-  reason: string
-}
-
-export type ZrxPrice = ValidatedType<typeof isValidSwapPriceResponse>
-export type ZrxQuote = ValidatedType<typeof isValidSwapQuoteResponse>
+  enrichAssetAmountWithDecimalValues,
+  enrichAssetAmountWithMainCurrencyValues,
+  isNetworkBaseAsset,
+} from "./utils/asset-utils"
+import { getProvider } from "./utils/contract-utils"
 
 export interface SwapState {
   latestQuoteRequest?: SwapQuoteRequest | undefined
-  finalQuote?: ZrxQuote | undefined
+  finalQuote?: SwapQuoteResponse | undefined
   inProgressApprovalContract?: string
 }
 
@@ -67,7 +39,7 @@ const swapSlice = createSlice({
   reducers: {
     setFinalSwapQuote: (
       state,
-      { payload: finalQuote }: { payload: ZrxQuote },
+      { payload: finalQuote }: { payload: SwapQuoteResponse },
     ) => ({
       ...state,
       finalQuote,
@@ -115,124 +87,6 @@ export const {
 
 export default swapSlice.reducer
 
-export const SWAP_FEE = 0.005
-
-const get0xApiBase = (network: EVMNetwork) => {
-  // Use gated features if there is an API key available in the build.
-  const prefix =
-    typeof process.env.ZEROX_API_KEY !== "undefined" &&
-    process.env.ZEROX_API_KEY.trim() !== "" &&
-    network.chainID === ETHEREUM.chainID
-      ? "gated."
-      : ""
-
-  const base = CHAIN_ID_TO_0X_API_BASE[network.chainID]
-  if (!base) {
-    logger.error(`0x swaps are not supported on ${network.name}`)
-    return null
-  }
-
-  return `${prefix}${base}`
-}
-
-function getGatedParameters(network: EVMNetwork) {
-  // Look up the community multisig address for a specific chain
-  const address =
-    COMMUNITY_MULTISIG_ADDRESS_BY_CHAINID[network.chainID] ??
-    DEFAULT_COMMUNITY_MULTISIG_ADDRESS
-  return {
-    affiliateAddress: address,
-    feeRecipient: address,
-    buyTokenPercentageFee: SWAP_FEE,
-  }
-}
-
-const gatedHeaders: { [header: string]: string } =
-  typeof process.env.ZEROX_API_KEY !== "undefined" &&
-  process.env.ZEROX_API_KEY.trim() !== ""
-    ? {
-        "0x-api-key": process.env.ZEROX_API_KEY,
-      }
-    : {}
-
-const get0xAssetName = (asset: SwappableAsset, network: EVMNetwork) => {
-  // 0x Does not support trading MATIC by contract address on polygon
-  if (network.name === "Polygon" && asset.symbol === "MATIC") {
-    return "MATIC"
-  }
-  if (
-    network.name === OPTIMISM.name &&
-    "contractAddress" in asset &&
-    asset.contractAddress === OPTIMISTIC_ETH.contractAddress
-  ) {
-    return ZEROEX_NATIVE_TOKEN_CONTRACT_ADDRESS
-  }
-
-  return "contractAddress" in asset && asset.contractAddress
-    ? asset.contractAddress
-    : asset.symbol
-}
-
-// Helper to build a URL to the 0x API for a given swap quote request. Usable
-// for both /price and /quote endpoints, returns a URL instance that can be
-// stringified or otherwise massaged.
-function build0xUrlFromSwapRequest(
-  requestPath: string,
-  {
-    assets,
-    amount,
-    slippageTolerance,
-    gasPrice,
-    network: selectedNetwork,
-  }: SwapQuoteRequest,
-  additionalParameters: Record<string, string>,
-): URL {
-  const requestUrl = new URL(
-    `https://${get0xApiBase(selectedNetwork)}/swap/v1${requestPath}`,
-  )
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
-  // When available, use smart contract addresses.
-
-  const sellToken = get0xAssetName(assets.sellAsset, selectedNetwork)
-  const buyToken = get0xAssetName(assets.buyAsset, selectedNetwork)
-
-  // Depending on whether the set amount is buy or sell, request the trade.
-  // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
-  // firm quotes, which the Taho UI calls "final" quotes that the user
-  // intends to fill.
-  const tradeField = "buyAmount" in amount ? "buyAmount" : "sellAmount"
-
-  Object.entries({
-    sellToken,
-    buyToken,
-    gasPrice: gasPrice.toString(),
-    slippagePercentage: slippageTolerance.toString(),
-    [tradeField]: tradeAmount.toString(),
-    ...getGatedParameters(selectedNetwork),
-    ...additionalParameters,
-  }).forEach(([parameter, value]) => {
-    // Do not set buyTokenPercentageFee if swapping to ETH. Currently the 0x
-    // `GET /quote` endpoint does not support a `sellTokenPercentageFee` and
-    // errors when passing in a `buyTokenPercentageFee` when the buy token is
-    // ETH.
-    if (
-      buyToken === "ETH" &&
-      (parameter === "buyTokenPercentageFee" || parameter === "feeRecipient")
-    ) {
-      return
-    }
-    requestUrl.searchParams.set(parameter, value.toString())
-  })
-
-  return requestUrl
-}
-
 /**
  * This async thunk fetches an firm RFQ-T quote for a swap. The quote request
  * specifies the swap assets as well as one end of the swap, and the returned
@@ -246,23 +100,14 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    const requestUrl = build0xUrlFromSwapRequest("/quote", quoteRequest, {
-      intentOnFilling: "true",
-      takerAddress: tradeAddress,
+    // TODO: Handle lack of liquidity, errors
+
+    const apiData = await getQuote({
+      ...quoteRequest,
+      taker: tradeAddress,
     })
 
-    const apiData: unknown = await fetchJson({
-      url: requestUrl.toString(),
-      headers: gatedHeaders,
-    })
-
-    if (!isValidSwapQuoteResponse(apiData)) {
-      logger.warn(
-        "Swap quote API call didn't validate, did the 0x API change?",
-        apiData,
-        isValidSwapQuoteResponse.errors,
-      )
-
+    if (!apiData) {
       return null
     }
 
@@ -271,29 +116,6 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     return apiData
   },
 )
-
-const parseAndNotifyOnZeroExApiError = (
-  error: unknown,
-  dispatch: ThunkDispatch<unknown, unknown, AnyAction>,
-) => {
-  try {
-    if (typeof error === "object" && error !== null && "body" in error) {
-      const parsedBody = JSON.parse(
-        (error as { body: string }).body,
-      ) as ZeroExErrorResponse
-      if (
-        // @TODO Extend this to handle more errors
-        parsedBody.validationErrors.find(
-          (e) => e.reason === "INSUFFICIENT_ASSET_LIQUIDITY",
-        )
-      ) {
-        dispatch(setSnackbarMessage("Insufficient liquidity for this trade."))
-      }
-    }
-  } catch (e) {
-    logger.warn("0x Api Response Parsing Failed")
-  }
-}
 
 /**
  * This async thunk fetches an indicative RFQ-T price for a swap. The quote
@@ -313,45 +135,96 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     },
     { dispatch, getState },
   ): Promise<
-    | { quote: ZrxPrice; needsApproval: boolean; priceDetails: PriceDetails }
+    | {
+        quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>
+        needsApproval: boolean
+        priceDetails: PriceDetails
+      }
     | undefined
   > => {
     const signer = getProvider().getSigner()
-    const tradeAddress = await signer.getAddress()
-    const { assets, prices } = getState() as {
-      assets: AssetsState
+    const taker = await signer.getAddress()
+    const { prices } = getState() as {
       prices: PricesState
     }
 
-    const requestUrl = build0xUrlFromSwapRequest("/price", quoteRequest, {
-      takerAddress: tradeAddress,
-    })
-    let apiData
+    const getPriceDetails = async (
+      quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>,
+    ) => {
+      const { buyAsset, sellAsset } = quoteRequest.assets
+
+      let [buyAssetPricePoint, sellAssetPricePoint] = [] as (
+        | PricePoint
+        | undefined
+      )[]
+
+      const assetPricesByContract = await getUSDPriceForTokens(
+        [quoteRequest.assets.buyAsset, quoteRequest.assets.sellAsset].filter(
+          isSmartContractFungibleAsset,
+        ),
+        quoteRequest.network,
+        getProvider(),
+      )
+
+      if (isNetworkBaseAsset(buyAsset)) {
+        buyAssetPricePoint = selectAssetPricePoint(prices, buyAsset, "USD")
+      } else if (assetPricesByContract[buyAsset.contractAddress]) {
+        buyAssetPricePoint = getPricePoint(
+          buyAsset,
+          assetPricesByContract[buyAsset.contractAddress],
+        )
+      }
+
+      if (isNetworkBaseAsset(sellAsset)) {
+        sellAssetPricePoint = selectAssetPricePoint(prices, sellAsset, "USD")
+      } else if (assetPricesByContract[sellAsset.contractAddress]) {
+        sellAssetPricePoint = getPricePoint(
+          sellAsset,
+          assetPricesByContract[sellAsset.contractAddress],
+        )
+      }
+
+      return {
+        // FIXME: deprecated, possibly coming back on 0x api
+        priceImpact: 0,
+        buyCurrencyAmount: buyAssetPricePoint
+          ? enrichAssetAmountWithMainCurrencyValues(
+              { asset: buyAsset, amount: BigInt(quote.buyAmount) },
+              buyAssetPricePoint,
+              2,
+            ).localizedMainCurrencyAmount
+          : undefined,
+        sellCurrencyAmount: sellAssetPricePoint
+          ? enrichAssetAmountWithMainCurrencyValues(
+              { asset: sellAsset, amount: BigInt(quote.sellAmount) },
+              sellAssetPricePoint,
+              2,
+            ).localizedMainCurrencyAmount
+          : undefined,
+      }
+    }
+
+    let quote: Awaited<ReturnType<typeof getPrice>> | null = null
 
     try {
-      apiData = await fetchJson({
-        url: requestUrl.toString(),
-        headers: gatedHeaders,
-      })
+      quote = await getPrice({ ...quoteRequest, taker })
 
-      if (!isValidSwapPriceResponse(apiData)) {
-        logger.warn(
-          "Swap price API call didn't validate, did the 0x API change?",
-          apiData,
-          isValidSwapQuoteResponse.errors,
-        )
-
+      if (!quote || quote.liquidityAvailable === false) {
+        dispatch(setSnackbarMessage("Insufficient liquidity for this trade"))
         return undefined
       }
 
-      const quote = apiData
+      const priceDetails = getPriceDetails(quote)
 
       let needsApproval = false
       // If we aren't selling ETH, check whether we need an approval to swap
       // TODO Handle other non-ETH base assets
-      if (quote.allowanceTarget !== ethers.constants.AddressZero) {
+      if (
+        quote.allowanceTarget !== null &&
+        quote.sellToken !== "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      ) {
         const assetContract = new ethers.Contract(
-          quote.sellTokenAddress,
+          quote.sellToken,
           ERC20_ABI,
           signer,
         )
@@ -367,32 +240,19 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
 
       dispatch(setLatestQuoteRequest(quoteRequest))
 
-      const priceDetails = {
-        priceImpact: quote.estimatedPriceImpact
-          ? Number(quote.estimatedPriceImpact)
-          : 0,
-        buyCurrencyAmount: await checkCurrencyAmount(
-          Number(quote.buyTokenToEthRate),
-          quoteRequest.assets.buyAsset,
-          assets,
-          prices,
-          quote.buyAmount,
-          quoteRequest.network,
-        ),
-        sellCurrencyAmount: await checkCurrencyAmount(
-          Number(quote.sellTokenToEthRate),
-          quoteRequest.assets.sellAsset,
-          assets,
-          prices,
-          quote.sellAmount,
-          quoteRequest.network,
-        ),
+      return { quote, needsApproval, priceDetails: await priceDetails }
+    } catch (error) {
+      logger.warn("Swap price API call threw an error!", quote, error)
+
+      try {
+        if (typeof error === "object" && error !== null && "body" in error) {
+          // TODO: i18n this string
+          dispatch(setSnackbarMessage("Error while fetching swap prices"))
+        }
+      } catch (e) {
+        logger.warn("0x Api Response Parsing Failed")
       }
 
-      return { quote, needsApproval, priceDetails }
-    } catch (error) {
-      logger.warn("Swap price API call threw an error!", apiData, error)
-      parseAndNotifyOnZeroExApiError(error, dispatch)
       return undefined
     }
   },
@@ -456,7 +316,11 @@ export const approveTransfer = createBackgroundAsyncThunk(
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
-    quote: ZrxQuote & { sellAsset: SwappableAsset; buyAsset: SwappableAsset },
+    quote: Exclude<SwapQuoteResponse, { liquidityAvailable: false }> & {
+      sellAsset: SwappableAsset
+      buyAsset: SwappableAsset
+      chainId: string
+    },
     { dispatch },
   ) => {
     const provider = getProvider()
@@ -481,24 +345,23 @@ export const executeSwap = createBackgroundAsyncThunk(
     dispatch(clearSwapQuote())
 
     await signer.sendTransaction({
-      chainId: quote.chainId,
-      data: quote.data,
-      gasLimit: BigNumber.from(quote.gas),
-      gasPrice: BigNumber.from(quote.gasPrice),
-      to: quote.to,
-      value: BigNumber.from(quote.value),
+      chainId: Number(quote.chainId),
+      data: quote.transaction.data,
+      gasLimit: BigNumber.from(quote.transaction.gas),
+      gasPrice: BigNumber.from(quote.transaction.gasPrice),
+      to: quote.transaction.to,
+      value: BigNumber.from(quote.transaction.value),
       type: 1 as const,
       annotation: {
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
-        estimatedPriceImpact: quote.estimatedPriceImpact
-          ? Number(quote.estimatedPriceImpact)
-          : 0,
-        sources: quote.sources
-          .map(({ name, proportion }) => ({
-            name,
-            proportion: parseFloat(proportion),
+        estimatedPriceImpact: 0, // disabled on v2
+        sources: quote.route.fills
+          .map(({ source, proportionBps: proportion }) => ({
+            name: source,
+            proportion:
+              typeof proportion === "string" ? parseFloat(proportion) : 0,
           }))
           .filter(({ proportion }) => proportion > 0),
         timestamp: Date.now(),
