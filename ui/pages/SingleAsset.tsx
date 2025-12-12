@@ -14,10 +14,8 @@ import {
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
-import {
-  DEFAULT_NETWORKS_BY_CHAIN_ID,
-  NETWORKS_SUPPORTING_SWAPS,
-} from "@tallyho/tally-background/constants"
+import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isTrustedAsset,
   isVerifiedAsset,
@@ -207,7 +205,7 @@ export default function SingleAsset(): ReactElement {
                 >
                   {t("shared.send")}
                 </SharedButton>
-                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
+                {networkSupportsSwaps(currentNetwork.chainID) ? (
                   <SharedButton
                     type="primary"
                     size="medium"
