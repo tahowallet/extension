@@ -101,6 +101,12 @@ type Events = ServiceLifecycleEvents & {
 
 export const idDerivationPath = "44'/60'/0'/0/0"
 
+/**
+ * Retrieves information about the currently open application
+ * from the connected ledger
+ *
+ * Extracted from @ledgerhq/live-common
+ */
 async function tryCheckAppIsEthereum(transport: TransportWebUSB) {
   const r = await transport.send(0xb0, 0x01, 0x00, 0x00)
 
