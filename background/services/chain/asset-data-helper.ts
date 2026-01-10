@@ -82,6 +82,15 @@ export default class AssetDataHelper {
       if (provider.supportsAlchemy) {
         return await getAlchemyTokenBalances(provider, addressOnNetwork)
       }
+    } catch (error) {
+      logger.debug(
+        "Problem resolving asset balances on Alchemy supported network",
+        addressOnNetwork.network,
+        error,
+      )
+    }
+
+    try {
       return await getTokenBalances(
         addressOnNetwork,
         smartContractAddresses || [],
@@ -98,6 +107,8 @@ export default class AssetDataHelper {
     // Load balances of tokens on the mainnet fork
     if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
       const tokens = [
+        "0x6b175474e89094c44da98b954eedeac495271d0f", // DAI
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", // USDC
         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", // AAVE
         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", // UNI
         "0x3A283D9c08E8b55966afb64C515f5143cf907611", // crvCVXETH

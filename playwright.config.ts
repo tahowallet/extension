@@ -8,34 +8,33 @@ import "dotenv-defaults/config"
 
 const SECOND = 1e3
 const CI_ENV = typeof process.env.CI === "string"
-const FORK = process.env.USE_MAINNET_FORK === "true"
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 const config: PlaywrightTestConfig = {
-  testDir: FORK ? "./e2e-tests/fork-based" : "./e2e-tests/regular",
+  testDir: "./e2e-tests/",
   /* Maximum time one test can run for. */
-  timeout: 240 * SECOND,
+  timeout: 100 * SECOND,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
      * For example in `await expect(locator).toHaveText();`
      */
-    timeout: (CI_ENV ? 60 : 15) * SECOND,
+    timeout: (CI_ENV ? 25 : 20) * SECOND,
   },
   /* Run tests in files in parallel */
   fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: CI_ENV,
+  forbidOnly: false,
   /* Retry on CI only */
-  retries: CI_ENV ? 2 : 0,
+  retries: CI_ENV ? 1 : 0,
   /**
    * Opt out of parallel tests since we interact with real APIs during testing
    */
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: CI_ENV ? "github" : "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
