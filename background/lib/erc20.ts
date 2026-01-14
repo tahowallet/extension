@@ -1,5 +1,6 @@
 import { BaseProvider, Provider } from "@ethersproject/providers"
 import { BigNumber, ethers } from "ethers"
+import _ from "lodash"
 
 import {
   EventFragment,
@@ -18,6 +19,7 @@ import {
   MULTICALL_CONTRACT_ADDRESS,
 } from "./multicall"
 import logger from "./logger"
+import { isFulfilledPromise } from "./utils/type-guards"
 
 export const ERC20_FUNCTIONS = {
   allowance: FunctionFragment.from(
@@ -181,7 +183,7 @@ export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
           senderAddress: decoded.from,
           recipientAddress: decoded.to,
         }
-      } catch (_) {
+      } catch (_err) {
         return undefined
       }
     })
@@ -197,6 +199,9 @@ export const getTokenBalances = async (
     CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES[network.chainID] ||
     MULTICALL_CONTRACT_ADDRESS
 
+  // This helps limiting gas and payload size
+  const MAX_LOOKUPS_PER_CALL = 300
+
   const contract = new ethers.Contract(
     multicallAddress,
     MULTICALL_ABI,
@@ -207,30 +212,48 @@ export const getTokenBalances = async (
     address,
   ])
 
-  const response = (await contract.callStatic.tryBlockAndAggregate(
-    // false === don't require all calls to succeed
-    false,
-    tokenAddresses.map((tokenAddress) => [tokenAddress, balanceOfCallData]),
-  )) as AggregateContractResponse
+  // Looking up balances for N tokens in M batches on chain P
+  logger.info(
+    "Looking up balances for",
+    tokenAddresses.length,
+    "tokens in",
+    Math.ceil(tokenAddresses.length / MAX_LOOKUPS_PER_CALL),
+    "batches on chain",
+    network.chainID,
+  )
 
-  return response.returnData.flatMap((data, i) => {
-    if (data.success !== true) {
-      return []
-    }
+  const lookups = _.chunk(tokenAddresses, MAX_LOOKUPS_PER_CALL).map(
+    async (batch) => {
+      const response = (await contract.callStatic.tryBlockAndAggregate(
+        // false === don't require all calls to succeed
+        false,
+        batch.map((tokenAddress) => [tokenAddress, balanceOfCallData]),
+      )) as AggregateContractResponse
 
-    if (data.returnData === "0x00" || data.returnData === "0x") {
-      return []
-    }
+      return response.returnData.flatMap((data, i) => {
+        if (data.success !== true) {
+          return []
+        }
 
-    return {
-      amount: ERC20_INTERFACE.decodeFunctionResult(
-        "balanceOf",
-        data.returnData,
-      )[0].toBigInt(),
-      smartContract: {
-        contractAddress: tokenAddresses[i],
-        homeNetwork: network,
-      },
-    }
-  })
+        if (data.returnData === "0x00" || data.returnData === "0x") {
+          return []
+        }
+
+        return {
+          amount: ERC20_INTERFACE.decodeFunctionResult(
+            "balanceOf",
+            data.returnData,
+          )[0].toBigInt(),
+          smartContract: {
+            contractAddress: batch[i],
+            homeNetwork: network,
+          },
+        }
+      })
+    },
+  )
+
+  return (await Promise.allSettled(lookups))
+    .filter(isFulfilledPromise)
+    .flatMap((result) => result.value)
 }

@@ -22,7 +22,7 @@ test.describe("Onboarding", () => {
 
     await expect(popup.getByTestId("wallet_balance")).toBeVisible()
 
-    expect(popup.getByTestId("wallet_balance").innerText()).not.toContain("$0")
+    await expect(popup.getByTestId("wallet_balance")).not.toContainText("$0")
   })
 
   test("User can onboard with a existing seed-phrase", async ({

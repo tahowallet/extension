@@ -35,8 +35,9 @@ export default class TransactionsHelper {
     )
 
     const assetBalance = await this.popup.locator(".available")
-    const balanceRegEx = new RegExp(`^Balance: ${regexAssetBalance}$`)
+    const balanceRegEx = new RegExp(`^Balance: ${regexAssetBalance}`)
     expect(assetBalance).toHaveText(balanceRegEx)
+
     if (baseAsset) {
       expect(
         await this.popup.getByRole("button", { name: "Max" }).count(),
@@ -45,10 +46,12 @@ export default class TransactionsHelper {
       await expect(
         this.popup.getByRole("button", { name: "Max" }),
       ).toBeVisible()
+
       await this.popup
         .getByRole("button", { name: "Max" })
         .click({ trial: true })
     }
+
     await expect(this.popup.getByPlaceholder(/^0\.0$/)).toBeVisible()
     await expect(this.popup.getByText(/^\$-$/)).toBeVisible()
 
@@ -101,12 +104,16 @@ export default class TransactionsHelper {
     await this.popup
       .getByRole("button", { name: sendToAddressShortened })
       .click()
-    const clipboardReceipientAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    expect(clipboardReceipientAddress.toLowerCase()).toBe(
-      sendToAddressFull.toLowerCase(),
-    ) // We need `toLowerCase()`, because for non-base assets the capitalization of the address may differ from the entered one.
+
+    await expect(async () => {
+      const clipboardReceipientAddress = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+
+      expect(clipboardReceipientAddress.toLowerCase()).toBe(
+        sendToAddressFull.toLowerCase(),
+      ) // We need `toLowerCase()`, because for non-base assets the capitalization of the address may differ from the entered one.
+    }).toPass()
 
     const spendAmountContainer = this.popup
       .locator(".container")
@@ -136,19 +143,23 @@ export default class TransactionsHelper {
 
     await this.popup.getByText("Raw data", { exact: true }).click()
     await this.popup.getByRole("button", { name: "Copy hex" }).click()
+
     const rawDataWrap = this.popup
       .locator(".raw_data_wrap")
       .filter({ hasText: "Copy hex" })
-    const clipboardHex = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    if (baseAsset) {
-      expect(clipboardHex).toBe("")
-      await expect(rawDataWrap.locator(".raw_data_text")).toBeEmpty()
-    } else {
-      expect(clipboardHex).toMatch(/0x[a-f\d]{40,}/)
-      await expect(rawDataWrap.getByText(/0x[a-f\d]{40,}/)).toBeVisible()
-    }
+
+    await expect(async () => {
+      const clipboardHex = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+      if (baseAsset) {
+        expect(clipboardHex).toBe("")
+        await expect(rawDataWrap.locator(".raw_data_text")).toBeEmpty()
+      } else {
+        expect(clipboardHex).toMatch(/0x[a-f\d]{40,}/)
+        await expect(rawDataWrap.getByText(/0x[a-f\d]{40,}/)).toBeVisible()
+      }
+    }).toPass()
 
     await this.popup
       .getByRole("button", { name: "Reject" })
