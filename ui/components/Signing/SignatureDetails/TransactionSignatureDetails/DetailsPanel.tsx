@@ -1,6 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useEffect, useState } from "react"
-import { selectEstimatedFeesPerGas } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectEstimatedFeesPerGas,
+  selectTransactionLikelyFails,
+  selectGasEstimationError,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { updateTransactionData } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import type {
   EnrichedEIP1559TransactionRequest,
@@ -47,6 +51,10 @@ export default function DetailPanel({
   const [updateNum, setUpdateNum] = useState(0)
 
   const estimatedFeesPerGas = useBackgroundSelector(selectEstimatedFeesPerGas)
+  const transactionLikelyFails = useBackgroundSelector(
+    selectTransactionLikelyFails,
+  )
+  const gasEstimationError = useBackgroundSelector(selectGasEstimationError)
 
   const useFlashbots = useBackgroundSelector(selectUseFlashbots)
   const [shouldUseFlashbots, setShouldUseFlashbots] = useState(useFlashbots)
@@ -164,6 +172,14 @@ export default function DetailPanel({
         </div>
         <FeeSettingsButton onClick={() => setNetworkSettingsModalOpen(true)} />
       </span>
+      {transactionLikelyFails && gasEstimationError && (
+        <TransactionSignatureDetailsWarning
+          message={t("signTransaction.transactionLikelyFails")}
+          variant="error"
+          details={gasEstimationError}
+          detailsCopyMessage={t("signTransaction.gasErrorCopied")}
+        />
+      )}
       <TransactionAdditionalDetails
         transactionRequest={transactionRequest}
         annotation={transactionRequest.annotation}

@@ -135,3 +135,15 @@ export const selectHasInsufficientFunds = createSelector(
   (transactionDetails) =>
     !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds"),
 )
+
+export const selectTransactionLikelyFails = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.transactionLikelyFails,
+  (transactionLikelyFails) => transactionLikelyFails,
+)
+
+export const selectGasEstimationError = createSelector(
+  (state: { transactionConstruction: TransactionConstruction }) =>
+    state.transactionConstruction.gasEstimationError,
+  (gasEstimationError) => gasEstimationError,
+)

@@ -743,21 +743,13 @@ export default class ReduxService extends BaseService<never> {
           populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
-        if (typeof gasEstimationError === "undefined") {
-          this.store.dispatch(
-            transactionRequest({
-              transactionRequest: populatedRequest,
-              transactionLikelyFails: false,
-            }),
-          )
-        } else {
-          this.store.dispatch(
-            transactionRequest({
-              transactionRequest: populatedRequest,
-              transactionLikelyFails: true,
-            }),
-          )
-        }
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: populatedRequest,
+            transactionLikelyFails: typeof gasEstimationError !== "undefined",
+            gasEstimationError,
+          }),
+        )
       },
     )
 

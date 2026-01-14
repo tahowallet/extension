@@ -686,6 +686,7 @@
     "showPasswordHint": "Show Password",
     "hidePasswordHint": "Hide Password",
     "close": "Close",
+    "copied": "Copied to clipboard",
     "readMore": "Read more",
     "modalClose": "Background close",
     "accountItemSummary": {
@@ -764,7 +765,10 @@
       "balanceChange": "Balance change",
       "daoFee": "DAO fee",
       "exchangeRoute": "Exchange route"
-    }
+    },
+    "transactionLikelyFails": "This transaction is likely to fail",
+    "gasErrorCopied": "Error details copied to clipboard",
+    "copyError": "Copy error"
   },
   "addNewChain": {
     "subtitle": "Wants to add a custom network to Taho",
