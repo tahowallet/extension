@@ -84,6 +84,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
     }
   } = {}
 
+  /**
+   * Tracks pending signing requests by hash to detect duplicate requests from
+   * dapps. When a duplicate is detected, it subscribes to the same outcome as
+   * the original request rather than creating a new signing flow.
+   */
+  #pendingSigningRequests: Map<
+    string,
+    {
+      timestamp: number
+      promise: Promise<unknown>
+    }
+  > = new Map()
+
   private addNetworkRequestId = 0
 
   openPorts: Array<Runtime.Port> = []
@@ -472,22 +485,108 @@ export default class ProviderBridgeService extends BaseService<Events> {
     await this.db.deletePermissionsByChain(chainId)
   }
 
+  /**
+   * Generates a hash for a signing request based on origin, method, and params.
+   * Used to detect duplicate requests from dapps.
+   */
+  private static getSigningRequestHash(
+    origin: string,
+    method: string,
+    params: unknown[],
+  ): string {
+    return `${origin}:${method}:${JSON.stringify(params)}`
+  }
+
+  /**
+   * Checks if a duplicate signing request is pending. If so, returns the
+   * existing promise so the duplicate can await the same outcome.
+   *
+   * @returns The existing promise if a duplicate is found, or undefined if this
+   *          is a new request.
+   */
+  private getPendingSigningRequest(hash: string): Promise<unknown> | undefined {
+    const existing = this.#pendingSigningRequests.get(hash)
+
+    if (existing) {
+      logger.info(
+        "Duplicate signing request detected - sharing outcome with original:",
+        hash.substring(0, 100),
+      )
+      return existing.promise
+    }
+
+    return undefined
+  }
+
+  /**
+   * Registers a new signing request in the pending map.
+   */
+  private registerPendingSigningRequest(
+    hash: string,
+    promise: Promise<unknown>,
+  ): void {
+    this.#pendingSigningRequests.set(hash, {
+      timestamp: Date.now(),
+      promise,
+    })
+  }
+
+  /**
+   * Clears a signing request from the pending map after it completes.
+   */
+  private clearPendingSigningRequest(hash: string): void {
+    this.#pendingSigningRequests.delete(hash)
+  }
+
   async routeSafeRequest(
     method: string,
     params: unknown[],
     origin: string,
     popupPromise: Promise<browser.Windows.Window>,
   ): Promise<unknown> {
-    const response = await this.internalEthereumProviderService
-      .routeSafeRPCRequest(method, params, origin)
-      .finally(async () => {
-        // Close the popup once we're done submitting.
+    const requestHash = ProviderBridgeService.getSigningRequestHash(
+      origin,
+      method,
+      params,
+    )
+
+    // Check for an existing request with the same hash
+    const existingRequest = this.getPendingSigningRequest(requestHash)
+    if (existingRequest) {
+      // Close the popup for the duplicate request since it will share
+      // the outcome of the original
+      const popup = await popupPromise
+      if (typeof popup.id !== "undefined") {
+        browser.windows.remove(popup.id)
+      }
+      // Return the same promise as the original request
+      return existingRequest
+    }
+
+    // Create the signing request promise
+    const signingPromise = (async () => {
+      try {
+        const result =
+          await this.internalEthereumProviderService.routeSafeRPCRequest(
+            method,
+            params,
+            origin,
+          )
+        return result
+      } finally {
+        this.clearPendingSigningRequest(requestHash)
+        // Close the popup once we're done
         const popup = await popupPromise
         if (typeof popup.id !== "undefined") {
           browser.windows.remove(popup.id)
         }
-      })
-    return response
+      }
+    })()
+
+    // Register this request before awaiting so duplicates can find it
+    this.registerPendingSigningRequest(requestHash, signingPromise)
+
+    return signingPromise
   }
 
   async routeContentScriptRPCRequest(
