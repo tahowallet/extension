@@ -169,6 +169,9 @@ const claimingSlice = createSlice({
         immerState.islandAssets.push(asset)
       }
     },
+    clearIslandAssets: (immerState) => {
+      immerState.islandAssets = []
+    },
     resetClaimFlow: (immerState) => {
       immerState.signature = undefined
       immerState.selectedForBonus = null
@@ -199,6 +202,7 @@ const claimingSlice = createSlice({
 
 export const {
   addIslandAsset,
+  clearIslandAssets,
   chooseSelectedForBonus,
   chooseDelegate,
   setEligibility,
