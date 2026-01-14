@@ -1,5 +1,10 @@
 import { lockInternalSigners } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectTransactionNetwork } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectSigningData,
+  selectTypedData,
+} from "@tallyho/tally-background/redux-slices/signing"
 import { clearSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { useEffect } from "react"
 import { useHistory } from "react-router-dom"
@@ -9,6 +14,7 @@ import {
   LedgerAccountSigner,
 } from "@tallyho/tally-background/services/ledger"
 import { HexString } from "@tallyho/tally-background/types"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
 /**
@@ -109,4 +115,20 @@ export function useSigningLedgerState(
         return assertUnreachable(device.status)
     }
   })
+}
+
+/**
+ * Returns the network for the current signing operation.
+ * Checks transaction requests, message signing requests, and typed data requests.
+ */
+export function useSigningNetwork(): EVMNetwork | undefined {
+  const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
+  const signDataRequest = useBackgroundSelector(selectSigningData)
+  const typedDataRequest = useBackgroundSelector(selectTypedData)
+
+  return (
+    transactionNetwork ||
+    signDataRequest?.account.network ||
+    typedDataRequest?.account.network
+  )
 }
