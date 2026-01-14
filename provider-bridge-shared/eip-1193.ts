@@ -44,11 +44,23 @@ export type EIP1193ErrorCodeNumbers = Pick<
   "code"
 >
 export class EIP1193Error extends Error {
-  constructor(public eip1193Error: EIP1193ErrorPayload) {
-    super(eip1193Error.message)
+  private customMessage: string | undefined
+
+  constructor(
+    public eip1193Error: EIP1193ErrorPayload,
+    customMessage?: string,
+  ) {
+    super(customMessage ?? eip1193Error.message)
+    this.customMessage = customMessage
   }
 
   toJSON(): unknown {
+    if (this.customMessage) {
+      return {
+        ...this.eip1193Error,
+        message: this.customMessage,
+      }
+    }
     return this.eip1193Error
   }
 }
