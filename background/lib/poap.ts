@@ -68,7 +68,7 @@ function poapNFTModelToNFT(original: PoapNFTModel, owner: string): NFT {
 /**
  * Returns list of POAPs for a given address. Doesn't take into account the network as
  * most of the POAPs are on the Gnosis chain, small % on Ethereum mainnet. This function should
- * return all POAPs, regardeless of the chain.
+ * return all POAPs, regardless of the chain.
  *
  * More information: https://documentation.poap.tech/reference/getactionsscan-5
  *

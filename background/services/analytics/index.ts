@@ -28,7 +28,7 @@ interface Events extends ServiceLifecycleEvents {
 
 /*
  * The analytics service is responsible for listening to events in the service layer,
- * handling sending and persistance concerns.
+ * handling sending and persistence concerns.
  */
 export default class AnalyticsService extends BaseService<Events> {
   #analyticsUUID: string | undefined = undefined

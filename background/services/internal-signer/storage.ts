@@ -44,7 +44,7 @@ export async function getEncryptedVaults(): Promise<SerializedEncryptedVaults> {
   ) {
     return tallyVaults as SerializedEncryptedVaults
   }
-  throw new Error("Encrypted vaults are using an unkown serialization format")
+  throw new Error("Encrypted vaults are using an unknown serialization format")
 }
 
 function equalVaults(vault1: EncryptedVault, vault2: EncryptedVault): boolean {

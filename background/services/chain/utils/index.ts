@@ -39,7 +39,7 @@ export function blockFromEthersBlock(
     blockHeight: gethResult.number,
     parentHash: gethResult.parentHash,
     // FIXME Hold for ethers/v5.4.8 _difficulty BigNumber field; the current
-    // FIXME difficutly field is a `number` and has overflowed since Ethereum
+    // FIXME difficulty field is a `number` and has overflowed since Ethereum
     // FIXME difficulty has exceeded MAX_SAFE_INTEGER. The current ethers
     // FIXME version devolves to `null` in that scenario, and does not reflect
     // FIXME in its type. The upcoming release will have a BigNumber
@@ -342,7 +342,7 @@ export function transactionFromEthersTransaction(
     blockHeight: tx.blockNumber || null,
     network,
     asset: network.baseAsset,
-  } as const // narrow types for compatiblity with our internal ones
+  } as const // narrow types for compatibility with our internal ones
 
   if (tx.r && tx.s && tx.v) {
     const signedTx: SignedTransaction = {
