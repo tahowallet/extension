@@ -1462,9 +1462,7 @@ export default class ReduxService extends BaseService<never> {
         await this.islandService.getReferrerStats(addressNetwork)
       this.store.dispatch(setReferrerStats(referrerStats))
 
-      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        addressNetwork.address,
-      )
+      this.providerBridgeService.notifyContentScriptsAboutAddressChange()
     })
 
     uiSliceEmitter.on("newSelectedAccountSwitched", async (addressNetwork) => {
