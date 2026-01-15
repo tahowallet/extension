@@ -24,7 +24,7 @@ export default function SwapAssetDetails({
           <div className="swap_details_value">
             {sources.map((source) => (
               <div className="swap_details_source" key={source.name}>
-                {source.proportion * 100}% - {source.name}
+                {source.percentage}% - {source.name}
               </div>
             ))}
           </div>

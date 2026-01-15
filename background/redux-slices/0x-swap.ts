@@ -358,12 +358,14 @@ export const executeSwap = createBackgroundAsyncThunk(
         toAssetAmount: buyAssetAmount,
         estimatedPriceImpact: 0, // disabled on v2
         sources: quote.route.fills
-          .map(({ source, proportionBps: proportion }) => ({
+          .map(({ source, proportionBps }) => ({
             name: source,
-            proportion:
-              typeof proportion === "string" ? parseFloat(proportion) : 0,
+            percentage:
+              typeof proportionBps === "string"
+                ? parseFloat(proportionBps) / 100
+                : 0,
           }))
-          .filter(({ proportion }) => proportion > 0),
+          .filter(({ percentage }) => percentage > 0),
         timestamp: Date.now(),
         blockTimestamp: undefined,
       },
