@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
+import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
 import { blockExplorer } from "../../utils/constants"
@@ -30,12 +31,20 @@ interface Props<T extends AnyAsset> {
   currentNetwork: EVMNetwork
   assetAndAmount: AnyAssetWithOptionalAmount<T>
   onClick?: (asset: T) => void
+  isSelected?: boolean
+  onMouseMove?: () => void
 }
 
 export default function SharedAssetItem<T extends AnyAsset>(
   props: Props<T>,
 ): ReactElement {
-  const { onClick, assetAndAmount, currentNetwork } = props
+  const {
+    onClick,
+    assetAndAmount,
+    currentNetwork,
+    isSelected = false,
+    onMouseMove,
+  } = props
   const { asset } = assetAndAmount
   const [contractLink, setContractLink] = useState("")
 
@@ -56,7 +65,12 @@ export default function SharedAssetItem<T extends AnyAsset>(
 
   return (
     <li>
-      <button type="button" className="token_group" onClick={handleClick}>
+      <button
+        type="button"
+        className={classNames("token_group", { selected: isSelected })}
+        onClick={handleClick}
+        onMouseMove={onMouseMove}
+      >
         <div className="list_item standard_width">
           <div className="left">
             <SharedAssetIconWithNetwork
@@ -137,7 +151,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             width: 100%;
             padding: 7.5px 24px;
           }
-          .token_group:hover {
+          .token_group.selected {
             background-color: var(--hunter-green);
           }
           .token_icon_wrap {
@@ -151,7 +165,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             align-items: center;
             justify-content: center;
           }
-          .token_group:hover .token_icon_wrap {
+          .token_group.selected .token_icon_wrap {
             background-color: var(--green-120);
           }
           .token_subtitle {
