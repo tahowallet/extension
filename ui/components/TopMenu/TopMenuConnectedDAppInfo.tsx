@@ -37,7 +37,7 @@ function ConnectionDAppGuideline({
           width: 320,
           borderRadius: 8,
           marginTop: 8,
-          background: "var(--green-120)",
+          background: "var(--hunter-green)",
           "--panel-switcher-border": "var(--green-80)",
           "--header-padding": "16px",
           "--content-fade-in-duration": "200ms",
@@ -300,7 +300,9 @@ export default function TopMenuConnectedDAppInfo(props: {
                     {t("connectedOnNetworkLabel")}
                   </span>
                   <SharedNetworkIcon network={network} size={16} />
-                  <span className="network_name">{network.name}</span>
+                  <span className="network_name" title={network.name}>
+                    {network.name}
+                  </span>
                   <span className="icon_chevron_down" />
                 </button>
               )}
@@ -416,6 +418,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 100%;
           padding: 20px 0 16px;
           box-sizing: border-box;
+          gap: 16px;
         }
         .network_selector {
           display: flex;
@@ -423,6 +426,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           gap: 8px;
           color: var(--green-40);
           font-size: 14px;
+          min-width: 0;
         }
         .network_selector:hover {
           color: #fff;
@@ -435,9 +439,14 @@ export default function TopMenuConnectedDAppInfo(props: {
         }
         .network_label {
           color: var(--green-40);
+          flex-shrink: 0;
+          white-space: nowrap;
         }
         .network_name {
           color: #fff;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .icon_chevron_down {
           mask-image: url("./images/chevron_down.svg");
@@ -454,6 +463,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           color: var(--error);
           font-size: 14px;
           font-weight: 500;
+          flex-shrink: 0;
         }
         .disconnect_button:hover {
           color: var(--error-80);
