@@ -25,7 +25,7 @@ import SharedAssetItem, {
   AnyAssetWithOptionalAmount,
   hasAmounts,
 } from "./SharedAssetItem"
-import SharedAssetIcon from "./SharedAssetIcon"
+import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import PriceDetails from "./PriceDetails"
 import SharedPanelSwitcher from "./SharedPanelSwitcher"
 import noop from "../../utils/noop"
@@ -312,13 +312,15 @@ function SelectAssetMenuContent<T extends AnyAsset>(
 
 interface SelectedAssetButtonProps {
   asset: Asset
+  network: EVMNetwork
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
   selectedNFT?: NFTCached
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
-  const { asset, isDisabled, toggleIsAssetMenuOpen, selectedNFT } = props
+  const { asset, network, isDisabled, toggleIsAssetMenuOpen, selectedNFT } =
+    props
 
   if (selectedNFT) {
     const { name, thumbnailURL } = selectedNFT
@@ -369,9 +371,11 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
       onClick={toggleIsAssetMenuOpen}
     >
       <div className="asset_icon_wrap">
-        <SharedAssetIcon
-          logoURL={asset?.metadata?.logoURL}
+        <SharedAssetIconWithNetwork
+          size="medium"
+          logoURL={asset?.metadata?.logoURL ?? ""}
           symbol={asset?.symbol}
+          network={network}
         />
       </div>
 
@@ -627,6 +631,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             <SelectedAssetButton
               isDisabled={isDisabled || disableDropdown}
               asset={selectedAssetAndAmount.asset}
+              network={currentNetwork}
               selectedNFT={selectedNFT}
               toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
             />

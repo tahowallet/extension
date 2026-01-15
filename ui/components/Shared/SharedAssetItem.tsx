@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
-import SharedAssetIcon from "./SharedAssetIcon"
+import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
 import { blockExplorer } from "../../utils/constants"
 
@@ -59,9 +59,11 @@ export default function SharedAssetItem<T extends AnyAsset>(
       <button type="button" className="token_group" onClick={handleClick}>
         <div className="list_item standard_width">
           <div className="left">
-            <SharedAssetIcon
-              logoURL={asset?.metadata?.logoURL}
+            <SharedAssetIconWithNetwork
+              size="medium"
+              logoURL={asset?.metadata?.logoURL ?? ""}
               symbol={asset?.symbol}
+              network={currentNetwork}
             />
 
             <div className="left_content">

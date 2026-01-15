@@ -1,5 +1,10 @@
 import { formatUnits } from "@ethersproject/units"
-import { AnyAssetAmount, FungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  AnyAssetAmount,
+  FungibleAsset,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   AssetDecimalAmount,
   enrichAssetAmountWithMainCurrencyValues,
@@ -13,7 +18,7 @@ import {
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectAssetPricePoint } from "@tallyho/tally-background/redux-slices/prices"
-import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedAssetIconWithNetwork from "../Shared/SharedAssetIconWithNetwork"
 import { useBackgroundSelector } from "../../hooks"
 import PriceDetails from "../Shared/PriceDetails"
 
@@ -21,6 +26,13 @@ type SwapQuoteBalanceChangeProps = {
   fromAsset: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
   toAsset: AnyAssetAmount<FungibleAsset> & AssetDecimalAmount
   priceImpact: number
+}
+
+function getAssetNetwork(asset: FungibleAsset): EVMNetwork | undefined {
+  if (isSmartContractFungibleAsset(asset)) {
+    return asset.homeNetwork as EVMNetwork
+  }
+  return undefined
 }
 export default function SwapQuoteBalanceChange(
   props: SwapQuoteBalanceChangeProps,
@@ -66,10 +78,11 @@ export default function SwapQuoteBalanceChange(
         </div>
 
         <div className="balance_token sell">
-          <SharedAssetIcon
+          <SharedAssetIconWithNetwork
             size={32}
-            logoURL={fromAsset.asset.metadata?.logoURL}
+            logoURL={fromAsset.asset.metadata?.logoURL ?? ""}
             symbol={fromAsset.asset.symbol}
+            network={getAssetNetwork(fromAsset.asset)}
           />
           <div
             className="balance_token_value amount "
@@ -90,10 +103,11 @@ export default function SwapQuoteBalanceChange(
         </div>
 
         <div className="balance_token buy">
-          <SharedAssetIcon
+          <SharedAssetIconWithNetwork
             size={32}
-            logoURL={toAsset.asset.metadata?.logoURL}
+            logoURL={toAsset.asset.metadata?.logoURL ?? ""}
             symbol={toAsset.asset.symbol}
+            network={getAssetNetwork(toAsset.asset)}
           />
           <div
             className="balance_token_value amount"
