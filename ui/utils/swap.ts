@@ -15,7 +15,7 @@ import {
   SwapQuoteRequest,
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
 import { debounce, DebouncedFunc } from "lodash"
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   isSameAsset,
@@ -140,6 +140,7 @@ type RequestQuoteUpdateConfig = {
 export function useSwapQuote(useSwapConfig: {
   savedQuoteRequest?: SwapQuoteRequest
   initialSwapSettings: QuoteUpdate["swapTransactionSettings"]
+  pauseAutoRefresh?: boolean
 }): {
   quote: QuoteUpdate | null
   loading: boolean
@@ -154,7 +155,6 @@ export function useSwapQuote(useSwapConfig: {
     useSwapConfig.initialSwapSettings,
   )
 
-  // Quoted amounts
   const [quoteRequestState, setQuoteRequestState] = useSetState<{
     quote: QuoteUpdate | null
     loading: boolean
@@ -185,14 +185,12 @@ export function useSwapQuote(useSwapConfig: {
       const transactionSettings =
         config.transactionSettings ?? requestContext.initialTransactionSettings
 
-      // Swap amounts can't update unless both sell and buy assets are specified.
       if (
         !sellAsset ||
         !buyAsset ||
         amount.trim() === "" ||
         Number(amount) === 0
       ) {
-        // noop
         return
       }
 
@@ -224,7 +222,7 @@ export function useSwapQuote(useSwapConfig: {
 
         setQuoteRequestState({
           quote: result,
-          // Finish loading once the last quote is fulfilled
+
           ...(hasPendingRequests
             ? { loading: true }
             : { loading: false, loadingType: undefined }),
@@ -249,6 +247,30 @@ export function useSwapQuote(useSwapConfig: {
 
   const loadingSellAmount = quoteRequestState.loadingType === "getSellAmount"
   const loadingBuyAmount = quoteRequestState.loadingType === "getBuyAmount"
+
+  useEffect(() => {
+    if (useSwapConfig.pauseAutoRefresh) {
+      return
+    }
+
+    const interval = setInterval(() => {
+      if (quoteRequestState.quote) {
+        requestQuoteUpdate({
+          type: "getSellAmount",
+          amount: quoteRequestState.quote.amount,
+          sellAsset: quoteRequestState.quote.sellAsset,
+          buyAsset: quoteRequestState.quote.buyAsset,
+          transactionSettings: quoteRequestState.quote.swapTransactionSettings,
+        })
+      }
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [
+    quoteRequestState.quote,
+    requestQuoteUpdate,
+    useSwapConfig.pauseAutoRefresh,
+  ])
 
   return {
     quote: quoteRequestState.quote,
