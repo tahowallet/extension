@@ -41,6 +41,7 @@ export type Events = {
   requestPermission: PermissionRequest
   grantPermission: PermissionRequest
   denyOrRevokePermission: PermissionRequest
+  switchNetworkForOrigin: { origin: string; network: EVMNetwork }
 }
 
 export const emitter = new Emittery<Events>()
@@ -62,6 +63,14 @@ export const denyOrRevokePermission = createBackgroundAsyncThunk(
   async (permission: PermissionRequest) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
+  },
+)
+
+// Async thunk to switch network for a specific origin (dApp).
+export const switchNetworkForOrigin = createBackgroundAsyncThunk(
+  "dapp-permission/switchNetworkForOrigin",
+  async ({ origin, network }: { origin: string; network: EVMNetwork }) => {
+    await emitter.emit("switchNetworkForOrigin", { origin, network })
   },
 )
 

@@ -820,6 +820,8 @@
     "rewardsProgram": "Rewards program",
     "copyAddressTooltip": "Copy address",
     "addressCopiedMsg": "Address copied to clipboard",
+    "selectNetwork": "Select network",
+    "searchNetworks": "Search networks",
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",

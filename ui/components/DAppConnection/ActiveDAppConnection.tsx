@@ -62,19 +62,19 @@ export default function ActiveDAppConnection({
 
   return (
     <>
-      {isActiveDAppConnectionInfoOpen ? (
-        <TopMenuConnectedDAppInfo
-          title={currentPermission?.title ?? ""}
-          url={currentPermission?.origin ?? ""}
-          faviconUrl={currentPermission?.faviconUrl ?? ""}
-          network={connectedNetwork}
-          close={() => {
-            setIsActiveDAppConnectionInfoOpen(false)
-          }}
-          disconnect={deny}
-          isConnected={isConnectedToDApp}
-        />
-      ) : null}
+      <TopMenuConnectedDAppInfo
+        isOpen={isActiveDAppConnectionInfoOpen}
+        title={currentPermission?.title ?? ""}
+        url={currentPermission?.origin ?? ""}
+        origin={currentPermission?.origin ?? ""}
+        faviconUrl={currentPermission?.faviconUrl ?? ""}
+        network={connectedNetwork}
+        close={() => {
+          setIsActiveDAppConnectionInfoOpen(false)
+        }}
+        disconnect={deny}
+        isConnected={isConnectedToDApp}
+      />
       <SharedTooltip
         type="dark"
         width={160}

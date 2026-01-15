@@ -9,8 +9,10 @@ type Props = {
   info: string
   network: EVMNetwork
   isSelected: boolean
+  isHighlighted?: boolean
   isDisabled: boolean
   onSelect: (network: EVMNetwork) => void
+  onMouseMove?: () => void
   showSelectedText?: boolean
 }
 
@@ -26,19 +28,26 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
   const {
     info,
     isSelected,
+    isHighlighted,
     network,
     onSelect,
+    onMouseMove,
     isDisabled,
     showSelectedText = true,
   } = props
 
   return (
     <li
-      className={classNames({ select: isSelected, disabled: isDisabled })}
+      className={classNames({
+        select: isSelected,
+        highlighted: isHighlighted,
+        disabled: isDisabled,
+      })}
       onClick={() => {
         if (isDisabled) return
         onSelect(network)
       }}
+      onMouseMove={onMouseMove}
       role="presentation"
     >
       <div className="left">
@@ -83,8 +92,14 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
 
           li {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 0;
             cursor: pointer;
+            padding: 12px 24px;
+            margin-left: -24px;
+            margin-right: -24px;
+          }
+          li.highlighted {
+            background-color: var(--hunter-green);
           }
           .status {
             height: 17px;
@@ -103,10 +118,11 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             display: flex;
             align-items: center;
             justify-content: center;
+            box-sizing: border-box;
+            border: 2px solid transparent;
           }
           .left {
             margin-right: 16px;
-            margin-left: 2px;
           }
           .right {
             height: 24px;
@@ -132,9 +148,6 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           }
           .select .icon_wrap {
             border: 2px solid var(--success);
-          }
-          .select .left {
-            margin-left: 0px;
           }
           .disabled {
             cursor: default;

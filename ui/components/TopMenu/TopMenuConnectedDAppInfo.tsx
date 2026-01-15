@@ -1,13 +1,19 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { switchNetworkForOrigin } from "@tallyho/tally-background/redux-slices/dapp"
 import classNames from "classnames"
 import React, { ReactElement, useCallback, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
+import { useBackgroundDispatch } from "../../hooks"
 import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefaultToggle"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SelectNetworkMenuContent from "./SelectNetworkMenuContent"
+
+const SLIDE_TRANSITION_MS = 445
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -199,8 +205,10 @@ function ConnectionDAppGuideline({
 }
 
 export default function TopMenuConnectedDAppInfo(props: {
+  isOpen: boolean
   title: string
   url: string
+  origin: string
   faviconUrl: string
   network: EVMNetwork | undefined
   isConnected: boolean
@@ -211,29 +219,57 @@ export default function TopMenuConnectedDAppInfo(props: {
     keyPrefix: "topMenu.connectedDappInfo",
   })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
-  const { title, url, close, faviconUrl, network, disconnect, isConnected } =
-    props
+  const {
+    isOpen,
+    title,
+    url,
+    origin,
+    close,
+    faviconUrl,
+    network,
+    disconnect,
+    isConnected,
+  } = props
 
-  const [isClosing, setIsClosing] = useState(false)
+  const dispatch = useBackgroundDispatch()
 
-  const animateThenClose = useCallback(() => {
-    setIsClosing(true)
-    setTimeout(close, 300)
-  }, [close])
+  const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false)
+
+  const handleNetworkChange = useCallback(
+    (newNetwork: EVMNetwork) => {
+      if (origin) {
+        dispatch(switchNetworkForOrigin({ origin, network: newNetwork }))
+      }
+      setIsNetworkSelectorOpen(false)
+    },
+    [dispatch, origin],
+  )
 
   return (
     <div
-      className={classNames("bg", {
-        fade_in: !isClosing,
-        fade_out: isClosing,
+      className={classNames("panel", {
+        closed: !isOpen,
       })}
     >
-      <div className="window">
+      <SharedSlideUpMenu
+        isOpen={isNetworkSelectorOpen}
+        isScrollable
+        style={{ display: "flex", flexDirection: "column" }}
+        close={() => {
+          setIsNetworkSelectorOpen(false)
+        }}
+      >
+        <SelectNetworkMenuContent
+          currentNetwork={network}
+          onNetworkChange={handleNetworkChange}
+        />
+      </SharedSlideUpMenu>
+      <div className="panel_content">
         <button
           type="button"
           className="icon_close"
           aria-label={tShared("close")}
-          onClick={animateThenClose}
+          onClick={close}
         />
         <div className="content">
           <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
@@ -255,11 +291,18 @@ export default function TopMenuConnectedDAppInfo(props: {
             </div>
             <div className="network_row">
               {network !== undefined && (
-                <div className="network_info">
-                  {t("connectedOnNetworkLabel")}
+                <button
+                  type="button"
+                  className="network_selector"
+                  onClick={() => setIsNetworkSelectorOpen(true)}
+                >
+                  <span className="network_label">
+                    {t("connectedOnNetworkLabel")}
+                  </span>
                   <SharedNetworkIcon network={network} size={16} />
                   <span className="network_name">{network.name}</span>
-                </div>
+                  <span className="icon_chevron_down" />
+                </button>
               )}
               <button
                 type="button"
@@ -274,41 +317,37 @@ export default function TopMenuConnectedDAppInfo(props: {
         </div>
         <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
-      <button
-        aria-label={tShared("modalClose")}
-        type="button"
-        className="void_space"
-        onClick={animateThenClose}
-      />
       <style jsx>{`
-        .bg {
+        .panel {
+          width: 100%;
+          height: calc(100% - 44px);
+          background-color: var(--green-120);
+          position: fixed;
+          top: 44px;
+          left: 0;
+          z-index: 998;
+          overflow: hidden;
+          clip-path: inset(0 0 0 0);
+          transition: clip-path cubic-bezier(0.19, 1, 0.22, 1)
+            ${SLIDE_TRANSITION_MS}ms;
+        }
+        .panel.closed {
+          clip-path: inset(0 0 100% 0);
+          pointer-events: none;
+        }
+        .panel_content {
           width: 100%;
           height: 100%;
-          border-radius: 16px;
-          background-color: rgba(0, 37, 34, 0.71);
-          position: fixed;
-          z-index: 99999;
-          top: 55px;
-          left: 0px;
-        }
-        .window {
-          width: 352px;
-          max-height: 90%;
-          box-shadow:
-            0 10px 12px rgba(0, 20, 19, 0.34),
-            0 14px 16px rgba(0, 20, 19, 0.24),
-            0 24px 24px rgba(0, 20, 19, 0.14);
-          border-radius: 8px;
-          background-color: var(--green-95);
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin: 0 auto;
-          justify-content: space-between;
-          padding-bottom: 16px;
+          padding: 16px;
+          box-sizing: border-box;
+          overflow-y: auto;
         }
         .content {
           width: 100%;
+          max-width: 352px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -319,18 +358,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 12px;
           height: 12px;
           position: absolute;
-          right: 33px;
+          right: 24px;
+          top: 24px;
           background-color: var(--green-20);
           z-index: 1;
-          margin-top: 17px;
         }
-        .void_space {
-          height: 100%;
-          width: 100%;
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: -1;
+        .icon_close:hover {
+          background-color: #fff;
         }
         h1 {
           color: var(--${isConnected ? "success" : "green-20"});
@@ -338,13 +372,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           font-weight: 400;
           line-height: 24px;
           text-align: center;
+          margin: 0 0 16px;
         }
         .dapp_header {
           display: flex;
           align-items: center;
           gap: 12px;
           width: 100%;
-          padding: 0 16px;
           box-sizing: border-box;
         }
         .favicon {
@@ -380,18 +414,38 @@ export default function TopMenuConnectedDAppInfo(props: {
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          padding: 20px 16px 16px;
+          padding: 20px 0 16px;
           box-sizing: border-box;
         }
-        .network_info {
+        .network_selector {
           display: flex;
           align-items: center;
           gap: 8px;
           color: var(--green-40);
           font-size: 14px;
         }
+        .network_selector:hover {
+          color: #fff;
+        }
+        .network_selector:hover .network_name {
+          color: #fff;
+        }
+        .network_selector:hover .icon_chevron_down {
+          background-color: #fff;
+        }
+        .network_label {
+          color: var(--green-40);
+        }
         .network_name {
           color: #fff;
+        }
+        .icon_chevron_down {
+          mask-image: url("./images/chevron_down.svg");
+          mask-size: 15px 8px;
+          width: 15px;
+          height: 8px;
+          background-color: var(--green-40);
+          flex-shrink: 0;
         }
         .disconnect_button {
           display: flex;

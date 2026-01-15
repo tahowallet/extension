@@ -1241,8 +1241,12 @@ export default class ReduxService extends BaseService<never> {
     )
     this.internalEthereumProviderService.emitter.on(
       "networkSwitchedForOrigin",
-      ({ origin, network }) => {
+      async ({ origin, network }) => {
         this.store.dispatch(setCurrentNetworkForOrigin({ origin, network }))
+        await this.providerBridgeService.notifyContentScriptsAboutNetworkChange(
+          origin,
+          network.chainID,
+        )
       },
     )
 
@@ -1361,6 +1365,16 @@ export default class ReduxService extends BaseService<never> {
               chainID: network.chainID,
             })
           }),
+        )
+      },
+    )
+
+    providerBridgeSliceEmitter.on(
+      "switchNetworkForOrigin",
+      async ({ origin, network }) => {
+        await this.internalEthereumProviderService.switchToSupportedNetwork(
+          origin,
+          network,
         )
       },
     )

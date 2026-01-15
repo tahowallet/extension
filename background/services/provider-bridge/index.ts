@@ -374,6 +374,26 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
+  async notifyContentScriptsAboutNetworkChange(
+    origin: string,
+    chainID: string,
+  ): Promise<void> {
+    const defaultWallet = await this.preferenceService.getDefaultWallet()
+    this.openPorts.forEach((port) => {
+      const portOrigin = new URL(port.sender?.url as string).origin
+      if (portOrigin === origin) {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_getConfig",
+            defaultWallet,
+            chainId: chainID,
+          },
+        })
+      }
+    })
+  }
+
   notifyContentScriptsAboutAddressChange(): void {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
