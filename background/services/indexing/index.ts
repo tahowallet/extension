@@ -537,10 +537,11 @@ export default class IndexingService extends BaseService<Events> {
   ): Promise<SmartContractAmount[]> {
     const addressNetwork = normalizeAddressOnNetwork(unsafeAddressNetwork)
 
-    const balances = await this.chainService.assetData.getTokenBalances(
-      addressNetwork,
-      smartContractAssets?.map(({ contractAddress }) => contractAddress),
-    )
+    const { balances, dataSource } =
+      await this.chainService.assetData.getTokenBalances(
+        addressNetwork,
+        smartContractAssets?.map(({ contractAddress }) => contractAddress),
+      )
 
     const listedAssetByAddress = keyAssetsByAddress(smartContractAssets ?? [])
 
@@ -577,8 +578,7 @@ export default class IndexingService extends BaseService<Events> {
               amount,
             },
             retrievedAt: Date.now(),
-            // FIXME: Not accurate
-            dataSource: "alchemy",
+            dataSource,
           } as const
 
           return accountBalance
