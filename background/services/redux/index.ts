@@ -100,6 +100,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
   revokePermissionsForAddress,
+  setCurrentNetworkForOrigin,
 } from "../../redux-slices/dapp"
 import logger from "../../lib/logger"
 import {
@@ -1236,6 +1237,12 @@ export default class ReduxService extends BaseService<never> {
       "selectedNetwork",
       (network) => {
         this.store.dispatch(setSelectedNetwork(network))
+      },
+    )
+    this.internalEthereumProviderService.emitter.on(
+      "networkSwitchedForOrigin",
+      ({ origin, network }) => {
+        this.store.dispatch(setCurrentNetworkForOrigin({ origin, network }))
       },
     )
 

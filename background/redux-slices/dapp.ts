@@ -14,6 +14,7 @@ import {
   POLYGON,
   ROOTSTOCK,
 } from "../constants"
+import { EVMNetwork } from "../networks"
 
 export type DAppPermissionState = {
   permissionRequests: { [origin: string]: PermissionRequest }
@@ -27,11 +28,13 @@ export type DAppPermissionState = {
       }
     }
   }
+  currentNetworkByOrigin: { [origin: string]: EVMNetwork }
 }
 
 export const initialState: DAppPermissionState = {
   permissionRequests: {},
   allowed: { evm: {} },
+  currentNetworkByOrigin: {},
 }
 
 export type Events = {
@@ -115,6 +118,22 @@ const dappSlice = createSlice({
         }
       })
     },
+    setCurrentNetworkForOrigin: (
+      immerState,
+      { payload }: { payload: { origin: string; network: EVMNetwork } },
+    ) => {
+      // Initialize if missing from persisted state
+      immerState.currentNetworkByOrigin ??= {}
+      immerState.currentNetworkByOrigin[payload.origin] = payload.network
+    },
+    clearCurrentNetworkForOrigin: (
+      immerState,
+      { payload: origin }: { payload: string },
+    ) => {
+      if (immerState.currentNetworkByOrigin !== undefined) {
+        delete immerState.currentNetworkByOrigin[origin]
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -177,6 +196,8 @@ export const {
   requestPermission,
   initializePermissions,
   revokePermissionsForAddress,
+  setCurrentNetworkForOrigin,
+  clearCurrentNetworkForOrigin,
 } = dappSlice.actions
 
 export default dappSlice.reducer

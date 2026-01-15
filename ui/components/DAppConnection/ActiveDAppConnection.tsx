@@ -23,11 +23,22 @@ export default function ActiveDAppConnection({
 
   const dispatch = useBackgroundDispatch()
 
-  const connectedNetwork = useBackgroundSelector((state: RootState) =>
-    currentPermission?.chainID !== undefined
-      ? state.networks.evmNetworks[currentPermission.chainID]
-      : undefined,
-  )
+  const connectedNetwork = useBackgroundSelector((state: RootState) => {
+    if (currentPermission?.origin === undefined) {
+      return undefined
+    }
+    // Check if there's a tracked network for this origin (updated via wallet_switchEthereumChain)
+    const originNetwork =
+      state.dapp.currentNetworkByOrigin?.[currentPermission.origin]
+    if (originNetwork !== undefined) {
+      return originNetwork
+    }
+    // Fall back to the permission's chainID
+    if (currentPermission.chainID !== undefined) {
+      return state.networks.evmNetworks[currentPermission.chainID]
+    }
+    return undefined
+  })
 
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
