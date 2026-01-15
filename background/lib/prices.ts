@@ -44,6 +44,8 @@ export async function getPrices(
   const url = `${COINGECKO_API_ROOT}/simple/price?ids=${coinIds}&include_last_updated_at=true&vs_currencies=${currencySymbols}`
 
   try {
+    // FIXME: Coingecko API requires credentials now
+    return []
     const json = await fetchJson({
       url,
       // Prevent throttling
@@ -109,6 +111,9 @@ export async function getTokenPrices(
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
+  // FIXME: Coingecko API requires credentials now
+  return {}
+
   if (tokenAddresses.length < 1) {
     return {}
   }
