@@ -828,7 +828,8 @@
     "connectedDappInfo": {
       "dAppTitle": "Account connected to",
       "dappConnections": "Website connections",
-      "disconnectDapp": "Disconnect Dapp",
+      "connectedOnNetworkLabel": "Connected on",
+      "disconnectDapp": "Disconnect",
       "guideline": {
         "title": "How to connect to websites",
         "step1": "Connect using Taho",

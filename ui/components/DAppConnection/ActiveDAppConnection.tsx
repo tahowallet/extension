@@ -1,10 +1,12 @@
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
+import { RootState } from "@tallyho/tally-background/redux-slices"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useBackgroundDispatch } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import TopMenuConnectedDAppInfo from "../TopMenu/TopMenuConnectedDAppInfo"
 import SharedTooltip from "../Shared/SharedTooltip"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
   isConnectedToDApp: boolean
@@ -20,6 +22,12 @@ export default function ActiveDAppConnection({
   const { t } = useTranslation("translation", { keyPrefix: "topMenu" })
 
   const dispatch = useBackgroundDispatch()
+
+  const connectedNetwork = useBackgroundSelector((state: RootState) =>
+    currentPermission?.chainID !== undefined
+      ? state.networks.evmNetworks[currentPermission.chainID]
+      : undefined,
+  )
 
   const [isActiveDAppConnectionInfoOpen, setIsActiveDAppConnectionInfoOpen] =
     useState(false)
@@ -48,6 +56,7 @@ export default function ActiveDAppConnection({
           title={currentPermission?.title ?? ""}
           url={currentPermission?.origin ?? ""}
           faviconUrl={currentPermission?.faviconUrl ?? ""}
+          network={connectedNetwork}
           close={() => {
             setIsActiveDAppConnectionInfoOpen(false)
           }}
@@ -71,7 +80,18 @@ export default function ActiveDAppConnection({
               setIsActiveDAppConnectionInfoOpen(!isActiveDAppConnectionInfoOpen)
             }}
           >
-            <div className="connection_img" />
+            <div className="connection_icon_wrapper">
+              <div className="connection_img" />
+              {connectedNetwork !== undefined && (
+                <div className="network_badge">
+                  <SharedNetworkIcon
+                    network={connectedNetwork}
+                    size={12}
+                    hasBackground
+                  />
+                </div>
+              )}
+            </div>
           </button>
         )}
       >
@@ -90,6 +110,12 @@ export default function ActiveDAppConnection({
         .connection_button:hover .connection_img {
           background-color: var(--success);
         }
+        .connection_icon_wrapper {
+          position: relative;
+          width: 32px;
+          height: 32px;
+          margin-top: -8px;
+        }
         .connection_img {
           mask-image: url("./images/bolt@2x.png");
           mask-repeat: no-repeat;
@@ -101,8 +127,11 @@ export default function ActiveDAppConnection({
           background-color: var(
             --${isConnectedToDApp ? "success" : "green-20"}
           );
-
-          margin-top: -8px;
+        }
+        .network_badge {
+          position: absolute;
+          bottom: 2px;
+          right: -2px;
         }
       `}</style>
     </>

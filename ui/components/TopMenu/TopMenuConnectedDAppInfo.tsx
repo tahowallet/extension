@@ -1,12 +1,13 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import classNames from "classnames"
 import React, { ReactElement, useCallback, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefaultToggle"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
-import SharedTooltip from "../Shared/SharedTooltip"
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -201,6 +202,7 @@ export default function TopMenuConnectedDAppInfo(props: {
   title: string
   url: string
   faviconUrl: string
+  network: EVMNetwork | undefined
   isConnected: boolean
   close: () => void
   disconnect: () => void
@@ -209,7 +211,8 @@ export default function TopMenuConnectedDAppInfo(props: {
     keyPrefix: "topMenu.connectedDappInfo",
   })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
-  const { title, url, close, faviconUrl, disconnect, isConnected } = props
+  const { title, url, close, faviconUrl, network, disconnect, isConnected } =
+    props
 
   const [isClosing, setIsClosing] = useState(false)
 
@@ -239,30 +242,34 @@ export default function TopMenuConnectedDAppInfo(props: {
               visible: isConnected,
             })}
           >
-            <div className="favicon" />
-            <div className="title text ellipsis" title={title}>
-              {title}
+            <div className="dapp_header">
+              <div className="favicon" />
+              <div className="dapp_details">
+                <div className="url ellipsis" title={url}>
+                  {url}
+                </div>
+                <div className="title ellipsis" title={title}>
+                  {title}
+                </div>
+              </div>
             </div>
-            <div className="url text ellipsis" title={url}>
-              {url}
-            </div>
-            <SharedTooltip
-              width={120}
-              verticalPosition="bottom"
-              horizontalPosition="center"
-              verticalShift={-20}
-              type="dark"
-              IconComponent={() => (
-                <button
-                  aria-label="disconnect"
-                  type="button"
-                  className="disconnect_icon"
-                  onClick={disconnect}
-                />
+            <div className="network_row">
+              {network !== undefined && (
+                <div className="network_info">
+                  {t("connectedOnNetworkLabel")}
+                  <SharedNetworkIcon network={network} size={16} />
+                  <span className="network_name">{network.name}</span>
+                </div>
               )}
-            >
-              {t("disconnectDapp")}
-            </SharedTooltip>
+              <button
+                type="button"
+                className="disconnect_button"
+                onClick={disconnect}
+              >
+                <div className="disconnect_icon" />
+                {t("disconnectDapp")}
+              </button>
+            </div>
           </div>
         </div>
         <ConnectionDAppGuideline isConnected={isConnected} />
@@ -332,6 +339,14 @@ export default function TopMenuConnectedDAppInfo(props: {
           line-height: 24px;
           text-align: center;
         }
+        .dapp_header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          padding: 0 16px;
+          box-sizing: border-box;
+        }
         .favicon {
           background: url("${faviconUrl === ""
             ? "./images/dapp_favicon_default@2x.png"
@@ -340,42 +355,76 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 48px;
           height: 48px;
           border-radius: 12px;
-          margin-top: 5px;
           flex-shrink: 0;
         }
+        .dapp_details {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-width: 0;
+          flex: 1;
+          height: 40px;
+        }
         .title {
-          color: #fff;
+          color: var(--green-40);
           font-weight: 500;
-          margin-top: 10px;
+          font-size: 14px;
         }
         .url {
-          color: var(--green-40);
-          margin-top: 5px;
-        }
-        .text {
+          color: #fff;
           font-size: 16px;
-          width: calc(100% - 16px);
-          padding: 0 8px;
-          text-align: center;
+          font-weight: 500;
+        }
+        .network_row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 20px 16px 16px;
+          box-sizing: border-box;
+        }
+        .network_info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--green-40);
+          font-size: 14px;
+        }
+        .network_name {
+          color: #fff;
+        }
+        .disconnect_button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--error);
+          font-size: 14px;
+          font-weight: 500;
+        }
+        .disconnect_button:hover {
+          color: var(--error-80);
+        }
+        .disconnect_button:hover .disconnect_icon {
+          background-color: var(--error-80);
         }
         .disconnect_icon {
-          background: url("./images/disconnect@2x.png");
-          background-size: cover;
+          mask-image: url("./images/disconnect@2x.png");
+          mask-size: cover;
           width: 16px;
           height: 18px;
-          margin: 16px 0 40px;
+          background-color: var(--error);
         }
         .dAppInfo_wrap {
           width: 100%;
           display: flex;
           flex-flow: column;
-          align-items: center;
+          align-items: flex-start;
           max-height: 0;
           overflow: hidden;
           transition: max-height 250ms ease-out;
         }
         .dAppInfo_wrap.visible {
-          max-height: 200px;
+          max-height: 250px;
           transition: max-height 250ms ease-in;
         }
       `}</style>
