@@ -6,7 +6,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useHistory } from "react-router-dom"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -39,7 +39,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
           {t("send")}
         </SharedSquareButton>
       </div>
-      {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
+      {networkSupportsSwaps(currentNetwork.chainID) ? (
         <div className="button_wrap">
           <SharedSquareButton
             icon="icons/s/swap.svg"
@@ -159,6 +159,7 @@ export default function WalletAccountBalanceControl(
           height={48}
           width={250}
           borderRadius={14}
+          testId="account_balance_loader"
           style={{ margin: "12px 0" }}
           isLoaded={!shouldIndicateLoading}
         >

@@ -108,6 +108,51 @@ export default class WalletPageHelper {
     fs.unlinkSync(filePath)
   }
 
+  /**
+   * Changes the first account name
+   */
+  async changeAccountName(newName: string) {
+    await this.popup
+      .getByTestId("top_menu_profile_button")
+      .getByRole("button")
+      .click()
+
+    await this.popup.getByRole("menu").first().click()
+    await this.popup.getByRole("button", { name: "Edit name" }).click()
+    await this.popup.getByRole("textbox", { name: "Type new name" }).click()
+    await this.popup
+      .getByRole("textbox", { name: "Type new name" })
+      .fill(newName)
+
+    await this.popup
+      .getByRole("button", { name: "Save name", exact: true })
+      .click()
+
+    await this.popup
+      .getByTestId("accounts_list_slide_up")
+      .getByRole("button", { name: "Close menu" })
+      .first()
+      .click()
+  }
+
+  async assertNetworkName(name: string): Promise<void> {
+    await expect(
+      this.popup.getByTestId("top_menu_network_switcher"),
+    ).toContainText(name)
+  }
+
+  async assertAccountName(name: string): Promise<void> {
+    await expect(
+      this.popup.getByTestId("top_menu_profile_button").last(),
+    ).toHaveText(name)
+  }
+
+  async assertSnackBar(text: string): Promise<void> {
+    await expect(async () => {
+      await expect(this.popup.getByTestId("snackbar")).toContainText(text)
+    }).toPass()
+  }
+
   async assertTopWrap(network: RegExp, accountLabel: RegExp): Promise<void> {
     // TODO: maybe we could also verify graphical elements (network icon, profile picture, etc)?
 
@@ -126,7 +171,7 @@ export default class WalletPageHelper {
 
     await expect(
       this.popup.getByTestId("top_menu_profile_button").last(),
-    ).toHaveText(accountLabel, { timeout: 240000 })
+    ).toHaveText(accountLabel)
     await this.popup
       .getByTestId("top_menu_profile_button")
       .last()
@@ -161,12 +206,13 @@ export default class WalletPageHelper {
     testnet: boolean,
     accountLabel: RegExp,
   ): Promise<void> {
-    await expect(this.popup.getByText("Total account balance")).toBeVisible({
-      timeout: 240000,
-    }) // we need longer timeout, because on fork it often takes long to load this section
-    await expect(this.popup.getByTestId("wallet_balance")).toHaveText(
-      /^\$(\d|,)+(\.\d{1,2})*$/,
-    )
+    await expect(
+      this.popup.getByTestId("account_balance_loader"),
+    ).not.toBeVisible({ timeout: 20000 })
+    await expect(this.popup.getByText("Total account balance")).toBeVisible()
+    // TODO: Shared assertions should not verify values. Instead, they
+    // should only verify there's a resolved value.
+    await expect(this.popup.getByTestId("wallet_balance")).toBeVisible()
 
     await this.assertTopWrap(network, accountLabel)
 
@@ -179,12 +225,14 @@ export default class WalletPageHelper {
     await this.popup
       .getByRole("button", { name: "Receive", exact: true })
       .click({ trial: true })
+
     if (testnet === false) {
       await this.popup
         .getByTestId("panel_switcher")
         .getByText("NFTs", { exact: true })
         .click({ trial: true })
     }
+
     await this.popup
       .getByTestId("panel_switcher")
       .getByText("Assets", { exact: true })
@@ -193,6 +241,7 @@ export default class WalletPageHelper {
       .getByTestId("panel_switcher")
       .getByText("Activity", { exact: true })
       .click({ trial: true })
+
     await this.assertBottomWrap()
   }
 

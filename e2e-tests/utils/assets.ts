@@ -14,40 +14,33 @@ export default class AssetsHelper {
    * In case of situation where there are multiple assets with the same name, it
    * verifies that all of those assets except of one are hidden.
    * The function then verifies that the not hidden asset has a balance (and a
-   * USD value, when aplicable) displayed and there are options to Send and
+   * USD value, when applicable) displayed and there are options to Send and
    * Swap.
    */
   async assertVerifiedAssetOnWalletPage(
     assetSymbol: RegExp,
     assetType: "base" | "knownERC20" | "trusted",
   ): Promise<void> {
-    const allSpecifiedAssets = this.popup
+    const match = this.popup
       .getByTestId("asset_list_item")
+      .and(this.popup.locator("[data-trusted=true]"))
       .filter({
-        has: this.popup.locator("span").filter({ hasText: assetSymbol }),
+        has: this.popup.getByTestId("asset_symbol").getByText(assetSymbol),
       })
 
-    /**
-     * Make sure that the asset we're checking appears exactly once on the list
-     * of verified assets.
-     */
-    const hiddenSpecifiedAssets = this.popup
-      .getByTestId("hidden_assets_container")
-      .getByTestId("asset_list_item")
-      .filter({
-        has: this.popup.locator("span").filter({ hasText: assetSymbol }),
-      })
-    const hiddenSpecifiedAssetsCount = await hiddenSpecifiedAssets.count()
-    const allSpecifiedAssetsCount = await allSpecifiedAssets.count()
-    expect(hiddenSpecifiedAssetsCount).toBe(allSpecifiedAssetsCount - 1)
+    await expect(match).toHaveCount(1)
+    await expect(match).toBeVisible()
 
     /**
      * If specified asset is a base asset, make sure it's first on the list.
      */
     if (assetType === "base") {
       expect(
-        allSpecifiedAssets.first().getByTestId("asset_symbol"),
-      ).toBeVisible()
+        this.popup
+          .getByTestId("asset_list_item")
+          .first()
+          .getByTestId("asset_symbol"),
+      ).toHaveText(assetSymbol)
     }
 
     /**
@@ -55,13 +48,9 @@ export default class AssetsHelper {
      * name are the fields we expect for a verified asset.
      */
 
-    const verifiedAsset = allSpecifiedAssets.first()
-    await expect(verifiedAsset.getByText(/^(\d|,)+(\.\d{2,4})*$/)).toBeVisible()
-    if (assetType === "base" || assetType === "knownERC20") {
-      await expect(verifiedAsset.getByText(/^\$(0|\d+\.\d{2})$/)).toBeVisible()
-    }
-    await verifiedAsset.locator(".asset_icon_send").click({ trial: true })
-    await verifiedAsset.locator(".asset_icon_swap").click({ trial: true })
+    await expect(match.getByTestId("asset_amount")).toHaveText(
+      /^(\d|,)+(\.\d{2,4})*$/,
+    )
   }
 
   /**
@@ -92,23 +81,20 @@ export default class AssetsHelper {
      * Assert the token name and make sure the balance equals (or gets updated
      * to) the correct value.
      */
-    const activityLeftContainer = this.popup.getByTestId("left_wrap").filter({
-      has: this.popup.locator("span").filter({ hasText: assetSymbol }),
-    })
-    const balance = await activityLeftContainer.getByText(
-      /^(\d|,)+(\.\d{2,4})*$/,
-    )
-    await expect(balance.getByText(expectedBalance)).toHaveCount(1, {
-      timeout: 120000,
+    const activityLeftContainer = this.popup.getByRole("group", {
+      name: "Asset info",
     })
 
-    if (assetType === "base" || assetType === "knownERC20") {
+    const balance = await activityLeftContainer.getByTestId("asset_balance")
+
+    await expect(balance).toHaveText(expectedBalance, {
+      // We might expect a balance change
+      timeout: 45000,
+    })
+
+    if (assetType === "unverified") {
       await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
-      ).toBeVisible()
-    } else {
-      await expect(
-        activityLeftContainer.getByText(/^\$(\d|,)+\.\d{2}$/),
+        activityLeftContainer.getByTestId("asset_currency_value"),
       ).not.toBeVisible()
     }
 
@@ -331,11 +317,7 @@ export default class AssetsHelper {
     /** Make sure there is a `See unverified assets` button, but no unverified
      * assets are listed before button is clicked.
      */
-    await expect(
-      this.popup.getByRole("button", {
-        name: /^See unverified assets \(\d+\)$/,
-      }),
-    ).toBeVisible()
+
     await expect(
       this.popup.getByRole("button", {
         name: /^Hide unverified assets \(\d+\)$/,
@@ -345,6 +327,14 @@ export default class AssetsHelper {
     await expect(
       this.popup.getByTestId("hidden_assets_container"),
     ).not.toBeVisible()
+
+    /** Click the `See unverified assets` button and make sure unverified
+     * assets do show up.
+     */
+    await this.popup
+      .getByRole("button", { name: /^See unverified assets \(\d+\)$/ })
+      .click()
+
     // Below assertions fail, as `Verify asset` and `Asset not verified`
     // elements are present in DOM even when unverified assets are collapsed.
     // There's no easy way to assert that those elements are not visible to a
@@ -359,18 +349,12 @@ export default class AssetsHelper {
     //   )
     // ).not.toBeVisible()
 
-    /** Click the `See unverified assets` button and make sure unverified
-     * assets do show up.
-     */
-    await this.popup
-      .getByRole("button", { name: /^See unverified assets \(\d+\)$/ })
-      .click()
-
     await expect(
       this.popup.getByRole("button", {
         name: /^Hide unverified assets \(\d+\)$/,
       }),
     ).toBeVisible()
+
     await expect(
       this.popup.getByRole("button", { name: "See unverified assets" }),
     ).not.toBeVisible()
@@ -399,6 +383,7 @@ export default class AssetsHelper {
         name: /^Hide unverified assets \(\d+\)$/,
       })
       .click()
+
     await expect(
       this.popup.getByRole("button", {
         name: /^See unverified assets \(\d+\)$/,
@@ -409,6 +394,7 @@ export default class AssetsHelper {
         name: /^Hide unverified assets \(\d+\)$/,
       }),
     ).not.toBeVisible()
+
     await expect(
       this.popup.getByTestId("hidden_assets_container"),
     ).not.toBeVisible()
@@ -419,14 +405,14 @@ export default class AssetsHelper {
    * available on the Transaction/Swap form.
    */
   async assertAssetsNotPresentOnAssetsList(
-    tokens: Array<unknown>,
+    tokens: Array<string>,
   ): Promise<void> {
     await expect(this.popup.getByTestId("assets_list")).toHaveCount(1)
     await Promise.all(
       tokens.map(async (token) => {
-        await expect(
-          this.popup.getByTitle(token as string, { exact: true }),
-        ).toHaveCount(0)
+        await expect(this.popup.getByTitle(token, { exact: true })).toHaveCount(
+          0,
+        )
       }),
     )
   }

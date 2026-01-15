@@ -43,8 +43,8 @@ export const account1: Account = {
 export const account2 = {
   address: "0x6e80164ea60673d64d5d6228beb684a1274bb017",
   name: /^testertesting\.eth$/,
-  jsonBody: process.env.TEST_WALLET_JSON_BODY,
-  jsonPassword: process.env.TEST_WALLET_JSON_PASSWORD,
+  jsonBody: process.env.TESTNET_TEST_WALLET_JSON_BODY,
+  jsonPassword: process.env.TESTNET_TEST_WALLET_JSON_PASSWORD,
 }
 
 export default class OnboardingHelper {

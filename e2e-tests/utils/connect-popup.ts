@@ -33,14 +33,16 @@ export default class ConnectPopupHelper {
    * additional interactions.
    */
   async hideDappConnectPopup(): Promise<void> {
-    // Clear the one-time informational popup, if present.
-    const connectingPopupTitle = this.page.locator("h3", {
-      hasText: "Connecting with Taho",
-    })
+    await expect(async () => {
+      // Clear the one-time informational popup, if present.
+      const connectingPopupTitle = this.page.locator("h3", {
+        hasText: "Connecting with Taho",
+      })
 
-    expect(await connectingPopupTitle.count()).toBe(1)
+      expect(await connectingPopupTitle.count()).toBe(1)
 
-    await expect(connectingPopupTitle).toBeVisible()
+      await expect(connectingPopupTitle).toBeVisible()
+    }).toPass()
 
     // Clear the popover.
     const bgLocator = this.page

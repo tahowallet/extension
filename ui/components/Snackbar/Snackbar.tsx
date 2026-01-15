@@ -76,7 +76,9 @@ export default function Snackbar({
         right_container: showInRightContainer,
       })}
     >
-      <div className="snackbar_wrap">{displayMessage}</div>
+      <div className="snackbar_wrap">
+        <span data-testid="snackbar">{displayMessage}</span>
+      </div>
       <style jsx>
         {`
           .snackbar_container {

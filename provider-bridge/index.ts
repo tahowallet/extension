@@ -13,8 +13,8 @@ export default function connectProviderBridge(): void {
 
   const onWindowMessageListener = (event: MessageEvent): void => {
     if (
-      event.origin === windowOriginAtLoadTime && // we want to recieve msgs only from the in-page script
-      event.source === window && // we want to recieve msgs only from the in-page script
+      event.origin === windowOriginAtLoadTime && // we want to receive msgs only from the in-page script
+      event.source === window && // we want to receive msgs only from the in-page script
       event.data.target === PROVIDER_BRIDGE_TARGET
     ) {
       // if dapp wants to connect let's grab its details

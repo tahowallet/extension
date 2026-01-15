@@ -4,11 +4,12 @@ import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/acco
 
 import { useTranslation } from "react-i18next"
 import {
+  getFullAssetID,
   isTrustedAsset,
   isUntrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { NETWORKS_SUPPORTING_SWAPS } from "@tallyho/tally-background/constants"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
@@ -72,7 +73,12 @@ export default function CommonAssetListItem(
         state: assetAmount.asset,
       }}
     >
-      <div className="asset_list_item" data-testid="asset_list_item">
+      <div
+        className="asset_list_item"
+        data-testid="asset_list_item"
+        data-assetid={getFullAssetID(assetAmount.asset)}
+        data-trusted={isTrustedAsset(assetAmount.asset)}
+      >
         <div className="asset_left">
           <SharedAssetIcon
             logoURL={
@@ -84,7 +90,7 @@ export default function CommonAssetListItem(
           />
           <div className="asset_left_content">
             <div className="asset_amount">
-              <span className="bold_amount_count">
+              <span className="bold_amount_count" data-testid="asset_amount">
                 {assetAmount.localizedDecimalAmount}
               </span>
               <span title={assetAmount.asset.symbol} data-testid="asset_symbol">
@@ -104,7 +110,9 @@ export default function CommonAssetListItem(
                     {isMissingLocalizedUserValue ? (
                       <SharedLoadingSpinner size="small" />
                     ) : (
-                      `$${assetAmount.localizedMainCurrencyAmount}`
+                      <span data-testid="resolved_asset_price">
+                        {`$${assetAmount.localizedMainCurrencyAmount}`}
+                      </span>
                     )}
                   </div>
                 )
@@ -129,7 +137,7 @@ export default function CommonAssetListItem(
                 isTooltip
                 tooltipText="Send"
               />
-              {NETWORKS_SUPPORTING_SWAPS.has(selectedNetwork.chainID) ? (
+              {networkSupportsSwaps(selectedNetwork.chainID) ? (
                 <SharedIconRouterLink
                   path="/swap"
                   state={{
