@@ -184,23 +184,39 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         )
       }
 
+      const buyEnriched = buyAssetPricePoint
+        ? enrichAssetAmountWithMainCurrencyValues(
+            { asset: buyAsset, amount: BigInt(quote.buyAmount) },
+            buyAssetPricePoint,
+            2,
+          )
+        : undefined
+
+      const sellEnriched = sellAssetPricePoint
+        ? enrichAssetAmountWithMainCurrencyValues(
+            { asset: sellAsset, amount: BigInt(quote.sellAmount) },
+            sellAssetPricePoint,
+            2,
+          )
+        : undefined
+
+      // Calculate price impact as percentage loss in USD value
+      let priceImpact = 0
+      if (
+        sellEnriched?.mainCurrencyAmount &&
+        buyEnriched?.mainCurrencyAmount &&
+        sellEnriched.mainCurrencyAmount > 0
+      ) {
+        priceImpact =
+          ((sellEnriched.mainCurrencyAmount - buyEnriched.mainCurrencyAmount) /
+            sellEnriched.mainCurrencyAmount) *
+          100
+      }
+
       return {
-        // FIXME: deprecated, possibly coming back on 0x api
-        priceImpact: 0,
-        buyCurrencyAmount: buyAssetPricePoint
-          ? enrichAssetAmountWithMainCurrencyValues(
-              { asset: buyAsset, amount: BigInt(quote.buyAmount) },
-              buyAssetPricePoint,
-              2,
-            ).localizedMainCurrencyAmount
-          : undefined,
-        sellCurrencyAmount: sellAssetPricePoint
-          ? enrichAssetAmountWithMainCurrencyValues(
-              { asset: sellAsset, amount: BigInt(quote.sellAmount) },
-              sellAssetPricePoint,
-              2,
-            ).localizedMainCurrencyAmount
-          : undefined,
+        priceImpact,
+        buyCurrencyAmount: buyEnriched?.localizedMainCurrencyAmount,
+        sellCurrencyAmount: sellEnriched?.localizedMainCurrencyAmount,
       }
     }
 
@@ -320,6 +336,7 @@ export const executeSwap = createBackgroundAsyncThunk(
       sellAsset: SwappableAsset
       buyAsset: SwappableAsset
       chainId: string
+      estimatedPriceImpact?: number
     },
     { dispatch },
   ) => {
@@ -356,7 +373,7 @@ export const executeSwap = createBackgroundAsyncThunk(
         type: "asset-swap",
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
-        estimatedPriceImpact: 0, // disabled on v2
+        estimatedPriceImpact: quote.estimatedPriceImpact ?? 0,
         sources: quote.route.fills
           .map(({ source, proportionBps }) => ({
             name: source,
