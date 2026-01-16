@@ -334,7 +334,7 @@ ui/ # @tallyho/tally-ui package
 
 Firefox requires to upload source code if minifier is used and to be able to compile identical output to the uploaded package. Our builds are environment dependent at the moment because of the minification and source map process. Long term solution will be to upgrade our build process to be able to produce identical file assets, but until then we use Docker.
 
-1. Install and setup container manger, like at [nerdctl](https://github.com/containerd/nerdctl),[podman](https://podman.io/) or [docker](https://www.docker.com/)
+1. Install and setup container manager, like at [nerdctl](https://github.com/containerd/nerdctl),[podman](https://podman.io/) or [docker](https://www.docker.com/)
 2. Clone git repository
 
 ```sh

@@ -184,7 +184,7 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.addEventListener("connect", this.#handleUSBConnect)
     navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
 
-    // Block serial oprations until the service is started, in case a
+    // Block serial operations until the service is started, in case a
     // connection or disconnection event occurs to soon.
     this.#lastOperationPromise = this.started().then(() => {})
   }
@@ -463,7 +463,7 @@ export default class LedgerService extends BaseService<Events> {
           blockHeight: null,
           asset: transactionRequest.network.baseAsset,
           network: transactionRequest.network,
-        } as const // narrow types for compatiblity with our internal ones
+        } as const // narrow types for compatibility with our internal ones
 
         return signedTx
       } catch (err) {

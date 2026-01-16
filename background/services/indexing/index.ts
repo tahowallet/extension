@@ -65,6 +65,23 @@ const FAST_TOKEN_REFRESH_BLOCK_RANGE = 10
 // before balance-checking them.
 const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
+/**
+ * How often the service should update token lists, token lists are also
+ * retrieved and updated at extension startup.
+ */
+const TOKEN_LIST_UPDATE_INTERVAL = 12 * HOUR
+
+/**
+ * How often the service queries balances for accounts that have recently
+ * interacted with the wallet
+ */
+const BALANCE_REFRESH_ACTIVE_ACCOUNTS_INTERVAL = 1 * MINUTE
+
+/**
+ * How often the service queries balances for all accounts
+ */
+const BALANCE_REFRESH_ALL_ACCOUNTS_INTERVAL = 60 * MINUTE
+
 interface Events extends ServiceLifecycleEvents {
   accountsWithBalances: {
     /**
@@ -120,11 +137,9 @@ function allowVerifyAssetByManualImport(
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
-  /**
-   * True if an off-cycle token refresh was scheduled, typically when a watched
-   * account had a transaction confirmed.
-   */
-  private scheduledTokenRefresh = false
+  #activeAccountBalanceAlarm: NodeJS.Timer | null = null
+
+  #allAccountBalanceAlarm: NodeJS.Timer | null = null
 
   #pricesUpdateTimer: NodeJS.Timer | null = null
 
@@ -159,28 +174,28 @@ export default class IndexingService extends BaseService<Events> {
     private chainService: ChainService,
   ) {
     super({
-      balance: {
+      balanceActiveAccounts: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: BALANCE_REFRESH_ACTIVE_ACCOUNTS_INTERVAL,
         },
-        handler: () => this.handleBalanceAlarm(),
+        handler: () => this.refreshAccountBalances(true),
       },
-      forceBalance: {
+      balanceAllAccounts: {
         schedule: {
-          periodInMinutes: (12 * HOUR) / MINUTE,
+          periodInMinutes: BALANCE_REFRESH_ALL_ACCOUNTS_INTERVAL,
         },
-        handler: () => this.handleBalanceAlarm(),
+        handler: () => this.refreshAccountBalances(false),
       },
-      balanceRefresh: {
+      tokenLists: {
         schedule: {
-          periodInMinutes: 1,
+          periodInMinutes: TOKEN_LIST_UPDATE_INTERVAL,
         },
-        handler: () => this.handleBalanceRefresh(),
+        handler: () => this.fetchAndCacheTokenLists(),
       },
       prices: {
         schedule: {
           delayInMinutes: 1,
-          periodInMinutes: 10,
+          periodInMinutes: 1,
         },
         handler: () => this.scheduleUpdateAssetsPrices(),
       },
@@ -211,7 +226,7 @@ export default class IndexingService extends BaseService<Events> {
         }),
         // Load balances after token lists load and after assets are cached, otherwise
         // we will not load balances on initial balance query
-      ).then(() => tokenListLoad.then(() => this.loadAccountBalances()))
+      ).then(() => tokenListLoad.then(() => this.refreshAccountBalances(false)))
     })
   }
 
@@ -477,7 +492,6 @@ export default class IndexingService extends BaseService<Events> {
         // networks that support Alchemy, then update prices.
         await this.loadAccountBalancesFor(addressOnNetwork)
 
-        // FIXME Refactor this to only update prices for tokens with balances.
         this.scheduleUpdateAssetsPrices()
       },
     )
@@ -492,7 +506,7 @@ export default class IndexingService extends BaseService<Events> {
             (await this.chainService.getBlockHeight(transaction.network)) -
               FAST_TOKEN_REFRESH_BLOCK_RANGE
         ) {
-          this.scheduledTokenRefresh = true
+          this.acceleratedBalanceRefresh()
         }
         if (
           "status" in transaction &&
@@ -537,7 +551,7 @@ export default class IndexingService extends BaseService<Events> {
     // look up all assets and set balances
     const unfilteredAccountBalances = await Promise.allSettled(
       balances.map(async ({ smartContract: { contractAddress }, amount }) => {
-        const knownAsset =
+        let knownAsset: SmartContractFungibleAsset | undefined =
           listedAssetByAddress[normalizeEVMAddress(contractAddress)] ??
           this.getKnownSmartContractAsset(
             addressNetwork.network,
@@ -548,7 +562,7 @@ export default class IndexingService extends BaseService<Events> {
           if (knownAsset) {
             await this.addAssetToTrack(knownAsset)
           } else {
-            await this.addTokenToTrackByContract(
+            knownAsset ??= await this.addTokenToTrackByContract(
               addressNetwork.network,
               contractAddress,
             )
@@ -563,6 +577,7 @@ export default class IndexingService extends BaseService<Events> {
               amount,
             },
             retrievedAt: Date.now(),
+            // FIXME: Not accurate
             dataSource: "alchemy",
           } as const
 
@@ -789,6 +804,7 @@ export default class IndexingService extends BaseService<Events> {
       const baseAssets = await this.chainService.getNetworkBaseAssets()
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
+      // Fallback to price oracle
       if (basicPrices.length === 0) {
         basicPrices = await Promise.all(
           [
@@ -1035,11 +1051,60 @@ export default class IndexingService extends BaseService<Events> {
     // the version has gone up
   }
 
-  private async handleBalanceRefresh(): Promise<void> {
-    if (this.scheduledTokenRefresh) {
-      await this.handleBalanceAlarm()
-      this.scheduledTokenRefresh = false
+  /**
+   * Schedules a balance refresh
+   */
+  private async refreshAccountBalances(activeAccounts: boolean): Promise<void> {
+    if (activeAccounts) {
+      if (this.#activeAccountBalanceAlarm) {
+        return
+      }
+
+      this.#activeAccountBalanceAlarm = setTimeout(() => {
+        this.#activeAccountBalanceAlarm = null
+        this.loadAccountBalances(true)
+      }, 1 * MINUTE)
+    } else {
+      if (this.#activeAccountBalanceAlarm) {
+        clearTimeout(this.#activeAccountBalanceAlarm)
+        this.#activeAccountBalanceAlarm = null
+      }
+
+      if (this.#allAccountBalanceAlarm) {
+        // If there's already one pending
+        return
+      }
+
+      this.#allAccountBalanceAlarm = setTimeout(() => {
+        this.#allAccountBalanceAlarm = null
+        this.loadAccountBalances(false)
+      }, 1 * SECOND)
     }
+  }
+
+  /**
+   * Schedules a quick balance refresh for active accounts.
+   *
+   * Used when an off-cycle token refresh was scheduled, typically when a
+   * watched account had a transaction confirmed.
+   *
+   * TODO: This should be triggered after transaction confirmation so we don't
+   * rely on an arbirtrary timer
+   */
+  private async acceleratedBalanceRefresh(): Promise<void> {
+    // If there's a recent lookup queued, postpone it
+    if (this.#activeAccountBalanceAlarm) {
+      clearTimeout(this.#activeAccountBalanceAlarm)
+    }
+
+    this.#activeAccountBalanceAlarm = setTimeout(async () => {
+      try {
+        await this.loadAccountBalances(true)
+      } catch (err) {
+        // TODO: Track last successful balance lookups
+        logger.error("Accelerated token refresh failed", err)
+      }
+    }, 16 * SECOND)
   }
 
   private async loadAccountBalancesFor(
@@ -1047,22 +1112,21 @@ export default class IndexingService extends BaseService<Events> {
   ): Promise<[AccountBalance, SmartContractAmount[]]> {
     const { network } = addressOnNetwork
 
-    const provider = this.chainService.providerForNetworkOrThrow(network)
-
     const loadBaseAccountBalance =
       this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
 
     /**
      * When the provider supports alchemy we can use alchemy_getTokenBalances
      * to query all erc20 token balances without specifying which assets we
-     * need to check. When it does not, we try checking balances for every asset
-     * we've seen in the network.
+     * need to check. If it fails, we try checking balances for every asset
+     * we've seen in the network through multicall.
      */
-    const assetsToCheck = provider.supportsAlchemy
-      ? []
-      : // This doesn't pass assetsToTrack stored in the db as
-        // it assumes they've already been cached
-        this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
+
+    // This doesn't pass assetsToTrack stored in the db as
+    // it assumes they've already been cached
+    const assetsToCheck = this.getCachedAssets(network).filter(
+      isSmartContractFungibleAsset,
+    )
 
     const loadTokenBalances = this.retrieveTokenBalances(
       addressOnNetwork,
@@ -1079,22 +1143,24 @@ export default class IndexingService extends BaseService<Events> {
     const accounts =
       await this.chainService.getAccountsToTrack(onlyActiveAccounts)
 
+    const prevTrackedAssets = await this.getAssetsToTrack()
+
     const balanceLoadResults = await Promise.allSettled(
       accounts.map((addressOnNetwork) =>
         this.loadAccountBalancesFor(addressOnNetwork),
       ),
     )
 
+    const newTrackedAssets = await this.getAssetsToTrack()
+
+    if (prevTrackedAssets.length !== newTrackedAssets.length) {
+      this.scheduleUpdateAssetsPrices()
+    }
+
     logger.errorLogRejectedPromises(
       "Account balances failed to load for",
       balanceLoadResults,
       accounts,
-    )
-  }
-
-  private async handleBalanceAlarm(): Promise<void> {
-    await this.fetchAndCacheTokenLists().then(() =>
-      this.loadAccountBalances(true),
     )
   }
 }

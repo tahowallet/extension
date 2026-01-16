@@ -1,8 +1,8 @@
 import React, { ReactElement } from "react"
 import { AssetSwap } from "@tallyho/tally-background/services/enrichment"
+import { SWAP_FEE } from "@tallyho/tally-background/lib/0x-swap"
 
 import { useTranslation } from "react-i18next"
-import { SWAP_FEE } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { TransactionSignatureSummaryProps } from "../TransactionSignatureSummary/TransactionSignatureSummaryProps"
 
 export default function SwapAssetDetails({

@@ -48,6 +48,7 @@ export default function TopMenu(): ReactElement {
       <SharedSlideUpMenu
         isOpen={isNotificationsOpen}
         allowOverflow
+        testid="accounts_list_slide_up"
         close={() => {
           setIsNotificationsOpen(false)
         }}

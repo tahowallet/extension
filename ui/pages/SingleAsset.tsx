@@ -14,10 +14,8 @@ import {
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
-import {
-  DEFAULT_NETWORKS_BY_CHAIN_ID,
-  NETWORKS_SUPPORTING_SWAPS,
-} from "@tallyho/tally-background/constants"
+import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isTrustedAsset,
   isVerifiedAsset,
@@ -124,13 +122,13 @@ export default function SingleAsset(): ReactElement {
       </div>
       {asset && (
         <div className="header standard_width_padded">
-          <div className="left" data-testid="left_wrap">
+          <div className="left" role="group" aria-label="Asset info">
             <div className="asset_wrap">
               <SharedAssetIcon
                 logoURL={asset?.metadata?.logoURL}
                 symbol={asset?.symbol}
               />
-              <span className="asset_name">
+              <span className="asset_name" data-testid="asset_symbol">
                 {trimWithEllipsis(symbol, MAX_SYMBOL_LENGTH)}
               </span>
               {contractAddress && (
@@ -161,9 +159,13 @@ export default function SingleAsset(): ReactElement {
                 </SharedTooltip>
               )}
             </div>
-            <div className="balance">{localizedDecimalAmount}</div>
+            <div className="balance" data-testid="asset_balance">
+              {localizedDecimalAmount}
+            </div>
             {localizedMainCurrencyAmount && (
-              <div className="usd_value">${localizedMainCurrencyAmount}</div>
+              <div className="usd_value" data-testid="asset_currency_value">
+                ${localizedMainCurrencyAmount}
+              </div>
             )}
           </div>
           <div className="right">
@@ -203,7 +205,7 @@ export default function SingleAsset(): ReactElement {
                 >
                   {t("shared.send")}
                 </SharedButton>
-                {NETWORKS_SUPPORTING_SWAPS.has(currentNetwork.chainID) ? (
+                {networkSupportsSwaps(currentNetwork.chainID) ? (
                   <SharedButton
                     type="primary"
                     size="medium"

@@ -31,7 +31,7 @@ export default class InjectWindowProvider {
 
             // need to encode so it can be used as a string
             // in non optimised builds the source is a multi line string > `` needs to be used
-            // but ${ needs to be escaped separatly otherwise it breaks the ``
+            // but ${ needs to be escaped separately otherwise it breaks the ``
             windowProviderSource = JSON.stringify(windowProviderSource)
             const providerBridgeSource =
               assets[PROVIDER_BRIDGE_FILENAME].source().toString()

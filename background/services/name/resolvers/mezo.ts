@@ -11,12 +11,15 @@ export default function mezoResolver(): NameResolver<"MEZO"> {
   return {
     type: "MEZO",
     canAttemptNameResolution(): boolean {
-      return true
+      // FIXME: mezo endpoint broken
+      return false
     },
     canAttemptAvatarResolution(): boolean {
       return false
     },
     canAttemptAddressResolution({ name, network }: NameOnNetwork): boolean {
+      // FIXME: mezo endpoint broken
+      return false
       return (
         name.endsWith(".mezo") &&
         MEZO_SUPPORTED_NETWORKS.some((supportedNetwork) =>

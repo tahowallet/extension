@@ -118,7 +118,7 @@ type Events = ServiceLifecycleEvents & {
   selectedNetwork: EVMNetwork
   watchAssetRequest: { contractAddress: string; network: EVMNetwork }
   // connect
-  // disconnet
+  // disconnect
   // account change
   // networkchange
 }

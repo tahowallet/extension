@@ -65,7 +65,7 @@ function requireCryptoGlobal(message?: string) {
  *        Note that the symmetric key, alone, or the salt *and* the password,
  *        together, must be retained to decrypt anything encrypted by the
  *        returned key. While the salt isn't secret key material, losing it
- *        could jeopardize access to user data (and therefor, funds).
+ *        could jeopardize access to user data (and therefore, funds).
  * @returns a salted symmetric key suitable for encrypting and decrypting
  *          material using AES GCM mode, as well as the salt required to derive
  *          the key again later.

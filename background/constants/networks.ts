@@ -143,7 +143,9 @@ export const FORK: EVMNetwork = {
 }
 
 export const EIP_1559_COMPLIANT_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, SEPOLIA, AVALANCHE].map((network) => network.chainID),
+  [ETHEREUM, POLYGON, SEPOLIA, AVALANCHE, SEPOLIA].map(
+    (network) => network.chainID,
+  ),
 )
 
 export const CHAINS_WITH_MEMPOOL = new Set(
@@ -172,24 +174,6 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
-// Networks that are not added to this struct will
-// not have an in-wallet Swap page
-export const CHAIN_ID_TO_0X_API_BASE: {
-  [chainID: string]: string | undefined
-} = {
-  [ETHEREUM.chainID]: "api.0x.org",
-  [POLYGON.chainID]: "polygon.api.0x.org",
-  [OPTIMISM.chainID]: "optimism.api.0x.org",
-  [SEPOLIA.chainID]: "sepolia.api.0x.org",
-  [ARBITRUM_ONE.chainID]: "arbitrum.api.0x.org",
-  [AVALANCHE.chainID]: "avalanche.api.0x.org",
-  [BINANCE_SMART_CHAIN.chainID]: "bsc.api.0x.org",
-}
-
-export const NETWORKS_SUPPORTING_SWAPS = new Set(
-  Object.keys(CHAIN_ID_TO_0X_API_BASE),
-)
-
 export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
   [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, SEPOLIA].map(
     (network) => network.chainID,
@@ -211,9 +195,9 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "wss://mezo-testnet.drpc.org",
   ],
   [POLYGON.chainID]: [
+    "https://polygon.drpc.org",
     // This one sometimes returns 0 for eth_getBalance
     "https://polygon-rpc.com",
-    "https://polygon.drpc.org",
     "https://1rpc.io/matic",
   ],
   [OPTIMISM.chainID]: [
@@ -224,7 +208,11 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [ETHEREUM.chainID]: ["https://eth.drpc.org", "https://1rpc.io/eth"],
   [ARBITRUM_ONE.chainID]: ["https://arbitrum.drpc.org", "https://1rpc.io/arb"],
   [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
-  [SEPOLIA.chainID]: ["https://endpoints.omniatech.io/v1/eth/sepolia/public"],
+  [SEPOLIA.chainID]: [
+    "https://sepolia.drpc.org",
+    "wss://sepolia.drpc.org",
+    "https://ethereum-sepolia-rpc.publicnode.com",
+  ],
   [ARBITRUM_SEPOLIA.chainID]: ["https://sepolia-rollup.arbitrum.io/rpc"],
   [AVALANCHE.chainID]: [
     "https://api.avax.network/ext/bc/C/rpc",

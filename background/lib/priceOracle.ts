@@ -1,5 +1,6 @@
 import * as ethers from "ethers"
 import { Fragment, FunctionFragment } from "ethers/lib/utils"
+import type { JsonRpcProvider } from "@ethersproject/providers"
 import _ from "lodash"
 import {
   AnyAsset,
@@ -29,9 +30,9 @@ import {
   AggregateContractResponse,
 } from "./multicall"
 import { toFixedPoint } from "./fixed-point"
-import SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { EVMNetwork } from "../networks"
 import logger, { logRejectedAndReturnFulfilledResults } from "./logger"
+import { FeatureFlags, isEnabled } from "../features"
 
 // The size of a batch of on-chain price lookups. Too high and the request will
 // fail due to running out of gas, as eth_call is still subject to gas limits.
@@ -39,7 +40,7 @@ import logger, { logRejectedAndReturnFulfilledResults } from "./logger"
 //
 // Some public RPCS (such as ankr) have stricter limits on gas for eth_calls
 // for now, this size appears to work fine
-const BATCH_SIZE = 5
+const BATCH_SIZE = isEnabled(FeatureFlags.USE_MAINNET_FORK) ? 2 : 4
 
 // Oracle Documentation and Address references can be found
 // at https://docs.1inch.io/docs/spot-price-aggregator/introduction/
@@ -113,7 +114,7 @@ export const toUSDPricePoint = (
 
 const getRateForBaseAsset = async (
   network: EVMNetwork,
-  provider: SerialFallbackProvider,
+  provider: JsonRpcProvider,
 ): Promise<number> => {
   const offChainOracleContract = new ethers.Contract(
     SPOT_PRICE_ORACLE_CONSTANTS[network.chainID].oracleAddress,
@@ -142,7 +143,7 @@ const getBaseAssetPriceFromRate = (rate: number, network: EVMNetwork) => {
 
 export async function getUSDPriceForBaseAsset(
   network: EVMNetwork,
-  provider: SerialFallbackProvider,
+  provider: JsonRpcProvider,
 ): Promise<PricePoint> {
   const rate = await getRateForBaseAsset(network, provider)
   const USDPriceOfBaseAsset = getBaseAssetPriceFromRate(rate, network)
@@ -151,7 +152,7 @@ export async function getUSDPriceForBaseAsset(
 
 const getRatesForTokens = async (
   assets: SmartContractFungibleAsset[],
-  provider: SerialFallbackProvider,
+  provider: JsonRpcProvider,
   network: EVMNetwork,
 ): Promise<
   {
@@ -219,7 +220,7 @@ const getTokenPriceFromRate = (
 export async function getUSDPriceForTokens(
   assets: SmartContractFungibleAsset[],
   network: EVMNetwork,
-  provider: SerialFallbackProvider,
+  provider: JsonRpcProvider,
 ): Promise<{
   [contractAddress: string]: UnitPricePoint<FungibleAsset>
 }> {
@@ -267,6 +268,7 @@ export async function getUSDPriceForTokens(
       }
       return
     }
+    // FIXME: If a lookup fails, retry?
     if (
       response.success !== true ||
       ethers.BigNumber.from(response.returnData).isZero()

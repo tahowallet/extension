@@ -2,7 +2,7 @@ import { test, expect } from "../utils"
 import { account2 } from "../utils/onboarding"
 
 test.describe("Transactions", () => {
-  test("User can send base asset (on Sepolia testnet) @expensive", async ({
+  test("User can send base asset (on Sepolia testnet) @testnet", async ({
     page: popup,
     walletPageHelper,
     transactionsHelper,
@@ -26,23 +26,6 @@ test.describe("Transactions", () => {
         account2.name,
       )
       await walletPageHelper.assertAnalyticsBanner()
-
-      /**
-       * Enable test networks
-       */
-      await popup
-        .getByLabel("Main")
-        .getByText("Settings", { exact: true })
-        .click()
-      const enableTestNetworksSetting = popup.locator("li").filter({
-        hasText: /^Show testnet networks$/,
-      })
-      await enableTestNetworksSetting.locator(".bulb").click()
-      await popup
-        .getByLabel("Main")
-        .getByText("Wallet", { exact: true })
-        .first()
-        .click()
 
       /**
        * Switch to Sepolia testnet.
@@ -127,6 +110,11 @@ test.describe("Transactions", () => {
         true,
       )
 
+      // Wait for any shown snackbars to disappear
+      await expect(() =>
+        expect(popup.getByTestId("snackbar")).not.toBeVisible(),
+      ).toPass()
+
       /**
        * Sign.
        */
@@ -136,12 +124,9 @@ test.describe("Transactions", () => {
        * Confirm there is "Transaction signed, broadcasting..." snackbar visible
        * and there is no "Transaction failed to broadcast" snackbar visible.
        */
-      await expect
-        .soft(popup.getByText("Transaction signed, broadcasting...").first())
-        .toBeVisible() // we need to use `.first()` because sometimes Playwright catches 2 elements matching that copy
-      await expect(
-        popup.getByText("Transaction failed to broadcast."),
-      ).toHaveCount(0)
+      await walletPageHelper.assertSnackBar(
+        "Transaction signed, broadcasting...",
+      )
     })
 
     await test.step("Verify asset activity screen and latest transaction status", async () => {
@@ -160,8 +145,6 @@ test.describe("Transactions", () => {
       /**
        * Verify latest transaction.
        */
-      setTimeout(() => {}, 10000) // wait for 10s
-
       const latestSentTx = popup.getByTestId("activity_list_item").first()
       await expect(latestSentTx.getByText("Pending")).toHaveCount(0, {
         timeout: 60000,
@@ -181,7 +164,7 @@ test.describe("Transactions", () => {
       await expect(latestSentTx.getByText(/^To: 0x4774…875a6$/)).toBeVisible()
 
       /**
-       * Open latest transaction and verify it's deatils
+       * Open latest transaction and verify it's details
        */
       await latestSentTx.click()
 
@@ -214,7 +197,7 @@ test.describe("Transactions", () => {
       await walletPageHelper.assertAnalyticsBanner()
 
       /**
-       * Open latest transaction and verify it's deatils
+       * Open latest transaction and verify it's details
        */
       const latestSentTx = popup.getByTestId("activity_list_item").first()
 

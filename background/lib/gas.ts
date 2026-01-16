@@ -15,6 +15,7 @@ import {
 } from "../constants/networks"
 import { gweiToWei } from "./utils"
 import { MINUTE } from "../constants"
+import { FeatureFlags, isDisabled } from "../features"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
@@ -39,7 +40,7 @@ type PolygonGasResponse = {
 // Not perfect but works most of the time.  Our fallback method does not work at all for polygon.
 // This is because the baseFeePerGas on polygon can be so small (oftentimes sub 100 wei (not gwei)) that
 // estimating maxFeePerGas as a function of baseFeePerGas almost always results in a "transaction underpriced"
-// being returned from alchemy because our maxFeePerGas is below its acceptance threshhold.
+// being returned from alchemy because our maxFeePerGas is below its acceptance threshold.
 const getPolygonGasPrices = async (price: bigint): Promise<BlockPrices> => {
   // @TODO Validate this response using ajv
   const gasEstimates = (await fetchJson(
@@ -154,7 +155,9 @@ export default async function getBlockPrices(
   // if BlockNative is configured and we're on mainnet, prefer their gas service.
   if (
     typeof BLOCKNATIVE_API_KEY !== "undefined" &&
-    network.chainID === ETHEREUM.chainID
+    network.chainID === ETHEREUM.chainID &&
+    // Don't use blocknative on mainnet fork
+    isDisabled(FeatureFlags.USE_MAINNET_FORK)
   ) {
     // If the last attempt was a failure and we last succeeded less than
     // BLOCKNATIVE_RETRY_INTERVAL ago, leave Blocknative alone and retry later.
