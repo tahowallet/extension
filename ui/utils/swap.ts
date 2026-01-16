@@ -97,12 +97,12 @@ export const fetchQuote = async ({
 
   if (updatedQuoteData) {
     if (
+      updatedQuoteData.quote.gas &&
       settings.networkSettings.gasLimit !== BigInt(updatedQuoteData.quote.gas)
     ) {
       requestResult.swapTransactionSettings.networkSettings = {
         ...requestResult.swapTransactionSettings.networkSettings,
         gasLimit: BigInt(updatedQuoteData.quote.gas),
-        suggestedGasLimit: BigInt(updatedQuoteData.quote.estimatedGas),
       }
     }
 
@@ -110,7 +110,7 @@ export const fetchQuote = async ({
       ...requestResult,
       priceDetails: updatedQuoteData.priceDetails,
       needsApproval: updatedQuoteData.needsApproval,
-      approvalTarget: updatedQuoteData.quote.allowanceTarget,
+      approvalTarget: updatedQuoteData.quote.allowanceTarget ?? undefined,
       quote:
         type === "getSellAmount"
           ? fixedPointNumberToString({

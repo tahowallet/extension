@@ -1,11 +1,11 @@
-import { ZrxQuote } from "../0x-swap"
-import { PriceDetails, SwapQuoteRequest } from "../utils/0x-swap-utils"
+type PriceDetails = {
+  priceImpact?: number
+  buyCurrencyAmount?: string
+  sellCurrencyAmount?: string
+}
 
 type OldState = {
   swap: {
-    latestQuoteRequest?: SwapQuoteRequest | undefined
-    finalQuote?: ZrxQuote | undefined
-    inProgressApprovalContract?: string
     [sliceKey: string]: unknown
   }
   [otherSlice: string]: unknown
@@ -13,9 +13,6 @@ type OldState = {
 
 type NewState = {
   swap: {
-    latestQuoteRequest?: SwapQuoteRequest | undefined
-    finalQuote?: ZrxQuote | undefined
-    inProgressApprovalContract?: string
     priceDetails?: PriceDetails | undefined
     [sliceKey: string]: unknown
   }
