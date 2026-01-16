@@ -119,7 +119,7 @@ type Events = ServiceLifecycleEvents & {
   watchAssetRequest: { contractAddress: string; network: EVMNetwork }
   networkSwitchedForOrigin: { origin: string; network: EVMNetwork }
   // connect
-  // disconnet
+  // disconnect
   // account change
   // networkchange
 }

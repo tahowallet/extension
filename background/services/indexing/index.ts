@@ -804,6 +804,7 @@ export default class IndexingService extends BaseService<Events> {
       const baseAssets = await this.chainService.getNetworkBaseAssets()
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
+      // Fallback to price oracle
       if (basicPrices.length === 0) {
         basicPrices = await Promise.all(
           [

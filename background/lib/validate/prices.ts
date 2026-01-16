@@ -5,7 +5,7 @@ import { JSONSchemaType } from "ajv"
 // with the fact that last_updated_at is listed in `required`. The two `as`
 // type casts below trick the type system into allowing the schema correctly.
 // Note that the schema will validate as required, and the casts allow it to
-// match the corret TypeScript types.
+// match the correct TypeScript types.
 //
 // This all stems from Ajv also incorrectly requiring an optional property (`|
 // undefined`) to be nullable (`| null`). See

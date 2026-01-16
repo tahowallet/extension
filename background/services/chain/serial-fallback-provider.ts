@@ -1071,7 +1071,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   /**
    * @param messageId The unique identifier of a given message
-   * @returns number of miliseconds to backoff
+   * @returns number of milliseconds to backoff
    */
   private backoffFor(messageId: symbol): number {
     this.messagesToSend[messageId].backoffCount += 1

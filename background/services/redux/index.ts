@@ -537,7 +537,7 @@ export default class ReduxService extends BaseService<never> {
     if (signer.type !== AccountType.ReadOnly) {
       await this.abilitiesService.deleteAbilitiesForAccount(address)
     }
-    // remove dApp premissions
+    // remove dApp permissions
     this.store.dispatch(revokePermissionsForAddress(address))
     await this.providerBridgeService.revokePermissionsForAddress(address)
     // TODO Adjust to handle specific network.
