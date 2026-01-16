@@ -49,11 +49,13 @@ import {
 } from "../../redux-slices/assets"
 import {
   addIslandAsset,
+  clearIslandAssets,
   setEligibility,
   setEligibilityLoading,
   setReferrer,
   setReferrerStats,
 } from "../../redux-slices/claim"
+import { FeatureFlags, isDisabled } from "../../features"
 import {
   emitter as internalSignerSliceEmitter,
   internalSignerLocked,
@@ -407,6 +409,11 @@ export default class ReduxService extends BaseService<never> {
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
+    // Clean up island assets if the feature is disabled to save state space
+    if (isDisabled(FeatureFlags.SHOW_TOKEN_FEATURES)) {
+      this.store.dispatch(clearIslandAssets())
+    }
+
     const servicesToBeStarted = [
       this.preferenceService.startService(),
       this.chainService.startService(),
@@ -736,21 +743,13 @@ export default class ReduxService extends BaseService<never> {
           populatedRequest.annotation = maybeEnrichedAnnotation
         }
 
-        if (typeof gasEstimationError === "undefined") {
-          this.store.dispatch(
-            transactionRequest({
-              transactionRequest: populatedRequest,
-              transactionLikelyFails: false,
-            }),
-          )
-        } else {
-          this.store.dispatch(
-            transactionRequest({
-              transactionRequest: populatedRequest,
-              transactionLikelyFails: true,
-            }),
-          )
-        }
+        this.store.dispatch(
+          transactionRequest({
+            transactionRequest: populatedRequest,
+            transactionLikelyFails: typeof gasEstimationError !== "undefined",
+            gasEstimationError,
+          }),
+        )
       },
     )
 

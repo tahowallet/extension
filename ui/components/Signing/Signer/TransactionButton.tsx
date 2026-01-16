@@ -4,11 +4,16 @@ import {
   selectTypedData,
 } from "@tallyho/tally-background/redux-slices/signing"
 import { selectIsTransactionLoaded } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { useBackgroundSelector, useDebounce } from "../../../hooks"
+import {
+  useBackgroundSelector,
+  useDebounce,
+  useSigningNetwork,
+} from "../../../hooks"
 import SharedButton, {
   Props as SharedButtonProps,
 } from "../../Shared/SharedButton"
 import SharedTooltip from "../../Shared/SharedTooltip"
+import SharedNetworkIcon from "../../Shared/SharedNetworkIcon"
 
 export type TransactionButtonProps = SharedButtonProps & {
   reactOnWindowFocus?: boolean
@@ -36,6 +41,11 @@ export default function TransactionButton({
   const hasSigningRequest = signDataRequest || typedDataRequest
 
   const isTransactionDataReady = hasTransactionLoaded || hasSigningRequest
+
+  const signingNetwork = useSigningNetwork()
+
+  // Show network icon only on sign buttons (primary types), not reject buttons
+  const isSignButton = type === "primary" || type === "primaryGreen"
 
   /*
     Prevent shenanigans by disabling the sign button for a bit
@@ -106,7 +116,16 @@ export default function TransactionButton({
       }
       isLoading={showLoading ? !unlockButtons : false}
     >
-      {children}
+      {isSignButton && signingNetwork ? (
+        <>
+          <span style={{ marginRight: 8 }}>
+            <SharedNetworkIcon network={signingNetwork} size={18} />
+          </span>
+          {children}
+        </>
+      ) : (
+        children
+      )}
     </SharedButton>
   )
 

@@ -58,6 +58,7 @@ export type TransactionConstruction = {
   signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails: boolean
+  gasEstimationError?: string
   estimatedFeesPerGas: { [chainID: string]: EstimatedFeesPerGas | undefined }
   customFeesPerGas?: EstimatedFeesPerGas["custom"]
   feeTypeSelected: NetworkFeeTypeChosen
@@ -170,11 +171,16 @@ const transactionSlice = createSlice({
     transactionRequest: (
       state,
       {
-        payload: { transactionRequest, transactionLikelyFails },
+        payload: {
+          transactionRequest,
+          transactionLikelyFails,
+          gasEstimationError,
+        },
       }: {
         payload: {
           transactionRequest: TransactionRequest
           transactionLikelyFails: boolean
+          gasEstimationError?: string
         }
       },
     ) => {
@@ -186,6 +192,7 @@ const transactionSlice = createSlice({
           ...transactionRequest,
         },
         transactionLikelyFails,
+        gasEstimationError,
       }
       const feeType = state.feeTypeSelected
       const { chainID } = transactionRequest.network

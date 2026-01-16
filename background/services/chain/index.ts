@@ -618,7 +618,19 @@ export default class ChainService extends BaseService<Events> {
           "code" in anyError &&
           anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
         ) {
-          gasEstimationError = anyError.error ?? "Unknown transaction error."
+          // anyError.error can be an object with properties like code, body, etc.
+          // We need to convert it to a displayable string
+          const innerError = anyError.error
+          if (typeof innerError === "string") {
+            gasEstimationError = innerError
+          } else if (innerError && typeof innerError === "object") {
+            gasEstimationError =
+              innerError.message ??
+              innerError.reason ??
+              JSON.stringify(innerError, null, 2)
+          } else {
+            gasEstimationError = "Unknown transaction error."
+          }
         }
       }
     }
@@ -702,7 +714,19 @@ export default class ChainService extends BaseService<Events> {
           "code" in anyError &&
           anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
         ) {
-          gasEstimationError = anyError.error ?? "Unknown transaction error."
+          // anyError.error can be an object with properties like code, body, etc.
+          // We need to convert it to a displayable string
+          const innerError = anyError.error
+          if (typeof innerError === "string") {
+            gasEstimationError = innerError
+          } else if (innerError && typeof innerError === "object") {
+            gasEstimationError =
+              innerError.message ??
+              innerError.reason ??
+              JSON.stringify(innerError, null, 2)
+          } else {
+            gasEstimationError = "Unknown transaction error."
+          }
         }
       }
     }

@@ -146,6 +146,35 @@ function backedOffMs(): number {
 }
 
 /**
+ * Extracts the HTTP status code from an error object, if present.
+ * Ethers errors may store the status code in different properties depending
+ * on the error type.
+ */
+function getHttpStatusCode(error: unknown): number | undefined {
+  if (error && typeof error === "object") {
+    // Check common properties where status code might be stored
+    if ("status" in error && typeof error.status === "number") {
+      return error.status
+    }
+    if ("statusCode" in error && typeof error.statusCode === "number") {
+      return error.statusCode
+    }
+    // ethers might store it in response
+    if (
+      "response" in error &&
+      error.response &&
+      typeof error.response === "object"
+    ) {
+      const response = error.response as Record<string, unknown>
+      if (typeof response.status === "number") {
+        return response.status
+      }
+    }
+  }
+  return undefined
+}
+
+/**
  * Returns true if the given provider is using a WebSocket AND the WebSocket is
  * either closing or already closed. Ethers does not provide direct access to
  * this information, nor does it attempt to reconnect in these cases.
@@ -497,6 +526,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         delete this.messagesToSend[messageId]
         throw error
       } else if (errorType === "invalid-response-error") {
+        // Don't retry on 4xx client errors - these indicate the request itself
+        // is invalid and retrying won't help
+        const statusCode = getHttpStatusCode(error)
+        if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
+          logger.debug(
+            "Not retrying invalid-response-error with 4xx status",
+            statusCode,
+            "on chain",
+            this.chainID,
+            "for",
+            method,
+          )
+          delete this.messagesToSend[messageId]
+          throw error
+        }
+
         // Check if we're already retrying this on a different provider
         if (
           this.hasExceededRetryLimit(messageId) &&
@@ -1115,11 +1160,13 @@ function getProviderCreator(rpcUrl: string): JsonRpcProvider {
   if (/^wss?/.test(url.protocol)) {
     return new WebSocketProvider(rpcUrl)
   }
-
   return new TahoRPCProvider({
     url: rpcUrl,
     throttleLimit: 1,
     timeout: PROVIDER_REQUEST_TIMEOUT,
+    fetchOptions: {
+      credentials: "omit",
+    },
   })
 }
 
