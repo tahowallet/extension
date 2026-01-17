@@ -374,7 +374,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  notifyContentScriptsAboutAddressChange(newAddress?: string): void {
+  async notifyContentScriptsAboutNetworkChange(
+    origin: string,
+    chainID: string,
+  ): Promise<void> {
+    const defaultWallet = await this.preferenceService.getDefaultWallet()
+    this.openPorts.forEach((port) => {
+      const portOrigin = new URL(port.sender?.url as string).origin
+      if (portOrigin === origin) {
+        port.postMessage({
+          id: "tallyHo",
+          result: {
+            method: "tally_getConfig",
+            defaultWallet,
+            chainId: chainID,
+          },
+        })
+      }
+    })
+  }
+
+  notifyContentScriptsAboutAddressChange(): void {
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
@@ -382,23 +402,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
         await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
           origin,
         )
-      if (await this.checkPermission(origin, chainID)) {
-        port.postMessage({
-          id: "tallyHo",
-          result: {
-            method: "tally_accountChanged",
-            address: [newAddress],
-          },
-        })
-      } else {
-        port.postMessage({
-          id: "tallyHo",
-          result: {
-            method: "tally_accountChanged",
-            address: [],
-          },
-        })
-      }
+      const permission = await this.checkPermission(origin, chainID)
+      port.postMessage({
+        id: "tallyHo",
+        result: {
+          method: "tally_accountChanged",
+          address: permission ? [permission.accountAddress] : [],
+        },
+      })
     })
   }
 

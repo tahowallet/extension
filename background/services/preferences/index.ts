@@ -13,7 +13,14 @@ import {
 } from "./db"
 import BaseService from "../base"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { ETHEREUM, OPTIMISM, ARBITRUM_ONE } from "../../constants"
+import {
+  ETHEREUM,
+  OPTIMISM,
+  ARBITRUM_ONE,
+  POLYGON,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+} from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
@@ -43,13 +50,15 @@ const sameAddressBookEntry = (a: AddressOnNetwork, b: AddressOnNetwork) =>
 const BUILT_IN_CONTRACTS = [
   {
     network: ETHEREUM,
+    // 0x v1 Exchange Proxy
     address: normalizeEVMAddress("0xDef1C0ded9bec7F1a1670819833240f027b25EfF"),
-    name: "0x Router",
+    name: "Swaps Router",
   },
   {
     network: OPTIMISM,
+    // 0x v1 Exchange Proxy
     address: normalizeEVMAddress("0xdef1abe32c034e558cdd535791643c58a13acc10"),
-    name: "0x Router",
+    name: "Swaps Router",
   },
   {
     network: ETHEREUM,
@@ -101,6 +110,42 @@ const BUILT_IN_CONTRACTS = [
     // https://etherscan.io/address/0x011b6e24ffb0b5f5fcc564cf4183c5bbbc96d515
     address: normalizeEVMAddress("0x011B6E24FfB0B5f5fCc564cf4183C5BBBc96D515"),
     name: "🔵 Arbitrum Old Bridge",
+  },
+  {
+    network: ETHEREUM,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
+  },
+  {
+    network: OPTIMISM,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
+  },
+  {
+    network: ARBITRUM_ONE,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
+  },
+  {
+    network: POLYGON,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
+  },
+  {
+    network: AVALANCHE,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
+  },
+  {
+    network: BINANCE_SMART_CHAIN,
+    // 0x Swap v2 Allowance Holder
+    address: normalizeEVMAddress("0x0000000000001fF3684f28c67538d4D072C22734"),
+    name: "Swaps Approval Router",
   },
 ]
 

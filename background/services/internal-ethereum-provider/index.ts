@@ -117,6 +117,7 @@ type Events = ServiceLifecycleEvents & {
   signDataRequest: DAppRequestEvent<MessageSigningRequest, string>
   selectedNetwork: EVMNetwork
   watchAssetRequest: { contractAddress: string; network: EVMNetwork }
+  networkSwitchedForOrigin: { origin: string; network: EVMNetwork }
   // connect
   // disconnect
   // account change
@@ -542,6 +543,10 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       network: supportedNetwork,
     })
     await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
+    this.emitter.emit("networkSwitchedForOrigin", {
+      origin,
+      network: supportedNetwork,
+    })
   }
 
   /**

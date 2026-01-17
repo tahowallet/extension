@@ -2,15 +2,16 @@ import React, { ReactElement, useState } from "react"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import { setSelectedNetwork } from "@tallyho/tally-background/redux-slices/ui"
+import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
 import BonusProgramModal from "../BonusProgram/BonusProgramModal"
 import AccountsNotificationPanel from "../AccountsNotificationPanel/AccountsNotificationPanel"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
-import TopMenuProtocolList from "./TopMenuProtocolList"
+import SelectNetworkMenuContent from "./SelectNetworkMenuContent"
 
-import { useBackgroundDispatch } from "../../hooks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import DAppConnection from "../DAppConnection/DAppConnection"
 
 export default function TopMenu(): ReactElement {
@@ -21,6 +22,7 @@ export default function TopMenu(): ReactElement {
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
 
   const dispatch = useBackgroundDispatch()
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   return (
     <>
@@ -38,8 +40,9 @@ export default function TopMenu(): ReactElement {
           setIsProtocolListOpen(false)
         }}
       >
-        <TopMenuProtocolList
-          onProtocolChange={(network) => {
+        <SelectNetworkMenuContent
+          currentNetwork={currentNetwork}
+          onNetworkChange={(network) => {
             dispatch(setSelectedNetwork(network))
             setIsProtocolListOpen(false)
           }}

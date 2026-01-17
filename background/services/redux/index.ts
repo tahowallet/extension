@@ -100,6 +100,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
   revokePermissionsForAddress,
+  setCurrentNetworkForOrigin,
 } from "../../redux-slices/dapp"
 import logger from "../../lib/logger"
 import {
@@ -1238,6 +1239,16 @@ export default class ReduxService extends BaseService<never> {
         this.store.dispatch(setSelectedNetwork(network))
       },
     )
+    this.internalEthereumProviderService.emitter.on(
+      "networkSwitchedForOrigin",
+      async ({ origin, network }) => {
+        this.store.dispatch(setCurrentNetworkForOrigin({ origin, network }))
+        await this.providerBridgeService.notifyContentScriptsAboutNetworkChange(
+          origin,
+          network.chainID,
+        )
+      },
+    )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -1357,6 +1368,16 @@ export default class ReduxService extends BaseService<never> {
         )
       },
     )
+
+    providerBridgeSliceEmitter.on(
+      "switchNetworkForOrigin",
+      async ({ origin, network }) => {
+        await this.internalEthereumProviderService.switchToSupportedNetwork(
+          origin,
+          network,
+        )
+      },
+    )
   }
 
   async connectPreferenceService(): Promise<void> {
@@ -1462,9 +1483,7 @@ export default class ReduxService extends BaseService<never> {
         await this.islandService.getReferrerStats(addressNetwork)
       this.store.dispatch(setReferrerStats(referrerStats))
 
-      this.providerBridgeService.notifyContentScriptsAboutAddressChange(
-        addressNetwork.address,
-      )
+      this.providerBridgeService.notifyContentScriptsAboutAddressChange()
     })
 
     uiSliceEmitter.on("newSelectedAccountSwitched", async (addressNetwork) => {

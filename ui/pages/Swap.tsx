@@ -365,6 +365,7 @@ export default function Swap(): ReactElement {
             sellAsset,
             buyAsset,
             chainId: currentNetwork.chainID,
+            estimatedPriceImpact: quote.priceDetails?.priceImpact,
           }),
         )
       }

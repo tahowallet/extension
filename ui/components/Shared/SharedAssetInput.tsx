@@ -25,7 +25,7 @@ import SharedAssetItem, {
   AnyAssetWithOptionalAmount,
   hasAmounts,
 } from "./SharedAssetItem"
-import SharedAssetIcon from "./SharedAssetIcon"
+import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import PriceDetails from "./PriceDetails"
 import SharedPanelSwitcher from "./SharedPanelSwitcher"
 import noop from "../../utils/noop"
@@ -134,6 +134,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
     onSelectNFT = noop,
   } = props
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const searchInput = useRef<HTMLInputElement | null>(null)
 
   const filteredAssets =
@@ -160,9 +161,52 @@ function SelectAssetMenuContent<T extends AnyAsset>(
       : assetAlphabeticSorterWithFilter(searchTerm.trim()),
   )
 
+  // Reset selection when search results change
+  useEffect(() => {
+    setSelectedIndex(0)
+  }, [searchTerm])
+
   useEffect(() => {
     searchInput.current?.focus()
   }, [searchInput])
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const maxIndex = sortedFilteredAssets.length - 1
+
+      switch (event.key) {
+        case "ArrowDown":
+          event.preventDefault()
+          setSelectedIndex((prev) => Math.min(prev + 1, maxIndex))
+          break
+        case "ArrowUp":
+          event.preventDefault()
+          setSelectedIndex((prev) => Math.max(prev - 1, 0))
+          break
+        case "n":
+          if (event.ctrlKey) {
+            event.preventDefault()
+            setSelectedIndex((prev) => Math.min(prev + 1, maxIndex))
+          }
+          break
+        case "p":
+          if (event.ctrlKey) {
+            event.preventDefault()
+            setSelectedIndex((prev) => Math.max(prev - 1, 0))
+          }
+          break
+        case "Enter":
+          event.preventDefault()
+          if (sortedFilteredAssets[selectedIndex]) {
+            setSelectedAssetAndClose(sortedFilteredAssets[selectedIndex])
+          }
+          break
+        default:
+          break
+      }
+    },
+    [sortedFilteredAssets, selectedIndex, setSelectedAssetAndClose],
+  )
 
   const shouldDisplayNFTs = nftCollections.length > 0
   const [panelNumber, setPanelNumber] = useState(0)
@@ -190,13 +234,14 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                 placeholder={t("assetInput.search")}
                 spellCheck={false}
                 onChange={(event) => setSearchTerm(event.target.value)}
+                onKeyDown={handleKeyDown}
               />
               <span className="icon_search" />
             </div>
           </div>
           <div className="divider" />
           <ul className="assets_list" data-testid="assets_list">
-            {sortedFilteredAssets.map((assetWithOptionalAmount) => {
+            {sortedFilteredAssets.map((assetWithOptionalAmount, index) => {
               const { asset } = assetWithOptionalAmount
               return (
                 <SharedAssetItem
@@ -210,6 +255,8 @@ function SelectAssetMenuContent<T extends AnyAsset>(
                     setSelectedAssetAndClose(assetWithOptionalAmount)
                   }
                   currentNetwork={currentNetwork}
+                  isSelected={index === selectedIndex}
+                  onMouseMove={() => setSelectedIndex(index)}
                 />
               )
             })}
@@ -312,13 +359,15 @@ function SelectAssetMenuContent<T extends AnyAsset>(
 
 interface SelectedAssetButtonProps {
   asset: Asset
+  network: EVMNetwork
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
   selectedNFT?: NFTCached
 }
 
 function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
-  const { asset, isDisabled, toggleIsAssetMenuOpen, selectedNFT } = props
+  const { asset, network, isDisabled, toggleIsAssetMenuOpen, selectedNFT } =
+    props
 
   if (selectedNFT) {
     const { name, thumbnailURL } = selectedNFT
@@ -369,9 +418,11 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
       onClick={toggleIsAssetMenuOpen}
     >
       <div className="asset_icon_wrap">
-        <SharedAssetIcon
-          logoURL={asset?.metadata?.logoURL}
+        <SharedAssetIconWithNetwork
+          size="medium"
+          logoURL={asset?.metadata?.logoURL ?? ""}
           symbol={asset?.symbol}
+          network={network}
         />
       </div>
 
@@ -627,6 +678,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             <SelectedAssetButton
               isDisabled={isDisabled || disableDropdown}
               asset={selectedAssetAndAmount.asset}
+              network={currentNetwork}
               selectedNFT={selectedNFT}
               toggleIsAssetMenuOpen={toggleIsAssetMenuOpen}
             />

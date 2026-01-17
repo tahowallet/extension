@@ -1,12 +1,19 @@
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { switchNetworkForOrigin } from "@tallyho/tally-background/redux-slices/dapp"
 import classNames from "classnames"
 import React, { ReactElement, useCallback, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
+import { useBackgroundDispatch } from "../../hooks"
 import DAppConnectionDefaultToggle from "../DAppConnection/DAppConnectionDefaultToggle"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedLink from "../Shared/SharedLink"
+import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
-import SharedTooltip from "../Shared/SharedTooltip"
+import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
+import SelectNetworkMenuContent from "./SelectNetworkMenuContent"
+
+const SLIDE_TRANSITION_MS = 445
 
 function ConnectionDAppGuideline({
   isConnected,
@@ -30,7 +37,7 @@ function ConnectionDAppGuideline({
           width: 320,
           borderRadius: 8,
           marginTop: 8,
-          background: "var(--green-120)",
+          background: "var(--hunter-green)",
           "--panel-switcher-border": "var(--green-80)",
           "--header-padding": "16px",
           "--content-fade-in-duration": "200ms",
@@ -198,9 +205,12 @@ function ConnectionDAppGuideline({
 }
 
 export default function TopMenuConnectedDAppInfo(props: {
+  isOpen: boolean
   title: string
   url: string
+  origin: string
   faviconUrl: string
+  network: EVMNetwork | undefined
   isConnected: boolean
   close: () => void
   disconnect: () => void
@@ -209,28 +219,57 @@ export default function TopMenuConnectedDAppInfo(props: {
     keyPrefix: "topMenu.connectedDappInfo",
   })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
-  const { title, url, close, faviconUrl, disconnect, isConnected } = props
+  const {
+    isOpen,
+    title,
+    url,
+    origin,
+    close,
+    faviconUrl,
+    network,
+    disconnect,
+    isConnected,
+  } = props
 
-  const [isClosing, setIsClosing] = useState(false)
+  const dispatch = useBackgroundDispatch()
 
-  const animateThenClose = useCallback(() => {
-    setIsClosing(true)
-    setTimeout(close, 300)
-  }, [close])
+  const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false)
+
+  const handleNetworkChange = useCallback(
+    (newNetwork: EVMNetwork) => {
+      if (origin) {
+        dispatch(switchNetworkForOrigin({ origin, network: newNetwork }))
+      }
+      setIsNetworkSelectorOpen(false)
+    },
+    [dispatch, origin],
+  )
 
   return (
     <div
-      className={classNames("bg", {
-        fade_in: !isClosing,
-        fade_out: isClosing,
+      className={classNames("panel", {
+        closed: !isOpen,
       })}
     >
-      <div className="window">
+      <SharedSlideUpMenu
+        isOpen={isNetworkSelectorOpen}
+        isScrollable
+        style={{ display: "flex", flexDirection: "column" }}
+        close={() => {
+          setIsNetworkSelectorOpen(false)
+        }}
+      >
+        <SelectNetworkMenuContent
+          currentNetwork={network}
+          onNetworkChange={handleNetworkChange}
+        />
+      </SharedSlideUpMenu>
+      <div className="panel_content">
         <button
           type="button"
           className="icon_close"
           aria-label={tShared("close")}
-          onClick={animateThenClose}
+          onClick={close}
         />
         <div className="content">
           <h1>{t(`${isConnected ? "dAppTitle" : "dappConnections"}`)}</h1>
@@ -239,69 +278,78 @@ export default function TopMenuConnectedDAppInfo(props: {
               visible: isConnected,
             })}
           >
-            <div className="favicon" />
-            <div className="title text ellipsis" title={title}>
-              {title}
+            <div className="dapp_header">
+              <div className="favicon" />
+              <div className="dapp_details">
+                <div className="url ellipsis" title={url}>
+                  {url}
+                </div>
+                <div className="title ellipsis" title={title}>
+                  {title}
+                </div>
+              </div>
             </div>
-            <div className="url text ellipsis" title={url}>
-              {url}
-            </div>
-            <SharedTooltip
-              width={120}
-              verticalPosition="bottom"
-              horizontalPosition="center"
-              verticalShift={-20}
-              type="dark"
-              IconComponent={() => (
+            <div className="network_row">
+              {network !== undefined && (
                 <button
-                  aria-label="disconnect"
                   type="button"
-                  className="disconnect_icon"
-                  onClick={disconnect}
-                />
+                  className="network_selector"
+                  onClick={() => setIsNetworkSelectorOpen(true)}
+                >
+                  <span className="network_label">
+                    {t("connectedOnNetworkLabel")}
+                  </span>
+                  <SharedNetworkIcon network={network} size={16} />
+                  <span className="network_name" title={network.name}>
+                    {network.name}
+                  </span>
+                  <span className="icon_chevron_down" />
+                </button>
               )}
-            >
-              {t("disconnectDapp")}
-            </SharedTooltip>
+              <button
+                type="button"
+                className="disconnect_button"
+                onClick={disconnect}
+              >
+                <div className="disconnect_icon" />
+                {t("disconnectDapp")}
+              </button>
+            </div>
           </div>
         </div>
         <ConnectionDAppGuideline isConnected={isConnected} />
       </div>
-      <button
-        aria-label={tShared("modalClose")}
-        type="button"
-        className="void_space"
-        onClick={animateThenClose}
-      />
       <style jsx>{`
-        .bg {
+        .panel {
+          width: 100%;
+          height: calc(100% - 44px);
+          background-color: var(--green-120);
+          position: fixed;
+          top: 44px;
+          left: 0;
+          z-index: 998;
+          overflow: hidden;
+          clip-path: inset(0 0 0 0);
+          transition: clip-path cubic-bezier(0.19, 1, 0.22, 1)
+            ${SLIDE_TRANSITION_MS}ms;
+        }
+        .panel.closed {
+          clip-path: inset(0 0 100% 0);
+          pointer-events: none;
+        }
+        .panel_content {
           width: 100%;
           height: 100%;
-          border-radius: 16px;
-          background-color: rgba(0, 37, 34, 0.71);
-          position: fixed;
-          z-index: 99999;
-          top: 55px;
-          left: 0px;
-        }
-        .window {
-          width: 352px;
-          max-height: 90%;
-          box-shadow:
-            0 10px 12px rgba(0, 20, 19, 0.34),
-            0 14px 16px rgba(0, 20, 19, 0.24),
-            0 24px 24px rgba(0, 20, 19, 0.14);
-          border-radius: 8px;
-          background-color: var(--green-95);
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin: 0 auto;
-          justify-content: space-between;
-          padding-bottom: 16px;
+          padding: 16px;
+          box-sizing: border-box;
+          overflow-y: auto;
         }
         .content {
           width: 100%;
+          max-width: 352px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -312,18 +360,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 12px;
           height: 12px;
           position: absolute;
-          right: 33px;
+          right: 24px;
+          top: 24px;
           background-color: var(--green-20);
           z-index: 1;
-          margin-top: 17px;
         }
-        .void_space {
-          height: 100%;
-          width: 100%;
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: -1;
+        .icon_close:hover {
+          background-color: #fff;
         }
         h1 {
           color: var(--${isConnected ? "success" : "green-20"});
@@ -331,6 +374,14 @@ export default function TopMenuConnectedDAppInfo(props: {
           font-weight: 400;
           line-height: 24px;
           text-align: center;
+          margin: 0 0 16px;
+        }
+        .dapp_header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          box-sizing: border-box;
         }
         .favicon {
           background: url("${faviconUrl === ""
@@ -340,42 +391,104 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 48px;
           height: 48px;
           border-radius: 12px;
-          margin-top: 5px;
           flex-shrink: 0;
         }
+        .dapp_details {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-width: 0;
+          flex: 1;
+          height: 40px;
+        }
         .title {
-          color: #fff;
+          color: var(--green-40);
           font-weight: 500;
-          margin-top: 10px;
+          font-size: 14px;
         }
         .url {
-          color: var(--green-40);
-          margin-top: 5px;
-        }
-        .text {
+          color: #fff;
           font-size: 16px;
-          width: calc(100% - 16px);
-          padding: 0 8px;
-          text-align: center;
+          font-weight: 500;
+        }
+        .network_row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 20px 0 16px;
+          box-sizing: border-box;
+          gap: 16px;
+        }
+        .network_selector {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--green-40);
+          font-size: 14px;
+          min-width: 0;
+        }
+        .network_selector:hover {
+          color: #fff;
+        }
+        .network_selector:hover .network_name {
+          color: #fff;
+        }
+        .network_selector:hover .icon_chevron_down {
+          background-color: #fff;
+        }
+        .network_label {
+          color: var(--green-40);
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        .network_name {
+          color: #fff;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .icon_chevron_down {
+          mask-image: url("./images/chevron_down.svg");
+          mask-size: 15px 8px;
+          width: 15px;
+          height: 8px;
+          background-color: var(--green-40);
+          flex-shrink: 0;
+        }
+        .disconnect_button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: var(--error);
+          font-size: 14px;
+          font-weight: 500;
+          flex-shrink: 0;
+        }
+        .disconnect_button:hover {
+          color: var(--error-80);
+        }
+        .disconnect_button:hover .disconnect_icon {
+          background-color: var(--error-80);
         }
         .disconnect_icon {
-          background: url("./images/disconnect@2x.png");
-          background-size: cover;
+          mask-image: url("./images/disconnect@2x.png");
+          mask-size: cover;
           width: 16px;
           height: 18px;
-          margin: 16px 0 40px;
+          background-color: var(--error);
         }
         .dAppInfo_wrap {
           width: 100%;
           display: flex;
           flex-flow: column;
-          align-items: center;
+          align-items: flex-start;
           max-height: 0;
           overflow: hidden;
           transition: max-height 250ms ease-out;
         }
         .dAppInfo_wrap.visible {
-          max-height: 200px;
+          max-height: 250px;
           transition: max-height 250ms ease-in;
         }
       `}</style>

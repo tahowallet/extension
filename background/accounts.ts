@@ -32,7 +32,7 @@ export type AccountBalance = {
    * A loose attempt at tracking balance data provenance, in case providers
    * disagree and need to be disambiguated.
    */
-  dataSource: "alchemy" | "local"
+  dataSource: "alchemy" | "generic-rpc" | "local"
 }
 
 /**

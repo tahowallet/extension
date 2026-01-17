@@ -971,10 +971,8 @@ export default class ChainService extends BaseService<Events> {
   }: AddressOnNetwork): Promise<AccountBalance> {
     const normalizedAddress = normalizeEVMAddress(address)
 
-    const balance =
-      await this.providerForNetworkOrThrow(network).getBalance(
-        normalizedAddress,
-      )
+    const provider = this.providerForNetworkOrThrow(network)
+    const balance = await provider.getBalance(normalizedAddress)
 
     const trackedAccounts = await this.getAccountsToTrack()
     const allTrackedAddresses = new Set(
@@ -989,7 +987,7 @@ export default class ChainService extends BaseService<Events> {
         asset: await this.db.getBaseAssetForNetwork(network.chainID),
         amount: balance.toBigInt(),
       },
-      dataSource: "alchemy", // TODO do this properly (eg provider isn't Alchemy)
+      dataSource: provider.supportsAlchemy ? "alchemy" : "generic-rpc",
       retrievedAt: Date.now(),
     }
 

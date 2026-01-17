@@ -70,17 +70,23 @@ export default class AssetDataHelper {
   async getTokenBalances(
     addressOnNetwork: AddressOnNetwork,
     smartContractAddresses?: HexString[],
-  ): Promise<SmartContractAmount[]> {
+  ): Promise<{
+    balances: SmartContractAmount[]
+    dataSource: "alchemy" | "generic-rpc" | "local"
+  }> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network,
     )
     if (typeof provider === "undefined") {
-      return []
+      return { balances: [], dataSource: "local" }
     }
 
     try {
       if (provider.supportsAlchemy) {
-        return await getAlchemyTokenBalances(provider, addressOnNetwork)
+        return {
+          balances: await getAlchemyTokenBalances(provider, addressOnNetwork),
+          dataSource: "alchemy",
+        }
       }
     } catch (error) {
       logger.debug(
@@ -91,11 +97,14 @@ export default class AssetDataHelper {
     }
 
     try {
-      return await getTokenBalances(
-        addressOnNetwork,
-        smartContractAddresses || [],
-        provider,
-      )
+      return {
+        balances: await getTokenBalances(
+          addressOnNetwork,
+          smartContractAddresses || [],
+          provider,
+        ),
+        dataSource: "generic-rpc",
+      }
     } catch (error) {
       logger.debug(
         "Problem resolving asset balances; network may not support it",
@@ -136,10 +145,10 @@ export default class AssetDataHelper {
           amount: BigInt(balance.toString()),
         }
       })
-      const resolvedBalances = Promise.all(balances)
-      return resolvedBalances
+      const resolvedBalances = await Promise.all(balances)
+      return { balances: resolvedBalances, dataSource: "generic-rpc" }
     }
-    return []
+    return { balances: [], dataSource: "local" }
   }
 
   async getTokenMetadata(
