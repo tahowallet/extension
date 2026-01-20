@@ -2,6 +2,7 @@ import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
 import { DeviceModelId } from "@ledgerhq/devices"
+import { getLedgerDevices } from "@ledgerhq/hw-transport-webusb/lib/webusb"
 import {
   serialize,
   UnsignedTransaction,
@@ -32,7 +33,6 @@ enum LedgerType {
   UNKNOWN,
   LEDGER_NANO_S,
   LEDGER_NANO_X,
-  LEDGER_NANO_X_1,
   LEDGER_NANO_S_PLUS,
 }
 
@@ -44,17 +44,7 @@ export type LedgerAccountSigner = {
   path: string
 }
 
-export const LedgerProductDatabase = {
-  LEDGER_NANO_S: { productId: 0x1015 },
-  LEDGER_NANO_X: { productId: 0x4015 },
-  LEDGER_NANO_X_1: { productId: 0x4000 },
-  LEDGER_NANO_S_PLUS: { productId: 0x5015 },
-}
-
 export const isLedgerSupported = typeof navigator.usb === "object"
-
-const TestedProductId = (productId: number): boolean =>
-  Object.values(LedgerProductDatabase).some((e) => e.productId === productId)
 
 /**
  * Metadata details about the display of a given Ledger device.
@@ -73,7 +63,6 @@ const DisplayDetailsByLedgerType: {
   [LedgerType.UNKNOWN]: { messageSigningDisplayLength: 0 },
   [LedgerType.LEDGER_NANO_S]: { messageSigningDisplayLength: 99 },
   [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
-  [LedgerType.LEDGER_NANO_X_1]: { messageSigningDisplayLength: 255 },
   [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
 }
 
@@ -111,6 +100,25 @@ type Events = ServiceLifecycleEvents & {
 }
 
 export const idDerivationPath = "44'/60'/0'/0/0"
+
+/**
+ * Retrieves information about the currently open application
+ * from the connected ledger
+ *
+ * Extracted from @ledgerhq/live-common
+ */
+async function tryCheckAppIsEthereum(transport: TransportWebUSB) {
+  const r = await transport.send(0xb0, 0x01, 0x00, 0x00)
+
+  const format = r[0]
+  if (format !== 1) {
+    return false
+  }
+  const nameLength = r[1]
+  const name = r.slice(2, 2 + nameLength).toString("ascii")
+
+  return name === "Ethereum"
+}
 
 async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
@@ -152,6 +160,29 @@ async function generateLedgerId(
 }
 
 /**
+ * This prevents an issue with MV3 and event handlers registered async during
+ * service start by setting up proxy listeners at worker script evaluation
+ */
+
+const connectListeners: ((ev: USBConnectionEvent) => void | Promise<void>)[] =
+  []
+
+const disconnectListeners: ((
+  ev: USBConnectionEvent,
+) => void | Promise<void>)[] = []
+
+const runConnectHandlers = (ev: USBConnectionEvent) => {
+  connectListeners.forEach((fn) => fn(ev))
+}
+
+const runDisconnectHandlers = (ev: USBConnectionEvent) => {
+  disconnectListeners.forEach((fn) => fn(ev))
+}
+
+navigator.usb.addEventListener("connect", runConnectHandlers)
+navigator.usb.addEventListener("disconnect", runDisconnectHandlers)
+
+/**
  * The LedgerService is responsible for exposing the functionality of
  * Ledger devices in a digestible form by other services
  *
@@ -181,8 +212,8 @@ export default class LedgerService extends BaseService<Events> {
   private constructor(private db: LedgerDatabase) {
     super()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    connectListeners.push(this.#handleUSBConnect)
+    disconnectListeners.push(this.#handleUSBDisconnect)
 
     // Block serial operations until the service is started, in case a
     // connection or disconnection event occurs to soon.
@@ -203,14 +234,20 @@ export default class LedgerService extends BaseService<Events> {
     return newOperationPromise
   }
 
-  async onConnection(productId: number): Promise<void> {
+  async onConnection(): Promise<void> {
     return this.runSerialized(async () => {
-      if (!TestedProductId(productId)) {
-        return
-      }
-
       try {
-        this.transport = await TransportWebUSB.create()
+        // Connect to the first ledger available
+        const transport = await TransportWebUSB.openConnected()
+        if (!transport) {
+          return
+        }
+
+        if (!(await tryCheckAppIsEthereum(transport))) {
+          throw new Error("Ledger open on wrong app")
+        }
+
+        this.transport = transport
 
         const eth = new Eth(this.transport)
 
@@ -262,16 +299,13 @@ export default class LedgerService extends BaseService<Events> {
     })
   }
 
-  #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
+  #handleUSBConnect = async (_: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
-    if (!TestedProductId(event.device.productId)) {
-      return
-    }
 
-    this.onConnection(event.device.productId)
+    this.onConnection()
   }
 
   #handleUSBDisconnect =
@@ -305,8 +339,12 @@ export default class LedgerService extends BaseService<Events> {
     navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
   }
 
+  /**
+   * Attempts to refresh the connected ledger state
+   */
   async refreshConnectedLedger(): Promise<string | null> {
-    const usbDeviceArray = await navigator.usb.getDevices()
+    // Get all ledger paired devices
+    const usbDeviceArray = await getLedgerDevices()
 
     this.emitter.emit("usbDeviceCount", usbDeviceArray.length)
 
@@ -315,7 +353,7 @@ export default class LedgerService extends BaseService<Events> {
     }
 
     if (usbDeviceArray.length === 1) {
-      await this.onConnection(usbDeviceArray[0].productId)
+      await this.onConnection()
     }
 
     return this.#currentLedgerId

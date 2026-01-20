@@ -1,7 +1,6 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
-import { ledgerUSBVendorId } from "@ledgerhq/devices"
-import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
+import { requestLedgerDevice } from "@ledgerhq/hw-transport-webusb/lib/webusb"
 import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
@@ -11,13 +10,6 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../../../hooks"
 import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
 import OnboardingRoutes from "../Routes"
-
-const filters = Object.values(LedgerProductDatabase).map(
-  ({ productId }): USBDeviceFilter => ({
-    vendorId: ledgerUSBVendorId,
-    productId,
-  }),
-)
 
 export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<"1-prepare" | "2-connect">("1-prepare")
@@ -57,9 +49,9 @@ export default function Ledger(): ReactElement {
             try {
               // Open popup for testing
               // TODO: use result (for multiple devices)?
-              await navigator.usb.requestDevice({
-                filters,
-              })
+              setPhase("2-connect")
+              setConnecting(true)
+              await requestLedgerDevice()
             } catch {
               // Timeout is needed to respond to clicks to,
               // e.g., "I don't see my device".
@@ -73,9 +65,6 @@ export default function Ledger(): ReactElement {
               // connectLedger fail later.
             }
 
-            setPhase("2-connect")
-
-            setConnecting(true)
             try {
               await dispatch(connectLedger())
             } finally {
