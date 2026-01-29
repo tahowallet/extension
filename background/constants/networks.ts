@@ -13,6 +13,11 @@ import {
   RBTC,
   ZK_SYNC_ETH,
   MEZO_BTC,
+  MEZO_MAINNET_BTC,
+  BOB_ETH,
+  CITREA_BTC,
+  BOTANIX_BTC,
+  CORE_TOKEN,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -110,9 +115,50 @@ export const MEZO_TESTNET: EVMNetwork = {
   family: "EVM",
 }
 
+export const MEZO: EVMNetwork = {
+  name: "Mezo",
+  baseAsset: MEZO_MAINNET_BTC,
+  chainID: "31612",
+  family: "EVM",
+}
+
+export const BOB: EVMNetwork = {
+  name: "BOB",
+  baseAsset: BOB_ETH,
+  chainID: "60808",
+  family: "EVM",
+}
+
+export const CITREA: EVMNetwork = {
+  name: "Citrea",
+  baseAsset: CITREA_BTC,
+  chainID: "4114",
+  family: "EVM",
+}
+
+export const BOTANIX: EVMNetwork = {
+  name: "Botanix",
+  baseAsset: BOTANIX_BTC,
+  chainID: "3637",
+  family: "EVM",
+}
+
+export const CORE: EVMNetwork = {
+  name: "Core",
+  baseAsset: CORE_TOKEN,
+  chainID: "1116",
+  family: "EVM",
+  coingeckoPlatformID: "coredaoorg",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
   ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
+  MEZO,
+  BOB,
+  CITREA,
+  BOTANIX,
+  CORE,
   POLYGON,
   OPTIMISM,
   SEPOLIA,
@@ -168,6 +214,11 @@ export const NETWORK_BY_CHAIN_ID = {
   [FORK.chainID]: FORK,
   [ZK_SYNC.chainID]: ZK_SYNC,
   [MEZO_TESTNET.chainID]: MEZO_TESTNET,
+  [MEZO.chainID]: MEZO,
+  [BOB.chainID]: BOB,
+  [CITREA.chainID]: CITREA,
+  [BOTANIX.chainID]: BOTANIX,
+  [CORE.chainID]: CORE,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
@@ -222,6 +273,26 @@ export const CHAIN_ID_TO_RPC_URLS: {
   [BINANCE_SMART_CHAIN.chainID]: [
     "https://bsc.drpc.org",
     "https://bsc-dataseed.binance.org",
+  ],
+  [MEZO.chainID]: [
+    "https://mezo.drpc.org",
+    "https://rpc-http.mezo.boar.network",
+    "https://mainnet.mezo.public.validationcloud.io",
+  ],
+  [BOB.chainID]: [
+    "https://rpc.gobob.xyz",
+    "https://bob.drpc.org",
+    "https://bob-mainnet.public.blastapi.io",
+  ],
+  [CITREA.chainID]: ["https://rpc.mainnet.citrea.xyz"],
+  [BOTANIX.chainID]: [
+    "https://rpc.botanixlabs.com",
+    "https://rpc.ankr.com/botanix_mainnet",
+  ],
+  [CORE.chainID]: [
+    "https://rpc.coredao.org",
+    "https://1rpc.io/core",
+    "https://core.drpc.org",
   ],
 }
 
