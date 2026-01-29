@@ -106,8 +106,39 @@ export const MEZO_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   coinType: 0,
 }
 
+export const MEZO_MAINNET_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.MEZO_MAINNET_BTC,
+  coinType: 0,
+}
+
+export const BOB_ETH: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.BOB_ETH,
+  ...ETH_DATA,
+}
+
+export const CITREA_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.CITREA_BTC,
+  coinType: 0,
+}
+
+export const BOTANIX_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.BOTANIX_BTC,
+  coinType: 0,
+}
+
+export const CORE_TOKEN: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...BASE_ASSETS_BY_CUSTOM_NAME.CORE_TOKEN,
+  coinType: coinTypesByAssetSymbol.CORE,
+  metadata: {
+    coinGeckoID: "coredaoorg",
+    tokenLists: [],
+    websiteURL: "https://coredao.org",
+  },
+}
+
 export const BUILT_IN_NETWORK_BASE_ASSETS = [
   MEZO_BTC,
+  MEZO_MAINNET_BTC,
   ETH,
   MATIC,
   RBTC,
@@ -118,4 +149,8 @@ export const BUILT_IN_NETWORK_BASE_ASSETS = [
   ARBITRUM_SEPOLIA_ETH,
   AVAX,
   BNB,
+  BOB_ETH,
+  CITREA_BTC,
+  BOTANIX_BTC,
+  CORE_TOKEN,
 ]
