@@ -10,6 +10,11 @@ import {
   POLYGON,
   ROOTSTOCK,
   MEZO_TESTNET,
+  MEZO,
+  BOB,
+  CITREA,
+  BOTANIX,
+  CORE,
 } from "@tallyho/tally-background/constants"
 import { NetworkFeeTypeChosen } from "@tallyho/tally-background/redux-slices/transaction-construction"
 import { i18n } from "../_locales/i18n"
@@ -45,6 +50,26 @@ export const blockExplorer = {
   [ARBITRUM_NOVA.chainID]: {
     title: "Arbiscan",
     url: "https://nova.arbiscan.io/",
+  },
+  [MEZO.chainID]: {
+    title: "Mezo Explorer",
+    url: "https://explorer.mezo.org",
+  },
+  [BOB.chainID]: {
+    title: "BOB Explorer",
+    url: "https://explorer.gobob.xyz",
+  },
+  [CITREA.chainID]: {
+    title: "Citrea Explorer",
+    url: "https://explorer.mainnet.citrea.xyz",
+  },
+  [BOTANIX.chainID]: {
+    title: "Botanix Explorer",
+    url: "https://explorer.botanixlabs.com",
+  },
+  [CORE.chainID]: {
+    title: "Core Scan",
+    url: "https://scan.coredao.org",
   },
 }
 

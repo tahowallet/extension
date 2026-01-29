@@ -72,6 +72,11 @@ export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
   "333999": "https://icons.llamao.fi/icons/chains/rsz_polis.jpg",
   "11297108109": "https://icons.llamao.fi/icons/chains/rsz_palm.jpg",
   "420420": "https://icons.llamao.fi/icons/chains/rsz_kekchain.jpg",
+  "31612": "https://icons.llamao.fi/icons/chains/rsz_mezo.jpg",
+  "60808": "https://icons.llamao.fi/icons/chains/rsz_bob.jpg",
+  "4114": "https://icons.llamao.fi/icons/chains/rsz_citrea.jpg",
+  "3637": "https://icons.llamao.fi/icons/chains/rsz_botanix.jpg",
+  "1116": "https://icons.llamao.fi/icons/chains/rsz_core.jpg",
 }
 
 export const NETWORK_COLORS_FALLBACK = [
