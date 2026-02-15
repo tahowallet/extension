@@ -45,7 +45,7 @@ export default function Wallet(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const history = useHistory()
 
-  //  accountLoading, hasWalletErrorCode
+  // accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)

@@ -82,7 +82,7 @@ const getPoolAPR = async ({
   // Fetch underlying yearn vault APR
   const yearnVaultAddress = await huntingGroundContract.vault()
   const yearnVaultAPYPercent = await getYearnVaultAPY(yearnVaultAddress)
-  //  What is the total value of all locked tokens
+  // What is the total value of all locked tokens
   const tokensStakedValue = tokensStaked
     .mul(BigNumber.from(singleTokenPrice))
     .div(BigNumber.from("10").pow(10 + asset.decimals))

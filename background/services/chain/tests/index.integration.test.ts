@@ -385,7 +385,7 @@ describe("ChainService", () => {
       const LAST_SEEN_NONCE = 12
       // Approval transaction
       const NONCE = 11
-      //  Nonce for chain
+      // Nonce for chain
       const CHAIN_NONCE = 10
 
       const chainServiceExternalized =

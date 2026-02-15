@@ -37,8 +37,8 @@ export const account1: Account = {
   jsonBody: process.env.E2E_TEST_ONLY_WALLET_JSON_BODY,
   jsonPassword: process.env.E2E_TEST_ONLY_WALLET_JSON_PASSWORD,
 }
-// The account2 is the he testertesting.eth account. It's used for manual
-// testing, so it's balance may fluctuate. It can be used to test features that
+// The account2 is the testertesting.eth account. It's used for manual
+// testing, so its balance may fluctuate. It can be used to test features that
 // don't depend on the constant balance or state of the assets.
 export const account2 = {
   address: "0x6e80164ea60673d64d5d6228beb684a1274bb017",
