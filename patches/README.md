@@ -65,18 +65,31 @@ fix version.
 
 ## `webext-redux+4.0.0.patch`
 
-**Purpose:** Three related bug fixes for the Redux store proxy bridge used to
-share state between the background service worker and UI pages.
+**Purpose:** Three bug fixes and one security hardening for the Redux store
+proxy bridge used to share state between the background service worker and UI
+pages.
 
-1. **Message deduplication:** Tracks in-flight dispatch IDs in a `Set` and
-   silently drops duplicate messages, preventing double-state-updates when the
-   service worker is woken multiple times.
-2. **Race condition guard (`readyResolved`):** Prevents the "store ready"
-   promise from resolving multiple times if the background page sends a
-   ready-signal before the UI has finished subscribing.
+1. **Message deduplication:** Tracks in-flight message IDs in a `Set` and
+   silently drops duplicates, preventing double-state-updates when the service
+   worker is woken multiple times by the same broadcast.
+2. **Race condition guard (`readyResolved`):** Prevents `patchState` from
+   running before the initial state has been hydrated, and prevents the "store
+   ready" promise from resolving more than once.
 3. **Consistent deserialiser application:** Ensures the configured deserialiser
-   function is applied uniformly to all incoming state patches, not just the
-   initial state hydration.
+   is applied uniformly to all incoming state (initial hydration, patches, and
+   dispatch responses), not just the initial fetch.
+4. **Sender origin validation:** `filterStateMessages` and
+   `filterActionMessages` now verify that the message sender URL starts with
+   `browserAPI.runtime.getURL("")` — the exact `chrome-extension://ID/` (or
+   `moz-extension://ID/`) origin of this extension. This blocks two threat
+   actors:
+   - _Foreign extension_: another installed extension cannot dispatch Redux
+     actions (e.g. `exportPrivateKey`) by guessing the channel name. This
+     closes the gap on Firefox where `externally_connectable` has no effect.
+   - _Compromised content script_: a content script (even one injected by this
+     extension) carries the host-page URL, not the extension origin, so it
+     cannot reach the background Redux store even if the script is tampered
+     with.
 
 **Upstream issue:** These are accumulated bug fixes that have not been merged
 upstream. The `webext-redux` project is largely unmaintained at v4.
