@@ -779,6 +779,19 @@ export default class ProviderBridgeService extends BaseService<Events> {
 
   async connectPort(port: Runtime.Port) {
     if (port.name === EXTERNAL_PORT_NAME && port.sender?.url) {
+      // Reject connections from other extensions masquerading as our content script
+      if (
+        port.sender.id !== undefined &&
+        port.sender.id !== browser.runtime.id
+      ) {
+        logger.error(
+          "Rejected port connection from unexpected extension ID:",
+          port.sender.id,
+        )
+        port.disconnect()
+        return
+      }
+
       port.onMessage.addListener((event) => {
         if (
           !event ||
