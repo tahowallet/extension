@@ -248,6 +248,7 @@ describe("InternalSignerService", () => {
     it("should be able to export private key", async () => {
       const privateKey = await internalSignerService.exportPrivateKey(
         PK_WALLET_MOCK.address,
+        "test",
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey)
@@ -255,6 +256,7 @@ describe("InternalSignerService", () => {
     it("should be able to export mnemonic", async () => {
       const mnemonic = await internalSignerService.exportMnemonic(
         HD_WALLET_MOCK.addresses[0],
+        "test",
       )
 
       expect(mnemonic).toBe(HD_WALLET_MOCK.mnemonic)
@@ -262,6 +264,7 @@ describe("InternalSignerService", () => {
     it("should be able to export private key from HD wallet addresses", async () => {
       const privateKey = await internalSignerService.exportPrivateKey(
         HD_WALLET_MOCK.addresses[0],
+        "test",
       )
 
       expect(privateKey).toBe(PK_WALLET_MOCK.privateKey) // first address from both mocks is the same
@@ -271,10 +274,16 @@ describe("InternalSignerService", () => {
 
       const errorMessage = "InternalSignerService must be unlocked."
       const exportMnemonic = async () => {
-        await internalSignerService.exportMnemonic(HD_WALLET_MOCK.addresses[0])
+        await internalSignerService.exportMnemonic(
+          HD_WALLET_MOCK.addresses[0],
+          "test",
+        )
       }
       const exportPrivateKey = async () => {
-        await internalSignerService.exportPrivateKey(PK_WALLET_MOCK.address)
+        await internalSignerService.exportPrivateKey(
+          PK_WALLET_MOCK.address,
+          "test",
+        )
       }
 
       expect(exportMnemonic()).rejects.toThrowError(errorMessage)

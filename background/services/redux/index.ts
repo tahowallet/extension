@@ -1632,12 +1632,18 @@ export default class ReduxService extends BaseService<never> {
     return this.internalSignerService.unlock(password)
   }
 
-  async exportMnemonic(address: HexString): Promise<string | null> {
-    return this.internalSignerService.exportMnemonic(address)
+  async exportMnemonic(
+    address: HexString,
+    password: string,
+  ): Promise<string | null> {
+    return this.internalSignerService.exportMnemonic(address, password)
   }
 
-  async exportPrivateKey(address: HexString): Promise<string | null> {
-    return this.internalSignerService.exportPrivateKey(address)
+  async exportPrivateKey(
+    address: HexString,
+    password: string,
+  ): Promise<string | null> {
+    return this.internalSignerService.exportPrivateKey(address, password)
   }
 
   async importSigner(signerRaw: SignerImportMetadata): Promise<string | null> {

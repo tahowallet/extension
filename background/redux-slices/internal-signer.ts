@@ -161,12 +161,16 @@ export const createPassword = createBackgroundAsyncThunk(
 
 export const exportMnemonic = createBackgroundAsyncThunk(
   "internalSigner/exportMnemonic",
-  async (address: HexString, { extra: { main } }) =>
-    main.exportMnemonic(address),
+  async (
+    { address, password }: { address: HexString; password: string },
+    { extra: { main } },
+  ) => main.exportMnemonic(address, password),
 )
 
 export const exportPrivateKey = createBackgroundAsyncThunk(
   "internalSigner/exportPrivateKey",
-  async (address: HexString, { extra: { main } }) =>
-    main.exportPrivateKey(address),
+  async (
+    { address, password }: { address: HexString; password: string },
+    { extra: { main } },
+  ) => main.exportPrivateKey(address, password),
 )
