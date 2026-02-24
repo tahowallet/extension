@@ -7,37 +7,6 @@
   "repository": "git@github.com:thesis/tally-extension.git",
   "author": "Matt Luongo <matt@thesis.co>",
   "license": "GPL-3.0",
-  "jest": {
-    "reporters": [
-      [
-        "github-actions",
-        {
-          "silent": false
-        }
-      ],
-      "default"
-    ],
-    "setupFiles": [
-      "./setup-extension-mock.ts",
-      "fake-indexeddb/auto",
-      "./setupJest.ts"
-    ],
-    "setupFilesAfterEnv": [
-      "./setupJest.env.ts",
-      "./ui/setupJest.env.ts"
-    ],
-    "testEnvironment": "jsdom",
-    "transformIgnorePatterns": [
-      "node_modules/(?!@walletconnect/)"
-    ],
-    "moduleNameMapper": {
-      "^dexie$": "<rootDir>/node_modules/dexie",
-      "^@walletconnect/utils$": "<rootDir>/node_modules/@walletconnect/utils",
-      "^@walletconnect/((?!types))$": "<rootDir>/node_modules/@walletconnect/$1",
-      "^multiformats(.*)": "<rootDir>/node_modules/multiformats$1",
-      "^uint8arrays(.*)": "<rootDir>/node_modules/uint8arrays$1"
-    }
-  },
   "keywords": [
     "ethereum",
     "bitcoin",
@@ -55,16 +24,14 @@
     "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
-    "lint:config": "prettier -c '**/*.@(json|yaml|toml|yml)'",
-    "lint:config:fix": "prettier -w '**/*.@(json|yaml|toml|yml)'",
-    "lint:docs": "prettier -c '**/*.md'",
-    "lint:docs:fix": "prettier -w '**/*.md'",
-    "lint:js": "eslint .",
-    "lint:js:fix": "eslint . --fix",
+    "lint:js": "oxlint --type-aware .",
+    "lint:js:fix": "oxlint --type-aware --fix .",
+    "lint:format": "oxfmt --check .",
+    "lint:format:fix": "oxfmt --write .",
     "test": "bun run test:unit && bun run test:integration && bun run test:ui",
-    "test:integration": "echo \"> Running Integration Tests\" && jest \"integration.test.ts\" --forceExit --runInBand",
-    "test:unit": "echo \"> Running Unit Tests\" && jest \"unit.test.ts\" --forceExit",
-    "test:ui": "echo \"> Running UI Tests\" && jest \".test.tsx\" --forceExit",
+    "test:integration": "echo \"> Running Integration Tests\" && bash scripts/run-tests-isolated.sh integration.test",
+    "test:unit": "echo \"> Running Unit Tests\" && bun test \"unit.test\"",
+    "test:ui": "echo \"> Running UI Tests\" && bash scripts/run-tests-isolated.sh .test.tsx",
     "test:e2e": "echo \"> Running e2e Tests\" && run-s e2e:*",
     "e2e:regular": "echo \"> Running base e2e Tests\" && playwright test --grep-invert '@testnet|@fork'",
     "e2e:testnet": "echo \"> Running testnet e2e Tests\" && playwright test --grep @testnet",
@@ -97,8 +64,7 @@
     "webextension-polyfill": "^0.12.0"
   },
   "resolutions": {
-    "@ledgerhq/devices": "8.10.0",
-    "@thesis-co/prettier-config": "github:thesis/prettier-config"
+    "@ledgerhq/devices": "8.10.0"
   },
   "patchedDependencies": {
     "jsan@3.1.14": "patches/jsan@3.1.14.patch",
@@ -112,39 +78,27 @@
     "@babel/preset-typescript": "^7.22.11",
     "@playwright/test": "^1.57.0",
     "@redux-devtools/cli": "^2.0.0",
-    "@thesis-co/eslint-config": "^0.6.1",
     "@types/archiver": "^5.1.0",
+    "@types/bun": "^1.0.0",
     "@types/firefox-webext-browser": "^120.0.4",
-    "@types/jest": "^29.5.0",
     "@types/react-router-dom": "^5.3.1",
     "@types/remote-redux-devtools": "^0.5.5",
     "@types/sharp": "^0.32.0",
-    "@typescript-eslint/eslint-plugin": "^6.5.0",
-    "@typescript-eslint/parser": "^6.5.0",
     "archiver": "^5.3.0",
     "crypto-browserify": "^3.12.1",
     "dedent-js": "^1.0.1",
     "dexie": "^3.0.4",
     "dotenv-defaults": "^2.0.2",
-    "eslint": "^8.48.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-airbnb-typescript": "^18.0.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-no-only-tests": "^3.3.0",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "ethers": "5.7.2",
+    "fake-indexeddb": "^4.0.0",
+    "happy-dom": "^17.0.0",
     "install": "^0.13.0",
-    "jest": "^29.5.0",
-    "jest-environment-jsdom": "^29.5.0",
     "jest-webextension-mock": "^3.7.22",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.0.2",
+    "oxfmt": "^0.35.0",
+    "oxlint": "^1.50.0",
+    "oxlint-tsgolint": "^0.15.0",
     "process": "^0.11.10",
     "sharp": "^0.34.5",
     "stream-browserify": "^3.0.0",

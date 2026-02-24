@@ -1,0 +1,9 @@
+[test]
+preload = [
+  "./setupBun.dom.ts",
+  "./setup-extension-mock.ts",
+  "fake-indexeddb/auto",
+  "./setupBun.ts",
+  "./setupBun.env.ts",
+  "./ui/setupBun.env.ts",
+]
