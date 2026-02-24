@@ -209,10 +209,12 @@ export default class TransactionsHelper {
       `),
     )
     await senderButton.click()
-    const clipboardSendFromAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
+    await expect(async () => {
+      const clipboardSendFromAddress = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+      expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
+    }).toPass()
 
     /**
      * Assert receipient's address.
@@ -230,10 +232,12 @@ export default class TransactionsHelper {
       `),
     )
     await receipientButton.click()
-    const clipboardSendToAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    expect(clipboardSendToAddress).toBe(sendToAddressFull)
+    await expect(async () => {
+      const clipboardSendToAddress = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+      expect(clipboardSendToAddress).toBe(sendToAddressFull)
+    }).toPass()
 
     /**
      * Assert other transaction properties.
