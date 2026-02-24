@@ -1,3 +1,6 @@
+import { IDBFactory } from "fake-indexeddb"
+import { beforeEach, afterEach, it } from "bun:test"
+
 /* Reset IndexedDB between tests */
 beforeEach(() => {
   global.indexedDB = new IDBFactory()
@@ -18,7 +21,7 @@ it.flaky = function checkFlaky(label: string, testCase: () => unknown): void {
   })
 }
 
-declare namespace jest {
+declare module "bun:test" {
   interface It {
     /**
      * Used for debugging flaky tests

@@ -1,5 +1,19 @@
-// It's necessary to have an object w/ the function on it so we can use spyOn
-import * as ethers from "@ethersproject/web" // << THIS IS THE IMPORTANT TRICK
+import {
+  mock,
+  describe,
+  beforeAll,
+  beforeEach,
+  it,
+  expect,
+  jest,
+} from "bun:test"
+
+const fetchJsonMock = mock(() => {})
+mock.module("@ethersproject/web", () => {
+  const actual = require("@ethersproject/web")
+  fetchJsonMock.mockImplementation(actual.fetchJson)
+  return { ...actual, fetchJson: fetchJsonMock }
+})
 
 import logger from "../lib/logger"
 import { ETH, FIAT_CURRENCIES, USD } from "../constants"
@@ -165,12 +179,12 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
+      fetchJsonMock.mockResolvedValue(fetchJsonResponse)
 
       await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual(
         getPricesResponse,
       )
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchJsonMock).toHaveBeenCalledTimes(1)
     })
     it("should filter out invalid pairs if the data DOESN'T exist", async () => {
       const currencies = [
@@ -208,19 +222,19 @@ describe("lib/prices.ts", () => {
         },
       ]
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(fetchJsonResponse)
+      fetchJsonMock.mockResolvedValue(fetchJsonResponse)
       await expect(getPrices([ETH, FAKE_COIN], currencies)).resolves.toEqual(
         getPricesResponse,
       )
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchJsonMock).toHaveBeenCalledTimes(1)
     })
     it("should return [] if the api response does not fit the schema", async () => {
       const response = "Na na na na na na na na na na na na ... BATMAN!"
 
-      jest.spyOn(ethers, "fetchJson").mockResolvedValue(response)
+      fetchJsonMock.mockResolvedValue(response)
 
       await expect(getPrices([ETH], FIAT_CURRENCIES)).resolves.toEqual([])
-      expect(ethers.fetchJson).toHaveBeenCalledTimes(1)
+      expect(fetchJsonMock).toHaveBeenCalledTimes(1)
     })
   })
 })

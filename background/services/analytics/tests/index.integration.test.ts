@@ -4,7 +4,15 @@
 // POC https://www.typescriptlang.org/play?#code/MYGwhgzhAEBiD29oG8BQ0PWPAdhALgE4Cuw+8hAFAA6ECWAbmPgKbRgBc0B9OA5gBpotRszYAjLjmIBbcS0IBKFAF9Ua1CBb5oAM0TQAvNBwsA7nESUARGHHBrQgIwAmAMyLU2PPC0A6EHg+Sn14AG1bawBdZQB6WOgAeQBpVHisXAhfFgCgkMQIgH0waLiEgFEAJUrEyrSE0IiSqKNoAFZodKqayqA
 /* oxlint-disable typescript/dot-notation */
 
-import { mock } from "bun:test"
+import {
+  mock,
+  describe,
+  beforeAll,
+  beforeEach,
+  it,
+  expect,
+  jest,
+} from "bun:test"
 import browser from "webextension-polyfill"
 
 const v4Mock = mock(() => {})

@@ -24,3 +24,8 @@ export default class IntersectionObserverMock {
 Object.defineProperty(window, "IntersectionObserver", {
   value: IntersectionObserverMock,
 })
+Object.defineProperty(globalThis, "IntersectionObserver", {
+  value: IntersectionObserverMock,
+  writable: true,
+  configurable: true,
+})
