@@ -1,7 +1,7 @@
-diff --git a/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js b/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
-index 9c80426..89307e9 100644
---- a/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
-+++ b/node_modules/@ethersproject/providers/lib.esm/alchemy-provider.js
+diff --git a/lib.esm/alchemy-provider.js b/lib.esm/alchemy-provider.js
+index 9c804269ec22f93a61aa5b1586d8c75f13550b15..89307e951a1c722f45d31292687cf006d8bf32dc 100644
+--- a/lib.esm/alchemy-provider.js
++++ b/lib.esm/alchemy-provider.js
 @@ -1,11 +1,11 @@
  "use strict";
 -import { defineReadOnly } from "@ethersproject/properties";
@@ -31,10 +31,10 @@ index 9c80426..89307e9 100644
              throttleCallback: (attempt, url) => {
                  if (apiKey === defaultApiKey) {
                      showThrottleMessage();
-diff --git a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
-index 7db7f78..0e49c0a 100644
---- a/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
-+++ b/node_modules/@ethersproject/providers/lib.esm/json-rpc-batch-provider.js
+diff --git a/lib.esm/json-rpc-batch-provider.js b/lib.esm/json-rpc-batch-provider.js
+index 7db7f785ad105cfda186f922061b08b608402101..0e49c0aac2387077f42e2f2628e9362db9f4b86d 100644
+--- a/lib.esm/json-rpc-batch-provider.js
++++ b/lib.esm/json-rpc-batch-provider.js
 @@ -1,6 +1,6 @@
 -import { deepCopy } from "@ethersproject/properties";
 -import { fetchJson } from "@ethersproject/web";
@@ -83,10 +83,10 @@ index 7db7f78..0e49c0a 100644
                      // For each result, feed it to the correct Promise, depending
                      // on whether it was a success or error
                      batch.forEach((inflightRequest, index) => {
-diff --git a/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js b/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
-index 02f6b39..be59be6 100644
---- a/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
-+++ b/node_modules/@ethersproject/providers/lib.esm/json-rpc-provider.js
+diff --git a/lib.esm/json-rpc-provider.js b/lib.esm/json-rpc-provider.js
+index 02f6b39851c773f0988a4f776ab17a3925b46c82..be59be67ac8e8c28948187c3bdaaad99e5a9f473 100644
+--- a/lib.esm/json-rpc-provider.js
++++ b/lib.esm/json-rpc-provider.js
 @@ -1,25 +1,25 @@
  "use strict";
  var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
@@ -248,10 +248,10 @@ index 02f6b39..be59be6 100644
      }
      _stopEvent(event) {
          if (event.tag === "pending" && this.listenerCount("pending") === 0) {
-diff --git a/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts b/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
-index f23b494..0355b84 100644
---- a/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
-+++ b/node_modules/@ethersproject/providers/src.ts/alchemy-provider.ts
+diff --git a/src.ts/alchemy-provider.ts b/src.ts/alchemy-provider.ts
+index f23b494a9975609e88fc3dcf5554afb30c9232c7..0355b84dff12b651a1aec45e2763a7404ba9a40d 100644
+--- a/src.ts/alchemy-provider.ts
++++ b/src.ts/alchemy-provider.ts
 @@ -85,7 +85,9 @@ export class AlchemyProvider extends UrlJsonRpcProvider {
  
          return {
@@ -263,10 +263,10 @@ index f23b494..0355b84 100644
              throttleCallback: (attempt: number, url: string) => {
                  if (apiKey === defaultApiKey) {
                      showThrottleMessage();
-diff --git a/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts b/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
-index de4957f..e4227da 100644
---- a/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
-+++ b/node_modules/@ethersproject/providers/src.ts/json-rpc-provider.ts
+diff --git a/src.ts/json-rpc-provider.ts b/src.ts/json-rpc-provider.ts
+index de4957ff12b93e14b11fbeacef5d1c869a3833b6..e4227dabdf4b42da871cc42ac2d2fb784ede7f42 100644
+--- a/src.ts/json-rpc-provider.ts
++++ b/src.ts/json-rpc-provider.ts
 @@ -470,7 +470,9 @@ export class JsonRpcProvider extends BaseProvider {
          if (chainId != null) {
              const getNetwork = getStatic<(network: Networkish) => Network>(this.constructor, "getNetwork");
