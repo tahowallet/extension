@@ -1,7 +1,7 @@
 import logger, { logRejectedAndReturnFulfilledResults } from "../../lib/logger"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyAsset,
   AnyAssetMetadata,
@@ -41,10 +41,10 @@ import {
 } from "../../lib/token-lists"
 import PreferenceService from "../preferences"
 import ChainService from "../chain"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import BaseService from "../base"
-import { EnrichedEVMTransaction } from "../enrichment/types"
+import type { EnrichedEVMTransaction } from "../enrichment/types"
 import {
   normalizeAddressOnNetwork,
   normalizeEVMAddress,

@@ -1,6 +1,6 @@
 import Dexie from "dexie"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 export interface LedgerAccount {
   ledgerId: string

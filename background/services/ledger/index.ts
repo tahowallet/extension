@@ -18,15 +18,15 @@ import {
   SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
-import { EIP712TypedData, HexString } from "../../types"
+import type { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 
 enum LedgerType {
   UNKNOWN,
@@ -277,23 +277,24 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  #handleUSBDisconnect =
-    async (/* event: USBConnectionEvent */): Promise<void> => {
-      this.emitter.emit(
-        "usbDeviceCount",
-        (await navigator.usb.getDevices()).length,
-      )
-      if (!this.#currentLedgerId) {
-        return
-      }
-
-      this.emitter.emit("disconnected", {
-        id: this.#currentLedgerId,
-        type: LedgerType.LEDGER_NANO_S,
-      })
-
-      this.#currentLedgerId = null
+  #handleUSBDisconnect = async (
+    /* event: USBConnectionEvent */
+  ): Promise<void> => {
+    this.emitter.emit(
+      "usbDeviceCount",
+      (await navigator.usb.getDevices()).length,
+    )
+    if (!this.#currentLedgerId) {
+      return
     }
+
+    this.emitter.emit("disconnected", {
+      id: this.#currentLedgerId,
+      type: LedgerType.LEDGER_NANO_S,
+    })
+
+    this.#currentLedgerId = null
+  }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns

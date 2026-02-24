@@ -75,7 +75,7 @@ export const fetchQuote = async ({
     slippageTolerance: settings.slippageTolerance,
     gasPrice: EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)
       ? settings.networkSettings.values.maxFeePerGas
-      : settings.networkSettings.values.gasPrice ?? 0n,
+      : (settings.networkSettings.values.gasPrice ?? 0n),
     network,
   }
 

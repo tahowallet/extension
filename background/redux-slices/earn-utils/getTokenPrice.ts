@@ -1,6 +1,6 @@
 import { BigNumber } from "ethers"
 import { PricesState, selectAssetPricePoint } from "../prices"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { AnyAsset, PricePoint } from "../../assets"
 import getCurveLPTokenPrice from "./getCurveLPTokenPrice"
 import getUniswapPairTokenPrice from "./getUniswapPairTokenPrice"

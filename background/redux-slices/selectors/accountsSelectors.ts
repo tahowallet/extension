@@ -17,7 +17,6 @@ import {
   isTrustedAsset,
 } from "../utils/asset-utils"
 import {
-  AnyAsset,
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
@@ -37,7 +36,7 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./internalSignerSelectors"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
@@ -63,9 +62,7 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
 // TODO Make this a setting.
 export const userValueDustThreshold = 2
 
-const shouldForciblyDisplayAsset = (
-  assetAmount: CompleteAssetAmount<AnyAsset>,
-) => {
+const shouldForciblyDisplayAsset = (assetAmount: CompleteAssetAmount) => {
   const isIslandRelated =
     (isEnabled(FeatureFlags.SHOW_TOKEN_FEATURES) &&
       assetAmount.asset.symbol === DOGGO.symbol) ||
@@ -75,7 +72,7 @@ const shouldForciblyDisplayAsset = (
 }
 
 export function determineAssetDisplayAndVerify(
-  assetAmount: CompleteAssetAmount<AnyAsset>,
+  assetAmount: CompleteAssetAmount,
   {
     hideDust,
     showUnverifiedAssets,
@@ -105,7 +102,7 @@ export function determineAssetDisplayAndVerify(
 }
 
 const computeCombinedAssetAmountsData = (
-  assetAmounts: AnyAssetAmount<AnyAsset>[],
+  assetAmounts: AnyAssetAmount[],
   assets: AssetsState,
   mainCurrencySymbol: string,
   hideDust: boolean,

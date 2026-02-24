@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { ethers } from "ethers"
 import type { RootState } from "."
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
   AnyAssetAmount,
@@ -12,7 +12,7 @@ import {
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { EVMNetwork, sameNetwork } from "../networks"
-import { NormalizedEVMAddress } from "../types"
+import type { NormalizedEVMAddress } from "../types"
 import { removeAssetReferences, updateAccountAssetReferences } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"

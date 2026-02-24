@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection, TransferredNFT } from "../nfts"

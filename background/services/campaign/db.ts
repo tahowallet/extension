@@ -1,5 +1,5 @@
 import Dexie from "dexie"
-import { CampaignIds, Campaigns, FilterCampaignsById } from "./types"
+import type { CampaignIds, Campaigns, FilterCampaignsById } from "./types"
 
 export class CampaignDatabase extends Dexie {
   private campaigns!: Dexie.Table<Campaigns, CampaignIds>

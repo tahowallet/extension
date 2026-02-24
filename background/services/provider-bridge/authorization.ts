@@ -6,7 +6,7 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { sameEVMAddress } from "../../lib/utils"
 import { toHexChainID } from "../../networks"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 export function checkPermissionSignTypedData(
   walletAddress: HexString,

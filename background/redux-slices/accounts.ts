@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
-import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
+import type {
+  AccountBalance,
+  AddressOnNetwork,
+  NameOnNetwork,
+} from "../accounts"
 import { EVMNetwork, Network } from "../networks"
 import {
   AnyAsset,
@@ -18,7 +22,7 @@ import {
   getFullAssetID,
   FullAssetID,
 } from "./utils/asset-utils"
-import { DomainName, HexString, URI } from "../types"
+import type { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
 import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"

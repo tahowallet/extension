@@ -1,6 +1,6 @@
 import Emittery from "emittery"
 import browser, { Alarms } from "webextension-polyfill"
-import { Service, ServiceLifecycleEvents } from "./types"
+import type { Service, ServiceLifecycleEvents } from "./types"
 
 /**
  * An alarm schedule for use in the `browser.alarms` API.
@@ -92,9 +92,9 @@ export type AlarmHandlerScheduleMap = {
  * By default, these two set up and tear down browser alarms, so subclasses
  * should generally call `BaseService`'s implementation.
  */
-export default abstract class BaseService<Events extends ServiceLifecycleEvents>
-  implements Service<Events>
-{
+export default abstract class BaseService<
+  Events extends ServiceLifecycleEvents,
+> implements Service<Events> {
   /**
    * {@inheritdoc Service.emitter}
    */

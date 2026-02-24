@@ -136,13 +136,15 @@ export default function SharedTooltip(props: Props): ReactElement {
             padding: 12px;
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height, verticalShift)}
-            ${width !== undefined
-              ? getHorizontalPosition(
-                  horizontalPosition,
-                  width,
-                  horizontalShift,
-                )
-              : ""}
+            ${
+              width !== undefined
+                ? getHorizontalPosition(
+                    horizontalPosition,
+                    width,
+                    horizontalShift,
+                  )
+                : ""
+            }
           }
           .dark {
             background: var(--green-120);

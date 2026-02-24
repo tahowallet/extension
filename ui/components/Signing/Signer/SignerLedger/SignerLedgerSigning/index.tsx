@@ -8,7 +8,7 @@ import {
 } from "@tallyho/tally-background/networks"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import { DisplayDetails } from "@tallyho/tally-background/services/ledger"
-import { EIP712TypedData } from "@tallyho/tally-background/types"
+import type { EIP712TypedData } from "@tallyho/tally-background/types"
 import { ethers } from "ethers"
 import { _TypedDataEncoder } from "ethers/lib/utils"
 import React, { ReactElement } from "react"

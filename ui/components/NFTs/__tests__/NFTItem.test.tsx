@@ -59,19 +59,24 @@ describe("NFTItem", () => {
     const icon = ui.container.getElementsByClassName("icon_network")[0]
 
     expect(icon).toBeInTheDocument()
-    expect(icon).toHaveStyle(`background: url(./images/networks/${iconUrl})`)
+    // styled-jsx renders CSS in <style> tags; check the rendered style content
+    const styleContent = Array.from(ui.container.querySelectorAll("style"))
+      .map((s) => s.textContent)
+      .join("")
+    expect(styleContent).toContain(iconUrl)
   })
 
   test("should zoom the image when the NFT item is hovered", async () => {
     const thumbnailURL = "thumbnailURL.svg"
     const nft = createNFT({ thumbnailURL })
     const ui = render(<NFTItem item={nft} onClick={onClick} />)
-    const item = ui.container.getElementsByClassName("nft_image")[0] as Element
+    const item = ui.container.getElementsByClassName("nft_image")[0]
 
-    expect(ui.getByRole("img")).toHaveStyle("transform: scale(1)")
+    // styled-jsx applies transform via CSS class; check class presence
+    expect(ui.getByRole("img").classList.contains("zoom")).toBe(false)
     await userEvent.hover(item)
     await waitFor(() =>
-      expect(ui.getByRole("img")).toHaveStyle("transform: scale(1.5)"),
+      expect(ui.getByRole("img").classList.contains("zoom")).toBe(true),
     )
   })
 

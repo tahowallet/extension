@@ -8,7 +8,7 @@ import {
 } from "../../../tests/factories"
 import { ChainDatabase, createDB } from "../db"
 
-describe("Chain Database ", () => {
+describe("Chain Database", () => {
   let db: ChainDatabase
 
   const account1 = createAddressOnNetwork()

@@ -3,7 +3,7 @@ import { ethers } from "ethers"
 import { SmartContractFungibleAsset } from "../../assets"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { ARBITRUM_SEPOLIA } from "../../constants"
-import { NormalizedEVMAddress } from "../../types"
+import type { NormalizedEVMAddress } from "../../types"
 
 export const ISLAND_NETWORK = ARBITRUM_SEPOLIA // TODO: change once we move to Arbitrum One
 

@@ -18,8 +18,8 @@
   --gold-5: #fdf6ed;
   --white: #d6eae9;
 
-  --error: #FF6666;
-  --error-80: #B04443;
+  --error: #ff6666;
+  --error-80: #b04443;
   --error-20: #372a29;
 
   --success: #20c580;
@@ -39,8 +39,9 @@
   --subscape: #e4eeee;
   --subscape-background: #315a5a;
 
-  --shadow: 0px 16px 16px rgba(0, 33, 30, 0.14),
-    0px 6px 8px rgba(0, 33, 30, 0.24), 0px 2px 4px rgba(0, 33, 30, 0.34);
+  --shadow:
+    0px 16px 16px rgba(0, 33, 30, 0.14), 0px 6px 8px rgba(0, 33, 30, 0.24),
+    0px 2px 4px rgba(0, 33, 30, 0.34);
 }
 
 ::-webkit-scrollbar {
@@ -50,7 +51,11 @@
 
 body {
   margin: 0;
-  font-family: "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+  font-family:
+    "Segment",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
     sans-serif;
   position: relative;
   color: var(--white);

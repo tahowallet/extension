@@ -26,7 +26,7 @@ export default function Ledger(): ReactElement {
   const [connecting, setConnecting] = useState(false)
 
   const devices = useBackgroundSelector((state) => state.ledger.devices)
-  const device = deviceID === null ? null : devices[deviceID] ?? null
+  const device = deviceID === null ? null : (devices[deviceID] ?? null)
 
   const usbDeviceCount = useBackgroundSelector(
     (state) => state.ledger.usbDeviceCount,

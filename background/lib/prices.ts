@@ -189,7 +189,7 @@ export function getPricePoint(
       BigInt(
         Math.trunc(
           (Number(unitPricePoint.unitPrice.amount) /
-            10 ** (unitPricePoint.unitPrice.asset as FungibleAsset).decimals) *
+            10 ** unitPricePoint.unitPrice.asset.decimals) *
             10 ** USD.decimals,
         ),
       ),

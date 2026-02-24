@@ -28,23 +28,19 @@ export function HeaderContainer({
                 var(--hunter-green) 140px /* bg fades at 140px height */
               ),
               /* bottom-right */
-                radial-gradient(
+              radial-gradient(
                   366px 366px at 507px 349px,
                   #fc49c0 0%,
                   rgba(255, 127, 240, 0) 100%
                 ),
               /* top-left */
-                radial-gradient(
+              radial-gradient(
                   366px 366px at -99px -238px,
                   #ff00b8 0%,
                   rgba(255, 0, 153, 0) 100%
                 ),
               /* top-down light */
-                radial-gradient(
-                  93.95% 101.67% at 45.05% 0%,
-                  #1a968c 4.17%,
-                  #002522 120%
-                );
+              radial-gradient(93.95% 101.67% at 45.05% 0%, #1a968c 4.17%, #002522 120%);
           }
         `}
       </style>

@@ -1,6 +1,6 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
-import { HexString, UNIXTime } from "./types"
+import type { HexString, UNIXTime } from "./types"
 import type { CoinGeckoAsset, FungibleAsset } from "./assets"
 import type {
   EnrichedEIP1559TransactionRequest,

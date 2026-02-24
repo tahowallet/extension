@@ -43,8 +43,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
             position: relative;
             display: block;
             height: 31px;
-            border-bottom: 1px solid
-              var(--panel-switcher-border, var(--green-120));
+            border-bottom: 1px solid var(--panel-switcher-border, var(--green-120));
           }
           button {
             color: var(--green-40);

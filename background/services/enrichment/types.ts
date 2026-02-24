@@ -3,7 +3,7 @@ import {
   FungibleAsset,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -11,7 +11,7 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import { UNIXTime } from "../../types"
+import type { UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import { ResolvedNameRecord } from "../name"
 

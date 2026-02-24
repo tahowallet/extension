@@ -53,7 +53,7 @@ window.LiveReloadOptions = { host: "localhost" }
         e,
         t,
         n,
-        r
+        r,
       )
     }
     return n[o].exports
@@ -72,10 +72,10 @@ window.LiveReloadOptions = { host: "localhost" }
           let Parser
           let Version
           let _ref
-          ;(_ref = require("./protocol")),
+          ;((_ref = require("./protocol")),
             (Parser = _ref.Parser),
             (PROTOCOL_6 = _ref.PROTOCOL_6),
-            (PROTOCOL_7 = _ref.PROTOCOL_7)
+            (PROTOCOL_7 = _ref.PROTOCOL_7))
 
           Version = "2.2.2"
 
@@ -122,7 +122,7 @@ window.LiveReloadOptions = { host: "localhost" }
                     _this._disconnectionReason = "handshake-timeout"
                     return _this.socket.close()
                   }
-                })(this)
+                })(this),
               )
               this._reconnectTimer = new Timer(
                 (function (_this) {
@@ -132,7 +132,7 @@ window.LiveReloadOptions = { host: "localhost" }
                     }
                     return _this.connect()
                   }
-                })(this)
+                })(this),
               )
               this.connect()
             }
@@ -193,7 +193,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 this._reconnectTimer.start(this._nextDelay)
                 return (this._nextDelay = Math.min(
                   this.options.maxdelay,
-                  this._nextDelay * 2
+                  this._nextDelay * 2,
                 ))
               }
             }
@@ -235,7 +235,7 @@ window.LiveReloadOptions = { host: "localhost" }
               }
               this._sendCommand(hello)
               return this._handshakeTimeout.start(
-                this.options.handshake_timeout
+                this.options.handshake_timeout,
               )
             }
 
@@ -243,7 +243,7 @@ window.LiveReloadOptions = { host: "localhost" }
               this.protocol = 0
               this.handlers.disconnected(
                 this._disconnectionReason,
-                this._nextDelay
+                this._nextDelay,
               )
               return this._scheduleReconnection()
             }
@@ -256,7 +256,7 @@ window.LiveReloadOptions = { host: "localhost" }
 
             return Connector
           })()
-        }.call(this))
+        }).call(this)
       },
       { "./protocol": 6 },
     ],
@@ -278,11 +278,11 @@ window.LiveReloadOptions = { host: "localhost" }
                     if (event.propertyName === eventName) {
                       return handler()
                     }
-                  }
+                  },
                 )
               }
               throw new Error(
-                `Attempt to attach custom event ${eventName} to something which isn't a DOMElement`
+                `Attempt to attach custom event ${eventName} to something which isn't a DOMElement`,
               )
             },
             fire(element, eventName) {
@@ -298,7 +298,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 }
               } else {
                 throw new Error(
-                  `Attempt to fire custom event ${eventName} on something which isn't a DOMElement`
+                  `Attempt to fire custom event ${eventName} on something which isn't a DOMElement`,
                 )
               }
             },
@@ -307,7 +307,7 @@ window.LiveReloadOptions = { host: "localhost" }
           exports.bind = CustomEvents.bind
 
           exports.fire = CustomEvents.fire
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
@@ -370,7 +370,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 link.href = this.host.generateCacheBustUrl(link.href)
               }
               this.host.console.log(
-                "LiveReload is asking LESS to recompile all stylesheets"
+                "LiveReload is asking LESS to recompile all stylesheets",
               )
               this.window.less.refresh(true)
               return true
@@ -384,7 +384,7 @@ window.LiveReloadOptions = { host: "localhost" }
 
             return LessPlugin
           })()
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
@@ -434,7 +434,7 @@ window.LiveReloadOptions = { host: "localhost" }
                   this.window.WebSocket || this.window.MozWebSocket)
               ) {
                 console.error(
-                  "LiveReload disabled because the browser does not seem to support web sockets"
+                  "LiveReload disabled because the browser does not seem to support web sockets",
                 )
                 return
               }
@@ -450,7 +450,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 this.options = Options.extract(this.window.document)
                 if (!this.options) {
                   console.error(
-                    "LiveReload disabled because it could not find its own <SCRIPT> tag"
+                    "LiveReload disabled because it could not find its own <SCRIPT> tag",
                   )
                   return
                 }
@@ -476,7 +476,7 @@ window.LiveReloadOptions = { host: "localhost" }
                         _base.connect()
                       }
                       _this.log(
-                        `LiveReload is connected to ${_this.options.host}:${_this.options.port} (protocol v${protocol}).`
+                        `LiveReload is connected to ${_this.options.host}:${_this.options.port} (protocol v${protocol}).`,
                       )
                       return _this.analyze()
                     }
@@ -495,7 +495,7 @@ window.LiveReloadOptions = { host: "localhost" }
                         console !== null
                       ) {
                         return console.log(
-                          `LiveReload internal error: ${e.message}`
+                          `LiveReload internal error: ${e.message}`,
                         )
                       }
                     }
@@ -512,19 +512,19 @@ window.LiveReloadOptions = { host: "localhost" }
                       switch (reason) {
                         case "cannot-connect":
                           return _this.log(
-                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port}, will retry in ${nextDelay} sec.`
+                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port}, will retry in ${nextDelay} sec.`,
                           )
                         case "broken":
                           return _this.log(
-                            `LiveReload disconnected from ${_this.options.host}:${_this.options.port}, reconnecting in ${nextDelay} sec.`
+                            `LiveReload disconnected from ${_this.options.host}:${_this.options.port}, reconnecting in ${nextDelay} sec.`,
                           )
                         case "handshake-timeout":
                           return _this.log(
-                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port} (handshake timeout), will retry in ${nextDelay} sec.`
+                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port} (handshake timeout), will retry in ${nextDelay} sec.`,
                           )
                         case "handshake-failed":
                           return _this.log(
-                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port} (handshake failed), will retry in ${nextDelay} sec.`
+                            `LiveReload cannot connect to ${_this.options.host}:${_this.options.port} (handshake failed), will retry in ${nextDelay} sec.`,
                           )
                         case "manual":
                           break
@@ -532,7 +532,7 @@ window.LiveReloadOptions = { host: "localhost" }
                           break
                         default:
                           return _this.log(
-                            `LiveReload disconnected from ${_this.options.host}:${_this.options.port} (${reason}), reconnecting in ${nextDelay} sec.`
+                            `LiveReload disconnected from ${_this.options.host}:${_this.options.port} (${reason}), reconnecting in ${nextDelay} sec.`,
                           )
                       }
                     }
@@ -547,7 +547,7 @@ window.LiveReloadOptions = { host: "localhost" }
                       }
                     }
                   })(this),
-                }
+                },
               )
               this.initialized = true
             }
@@ -567,8 +567,8 @@ window.LiveReloadOptions = { host: "localhost" }
                 `LiveReload received reload request: ${JSON.stringify(
                   message,
                   null,
-                  2
-                )}`
+                  2,
+                )}`,
               )
               return this.reloader.reload(message.path, {
                 liveCSS: (_ref = message.liveCSS) != null ? _ref : true,
@@ -656,7 +656,7 @@ window.LiveReloadOptions = { host: "localhost" }
 
             return LiveReload
           })()
-        }.call(this))
+        }).call(this)
       },
       { "./connector": 1, "./options": 5, "./reloader": 7, "./timer": 9 },
     ],
@@ -727,7 +727,7 @@ window.LiveReloadOptions = { host: "localhost" }
                     if ((keyAndValue = pair.split("=")).length > 1) {
                       options.set(
                         keyAndValue[0].replace(/-/g, "_"),
-                        keyAndValue.slice(1).join("=")
+                        keyAndValue.slice(1).join("="),
                       )
                     }
                   }
@@ -737,7 +737,7 @@ window.LiveReloadOptions = { host: "localhost" }
             }
             return null
           }
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
@@ -794,7 +794,7 @@ window.LiveReloadOptions = { host: "localhost" }
                   } else if ((message = this._parseMessage(data, ["hello"]))) {
                     if (!message.protocols.length) {
                       throw new ProtocolError(
-                        "no protocols specified in handshake message"
+                        "no protocols specified in handshake message",
                       )
                     } else if (
                       __indexOf.call(message.protocols, PROTOCOL_7) >= 0
@@ -814,10 +814,10 @@ window.LiveReloadOptions = { host: "localhost" }
                   message = JSON.parse(data)
                   if (!message.length) {
                     throw new ProtocolError(
-                      "protocol 6 messages must be arrays"
+                      "protocol 6 messages must be arrays",
                     )
                   }
-                  ;(command = message[0]), (options = message[1])
+                  ;((command = message[0]), (options = message[1]))
                   if (command !== "refresh") {
                     throw new ProtocolError("unknown protocol 6 command")
                   }
@@ -860,7 +860,7 @@ window.LiveReloadOptions = { host: "localhost" }
                   `invalid command '${
                     message.command
                   }', only valid commands are: ${validCommands.join(", ")})`,
-                  data
+                  data,
                 )
               }
               return message
@@ -868,7 +868,7 @@ window.LiveReloadOptions = { host: "localhost" }
 
             return Parser
           })()
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
@@ -1046,10 +1046,12 @@ window.LiveReloadOptions = { host: "localhost" }
                     .filter(
                       // The open window path matches the location of the file changed
                       (_) =>
-                        _.window.document.location.toString().includes(location)
+                        _.window.document.location
+                          .toString()
+                          .includes(location),
                     )
                     .forEach((_) => _.window.document.location.reload())
-                }, 300)
+                }, 300),
               )
             }
 
@@ -1082,9 +1084,9 @@ window.LiveReloadOptions = { host: "localhost" }
               }
               if (this.document.querySelectorAll) {
                 for (_j = 0, _len1 = IMAGE_STYLES.length; _j < _len1; _j++) {
-                  ;(_ref1 = IMAGE_STYLES[_j]),
+                  ;((_ref1 = IMAGE_STYLES[_j]),
                     (selector = _ref1.selector),
-                    (styleNames = _ref1.styleNames)
+                    (styleNames = _ref1.styleNames))
                   _ref2 = this.document.querySelectorAll(`[style*=${selector}]`)
                   for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
                     img = _ref2[_k]
@@ -1098,7 +1100,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
                   styleSheet = _ref3[_l]
                   _results.push(
-                    this.reloadStylesheetImages(styleSheet, path, expando)
+                    this.reloadStylesheetImages(styleSheet, path, expando),
                   )
                 }
                 return _results
@@ -1108,7 +1110,7 @@ window.LiveReloadOptions = { host: "localhost" }
             Reloader.prototype.reloadStylesheetImages = function (
               styleSheet,
               path,
-              expando
+              expando,
             ) {
               let e
               let rule
@@ -1143,7 +1145,7 @@ window.LiveReloadOptions = { host: "localhost" }
                         rule.style,
                         styleNames,
                         path,
-                        expando
+                        expando,
                       )
                     }
                     break
@@ -1157,7 +1159,7 @@ window.LiveReloadOptions = { host: "localhost" }
               style,
               styleNames,
               path,
-              expando
+              expando,
             ) {
               let newValue
               let styleName
@@ -1175,12 +1177,12 @@ window.LiveReloadOptions = { host: "localhost" }
                         if (pathsMatch(path, pathFromUrl(src))) {
                           return `url(${_this.generateCacheBustUrl(
                             src,
-                            expando
+                            expando,
                           )})`
                         }
                         return match
                       }
-                    })(this)
+                    })(this),
                   )
                   if (newValue !== value) {
                     style[styleName] = newValue
@@ -1243,7 +1245,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 }
               }
               this.console.log(
-                `LiveReload found ${links.length} LINKed stylesheets, ${imported.length} @imported stylesheets`
+                `LiveReload found ${links.length} LINKed stylesheets, ${imported.length} @imported stylesheets`,
               )
               match = pickBestMatch(
                 path,
@@ -1252,25 +1254,25 @@ window.LiveReloadOptions = { host: "localhost" }
                   return function (l) {
                     return pathFromUrl(_this.linkHref(l))
                   }
-                })(this)
+                })(this),
               )
               if (match) {
                 if (match.object.rule) {
                   this.console.log(
-                    `LiveReload is reloading imported stylesheet: ${match.object.href}`
+                    `LiveReload is reloading imported stylesheet: ${match.object.href}`,
                   )
                   this.reattachImportedRule(match.object)
                 } else {
                   this.console.log(
                     `LiveReload is reloading stylesheet: ${this.linkHref(
-                      match.object
-                    )}`
+                      match.object,
+                    )}`,
                   )
                   this.reattachStylesheetLink(match.object)
                 }
               } else {
                 this.console.log(
-                  `LiveReload will reload all stylesheets because path '${path}' did not match any specific one`
+                  `LiveReload will reload all stylesheets because path '${path}' did not match any specific one`,
                 )
                 for (_l = 0, _len3 = links.length; _l < _len3; _l++) {
                   link = links[_l]
@@ -1283,7 +1285,7 @@ window.LiveReloadOptions = { host: "localhost" }
             Reloader.prototype.collectImportedStylesheets = function (
               link,
               styleSheet,
-              result
+              result,
             ) {
               let e
               let index
@@ -1316,7 +1318,7 @@ window.LiveReloadOptions = { host: "localhost" }
                       this.collectImportedStylesheets(
                         link,
                         rule.styleSheet,
-                        result
+                        result,
                       )
                       break
                     default:
@@ -1343,7 +1345,7 @@ window.LiveReloadOptions = { host: "localhost" }
               clone.onload = (function (_this) {
                 return function () {
                   _this.console.log(
-                    "LiveReload: the new stylesheet has finished loading"
+                    "LiveReload: the new stylesheet has finished loading",
                   )
                   _this.knownToSupportCssOnLoad = true
                   return executeCallback()
@@ -1354,7 +1356,7 @@ window.LiveReloadOptions = { host: "localhost" }
                   return function () {
                     if (clone.sheet) {
                       _this.console.log(
-                        "LiveReload is polling until the new CSS finishes loading..."
+                        "LiveReload is polling until the new CSS finishes loading...",
                       )
                       return executeCallback()
                     }
@@ -1364,7 +1366,7 @@ window.LiveReloadOptions = { host: "localhost" }
               }
               return this.Timer.start(
                 this.options.stylesheetReloadTimeout,
-                executeCallback
+                executeCallback,
               )
             }
 
@@ -1416,10 +1418,10 @@ window.LiveReloadOptions = { host: "localhost" }
                         return (_ref = _this.window.StyleFix) != null
                           ? _ref.link(clone)
                           : void 0
-                      }
+                      },
                     )
                   }
-                })(this)
+                })(this),
               )
             }
 
@@ -1432,7 +1434,7 @@ window.LiveReloadOptions = { host: "localhost" }
               let parent
               let rule
               let tempLink
-              ;(rule = _arg.rule), (index = _arg.index), (link = _arg.link)
+              ;((rule = _arg.rule), (index = _arg.index), (link = _arg.link))
               parent = rule.parentStyleSheet
               href = this.generateCacheBustUrl(rule.href)
               media = rule.media.length ? [].join.call(rule.media, ", ") : ""
@@ -1467,10 +1469,10 @@ window.LiveReloadOptions = { host: "localhost" }
                         }
                         parent.insertRule(newRule, index)
                         return parent.deleteRule(index + 1)
-                      }
+                      },
                     )
                   }
-                })(this)
+                })(this),
               )
             }
 
@@ -1487,10 +1489,10 @@ window.LiveReloadOptions = { host: "localhost" }
               if (expando == null) {
                 expando = this.generateUniqueString()
               }
-              ;(_ref = splitUrl(url)),
+              ;((_ref = splitUrl(url)),
                 (url = _ref.url),
                 (hash = _ref.hash),
-                (oldParams = _ref.params)
+                (oldParams = _ref.params))
               if (this.options.overrideURL) {
                 if (url.indexOf(this.options.serverURL) < 0) {
                   originalUrl = url
@@ -1498,7 +1500,7 @@ window.LiveReloadOptions = { host: "localhost" }
                     this.options.serverURL + this.options.overrideURL
                   }?url=${encodeURIComponent(url)}`
                   this.console.log(
-                    `LiveReload is overriding source URL ${originalUrl} with ${url}`
+                    `LiveReload is overriding source URL ${originalUrl} with ${url}`,
                   )
                 }
               }
@@ -1506,7 +1508,7 @@ window.LiveReloadOptions = { host: "localhost" }
                 /(\?|&)livereload=(\d+)/,
                 function (match, sep) {
                   return `${sep}${expando}`
-                }
+                },
               )
               if (params === oldParams) {
                 if (oldParams.length === 0) {
@@ -1520,7 +1522,7 @@ window.LiveReloadOptions = { host: "localhost" }
 
             return Reloader
           })()
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
@@ -1559,7 +1561,7 @@ window.LiveReloadOptions = { host: "localhost" }
           CustomEvents.bind(document, "LiveReloadShutDown", function () {
             return LiveReload.shutDown()
           })
-        }.call(this))
+        }).call(this)
       },
       { "./customevents": 2, "./less": 3, "./livereload": 4 },
     ],
@@ -1604,11 +1606,11 @@ window.LiveReloadOptions = { host: "localhost" }
           Timer.start = function (timeout, func) {
             return setTimeout(func, timeout)
           }
-        }.call(this))
+        }).call(this)
       },
       {},
     ],
   },
   {},
-  [8]
+  [8],
 )

@@ -23,8 +23,7 @@ export default function NotificationItem(): ReactElement {
           padding: 0px 0.5px;
         }
         .icon_notification {
-          background: url("./images/notification_receive@2x.png") center
-            no-repeat;
+          background: url("./images/notification_receive@2x.png") center no-repeat;
           background-size: 12px 12px;
           width: 24px;
           height: 24px;

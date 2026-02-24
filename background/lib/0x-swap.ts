@@ -8,7 +8,7 @@ import {
 import { EVMNetwork } from "../networks"
 import { SwapQuoteRequest } from "../redux-slices/utils/0x-swap-utils"
 import { isNetworkBaseAsset } from "../redux-slices/utils/asset-utils"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import { GetPriceParams, GetQuoteParams } from "./0x-swap-types"
 import logger from "./logger"
 import {

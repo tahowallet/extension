@@ -1,4 +1,4 @@
-import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import {
   isProbablyEVMAddress,
@@ -8,7 +8,7 @@ import {
 } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import { useRef, useState, useCallback } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 

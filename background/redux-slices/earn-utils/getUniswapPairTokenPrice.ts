@@ -1,4 +1,4 @@
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { getContract } from "../utils/contract-utils"
 import UNISWAP_V2_PAIR from "../../lib/uniswapPair"
 import getLPTokenValue from "./getLPTokenValue"

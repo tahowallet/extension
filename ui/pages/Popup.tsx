@@ -107,7 +107,7 @@ export function Main(): ReactElement {
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const entries = routeHistoryEntities
       .reduce((agg: Partial<Location>[], entity) => {
-        const { ...entityCopy } = entity as Partial<Location>
+        const { ...entityCopy } = entity
         delete entityCopy.hash
         delete entityCopy.key
         agg.push(entityCopy)
@@ -153,7 +153,7 @@ export function Main(): ReactElement {
             // the user or explicitly added. That said, we can still certainly "POP" via
             // history.goBack(). This case is not yet accounted for.
             if (
-              pagePreferences[normalizedPathname]?.persistOnClose === true &&
+              pagePreferences[normalizedPathname]?.persistOnClose &&
               routeProps.history.action === "PUSH"
             ) {
               // @ts-expect-error TODO: fix the typing
@@ -211,12 +211,14 @@ export function Main(): ReactElement {
             opacity: 0;
           }
 
-          ${isDappPopup &&
-          `
+          ${
+            isDappPopup &&
+            `
             body {
               height: 100%;
             }
-           `}
+           `
+          }
         `}
       </style>
     </>

@@ -1,6 +1,6 @@
 import Dexie from "dexie"
 import { ABILITY_TYPES, Ability } from "../../abilities"
-import { HexString, NormalizedEVMAddress } from "../../types"
+import type { HexString, NormalizedEVMAddress } from "../../types"
 
 export class AbilitiesDatabase extends Dexie {
   private abilities!: Dexie.Table<Ability, [string, string]>
