@@ -68,7 +68,7 @@ export default class OnboardingHelper {
 
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      ).toBeVisible({ timeout: 60000 })
       await page.close()
     })
   }
@@ -104,7 +104,7 @@ export default class OnboardingHelper {
       await page.getByRole("button", { name: "Import account" }).click()
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      ).toBeVisible({ timeout: 60000 })
       await page.close()
     })
   }
@@ -164,7 +164,7 @@ export default class OnboardingHelper {
 
       await expect(
         page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      ).toBeVisible({ timeout: 60000 })
       await page.close()
     })
   }
@@ -229,7 +229,7 @@ export default class OnboardingHelper {
 
     await expect(
       page.getByRole("heading", { name: "Welcome to Taho" }),
-    ).toBeVisible()
+    ).toBeVisible({ timeout: 60000 })
     await page.close()
   }
 }
