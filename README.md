@@ -237,9 +237,9 @@ services (in the API package) and the interface and browser notifications:
 │                 │                                                                             ┃     │  │   │                 │
 │                 │                                                                             ┃     │  │   │  Alchemy        │
 │                 │                                                                             ┃     │  ├───▶                 │
-│                 │                                                    Indexing                 ┃     │  │   │  BlockNative    │
+│                 │                                                    Indexing                 ┃     │  │   │  CoinGecko      │
 │                 │                                                    - Accounts               ┃     │  │   │                 │
-│                 │                                                    - ERC-20 balances    ━━━━╋─────┼──┘   │  CoinGecko      │
+│                 │                                                    - ERC-20 balances    ━━━━╋─────┼──┘   │                 │
 │                 ├───subscribe (eg balance changes), get balances───▶ - ERC-721 ownership      ┃     │      │                 │
 │                 │                                                    - Governance proposals   ┃     │      │                 │
 │                 │                                                    - On-chain prices        ┃     │      └─────────────────┘
