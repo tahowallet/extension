@@ -5,7 +5,7 @@ import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 import { arrayify } from "ethers/lib/utils"
 import { Wallet } from "ethers"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
   getEncryptedVaults,
   migrateVaultsToLatestVersion,
@@ -18,14 +18,14 @@ import {
   SaltedKey,
   VaultVersion,
 } from "./encryption"
-import { HexString, EIP712TypedData, UNIXTime } from "../../types"
+import type { HexString, EIP712TypedData, UNIXTime } from "../../types"
 import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
 
 import BaseService from "../base"
 import { FORK } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { FeatureFlags, isEnabled } from "../../features"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
@@ -581,7 +581,7 @@ export default class InternalSignerService extends BaseService<Events> {
       addresses: [
         ...kr
           .getAddressesSync()
-          .filter((address) => this.#hiddenAccounts[address] !== true),
+          .filter((address) => !this.#hiddenAccounts[address]),
       ],
       id: kr.id,
       path: kr.path,
@@ -623,9 +623,8 @@ export default class InternalSignerService extends BaseService<Events> {
 
     // If There are any hidden addresses, show those first before adding new ones.
     const newAddress =
-      keyringAddresses.find(
-        (address) => this.#hiddenAccounts[address] === true,
-      ) ?? keyring.addAddressesSync(1)[0]
+      keyringAddresses.find((address) => this.#hiddenAccounts[address]) ??
+      keyring.addAddressesSync(1)[0]
 
     this.#hiddenAccounts[newAddress] = false
 
@@ -663,7 +662,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
       if (
         keyringAddresses.every(
-          (keyringAddress) => this.#hiddenAccounts[keyringAddress] === true,
+          (keyringAddress) => this.#hiddenAccounts[keyringAddress],
         )
       ) {
         keyringAddresses.forEach((keyringAddress) => {
@@ -958,7 +957,6 @@ export default class InternalSignerService extends BaseService<Events> {
     try {
       let signature: string
       if (isPrivateKey(signerWithType)) {
-        // eslint-disable-next-line no-underscore-dangle
         signature = await signerWithType.signer._signTypedData(
           domain,
           typesForSigning,
@@ -975,7 +973,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
       return signature
     } catch (error) {
-      throw new Error("Signing data failed")
+      throw new Error("Signing data failed", { cause: error })
     }
   }
 
@@ -1016,7 +1014,7 @@ export default class InternalSignerService extends BaseService<Events> {
 
       return signature
     } catch (error) {
-      throw new Error("Signing data failed")
+      throw new Error("Signing data failed", { cause: error })
     }
   }
 

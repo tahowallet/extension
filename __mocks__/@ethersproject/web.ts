@@ -1,5 +1,4 @@
 // Fixing this here requires digging into Jest a bit, kicking for now.
-// eslint-disable-next-line import/no-import-module-exports
 import sinon from "sinon"
 
 const mock =

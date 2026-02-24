@@ -1,5 +1,12 @@
-import { fetchJson } from "@ethersproject/web"
-import sinon, { SinonStub } from "sinon"
+import { mock } from "bun:test"
+import sinon from "sinon"
+
+const fetchJsonStub = sinon.stub()
+mock.module("@ethersproject/web", () => {
+  const actual = require("@ethersproject/web")
+  return { ...actual, fetchJson: fetchJsonStub }
+})
+
 import IndexingService from ".."
 import { ETHEREUM, OPTIMISM } from "../../../constants"
 import {
@@ -19,18 +26,12 @@ type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
   Parameters<T>
 >
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 const getPrivateMethodSpy = <T extends (...args: any[]) => unknown>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   object: any,
   property: string,
 ) => jest.spyOn(object, property) as MethodSpy<T>
-
-const fetchJsonStub: SinonStub<
-  Parameters<typeof fetchJson>,
-  ReturnType<typeof fetchJson>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-> = fetchJson as any
 
 // Default to an empty response
 beforeEach(() => fetchJsonStub.callsFake(async () => ({})))
@@ -334,19 +335,19 @@ describe("IndexingService", () => {
       // We don't care about the return value for these calls
       const baseBalanceSpy = jest
         .spyOn(chainService, "getLatestBaseAccountBalance")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         .mockImplementation(() => Promise.resolve({} as any))
 
       const tokenBalanceSpy = getPrivateMethodSpy<
         IndexingService["retrieveTokenBalances"]
       >(indexingService, "retrieveTokenBalances").mockImplementation(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         () => Promise.resolve({}) as any,
       )
 
       await indexingService.cacheAssetsForNetwork(ETHEREUM)
 
-      // eslint-disable-next-line @typescript-eslint/dot-notation
+      // oxlint-disable-next-line typescript/dot-notation
       await indexingService["loadAccountBalances"]()
 
       expect(baseBalanceSpy).toHaveBeenCalledWith(account)

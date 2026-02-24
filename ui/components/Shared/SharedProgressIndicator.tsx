@@ -19,7 +19,7 @@ export default function SharedProgressIndicator(props: {
             aria-label="step"
             type="button"
             // The nature of this is that the key and index are the same.
-            // eslint-disable-next-line react/no-array-index-key
+            // oxlint-disable-next-line react/no-array-index-key
             key={index}
             className={classNames("step", {
               active: index === activeStep - 1,

@@ -19,7 +19,7 @@ import { FeatureFlags, isDisabled } from "../features"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
-const BLOCKNATIVE_API_KEY = process.env.BLOCKNATIVE_API_KEY // eslint-disable-line prefer-destructuring
+const BLOCKNATIVE_API_KEY = process.env.BLOCKNATIVE_API_KEY // oxlint-disable-line prefer-destructuring
 
 let blocknative: Blocknative
 

@@ -1,27 +1,27 @@
 // Disable parameter reassign rule to be able to modify the activities object freely
 // that way we can avoid nested object iteration and we can initialize object fields
-/* eslint-disable no-param-reassign */
+/* oxlint-disable no-param-reassign */
 
 import { createSlice } from "@reduxjs/toolkit"
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 import {
   normalizeAddressOnNetwork,
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../lib/utils"
 import { Transaction } from "../services/chain/db"
-import { EnrichedEVMTransaction } from "../services/enrichment"
-import { HexString } from "../types"
+import type { EnrichedEVMTransaction } from "../services/enrichment"
+import type { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   sortActivities,
   getActivity,
-  Activity,
-  ActivityDetail,
   INFINITE_VALUE,
 } from "./utils/activities-utils"
+import type { Activity, ActivityDetail } from "./utils/activities-utils"
 
-export { Activity, ActivityDetail, INFINITE_VALUE }
+export type { Activity, ActivityDetail }
+export { INFINITE_VALUE }
 export type Activities = {
   [address: string]: {
     [chainID: string]: Activity[]

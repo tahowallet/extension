@@ -209,11 +209,10 @@ export default class OnboardingHelper {
 
     await seedWordPlaceholders.first().click()
 
-    // eslint-disable-next-line no-restricted-syntax
     for (const wordPos of wordsToVerify) {
       const word = seedWords[wordPos - 1]
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await page
         .getByTestId("remaining_seed_words")
         .getByRole("button", { name: word })

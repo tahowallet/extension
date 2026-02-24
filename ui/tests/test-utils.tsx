@@ -11,7 +11,7 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
   store?: ReduxStoreTypeForTest
 }
 
-// eslint-disable-next-line import/prefer-default-export, @typescript-eslint/explicit-module-boundary-types
+// oxlint-disable-next-line import/prefer-default-export, typescript/explicit-module-boundary-types
 export function renderWithProviders(
   ui: React.ReactElement,
   {
@@ -21,7 +21,6 @@ export function renderWithProviders(
     ...renderOptions
   }: ExtendedRenderOptions = {},
 ) {
-  // eslint-disable-next-line @typescript-eslint/ban-types
   function Wrapper({ children }: PropsWithChildren<{}>): JSX.Element {
     return <Provider store={store}>{children}</Provider>
   }

@@ -51,7 +51,7 @@ Object.defineProperty(window, "fetch", {
         body: file,
       }
     }
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.warn("Uncaught fetch call to: \n", url)
     return undefined
   },

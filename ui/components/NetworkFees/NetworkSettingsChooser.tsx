@@ -1,4 +1,4 @@
-/* eslint-disable no-nested-ternary */
+/* oxlint-disable no-nested-ternary */
 import React, { ReactElement, useState } from "react"
 import {
   EstimatedFeesPerGas,

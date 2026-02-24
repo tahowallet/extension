@@ -17,10 +17,10 @@ import {
 } from "./asset-similarity"
 import { SECOND } from "../constants"
 import { normalizeEVMAddress } from "./utils"
-import { DeepWriteable } from "../types"
+import type { DeepWriteable } from "../types"
 
 // We allow `any` here because we don't know what we'll get back from a 3rd party api.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 const cleanTokenListResponse = (json: any, url: string) => {
   if (url.includes("api-polygon-tokens.polygon.technology")) {
     if (typeof json === "object" && json !== null && "tags" in json) {

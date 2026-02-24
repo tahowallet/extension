@@ -25,7 +25,7 @@ import {
 
 import { fromFixedPointNumber } from "@tallyho/tally-background/lib/fixed-point"
 import { DOGGO } from "@tallyho/tally-background/constants"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 
 import { useHistory, useLocation } from "react-router-dom"
 import BackButton from "../components/Shared/SharedBackButton"
@@ -107,14 +107,14 @@ export default function EarnDeposit(): ReactElement | null {
       )) as unknown as AvailableVault[]
       setVaultData(updatedVault[0])
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, vault?.pendingRewards, vault?.userDeposited])
 
   // on account change reset vault data that is different for each account
   useEffect(() => {
     if (isVaultDataStale && vaultData)
       setVaultData({ ...vaultData, pendingRewards: 0n, userDeposited: 0n })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isVaultDataStale])
 
   useAllEarnVaults() // update all vaults on account change

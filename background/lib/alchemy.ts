@@ -1,7 +1,7 @@
 import { BigNumber, utils } from "ethers"
 
 import logger from "./logger"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import {
   AssetTransfer,
   SmartContractAmount,
@@ -15,11 +15,11 @@ import {
   ValidatedType,
 } from "./validate"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output
-export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
+export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // oxlint-disable-line prefer-destructuring
 
 /**
  * Use Alchemy's getAssetTransfers call to get historical transfers for an
@@ -183,7 +183,7 @@ export async function getTokenBalances(
   let response: Awaited<ReturnType<typeof fetchAndValidate>>
 
   do {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     response = await fetchAndValidate(addressOnNetwork.address, currentPageKey)
 
     if (!response) {

@@ -1,5 +1,5 @@
 // // Disabled while we decide how we want to move here.
-// eslint-disable-next-line import/prefer-default-export
+// oxlint-disable-next-line import/prefer-default-export
 export const NETWORK_ERRORS = {
   // 405: 'RPC response not ok: 405 method not found',
   // 429: 'Request is being rate limited.',

@@ -2,7 +2,7 @@ import browser from "webextension-polyfill"
 
 // Ignore the no-console lint rule since this file is meant to funnel output to
 // the console.
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 
 const HOUR = 1000 * 60 * 60
 

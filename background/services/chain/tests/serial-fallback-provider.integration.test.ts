@@ -214,7 +214,7 @@ describe("Serial Fallback Provider", () => {
       alchemySendStub.onCall(1).returns("success")
 
       // Accessing private property
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
 
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
@@ -223,7 +223,7 @@ describe("Serial Fallback Provider", () => {
         fallbackProvider.send("eth_getBalance", []),
       ).resolves.toEqual("success")
       // Accessing private property
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
     })
   })

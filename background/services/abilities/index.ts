@@ -1,6 +1,6 @@
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
-import { HexString, NormalizedEVMAddress } from "../../types"
+import type { HexString, NormalizedEVMAddress } from "../../types"
 import {
   createSpamReport,
   DaylightAbility,
@@ -150,7 +150,7 @@ export default class AbilitiesService extends BaseService<Events> {
   }
 
   // Re-enable once polling is re-enabled.
-  // eslint-disable-next-line class-methods-use-this, @typescript-eslint/no-unused-vars
+  // oxlint-disable-next-line class-methods-use-this, no-unused-vars
   async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
     // FIXME Disabled due to high usage on the Daylight side. UI should also be
     // FIXME disconnected. Re-enabling should involve reconsidering our
@@ -203,7 +203,6 @@ export default class AbilitiesService extends BaseService<Events> {
     )
 
     // 1-by-1 decreases likelihood of hitting rate limit
-    // eslint-disable-next-line no-restricted-syntax
     for (const address of addresses) {
       this.emitter.emit("initAbilities", address)
     }

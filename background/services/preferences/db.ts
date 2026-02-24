@@ -1,13 +1,13 @@
 import Dexie, { Transaction } from "dexie"
 
 import { FiatCurrency } from "../../assets"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 
 import DEFAULT_PREFERENCES, { DEFAULT_AUTOLOCK_INTERVAL } from "./defaults"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { NETWORK_BY_CHAIN_ID } from "../../constants"
-import { UNIXTime } from "../../types"
+import type { UNIXTime } from "../../types"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -137,7 +137,7 @@ export class PreferenceDatabase extends Dexie {
             if (!storedPreferences.defaultWallet) {
               // Dexie API expects modification of the argument:
               // https://dexie.org/docs/Collection/Collection.modify()
-              // eslint-disable-next-line no-param-reassign
+              // oxlint-disable-next-line no-param-reassign
               storedPreferences.defaultWallet =
                 DEFAULT_PREFERENCES.defaultWallet
             }
@@ -161,13 +161,13 @@ export class PreferenceDatabase extends Dexie {
           .modify(
             (storedPreferences: Preferences & { currentAddress?: string }) => {
               if (storedPreferences.currentAddress) {
-                // eslint-disable-next-line no-param-reassign
+                // oxlint-disable-next-line no-param-reassign
                 storedPreferences.selectedAccount = {
                   network: DEFAULT_PREFERENCES.selectedAccount.network,
                   address: storedPreferences.currentAddress,
                 }
               } else {
-                // eslint-disable-next-line no-param-reassign
+                // oxlint-disable-next-line no-param-reassign
                 storedPreferences.selectedAccount =
                   DEFAULT_PREFERENCES.selectedAccount
               }
@@ -185,7 +185,7 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: [
@@ -214,7 +214,7 @@ export class PreferenceDatabase extends Dexie {
               "bafybeifeqadgtritd3p2qzf5ntzsgnph77hwt4tme2umiuxv2ez2jspife",
             )
 
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: newURLs,
@@ -232,7 +232,7 @@ export class PreferenceDatabase extends Dexie {
           .table("preferences")
           .toCollection()
           .modify((storedPreferences: Preferences) => {
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: [
@@ -258,7 +258,7 @@ export class PreferenceDatabase extends Dexie {
             const updatedURLs = storedPreferences.tokenLists.urls.map((url) =>
               url.endsWith(".eth.link") ? `${url.slice(0, -9)}.eth.limo` : url,
             )
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: updatedURLs,
@@ -284,7 +284,7 @@ export class PreferenceDatabase extends Dexie {
               "bafybeigtlpxobme7utbketsaofgxqalgqzowhx24wlwwrtbzolgygmqorm",
             )
 
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedPreferences.tokenLists = {
               ...storedPreferences.tokenLists,
               urls: newURLs,
@@ -302,7 +302,7 @@ export class PreferenceDatabase extends Dexie {
         .table("preferences")
         .toCollection()
         .modify((storedPreferences: Preferences) => {
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           storedPreferences.analytics = DEFAULT_PREFERENCES.analytics
         }),
     )
@@ -399,7 +399,7 @@ export class PreferenceDatabase extends Dexie {
           )
 
           // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           storedPreferences.tokenLists = {
             ...storedPreferences.tokenLists,
             urls: newURLs,
@@ -472,7 +472,7 @@ export class PreferenceDatabase extends Dexie {
           )
 
           // Param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           storedPreferences.tokenLists = {
             ...storedPreferences.tokenLists,
             urls: newURLs,

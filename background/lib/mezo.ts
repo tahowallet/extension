@@ -14,7 +14,7 @@ const NFTContractAbi = new Interface([
   "function mint(string calldata installId, bytes calldata signature)",
 ])
 
-// eslint-disable-next-line import/prefer-default-export
+// oxlint-disable-next-line import/prefer-default-export
 export const checkIsBorrowingTx = (tx: ConfirmedEVMTransaction) => {
   if (
     !sameNetwork(tx.network, MEZO_TESTNET) ||

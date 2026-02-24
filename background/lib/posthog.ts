@@ -41,7 +41,7 @@ export const POSTHOG_URL =
   process.env.POSTHOG_URL ?? "https://app.posthog.com/capture/"
 
 // Destructuring doesn't work with env variables. process.nev is `MISSING ENV VAR` in that case
-// eslint-disable-next-line prefer-destructuring
+// oxlint-disable-next-line prefer-destructuring
 export const USE_ANALYTICS_SOURCE = process.env.USE_ANALYTICS_SOURCE
 
 export function shouldSendPosthogEvents(): boolean {

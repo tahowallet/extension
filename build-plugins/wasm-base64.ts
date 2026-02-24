@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */
+/* oxlint-disable import/prefer-default-export */
 import type { BunPlugin } from "bun"
 
 /**

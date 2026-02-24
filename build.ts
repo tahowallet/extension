@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax, no-continue, no-console, no-plusplus, no-bitwise, no-useless-escape, no-await-in-loop, @typescript-eslint/no-use-before-define */
+/* oxlint-disable no-continue, no-console, no-plusplus, no-bitwise, no-useless-escape, no-await-in-loop */
 import path from "path"
 import fs from "fs"
 import archiver from "archiver"

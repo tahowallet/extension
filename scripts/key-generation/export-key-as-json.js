@@ -1,5 +1,5 @@
 // Since this is a script we can’t use import yet.
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* oxlint-disable typescript/no-var-requires */
 const fs = require("fs")
 const wallet = require("ethereumjs-wallet").default
 

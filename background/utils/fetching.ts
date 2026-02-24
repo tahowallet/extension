@@ -3,10 +3,10 @@ import { logger } from "ethers"
 const DEFAULT_TIMEOUT = 10000
 
 export const makeFetchWithTimeout = (timeoutMs: number) =>
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  // oxlint-disable-next-line typescript/explicit-module-boundary-types
   async function fetchWithTimeout(
     requestInfo: RequestInfo,
-    options?: RequestInit | undefined,
+    options?: RequestInit,
   ) {
     const controller = new AbortController()
     const id = setTimeout(() => {

@@ -1,7 +1,7 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
 import { BigNumber, Signature, utils } from "ethers"
 import { TransactionResponse } from "@ethersproject/abstract-provider"
-import { Eligible } from "../services/island/types"
+import type { Eligible } from "../services/island/types"
 
 import { createBackgroundAsyncThunk } from "./utils"
 import { normalizeEVMAddress, truncateAddress } from "../lib/utils"
@@ -13,7 +13,7 @@ import {
 } from "./utils/contract-utils"
 import DAOs from "../static/DAOs.json"
 import delegates from "../static/delegates.json"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import DISTRIBUTOR_ABI from "./contract-abis/merkle-distributor"
 
 import { DOGGO, HOUR } from "../constants"
@@ -375,7 +375,6 @@ export const signTokenDelegationData = createBackgroundAsyncThunk(
         expiry,
       }
       // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
-      // eslint-disable-next-line no-underscore-dangle
       const tx = await signer._signTypedData(domain, types, message)
 
       const signature = utils.splitSignature(tx)

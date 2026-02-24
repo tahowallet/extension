@@ -6,8 +6,8 @@ import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
 import getBlockPrices from "../../lib/gas"
-import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
+import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,
@@ -40,7 +40,7 @@ import {
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
@@ -611,7 +611,7 @@ export default class ChainService extends BaseService<Events> {
       if (error instanceof Error) {
         // Ethers does some heavily loose typing around errors to carry
         // arbitrary info without subclassing Error, so an any cast is needed.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         const anyError: any = error
 
         if (
@@ -707,7 +707,7 @@ export default class ChainService extends BaseService<Events> {
       if (error instanceof Error) {
         // Ethers does some heavily loose typing around errors to carry
         // arbitrary info without subclassing Error, so an any cast is needed.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any
         const anyError: any = error
 
         if (
@@ -1819,7 +1819,6 @@ export default class ChainService extends BaseService<Events> {
     if (error) {
       // We don't control the errors in the whole stack, but we do want to
       // rethrow them regardless.
-      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw error
     }
   }
@@ -1886,7 +1885,6 @@ export default class ChainService extends BaseService<Events> {
    */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
     const provider = this.providerForNetworkOrThrow(network)
-    // eslint-disable-next-line no-underscore-dangle
     this.subscribedNetworks.push({
       network,
       provider,
