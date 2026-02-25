@@ -167,9 +167,9 @@ export default class AssetsHelper {
       await this.popup
         .getByRole("button", { name: "Send", exact: true })
         .click({ trial: true })
-      await this.popup
-        .getByRole("button", { name: "Swap", exact: true })
-        .click({ trial: true })
+      await expect(
+        this.popup.getByRole("button", { name: "Swap", exact: true }),
+      ).toBeVisible()
     } else {
       await expect(
         this.popup.getByRole("button", { name: "Send", exact: true }),

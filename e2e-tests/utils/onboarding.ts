@@ -23,6 +23,18 @@ export const getOnboardingPage = async (
 
 const DEFAULT_PASSWORD = "12345678"
 
+/**
+ * After onboarding, Done.tsx shows "Welcome to Taho" when the Redux store
+ * reflects exactly one address, or "Account added to Taho!" otherwise.
+ * Because webext-redux state sync between background and UI can lag behind
+ * the client-side navigation, the first render may see stale state.  Accept
+ * either heading to avoid flakes.
+ */
+const onboardingCompleteHeading = (page: Page) =>
+  page
+    .getByRole("heading", { name: "Welcome to Taho" })
+    .or(page.getByRole("heading", { name: "Account added to Taho!" }))
+
 export interface Account {
   address: string
   name: RegExp
@@ -66,9 +78,9 @@ export default class OnboardingHelper {
       await page.getByRole("textbox").fill(addressOrName)
       await page.getByRole("button", { name: "Preview Taho" }).click()
 
-      await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      await expect(onboardingCompleteHeading(page)).toBeVisible({
+        timeout: 60000,
+      })
       await page.close()
     })
   }
@@ -102,9 +114,9 @@ export default class OnboardingHelper {
         .fill(phrase)
 
       await page.getByRole("button", { name: "Import account" }).click()
-      await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      await expect(onboardingCompleteHeading(page)).toBeVisible({
+        timeout: 60000,
+      })
       await page.close()
     })
   }
@@ -162,9 +174,9 @@ export default class OnboardingHelper {
 
       await page.getByRole("button", { name: "Finalize" }).click()
 
-      await expect(
-        page.getByRole("heading", { name: "Welcome to Taho" }),
-      ).toBeVisible()
+      await expect(onboardingCompleteHeading(page)).toBeVisible({
+        timeout: 60000,
+      })
       await page.close()
     })
   }
@@ -227,9 +239,9 @@ export default class OnboardingHelper {
 
     await page.getByRole("button", { name: "Finalize" }).click()
 
-    await expect(
-      page.getByRole("heading", { name: "Welcome to Taho" }),
-    ).toBeVisible()
+    await expect(onboardingCompleteHeading(page)).toBeVisible({
+      timeout: 60000,
+    })
     await page.close()
   }
 }

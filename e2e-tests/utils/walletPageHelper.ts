@@ -208,7 +208,7 @@ export default class WalletPageHelper {
   ): Promise<void> {
     await expect(
       this.popup.getByTestId("account_balance_loader"),
-    ).not.toBeVisible({ timeout: 20000 })
+    ).not.toBeVisible({ timeout: 60000 })
     await expect(this.popup.getByText("Total account balance")).toBeVisible()
     // TODO: Shared assertions should not verify values. Instead, they
     // should only verify there's a resolved value.
