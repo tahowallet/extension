@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { getContract } from "../utils/contract-utils"
 import { ERC20_ABI } from "../../lib/erc20"
 import { PricesState, selectAssetPricePoint } from "../prices"

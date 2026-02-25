@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* oxlint-disable no-console */
 /**
  * This is a simple proxy server that will randomly throttle or timeout
  * requests and is used to test the reliability of the SerialFallbackProvider.

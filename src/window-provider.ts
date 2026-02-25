@@ -102,7 +102,7 @@ function reflectRedirectAndDevLog(
           // Logging for development purposes; should not appear on prod. t
           // prefix indicates this is a timing log rather than a completion
           // log.
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log(
             `t${labelString()}`,
             "color: #bada55; background-color: #222;",
@@ -116,7 +116,7 @@ function reflectRedirectAndDevLog(
             .then((succesfulResult) => {
               clearInterval(timeLoggingInterval)
               // Logging for development purposes; should not appear on prod.
-              // eslint-disable-next-line no-console
+              // oxlint-disable-next-line no-console
               console.log(
                 `${labelString()}%c -> ${safeSerialize(succesfulResult)}`,
                 "background: #bada55; color: #222",
@@ -126,7 +126,7 @@ function reflectRedirectAndDevLog(
             .catch((error) => {
               clearInterval(timeLoggingInterval)
               // Logging for development purposes; should not appear on prod.
-              // eslint-disable-next-line no-console
+              // oxlint-disable-next-line no-console
               console.log(
                 `${labelString()}%c -> ${safeSerialize(error)}`,
                 "background: #bada55; color: #222",
@@ -140,7 +140,7 @@ function reflectRedirectAndDevLog(
           clearInterval(timeLoggingInterval)
 
           // Logging for development purposes; should not appear on prod.
-          // eslint-disable-next-line no-console
+          // oxlint-disable-next-line no-console
           console.log(
             `${labelString()}%c -> ${safeSerialize(err)}`,
             "background: #bada55; color: #222",
@@ -179,7 +179,7 @@ function wrapMetaMaskProvider(provider: WalletProvider): {
   if (metaMaskWrapperByWrappedProvider.has(provider)) {
     return {
       // `get` is guarded by the `has` check above.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // oxlint-disable-next-line typescript/no-non-null-assertion
       provider: metaMaskWrapperByWrappedProvider.get(provider)!,
       wasMetaMaskLike: true,
     }
@@ -255,7 +255,6 @@ function metaMaskWrappedProviders(
     metaMaskDetected: boolean
   }>(
     // Shadowing as we're building up the final value extracted above.
-    // eslint-disable-next-line @typescript-eslint/no-shadow
     ({ defaultManagedProviders, metaMaskDetected }, provider) => {
       if (provider === undefined) {
         return { defaultManagedProviders, metaMaskDetected }
@@ -596,14 +595,14 @@ window.addEventListener("eip6963:requestProvider", announceProvider)
 
 window.addEventListener("tally:reconnectProvider", () => {
   // Log this for debugging
-  // eslint-disable-next-line no-console
+  // oxlint-disable-next-line no-console
   console.debug(
     "%c Reconnecting window provider",
     "background: #bada55; color: #222",
   )
   if (!window.ethereum) {
     // Log this for debugging
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.debug(
       "Setting taho on window object",
       "background: #bada55; color: #222",

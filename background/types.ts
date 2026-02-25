@@ -1,5 +1,5 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
-import { Opaque } from "./tag-types"
+import type { Opaque } from "./tag-types"
 
 /**
  * Named type for strings that should be URIs.

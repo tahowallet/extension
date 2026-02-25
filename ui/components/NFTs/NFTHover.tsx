@@ -1,4 +1,4 @@
-/* eslint-disable no-nested-ternary */
+/* oxlint-disable no-nested-ternary */
 import React, { CSSProperties, ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { I18nKey } from "../../_locales/i18n"

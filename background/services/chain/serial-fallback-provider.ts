@@ -17,7 +17,7 @@ import {
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
   ALCHEMY_KEY,
@@ -122,7 +122,7 @@ function getRPCCacheKey(method: string, params: unknown) {
     if (typeof val === "object" && !Array.isArray(val)) {
       const keys = Object.keys(val)
       keys.sort()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       return keys.reduce<any>((acc, key) => {
         acc[key] = val[key]
         return acc
@@ -752,7 +752,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     const subscription = { tag, param, processFunc }
 
     if (isWebSocketProvider(this.currentProvider)) {
-      // eslint-disable-next-line no-underscore-dangle
       await this.currentProvider._subscribe(tag, param, processFunc)
       this.subscriptions.push(subscription)
     } else {
@@ -942,7 +941,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           ({ eventName: storedEventName, listener, once }) =>
             eventName !== storedEventName ||
             listener !== wrappedListener ||
-            once !== true,
+            !once,
         )
       }
     }
@@ -1015,7 +1014,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             waitAnd(backedOffMs(), () =>
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
-              // eslint-disable-next-line no-underscore-dangle
               provider._subscribe(tag, param, processFunc),
             ),
           ),
@@ -1199,7 +1197,7 @@ export function makeSerialFallbackProvider(
     process.env.ARBITRUM_FORK_RPC.trim() !== "" &&
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true"
   ) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(
       "%c🦴 Using Tenderly fork as Arbitrum Sepolia provider",
       "background: #071111; color: #fff; font-weight: 900;",

@@ -7,7 +7,7 @@ import {
 import { EVMNetwork } from "../../networks"
 
 // Adds chainID to each NFT for convenience in frontend
-// eslint-disable-next-line import/prefer-default-export
+// oxlint-disable-next-line import/prefer-default-export
 export const selectEVMNetworks = createSelector(
   (state: RootState) => state.networks.evmNetworks,
   (evmNetworks): EVMNetwork[] => Object.values(evmNetworks),

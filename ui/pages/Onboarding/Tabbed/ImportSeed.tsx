@@ -155,12 +155,16 @@ export default function ImportSeed(props: Props): ReactElement {
           width: 100%;
           display: flex;
           flex-direction: column;
-          margin-top: ${isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
-            ? "24px"
-            : "48px"};
-          margin-bottom: ${isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
-            ? "16px"
-            : "24px"};
+          margin-top: ${
+            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
+              ? "24px"
+              : "48px"
+          };
+          margin-bottom: ${
+            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
+              ? "16px"
+              : "24px"
+          };
         }
         .help_button {
           width: 320px;

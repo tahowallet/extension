@@ -359,8 +359,8 @@ export default function Swap(): ReactElement {
                 // to avoid problems with gas price on Optimism Bedrock.
                 currentNetwork.chainID === OPTIMISM.chainID
                   ? transaction.gasPrice
-                  : quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
-                    transaction.gasPrice,
+                  : (quote.swapTransactionSettings.networkSettings.values.maxFeePerGas.toString() ??
+                    transaction.gasPrice),
             },
             sellAsset,
             buyAsset,

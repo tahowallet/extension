@@ -43,8 +43,7 @@ function BrowserTabContainer({
           --left: 39.7vw;
           --top: 60.2vh;
           background: radial-gradient(
-            ellipse var(--originX) var(--originY) at
-              calc(var(--left) + var(--originX))
+            ellipse var(--originX) var(--originY) at calc(var(--left) + var(--originX))
               calc(var(--top) + var(--originY)),
             hsl(175.77, 49.65%, 28.04%),
             hsla(175.77, 49.7%, 27.65%, 0.9657064) 13.11%,
@@ -96,8 +95,7 @@ function BrowserTabContainer({
           --left: 37.2vw;
           --top: -21vh;
           background: radial-gradient(
-            ellipse var(--originX) var(--originY) at
-              calc(var(--left) + var(--originX))
+            ellipse var(--originX) var(--originY) at calc(var(--left) + var(--originX))
               calc(var(--top) + var(--originY)),
             hsl(175.77, 49.65%, 28.04%),
             hsla(175.77, 49.68%, 27.81%, 0.9803241) 9.99%,

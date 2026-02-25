@@ -1,5 +1,5 @@
 import eligibles from "../../static/eligibles.json"
-import { Claim, Eligible } from "./types"
+import type { Claim, Eligible } from "./types"
 
 const defaultClaim: Claim = {
   eligibles: eligibles.map(

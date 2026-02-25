@@ -1,4 +1,4 @@
-import { NormalizedEVMAddress } from "./types"
+import type { NormalizedEVMAddress } from "./types"
 
 type HoldERC20 = {
   type: "hold"

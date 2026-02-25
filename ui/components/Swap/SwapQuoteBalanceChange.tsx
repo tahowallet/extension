@@ -30,7 +30,7 @@ type SwapQuoteBalanceChangeProps = {
 
 function getAssetNetwork(asset: FungibleAsset): EVMNetwork | undefined {
   if (isSmartContractFungibleAsset(asset)) {
-    return asset.homeNetwork as EVMNetwork
+    return asset.homeNetwork
   }
   return undefined
 }

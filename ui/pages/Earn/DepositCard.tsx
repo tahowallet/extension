@@ -106,10 +106,7 @@ export default function EarnDepositedCard({
               width: 352px;
               height: 176px;
               border-radius: 8px;
-              background: linear-gradient(
-                var(--green-95) 100%,
-                var(--green-95)
-              );
+              background: linear-gradient(var(--green-95) 100%, var(--green-95));
               box-sizing: border-box;
               padding: 16px;
               margin-bottom: 20px;
@@ -118,11 +115,7 @@ export default function EarnDepositedCard({
             }
             .card:hover {
               box-shadow: 0px 10px 12px 0px #0014138a;
-              background: linear-gradient(
-                180deg,
-                #284340 0%,
-                var(--green-95) 100%
-              );
+              background: linear-gradient(180deg, #284340 0%, var(--green-95) 100%);
             }
             .info {
               display: flex;

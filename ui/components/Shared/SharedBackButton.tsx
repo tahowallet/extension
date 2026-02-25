@@ -21,7 +21,7 @@ export default function SharedBackButton({
   round?: boolean
 }): ReactElement {
   const { t } = useTranslation()
-  const history = useHistory<unknown>()
+  const history = useHistory()
 
   const goBack = () => {
     if (isMemoryHistory(history)) {

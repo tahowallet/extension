@@ -155,9 +155,9 @@ function ExploreMarketButton(props: ExploreMarketButtonProps): ReactElement {
         }
 
         .market_wrapper:hover .market_icon {
-          background-image: url("images/marketplaces/${smallHoverIcon ??
-          smallIcon ??
-          icon}");
+          background-image: url("images/marketplaces/${
+            smallHoverIcon ?? smallIcon ?? icon
+          }");
         }
       `}</style>
     </div>
@@ -215,10 +215,10 @@ export default function ExploreMarketLink(
     >
       {type === "button" ? (
         // As we know how props are going to look like let's spread them
-        // eslint-disable-next-line react/jsx-props-no-spreading
+        // oxlint-disable-next-line react/jsx-props-no-spreading
         <ExploreMarketButton {...props} />
       ) : (
-        // eslint-disable-next-line react/jsx-props-no-spreading
+        // oxlint-disable-next-line react/jsx-props-no-spreading
         <ExploreMarketIcon {...props} />
       )}
     </a>

@@ -1,4 +1,4 @@
-/* eslint-disable class-methods-use-this */
+/* oxlint-disable class-methods-use-this */
 import {
   Block,
   FeeData,
@@ -8,7 +8,7 @@ import {
 import { DexieOptions } from "dexie"
 import { BigNumber, Wallet } from "ethers"
 import { keccak256 } from "ethers/lib/utils"
-import { AccountBalance, AddressOnNetwork } from "../accounts"
+import type { AccountBalance, AddressOnNetwork } from "../accounts"
 import {
   AnyAsset,
   AnyAssetAmount,
@@ -54,11 +54,43 @@ import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
-import { EIP712TypedData } from "../types"
+import type { EIP712TypedData } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
+import { mock } from "bun:test"
 
-// We don't want the chain service to use a real provider in tests
-jest.mock("../services/chain/serial-fallback-provider")
+// We don't want the chain service to use a real provider in tests.
+// Use mock.module() with an inline factory to avoid the circular dependency
+// between the __mocks__ file and this factories file.
+mock.module("../services/chain/serial-fallback-provider", () => {
+  class MockSerialFallbackProvider {
+    async getBlock() {
+      // Lazily import to break circular dependency
+      const { makeEthersBlock } = require("./factories")
+      return makeEthersBlock()
+    }
+    async getBlockNumber() {
+      return 1
+    }
+    async getBalance() {
+      return BigNumber.from(100)
+    }
+    async getFeeData() {
+      const { makeEthersFeeData } = require("./factories")
+      return makeEthersFeeData()
+    }
+    async getCode() {
+      return "false"
+    }
+    async subscribeFullPendingTransactions() {
+      return Promise.resolve()
+    }
+  }
+
+  return {
+    default: MockSerialFallbackProvider,
+    makeSerialFallbackProvider: () => new MockSerialFallbackProvider(),
+  }
+})
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -515,8 +547,8 @@ export const createAssetAmount = (
 export const createCompleteAssetAmount = (
   asset: AnyAsset = ETH,
   amount = 1,
-  overrides: Partial<CompleteAssetAmount<AnyAsset>> = {},
-): CompleteAssetAmount<AnyAsset> => {
+  overrides: Partial<CompleteAssetAmount> = {},
+): CompleteAssetAmount => {
   const assetAmount = createAssetAmount(asset, amount)
   return {
     ...assetAmount,

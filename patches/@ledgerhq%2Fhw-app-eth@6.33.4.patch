@@ -1,20 +1,7 @@
-diff --git a/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js b/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
-index f3815c8..7581b15 100644
---- a/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
-+++ b/node_modules/@ledgerhq/hw-app-eth/lib-es/Eth.js
-@@ -206,7 +206,7 @@ export default class Eth {
-                 }
-                 else {
-                     // Legacy type transaction with a big chain ID
--                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
-+                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
-                 }
-             }
-             else {
-diff --git a/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js b/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
-index 4a7cb64..f11819b 100644
---- a/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
-+++ b/node_modules/@ledgerhq/hw-app-eth/lib/Eth.js
+diff --git a/lib/Eth.js b/lib/Eth.js
+index 4a7cb64fa4344d91546d0b3c07e738fb78eced9f..eee7a09496c0111813c3af161ba4ad0452366fc6 100644
+--- a/lib/Eth.js
++++ b/lib/Eth.js
 @@ -228,7 +228,7 @@ class Eth {
                  }
                  else {
@@ -24,10 +11,23 @@ index 4a7cb64..f11819b 100644
                  }
              }
              else {
-diff --git a/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts b/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
-index a501e97..72f63eb 100644
---- a/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
-+++ b/node_modules/@ledgerhq/hw-app-eth/src/Eth.ts
+diff --git a/lib-es/Eth.js b/lib-es/Eth.js
+index f3815c8afd77f7739d5044a115ae44da089cbc7b..b7cb405907a2a0b9143269a40c267d3c252e0408 100644
+--- a/lib-es/Eth.js
++++ b/lib-es/Eth.js
+@@ -206,7 +206,7 @@ export default class Eth {
+                 }
+                 else {
+                     // Legacy type transaction with a big chain ID
+-                    v = chainId.times(2).plus(35).plus(ecc_parity).toString(16);
++                    v = chainId.times(2).plus(35).plus(chainIdTruncated === 421614 ? ecc_parity % 2 : ecc_parity).toString(16);
+                 }
+             }
+             else {
+diff --git a/src/Eth.ts b/src/Eth.ts
+index a501e9785973f37743cb647acd0991716443dfb2..c0079de651b31e980615ad48d88f7e84090e7b16 100644
+--- a/src/Eth.ts
++++ b/src/Eth.ts
 @@ -316,7 +316,7 @@ export default class Eth {
          v = ecc_parity % 2 == 1 ? "00" : "01";
        } else {

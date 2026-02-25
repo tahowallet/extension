@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { Wallet } from "ethers"
 import { createInterface } from "node:readline/promises"
 
@@ -13,7 +12,7 @@ async function print() {
 
   const json = await wallet.encrypt(password.trim())
   readline.close()
-  // eslint-disable-next-line no-console
+  // oxlint-disable-next-line no-console
   console.log(json)
 }
 

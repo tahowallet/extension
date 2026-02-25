@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { fetchWithTimeout } from "../../utils/fetching"
 
 const getCurveLPTokenPrice = async (wantToken: HexString): Promise<bigint> => {

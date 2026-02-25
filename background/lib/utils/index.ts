@@ -1,7 +1,7 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
-import { NormalizedEVMAddress, UNIXTime } from "../../types"
-import { AddressOnNetwork } from "../../accounts"
+import type { NormalizedEVMAddress, UNIXTime } from "../../types"
+import type { AddressOnNetwork } from "../../accounts"
 
 export function isValidChecksumAddress(
   address: string,

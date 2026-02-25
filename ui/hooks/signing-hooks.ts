@@ -13,7 +13,7 @@ import {
   DisplayDetails,
   LedgerAccountSigner,
 } from "@tallyho/tally-background/services/ledger"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 

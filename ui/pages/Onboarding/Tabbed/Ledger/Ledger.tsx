@@ -1,7 +1,6 @@
 import { connectLedger } from "@tallyho/tally-background/redux-slices/ledger"
 import React, { ReactElement, useState } from "react"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
-import { LedgerProductDatabase } from "@tallyho/tally-background/services/ledger"
 import { useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
 import { sendEvent } from "@tallyho/tally-background/redux-slices/ui"
@@ -12,12 +11,7 @@ import LedgerImportAccounts from "./LedgerImportAccounts"
 import LedgerPrepare from "./LedgerPrepare"
 import OnboardingRoutes from "../Routes"
 
-const filters = Object.values(LedgerProductDatabase).map(
-  ({ productId }): USBDeviceFilter => ({
-    vendorId: ledgerUSBVendorId,
-    productId,
-  }),
-)
+const filters: USBDeviceFilter[] = [{ vendorId: ledgerUSBVendorId }]
 
 export default function Ledger(): ReactElement {
   const [phase, setPhase] = useState<"1-prepare" | "2-connect">("1-prepare")
@@ -32,7 +26,7 @@ export default function Ledger(): ReactElement {
   const [connecting, setConnecting] = useState(false)
 
   const devices = useBackgroundSelector((state) => state.ledger.devices)
-  const device = deviceID === null ? null : devices[deviceID] ?? null
+  const device = deviceID === null ? null : (devices[deviceID] ?? null)
 
   const usbDeviceCount = useBackgroundSelector(
     (state) => state.ledger.usbDeviceCount,

@@ -197,12 +197,14 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         `}
       </style>
       <style jsx>{`
-        ${typeof size === "number"
-          ? `.token_icon_wrap.custom_size {
+        ${
+          typeof size === "number"
+            ? `.token_icon_wrap.custom_size {
               width: ${size}px;
               height: ${size}px;
             }`
-          : ""}
+            : ""
+        }
         .token_icon {
           width: 100%;
           height: 100%;
@@ -210,11 +212,13 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          ${hasHardcodedIcon
-            ? `background: url("${`./images/assets/${symbol.toLowerCase()}.png`}");
+          ${
+            hasHardcodedIcon
+              ? `background: url("${`./images/assets/${symbol.toLowerCase()}.png`}");
             `
-            : `background: url("${imageURL}");
-            `}
+              : `background: url("${imageURL}");
+            `
+          }
           background-size: cover;
           animation: fadein 130ms ease-out forwards;
         }

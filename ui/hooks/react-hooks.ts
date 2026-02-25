@@ -122,6 +122,6 @@ export function useSkipFirstRenderEffect(
     if (didMount.current) func()
     else didMount.current = true
     // We are passing in the dependencies when we initialize this hook, so we can not know what it will be exactly and it's ok.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 }

@@ -82,7 +82,9 @@ export default function Earn(): ReactElement {
           {stage === EarnStages.PartialyLive && <NotificationVaults />}
           <ul className="cards_wrap">
             {/* TODO Replace isComing soon with a check if current Timestamp > vault.poolStartTime */}
-            {vaultsWithLockedValues?.map((vault) => <PoolCard vault={vault} />)}
+            {vaultsWithLockedValues?.map((vault) => (
+              <PoolCard vault={vault} />
+            ))}
           </ul>
         </section>
       )}

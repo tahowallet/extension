@@ -9,7 +9,7 @@ import {
 import { validateAddEthereumChainParameter } from "../../provider-bridge/utils"
 import { ETHEREUM } from "../../../constants"
 import { SignTypedDataRequest } from "../../../utils/signing"
-import { EIP712TypedData } from "../../../types"
+import type { EIP712TypedData } from "../../../types"
 
 const TEST_ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 

@@ -1,17 +1,17 @@
 import { fetchJson } from "@ethersproject/web"
-import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { ETHEREUM, MINUTE, POLYGON } from "../../../constants"
 import { isDefined } from "../../../lib/utils/type-guards"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"
 
-// eslint-disable-next-line prefer-destructuring
+// oxlint-disable-next-line prefer-destructuring
 const UNS_API_KEY = process.env.UNS_API_KEY
 
 // Time until response is stale
 const RESPONSE_TTL = 2 * MINUTE
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 const cacheAsyncResults = <F extends (...args: any[]) => Promise<any>>(
   ttl: number,
   fn: F,
@@ -71,7 +71,7 @@ const UNS_SUPPORTED_NETWORKS = [ETHEREUM, POLYGON]
  * Lookup a UNS domain name and fetch the owners address
  */
 // FIXME UNS issues
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// oxlint-disable-next-line no-unused-vars
 const lookupUNSDomain = async (domain: string) => {
   const response = await fetchJson({
     url: `https://resolve.unstoppabledomains.com/domains/${domain}`,

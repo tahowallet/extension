@@ -28,10 +28,14 @@ import {
   AnalyticsService,
 } from ".."
 
-import { HexString, NormalizedEVMAddress } from "../../types"
+import type { HexString, NormalizedEVMAddress } from "../../types"
 import { SignedTransaction, sameNetwork } from "../../networks"
-import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
-import { Eligible, ReferrerStats } from "../island/types"
+import type {
+  AccountBalance,
+  AddressOnNetwork,
+  NameOnNetwork,
+} from "../../accounts"
+import type { Eligible, ReferrerStats } from "../island/types"
 
 import {
   AccountType,
@@ -145,8 +149,8 @@ import {
 } from "../signing"
 import { PermissionMap } from "../provider-bridge/utils"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
+import type { ActivityDetail } from "../../redux-slices/activities"
 import {
-  ActivityDetail,
   addActivity,
   initializeActivities,
   initializeActivitiesForAccount,
@@ -1080,13 +1084,11 @@ export default class ReduxService extends BaseService<never> {
 
         const clear = () => {
           // Mutual dependency to handleAndClear.
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           this.signingService.emitter.off("signingTxResponse", handleAndClear)
 
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1140,14 +1142,12 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "signingDataResponse",
             // Mutual dependency to handleAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1196,14 +1196,12 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "personalSigningResponse",
             // Mutual dependency to handleAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1413,7 +1411,7 @@ export default class ReduxService extends BaseService<never> {
           )
 
           if (!supportedNetwork) {
-            // eslint-disable-next-line prefer-destructuring
+            // oxlint-disable-next-line prefer-destructuring
             supportedNetwork = this.chainService.supportedNetworks[0]
           }
 

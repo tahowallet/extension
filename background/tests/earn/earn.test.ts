@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* oxlint-disable typescript/ban-ts-comment */
 import { BigNumber } from "ethers"
 import * as getTokenPrice from "../../redux-slices/earn-utils/getTokenPrice"
 import { getDoggoPrice, getPoolAPR } from "../../redux-slices/earn-utils"

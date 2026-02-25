@@ -32,7 +32,7 @@ import { resetClaimFlow } from "@tallyho/tally-background/redux-slices/claim"
 import { useTranslation } from "react-i18next"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
 import { isSameAccountSignerWithId } from "@tallyho/tally-background/utils/signing"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import SharedButton from "../Shared/SharedButton"
 import {
   useBackgroundDispatch,

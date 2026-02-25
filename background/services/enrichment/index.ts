@@ -5,7 +5,7 @@ import { SmartContractFungibleAsset } from "../../assets"
 import ChainService from "../chain"
 import IndexingService from "../indexing"
 import NameService from "../name"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import {
   EnrichedEVMTransaction,
@@ -24,7 +24,7 @@ import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
 
-export * from "./types"
+export type * from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   enrichedEVMTransaction: {

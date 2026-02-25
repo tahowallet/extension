@@ -2,10 +2,25 @@
 // without redefining the types. This is a typescript shortcoming that we can't easily redefine class member visibility.
 // https://github.com/microsoft/TypeScript/issues/22677
 // POC https://www.typescriptlang.org/play?#code/MYGwhgzhAEBiD29oG8BQ0PWPAdhALgE4Cuw+8hAFAA6ECWAbmPgKbRgBc0B9OA5gBpotRszYAjLjmIBbcS0IBKFAF9Ua1CBb5oAM0TQAvNBwsA7nESUARGHHBrQgIwAmAMyLU2PPC0A6EHg+Sn14AG1bawBdZQB6WOgAeQBpVHisXAhfFgCgkMQIgH0waLiEgFEAJUrEyrSE0IiSqKNoAFZodKqayqA
-/* eslint-disable @typescript-eslint/dot-notation */
+/* oxlint-disable typescript/dot-notation */
 
-import * as uuid from "uuid"
+import {
+  mock,
+  describe,
+  beforeAll,
+  beforeEach,
+  it,
+  expect,
+  jest,
+} from "bun:test"
 import browser from "webextension-polyfill"
+
+const v4Mock = mock(() => {})
+mock.module("uuid", () => {
+  const actual = require("uuid")
+  v4Mock.mockImplementation(actual.v4)
+  return { ...actual, v4: v4Mock }
+})
 
 import AnalyticsService from ".."
 import { createAnalyticsService } from "../../../tests/factories"
@@ -85,7 +100,7 @@ describe("AnalyticsService", () => {
     it("should generate a new uuid and save it to database", async () => {
       // Called once for generating the new user uuid
       // and once for the `New install' event
-      expect(uuid.v4).toBeCalledTimes(2)
+      expect(v4Mock).toBeCalledTimes(2)
 
       expect(analyticsService["db"].setAnalyticsUUID).toBeCalledTimes(1)
     })

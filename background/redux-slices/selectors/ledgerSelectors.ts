@@ -1,6 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { RootState } from ".."
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { LedgerDeviceState } from "../ledger"
 
 export const selectLedgerDeviceByAddresses = createSelector(

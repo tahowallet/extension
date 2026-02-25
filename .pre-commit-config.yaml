@@ -3,23 +3,13 @@ repos:
     hooks:
       - id: lint-js
         name: "lint typescript and javascript"
-        entry: /usr/bin/env npx eslint
+        entry: /usr/bin/env bunx oxlint --type-aware
         files: '\.jsx?$|\.tsx?$'
         language: script
         description: "Checks JS/TS code according to the package's linter configuration"
-  - repo: local
-    hooks:
-      - id: lint-config
-        name: "lint config files"
-        entry: /usr/bin/env npx prettier -c
-        files: '\.json$|\.yaml$|\.toml$|\.yml$'
+      - id: format
+        name: "check formatting"
+        entry: /usr/bin/env bunx oxfmt --check
+        files: '\.jsx?$|\.tsx?$|\.json$|\.yaml$|\.yml$|\.md$'
         language: script
-        description: "Checks config files according to the package's linter configuration"
-  - repo: local
-    hooks:
-      - id: lint-docs
-        name: "lint documentation files"
-        entry: /usr/bin/env npx prettier -c
-        files: '\.md$'
-        language: script
-        description: "Checks documentation files according to the package's linter configuration"
+        description: "Checks file formatting"

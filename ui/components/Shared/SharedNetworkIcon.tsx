@@ -69,9 +69,9 @@ export default function SharedNetworkIcon(props: {
           width: 100%;
           height: 100%;
           border-radius: 6px;
-          background-color: ${hasBackground
-            ? "var(--green-95)"
-            : "transparent"};
+          background-color: ${
+            hasBackground ? "var(--green-95)" : "transparent"
+          };
           opacity: ${backgroundOpacity};
         }
         .icon_fallback {

@@ -1,3 +1,6 @@
+import { IDBFactory } from "fake-indexeddb"
+import { beforeEach, afterEach, it } from "bun:test"
+
 /* Reset IndexedDB between tests */
 beforeEach(() => {
   global.indexedDB = new IDBFactory()
@@ -9,7 +12,6 @@ afterEach(() => {
 })
 
 it.flaky = function checkFlaky(label: string, testCase: () => unknown): void {
-  // eslint-disable-next-line no-only-tests/no-only-tests
   it.only(label, () => {
     const results = []
     for (let i = 0; i < 2000; i += 1) {
@@ -19,8 +21,7 @@ it.flaky = function checkFlaky(label: string, testCase: () => unknown): void {
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-unused-vars
-declare namespace jest {
+declare module "bun:test" {
   interface It {
     /**
      * Used for debugging flaky tests

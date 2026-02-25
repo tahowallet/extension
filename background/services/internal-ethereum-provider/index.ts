@@ -12,7 +12,7 @@ import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import logger from "../../lib/logger"
 
 import BaseService from "../base"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
 import {
   EVMNetwork,

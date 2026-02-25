@@ -9,11 +9,11 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
 } from "../../networks"
-import { EIP712TypedData, HexString } from "../../types"
+import type { EIP712TypedData, HexString } from "../../types"
 import BaseService from "../base"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import ChainService from "../chain"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 
 type SigningErrorReason = "userRejected" | "genericError"
@@ -244,14 +244,14 @@ export default class SigningService extends BaseService<Events> {
       let signedData: string
       const chainId =
         typeof typedData.domain.chainId === "string"
-          ? // eslint-disable-next-line radix
+          ? // oxlint-disable-next-line radix
             parseInt(typedData.domain.chainId)
           : typedData.domain.chainId
       if (
         typedData.domain.chainId !== undefined &&
         // Let parseInt infer radix by prefix; chainID can be hex or decimal,
         // though it should generally be hex.
-        // eslint-disable-next-line radix
+        // oxlint-disable-next-line radix
         chainId !== parseInt(account.network.chainID)
       ) {
         throw new Error(

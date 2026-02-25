@@ -119,8 +119,7 @@ export default function SignerLedgerFrame<
               width: 24px;
               height: 24px;
               margin: 8px;
-              background: no-repeat center / cover
-                url("./images/block_icon@2x.png");
+              background: no-repeat center / cover url("./images/block_icon@2x.png");
             }
           `}</style>
         </>

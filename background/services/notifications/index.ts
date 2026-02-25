@@ -2,7 +2,7 @@ import { uniqueId } from "lodash"
 import browser from "webextension-polyfill"
 import BaseService from "../base"
 import PreferenceService from "../preferences"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { HOUR } from "../../constants"
 
 const TAHO_ICON_URL =

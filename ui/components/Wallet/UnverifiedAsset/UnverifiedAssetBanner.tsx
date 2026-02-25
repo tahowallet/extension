@@ -18,7 +18,7 @@ export default function UnverifiedAssetBanner({
       icon="notif-attention"
       iconColor="var(--attention)"
       style={style}
-      // eslint-disable-next-line react/jsx-props-no-spreading
+      // oxlint-disable-next-line react/jsx-props-no-spreading
       {...props}
     >
       <div className="banner">

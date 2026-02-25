@@ -15,7 +15,7 @@ import type ReduxService from "../services/redux"
 // Below, we use `any` to deal with the fact that allAliases is a heterogeneous
 // collection of async thunk actions whose payload types have little in common
 // with each other.
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* oxlint-disable typescript/no-explicit-any */
 /**
  * A list of all webext-redux aliases that have been registered globally. These
  * are generally updated automatically by helpers like
@@ -95,13 +95,14 @@ export type BackgroundAsyncThunk<
 
 // Extracts a @reduxjs/toolkit internal type for type alignment in the below
 // function types.
-type AsyncThunkConfig = ReturnType<typeof createAsyncThunk> extends AsyncThunk<
-  infer _,
-  infer __,
-  infer T
->
-  ? T
-  : never
+type AsyncThunkConfig =
+  ReturnType<typeof createAsyncThunk> extends AsyncThunk<
+    infer _,
+    infer __,
+    infer T
+  >
+    ? T
+    : never
 
 /**
  * Create an async thunk action that will always run in the background script,
@@ -200,13 +201,13 @@ export function createBackgroundAsyncThunk<
  * wanting to declare something as "the type that this thunk will return once
  * it completes".
  */
-export type AsyncThunkFulfillmentType<T> = T extends Pick<
-  // We don't really need the other two inferred values.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  AsyncThunk<infer Returned, infer _1, infer _2>,
-  "fulfilled"
->
-  ? Returned
-  : never
+export type AsyncThunkFulfillmentType<T> =
+  T extends Pick<
+    // We don't really need the other two inferred values.
+    AsyncThunk<infer Returned, infer _1, infer _2>,
+    "fulfilled"
+  >
+    ? Returned
+    : never
 
 export const noopAction = createBackgroundAsyncThunk("noop", () => {})

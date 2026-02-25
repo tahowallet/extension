@@ -16,7 +16,7 @@ import InternalEthereumProviderService, {
   AddEthereumChainParameter,
 } from "../internal-ethereum-provider"
 import { getOrCreateDB, ProviderBridgeServiceDatabase } from "./db"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import PreferenceService from "../preferences"
 import logger from "../../lib/logger"
 import {
@@ -25,7 +25,7 @@ import {
   checkPermissionSignTransaction,
 } from "./authorization"
 import showExtensionPopup from "./show-popup"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import {
   handleRPCErrorResponse,
@@ -262,9 +262,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // to be this, and no parameters that might be passed before these should
       // be read as injected (which can happen in certain invocations of these
       // methods).
-      const [title, faviconUrl] = (event.request.params as unknown[]).slice(
-        -2,
-      ) as string[]
+      const [title, faviconUrl] = event.request.params.slice(-2) as string[]
 
       const existingPermission = await this.checkPermission(origin, dAppChainID)
       if (

@@ -9,8 +9,8 @@ import {
   SmartContractAmount,
   SmartContractFungibleAsset,
 } from "../../assets"
-import { AddressOnNetwork } from "../../accounts"
-import { HexString } from "../../types"
+import type { AddressOnNetwork } from "../../accounts"
+import type { HexString } from "../../types"
 import logger from "../../lib/logger"
 import { EVMNetwork, SmartContract } from "../../networks"
 import {

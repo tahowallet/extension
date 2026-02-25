@@ -1,5 +1,5 @@
 import Dexie from "dexie"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
 

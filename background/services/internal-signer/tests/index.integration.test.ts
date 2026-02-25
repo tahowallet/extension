@@ -393,7 +393,7 @@ describe("InternalSignerService when autolocking", () => {
   })
 
   it("will autolock after the keyring idle time but not sooner", async () => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
+    // oxlint-disable-next-line typescript/dot-notation
     const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     expect(service.locked()).toEqual(false)
@@ -406,7 +406,7 @@ describe("InternalSignerService when autolocking", () => {
   })
 
   it("will autolock after the outside activity idle time but not sooner", async () => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
+    // oxlint-disable-next-line typescript/dot-notation
     const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     expect(service.locked()).toEqual(false)
@@ -447,7 +447,7 @@ describe("InternalSignerService when autolocking", () => {
       },
     },
   ])("will bump keyring activity idle time when $action", async ({ call }) => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
+    // oxlint-disable-next-line typescript/dot-notation
     const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
@@ -470,7 +470,7 @@ describe("InternalSignerService when autolocking", () => {
   })
 
   it("will bump the outside activity idle time when outside activity is marked", async () => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation
+    // oxlint-disable-next-line typescript/dot-notation
     const maxIdleTime = await service["preferenceService"].getAutoLockInterval()
 
     jest.spyOn(Date, "now").mockReturnValue(dateNowValue + maxIdleTime - 1)
@@ -493,7 +493,7 @@ describe("InternalSignerService when autolocking", () => {
   })
 
   it("locks when auto-lock timer has been updated to be less than current idle time", async () => {
-    // eslint-disable-next-line @typescript-eslint/dot-notation, prefer-destructuring
+    // oxlint-disable-next-line typescript/dot-notation, prefer-destructuring
     const preferenceService = service["preferenceService"]
 
     const maxIdleTime = await preferenceService.getAutoLockInterval()

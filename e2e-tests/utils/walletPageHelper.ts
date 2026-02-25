@@ -226,7 +226,7 @@ export default class WalletPageHelper {
       .getByRole("button", { name: "Receive", exact: true })
       .click({ trial: true })
 
-    if (testnet === false) {
+    if (!testnet) {
       await this.popup
         .getByTestId("panel_switcher")
         .getByText("NFTs", { exact: true })

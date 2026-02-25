@@ -3,8 +3,8 @@ import Emittery from "emittery"
 import { MessageSigningRequest, SignTypedDataRequest } from "../utils/signing"
 import { createBackgroundAsyncThunk } from "./utils"
 import { EnrichedSignTypedDataRequest } from "../services/enrichment"
-import { EIP712TypedData } from "../types"
-import { AddressOnNetwork } from "../accounts"
+import type { EIP712TypedData } from "../types"
+import type { AddressOnNetwork } from "../accounts"
 import { AccountSigner } from "../services/signing"
 import {
   EIP1559TransactionRequest,

@@ -3,7 +3,7 @@ import AccountsNotificationPanelNotificationItem from "./AccountsNotificationPan
 import SharedButton from "../Shared/SharedButton"
 
 // This file is currently still a stub, so using sample data.
-/* eslint-disable react/no-array-index-key */
+/* oxlint-disable react/no-array-index-key */
 
 export default function AccountsNotificationPanelNotifications(): ReactElement {
   return (

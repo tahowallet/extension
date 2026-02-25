@@ -8,3 +8,5 @@
 fd45e9ffe8405e00ed34ca500bbf8f88d06de20f
 # Bump to @thesis-co/eslint-config@0.6.0 with prettier 3.x.
 9c4488cebd14d578dcd2cf9d3d3b26934b5262df
+# Reformat codebase with oxfmt (replacing prettier).
+d0f9b6a53b44b77229e58f4ec48c24b9965d0476

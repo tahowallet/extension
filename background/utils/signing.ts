@@ -1,10 +1,10 @@
 import { TypedDataField } from "@ethersproject/abstract-signer"
 import { hexlify, toUtf8Bytes, toUtf8String } from "ethers/lib/utils"
 import { SiweMessage } from "siwe"
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 import { AccountSignerWithId } from "../signing"
 
-import { EIP191Data, EIP712TypedData, HexString } from "../types"
+import type { EIP191Data, EIP712TypedData, HexString } from "../types"
 
 export type EIP712DomainType = {
   name?: string
@@ -111,7 +111,7 @@ export function parseSigningData(signingData: string): MessageSigningData {
       possibleMessageString = toUtf8String(signingData)
       // Below, if the signing data is not a valid UTF-8 string, we move on
       // with an undefined possibleMessageString.
-      // eslint-disable-next-line no-empty
+      // oxlint-disable-next-line no-empty
     } catch (err) {}
 
     // If the hex was parsable as UTF-8 and re-converting to bytes in a hex

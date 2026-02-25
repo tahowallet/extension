@@ -132,7 +132,7 @@ const syncGalxe = async () => {
         body: JSON.stringify(payload),
       })
     } catch (error) {
-      throw new Error("Unable to sync with galxe")
+      throw new Error("Unable to sync with galxe", { cause: error })
     }
 
     await wait(3000)

@@ -8,7 +8,7 @@ import {
 } from "@tallyho/provider-bridge-shared"
 import { AddEthereumChainParameter } from "../internal-ethereum-provider"
 import { sameEVMAddress } from "../../lib/utils"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 export type PermissionMap = {
   evm: {

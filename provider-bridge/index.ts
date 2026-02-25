@@ -35,7 +35,7 @@ export default function connectProviderBridge(): void {
           // For eth_requestAccounts specifically, we force the parameters as
           // the dApp should be sending none, but some send parameters that look
           // more like what you'd expect on wallet_requestPermissions.
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           event.data.request.params = [title, faviconUrl]
         } else {
           event.data.request.params.push(title, faviconUrl)
@@ -43,7 +43,7 @@ export default function connectProviderBridge(): void {
       }
 
       // TODO: replace with better logging before v1. Now it's invaluable in debugging.
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(
         `%c content: inpage > background: ${JSON.stringify(event.data)}`,
         "background: #bada55; color: #222",
@@ -59,13 +59,13 @@ export default function connectProviderBridge(): void {
     }
 
     // TODO: replace with better logging before v1. Now it's invaluable in debugging.
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(
       `%c content: background > inpage: ${JSON.stringify(data)}`,
       "background: #222; color: #bada55",
     )
     if (typeof data !== "object") {
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.error("Unexpected message on port listener", data)
     }
     window.postMessage(
@@ -86,7 +86,7 @@ export default function connectProviderBridge(): void {
     port.onMessage.removeListener(onPortMessageListener)
 
     // Log this for debugging
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log(
       "%c Reconnecting port from contentScript",
       "background: #bada55; color: #222",
