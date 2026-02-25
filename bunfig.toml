@@ -1,5 +1,6 @@
 [test]
 preload = [
+  "./setupBun.styled-jsx.ts",
   "./setupBun.dom.ts",
   "./setup-extension-mock.ts",
   "fake-indexeddb/auto",
