@@ -122,8 +122,12 @@ export default class TransactionsHelper {
       `^${regexSpendAmount} ${regexAssetSymbol}$`,
     )
     await expect(spendAmountContainer.getByText(spendAmountRegEx)).toBeVisible()
+    // Accept either a dollar amount or `$-` fallback, as price data may be
+    // unavailable in CI/fork environments.
     await expect(
-      spendAmountContainer.getByText(/^\$(\d|,)+(\.\d{1,2})*$/),
+      spendAmountContainer
+        .getByText(/^\$(\d|,)+(\.\d{1,2})*$/)
+        .or(spendAmountContainer.getByText(/^\$-$/)),
     ).toBeVisible()
 
     await this.popup
