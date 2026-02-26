@@ -20,6 +20,36 @@ module.exports = async function postBuildLink({ github, context }) {
     throw new Error("Failed to get workflow run id")
   }
 
+  const actor = context.payload.workflow_run?.actor?.login
+  const triggeringActor =
+    context.payload.workflow_run?.triggering_actor?.login ?? actor
+
+  async function hasWriteAccess(username) {
+    try {
+      const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        username,
+      })
+      return ["admin", "write"].includes(data.permission)
+    } catch {
+      return false
+    }
+  }
+
+  if (actor !== undefined) {
+    const allowed =
+      (await hasWriteAccess(actor)) ||
+      (triggeringActor !== actor && (await hasWriteAccess(triggeringActor)))
+
+    if (!allowed) {
+      console.log(
+        `Actor ${actor} / triggering actor ${triggeringActor} lacks write access. Skipping comment.`,
+      )
+      return
+    }
+  }
+
   const {
     status: workflowLookupStatus,
     data: { check_suite_id: checkSuiteId, updated_at: workflowUpdatedAt },
@@ -79,19 +109,6 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
-  const {
-    status: pullLookupStatus,
-    data: { body },
-  } = await github.rest.pulls.get({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    pull_number: Number(prNumber),
-  })
-
-  if (pullLookupStatus !== 200) {
-    throw new Error(`Failed to fetch PR body :( Status ${pullLookupStatus}.`)
-  }
-
   const baseUrl = context.payload?.repository?.html_url
   const artifactUrl = `${baseUrl}/suites/${checkSuiteId}/artifacts/${matchArtifact.id}`
 
@@ -99,17 +116,30 @@ module.exports = async function postBuildLink({ github, context }) {
     `Detected artifact ${matchArtifact.name} at ${artifactUrl}, posting...`,
   )
 
-  const updatedBody = `${(body ?? "").replace(
-    /\s+Latest build: [^\n]*/,
-    "",
-  )}\n\nLatest build: [${matchArtifact.name}](${artifactUrl}) (as of ${new Date(
-    workflowUpdatedAt,
-  ).toUTCString()}).`
+  const MARKER = "<!-- extension-build-link -->"
+  const commentBody = `${MARKER}\n**Latest build:** [${matchArtifact.name}](${artifactUrl}) (as of ${new Date(workflowUpdatedAt).toUTCString()}).`
 
-  await github.rest.pulls.update({
+  const { data: comments } = await github.rest.issues.listComments({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    pull_number: Number(prNumber),
-    body: updatedBody,
+    issue_number: Number(prNumber),
   })
+
+  const existing = comments.find((c) => c.body?.includes(MARKER))
+
+  if (existing) {
+    await github.rest.issues.updateComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      comment_id: existing.id,
+      body: commentBody,
+    })
+  } else {
+    await github.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: Number(prNumber),
+      body: commentBody,
+    })
+  }
 }
