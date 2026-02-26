@@ -46,7 +46,6 @@ jobs:
         env:
           ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
           ZEROX_API_KEY: ${{ secrets.DEV_ZEROX_API_KEY }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
       - name: Production build
@@ -56,7 +55,6 @@ jobs:
           yarn build
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
           UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
           SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
           ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
@@ -86,7 +84,6 @@ jobs:
           find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
           ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.DEV_BLOCKNATIVE_API_KEY || 'f60816ff-da02-463f-87a6-67a09c6d53fa' }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
           USE_MAINNET_FORK: true
@@ -98,7 +95,6 @@ jobs:
           find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
           ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-          BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
           UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
           SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
           ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}

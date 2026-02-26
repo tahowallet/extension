@@ -2,8 +2,8 @@
 
 The Taho Background package can effectively be considered the background script for the
 Taho extension. It is designed to connect to external data providers including
-Ethereum nodes, as well as specific providers like Alchemy and Blocknative that
-may enable specific functionality beyond the standard node functions. It constructs
+Ethereum nodes, as well as specific providers like Alchemy that may enable
+specific functionality beyond the standard node functions. It constructs
 a data model in the form of a [Redux](https://redux.js.org) store, which is
 then synchronized to any consumer via a proxy store using functionality in the
 [webext-redux](https://github.com/tshaddix/webext-redux) library.
