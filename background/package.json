@@ -33,7 +33,7 @@
     "@ethersproject/providers": "5.7.2",
     "@ethersproject/transactions": "5.7.0",
     "@ethersproject/web": "^5.7.1",
-    "@ledgerhq/devices": "8.0.3",
+    "@ledgerhq/devices": "8.10.0",
     "@ledgerhq/errors": "6.12.6",
     "@ledgerhq/hw-app-eth": "6.33.4",
     "@ledgerhq/hw-transport": "6.28.4",
