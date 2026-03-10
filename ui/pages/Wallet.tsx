@@ -96,8 +96,7 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired,
   )
 
-  const showHiddenAssets =
-    showUnverifiedAssets && unverifiedAssetAmounts.length > 0
+  const showHiddenAssets = showUnverifiedAssets && unverifiedAssetAmounts.length > 0
 
   const panelNames = [t("wallet.pages.assets")]
 
