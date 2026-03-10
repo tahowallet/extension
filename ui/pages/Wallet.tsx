@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useMemo, useState } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import dayjs from "dayjs"
 import isBetween from "dayjs/plugin/isBetween"
 
@@ -96,10 +96,7 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired,
   )
 
-  const showHiddenAssets = useMemo(
-    () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
-    [showUnverifiedAssets, unverifiedAssetAmounts.length],
-  )
+  const showHiddenAssets = showUnverifiedAssets && unverifiedAssetAmounts.length > 0
 
   const panelNames = [t("wallet.pages.assets")]
 
