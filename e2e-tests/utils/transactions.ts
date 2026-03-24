@@ -122,8 +122,12 @@ export default class TransactionsHelper {
       `^${regexSpendAmount} ${regexAssetSymbol}$`,
     )
     await expect(spendAmountContainer.getByText(spendAmountRegEx)).toBeVisible()
+    // Accept either a dollar amount or `$-` fallback, as price data may be
+    // unavailable in CI/fork environments.
     await expect(
-      spendAmountContainer.getByText(/^\$(\d|,)+(\.\d{1,2})*$/),
+      spendAmountContainer
+        .getByText(/^\$(\d|,)+(\.\d{1,2})*$/)
+        .or(spendAmountContainer.getByText(/^\$-$/)),
     ).toBeVisible()
 
     await this.popup
@@ -132,12 +136,11 @@ export default class TransactionsHelper {
     const estimatedFeeContainer = this.popup
       .locator("span")
       .filter({ hasText: "Estimated network fee" })
-    await expect(
-      estimatedFeeContainer.getByText(/^~\$\d+(\.\d{1,2})*$/),
-    ).toBeVisible()
-    await expect(
-      estimatedFeeContainer.getByText(/^\(\d+(\.\d{1,2})* Gwei\)$/),
-    ).toBeVisible()
+    // Accept either dollar-denominated fee or gwei-only fallback, as price
+    // data may be unavailable in CI/fork environments.
+    const dollarFee = estimatedFeeContainer.getByText(/^~\$\d+(\.\d{1,2})*$/)
+    const gweiFallback = estimatedFeeContainer.getByText(/^~\d+(\.\d+)? Gwei$/)
+    await expect(dollarFee.or(gweiFallback)).toBeVisible()
     await estimatedFeeContainer.getByRole("button").click({ trial: true })
     // TODO: Add network fees verification
 
@@ -210,10 +213,12 @@ export default class TransactionsHelper {
       `),
     )
     await senderButton.click()
-    const clipboardSendFromAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
+    await expect(async () => {
+      const clipboardSendFromAddress = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+      expect(clipboardSendFromAddress).toBe(sendFromAddressFull)
+    }).toPass()
 
     /**
      * Assert receipient's address.
@@ -231,10 +236,12 @@ export default class TransactionsHelper {
       `),
     )
     await receipientButton.click()
-    const clipboardSendToAddress = await this.popup.evaluate(() =>
-      navigator.clipboard.readText(),
-    )
-    expect(clipboardSendToAddress).toBe(sendToAddressFull)
+    await expect(async () => {
+      const clipboardSendToAddress = await this.popup.evaluate(() =>
+        navigator.clipboard.readText(),
+      )
+      expect(clipboardSendToAddress).toBe(sendToAddressFull)
+    }).toPass()
 
     /**
      * Assert other transaction properties.

@@ -2,26 +2,14 @@ import { Provider } from "@ethersproject/abstract-provider"
 import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
-import Blocknative, {
-  BlocknativeNetworkIds,
-} from "../third-party-data/blocknative"
 import { BlockPrices, EVMNetwork } from "../networks"
 import {
   ARBITRUM_ONE,
   BINANCE_SMART_CHAIN,
   EIP_1559_COMPLIANT_CHAIN_IDS,
-  ETHEREUM,
   POLYGON,
 } from "../constants/networks"
 import { gweiToWei } from "./utils"
-import { MINUTE } from "../constants"
-import { FeatureFlags, isDisabled } from "../features"
-
-// We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-const BLOCKNATIVE_API_KEY = process.env.BLOCKNATIVE_API_KEY // eslint-disable-line prefer-destructuring
-
-let blocknative: Blocknative
 
 type PolygonFeeDetails = {
   maxPriorityFee: number // gwei
@@ -144,49 +132,10 @@ const getLegacyGasPrices = async (
   dataSource: "local",
 })
 
-let lastSuccessfulBlocknativeAttempt: number = 0
-let lastFailedBlocknativeAttempt: number = 0
-const BLOCKNATIVE_RETRY_INTERVAL = 10 * MINUTE
-
 export default async function getBlockPrices(
   network: EVMNetwork,
   provider: Provider,
 ): Promise<BlockPrices> {
-  // if BlockNative is configured and we're on mainnet, prefer their gas service.
-  if (
-    typeof BLOCKNATIVE_API_KEY !== "undefined" &&
-    network.chainID === ETHEREUM.chainID &&
-    // Don't use blocknative on mainnet fork
-    isDisabled(FeatureFlags.USE_MAINNET_FORK)
-  ) {
-    // If the last attempt was a failure and we last succeeded less than
-    // BLOCKNATIVE_RETRY_INTERVAL ago, leave Blocknative alone and retry later.
-    if (
-      lastSuccessfulBlocknativeAttempt > lastFailedBlocknativeAttempt ||
-      lastFailedBlocknativeAttempt - lastSuccessfulBlocknativeAttempt >
-        BLOCKNATIVE_RETRY_INTERVAL
-    ) {
-      try {
-        if (!blocknative) {
-          blocknative = Blocknative.connect(
-            BLOCKNATIVE_API_KEY,
-            BlocknativeNetworkIds.ethereum.mainnet,
-          )
-        }
-        const prices = await blocknative.getBlockPrices()
-        lastSuccessfulBlocknativeAttempt = Date.now()
-
-        return prices
-      } catch (err) {
-        logger.error("Error getting block prices from BlockNative", err)
-      }
-    }
-
-    // If we fall through, treat it as a failure and increment the last failure
-    // timestamp.
-    lastFailedBlocknativeAttempt = Date.now()
-  }
-
   const [currentBlock, feeData] = await Promise.all([
     provider.getBlock("latest"),
     provider.getFeeData(),
@@ -219,7 +168,7 @@ export default async function getBlockPrices(
         currentBlock.number,
       )
     } catch (err) {
-      logger.error("Error getting gas price from BlockNative", err)
+      logger.error("Error getting gas price for BSC", err)
     }
   }
 

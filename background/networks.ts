@@ -332,7 +332,7 @@ export type BlockPrices = {
   /**
    * Whether these prices were estimated locally or via a third party provider
    */
-  dataSource: "local" | "blocknative"
+  dataSource: "local"
 }
 
 /**
