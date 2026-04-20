@@ -28,6 +28,15 @@ import { RpcConfig } from "./db"
 import TahoAlchemyProvider from "./taho-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
+import {
+  recordReconnectAttempt,
+  recordReconnectFailed,
+  recordReconnectSucceeded,
+  recordRequestFailed,
+  recordRequestSent,
+  recordRequestSucceeded,
+  RequestFailureCategory,
+} from "../../lib/perf-metrics"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -143,6 +152,18 @@ type CacheEntry = {
  */
 function backedOffMs(): number {
   return BASE_BACKOFF_MS + 400 * Math.random()
+}
+
+/**
+ * Normalize an arbitrary error thrown during RPC routing into one of the
+ * categories tracked by the perf metrics collector. Unrecognized errors map
+ * to `"unknown-error"`; this stays in sync with {@link getErrorType}.
+ */
+function categorizeError(
+  error: unknown,
+  method: string,
+): RequestFailureCategory {
+  return getErrorType(String(error), method)
 }
 
 /**
@@ -730,13 +751,34 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       providerIndex: this.currentProviderIndex,
     }
 
-    // Start routing message down our waterfall of rpc providers
-    const result = await this.routeRpcCall(id)
+    const startingProviderIndex = this.currentProviderIndex
+    recordRequestSent(this.chainID, startingProviderIndex)
+    const startTime = Date.now()
 
-    // Cache results for method/param combinations that are frequently called subsequently
-    this.conditionallyCacheResult(result, { method, params })
+    try {
+      // Start routing message down our waterfall of rpc providers
+      const result = await this.routeRpcCall(id)
 
-    return result
+      // Record against the provider that actually served the request, which
+      // may differ from the starting index if we failed over.
+      recordRequestSucceeded(
+        this.chainID,
+        this.currentProviderIndex,
+        Date.now() - startTime,
+      )
+
+      // Cache results for method/param combinations that are frequently called subsequently
+      this.conditionallyCacheResult(result, { method, params })
+
+      return result
+    } catch (error) {
+      recordRequestFailed(
+        this.chainID,
+        this.currentProviderIndex,
+        categorizeError(error, method),
+      )
+      throw error
+    }
   }
 
   /**
@@ -962,6 +1004,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.currentProviderIndex = 0
     }
 
+    recordReconnectAttempt(this.chainID, this.currentProviderIndex)
+
     logger.debug(
       "Reconnecting provider at index",
       this.currentProviderIndex,
@@ -978,7 +1022,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.currentProvider = cachedProvider
 
-    await this.resubscribe(this.currentProvider)
+    const resubscribed = await this.resubscribe(this.currentProvider)
+    if (resubscribed) {
+      recordReconnectSucceeded(this.chainID, this.currentProviderIndex)
+    } else {
+      recordReconnectFailed(this.chainID, this.currentProviderIndex)
+    }
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
@@ -1052,6 +1101,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // If we are already connected to the primary provider - don't resubscribe
       return null
     }
+    recordReconnectAttempt(this.chainID, 0)
     const primaryProvider = this.providerCreators[0]()
     // We need to wait before attempting to resubscribe of the primaryProvider's
     // websocket connection will almost always still be in a CONNECTING state when
@@ -1059,6 +1109,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
       const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
       if (!subscriptionsSuccessful) {
+        recordReconnectFailed(this.chainID, 0)
         return
       }
       // Cleanup the subscriptions on the backup provider.
@@ -1066,6 +1117,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // only set if subscriptions are successful
       this.currentProvider = primaryProvider
       this.currentProviderIndex = 0
+      recordReconnectSucceeded(this.chainID, 0)
     })
   }
 
