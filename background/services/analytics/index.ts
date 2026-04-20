@@ -20,6 +20,12 @@ import SigningService, {
 } from "../signing"
 import InternalSignerService from "../internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
+import { snapshotAndReset } from "../../lib/perf-metrics"
+
+// Perf metrics are aggregated in memory and flushed at a cadence long enough
+// that a typical wallet session contributes at most a handful of events,
+// but short enough to produce multiple samples per day for active users.
+const PERF_METRICS_FLUSH_INTERVAL_MINUTES = 180
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -62,7 +68,14 @@ export default class AnalyticsService extends BaseService<Events> {
     private signingService: SigningService,
     private preferenceService: PreferenceService,
   ) {
-    super()
+    super({
+      flushPerfMetrics: {
+        schedule: { periodInMinutes: PERF_METRICS_FLUSH_INTERVAL_MINUTES },
+        handler: () => {
+          this.flushPerfMetrics()
+        },
+      },
+    })
 
     this.internalSignerService.emitter.on(
       "vaultMigrationCompleted",
@@ -192,6 +205,31 @@ export default class AnalyticsService extends BaseService<Events> {
 
     sendPosthogEvent(uuid, eventName, payload)
     this.db.setOneTimeEvent(key)
+  }
+
+  /**
+   * Drains the in-memory perf metrics collector and, if the snapshot contains
+   * any observations and analytics are enabled, emits it as a single event.
+   *
+   * Kept best-effort: failing to flush should never interfere with the rest
+   * of the service, since the next interval will pick up a fresh window.
+   */
+  private async flushPerfMetrics(): Promise<void> {
+    try {
+      const snapshot = snapshotAndReset()
+      if (Object.keys(snapshot.chains).length === 0) {
+        return
+      }
+
+      await this.sendAnalyticsEvent(AnalyticsEvent.PERF_METRICS_FLUSH, {
+        windowStartedAt: snapshot.windowStartedAt,
+        takenAt: snapshot.takenAt,
+        windowDurationMs: snapshot.takenAt - snapshot.windowStartedAt,
+        chains: snapshot.chains,
+      })
+    } catch (error) {
+      logger.debug("Perf metrics flush failed: ", error)
+    }
   }
 
   async removeAnalyticsData(): Promise<void> {
