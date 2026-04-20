@@ -29,6 +29,7 @@ import TahoAlchemyProvider from "./taho-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
 import {
+  recordCircuitBreakerTransition,
   recordReconnectAttempt,
   recordReconnectFailed,
   recordReconnectSucceeded,
@@ -38,6 +39,7 @@ import {
   recordSingleFlightCoalesce,
   RequestFailureCategory,
 } from "../../lib/perf-metrics"
+import { CircuitBreaker } from "./circuit-breaker"
 
 export type ProviderCreator = {
   type: "alchemy" | "custom" | "generic"
@@ -332,6 +334,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   #inFlightRequests = new Map<string, Promise<unknown>>()
 
+  /**
+   * One circuit breaker per provider index, created lazily. Protects each
+   * provider from being retried into the ground while it is known to be
+   * failing, and suppresses the periodic primary-recovery attempt while the
+   * primary breaker is open.
+   */
+  #circuitBreakers = new Map<number, CircuitBreaker>()
+
   #cacheSettings = new Map<string, number>(
     Object.entries({
       // TEMPORARY cache for latest account balances to reduce number of rpc calls
@@ -503,7 +513,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return result
       }
 
-      const result = await this.currentProvider.send(method, params)
+      const breaker = this.breakerFor(this.currentProviderIndex)
+      if (!breaker.canRequest()) {
+        // The current provider is known-bad. Skip straight to the existing
+        // fallback path so we do not issue a request guaranteed to fail and
+        // do not pile onto whatever outage it is sitting out.
+        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+        // No more providers to try this cycle; reset and fail as we would
+        // on an exhausted chain.
+        this.currentProviderIndex = 0
+        this.reconnectProvider()
+        delete this.messagesToSend[messageId]
+        throw new Error("NETWORK_ERROR: circuit open and no fallback available")
+      }
+
+      let result: unknown
+      try {
+        result = await this.currentProvider.send(method, params)
+      } catch (error) {
+        // Any thrown error here represents the breaker's view of a failure;
+        // feeding it into the breaker keeps state machines aligned with the
+        // behavior observed by the existing error-classification path below.
+        breaker.recordFailure()
+        throw error
+      }
+      breaker.recordSuccess()
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
@@ -651,6 +687,23 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       delete this.messagesToSend[messageId]
       throw error
     }
+  }
+
+  /**
+   * Returns the circuit breaker for a given provider index, creating it the
+   * first time it is requested. Each breaker wires its transitions into the
+   * perf metrics collector so analytics can track how often providers go down
+   * and how quickly they recover.
+   */
+  private breakerFor(providerIndex: number): CircuitBreaker {
+    let breaker = this.#circuitBreakers.get(providerIndex)
+    if (!breaker) {
+      breaker = new CircuitBreaker({}, (next) =>
+        recordCircuitBreakerTransition(this.chainID, providerIndex, next),
+      )
+      this.#circuitBreakers.set(providerIndex, breaker)
+    }
+    return breaker
   }
 
   addCustomProvider(customProviderCreator: ProviderCreator): void {
@@ -1171,6 +1224,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
     if (this.currentProviderIndex === 0) {
       // If we are already connected to the primary provider - don't resubscribe
+      return null
+    }
+    if (!this.breakerFor(0).canRequest()) {
+      // Primary is still in cooldown; skip this cycle so the reconnect loop
+      // does not itself become a source of request pressure on a down endpoint.
       return null
     }
     recordReconnectAttempt(this.chainID, 0)
