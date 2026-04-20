@@ -35,6 +35,7 @@ import {
   recordRequestFailed,
   recordRequestSent,
   recordRequestSucceeded,
+  recordSingleFlightCoalesce,
   RequestFailureCategory,
 } from "../../lib/perf-metrics"
 
@@ -73,6 +74,28 @@ export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
+/**
+ * Methods that must never be coalesced into a shared in-flight request.
+ *
+ * Subscription lifecycle methods produce per-call state (subscription ids)
+ * that cannot be shared between callers. Signing and broadcasting methods
+ * either have side effects or must produce an independent response per call
+ * to support user-visible confirmation flows.
+ */
+const NON_COALESCEABLE_METHODS = new Set([
+  "eth_subscribe",
+  "eth_unsubscribe",
+  "eth_sendTransaction",
+  "eth_sendRawTransaction",
+  "eth_sign",
+  "eth_signTransaction",
+  "eth_signTypedData",
+  "eth_signTypedData_v1",
+  "eth_signTypedData_v3",
+  "eth_signTypedData_v4",
+  "personal_sign",
+])
+
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
@@ -297,6 +320,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     {}
 
   #sendCache = new Map<string, CacheEntry>()
+
+  /**
+   * Promises for RPC requests that are currently in flight, keyed by a
+   * canonical method+params signature. New callers issuing the same request
+   * while one is still outstanding receive the in-flight promise rather than
+   * initiating a second provider call.
+   *
+   * Only methods that are safe to share (not signing, not broadcasting, not
+   * subscription lifecycle) are stored here; see {@link NON_COALESCEABLE_METHODS}.
+   */
+  #inFlightRequests = new Map<string, Promise<unknown>>()
 
   #cacheSettings = new Map<string, number>(
     Object.entries({
@@ -742,6 +776,44 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
+    // Coalesce concurrent identical requests into a single in-flight call.
+    // This is safe for idempotent reads and explicitly skipped for subscription
+    // lifecycle and side-effecting (signing / broadcast) methods so those always
+    // produce an independent provider call per invocation.
+    if (!NON_COALESCEABLE_METHODS.has(method)) {
+      const key = getRPCCacheKey(method, params)
+      const existing = this.#inFlightRequests.get(key)
+      if (existing !== undefined) {
+        recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex)
+        return existing
+      }
+
+      const flight = this.dispatchRequest(method, params)
+      this.#inFlightRequests.set(key, flight)
+      // Clear the slot on both success and failure so the next caller makes
+      // a fresh request. Use `then(cleanup, cleanup)` rather than `finally`
+      // so a rejection does not escape as an unhandled promise on the
+      // cleanup chain; callers still observe the rejection on `flight`.
+      const cleanup = () => {
+        this.#inFlightRequests.delete(key)
+      }
+      flight.then(cleanup, cleanup)
+      return flight
+    }
+
+    return this.dispatchRequest(method, params)
+  }
+
+  /**
+   * Executes a single logical RPC request end-to-end, including metrics and
+   * result caching. Callers must never invoke this directly for coalesceable
+   * methods; {@link send} is responsible for single-flight deduplication
+   * before handing off here.
+   */
+  private async dispatchRequest(
+    method: string,
+    params: unknown[],
+  ): Promise<unknown> {
     // Generate a unique symbol to track the message and store message information
     const id = Symbol(method)
     this.messagesToSend[id] = {
