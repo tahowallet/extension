@@ -26,6 +26,7 @@ import {
 import { ETHEREUM } from "../../constants"
 
 import resolveTransactionAnnotation from "./transactions"
+import simulateSignatureRequestLogs from "./simulation"
 
 export type * from "./types"
 
@@ -98,6 +99,15 @@ export default class EnrichmentService extends BaseService<Events> {
     transaction: PartialTransactionRequestWithFrom,
     desiredDecimals: number,
   ): Promise<EnrichedEVMTransactionSignatureRequest> {
+    // When the provider supports eth_simulateV1, simulate first so the
+    // resulting logs flow through the standard annotation pipeline. Returns
+    // undefined if unsupported/failed, which falls back to calldata heuristics.
+    const simulatedLogs = await simulateSignatureRequestLogs(
+      this.chainService,
+      network,
+      transaction,
+    )
+
     const enrichedTxSignatureRequest = {
       ...transaction,
       network,
@@ -108,6 +118,7 @@ export default class EnrichmentService extends BaseService<Events> {
         network,
         transaction,
         desiredDecimals,
+        simulatedLogs,
       ),
     }
 

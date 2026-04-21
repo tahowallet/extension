@@ -182,6 +182,11 @@ export async function annotationsFromLogs(
 /**
  * Resolve an annotation for a partial transaction request, or a pending
  * or mined transaction.
+ *
+ * `simulatedLogs` supplies logs produced by an off-chain simulation (e.g.
+ * `eth_simulateV1`) for pending requests that don't yet have real logs; they
+ * are fed through the same log-to-subannotation pipeline used for mined
+ * transactions.
  */
 export default async function resolveTransactionAnnotation(
   chainService: ChainService,
@@ -197,6 +202,7 @@ export default async function resolveTransactionAnnotation(
         blockHash?: string
       }),
   desiredDecimals: number,
+  simulatedLogs?: EVMLog[],
 ): Promise<TransactionAnnotation> {
   const assets = await indexingService.getCachedAssets(network)
 
@@ -452,13 +458,19 @@ export default async function resolveTransactionAnnotation(
     }
   }
 
-  // Look up logs and resolve subannotations, if available.
-  if ("logs" in transaction && typeof transaction.logs !== "undefined") {
+  // Look up logs and resolve subannotations, if available. Prefer real
+  // confirmed-tx logs when present; otherwise fall back to any logs we got
+  // from off-chain simulation of a pending request.
+  const logsForAnnotations =
+    "logs" in transaction && typeof transaction.logs !== "undefined"
+      ? transaction.logs
+      : simulatedLogs
+  if (logsForAnnotations !== undefined) {
     const subannotations = await annotationsFromLogs(
       chainService,
       indexingService,
       nameService,
-      transaction.logs,
+      logsForAnnotations,
       network,
       desiredDecimals,
       txAnnotation.timestamp,
