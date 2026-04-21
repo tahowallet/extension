@@ -56,6 +56,7 @@ export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_subscribe", // generic http providers do not support this, but dapps need this
     "eth_estimateGas", // just want to be safe, when setting up a transaction
     "eth_getLogs", // to avoid eth_getLogs block range limitations
+    "eth_simulateV1", // prefer alchemy for simulation where available
   ],
   [OPTIMISM.chainID]: [
     "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
@@ -705,6 +706,67 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.reconnectProvider()
       }
     })
+  }
+
+  // Memoized eth_simulateV1 capability. `undefined` means not yet probed.
+  #ethSimulateV1Supported: boolean | undefined = undefined
+
+  // In-flight probe promise, so concurrent callers share a single request.
+  #ethSimulateV1Probe: Promise<boolean> | undefined = undefined
+
+  /**
+   * Probes the underlying provider stack for `eth_simulateV1` support and
+   * memoizes the result. A method-not-found response (JSON-RPC -32601, or the
+   * various string variants providers return) is treated as a definitive "no"
+   * and cached; transient errors are not cached so a later probe can retry.
+   */
+  async supportsEthSimulateV1(): Promise<boolean> {
+    if (this.#ethSimulateV1Supported !== undefined) {
+      return this.#ethSimulateV1Supported
+    }
+    if (this.#ethSimulateV1Probe !== undefined) {
+      return this.#ethSimulateV1Probe
+    }
+
+    this.#ethSimulateV1Probe = (async () => {
+      try {
+        await this.send("eth_simulateV1", [
+          { blockStateCalls: [{ calls: [] }] },
+          "latest",
+        ])
+        this.#ethSimulateV1Supported = true
+        return true
+      } catch (err) {
+        const message = String(
+          (err as { message?: unknown })?.message ?? err,
+        ).toLowerCase()
+        const code = (err as { code?: unknown })?.code
+        const methodUnsupported =
+          code === -32601 ||
+          code === -32004 ||
+          message.includes("method not found") ||
+          message.includes("method does not exist") ||
+          message.includes("method not supported") ||
+          message.includes("not supported") ||
+          message.includes("unsupported method")
+
+        if (methodUnsupported) {
+          this.#ethSimulateV1Supported = false
+          return false
+        }
+        // Transient — don't cache so a later call can retry.
+        logger.debug(
+          "eth_simulateV1 probe errored without a clear unsupported signal on chain",
+          this.chainID,
+          err,
+        )
+        return false
+      } finally {
+        this.#ethSimulateV1Probe = undefined
+      }
+    })()
+
+    return this.#ethSimulateV1Probe
   }
 
   /**
