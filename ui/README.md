@@ -40,7 +40,9 @@ Then, start up the dev server:
 yarn start
 ```
 
-Load the unpacked extension for your web browser via the `/build` directory. Currently builds are tested to work on Chrome and Brave browser.
+Load the unpacked extension for your web browser from the appropriate
+`/dist/<browser>` directory. Currently builds are tested to work on Chrome and
+Brave browser.
 
 ## Primary file structure 📁
 
