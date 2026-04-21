@@ -18,6 +18,7 @@ import { allAliases } from "../../redux-slices/utils"
 
 import { diff as deepDiff, patch } from "./differ"
 import logger from "../../lib/logger"
+import { recordReduxDiff, recordReduxPersist } from "../../lib/perf-metrics"
 
 // Manifest v3/webext-redux v3 requirement, create at the top level to properly
 // attach to event handlers.
@@ -43,12 +44,15 @@ const devToolsSanitizer = (input: unknown) => {
 
 async function persistStoreBsae<T>(state: T) {
   if (process.env.WRITE_REDUX_CACHE === "true") {
+    const startedAt = Date.now()
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
+    const encoded = encodeJSON(state)
     await browser.storage.local.set({
-      state: encodeJSON(state),
+      state: encoded,
       version: REDUX_STATE_VERSION,
     })
+    recordReduxPersist(Date.now() - startedAt, encoded.length)
   }
 }
 
@@ -171,7 +175,9 @@ export function initializeStore<ThunkArgType>(
   const queueUpdate = debounce(
     (lastState, newState, updateFn) => {
       if (lastState !== newState) {
+        const diffStartedAt = Date.now()
         const diff = deepDiff(lastState, newState)
+        recordReduxDiff(Date.now() - diffStartedAt)
 
         if (diff !== undefined) {
           updateFn(newState, [diff])

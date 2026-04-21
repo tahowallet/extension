@@ -50,6 +50,75 @@ type ChainCounters = {
   providers: Map<number, ProviderCounters>
 }
 
+/**
+ * Summary of a scalar measurement over the window. Keeping `sum` alongside
+ * `count` lets consumers compute the arithmetic mean without having to send
+ * every data point, and `max` preserves the worst-case outlier that averages
+ * otherwise obscure. Distribution shape is captured separately by a
+ * histogram where relevant.
+ */
+type AggregateStat = {
+  count: number
+  sum: number
+  max: number
+}
+
+function freshAggregateStat(): AggregateStat {
+  return { count: 0, sum: 0, max: 0 }
+}
+
+function freshDurationHistogram(): Record<DurationBucketLabel, number> {
+  const histogram = { overflow: 0 } as Record<DurationBucketLabel, number>
+  DURATION_BUCKETS_MS.forEach((bound) => {
+    histogram[`le_${bound}`] = 0
+  })
+  return histogram
+}
+
+/* eslint-disable no-param-reassign */
+function updateAggregateStat(stat: AggregateStat, value: number): void {
+  stat.count += 1
+  stat.sum += value
+  if (value > stat.max) {
+    stat.max = value
+  }
+}
+/* eslint-enable no-param-reassign */
+
+/**
+ * Counters describing the cost of the redux store's persistence and UI-diff
+ * paths. These are the dominant contributors to the long redux locks
+ * observed under heavy RPC churn, so tracking average and max cost per
+ * window gives a direct signal on whether subsequent work (batching,
+ * keyed-record slices, objectHash, slice-level persistence) is moving the
+ * needle.
+ */
+type ReduxCounters = {
+  persist: {
+    duration: AggregateStat
+    bytes: AggregateStat
+    durationHistogramMs: Record<DurationBucketLabel, number>
+  }
+  diff: {
+    duration: AggregateStat
+    durationHistogramMs: Record<DurationBucketLabel, number>
+  }
+}
+
+function freshReduxCounters(): ReduxCounters {
+  return {
+    persist: {
+      duration: freshAggregateStat(),
+      bytes: freshAggregateStat(),
+      durationHistogramMs: freshDurationHistogram(),
+    },
+    diff: {
+      duration: freshAggregateStat(),
+      durationHistogramMs: freshDurationHistogram(),
+    },
+  }
+}
+
 export type PerfMetricsSnapshot = {
   windowStartedAt: number
   takenAt: number
@@ -65,6 +134,12 @@ export type PerfMetricsSnapshot = {
       >
     }
   >
+  /**
+   * Only present when at least one redux persist or diff observation was
+   * recorded in the window; empty redux windows are omitted so the analytics
+   * flush does not emit noise for idle sessions.
+   */
+  redux?: ReduxCounters
 }
 
 function freshFailureCounters(): Record<RequestFailureCategory, number> {
@@ -78,14 +153,6 @@ function freshFailureCounters(): Record<RequestFailureCategory, number> {
     "unknown-error": 0,
     aborted: 0,
   }
-}
-
-function freshDurationHistogram(): Record<DurationBucketLabel, number> {
-  const histogram = { overflow: 0 } as Record<DurationBucketLabel, number>
-  DURATION_BUCKETS_MS.forEach((bound) => {
-    histogram[`le_${bound}`] = 0
-  })
-  return histogram
 }
 
 function freshProviderCounters(): ProviderCounters {
@@ -105,7 +172,12 @@ function freshProviderCounters(): ProviderCounters {
 }
 
 let chains: Map<string, ChainCounters> = new Map()
+let redux: ReduxCounters = freshReduxCounters()
 let windowStartedAt: number = Date.now()
+
+function reduxHasObservations(counters: ReduxCounters): boolean {
+  return counters.persist.duration.count > 0 || counters.diff.duration.count > 0
+}
 
 function providerBucket(
   chainID: string,
@@ -188,6 +260,27 @@ export function recordReconnectFailed(
   providerBucket(chainID, providerIndex).reconnectFailures += 1
 }
 
+/**
+ * Record a completed redux persist pass (`encodeJSON(state)` plus the write
+ * to `browser.storage.local`). `bytes` is the length of the serialized
+ * payload; it is accumulated alongside duration so consumers can correlate
+ * state size with persist cost.
+ */
+export function recordReduxPersist(durationMs: number, bytes: number): void {
+  updateAggregateStat(redux.persist.duration, durationMs)
+  updateAggregateStat(redux.persist.bytes, bytes)
+  redux.persist.durationHistogramMs[bucketForDuration(durationMs)] += 1
+}
+
+/**
+ * Record a completed redux diff pass (the call that produces the delta sent
+ * to the UI proxy store).
+ */
+export function recordReduxDiff(durationMs: number): void {
+  updateAggregateStat(redux.diff.duration, durationMs)
+  redux.diff.durationHistogramMs[bucketForDuration(durationMs)] += 1
+}
+
 export type CircuitBreakerState = "closed" | "open" | "half-open"
 
 export function recordCircuitBreakerTransition(
@@ -238,7 +331,12 @@ export function snapshotAndReset(): PerfMetricsSnapshot {
     }
   })
 
+  if (reduxHasObservations(redux)) {
+    snapshot.redux = redux
+  }
+
   chains = new Map()
+  redux = freshReduxCounters()
   windowStartedAt = takenAt
 
   return snapshot
@@ -250,5 +348,6 @@ export function snapshotAndReset(): PerfMetricsSnapshot {
  */
 export function resetForTests(): void {
   chains = new Map()
+  redux = freshReduxCounters()
   windowStartedAt = Date.now()
 }
