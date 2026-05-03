@@ -217,7 +217,8 @@ export default class AnalyticsService extends BaseService<Events> {
   private async flushPerfMetrics(): Promise<void> {
     try {
       const snapshot = snapshotAndReset()
-      if (Object.keys(snapshot.chains).length === 0) {
+      const hasChains = Object.keys(snapshot.chains).length > 0
+      if (!hasChains && !snapshot.redux) {
         return
       }
 
@@ -226,6 +227,7 @@ export default class AnalyticsService extends BaseService<Events> {
         takenAt: snapshot.takenAt,
         windowDurationMs: snapshot.takenAt - snapshot.windowStartedAt,
         chains: snapshot.chains,
+        ...(snapshot.redux ? { redux: snapshot.redux } : {}),
       })
     } catch (error) {
       logger.debug("Perf metrics flush failed: ", error)
