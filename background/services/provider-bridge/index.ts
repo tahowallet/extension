@@ -51,6 +51,7 @@ type Events = ServiceLifecycleEvents & {
    */
   mezoClaimData: string
   getMezoClaimData: void
+  revokePermissionsForOrigin: string
 }
 
 export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
@@ -210,6 +211,12 @@ export default class ProviderBridgeService extends BaseService<Events> {
             `Unknown method ${event.request.method} in 'ProviderBridgeService'`,
           )
       }
+    } else if (event.request.method === "wallet_revokePermissions") {
+      // wallet_revokePermissions is handled before the permission check
+      // because it should succeed regardless of whether the dapp currently
+      // has permissions (revoking when already disconnected is a no-op).
+      await this.revokePermissionsForOrigin(origin)
+      response.result = null
     } else if (
       event.request.method === "eth_chainId" ||
       event.request.method === "net_version"
@@ -479,6 +486,14 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async revokePermissionsForAddress(revokeAddress: string): Promise<void> {
     await this.db.deletePermissionByAddress(revokeAddress)
     this.notifyContentScriptsAboutAddressChange()
+  }
+
+  async revokePermissionsForOrigin(origin: string): Promise<void> {
+    const deleted = await this.db.deletePermissionsByOrigin(origin)
+    if (deleted > 0) {
+      this.notifyContentScriptsAboutAddressChange()
+    }
+    this.emitter.emit("revokePermissionsForOrigin", origin)
   }
 
   async checkPermission(

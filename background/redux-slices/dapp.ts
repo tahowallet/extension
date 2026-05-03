@@ -127,6 +127,25 @@ const dappSlice = createSlice({
         }
       })
     },
+    revokePermissionsForOrigin: (
+      immerState,
+      { payload: origin }: { payload: string },
+    ) => {
+      Object.keys(immerState.allowed.evm).forEach((chainID) => {
+        Object.keys(immerState.allowed.evm[chainID] ?? {}).forEach(
+          (address) => {
+            if (immerState.allowed.evm[chainID]?.[address]?.[origin]) {
+              const { [origin]: _, ...withoutOriginToRemove } =
+                immerState.allowed.evm[chainID][address]
+              immerState.allowed.evm[chainID][address] = withoutOriginToRemove
+            }
+          },
+        )
+      })
+      if (immerState.currentNetworkByOrigin !== undefined) {
+        delete immerState.currentNetworkByOrigin[origin]
+      }
+    },
     setCurrentNetworkForOrigin: (
       immerState,
       { payload }: { payload: { origin: string; network: EVMNetwork } },
@@ -205,6 +224,7 @@ export const {
   requestPermission,
   initializePermissions,
   revokePermissionsForAddress,
+  revokePermissionsForOrigin,
   setCurrentNetworkForOrigin,
   clearCurrentNetworkForOrigin,
 } = dappSlice.actions
