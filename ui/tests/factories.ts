@@ -24,10 +24,6 @@ export const createAccountState = (
       },
     },
   },
-  combinedData: {
-    totalMainCurrencyValue: "",
-    assets: [],
-  },
   ...overrides,
 })
 

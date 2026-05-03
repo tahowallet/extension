@@ -2,27 +2,17 @@ import { createSlice } from "@reduxjs/toolkit"
 import { createBackgroundAsyncThunk } from "./utils"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../accounts"
 import { EVMNetwork, Network } from "../networks"
-import {
-  AnyAsset,
-  AnyAssetAmount,
-  isFungibleAsset,
-  isSmartContractFungibleAsset,
-  SmartContractFungibleAsset,
-} from "../assets"
+import { AnyAsset, AnyAssetAmount, SmartContractFungibleAsset } from "../assets"
 import {
   AssetMainCurrencyAmount,
   AssetDecimalAmount,
   isBaseAssetForNetwork,
-  isSameAsset,
-  isTrustedAsset,
   getFullAssetID,
   FullAssetID,
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
-import { normalizeEVMAddress, sameEVMAddress } from "../lib/utils"
+import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner } from "../services/signing"
-import { TEST_NETWORK_BY_CHAIN_ID } from "../constants"
-import { convertFixedPoint } from "../lib/fixed-point"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -57,11 +47,23 @@ export const DEFAULT_ACCOUNT_NAMES = [
 
 const availableDefaultNames = [...DEFAULT_ACCOUNT_NAMES]
 
+/**
+ * A slim balance record stored per-asset in each account. The full asset
+ * object lives in the assets entity table; the network and address are
+ * derivable from the parent keys in accountsData.evm[chainID][address].
+ */
+export type NormalizedBalance = {
+  amount: bigint
+  blockHeight?: bigint
+  retrievedAt: number
+  dataSource: "alchemy" | "generic-rpc" | "local"
+}
+
 export type AccountData = {
   address: HexString
   network: Network
   balances: {
-    [assetID: FullAssetID]: AccountBalance
+    [assetID: FullAssetID]: NormalizedBalance
   }
   ens: {
     name?: DomainName
@@ -84,12 +86,6 @@ export type AccountState = {
   accountsData: {
     evm: AccountsByChainID
   }
-  combinedData: CombinedAccountData
-}
-
-export type CombinedAccountData = {
-  totalMainCurrencyValue?: string
-  assets: AnyAssetAmount[]
 }
 
 // Utility type, wrapped in CompleteAssetAmount<T>.
@@ -110,10 +106,15 @@ export type CompleteSmartContractFungibleAssetAmount =
 
 export const initialState: AccountState = {
   accountsData: { evm: {} },
-  combinedData: {
-    totalMainCurrencyValue: "",
-    assets: [],
-  },
+}
+
+function normalizeBalance(balance: AccountBalance): NormalizedBalance {
+  return {
+    amount: balance.assetAmount.amount,
+    blockHeight: balance.blockHeight,
+    retrievedAt: balance.retrievedAt,
+    dataSource: balance.dataSource,
+  }
 }
 
 function newAccountData(
@@ -168,69 +169,6 @@ function newAccountData(
   }
 }
 
-function updateCombinedData(immerState: AccountState) {
-  // A key assumption here is that the balances of two accounts in
-  // accountsData are mutually exclusive; that is, that there are no two
-  // accounts in accountsData all or part of whose balances are shared with
-  // each other.
-  const filteredEvm = Object.keys(immerState.accountsData.evm)
-    .filter((key) => !TEST_NETWORK_BY_CHAIN_ID.has(key))
-    .reduce<AccountsByChainID>(
-      (evm, key) => ({
-        ...evm,
-        [key]: immerState.accountsData.evm[key],
-      }),
-      {},
-    )
-
-  const combinedAccountBalances = Object.values(filteredEvm)
-    .flatMap((accountDataByChain) => Object.values(accountDataByChain))
-    .flatMap((ad) =>
-      ad === "loading"
-        ? []
-        : Object.values(ad.balances).map((ab) => ab.assetAmount),
-    )
-
-  immerState.combinedData.assets = Object.values(
-    combinedAccountBalances
-      // Combine account balances for trusted assets only
-      .filter(({ asset }) => isTrustedAsset(asset))
-      .reduce<{
-        [assetID: string]: AnyAssetAmount
-      }>((acc, combinedAssetAmount) => {
-        const { asset } = combinedAssetAmount
-
-        const assetID = asset.symbol
-
-        let { amount } = combinedAssetAmount
-
-        if (acc[assetID]?.asset) {
-          const accAsset = acc[assetID].asset
-          const existingDecimals = isFungibleAsset(accAsset)
-            ? accAsset.decimals
-            : 0
-          const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
-            ? combinedAssetAmount.asset.decimals
-            : 0
-
-          if (newDecimals !== existingDecimals) {
-            amount = convertFixedPoint(amount, newDecimals, existingDecimals)
-          }
-        }
-
-        if (acc[assetID]) {
-          acc[assetID].amount += amount
-        } else {
-          acc[assetID] = {
-            ...combinedAssetAmount,
-          }
-        }
-
-        return acc
-      }, {}),
-  )
-}
-
 function getOrCreateAccountData(
   accountState: AccountState,
   account: HexString,
@@ -244,8 +182,6 @@ function getOrCreateAccountData(
   return accountData
 }
 
-// TODO Much of the combinedData bits should probably be done in a Reselect
-// TODO selector.
 const accountSlice = createSlice({
   name: "account",
   initialState,
@@ -297,8 +233,6 @@ const accountSlice = createSlice({
 
         immerState.accountsData.evm[chainId] = withoutEntryToRemove
       })
-
-      updateCombinedData(immerState)
     },
     updateAccountBalance: (
       immerState,
@@ -336,20 +270,18 @@ const accountSlice = createSlice({
           ) {
             return
           }
-          existingAccountData.balances[assetID] = updatedAccountBalance
+          existingAccountData.balances[assetID] = normalizeBalance(
+            updatedAccountBalance,
+          )
         } else {
           immerState.accountsData.evm[network.chainID][normalizedAddress] = {
-            // TODO Figure out the best way to handle default name assignment
-            // TODO across networks.
             ...newAccountData(address, network, immerState),
             balances: {
-              [assetID]: updatedAccountBalance,
+              [assetID]: normalizeBalance(updatedAccountBalance),
             },
           }
         }
       })
-
-      updateCombinedData(immerState)
     },
     updateAccountName: (
       immerState,
@@ -371,8 +303,6 @@ const accountSlice = createSlice({
       immerState.accountsData.evm[network.chainID] ??= {}
 
       const baseAccountData = getOrCreateAccountData(
-        // TODO Figure out the best way to handle default name assignment
-        // TODO across networks.
         immerState,
         normalizedAddress,
         network,
@@ -404,8 +334,6 @@ const accountSlice = createSlice({
 
       immerState.accountsData.evm[network.chainID] ??= {}
 
-      // TODO Figure out the best way to handle default name assignment
-      // TODO across networks.
       const baseAccountData = getOrCreateAccountData(
         immerState,
         normalizedAddress,
@@ -417,65 +345,18 @@ const accountSlice = createSlice({
         ens: { ...baseAccountData.ens, avatarURL: avatar },
       }
     },
-    /**
-     * Updates cached SmartContracts metadata
-     */
-    updateAccountAssetReferences: (
-      immerState,
-      { payload: assets }: { payload: SmartContractFungibleAsset[] },
-    ) => {
-      const assetsByChainID: {
-        [chainID: string]: SmartContractFungibleAsset[]
-      } = {}
-      assets.forEach((asset) => {
-        assetsByChainID[asset.homeNetwork.chainID] ??= []
-        assetsByChainID[asset.homeNetwork.chainID].push(asset)
-      })
-
-      Object.keys(assetsByChainID).forEach((chainID) => {
-        const allAccounts = immerState.accountsData.evm[chainID]
-        Object.keys(allAccounts ?? {}).forEach((address) => {
-          const account = allAccounts[address]
-          if (account !== "loading") {
-            assetsByChainID[chainID].forEach((asset) => {
-              const { assetAmount } = account.balances[
-                getFullAssetID(asset)
-              ] ?? { assetAmount: undefined }
-
-              if (
-                assetAmount &&
-                isSmartContractFungibleAsset(assetAmount.asset) &&
-                sameEVMAddress(
-                  assetAmount.asset.contractAddress,
-                  asset.contractAddress,
-                )
-              ) {
-                Object.assign(assetAmount.asset, asset)
-              }
-            })
-          }
-        })
-      })
-
-      updateCombinedData(immerState)
-    },
     removeAssetReferences: (
       immerState,
       { payload: asset }: { payload: SmartContractFungibleAsset },
     ) => {
+      const assetID = getFullAssetID(asset)
       const allAccounts = immerState.accountsData.evm[asset.homeNetwork.chainID]
       Object.keys(allAccounts).forEach((address) => {
         const account = allAccounts[address]
         if (account !== "loading") {
-          Object.values(account.balances).forEach(({ assetAmount }) => {
-            if (isSameAsset(assetAmount.asset, asset)) {
-              delete account.balances[getFullAssetID(assetAmount.asset)]
-            }
-          })
+          delete account.balances[assetID]
         }
       })
-
-      updateCombinedData(immerState)
     },
     removeChainBalances: (
       immerState,
@@ -492,7 +373,6 @@ export const {
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
-  updateAccountAssetReferences,
   removeAssetReferences,
   removeChainBalances,
 } = accountSlice.actions

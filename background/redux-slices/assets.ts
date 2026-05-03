@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit"
+import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
 import { ethers } from "ethers"
 import type { RootState } from "."
 import { AddressOnNetwork } from "../accounts"
@@ -13,16 +13,30 @@ import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
 import { EVMNetwork, sameNetwork } from "../networks"
 import { NormalizedEVMAddress } from "../types"
-import { removeAssetReferences, updateAccountAssetReferences } from "./accounts"
+import { removeAssetReferences, updateAccountBalance } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
-import { isBaseAssetForNetwork, isSameAsset } from "./utils/asset-utils"
+import { getAssetEntityID, isBaseAssetForNetwork } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
 
 export type SingleAssetState = AnyAsset
 
-export type AssetsState = SingleAssetState[]
+const assetsAdapter = createEntityAdapter<SingleAssetState>({
+  selectId: getAssetEntityID,
+})
 
-export const initialState: AssetsState = []
+export type AssetsState = EntityState<SingleAssetState>
+
+export const initialState: AssetsState = assetsAdapter.getInitialState()
+
+/**
+ * Adapter-generated selectors scoped to the `assets` slice of the root state.
+ */
+export const {
+  selectAll: selectAllAssets,
+  selectById: selectAssetById,
+  selectEntities: selectAssetEntities,
+  selectIds: selectAssetIds,
+} = assetsAdapter.getSelectors((state: RootState) => state.assets)
 
 const assetsSlice = createSlice({
   name: "assets",
@@ -39,128 +53,80 @@ const assetsSlice = createSlice({
         }
       },
     ) => {
-      // For loading scope `network`, any network mentioned in `newAssets` is a
-      // complete set and thus should replace data currently in the store.
-      const networksToReset =
-        loadingScope === "network"
-          ? newAssets.reduce<EVMNetwork[]>((uniqueNetworks, asset) => {
-              const lastNetwork = uniqueNetworks.at(-1)
-              return "homeNetwork" in asset &&
-                // Eliminate contiguous duplicates, which should generally be
-                // all duplicates.
-                (uniqueNetworks.length === 0 ||
-                  (lastNetwork && !sameNetwork(asset.homeNetwork, lastNetwork)))
-                ? [...uniqueNetworks, asset.homeNetwork]
-                : uniqueNetworks
-            }, [])
-          : []
-
-      // The goal here is to update the Immer state in such a way that minimal
-      // object identity differences occur; this ensures that any diffing of
-      // the state will produce reduced differences. To do this, we iterate all
-      // existing assets, see if there is an update for those assets, and then
-      // update the asset's properties. New assets that are used to update
-      // existing assets in this way are deleted from the new asset list.
-      //
-      // When we are using a loading scope of `network` or `all`, we also mark
-      // any existing assets that are _not_ in the incoming set for deletion.
-      // We then delete everything at the end in batched `splice` operations.
-      //
-      // Finally, we insert any new assets that weren't used to update existing
-      // assets.
-
-      const newAssetsBySymbol: { [sym: string]: SingleAssetState[] } = {}
-
-      newAssets.forEach((asset) => {
-        newAssetsBySymbol[asset.symbol] ??= []
-
-        newAssetsBySymbol[asset.symbol].push(asset)
-      })
-
-      const pruneIndexes: number[] = []
-      immerState.forEach((existingAsset, i) => {
-        const matchingNewAssets = (
-          newAssetsBySymbol[existingAsset.symbol] ?? []
-        ).filter((newAsset) => isSameAsset(existingAsset, newAsset))
-
-        const assetOnAResettingNetwork =
-          loadingScope === "network" &&
-          networksToReset.some(
-            (network) =>
-              "homeNetwork" in existingAsset &&
-              sameNetwork(existingAsset.homeNetwork, network),
-          )
-
-        // If there are no matching new assets, then we have a couple of
-        // options.
-        if (matchingNewAssets.length === 0) {
-          // For network loads and full loads, no match means pruning if the
-          // asset is on one of the included networks.
-          if (
-            loadingScope === "all" ||
-            (loadingScope === "network" && assetOnAResettingNetwork)
-          ) {
-            pruneIndexes.push(i)
-            return
-          }
-          // For incremental loads, no match means no action.
-          return
-        }
-
-        // If there are matching new assets, then we have a couple of options.
-        if (
-          loadingScope === "all" ||
-          (loadingScope === "network" && assetOnAResettingNetwork)
-        ) {
-          // If we're replacing all assets or this network's asset, assign all
-          // data from the first matching new asset to the entry for the
-          // existing asset.
-          Object.assign(existingAsset, matchingNewAssets[0])
-        } else {
-          // If we're doing an incremental update, only update metadata from the
-          // duplicate.
-          immerState[i].metadata = matchingNewAssets[0].metadata
-        }
-
-        // Remove all matching assets from the matchingNewAssets list; for
-        // incremental updates, this just means not adding duplicates later,
-        // while for asset list replacements, this means any other duplicates
-        // in existing and new lists both will be pruned.
-        newAssetsBySymbol[existingAsset.symbol] = newAssetsBySymbol[
-          existingAsset.symbol
-        ].filter((newAsset) => !matchingNewAssets.includes(newAsset))
-      })
-
-      // Prune all indexes that were flagged for pruning.
-      if (pruneIndexes.length === 1) {
-        immerState.splice(pruneIndexes[0], 1)
-      } else if (pruneIndexes.length > 1) {
-        // Splice out contiguous index runs.
-        const currentRun = { runStart: pruneIndexes[0], runLength: 1 }
-        for (let i = 1; i < pruneIndexes.length; i += 1) {
-          if (pruneIndexes[i] === currentRun.runStart + currentRun.runLength) {
-            currentRun.runLength += 1
-          } else {
-            immerState.splice(currentRun.runStart, currentRun.runLength)
-
-            currentRun.runStart = pruneIndexes[i]
-            currentRun.runLength = 1
-          }
-        }
+      if (loadingScope === "all") {
+        // Full replacement: set the entire entity table to the incoming assets.
+        assetsAdapter.setAll(immerState, newAssets)
+        return
       }
 
-      // Any remaining new assets had no duplicates in the existing asset list
-      // and can be safely added.
-      Object.values(newAssetsBySymbol)
-        .flat()
-        .forEach((newAsset) => {
-          immerState.push(newAsset)
+      if (loadingScope === "network") {
+        // Determine which networks are being fully replaced.
+        const networksToReset = newAssets.reduce<EVMNetwork[]>(
+          (uniqueNetworks, asset) => {
+            const lastNetwork = uniqueNetworks.at(-1)
+            return "homeNetwork" in asset &&
+              (uniqueNetworks.length === 0 ||
+                (lastNetwork && !sameNetwork(asset.homeNetwork, lastNetwork)))
+              ? [...uniqueNetworks, asset.homeNetwork]
+              : uniqueNetworks
+          },
+          [],
+        )
+
+        // Remove all existing assets on the resetting networks.
+        const idsToRemove = immerState.ids.filter((id) => {
+          const asset = immerState.entities[id]
+          return (
+            asset &&
+            "homeNetwork" in asset &&
+            networksToReset.some((network) =>
+              sameNetwork(network, asset.homeNetwork),
+            )
+          )
         })
+        assetsAdapter.removeMany(immerState, idsToRemove)
+
+        // Insert the new assets (any ID collisions are replaced).
+        assetsAdapter.upsertMany(immerState, newAssets)
+        return
+      }
+
+      // Incremental: only update metadata for existing assets; add new ones.
+      const updates: {
+        id: string
+        changes: { metadata: AnyAsset["metadata"] }
+      }[] = []
+      const additions: AnyAsset[] = []
+
+      newAssets.forEach((asset) => {
+        const id = getAssetEntityID(asset)
+        if (immerState.entities[id]) {
+          updates.push({ id, changes: { metadata: asset.metadata } })
+        } else {
+          additions.push(asset)
+        }
+      })
+
+      assetsAdapter.updateMany(immerState, updates)
+      assetsAdapter.addMany(immerState, additions)
     },
     removeAsset: (
       immerState,
       { payload: removedAsset }: { payload: AnyAsset },
-    ) => immerState.filter((asset) => !isSameAsset(asset, removedAsset)),
+    ) => {
+      assetsAdapter.removeOne(immerState, getAssetEntityID(removedAsset))
+    },
+  },
+  extraReducers: (builder) => {
+    // When account balances arrive, ensure each balance's asset is in the
+    // entity table. This guarantees that selectors can always hydrate a
+    // normalized balance into a full AnyAssetAmount.
+    builder.addCase(updateAccountBalance, (immerState, { payload }) => {
+      assetsAdapter.upsertMany(
+        immerState,
+        payload.balances.map((b) => b.assetAmount.asset),
+      )
+    })
   },
 })
 
@@ -194,12 +160,11 @@ export const refreshAsset = createBackgroundAsyncThunk(
     },
     { dispatch },
   ) => {
-    // Update assets slice
+    // Update the canonical asset in the entity table; account balances
+    // reference it by ID so no separate account-side update is needed.
     await dispatch(
       assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
     )
-    // Update accounts slice cached data about this asset
-    await dispatch(updateAccountAssetReferences([asset]))
   },
 )
 

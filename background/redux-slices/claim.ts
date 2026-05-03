@@ -26,7 +26,7 @@ import {
 } from "../services/island"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import { SmartContractFungibleAsset } from "../assets"
-import { isSameAsset } from "./utils/asset-utils"
+import { getFullAssetID, isSameAsset } from "./utils/asset-utils"
 import { selectCurrentAccount } from "./selectors/uiSelectors"
 import { AccountState } from "./accounts"
 import { ISLAND_NETWORK } from "../services/island/contracts"
@@ -484,12 +484,10 @@ export const selectHasIslandAssets = createSelector(
       return false
     }
 
-    const balances = Object.values(currentAccountData?.balances ?? {})
+    const balanceIDs = Object.keys(currentAccountData?.balances ?? {})
 
     const hasIslandAssets = islandAssets.some((islandAsset) =>
-      balances.some(({ assetAmount: { asset } }) =>
-        isSameAsset(asset, islandAsset),
-      ),
+      balanceIDs.includes(getFullAssetID(islandAsset)),
     )
     return hasIslandAssets
   },

@@ -4,6 +4,7 @@ import { SwappableAsset, isSmartContractFungibleAsset } from "../../assets"
 import { sameNetwork } from "../../networks"
 import { isBaseAssetForNetwork, isTrustedAsset } from "../utils/asset-utils"
 import { RootState } from ".."
+import { selectAllAssets } from "../assets"
 
 export const selectLatestQuoteRequest = createSelector(
   (state: RootState) => state.swap.latestQuoteRequest,
@@ -16,7 +17,7 @@ export const selectInProgressApprovalContract = createSelector(
 )
 
 export const selectSwapBuyAssets = createSelector(
-  (state: RootState) => state.assets,
+  selectAllAssets,
   selectCurrentNetwork,
   (assets, currentNetwork) =>
     assets.filter((asset): asset is SwappableAsset => {

@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit"
 import type { RootState } from ".."
+import { selectAllAssets } from "../assets"
 import {
   hardcodedMainCurrencySign,
   hardcodedMainCurrencySymbol,
@@ -58,7 +59,7 @@ export const selectMainCurrencySign = createSelector(
 
 export const selectMainCurrency = createSelector(
   (state: RootState) => state.ui,
-  (state: RootState) => state.assets,
+  (state: RootState) => selectAllAssets(state),
   (state: RootState) => selectMainCurrencySymbol(state),
   (_, assets, mainCurrencySymbol) =>
     assets.find((asset) => asset.symbol === mainCurrencySymbol),

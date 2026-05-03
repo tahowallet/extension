@@ -417,6 +417,20 @@ export const getFullAssetID = (
   return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
 }
 
+/**
+ * Stable entity ID for any asset type. Network-specific assets use
+ * {@link getFullAssetID}; plain assets fall back to their symbol.
+ */
+export function getAssetEntityID(asset: AnyAsset): string {
+  if (isSmartContractFungibleAsset(asset)) {
+    return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
+  }
+  if (isNetworkBaseAsset(asset)) {
+    return `${asset.chainID}/base`
+  }
+  return asset.symbol
+}
+
 // FIXME Unify once asset similarity code is unified.
 export function isSameAsset(asset1?: AnyAsset, asset2?: AnyAsset): boolean {
   if (typeof asset1 === "undefined" || typeof asset2 === "undefined") {

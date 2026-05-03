@@ -5,22 +5,24 @@ import {
   AccountType,
   DEFAULT_ACCOUNT_NAMES,
   CompleteAssetAmount,
+  NormalizedBalance,
 } from "../accounts"
-import { AssetsState } from "../assets"
+import { selectAssetEntities } from "../assets"
 import {
   enrichAssetAmountWithDecimalValues,
   enrichAssetAmountWithMainCurrencyValues,
   formatCurrencyAmount,
   heuristicDesiredDecimalsForUnitPrice,
   isNetworkBaseAsset,
-  isSameAsset,
   isTrustedAsset,
+  FullAssetID,
 } from "../utils/asset-utils"
 import {
   AnyAsset,
   AnyAssetAmount,
   assetAmountToDesiredDecimals,
   convertAssetAmountViaPricePoint,
+  isFungibleAsset,
 } from "../../assets"
 import {
   selectCurrentAccount,
@@ -37,7 +39,7 @@ import {
   selectKeyringsByAddresses,
   selectSourcesByAddress,
 } from "./internalSignerSelectors"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import { AddressOnNetwork } from "../../accounts"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
@@ -47,6 +49,7 @@ import { SignerImportSource } from "../../services/internal-signer"
 import { assertUnreachable, isDefined } from "../../lib/utils/type-guards"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import { TESTNET_TAHO } from "../../services/island"
+import { convertFixedPoint } from "../../lib/fixed-point"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -62,6 +65,23 @@ const EXCEPTION_ASSETS_BY_SYMBOL = ["BTC", "sBTC", "WBTC", "tBTC"].map(
 
 // TODO Make this a setting.
 export const userValueDustThreshold = 2
+
+// Inline isSameAsset to avoid circular import (accounts -> assets -> accounts).
+// Mirrors the logic in asset-utils but only for the display check below.
+function isSameAsset(asset1: AnyAsset, asset2: AnyAsset): boolean {
+  if ("contractAddress" in asset1 && "contractAddress" in asset2) {
+    return (
+      "homeNetwork" in asset1 &&
+      "homeNetwork" in asset2 &&
+      sameNetwork(asset1.homeNetwork, asset2.homeNetwork) &&
+      sameEVMAddress(
+        asset1.contractAddress as string,
+        asset2.contractAddress as string,
+      )
+    )
+  }
+  return asset1.symbol === asset2.symbol
+}
 
 const shouldForciblyDisplayAsset = (
   assetAmount: CompleteAssetAmount<AnyAsset>,
@@ -104,9 +124,25 @@ export function determineAssetDisplayAndVerify(
   }
 }
 
+/**
+ * Hydrate normalized balances into AnyAssetAmount[] by looking up each
+ * asset from the entity table.
+ */
+function hydrateBalances(
+  balances: { [assetID: FullAssetID]: NormalizedBalance },
+  assetEntities: ReturnType<typeof selectAssetEntities>,
+): AnyAssetAmount[] {
+  return Object.entries(balances)
+    .map(([assetID, balance]) => {
+      const asset = assetEntities[assetID]
+      if (!asset) return undefined
+      return { asset, amount: balance.amount }
+    })
+    .filter((x): x is AnyAssetAmount => x !== undefined)
+}
+
 const computeCombinedAssetAmountsData = (
   assetAmounts: AnyAssetAmount<AnyAsset>[],
-  assets: AssetsState,
   mainCurrencySymbol: string,
   hideDust: boolean,
   showUnverifiedAssets: boolean,
@@ -235,19 +271,85 @@ const getCurrentAccountState = (state: RootState) => {
     normalizeEVMAddress(address)
   ]
 }
-export const getAssetsState = (state: RootState): AssetsState => state.assets
 export const getPricesState = (state: RootState): PricesState => state.prices
 
-export const selectAccountAndTimestampedActivities = createSelector(
+/**
+ * Computes the combined asset amounts across all accounts and non-test
+ * networks, replacing the old in-state `combinedData`. Asset objects are
+ * hydrated from the entity table.
+ */
+const selectCombinedAssets = createSelector(
   getAccountState,
-  getAssetsState,
+  selectAssetEntities,
+  (account, assetEntities) => {
+    const allAssetAmounts = Object.keys(account.accountsData.evm)
+      .filter((chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID))
+      .flatMap((chainID) =>
+        Object.values(account.accountsData.evm[chainID])
+          .flatMap((ad) => {
+            if (ad === "loading") return []
+            return Object.entries(ad.balances).map(([assetID, balance]) => {
+              const asset = assetEntities[assetID]
+              if (!asset) return undefined
+              return { asset, amount: balance.amount } as AnyAssetAmount
+            })
+          })
+          .filter((x): x is AnyAssetAmount => x !== undefined),
+      )
+
+    // Combine balances for trusted assets, grouping by symbol.
+    return Object.values(
+      allAssetAmounts
+        .filter(({ asset }) => isTrustedAsset(asset))
+        .reduce<{ [symbol: string]: AnyAssetAmount }>(
+          (acc, combinedAssetAmount) => {
+            const { asset } = combinedAssetAmount
+            const key = asset.symbol
+
+            let { amount } = combinedAssetAmount
+
+            if (acc[key]?.asset) {
+              const accAsset = acc[key].asset
+              const existingDecimals = isFungibleAsset(accAsset)
+                ? accAsset.decimals
+                : 0
+              const newDecimals = isFungibleAsset(combinedAssetAmount.asset)
+                ? combinedAssetAmount.asset.decimals
+                : 0
+
+              if (newDecimals !== existingDecimals) {
+                amount = convertFixedPoint(
+                  amount,
+                  newDecimals,
+                  existingDecimals,
+                )
+              }
+            }
+
+            if (acc[key]) {
+              acc[key].amount += amount
+            } else {
+              acc[key] = { ...combinedAssetAmount }
+            }
+
+            return acc
+          },
+          {},
+        ),
+    )
+  },
+)
+
+export const selectAccountAndTimestampedActivities = createSelector(
+  selectCombinedAssets,
+  getAccountState,
   getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
   (
+    combinedAssets,
     account,
-    assets,
     prices,
     hideDust,
     showUnverifiedAssets,
@@ -255,8 +357,7 @@ export const selectAccountAndTimestampedActivities = createSelector(
   ) => {
     const { combinedAssetAmounts, totalMainCurrencyAmount } =
       computeCombinedAssetAmountsData(
-        account.combinedData.assets,
-        assets,
+        combinedAssets,
         mainCurrencySymbol,
         hideDust,
         showUnverifiedAssets,
@@ -280,14 +381,14 @@ export const selectAccountAndTimestampedActivities = createSelector(
 )
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
-  getAssetsState,
+  selectAssetEntities,
   getPricesState,
   selectHideDust,
   selectShowUnverifiedAssets,
   selectMainCurrencySymbol,
   (
     currentAccount,
-    assets,
+    assetEntities,
     prices,
     hideDust,
     showUnverifiedAssets,
@@ -297,9 +398,7 @@ export const selectCurrentAccountBalances = createSelector(
       return undefined
     }
 
-    const assetAmounts = Object.values(currentAccount.balances).map(
-      (balance) => balance.assetAmount,
-    )
+    const assetAmounts = hydrateBalances(currentAccount.balances, assetEntities)
 
     const {
       allAssetAmounts,
@@ -308,7 +407,6 @@ export const selectCurrentAccountBalances = createSelector(
       totalMainCurrencyAmount,
     } = computeCombinedAssetAmountsData(
       assetAmounts,
-      assets,
       mainCurrencySymbol,
       hideDust,
       showUnverifiedAssets,
@@ -390,12 +488,17 @@ const getAccountType = (
 }
 
 const getTotalBalance = (
-  accountBalances: { [assetSymbol: string]: AccountBalance },
+  accountBalances: { [assetID: string]: NormalizedBalance },
+  assetEntities: ReturnType<typeof selectAssetEntities>,
   prices: PricesState,
   mainCurrencySymbol: string,
 ) =>
-  Object.values(accountBalances)
-    .map(({ assetAmount }) => {
+  Object.entries(accountBalances)
+    .map(([assetID, balance]) => {
+      const asset = assetEntities[assetID]
+      if (!asset) return 0
+
+      const assetAmount = { asset, amount: balance.amount }
       const assetPricePoint = selectAssetPricePoint(
         prices,
         assetAmount.asset,
@@ -427,6 +530,7 @@ function getNetworkAccountTotalsByCategory(
   network: EVMNetwork,
 ): CategorizedAccountTotals {
   const accounts = getAccountState(state)
+  const assetEntities = selectAssetEntities(state)
   const prices = getPricesState(state)
   const accountSignersByAddress = selectAccountSignersByAddress(state)
   const keyringsByAddresses = selectKeyringsByAddresses(state)
@@ -474,7 +578,12 @@ function getNetworkAccountTotalsByCategory(
         avatarURL: avatarURL ?? accountData.defaultAvatar,
         localizedTotalMainCurrencyAmount: formatCurrencyAmount(
           mainCurrencySymbol,
-          getTotalBalance(accountData.balances, prices, mainCurrencySymbol),
+          getTotalBalance(
+            accountData.balances,
+            assetEntities,
+            prices,
+            mainCurrencySymbol,
+          ),
           desiredDecimals.default,
         ),
       }
@@ -525,10 +634,10 @@ export type AccountTotalList = {
 /** Get list of all accounts totals on all networks but without test networks */
 export const selectAccountTotalsForOverview = createSelector(
   getAccountState,
-  getAssetsState,
+  selectAssetEntities,
   getPricesState,
   selectMainCurrencySymbol,
-  (accountsState, assetsState, pricesState, mainCurrencySymbol) => {
+  (accountsState, assetEntities, pricesState, mainCurrencySymbol) => {
     const accountsTotal: AccountTotalList = {}
 
     Object.entries(accountsState.accountsData.evm)
@@ -550,6 +659,7 @@ export const selectAccountTotalsForOverview = createSelector(
 
           accountsTotal[normalizedAddress].totals[chainID] = getTotalBalance(
             accountData.balances,
+            assetEntities,
             pricesState,
             mainCurrencySymbol,
           )

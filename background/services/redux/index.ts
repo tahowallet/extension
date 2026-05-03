@@ -39,7 +39,6 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAccountAssetReferences,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
 import {
@@ -100,6 +99,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
   revokePermissionsForAddress,
+  revokePermissionsForOrigin,
   setCurrentNetworkForOrigin,
 } from "../../redux-slices/dapp"
 import logger from "../../lib/logger"
@@ -931,7 +931,6 @@ export default class ReduxService extends BaseService<never> {
 
         const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
         if (smartContractAssets.length > 0) {
-          this.store.dispatch(updateAccountAssetReferences(smartContractAssets))
           this.store.dispatch(updatePriceAssetReferences(smartContractAssets))
         }
       },
@@ -1297,6 +1296,13 @@ export default class ReduxService extends BaseService<never> {
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializePermissions(allowedPages))
+      },
+    )
+
+    this.providerBridgeService.emitter.on(
+      "revokePermissionsForOrigin",
+      (origin: string) => {
+        this.store.dispatch(revokePermissionsForOrigin(origin))
       },
     )
 
