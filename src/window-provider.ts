@@ -396,7 +396,8 @@ function setupProviderWrapper() {
           if (
             this.currentProvider !== this.tahoProvider ||
             this.lastInjectedProvider === undefined ||
-            this.currentProvider === this.lastInjectedProvider
+            this.currentProvider === this.lastInjectedProvider ||
+            typeof this.lastInjectedProvider.emit !== "function"
           ) {
             return false
           }

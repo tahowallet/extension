@@ -21,6 +21,7 @@ export function useDappPermission(): {
     const { url } = await browser.tabs
       .query({
         active: true,
+        currentWindow: true,
       })
       .then((tabs) =>
         tabs[0] ? tabs[0] : { url: "", favIconUrl: "", title: "" },
