@@ -42,8 +42,27 @@ const devToolsSanitizer = (input: unknown) => {
   }
 }
 
+// Guard against overlapping persist calls. Lodash debounce does not await
+// the async function it wraps, so a slow browser.storage.local.set (likely
+// for a multi-MB payload) can still be in-flight when the next debounce tick
+// fires, creating a second full-size encoded string. With 5+ overlapping
+// writes the extension OOMs on string copies alone.
+let persistInFlight = false
+let persistQueued: unknown | null = null
+
 async function persistStoreBsae<T>(state: T) {
-  if (process.env.WRITE_REDUX_CACHE === "true") {
+  if (process.env.WRITE_REDUX_CACHE !== "true") return
+
+  if (persistInFlight) {
+    // A persist is already running; stash the latest state so it gets
+    // written once the current pass finishes. Only the most recent state
+    // matters — intermediate snapshots are redundant.
+    persistQueued = state
+    return
+  }
+
+  persistInFlight = true
+  try {
     const startedAt = Date.now()
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
@@ -53,6 +72,13 @@ async function persistStoreBsae<T>(state: T) {
       version: REDUX_STATE_VERSION,
     })
     recordReduxPersist(Date.now() - startedAt, encoded.length)
+  } finally {
+    persistInFlight = false
+    if (persistQueued !== null) {
+      const next = persistQueued
+      persistQueued = null
+      persistStoreBsae(next)
+    }
   }
 }
 
