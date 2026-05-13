@@ -119,6 +119,7 @@ export const MEZO: EVMNetwork = {
 
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
+  MEZO,
   ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   POLYGON,
   OPTIMISM,
