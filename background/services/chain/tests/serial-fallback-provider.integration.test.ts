@@ -10,16 +10,16 @@ const sandbox = sinon.createSandbox()
 describe("Serial Fallback Provider", () => {
   let fallbackProvider: SerialFallbackProvider
   let genericSendStub: Sinon.SinonStub
-  let alchemySendStub: Sinon.SinonStub
+  let boarSendStub: Sinon.SinonStub
 
   beforeEach(() => {
     const mockGenericProvider = new JsonRpcProvider("fake-rpc-url")
-    const mockAlchemyProvider = new JsonRpcProvider("fake-alchemy-url")
+    const mockBoarProvider = new JsonRpcProvider("fake-boar-url")
     genericSendStub = sandbox
       .stub(mockGenericProvider, "send")
       .callsFake(async () => "success")
-    alchemySendStub = sandbox
-      .stub(mockAlchemyProvider, "send")
+    boarSendStub = sandbox
+      .stub(mockBoarProvider, "send")
       .callsFake(async () => "success")
     fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
       {
@@ -27,8 +27,8 @@ describe("Serial Fallback Provider", () => {
         creator: () => mockGenericProvider,
       },
       {
-        type: "alchemy",
-        creator: () => mockAlchemyProvider,
+        type: "boar",
+        creator: () => mockBoarProvider,
       },
     ])
   })
@@ -40,34 +40,34 @@ describe("Serial Fallback Provider", () => {
   describe("send", () => {
     it("should not call any providers when called with eth_chainId", async () => {
       await fallbackProvider.send("eth_chainId", [])
-      expect(alchemySendStub.called).toBe(false)
+      expect(boarSendStub.called).toBe(false)
       expect(genericSendStub.called).toBe(false)
     })
 
-    describe("should use the alchemy provider for alchemy specific methods", () => {
+    describe("should use the boar provider for alchemy specific methods", () => {
       it("alchemy_getTokenBalances", async () => {
         await fallbackProvider.send("alchemy_getTokenBalances", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
       it("alchemy_getAssetTransfers", async () => {
         await fallbackProvider.send("alchemy_getAssetTransfers", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
       it("alchemy_getTokenMetadata", async () => {
         await fallbackProvider.send("alchemy_getTokenMetadata", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
       it("alchemy_pendingTransactions", async () => {
         await fallbackProvider.send("alchemy_pendingTransactions", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
       it("eth_subscribe", async () => {
         await fallbackProvider.send("eth_subscribe", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
       it("eth_estimateGas", async () => {
         await fallbackProvider.send("eth_estimateGas", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
     })
 
@@ -83,7 +83,7 @@ describe("Serial Fallback Provider", () => {
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
-      expect(alchemySendStub.callCount).toEqual(1)
+      expect(boarSendStub.callCount).toEqual(1)
       expect(genericSendStub.callCount).toEqual(3)
     })
 
@@ -99,7 +99,7 @@ describe("Serial Fallback Provider", () => {
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
-      expect(alchemySendStub.callCount).toEqual(1)
+      expect(boarSendStub.callCount).toEqual(1)
       expect(genericSendStub.callCount).toEqual(3)
     })
 
@@ -115,14 +115,14 @@ describe("Serial Fallback Provider", () => {
       ).resolves.toEqual("success")
 
       // eth_chainId is called once in the constructor
-      expect(alchemySendStub.callCount).toEqual(1)
+      expect(boarSendStub.callCount).toEqual(1)
       expect(genericSendStub.callCount).toEqual(3)
     })
 
     it("should switch to next provider after three bad responses", async () => {
       genericSendStub.throws("bad result from backend")
-      alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
-      alchemySendStub.onCall(1).returns("success")
+      boarSendStub.onCall(0).returns(ETHEREUM.chainID)
+      boarSendStub.onCall(1).returns("success")
 
       await waitFor(() => expect(genericSendStub.called).toEqual(true))
 
@@ -136,20 +136,19 @@ describe("Serial Fallback Provider", () => {
       ).toEqual(4)
       // 1 try of eth_getBalance
       expect(
-        alchemySendStub.args.filter((args) => args[0] === "eth_getBalance")
-          .length,
+        boarSendStub.args.filter((args) => args[0] === "eth_getBalance").length,
       ).toEqual(1)
     })
 
     it("should eventually throw if all providers fail", async () => {
       const error = new Error("bad response")
       genericSendStub.throws(error)
-      alchemySendStub.throws(error)
+      boarSendStub.throws(error)
       await expect(fallbackProvider.send("eth_getBalance", [])).rejects.toEqual(
         error,
       )
       expect(genericSendStub.called).toEqual(true)
-      expect(alchemySendStub.called).toEqual(true)
+      expect(boarSendStub.called).toEqual(true)
     })
 
     it("should cache and return cached result for eth_getCode", async () => {
@@ -210,8 +209,8 @@ describe("Serial Fallback Provider", () => {
 
     it("should increment the currentProviderIndex when failing over", async () => {
       genericSendStub.throws("bad response")
-      alchemySendStub.onCall(0).returns(ETHEREUM.chainID)
-      alchemySendStub.onCall(1).returns("success")
+      boarSendStub.onCall(0).returns(ETHEREUM.chainID)
+      boarSendStub.onCall(1).returns("success")
 
       // Accessing private property
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

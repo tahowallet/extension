@@ -325,7 +325,7 @@ describe("IndexingService", () => {
       const account = createAddressOnNetwork()
 
       const provider = chainService.providerForNetworkOrThrow(ETHEREUM)
-      provider.supportsAlchemy = false
+      provider.supportsBoar = false
 
       jest
         .spyOn(chainService, "getAccountsToTrack")

@@ -44,7 +44,12 @@ jobs:
           echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
           yarn build
         env:
-          ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+          BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_OPTIMISM: ${{ secrets.DEV_BOAR_RPC_URL_OPTIMISM || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_POLYGON: ${{ secrets.DEV_BOAR_RPC_URL_POLYGON || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_ARBITRUM_ONE: ${{ secrets.DEV_BOAR_RPC_URL_ARBITRUM_ONE || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_SEPOLIA: ${{ secrets.DEV_BOAR_RPC_URL_SEPOLIA || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_MEZO: ${{ secrets.DEV_BOAR_RPC_URL_MEZO || 'https://rpc.boar.network/v2/placeholder-key' }}
           ZEROX_API_KEY: ${{ secrets.DEV_ZEROX_API_KEY }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
@@ -54,7 +59,12 @@ jobs:
           echo 'USE_ANALYTICS_SOURCE="PROD"' >> .env
           yarn build
         env:
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
+          BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
+          BOAR_RPC_URL_POLYGON: ${{ secrets.BOAR_RPC_URL_POLYGON }}
+          BOAR_RPC_URL_ARBITRUM_ONE: ${{ secrets.BOAR_RPC_URL_ARBITRUM_ONE }}
+          BOAR_RPC_URL_SEPOLIA: ${{ secrets.BOAR_RPC_URL_SEPOLIA }}
+          BOAR_RPC_URL_MEZO: ${{ secrets.BOAR_RPC_URL_MEZO }}
           UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
           SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
           ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
@@ -83,7 +93,12 @@ jobs:
           yarn build
           find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
-          ALCHEMY_KEY: ${{ secrets.DEV_ALCHEMY_API_KEY || 'oV1Rtjh61hGa97X2MTqMY9kEUcpxP-6K' }}
+          BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_OPTIMISM: ${{ secrets.DEV_BOAR_RPC_URL_OPTIMISM || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_POLYGON: ${{ secrets.DEV_BOAR_RPC_URL_POLYGON || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_ARBITRUM_ONE: ${{ secrets.DEV_BOAR_RPC_URL_ARBITRUM_ONE || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_SEPOLIA: ${{ secrets.DEV_BOAR_RPC_URL_SEPOLIA || 'https://rpc.boar.network/v2/placeholder-key' }}
+          BOAR_RPC_URL_MEZO: ${{ secrets.DEV_BOAR_RPC_URL_MEZO || 'https://rpc.boar.network/v2/placeholder-key' }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
           COMMIT_SHA: ${{ github.sha }}
           USE_MAINNET_FORK: true
@@ -94,7 +109,12 @@ jobs:
           yarn build
           find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
         env:
-          ALCHEMY_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
+          BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
+          BOAR_RPC_URL_POLYGON: ${{ secrets.BOAR_RPC_URL_POLYGON }}
+          BOAR_RPC_URL_ARBITRUM_ONE: ${{ secrets.BOAR_RPC_URL_ARBITRUM_ONE }}
+          BOAR_RPC_URL_SEPOLIA: ${{ secrets.BOAR_RPC_URL_SEPOLIA }}
+          BOAR_RPC_URL_MEZO: ${{ secrets.BOAR_RPC_URL_MEZO }}
           UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
           SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
           ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}

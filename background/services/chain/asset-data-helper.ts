@@ -1,8 +1,8 @@
 import {
-  getAssetTransfers as getAlchemyAssetTransfers,
-  getTokenBalances as getAlchemyTokenBalances,
-  getTokenMetadata as getAlchemyTokenMetadata,
-} from "../../lib/alchemy"
+  getAssetTransfers as getBoarAssetTransfers,
+  getTokenBalances as getBoarTokenBalances,
+  getTokenMetadata as getBoarTokenMetadata,
+} from "../../lib/boar"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import {
   AssetTransfer,
@@ -72,7 +72,7 @@ export default class AssetDataHelper {
     smartContractAddresses?: HexString[],
   ): Promise<{
     balances: SmartContractAmount[]
-    dataSource: "alchemy" | "generic-rpc" | "local"
+    dataSource: "boar" | "generic-rpc" | "local"
   }> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network,
@@ -82,15 +82,15 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsBoar) {
         return {
-          balances: await getAlchemyTokenBalances(provider, addressOnNetwork),
-          dataSource: "alchemy",
+          balances: await getBoarTokenBalances(provider, addressOnNetwork),
+          dataSource: "boar",
         }
       }
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances on Alchemy supported network",
+        "Problem resolving asset balances on Boar supported network",
         addressOnNetwork.network,
         error,
       )
@@ -161,8 +161,8 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    if (provider.supportsAlchemy) {
-      return getAlchemyTokenMetadata(provider, tokenSmartContract)
+    if (provider.supportsBoar) {
+      return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
     return getERC20Metadata(provider, tokenSmartContract)
@@ -186,9 +186,9 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsBoar) {
         const promises = [
-          getAlchemyAssetTransfers(
+          getBoarAssetTransfers(
             provider,
             addressOnNetwork,
             "incoming",
@@ -198,7 +198,7 @@ export default class AssetDataHelper {
         ]
         if (!incomingOnly) {
           promises.push(
-            getAlchemyAssetTransfers(
+            getBoarAssetTransfers(
               provider,
               addressOnNetwork,
               "outgoing",
@@ -211,7 +211,7 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Alchemy helper; network may " +
+        "Problem resolving asset transfers via Boar helper; network may " +
           "not support it.",
         error,
       )

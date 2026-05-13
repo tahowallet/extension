@@ -24,7 +24,7 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 
 export type Transaction = AnyEVMTransaction & {
-  dataSource: "alchemy" | "local"
+  dataSource: "boar" | "local"
   firstSeen: UNIXTime
 }
 

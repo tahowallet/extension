@@ -9,27 +9,35 @@ import {
 } from "../assets"
 import { AnyEVMTransaction, EVMNetwork, SmartContract } from "../networks"
 import {
-  isValidAlchemyAssetTransferResponse,
-  isValidAlchemyTokenBalanceResponse,
-  isValidAlchemyTokenMetadataResponse,
+  isValidBoarAssetTransferResponse,
+  isValidBoarTokenBalanceResponse,
+  isValidBoarTokenMetadataResponse,
   ValidatedType,
 } from "./validate"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
 
 // We can't use destructuring because webpack has to replace all instances of
-// `process.env` variables in the bundled output
-export const ALCHEMY_KEY = process.env.ALCHEMY_KEY // eslint-disable-line prefer-destructuring
+// `process.env` variables in the bundled output. Each chain URL must be
+// referenced explicitly so the bundler can inline the values.
+// eslint-disable-next-line prefer-destructuring
+export const BOAR_RPC_URLS: Readonly<Record<string, string | undefined>> = {
+  "1": process.env.BOAR_RPC_URL_ETHEREUM,
+  "10": process.env.BOAR_RPC_URL_OPTIMISM,
+  "137": process.env.BOAR_RPC_URL_POLYGON,
+  "42161": process.env.BOAR_RPC_URL_ARBITRUM_ONE,
+  "11155111": process.env.BOAR_RPC_URL_SEPOLIA,
+  "31612": process.env.BOAR_RPC_URL_MEZO,
+}
 
 /**
- * Use Alchemy's getAssetTransfers call to get historical transfers for an
+ * Use Boar's getAssetTransfers call to get historical transfers for an
  * account.
  *
  * Note that pagination isn't supported in this wrapper, so any responses after
  * 1k transfers will be dropped.
  *
- * More information https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api
- * @param provider an Alchemy ethers provider
+ * @param provider a Boar RPC ethers provider
  * @param addressOnNetwork the address whose transfer history we're fetching
  *        and the network it should happen on; note that if the network does
  *        not match the network the provider is set up for, this will likely
@@ -65,12 +73,10 @@ export async function getAssetTransfers(
   }
 
   // Categories that are most important to us, supported both on Ethereum Mainnet and polygon
-  // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-ethereum-mainnet
   const category = ["external", "erc20"]
 
   if (addressOnNetwork.network.name === "Ethereum") {
     // "internal" is supported only on Ethereum Mainnet and Sepolia atm
-    // https://docs.alchemy.com/alchemy/enhanced-apis/transfers-api#alchemy_getassettransfers-testnets-and-layer-2s
     category.push("internal")
   }
 
@@ -84,14 +90,14 @@ export async function getAssetTransfers(
 
   return [rpcResponse]
     .flatMap((jsonResponse: unknown) => {
-      if (isValidAlchemyAssetTransferResponse(jsonResponse)) {
+      if (isValidBoarAssetTransferResponse(jsonResponse)) {
         return jsonResponse.transfers
       }
 
       logger.warn(
-        "Alchemy asset transfer response didn't validate, did the API change?",
+        "Boar asset transfer response didn't validate, did the API change?",
         jsonResponse,
-        isValidAlchemyAssetTransferResponse.errors,
+        isValidBoarAssetTransferResponse.errors,
       )
       return []
     })
@@ -130,22 +136,19 @@ export async function getAssetTransfers(
         txHash: transfer.hash,
         to: transfer.to,
         from: transfer.from,
-        dataSource: "alchemy",
+        dataSource: "boar",
       } as AssetTransfer
     })
     .filter((t): t is AssetTransfer => t !== null)
 }
 
 /**
- * Use Alchemy's getTokenBalances call to get balances for a particular address.
+ * Use Boar's getTokenBalances call to get balances for a particular address.
  *
- *
- * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- *
- * @param provider an Alchemy ethers provider
+ * @param provider a Boar RPC ethers provider
  * @param address the address whose balances we're fetching
  * @param tokens An optional list of hex-string contract addresses. If the list
- *        isn't provided, Alchemy will choose based on the top 100 high-volume
+ *        isn't provided, Boar will choose based on the top high-volume
  *        tokens on its platform
  */
 export async function getTokenBalances(
@@ -159,11 +162,11 @@ export async function getTokenBalances(
       ...(pageKey ? [{ pageKey }] : []),
     ])
 
-    if (!isValidAlchemyTokenBalanceResponse(json)) {
+    if (!isValidBoarTokenBalanceResponse(json)) {
       logger.warn(
-        "Alchemy token balance response didn't validate, did the API change?",
+        "Boar token balance response didn't validate, did the API change?",
         json,
-        isValidAlchemyTokenBalanceResponse.errors,
+        isValidBoarTokenBalanceResponse.errors,
       )
       return null
     }
@@ -172,7 +175,7 @@ export async function getTokenBalances(
   }
 
   type TokenBalance = ValidatedType<
-    typeof isValidAlchemyTokenBalanceResponse
+    typeof isValidBoarTokenBalanceResponse
   >["tokenBalances"]
 
   const balances: TokenBalance = []
@@ -234,12 +237,9 @@ export async function getTokenBalances(
 }
 
 /**
- * Use Alchemy's getTokenMetadata call to get metadata for a token contract on
- * Ethereum.
+ * Use Boar's getTokenMetadata call to get metadata for a token contract.
  *
- * More information https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
- *
- * @param provider an Alchemy ethers provider
+ * @param provider a Boar RPC ethers provider
  * @param smartContract The information on the token smart contract whose
  *        metadata should be returned; note that the passed provider should be
  *        for the same network, or results are undefined.
@@ -251,13 +251,13 @@ export async function getTokenMetadata(
   const json: unknown = await provider.send("alchemy_getTokenMetadata", [
     contractAddress,
   ])
-  if (!isValidAlchemyTokenMetadataResponse(json)) {
+  if (!isValidBoarTokenMetadataResponse(json)) {
     logger.warn(
-      "Alchemy token metadata response didn't validate, did the API change?",
+      "Boar token metadata response didn't validate, did the API change?",
       json,
-      isValidAlchemyTokenMetadataResponse.errors,
+      isValidBoarTokenMetadataResponse.errors,
     )
-    throw new Error("Alchemy token metadata response didn't validate.")
+    throw new Error("Boar token metadata response didn't validate.")
   }
   return {
     decimals: json.decimals ?? 0,
@@ -272,9 +272,9 @@ export async function getTokenMetadata(
 }
 
 /**
- * Parse a transaction as returned by an Alchemy provider subscription.
+ * Parse a transaction as returned by a Boar provider subscription.
  */
-export function transactionFromAlchemyWebsocketTransaction(
+export function transactionFromBoarWebsocketTransaction(
   websocketTx: unknown,
   network: EVMNetwork,
 ): AnyEVMTransaction {
