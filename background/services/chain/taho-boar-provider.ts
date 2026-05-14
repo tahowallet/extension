@@ -1,6 +1,6 @@
 import TahoRPCProvider from "./taho-rpc-provider"
 
-const PROVIDER_REQUEST_TIMEOUT = 5000
+const PROVIDER_REQUEST_TIMEOUT = 10000
 
 /**
  * Boar RPC provider for enhanced API methods (token balances, transfers, etc.)
