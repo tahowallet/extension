@@ -12,6 +12,7 @@ import {
   OPTIMISM,
   FORK,
   ARBITRUM_SEPOLIA,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
@@ -216,6 +217,12 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
  * @returns true | false whether the method on a given network should be routed to Boar or can be sent over the generic provider
  */
 function boarOrDefaultProvider(chainID: string, method: string): boolean {
+  if (
+    method.startsWith("alchemy_") &&
+    BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
+  ) {
+    return false
+  }
   return (
     BOAR_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m),

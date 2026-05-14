@@ -191,6 +191,8 @@ export const BOAR_SUPPORTED_CHAIN_IDS = new Set(
     (network) => network.chainID,
   ),
 )
+
+export const BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS = new Set([MEZO.chainID])
 export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 

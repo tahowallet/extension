@@ -19,7 +19,11 @@ import {
   getTokenBalances,
 } from "../../lib/erc20"
 import { FeatureFlags, isEnabled } from "../../features"
-import { DOGGO, FORK } from "../../constants"
+import {
+  DOGGO,
+  FORK,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
+} from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -82,7 +86,12 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsBoar) {
+      if (
+        provider.supportsBoar &&
+        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
+          addressOnNetwork.network.chainID,
+        )
+      ) {
         return {
           balances: await getBoarTokenBalances(provider, addressOnNetwork),
           dataSource: "boar",
@@ -161,7 +170,12 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    if (provider.supportsBoar) {
+    if (
+      provider.supportsBoar &&
+      !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
+        tokenSmartContract.homeNetwork.chainID,
+      )
+    ) {
       return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
@@ -186,7 +200,12 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsBoar) {
+      if (
+        provider.supportsBoar &&
+        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
+          addressOnNetwork.network.chainID,
+        )
+      ) {
         const promises = [
           getBoarAssetTransfers(
             provider,
