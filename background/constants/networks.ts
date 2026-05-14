@@ -13,6 +13,7 @@ import {
   RBTC,
   ZK_SYNC_ETH,
   MEZO_BTC,
+  MEZO_MAINNET_BTC,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -112,7 +113,7 @@ export const MEZO_TESTNET: EVMNetwork = {
 
 export const MEZO: EVMNetwork = {
   name: "Mezo",
-  baseAsset: MEZO_BTC,
+  baseAsset: MEZO_MAINNET_BTC,
   chainID: "31612",
   family: "EVM",
 }
