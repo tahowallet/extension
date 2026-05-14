@@ -208,7 +208,7 @@ describe("ChainService", () => {
     it("should update supported networks after adding a chain", async () => {
       expect(chainService.supportedNetworks.length).toBe(10)
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
-      expect(chainService.supportedNetworks.length).toBe(10)
+      expect(chainService.supportedNetworks.length).toBe(11)
     })
 
     it("should create a provider for the new chain", async () => {
