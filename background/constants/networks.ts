@@ -184,9 +184,6 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
-export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
-export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
-
 export const BOAR_SUPPORTED_CHAIN_IDS = new Set(
   [ETHEREUM, OPTIMISM, POLYGON, ARBITRUM_ONE, SEPOLIA, MEZO].map(
     (network) => network.chainID,
@@ -194,6 +191,11 @@ export const BOAR_SUPPORTED_CHAIN_IDS = new Set(
 )
 
 export const BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS = new Set([MEZO.chainID])
+
+export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
+
+export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
+
 export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
