@@ -19,7 +19,7 @@ module.exports = {
     "react/require-default-props": [0],
     // Styled-jsx does not play nice with this rule, unfortunately.
     "react/jsx-one-expression-per-line": [0],
-    // stlyed-jsx also uses a couple of not-known-by-default properties.
+    // styled-jsx also uses a couple of not-known-by-default properties.
     "react/no-unknown-property": [2, { ignore: ["jsx", "global"] }],
     // Shared components may have labels associated externally in a way ESLint
     // does not detect.

@@ -123,7 +123,7 @@ export const {
 
 export default internalSignerSlice.reducer
 
-// Async thunk to bubble the generateNewKeyring action from  store to emitter.
+// Async thunk to bubble the generateNewKeyring action from store to emitter.
 export const generateNewKeyring = createBackgroundAsyncThunk(
   "internalSigner/generateNewKeyring",
   async (path?: string) => {
