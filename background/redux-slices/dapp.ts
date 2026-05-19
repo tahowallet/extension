@@ -46,7 +46,7 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
-// Async thunk to bubble the permissionGrant action from  store to emitter.
+// Async thunk to bubble the permissionGrant action from store to emitter.
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
   async (permission: PermissionRequest) => {
@@ -57,7 +57,7 @@ export const grantPermission = createBackgroundAsyncThunk(
   },
 )
 
-// Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
+// Async thunk to bubble the permissionDenyOrRevoke action from store to emitter.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionDenyOrRevoke",
   async (permission: PermissionRequest) => {
