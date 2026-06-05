@@ -987,7 +987,7 @@ export default class ChainService extends BaseService<Events> {
         asset: await this.db.getBaseAssetForNetwork(network.chainID),
         amount: balance.toBigInt(),
       },
-      dataSource: provider.supportsAlchemy ? "alchemy" : "generic-rpc",
+      dataSource: provider.supportsBoar ? "boar" : "generic-rpc",
       retrievedAt: Date.now(),
     }
 
@@ -1112,7 +1112,7 @@ export default class ChainService extends BaseService<Events> {
     }
 
     // TODO proper provider string
-    this.saveTransaction(newTransaction, "alchemy")
+    this.saveTransaction(newTransaction, "boar")
     return newTransaction
   }
 
@@ -1290,7 +1290,7 @@ export default class ChainService extends BaseService<Events> {
             // Failure to broadcast needs to be registered.
             this.saveTransaction(
               { ...transaction, status: 0, error: error.toString() },
-              "alchemy",
+              "boar",
             )
             // the reject here will release the nonce in the following catch
             return Promise.reject(error)
@@ -1479,7 +1479,7 @@ export default class ChainService extends BaseService<Events> {
             blockHash: null,
             blockHeight: null,
           },
-          "alchemy",
+          "boar",
         )
 
         // Let's also release the nonce from our bookkeeping.
@@ -1711,7 +1711,7 @@ export default class ChainService extends BaseService<Events> {
       const transaction = transactionFromEthersTransaction(result, network)
 
       // TODO make this provider type specific
-      await this.saveTransaction(transaction, "alchemy")
+      await this.saveTransaction(transaction, "boar")
 
       if (
         !("status" in transaction) && // if status field is present then it's not a pending tx anymore.
@@ -1767,7 +1767,7 @@ export default class ChainService extends BaseService<Events> {
    */
   private async saveTransaction(
     transaction: AnyEVMTransaction,
-    dataSource: "local" | "alchemy",
+    dataSource: "local" | "boar",
   ): Promise<void> {
     // Merge existing data into the updated transaction data. This handles
     // cases where an existing transaction has been enriched by e.g. a receipt,
@@ -1947,7 +1947,7 @@ export default class ChainService extends BaseService<Events> {
           normalizedFromAddress
         ] = transaction.nonce
       }
-      await this.saveTransaction(transaction, "alchemy")
+      await this.saveTransaction(transaction, "boar")
 
       // Wait for confirmation/receipt information.
       this.subscribeToTransactionConfirmation(network, transaction)
@@ -1971,7 +1971,7 @@ export default class ChainService extends BaseService<Events> {
     provider.once(transaction.hash, (confirmedReceipt: TransactionReceipt) => {
       this.saveTransaction(
         enrichTransactionWithReceipt(transaction, confirmedReceipt),
-        "alchemy",
+        "boar",
       )
 
       this.removeTransactionHashFromQueue(network, transaction.hash)
@@ -1997,7 +1997,7 @@ export default class ChainService extends BaseService<Events> {
     if (receipt) {
       await this.saveTransaction(
         enrichTransactionWithReceipt(transaction, receipt),
-        "alchemy",
+        "boar",
       )
     }
   }

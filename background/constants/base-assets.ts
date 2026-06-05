@@ -121,14 +121,8 @@ const MEZO_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
 }
 
 const MEZO_MAINNET_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...MEZO_BTC,
   chainID: "31612",
-  name: "Bitcoin",
-  symbol: "BTC",
-  decimals: 18,
-  metadata: {
-    coinGeckoID: "bitcoin",
-    tokenLists: [],
-  },
 }
 
 const BOB_ETH: NetworkBaseAsset = {

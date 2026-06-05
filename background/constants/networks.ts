@@ -153,8 +153,8 @@ export const CORE: EVMNetwork = {
 
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
-  ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   MEZO,
+  ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   BOB,
   CITREA,
   BOTANIX,
@@ -225,14 +225,18 @@ export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
-export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, SEPOLIA].map(
+export const BOAR_SUPPORTED_CHAIN_IDS = new Set(
+  [ETHEREUM, OPTIMISM, POLYGON, ARBITRUM_ONE, SEPOLIA, MEZO].map(
     (network) => network.chainID,
   ),
 )
 
+export const BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS = new Set([MEZO.chainID])
+
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
+
 export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
+
 export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
@@ -245,6 +249,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://mezo-testnet.drpc.org",
     "wss://mezo-testnet.drpc.org",
   ],
+  [MEZO.chainID]: ["https://rpc-internal.mezo.org"],
   [POLYGON.chainID]: [
     "https://polygon.drpc.org",
     // This one sometimes returns 0 for eth_getBalance
