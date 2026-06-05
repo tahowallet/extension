@@ -11,7 +11,6 @@ import {
   POLYGON,
   ROOTSTOCK,
   MEZO_TESTNET,
-  MEZO,
   BOB,
   CITREA,
   BOTANIX,
@@ -52,10 +51,6 @@ export const blockExplorer = {
   [ARBITRUM_NOVA.chainID]: {
     title: "Arbiscan",
     url: "https://nova.arbiscan.io/",
-  },
-  [MEZO.chainID]: {
-    title: "Mezo Explorer",
-    url: "https://explorer.mezo.org",
   },
   [BOB.chainID]: {
     title: "BOB Explorer",

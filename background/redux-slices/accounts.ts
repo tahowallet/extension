@@ -56,7 +56,7 @@ export type NormalizedBalance = {
   amount: bigint
   blockHeight?: bigint
   retrievedAt: number
-  dataSource: "alchemy" | "generic-rpc" | "local"
+  dataSource: "boar" | "generic-rpc" | "local"
 }
 
 export type AccountData = {

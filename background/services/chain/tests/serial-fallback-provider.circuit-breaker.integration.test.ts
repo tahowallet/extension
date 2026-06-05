@@ -45,7 +45,7 @@ describe("SerialFallbackProvider circuit breaker integration", () => {
       .callsFake(async () => "alchemy")
     fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
       { type: "generic", creator: () => mockGenericProvider },
-      { type: "alchemy", creator: () => mockAlchemyProvider },
+      { type: "boar", creator: () => mockAlchemyProvider },
     ])
   })
 
