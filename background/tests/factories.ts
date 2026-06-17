@@ -329,7 +329,7 @@ export const createAccountBalance = (
   network: ETHEREUM,
   blockHeight: BigInt(15547463),
   retrievedAt: Date.now(),
-  dataSource: "alchemy",
+  dataSource: "boar",
   ...overrides,
 })
 

@@ -5,32 +5,31 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { utils } from "ethers"
-import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
-  ALCHEMY_SUPPORTED_CHAIN_IDS,
   FLASHBOTS_RPC_URL,
   ARBITRUM_ONE,
   OPTIMISM,
   FORK,
   ARBITRUM_SEPOLIA,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
 import { AnyEVMTransaction } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
-  ALCHEMY_KEY,
-  transactionFromAlchemyWebsocketTransaction,
-} from "../../lib/alchemy"
+  BOAR_RPC_URLS,
+  transactionFromBoarWebsocketTransaction,
+} from "../../lib/boar"
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
-import TahoAlchemyProvider from "./taho-provider"
+import TahoBoarProvider from "./taho-boar-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
 
 export type ProviderCreator = {
-  type: "alchemy" | "custom" | "generic"
+  type: "boar" | "custom" | "generic"
   supportedMethods?: string[]
   creator: () => JsonRpcProvider
 }
@@ -41,18 +40,18 @@ const isWebSocketProvider = (
 
 /**
  * Method list, to describe which rpc method calls on which networks should
- * prefer alchemy provider over the generic ones.
+ * prefer the Boar provider over the generic ones.
  *
  * The method names can be full or the starting parts of the method name.
  * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
  *
  * The structure is network specific with an extra `everyChain` option.
- * The methods in this array will be directed towards alchemy on every network.
+ * The methods in this array will be directed towards Boar on every network.
  */
-export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
+export const BOAR_RPC_METHOD_PROVIDER_ROUTING = {
   everyChain: [
     "alchemy_", // alchemy specific api calls start with this
-    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_sendRawTransaction", // broadcast should always go to boar
     "eth_subscribe", // generic http providers do not support this, but dapps need this
     "eth_estimateGas", // just want to be safe, when setting up a transaction
     "eth_getLogs", // to avoid eth_getLogs block range limitations
@@ -208,21 +207,27 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
 }
 
 /**
- * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * Return the decision whether a given RPC call should be routed to the Boar provider
  * or the generic provider.
  *
- * Checking whether is alchemy supported is a non concern for this function!
+ * Checking whether Boar is supported is a non concern for this function!
  *
  * @param chainID string chainID to handle chain specific routings
  * @param method the current RPC method
- * @returns true | false whether the method on a given network should be routed to alchemy or can be sent over the generic provider
+ * @returns true | false whether the method on a given network should be routed to Boar or can be sent over the generic provider
  */
-function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+function boarOrDefaultProvider(chainID: string, method: string): boolean {
+  if (
+    method.startsWith("alchemy_") &&
+    BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
+  ) {
+    return false
+  }
   return (
-    ALCHEMY_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+    BOAR_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m),
     ) ||
-    (ALCHEMY_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
+    (BOAR_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
       (m: string) => method.startsWith(m),
     )
   )
@@ -232,7 +237,7 @@ function customOrDefaultProvider(
   method: string,
   supportedMethods: string[] = [],
 ): boolean {
-  // Alchemy's methods have to go through Alchemy
+  // Boar's methods have to go through Boar
   if (method.startsWith("alchemy_")) {
     return false
   }
@@ -266,7 +271,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // currentProviderIndex.
   private currentProvider: JsonRpcProvider
 
-  private alchemyProvider: JsonRpcProvider | undefined
+  private boarProvider: JsonRpcProvider | undefined
 
   private customProvider: JsonRpcProvider | undefined
 
@@ -310,9 +315,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
-  private alchemyProviderCreator: (() => JsonRpcProvider) | undefined
+  private boarProviderCreator: (() => JsonRpcProvider) | undefined
 
-  supportsAlchemy = false
+  supportsBoar = false
 
   private customProviderCreator: (() => JsonRpcProvider) | undefined
 
@@ -354,8 +359,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       (creator) => creator.type === "custom",
     )
 
-    const alchemyProviderCreator = providerCreators.find(
-      (creator) => creator.type === "alchemy",
+    const boarProviderCreator = providerCreators.find(
+      (creator) => creator.type === "boar",
     )
 
     const [firstProviderCreator, ...remainingProviderCreators] =
@@ -368,10 +373,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentProvider = firstProvider
     this.cachedProvidersByIndex[0] = firstProvider
 
-    if (alchemyProviderCreator) {
-      this.supportsAlchemy = true
-      this.alchemyProviderCreator = alchemyProviderCreator.creator
-      this.alchemyProvider = this.alchemyProviderCreator()
+    if (boarProviderCreator) {
+      this.supportsBoar = true
+      this.boarProviderCreator = boarProviderCreator.creator
+      this.boarProvider = this.boarProviderCreator()
     }
 
     if (customProviderCreator) {
@@ -380,7 +385,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     setInterval(() => {
       this.attemptToReconnectToPrimaryProvider()
-      this.attemptToReconnectToAlchemyProvider()
+      this.attemptToReconnectToBoarProvider()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
     setInterval(() => {
@@ -439,11 +444,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        // Force some methods to be handled by alchemy if we're on an alchemy supported chain
-        this.alchemyProvider &&
-        alchemyOrDefaultProvider(this.cachedChainId, method)
+        // Force some methods to be handled by Boar if we're on a Boar supported chain
+        this.boarProvider &&
+        boarOrDefaultProvider(this.cachedChainId, method)
       ) {
-        const result = await this.alchemyProvider.send(method, params)
+        const result = await this.boarProvider.send(method, params)
         delete this.messagesToSend[messageId]
         return result
       }
@@ -693,14 +698,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Try again with the next provider.
     await this.reconnectProvider()
 
-    const isAlchemyFallback =
-      this.alchemyProvider && this.currentProvider === this.alchemyProvider
+    const isBoarFallback =
+      this.boarProvider && this.currentProvider === this.boarProvider
 
     return this.routeRpcCall(messageId).finally(() => {
-      // If every other provider failed and we're on the alchemy provider,
+      // If every other provider failed and we're on the Boar provider,
       // reconnect to the first provider once we've handled this request
-      // as we should limit relying on alchemy as a fallback
-      if (isAlchemyFallback && this.currentProviderIndex !== 0) {
+      // as we should limit relying on Boar as a fallback
+      if (isBoarFallback && this.currentProviderIndex !== 0) {
         this.currentProviderIndex = 0
         this.reconnectProvider()
       }
@@ -788,15 +793,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       )
       return
     }
-    const alchemySubscription =
-      await this.alchemySubscribeFullPendingTransactions(
-        { address, network },
-        handler,
-      )
+    const boarSubscription = await this.boarSubscribeFullPendingTransactions(
+      { address, network },
+      handler,
+    )
 
-    if (alchemySubscription === "unsupported") {
+    if (boarSubscription === "unsupported") {
       // Fall back on a standard pending transaction subscription if the
-      // Alchemy version is unsupported.
+      // Boar version is unsupported.
       this.on("pending", async (transactionHash: unknown) => {
         try {
           if (typeof transactionHash === "string") {
@@ -1035,15 +1039,15 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return true
   }
 
-  private async attemptToReconnectToAlchemyProvider(): Promise<void> {
+  private async attemptToReconnectToBoarProvider(): Promise<void> {
     if (
-      this.alchemyProvider &&
-      this.alchemyProviderCreator &&
-      isClosedOrClosingWebSocketProvider(this.alchemyProvider)
+      this.boarProvider &&
+      this.boarProviderCreator &&
+      isClosedOrClosingWebSocketProvider(this.boarProvider)
     ) {
       // Always reconnect without resubscribing - since subscriptions
       // should live on the currentProvider
-      this.alchemyProvider = this.alchemyProviderCreator()
+      this.boarProvider = this.boarProviderCreator()
     }
   }
 
@@ -1107,11 +1111,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Attempts to subscribe to pending transactions in an Alchemy-specific
+   * Attempts to subscribe to pending transactions in a Boar-specific
    * way. Returns `subscribed` if the subscription succeeded, or `unsupported`
-   * if the underlying provider did not support Alchemy-specific subscriptions.
+   * if the underlying provider did not support Boar-specific subscriptions.
    */
-  private async alchemySubscribeFullPendingTransactions(
+  private async boarSubscribeFullPendingTransactions(
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void,
   ): Promise<"subscribed" | "unsupported"> {
@@ -1126,7 +1130,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           // TODO use proper provider string
           // handle incoming transactions for an account
           try {
-            const transaction = transactionFromAlchemyWebsocketTransaction(
+            const transaction = transactionFromBoarWebsocketTransaction(
               result,
               network,
             )
@@ -1212,16 +1216,15 @@ export function makeSerialFallbackProvider(
     ])
   }
 
-  const alchemyProviderCreators: ProviderCreator[] =
-    ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
-      ? [
-          {
-            type: "alchemy" as const,
-            creator: () =>
-              new TahoAlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-          },
-        ]
-      : []
+  const boarRpcUrl = BOAR_RPC_URLS[chainID]
+  const boarProviderCreators: ProviderCreator[] = boarRpcUrl
+    ? [
+        {
+          type: "boar" as const,
+          creator: () => new TahoBoarProvider(boarRpcUrl),
+        },
+      ]
+    : []
 
   const customProviderCreator: ProviderCreator[] = customRpc
     ? [
@@ -1240,7 +1243,7 @@ export function makeSerialFallbackProvider(
 
   return new SerialFallbackProvider(chainID, [
     ...genericProviders,
-    ...alchemyProviderCreators,
+    ...boarProviderCreators,
     ...customProviderCreator,
   ])
 }

@@ -1,21 +1,21 @@
 import { JTDDataType, ValidateFunction } from "ajv/dist/jtd"
 import {
-  alchemyGetAssetTransfersJTD,
-  alchemyTokenBalanceJTD,
-  alchemyTokenMetadataJTD,
-} from "./alchemy"
+  boarGetAssetTransfersJTD,
+  boarTokenBalanceJTD,
+  boarTokenMetadataJTD,
+} from "./boar"
 import { metadataJTD } from "./erc721"
 
-export const isValidAlchemyAssetTransferResponse: ValidateFunction<
-  JTDDataType<typeof alchemyGetAssetTransfersJTD>
+export const isValidBoarAssetTransferResponse: ValidateFunction<
+  JTDDataType<typeof boarGetAssetTransfersJTD>
 >
 
-export const isValidAlchemyTokenBalanceResponse: ValidateFunction<
-  JTDDataType<typeof alchemyTokenBalanceJTD>
+export const isValidBoarTokenBalanceResponse: ValidateFunction<
+  JTDDataType<typeof boarTokenBalanceJTD>
 >
 
-export const isValidAlchemyTokenMetadataResponse: ValidateFunction<
-  JTDDataType<typeof alchemyTokenMetadataJTD>
+export const isValidBoarTokenMetadataResponse: ValidateFunction<
+  JTDDataType<typeof boarTokenMetadataJTD>
 >
 export const isValidMetadata: ValidateFunction<JTDDataType<typeof metadataJTD>>
 

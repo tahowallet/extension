@@ -8,6 +8,7 @@ import {
   SEPOLIA,
   ARBITRUM_SEPOLIA,
   isBuiltInNetwork,
+  MEZO,
   OPTIMISM,
   POLYGON,
   ROOTSTOCK,
@@ -29,6 +30,7 @@ import { i18n } from "../../_locales/i18n"
 
 export const productionNetworkDescription = {
   [ETHEREUM.chainID]: i18n.t("protocol.mainnet"),
+  [MEZO.chainID]: i18n.t("protocol.compatibleChain"),
   [POLYGON.chainID]: i18n.t("protocol.l2"),
   [OPTIMISM.chainID]: i18n.t("protocol.l2"),
   [ARBITRUM_ONE.chainID]: i18n.t("protocol.l2"),
