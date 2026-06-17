@@ -1,7 +1,7 @@
 import Transport from "@ledgerhq/hw-transport"
 import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
-import { DeviceModelId } from "@ledgerhq/devices"
+import { DeviceModelId, identifyUSBProductId } from "@ledgerhq/devices"
 import {
   serialize,
   UnsignedTransaction,
@@ -34,6 +34,8 @@ enum LedgerType {
   LEDGER_NANO_X,
   LEDGER_NANO_X_1,
   LEDGER_NANO_S_PLUS,
+  LEDGER_STAX,
+  LEDGER_FLEX,
 }
 
 const LedgerTypeAsString = Object.values(LedgerType)
@@ -44,17 +46,10 @@ export type LedgerAccountSigner = {
   path: string
 }
 
-export const LedgerProductDatabase = {
-  LEDGER_NANO_S: { productId: 0x1015 },
-  LEDGER_NANO_X: { productId: 0x4015 },
-  LEDGER_NANO_X_1: { productId: 0x4000 },
-  LEDGER_NANO_S_PLUS: { productId: 0x5015 },
-}
-
 export const isLedgerSupported = typeof navigator.usb === "object"
 
 const TestedProductId = (productId: number): boolean =>
-  Object.values(LedgerProductDatabase).some((e) => e.productId === productId)
+  identifyUSBProductId(productId) != null
 
 /**
  * Metadata details about the display of a given Ledger device.
@@ -75,6 +70,8 @@ const DisplayDetailsByLedgerType: {
   [LedgerType.LEDGER_NANO_X]: { messageSigningDisplayLength: 255 },
   [LedgerType.LEDGER_NANO_X_1]: { messageSigningDisplayLength: 255 },
   [LedgerType.LEDGER_NANO_S_PLUS]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_STAX]: { messageSigningDisplayLength: 255 },
+  [LedgerType.LEDGER_FLEX]: { messageSigningDisplayLength: 255 },
 }
 
 type MetaData = {
@@ -137,6 +134,12 @@ async function generateLedgerId(
       break
     case DeviceModelId.nanoSP:
       extensionDeviceType = LedgerType.LEDGER_NANO_S_PLUS
+      break
+    case DeviceModelId.stax:
+      extensionDeviceType = LedgerType.LEDGER_STAX
+      break
+    case DeviceModelId.europa:
+      extensionDeviceType = LedgerType.LEDGER_FLEX
       break
     default:
       extensionDeviceType = LedgerType.UNKNOWN

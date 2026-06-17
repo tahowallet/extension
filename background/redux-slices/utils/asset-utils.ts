@@ -176,7 +176,7 @@ export function sameBuiltInNetworkBaseAsset(
  * @param desiredDecimals The desired number of decimals of the formatted
  *        result.
  *
- * @return A localized representatin of the currency amount with the given
+ * @return A localized representation of the currency amount with the given
  *         currency symbol.
  */
 export function formatCurrencyAmount(
