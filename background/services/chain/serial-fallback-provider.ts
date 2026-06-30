@@ -27,6 +27,18 @@ import { RpcConfig } from "./db"
 import TahoBoarProvider from "./taho-boar-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
+import {
+  recordCircuitBreakerTransition,
+  recordReconnectAttempt,
+  recordReconnectFailed,
+  recordReconnectSucceeded,
+  recordRequestFailed,
+  recordRequestSent,
+  recordRequestSucceeded,
+  recordSingleFlightCoalesce,
+  RequestFailureCategory,
+} from "../../lib/perf-metrics"
+import { CircuitBreaker } from "./circuit-breaker"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
@@ -63,6 +75,28 @@ export const BOAR_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
+/**
+ * Methods that must never be coalesced into a shared in-flight request.
+ *
+ * Subscription lifecycle methods produce per-call state (subscription ids)
+ * that cannot be shared between callers. Signing and broadcasting methods
+ * either have side effects or must produce an independent response per call
+ * to support user-visible confirmation flows.
+ */
+const NON_COALESCEABLE_METHODS = new Set([
+  "eth_subscribe",
+  "eth_unsubscribe",
+  "eth_sendTransaction",
+  "eth_sendRawTransaction",
+  "eth_sign",
+  "eth_signTransaction",
+  "eth_signTypedData",
+  "eth_signTypedData_v1",
+  "eth_signTypedData_v3",
+  "eth_signTypedData_v4",
+  "personal_sign",
+])
+
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
@@ -142,6 +176,18 @@ type CacheEntry = {
  */
 function backedOffMs(): number {
   return BASE_BACKOFF_MS + 400 * Math.random()
+}
+
+/**
+ * Normalize an arbitrary error thrown during RPC routing into one of the
+ * categories tracked by the perf metrics collector. Unrecognized errors map
+ * to `"unknown-error"`; this stays in sync with {@link getErrorType}.
+ */
+function categorizeError(
+  error: unknown,
+  method: string,
+): RequestFailureCategory {
+  return getErrorType(String(error), method)
 }
 
 /**
@@ -281,6 +327,25 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     {}
 
   #sendCache = new Map<string, CacheEntry>()
+
+  /**
+   * Promises for RPC requests that are currently in flight, keyed by a
+   * canonical method+params signature. New callers issuing the same request
+   * while one is still outstanding receive the in-flight promise rather than
+   * initiating a second provider call.
+   *
+   * Only methods that are safe to share (not signing, not broadcasting, not
+   * subscription lifecycle) are stored here; see {@link NON_COALESCEABLE_METHODS}.
+   */
+  #inFlightRequests = new Map<string, Promise<unknown>>()
+
+  /**
+   * One circuit breaker per provider index, created lazily. Protects each
+   * provider from being retried into the ground while it is known to be
+   * failing, and suppresses the periodic primary-recovery attempt while the
+   * primary breaker is open.
+   */
+  #circuitBreakers = new Map<number, CircuitBreaker>()
 
   #cacheSettings = new Map<string, number>(
     Object.entries({
@@ -453,7 +518,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return result
       }
 
-      const result = await this.currentProvider.send(method, params)
+      const breaker = this.breakerFor(this.currentProviderIndex)
+      if (!breaker.canRequest()) {
+        // The current provider is known-bad. Skip straight to the existing
+        // fallback path so we do not issue a request guaranteed to fail and
+        // do not pile onto whatever outage it is sitting out.
+        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+        // No more providers to try this cycle; reset and fail as we would
+        // on an exhausted chain.
+        this.currentProviderIndex = 0
+        this.reconnectProvider()
+        delete this.messagesToSend[messageId]
+        throw new Error("NETWORK_ERROR: circuit open and no fallback available")
+      }
+
+      let result: unknown
+      try {
+        result = await this.currentProvider.send(method, params)
+      } catch (error) {
+        // Any thrown error here represents the breaker's view of a failure;
+        // feeding it into the breaker keeps state machines aligned with the
+        // behavior observed by the existing error-classification path below.
+        breaker.recordFailure()
+        throw error
+      }
+      breaker.recordSuccess()
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
@@ -603,6 +694,23 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  /**
+   * Returns the circuit breaker for a given provider index, creating it the
+   * first time it is requested. Each breaker wires its transitions into the
+   * perf metrics collector so analytics can track how often providers go down
+   * and how quickly they recover.
+   */
+  private breakerFor(providerIndex: number): CircuitBreaker {
+    let breaker = this.#circuitBreakers.get(providerIndex)
+    if (!breaker) {
+      breaker = new CircuitBreaker({}, (next) =>
+        recordCircuitBreakerTransition(this.chainID, providerIndex, next),
+      )
+      this.#circuitBreakers.set(providerIndex, breaker)
+    }
+    return breaker
+  }
+
   addCustomProvider(customProviderCreator: ProviderCreator): void {
     this.customProviderSupportedMethods =
       customProviderCreator.supportedMethods ?? []
@@ -726,6 +834,44 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
+    // Coalesce concurrent identical requests into a single in-flight call.
+    // This is safe for idempotent reads and explicitly skipped for subscription
+    // lifecycle and side-effecting (signing / broadcast) methods so those always
+    // produce an independent provider call per invocation.
+    if (!NON_COALESCEABLE_METHODS.has(method)) {
+      const key = getRPCCacheKey(method, params)
+      const existing = this.#inFlightRequests.get(key)
+      if (existing !== undefined) {
+        recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex)
+        return existing
+      }
+
+      const flight = this.dispatchRequest(method, params)
+      this.#inFlightRequests.set(key, flight)
+      // Clear the slot on both success and failure so the next caller makes
+      // a fresh request. Use `then(cleanup, cleanup)` rather than `finally`
+      // so a rejection does not escape as an unhandled promise on the
+      // cleanup chain; callers still observe the rejection on `flight`.
+      const cleanup = () => {
+        this.#inFlightRequests.delete(key)
+      }
+      flight.then(cleanup, cleanup)
+      return flight
+    }
+
+    return this.dispatchRequest(method, params)
+  }
+
+  /**
+   * Executes a single logical RPC request end-to-end, including metrics and
+   * result caching. Callers must never invoke this directly for coalesceable
+   * methods; {@link send} is responsible for single-flight deduplication
+   * before handing off here.
+   */
+  private async dispatchRequest(
+    method: string,
+    params: unknown[],
+  ): Promise<unknown> {
     // Generate a unique symbol to track the message and store message information
     const id = Symbol(method)
     this.messagesToSend[id] = {
@@ -735,13 +881,34 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       providerIndex: this.currentProviderIndex,
     }
 
-    // Start routing message down our waterfall of rpc providers
-    const result = await this.routeRpcCall(id)
+    const startingProviderIndex = this.currentProviderIndex
+    recordRequestSent(this.chainID, startingProviderIndex)
+    const startTime = Date.now()
 
-    // Cache results for method/param combinations that are frequently called subsequently
-    this.conditionallyCacheResult(result, { method, params })
+    try {
+      // Start routing message down our waterfall of rpc providers
+      const result = await this.routeRpcCall(id)
 
-    return result
+      // Record against the provider that actually served the request, which
+      // may differ from the starting index if we failed over.
+      recordRequestSucceeded(
+        this.chainID,
+        this.currentProviderIndex,
+        Date.now() - startTime,
+      )
+
+      // Cache results for method/param combinations that are frequently called subsequently
+      this.conditionallyCacheResult(result, { method, params })
+
+      return result
+    } catch (error) {
+      recordRequestFailed(
+        this.chainID,
+        this.currentProviderIndex,
+        categorizeError(error, method),
+      )
+      throw error
+    }
   }
 
   /**
@@ -966,6 +1133,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.currentProviderIndex = 0
     }
 
+    recordReconnectAttempt(this.chainID, this.currentProviderIndex)
+
     logger.debug(
       "Reconnecting provider at index",
       this.currentProviderIndex,
@@ -982,7 +1151,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.currentProvider = cachedProvider
 
-    await this.resubscribe(this.currentProvider)
+    const resubscribed = await this.resubscribe(this.currentProvider)
+    if (resubscribed) {
+      recordReconnectSucceeded(this.chainID, this.currentProviderIndex)
+    } else {
+      recordReconnectFailed(this.chainID, this.currentProviderIndex)
+    }
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
@@ -1056,6 +1230,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // If we are already connected to the primary provider - don't resubscribe
       return null
     }
+    if (!this.breakerFor(0).canRequest()) {
+      // Primary is still in cooldown; skip this cycle so the reconnect loop
+      // does not itself become a source of request pressure on a down endpoint.
+      return null
+    }
+    recordReconnectAttempt(this.chainID, 0)
     const primaryProvider = this.providerCreators[0]()
     // We need to wait before attempting to resubscribe of the primaryProvider's
     // websocket connection will almost always still be in a CONNECTING state when
@@ -1063,6 +1243,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
       const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
       if (!subscriptionsSuccessful) {
+        recordReconnectFailed(this.chainID, 0)
         return
       }
       // Cleanup the subscriptions on the backup provider.
@@ -1070,6 +1251,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // only set if subscriptions are successful
       this.currentProvider = primaryProvider
       this.currentProviderIndex = 0
+      recordReconnectSucceeded(this.chainID, 0)
     })
   }
 

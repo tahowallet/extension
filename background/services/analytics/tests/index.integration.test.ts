@@ -11,6 +11,11 @@ import AnalyticsService from ".."
 import { createAnalyticsService } from "../../../tests/factories"
 import PreferenceService from "../../preferences"
 import * as posthog from "../../../lib/posthog"
+import {
+  recordRequestSent,
+  recordRequestSucceeded,
+  resetForTests as resetPerfMetricsForTests,
+} from "../../../lib/perf-metrics"
 
 const { AnalyticsEvent } = posthog
 
@@ -171,6 +176,64 @@ describe("AnalyticsService", () => {
 
       expect(posthog.sendPosthogEvent).not.toBeCalled()
       expect(fetch).not.toBeCalled()
+    })
+  })
+
+  describe("perf metrics flush", () => {
+    beforeEach(async () => {
+      resetPerfMetricsForTests()
+      jest.spyOn(analyticsService, "sendAnalyticsEvent")
+      jest
+        .spyOn(preferenceService, "getAnalyticsPreferences")
+        .mockImplementation(() =>
+          Promise.resolve({
+            isEnabled: true,
+            hasDefaultOnBeenTurnedOn: true,
+          }),
+        )
+
+      await analyticsService["getOrCreateAnalyticsUUID"]()
+    })
+
+    it("does not emit when the counter window is empty", async () => {
+      await analyticsService["flushPerfMetrics"]()
+      expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalled()
+    })
+
+    it("emits a single flush event with a windowed snapshot", async () => {
+      recordRequestSent("1", 0)
+      recordRequestSucceeded("1", 0, 120)
+
+      await analyticsService["flushPerfMetrics"]()
+
+      expect(analyticsService.sendAnalyticsEvent).toHaveBeenCalledTimes(1)
+      const [eventName, payload] = (
+        analyticsService.sendAnalyticsEvent as jest.Mock
+      ).mock.calls[0]
+      expect(eventName).toBe(AnalyticsEvent.PERF_METRICS_FLUSH)
+      expect(payload).toMatchObject({
+        chains: {
+          "1": {
+            providers: [
+              expect.objectContaining({
+                providerIndex: 0,
+                requestsSent: 1,
+                requestsSucceeded: 1,
+              }),
+            ],
+          },
+        },
+      })
+      expect(payload.windowDurationMs).toBeGreaterThanOrEqual(0)
+    })
+
+    it("resets counters after a flush so the next window starts clean", async () => {
+      recordRequestSent("1", 0)
+      await analyticsService["flushPerfMetrics"]()
+      ;(analyticsService.sendAnalyticsEvent as jest.Mock).mockClear()
+
+      await analyticsService["flushPerfMetrics"]()
+      expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalled()
     })
   })
 })
