@@ -173,9 +173,11 @@ export type LegacyEVMTransactionRequest = Pick<
  * 0 - plain jane
  * 1 - EIP-2930
  * 2 - EIP-1559 transactions
+ * 3 - EIP-4844 blob transactions (Dencun)
+ * 4 - EIP-7702 set code transactions (Pectra)
  * 100 - EIP-2718 on Arbitrum
  */
-export const KNOWN_TX_TYPES = [0, 1, 2, 100] as const
+export const KNOWN_TX_TYPES = [0, 1, 2, 3, 4, 100] as const
 export type KnownTxTypes = (typeof KNOWN_TX_TYPES)[number]
 export function isKnownTxType(arg: unknown): arg is KnownTxTypes {
   return (
