@@ -125,49 +125,6 @@ const MEZO_MAINNET_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   chainID: "31612",
 }
 
-const BOB_ETH: NetworkBaseAsset = {
-  ...ETH,
-  chainID: "60808",
-  metadata: {
-    coinGeckoID: "ethereum",
-    tokenLists: [],
-  },
-}
-
-const CITREA_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
-  chainID: "4114",
-  name: "Citrea Bitcoin",
-  symbol: "cBTC",
-  decimals: 18,
-  metadata: {
-    coinGeckoID: "bitcoin",
-    tokenLists: [],
-  },
-}
-
-const BOTANIX_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
-  chainID: "3637",
-  name: "Bitcoin",
-  symbol: "BTC",
-  decimals: 18,
-  metadata: {
-    coinGeckoID: "bitcoin",
-    tokenLists: [],
-  },
-}
-
-const CORE_TOKEN: NetworkBaseAsset & Required<CoinGeckoAsset> = {
-  chainID: "1116",
-  name: "Core",
-  symbol: "CORE",
-  decimals: 18,
-  metadata: {
-    coinGeckoID: "coredaoorg",
-    tokenLists: [],
-    websiteURL: "https://coredao.org",
-  },
-}
-
 export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
   MATIC,
@@ -182,10 +139,6 @@ export const BASE_ASSETS_BY_CUSTOM_NAME = {
   SEPOLIA_ETH,
   ARBITRUM_SEPOLIA_ETH,
   ZK_SYNC_ETH,
-  BOB_ETH,
-  CITREA_BTC,
-  BOTANIX_BTC,
-  CORE_TOKEN,
 }
 
 export const BASE_ASSETS = Object.values(BASE_ASSETS_BY_CUSTOM_NAME)

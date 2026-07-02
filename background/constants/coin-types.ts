@@ -11,7 +11,6 @@ export const coinTypesByAssetSymbol = {
   MATIC: 966,
   AVAX: 9005,
   BNB: 714,
-  CORE: 1116,
 } as const
 
 /**
