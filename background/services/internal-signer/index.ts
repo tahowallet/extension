@@ -715,14 +715,50 @@ export default class InternalSignerService extends BaseService<Events> {
   }
 
   /**
+   * Verify that the provided password matches the stored vault.
+   *
+   * @param password - the password to verify
+   * @returns true if the password is correct, false otherwise
+   */
+  private static async verifyPassword(password: string): Promise<boolean> {
+    const { vaults, version } = await getEncryptedVaults()
+    const currentEncryptedVault = vaults.slice(-1)[0]?.vault
+    if (!currentEncryptedVault) return false
+
+    try {
+      const saltedKey = await deriveSymmetricKeyFromPassword(
+        version,
+        password,
+        currentEncryptedVault.salt,
+      )
+      await decryptVault<SerializedKeyringData>({
+        version,
+        vault: currentEncryptedVault,
+        passwordOrSaltedKey: saltedKey,
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Export private key - supports exporting from both private key wallet signers and
    * HD Wallet's specific accounts
    *
    * @param address
+   * @param password - the user's password, re-verified before export
    * @returns string | null - private key string if it was exported successfully
    */
-  async exportPrivateKey(address: HexString): Promise<string | null> {
+  async exportPrivateKey(
+    address: HexString,
+    password: string,
+  ): Promise<string | null> {
     this.requireUnlocked()
+
+    if (!(await InternalSignerService.verifyPassword(password))) {
+      throw new Error("Incorrect password for export")
+    }
 
     const signerWithType = this.#findSigner(address)
 
@@ -745,10 +781,18 @@ export default class InternalSignerService extends BaseService<Events> {
    * Export mnemonic from HD wallet
    *
    * @param address
+   * @param password - the user's password, re-verified before export
    * @returns string | null - mnemonic string if it was exported successfully
    */
-  async exportMnemonic(address: HexString): Promise<string | null> {
+  async exportMnemonic(
+    address: HexString,
+    password: string,
+  ): Promise<string | null> {
     this.requireUnlocked()
+
+    if (!(await InternalSignerService.verifyPassword(password))) {
+      throw new Error("Incorrect password for export")
+    }
 
     const keyring = this.#findKeyring(address)
 

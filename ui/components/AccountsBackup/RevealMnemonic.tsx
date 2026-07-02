@@ -1,12 +1,14 @@
 import { exportMnemonic } from "@tallyho/tally-background/redux-slices/internal-signer"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedSecretText from "../Shared/SharedSecretText"
+import SharedButton from "../Shared/SharedButton"
 import CopyToClipboard from "./CopyToClipboard"
+import PasswordInput from "../Shared/PasswordInput"
 
 function MnemonicList(props: {
   mnemonic: string
@@ -44,22 +46,53 @@ export default function RevealMnemonic({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showMnemonic",
   })
+  const { t: tKeyring } = useTranslation("translation", {
+    keyPrefix: "keyring.unlock",
+  })
   const dispatch = useBackgroundDispatch()
+  const [password, setPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
   const [mnemonic, setMnemonic] = useState("")
 
-  useEffect(() => {
-    const fetchMnemonic = async () => {
-      const mnemonicText = (await dispatch(
-        exportMnemonic(address),
-      )) as unknown as AsyncThunkFulfillmentType<typeof exportMnemonic>
+  const handleSubmit = async () => {
+    setPasswordError("")
+    const mnemonicText = (await dispatch(
+      exportMnemonic({ address, password }),
+    )) as unknown as AsyncThunkFulfillmentType<typeof exportMnemonic>
 
-      if (mnemonicText) {
-        setMnemonic(mnemonicText)
-      }
+    if (mnemonicText) {
+      setMnemonic(mnemonicText)
+    } else {
+      setPasswordError(tKeyring("error.incorrect"))
     }
+  }
 
-    fetchMnemonic()
-  }, [dispatch, address])
+  if (!mnemonic) {
+    return (
+      <div className="password_form">
+        <PasswordInput
+          label={tKeyring("signingPassword")}
+          value={password}
+          onChange={(value) => setPassword(value ?? "")}
+          errorMessage={passwordError}
+          focusedLabelBackgroundColor="var(--hunter-green)"
+        />
+        <div>
+          <SharedButton type="primary" size="medium" onClick={handleSubmit}>
+            {tKeyring("submitBtn")}
+          </SharedButton>
+        </div>
+        <style jsx>{`
+          .password_form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+          }
+        `}</style>
+      </div>
+    )
+  }
 
   const splitIndex = mnemonic.split(" ").length === 12 ? 6 : 12
 
