@@ -174,6 +174,8 @@ async function generateLedgerId(
 export default class LedgerService extends BaseService<Events> {
   #currentLedgerId: string | null = null
 
+  #currentLedgerType: LedgerType | null = null
+
   transport: Transport | undefined = undefined
 
   #lastOperationPromise = Promise.resolve()
@@ -228,6 +230,7 @@ export default class LedgerService extends BaseService<Events> {
         const normalizedID = normalizeEVMAddress(id)
 
         this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        this.#currentLedgerType = type
 
         this.emitter.emit("connected", {
           id: this.#currentLedgerId,
@@ -289,10 +292,11 @@ export default class LedgerService extends BaseService<Events> {
 
       this.emitter.emit("disconnected", {
         id: this.#currentLedgerId,
-        type: LedgerType.LEDGER_NANO_S,
+        type: this.#currentLedgerType ?? LedgerType.UNKNOWN,
       })
 
       this.#currentLedgerId = null
+      this.#currentLedgerType = null
     }
 
   protected override async internalStartService(): Promise<void> {
