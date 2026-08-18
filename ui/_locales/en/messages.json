@@ -577,7 +577,7 @@
     "autoLockTimer.tooltip": "How long after your last interaction should we lock the wallet?",
     "autoLockTimer.interval": "{{time}} min",
     "needHelp": "Need Help?",
-    "customNetworks": "Custom networks (beta)",
+    "customNetworks": "Manage networks",
     "showBanners": "Show achievement banners",
     "versionLabel": "Version {{version}}",
     "unknownVersionOrCommit": "<unknown>",
@@ -649,15 +649,50 @@
       "footer.hint": "How to add a custom asset"
     },
     "customNetworksSettings": {
-      "title": "Custom networks (beta)",
-      "ariaLabel": "Open custom networks page",
-      "subtitleAdded": "Manage chains",
+      "title": "Manage networks",
+      "ariaLabel": "Open manage networks page",
       "subtitleAddMore": "Add more chains",
       "deleteModal.title": "Remove custom network?",
       "deleteModal.desc": "You are removing <name>{{name}}</name>. This means you won't be able to see assets from it and it won't be in your network selection list.",
       "deleteModal.confirm": "Remove",
+      "editModal": {
+        "title": "Edit custom network",
+        "titleBuiltIn": "Edit network RPCs",
+        "save": "Save changes",
+        "loading": "Loading RPC endpoints…",
+        "chainId": "Chain ID",
+        "family": "Family",
+        "icon": "Icon",
+        "name": "Network name",
+        "currencyName": "Currency name",
+        "currencySymbol": "Currency symbol",
+        "currencyDecimals": "Currency decimals",
+        "blockExplorerUrl": "Block explorer URL",
+        "iconUrl": "Icon URL (optional)",
+        "iconPreviewAlt": "Network icon preview",
+        "rpcUrlsTitle": "RPC endpoints",
+        "rpcUrlsHint": "Endpoints are tried in the order listed, the first one is the primary.",
+        "rpcUrl": "RPC URL {{index}}",
+        "alchemyApis": "Alchemy APIs",
+        "alchemyApisHint": "Check Alchemy APIs when an endpoint supports Alchemy-compatible enhanced APIs (alchemy_* methods).",
+        "managedRpcUrlsHint": "Taho also provides an endpoint for this network, used as first choice. It can't be edited or removed.",
+        "managedTag": "Taho",
+        "addRpcUrl": "Add RPC",
+        "removeRpcUrl": "Remove RPC URL",
+        "errors": {
+          "required": "This field is required",
+          "invalidDecimals": "Must be a whole number greater than 0",
+          "invalidUrl": "Must be a valid http(s) URL",
+          "invalidRpcUrl": "Must be a valid http(s) or ws(s) URL"
+        },
+        "snackbar": {
+          "success": "Network updated"
+        }
+      },
       "networksList": {
-        "typeCustom": "Custom network"
+        "typeCustom": "Custom network",
+        "tagBuiltIn": "Built-in",
+        "editAriaLabel": "Edit network"
       },
       "chainList": {
         "description": "<url></url> is the fastest, safest way to add a custom network. Just connect your wallet, search for the network you want to add, and click <strong>Add to Taho</strong>.",
@@ -825,7 +860,7 @@
     "protocolList": {
       "testnetsSectionTitle": "Testnets",
       "customNetworksSectionTitle": "Custom networks",
-      "networkSettingsBtn": "Add network (beta)"
+      "networkSettingsBtn": "Add network"
     },
     "connectedDappInfo": {
       "dAppTitle": "Account connected to",

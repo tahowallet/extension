@@ -1,8 +1,9 @@
+import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { removeCustomChain } from "@tallyho/tally-background/redux-slices/networks"
-import { selectCustomNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
-import React, { ReactElement, useState } from "react"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import React, { ReactElement, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -12,6 +13,9 @@ import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { intersperseWith } from "../../utils/lists"
+import CustomNetworkEditForm, {
+  EDIT_FORM_MENU_HEIGHT,
+} from "./CustomNetworkEditForm"
 
 const CHAIN_LIST = {
   name: "ChainList",
@@ -26,10 +30,24 @@ export default function SettingsCustomNetworks(): ReactElement {
 
   const dispatch = useBackgroundDispatch()
 
-  const allCustomNetworks = useBackgroundSelector(selectCustomNetworks)
+  const allNetworks = useBackgroundSelector(selectEVMNetworks)
 
-  const customNetworksListItems = intersperseWith(
-    allCustomNetworks,
+  const isBuiltIn = (network: EVMNetwork) =>
+    DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+
+  // One list for every network the wallet knows about. Built-ins keep their
+  // bundled order and lead, with user-added networks trailing them, so adding
+  // or removing a custom network never reshuffles the rest of the list.
+  const orderedNetworks = useMemo(
+    () => [
+      ...allNetworks.filter(isBuiltIn),
+      ...allNetworks.filter((network) => !isBuiltIn(network)),
+    ],
+    [allNetworks],
+  )
+
+  const networkListItems = intersperseWith(
+    orderedNetworks,
     () => "spacer" as const,
   )
 
@@ -37,6 +55,7 @@ export default function SettingsCustomNetworks(): ReactElement {
   const [networkToDelete, setNetworkToDelete] = useState<EVMNetwork | null>(
     null,
   )
+  const [networkToEdit, setNetworkToEdit] = useState<EVMNetwork | null>(null)
 
   const handleModalConfirm = () => {
     if (networkToDelete) {
@@ -53,6 +72,20 @@ export default function SettingsCustomNetworks(): ReactElement {
 
   return (
     <div className="standard_width_padded wrapper">
+      <SharedSlideUpMenu
+        isOpen={networkToEdit !== null}
+        close={() => setNetworkToEdit(null)}
+        size="custom"
+        customSize={EDIT_FORM_MENU_HEIGHT}
+      >
+        {networkToEdit !== null && (
+          <CustomNetworkEditForm
+            key={networkToEdit.chainID}
+            network={networkToEdit}
+            onComplete={() => setNetworkToEdit(null)}
+          />
+        )}
+      </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={showConfirmDelete}
         close={() => handleModalCancel()}
@@ -134,11 +167,10 @@ export default function SettingsCustomNetworks(): ReactElement {
         }
       `}</style>
       <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
-      {customNetworksListItems.length > 0 && (
+      {networkListItems.length > 0 && (
         <section className="content">
-          <h2 className="subheader">{t("subtitleAdded")}</h2>
           <ul className="custom_networks_list">
-            {customNetworksListItems.map((item, index) => {
+            {networkListItems.map((item, index) => {
               if (item === "spacer") {
                 return (
                   <li
@@ -149,28 +181,56 @@ export default function SettingsCustomNetworks(): ReactElement {
                 )
               }
 
+              // Built-in networks ship with the extension: they carry a tag
+              // rather than a type sublabel, and cannot be removed.
+              const isItemBuiltIn = isBuiltIn(item)
+
               return (
                 <li className="custom_network_item" key={item.chainID}>
                   <SharedNetworkIcon size={42} network={item} />
                   <div className="network_label">
-                    <span className="network_name" title={item.name}>
-                      {item.name}
-                    </span>
-                    <span className="network_type">
-                      {t("networksList.typeCustom")}
-                    </span>
+                    <div className="network_name_row">
+                      <span className="network_name" title={item.name}>
+                        {item.name}
+                      </span>
+                      {isItemBuiltIn && (
+                        <span className="network_tag">
+                          {t("networksList.tagBuiltIn")}
+                        </span>
+                      )}
+                    </div>
+                    {!isItemBuiltIn && (
+                      <span className="network_type">
+                        {t("networksList.typeCustom")}
+                      </span>
+                    )}
                   </div>
                   <div className="actions">
                     <SharedIcon
                       width={16}
                       onClick={() => {
-                        setShowConfirmDelete(true)
-                        setNetworkToDelete(item)
+                        setShowConfirmDelete(false)
+                        setNetworkToDelete(null)
+                        setNetworkToEdit(item)
                       }}
-                      icon="icons/s/garbage.svg"
+                      icon="icons/s/edit.svg"
                       color="var(--green-40)"
-                      hoverColor="var(--error)"
+                      hoverColor="var(--trophy-gold)"
+                      ariaLabel={t("networksList.editAriaLabel")}
                     />
+                    {!isItemBuiltIn && (
+                      <SharedIcon
+                        width={16}
+                        onClick={() => {
+                          setNetworkToEdit(null)
+                          setShowConfirmDelete(true)
+                          setNetworkToDelete(item)
+                        }}
+                        icon="icons/s/garbage.svg"
+                        color="var(--green-40)"
+                        hoverColor="var(--error)"
+                      />
+                    )}
                   </div>
                 </li>
               )
@@ -245,6 +305,9 @@ export default function SettingsCustomNetworks(): ReactElement {
         }
         .custom_network_item .actions {
           margin-left: auto;
+          display: flex;
+          align-items: center;
+          gap: 16px;
         }
         .custom_network_item {
           display: flex;
@@ -256,6 +319,25 @@ export default function SettingsCustomNetworks(): ReactElement {
           display: flex;
           flex-direction: column;
           align-items: flex-start;
+          min-width: 0;
+        }
+        .network_name_row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+        }
+        .network_tag {
+          flex-shrink: 0;
+          padding: 2px 8px;
+          border-radius: 4px;
+          background: var(--green-120);
+          color: var(--green-40);
+          font-family: Segment;
+          font-size: 12px;
+          font-weight: 500;
+          line-height: 16px;
+          letter-spacing: 0.03em;
         }
         .network_name {
           font-family: Segment;
