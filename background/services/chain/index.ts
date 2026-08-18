@@ -38,6 +38,7 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
   DEFAULT_NETWORKS_BY_CHAIN_ID,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
@@ -68,9 +69,11 @@ import type {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider, {
+  ALCHEMY_CAPABILITY_NAMESPACE,
   ProviderCreator,
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
+import { BOAR_RPC_URLS } from "../../lib/boar"
 import AssetDataHelper from "./asset-data-helper"
 import {
   OPTIMISM_GAS_ORACLE_ABI,
@@ -2076,6 +2079,88 @@ export default class ChainService extends BaseService<Events> {
     await this.rebuildProviderForChain(chainInfo.chainId, endpoints)
 
     return network
+  }
+
+  /**
+   * Replaces the stored RPC endpoint list for any known network — built-in
+   * or custom — and rebuilds the network's provider to use it. The list is
+   * used in priority order; endpoints past the first act as fallbacks.
+   */
+  async setRpcEndpointsForChain(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    if (rpcEndpoints.length === 0) {
+      throw new Error("At least one RPC endpoint is required")
+    }
+
+    const network = await this.db.getEVMNetworkByChainID(chainID)
+    if (network === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    await this.validateRpcEndpoints(chainID, rpcEndpoints)
+
+    await this.db.setRpcEndpoints(chainID, rpcEndpoints)
+    await this.rebuildProviderForChain(chainID, rpcEndpoints)
+  }
+
+  async getRpcEndpointsForChain(chainID: string): Promise<RpcEndpoint[]> {
+    return this.db.getRpcEndpointsByChainId(chainID)
+  }
+
+  /**
+   * Updates the user-editable settings for any known network — the RPC
+   * endpoint list and, optionally, the block explorer URL. Like RPC
+   * endpoints, a stored block explorer URL takes precedence over the
+   * hardcoded defaults from then on.
+   */
+  async updateChainSettings(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    blockExplorerUrl?: string,
+  ): Promise<void> {
+    await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
+
+    if (blockExplorerUrl !== undefined) {
+      await this.db.setBlockExplorerUrl(chainID, blockExplorerUrl)
+
+      const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
+      if (updatedNetwork !== undefined) {
+        this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
+          trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
+        )
+      }
+
+      await this.updateSupportedNetworks()
+    }
+  }
+
+  /**
+   * The user-editable RPC endpoints for a chain, alongside any Taho-managed
+   * endpoints (currently Boar, while it remains in service) that also serve
+   * the chain but are not part of the stored, editable list.
+   */
+  async getRpcConfigForChain(chainID: string): Promise<{
+    rpcEndpoints: RpcEndpoint[]
+    managedRpcEndpoints: RpcEndpoint[]
+  }> {
+    const rpcEndpoints = await this.db.getRpcEndpointsByChainId(chainID)
+
+    const boarRpcUrl = BOAR_RPC_URLS[chainID]
+    const managedRpcEndpoints =
+      boarRpcUrl === undefined
+        ? []
+        : [
+            {
+              url: boarRpcUrl,
+              capabilities: BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
+                ? []
+                : [ALCHEMY_CAPABILITY_NAMESPACE],
+            },
+          ]
+
+    return { rpcEndpoints, managedRpcEndpoints }
   }
 
   private async rebuildProviderForChain(

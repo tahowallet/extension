@@ -13,6 +13,7 @@ import {
   createLegacyTransactionRequest,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
+import { BOAR_RPC_URLS } from "../../../lib/boar"
 import SerialFallbackProvider from "../serial-fallback-provider"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
@@ -488,6 +489,133 @@ describe("ChainService", () => {
       expect(
         networksToTrack.find((network) => network.chainID === "12345"),
       ).toBeTruthy()
+    })
+  })
+
+  describe("setRpcEndpointsForChain", () => {
+    const originalFetch = globalThis.fetch
+    let fetchMock: jest.Mock
+
+    const mockProbeResult = (chainIDHex: string) => {
+      fetchMock.mockResolvedValue({
+        json: async () => ({ jsonrpc: "2.0", id: 1, result: chainIDHex }),
+      })
+    }
+
+    beforeEach(() => {
+      fetchMock = jest.fn()
+      globalThis.fetch = fetchMock as unknown as typeof fetch
+    })
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    it("persists the new endpoint list and rebuilds the provider when the probe agrees", async () => {
+      mockProbeResult("0x1")
+
+      const previousProvider = chainService.providerForNetwork(ETHEREUM)
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual([
+        { url: "https://new-rpc.example.com", capabilities: ["alchemy_"] },
+      ])
+      expect(chainService.providerForNetwork(ETHEREUM)).not.toBe(
+        previousProvider,
+      )
+    })
+
+    it("rejects and does not persist when an endpoint reports the wrong chain ID", async () => {
+      mockProbeResult("0x89") // Polygon, not Ethereum
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://wrong-chain.example.com" },
+        ]),
+      ).rejects.toThrow("reports chain ID 137")
+
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual(existingEndpoints)
+    })
+
+    it("rejects when an endpoint is unreachable", async () => {
+      fetchMock.mockRejectedValue(new Error("connection refused"))
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://unreachable.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+    })
+
+    it("does not probe WebSocket endpoints", async () => {
+      mockProbeResult("0x1")
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com" },
+        { url: "wss://ws-rpc.example.com" },
+      ])
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(fetchMock.mock.calls[0][0]).toEqual("https://new-rpc.example.com")
+    })
+
+    it("rejects an empty endpoint list", async () => {
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, []),
+      ).rejects.toThrow("At least one RPC endpoint is required")
+    })
+
+    it("reports Taho-managed endpoints alongside the stored list", async () => {
+      const { rpcEndpoints, managedRpcEndpoints } =
+        await chainService.getRpcConfigForChain(ETHEREUM.chainID)
+
+      expect(rpcEndpoints.length).toBeGreaterThan(0)
+
+      const boarRpcUrl = BOAR_RPC_URLS[ETHEREUM.chainID]
+      if (boarRpcUrl === undefined) {
+        expect(managedRpcEndpoints).toEqual([])
+      } else {
+        expect(managedRpcEndpoints).toEqual([
+          { url: boarRpcUrl, capabilities: ["alchemy_"] },
+        ])
+      }
+    })
+
+    it("persists the block explorer URL via updateChainSettings", async () => {
+      mockProbeResult("0x1")
+
+      await chainService.updateChainSettings(
+        ETHEREUM.chainID,
+        [{ url: "https://new-rpc.example.com" }],
+        "https://custom-explorer.example.com",
+      )
+
+      expect(
+        chainService.supportedNetworks.find(
+          ({ chainID }) => chainID === ETHEREUM.chainID,
+        )?.blockExplorerURL,
+      ).toEqual("https://custom-explorer.example.com")
+    })
+
+    it("rejects for unknown chains", async () => {
+      mockProbeResult("0x1")
+
+      await expect(
+        chainService.setRpcEndpointsForChain("999999", [
+          { url: "https://new-rpc.example.com" },
+        ]),
+      ).rejects.toThrow("No network found")
     })
   })
 })

@@ -1890,6 +1890,25 @@ export default class ReduxService extends BaseService<never> {
     return this.chainService.editCustomChain(chainInfo, rpcEndpoints)
   }
 
+  async updateChainSettings(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    blockExplorerUrl?: string,
+  ): Promise<void> {
+    return this.chainService.updateChainSettings(
+      chainID,
+      rpcEndpoints,
+      blockExplorerUrl,
+    )
+  }
+
+  async getRpcConfigForChain(chainID: string): Promise<{
+    rpcEndpoints: RpcEndpoint[]
+    managedRpcEndpoints: RpcEndpoint[]
+  }> {
+    return this.chainService.getRpcConfigForChain(chainID)
+  }
+
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
       const flashbotsProvider = makeFlashbotsProviderCreator()

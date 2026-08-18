@@ -140,3 +140,43 @@ export const editCustomChain = createBackgroundAsyncThunk(
     }
   },
 )
+
+/**
+ * Updates the user-editable settings for any known network — built-in or
+ * custom: the RPC endpoint list and, optionally, the block explorer URL.
+ * Endpoints are probed for reachability and chain ID agreement before being
+ * saved; failures are reported via the returned result rather than thrown.
+ */
+export const updateChainSettings = createBackgroundAsyncThunk(
+  "networks/updateChainSettings",
+  async (
+    {
+      chainID,
+      rpcEndpoints,
+      blockExplorerUrl,
+    }: {
+      chainID: string
+      rpcEndpoints: RpcEndpoint[]
+      blockExplorerUrl?: string
+    },
+    { extra: { main } },
+  ): Promise<ChainConfigUpdateResult> => {
+    try {
+      await main.updateChainSettings(chainID, rpcEndpoints, blockExplorerUrl)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: toErrorMessage(error) }
+    }
+  },
+)
+
+/**
+ * Resolves to the given chain's current user-editable RPC endpoints (in
+ * priority order) along with any Taho-managed endpoints that serve the chain
+ * but are not user-editable.
+ */
+export const getChainRpcConfig = createBackgroundAsyncThunk(
+  "networks/getChainRpcConfig",
+  async (chainID: string, { extra: { main } }) =>
+    main.getRpcConfigForChain(chainID),
+)
