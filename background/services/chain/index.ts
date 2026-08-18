@@ -369,7 +369,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async initializeNetworks(): Promise<void> {
-    const rpcUrls = await this.db.getAllRpcUrls()
+    const rpcEndpointConfigs = await this.db.getAllRpcEndpoints()
     const customRpcUrls = await this.db.getAllCustomRpcUrls()
 
     await this.updateSupportedNetworks()
@@ -385,7 +385,8 @@ export default class ChainService extends BaseService<Events> {
           network.chainID,
           makeSerialFallbackProvider(
             network.chainID,
-            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || [],
+            rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
+              ?.endpoints || [],
             customRpcUrls.find((v) => v.chainID === network.chainID),
           ),
         ]),
@@ -2023,7 +2024,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
       chainInfo.chainId,
-      chainInfo.rpcUrls,
+      chainInfo.rpcUrls.map((url) => ({ url })),
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)

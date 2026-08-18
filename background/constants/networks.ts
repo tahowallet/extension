@@ -1,5 +1,5 @@
 import { FeatureFlags, wrapIfEnabled } from "../features"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, RpcEndpoint } from "../networks"
 import {
   ARBITRUM_NOVA_ETH,
   ARBITRUM_ONE_ETH,
@@ -243,6 +243,22 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://mainnet.mezo.public.validationcloud.io",
   ],
 }
+
+/**
+ * The default RPC endpoints for each built-in chain. These are deliberately
+ * hardcoded and never user-editable; they are used ONLY to seed the stored
+ * per-chain RPC endpoint config the first time a chain is seen. Once a chain
+ * has a stored endpoint list, that list is the sole source of truth and these
+ * defaults are never consulted or merged back in.
+ */
+export const DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID: {
+  [chainID: string]: RpcEndpoint[]
+} = Object.fromEntries(
+  Object.entries(CHAIN_ID_TO_RPC_URLS).map(([chainID, rpcUrls]) => [
+    chainID,
+    rpcUrls.map((url) => ({ url })),
+  ]),
+)
 
 // Taken from https://api.coingecko.com/api/v3/asset_platforms
 export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {

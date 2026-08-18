@@ -348,12 +348,56 @@ describe("Chain Database ", () => {
 
       expect(await db.getEVMNetworkByChainID("12345")).toBeTruthy()
       expect(
-        (await db.getAllRpcUrls()).find((rpcUrl) =>
-          rpcUrl.rpcUrls.includes("https://foo.com"),
+        (await db.getAllRpcEndpoints()).find((rpcConfig) =>
+          rpcConfig.endpoints.some(({ url }) => url === "https://foo.com"),
         ),
       ).toBeTruthy()
 
       expect(await db.getBaseAssetForNetwork("12345")).toBeTruthy()
+    })
+  })
+
+  describe("RPC endpoint config", () => {
+    it("should seed default endpoints only for chains with no stored list", async () => {
+      await db.initialize()
+
+      const seededEndpoints = await db.getRpcEndpointsByChainId(
+        ETHEREUM.chainID,
+      )
+      expect(seededEndpoints.length).toBeGreaterThan(0)
+
+      // Replace the stored list; re-initialization must NOT merge the
+      // defaults back in.
+      const userEndpoints = [
+        { url: "https://user-rpc.example.com", capabilities: ["alchemy_"] },
+      ]
+      await db.setRpcEndpoints(ETHEREUM.chainID, userEndpoints)
+
+      await db.initialize()
+
+      expect(await db.getRpcEndpointsByChainId(ETHEREUM.chainID)).toEqual(
+        userEndpoints,
+      )
+    })
+
+    it("should replace and dedupe endpoints in setRpcEndpoints", async () => {
+      await db.setRpcEndpoints("12345", [
+        { url: "https://foo.example.com" },
+        { url: "https://bar.example.com", capabilities: ["alchemy_"] },
+        // Duplicate URL; the first occurrence wins.
+        { url: "https://foo.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://foo.example.com" },
+        { url: "https://bar.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      await db.setRpcEndpoints("12345", [{ url: "https://baz.example.com" }])
+
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://baz.example.com" },
+      ])
     })
   })
 })

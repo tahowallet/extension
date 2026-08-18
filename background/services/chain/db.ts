@@ -8,6 +8,7 @@ import {
   EVMNetwork,
   Network,
   NetworkBaseAsset,
+  RpcEndpoint,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import {
@@ -15,6 +16,7 @@ import {
   CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
+  DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
   ETH,
   SEPOLIA,
   isBuiltInNetwork,
@@ -41,12 +43,22 @@ export type RpcConfig = {
   supportedMethods?: string[]
 }
 
+/**
+ * The stored per-chain RPC endpoint list. Once a row exists for a chain, it
+ * is the sole source of truth for that chain's RPC endpoints — the hardcoded
+ * defaults are only used to seed rows for chains that have none.
+ */
+export type ChainRpcConfig = {
+  chainID: string
+  endpoints: RpcEndpoint[]
+}
+
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
   static defaultSettings = {
-    CHAIN_ID_TO_RPC_URLS,
+    DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
     BASE_ASSETS,
     DEFAULT_NETWORKS,
   }
@@ -96,7 +108,7 @@ export class ChainDatabase extends Dexie {
 
   private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
 
-  private rpcConfig!: Dexie.Table<RpcConfig, string>
+  private rpcConfig!: Dexie.Table<ChainRpcConfig, string>
 
   private customRpcConfig!: Dexie.Table<RpcConfig, string>
 
@@ -232,6 +244,28 @@ export class ChainDatabase extends Dexie {
           }
         }),
     )
+
+    // Converts stored per-chain RPC URL lists into capability-carrying
+    // endpoint lists ({ url, capabilities? } per endpoint).
+    this.version(11)
+      .stores({
+        rpcConfig: "&chainID",
+      })
+      .upgrade(async (tx) =>
+        tx
+          .table("rpcConfig")
+          .toCollection()
+          .modify((rpcConfig: RpcConfig & Partial<ChainRpcConfig>) => {
+            const { rpcUrls } = rpcConfig
+            if (rpcUrls !== undefined) {
+              Object.assign(rpcConfig, {
+                endpoints: rpcUrls.map((url) => ({ url })),
+              })
+              // eslint-disable-next-line no-param-reassign
+              delete (rpcConfig as Partial<RpcConfig>).rpcUrls
+            }
+          }),
+      )
   }
 
   async initialize(): Promise<void> {
@@ -302,7 +336,10 @@ export class ChainDatabase extends Dexie {
     // A bit awkward that we are adding the base asset to the network as well
     // as to its own separate table - but lets forge on for now.
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
-    await this.addRpcUrls(chainID, rpcUrls)
+    await this.addRpcEndpoints(
+      chainID,
+      rpcUrls.map((url) => ({ url })),
+    )
     return network
   }
 
@@ -375,13 +412,19 @@ export class ChainDatabase extends Dexie {
 
   private async initializeRPCs(): Promise<void> {
     await Promise.all(
-      Object.entries(ChainDatabase.defaultSettings.CHAIN_ID_TO_RPC_URLS).map(
-        async ([chainId, rpcUrls]) => {
-          if (rpcUrls) {
-            await this.addRpcUrls(chainId, rpcUrls)
+      Object.entries(
+        ChainDatabase.defaultSettings.DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
+      ).map(async ([chainID, endpoints]) => {
+        if (endpoints) {
+          // Seed only chains that have no stored endpoint list. Once a chain
+          // has one, the stored list is the sole source of truth; the
+          // hardcoded defaults are never merged back in.
+          const existingConfig = await this.rpcConfig.get(chainID)
+          if (existingConfig === undefined) {
+            await this.rpcConfig.put({ chainID, endpoints })
           }
-        },
-      ),
+        }
+      }),
     )
   }
 
@@ -399,24 +442,45 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getRpcUrlsByChainId(chainId: string): Promise<string[]> {
-    const rpcUrls = await this.rpcConfig.where({ chainId }).first()
-    if (rpcUrls) {
-      return rpcUrls.rpcUrls
+  async getRpcEndpointsByChainId(chainID: string): Promise<RpcEndpoint[]> {
+    const config = await this.rpcConfig.get(chainID)
+    if (config) {
+      return config.endpoints
     }
-    throw new Error(`No RPC Found for ${chainId}`)
+    throw new Error(`No RPC Found for ${chainID}`)
   }
 
-  private async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
-    const existingRpcUrlsForChain = await this.rpcConfig.get(chainID)
-    if (existingRpcUrlsForChain) {
-      existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
-      existingRpcUrlsForChain.rpcUrls = [
-        ...new Set(existingRpcUrlsForChain.rpcUrls),
-      ]
-      await this.rpcConfig.put(existingRpcUrlsForChain)
+  /**
+   * Replaces the stored RPC endpoint list for the given chain, unlike
+   * {@link addRpcEndpoints}, which merges with any existing list. Endpoints
+   * are deduplicated by URL, keeping the first occurrence's capabilities.
+   */
+  async setRpcEndpoints(
+    chainID: string,
+    endpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const dedupedEndpoints = endpoints.filter(
+      (endpoint, index) =>
+        endpoints.findIndex(({ url }) => url === endpoint.url) === index,
+    )
+    await this.rpcConfig.put({ chainID, endpoints: dedupedEndpoints })
+  }
+
+  private async addRpcEndpoints(
+    chainID: string,
+    endpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const existingConfig = await this.rpcConfig.get(chainID)
+    if (existingConfig) {
+      const mergedEndpoints = [...existingConfig.endpoints]
+      endpoints.forEach((endpoint) => {
+        if (!mergedEndpoints.some(({ url }) => url === endpoint.url)) {
+          mergedEndpoints.push(endpoint)
+        }
+      })
+      await this.rpcConfig.put({ chainID, endpoints: mergedEndpoints })
     } else {
-      await this.rpcConfig.put({ chainID, rpcUrls })
+      await this.rpcConfig.put({ chainID, endpoints })
     }
   }
 
@@ -436,7 +500,7 @@ export class ChainDatabase extends Dexie {
     return this.customRpcConfig.where({ chainID }).delete()
   }
 
-  async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
+  async getAllRpcEndpoints(): Promise<ChainRpcConfig[]> {
     return this.rpcConfig.toArray()
   }
 

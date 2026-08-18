@@ -69,6 +69,20 @@ export type EVMNetwork = Network & {
 }
 
 /**
+ * A single JSON-RPC endpoint for a network, along with any non-standard
+ * method namespaces it serves.
+ */
+export type RpcEndpoint = {
+  url: string
+  /**
+   * Method-name prefixes for non-standard JSON-RPC namespaces this endpoint
+   * serves beyond the standard set — e.g. "alchemy_" for Alchemy-compatible
+   * enhanced APIs. Standard methods are always assumed to be supported.
+   */
+  capabilities?: string[]
+}
+
+/**
  * Union type that allows narrowing to particular network subtypes.
  */
 export type AnyNetwork = EVMNetwork

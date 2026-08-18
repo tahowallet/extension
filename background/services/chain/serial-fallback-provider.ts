@@ -15,7 +15,7 @@ import {
   BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
-import { AnyEVMTransaction } from "../../networks"
+import { AnyEVMTransaction, RpcEndpoint } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
@@ -40,9 +40,22 @@ import {
 } from "../../lib/perf-metrics"
 import { CircuitBreaker } from "./circuit-breaker"
 
+/**
+ * The capability namespace declared by RPC endpoints that serve
+ * Alchemy-compatible enhanced APIs.
+ */
+export const ALCHEMY_CAPABILITY_NAMESPACE = "alchemy_"
+
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
   supportedMethods?: string[]
+  /**
+   * For generic providers, method-name prefixes for non-standard JSON-RPC
+   * namespaces the underlying endpoint serves beyond the standard set (e.g.
+   * "alchemy_"). Methods in these namespaces are routed to declaring
+   * endpoints rather than walked across the full generic list.
+   */
+  capabilities?: string[]
   creator: () => JsonRpcProvider
 }
 
@@ -394,6 +407,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // ones before them.
   private customProviderCreators: (() => JsonRpcProvider)[] = []
 
+  // Creators for generic providers whose endpoints declare support for
+  // non-standard method namespaces (e.g. "alchemy_"), keyed by namespace, in
+  // priority order.
+  private capabilityProviderCreators: {
+    [namespace: string]: (() => JsonRpcProvider)[]
+  } = {}
+
+  // Lazily-created providers used for non-standard namespace routing, along
+  // with the index of the creator that produced each, for failover.
+  private capabilityProviders: {
+    [namespace: string]:
+      | { provider: JsonRpcProvider; creatorIndex: number }
+      | undefined
+  } = {}
+
   /**
    * Since our architecture follows a pattern of using distinct provider instances
    * per network - and we know that a given provider will never switch its network
@@ -456,10 +484,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.addCustomProviders(customProviderCreators)
     }
 
+    providerCreators
+      .filter((creator) => creator.type === "generic")
+      .forEach(({ capabilities, creator }) => {
+        capabilities?.forEach((namespace) => {
+          this.capabilityProviderCreators[namespace] ??= []
+          this.capabilityProviderCreators[namespace].push(creator)
+        })
+      })
+
     setInterval(() => {
       this.attemptToReconnectToPrimaryProvider()
       this.attemptToReconnectToBoarProvider()
       this.attemptToReconnectToPrimaryCustomProvider()
+      this.attemptToReconnectToPrimaryCapabilityProviders()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
     setInterval(() => {
@@ -540,6 +578,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           }
 
           throw error
+        }
+      }
+
+      const capabilityNamespace = Object.keys(
+        this.capabilityProviderCreators,
+      ).find((namespace) => method.startsWith(namespace))
+
+      if (capabilityNamespace !== undefined) {
+        try {
+          const result = await this.sendViaCapabilityProviders(
+            capabilityNamespace,
+            method,
+            params,
+          )
+          delete this.messagesToSend[messageId]
+          return result
+        } catch (error) {
+          if (
+            !(
+              this.boarProvider &&
+              boarOrDefaultProvider(this.cachedChainId, method)
+            )
+          ) {
+            throw error
+          }
+          // Otherwise, fall through to the Boar branch below as a last
+          // resort for this namespace.
         }
       }
 
@@ -744,6 +809,68 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.#circuitBreakers.set(providerIndex, breaker)
     }
     return breaker
+  }
+
+  /**
+   * True if this network can serve Alchemy enhanced API calls (alchemy_*),
+   * either via an endpoint that declares the "alchemy_" capability or via
+   * Boar while it remains available.
+   */
+  get supportsAlchemy(): boolean {
+    return (
+      (this.capabilityProviderCreators[ALCHEMY_CAPABILITY_NAMESPACE] ?? [])
+        .length > 0 ||
+      (this.supportsBoar &&
+        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(this.chainID))
+    )
+  }
+
+  /**
+   * Sends a method belonging to a non-standard namespace via the providers
+   * whose endpoints declare that capability, in priority order, falling over
+   * to the next one when the current one fails. Throws the final provider's
+   * error once all are exhausted.
+   */
+  private async sendViaCapabilityProviders(
+    namespace: string,
+    method: string,
+    params: unknown[],
+  ): Promise<unknown> {
+    const creators = this.capabilityProviderCreators[namespace]
+
+    let current = this.capabilityProviders[namespace]
+    if (current === undefined) {
+      current = { provider: creators[0](), creatorIndex: 0 }
+      this.capabilityProviders[namespace] = current
+    }
+
+    for (;;) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        return await current.provider.send(method, params)
+      } catch (error) {
+        if (current.creatorIndex + 1 >= creators.length) {
+          throw error
+        }
+
+        current = {
+          provider: creators[current.creatorIndex + 1](),
+          creatorIndex: current.creatorIndex + 1,
+        }
+        this.capabilityProviders[namespace] = current
+
+        logger.debug(
+          "Falling back to",
+          namespace,
+          "capability provider",
+          current.creatorIndex,
+          "on chain",
+          this.chainID,
+          "for",
+          method,
+        )
+      }
+    }
   }
 
   addCustomProvider(customProviderCreator: ProviderCreator): void {
@@ -1278,6 +1405,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  private async attemptToReconnectToPrimaryCapabilityProviders(): Promise<void> {
+    Object.entries(this.capabilityProviders).forEach(([namespace, current]) => {
+      if (current !== undefined && current.creatorIndex !== 0) {
+        // Periodically drop back to the primary provider for this
+        // namespace after a failover; if it is still down, the next failed
+        // call will walk back down the fallback list.
+        this.capabilityProviders[namespace] = {
+          provider: this.capabilityProviderCreators[namespace][0](),
+          creatorIndex: 0,
+        }
+      }
+    })
+  }
+
   private async attemptToReconnectToPrimaryCustomProvider(): Promise<void> {
     if (
       this.customProvider &&
@@ -1435,7 +1576,7 @@ export function makeFlashbotsProviderCreator(): ProviderCreator {
 
 export function makeSerialFallbackProvider(
   chainID: string,
-  rpcUrls: string[],
+  rpcEndpoints: RpcEndpoint[],
   customRpc?: RpcConfig,
 ): SerialFallbackProvider {
   if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
@@ -1486,10 +1627,13 @@ export function makeSerialFallbackProvider(
     creator: () => getProviderCreator(rpcUrl),
   }))
 
-  const genericProviders: ProviderCreator[] = rpcUrls.map((rpcUrl) => ({
-    type: "generic" as const,
-    creator: () => getProviderCreator(rpcUrl),
-  }))
+  const genericProviders: ProviderCreator[] = rpcEndpoints.map(
+    ({ url, capabilities }) => ({
+      type: "generic" as const,
+      capabilities,
+      creator: () => getProviderCreator(url),
+    }),
+  )
 
   return new SerialFallbackProvider(chainID, [
     ...genericProviders,
