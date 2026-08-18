@@ -18,12 +18,9 @@ import {
   getMetadata as getERC20Metadata,
   getTokenBalances,
 } from "../../lib/erc20"
+import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
 import { FeatureFlags, isEnabled } from "../../features"
-import {
-  DOGGO,
-  FORK,
-  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
-} from "../../constants"
+import { DOGGO, FORK } from "../../constants"
 
 interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
@@ -86,12 +83,7 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (
-        provider.supportsBoar &&
-        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
-          addressOnNetwork.network.chainID,
-        )
-      ) {
+      if (provider.supportsAlchemy) {
         return {
           balances: await getBoarTokenBalances(provider, addressOnNetwork),
           dataSource: "boar",
@@ -99,7 +91,7 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances on Boar supported network",
+        "Problem resolving asset balances on Alchemy-capable network",
         addressOnNetwork.network,
         error,
       )
@@ -170,12 +162,7 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    if (
-      provider.supportsBoar &&
-      !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
-        tokenSmartContract.homeNetwork.chainID,
-      )
-    ) {
+    if (provider.supportsAlchemy) {
       return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
@@ -200,12 +187,7 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (
-        provider.supportsBoar &&
-        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(
-          addressOnNetwork.network.chainID,
-        )
-      ) {
+      if (provider.supportsAlchemy) {
         const promises = [
           getBoarAssetTransfers(
             provider,
@@ -230,8 +212,8 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Boar helper; network may " +
-          "not support it.",
+        "Problem resolving asset transfers via Alchemy-compatible helper; " +
+          "network may not support it.",
         error,
       )
 
@@ -240,6 +222,29 @@ export default class AssetDataHelper {
       throw error
     }
 
-    return []
+    // Without an Alchemy-capable endpoint, fall back to scanning standard
+    // ERC-20 Transfer logs via eth_getLogs. Native-asset transfers are not
+    // captured this way.
+    try {
+      const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
+
+      return await getAssetTransfersViaLogs(
+        provider,
+        addressOnNetwork,
+        startBlock,
+        resolvedEndBlock,
+        incomingOnly,
+      )
+    } catch (error) {
+      logger.warn(
+        "Problem resolving asset transfers via Transfer logs; network may " +
+          "not support it.",
+        error,
+      )
+
+      // Rethrow as consumers like ChainService need the exception to manage
+      // retries.
+      throw error
+    }
   }
 }
