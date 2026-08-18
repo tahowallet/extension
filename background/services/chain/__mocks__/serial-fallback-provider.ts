@@ -30,6 +30,10 @@ export default class MockSerialFallbackProvider
   async subscribeFullPendingTransactions(): Promise<void> {
     return Promise.resolve()
   }
+
+  destroy(): void {
+    // Nothing to tear down in the mock; provider replacement still calls this.
+  }
 }
 
 export const makeSerialFallbackProvider = (): Partial<SerialFallbackProvider> =>

@@ -2211,10 +2211,104 @@ export default class ChainService extends BaseService<Events> {
     rpcEndpoints: RpcEndpoint[],
   ): Promise<void> {
     const customRpcConfigs = await this.db.getAllCustomRpcUrls()
+    const previousProvider = this.providers.evm[chainID]
+
     this.providers.evm[chainID] = makeSerialFallbackProvider(
       chainID,
       rpcEndpoints,
       customRpcConfigs.find((config) => config.chainID === chainID),
+    )
+
+    // Nothing points at the replaced provider anymore, but its reconnect and
+    // cache-cleanup timers would keep running, and its WebSockets keep
+    // reopening, against endpoints the user just removed.
+    previousProvider?.destroy()
+
+    // Subscriptions are tracked alongside the provider they were made on, so
+    // they have to be moved over; otherwise gas polling and pending
+    // transaction watching would keep addressing the retired provider.
+    await this.resubscribeToChainEvents(chainID, previousProvider)
+  }
+
+  /**
+   * Re-establishes the network and account subscriptions that were made
+   * against a chain's previous provider on its replacement, updating the
+   * subscription registries in place instead of appending duplicate entries.
+   *
+   * Chains that had no subscriptions to begin with are left alone; a provider
+   * rebuild is not a reason to start tracking a network or an account.
+   */
+  private async resubscribeToChainEvents(
+    chainID: string,
+    previousProvider: SerialFallbackProvider | undefined,
+  ): Promise<void> {
+    const provider = this.providers.evm[chainID]
+    const networkSubscription = this.subscribedNetworks.find(
+      ({ network: subscribedNetwork }) =>
+        sameChainID(subscribedNetwork.chainID, chainID),
+    )
+    const network =
+      networkSubscription?.network ??
+      this.trackedNetworks.find((trackedNetwork) =>
+        sameChainID(trackedNetwork.chainID, chainID),
+      ) ??
+      this.supportedNetworks.find((supportedNetwork) =>
+        sameChainID(supportedNetwork.chainID, chainID),
+      )
+
+    if (provider === undefined || network === undefined) {
+      return
+    }
+
+    if (networkSubscription !== undefined) {
+      // Point the existing entry at the replacement instead of pushing a
+      // second one for the same network; block price polling reads the
+      // provider from here on every pass.
+      this.subscribedNetworks = this.subscribedNetworks.map((subscription) =>
+        subscription === networkSubscription
+          ? { network: subscription.network, provider }
+          : subscription,
+      )
+
+      // Read a fresh block and fresh block prices off the replacement, the
+      // way `subscribeToNewHeads` does for a newly subscribed network; both
+      // are fire-and-forget there as well, and the periodic poll picks the new
+      // provider up from `subscribedNetworks` on its next pass.
+      this.pollLatestBlock(network, provider).catch((error) =>
+        logger.error(
+          `Error reading the latest block from the rebuilt provider on chain ${chainID}`,
+          error,
+        ),
+      )
+      this.pollBlockPricesForNetwork(chainID).catch((error) =>
+        logger.error(
+          `Error reading block prices from the rebuilt provider on chain ${chainID}`,
+          error,
+        ),
+      )
+    }
+
+    // Account subscriptions have to be made again on the new provider, so drop
+    // the entries for the retired one and let `subscribeToAccountTransactions`
+    // record fresh ones.
+    const subscribedAddresses =
+      previousProvider === undefined
+        ? []
+        : this.subscribedAccounts
+            .filter(
+              ({ provider: accountProvider }) =>
+                accountProvider === previousProvider,
+            )
+            .map(({ account }) => account)
+
+    this.subscribedAccounts = this.subscribedAccounts.filter(
+      ({ provider: accountProvider }) => accountProvider !== previousProvider,
+    )
+
+    await Promise.allSettled(
+      subscribedAddresses.map((address) =>
+        this.subscribeToAccountTransactions({ address, network }),
+      ),
     )
   }
 

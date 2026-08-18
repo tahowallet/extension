@@ -43,14 +43,15 @@ describe("Serial Fallback Provider capability routing", () => {
   })
 
   it("routes alchemy_ methods to a capability-declaring endpoint ahead of Boar", async () => {
+    // Creator order mirrors production: the Boar creator leads the walk.
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "boar", creator: () => boarProvider },
       { type: "generic", creator: () => plainProvider },
       {
         type: "generic",
         capabilities: ["alchemy_"],
         creator: () => alchemyProvider,
       },
-      { type: "boar", creator: () => boarProvider },
     ])
 
     await expect(
@@ -66,7 +67,7 @@ describe("Serial Fallback Provider capability routing", () => {
     )
   })
 
-  it("still routes standard methods through the ordinary generic walk", async () => {
+  it("routes standard methods through the ordinary generic walk with no managed endpoint", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
       { type: "generic", creator: () => plainProvider },
       {
@@ -81,6 +82,26 @@ describe("Serial Fallback Provider capability routing", () => {
     )
 
     expect(callsFor(plainSendStub, "eth_getBalance").length).toEqual(1)
+    expect(callsFor(alchemySendStub, "eth_getBalance").length).toEqual(0)
+  })
+
+  it("routes standard methods to Boar when it heads the walk", async () => {
+    const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "boar", creator: () => boarProvider },
+      { type: "generic", creator: () => plainProvider },
+      {
+        type: "generic",
+        capabilities: ["alchemy_"],
+        creator: () => alchemyProvider,
+      },
+    ])
+
+    await expect(fallbackProvider.send("eth_getBalance", [])).resolves.toEqual(
+      "boar",
+    )
+
+    expect(callsFor(boarSendStub, "eth_getBalance").length).toEqual(1)
+    expect(callsFor(plainSendStub, "eth_getBalance").length).toEqual(0)
     expect(callsFor(alchemySendStub, "eth_getBalance").length).toEqual(0)
   })
 
@@ -117,13 +138,13 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("falls back to Boar when capability endpoints are exhausted", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "boar", creator: () => boarProvider },
       { type: "generic", creator: () => plainProvider },
       {
         type: "generic",
         capabilities: ["alchemy_"],
         creator: () => alchemyProvider,
       },
-      { type: "boar", creator: () => boarProvider },
     ])
 
     alchemySendStub
@@ -178,8 +199,8 @@ describe("Serial Fallback Provider capability routing", () => {
 
     it("is true when Boar is available", () => {
       const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => plainProvider },
         { type: "boar", creator: () => boarProvider },
+        { type: "generic", creator: () => plainProvider },
       ])
 
       expect(fallbackProvider.supportsAlchemy).toBe(true)
