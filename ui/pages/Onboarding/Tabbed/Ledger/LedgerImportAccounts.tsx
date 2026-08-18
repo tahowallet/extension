@@ -14,7 +14,7 @@ import SharedButton from "../../../../components/Shared/SharedButton"
 import LedgerContinueButton from "../../../../components/Ledger/LedgerContinueButton"
 import LedgerPanelContainer from "../../../../components/Ledger/LedgerPanelContainer"
 import OnboardingDerivationPathSelectAlt from "../../../../components/Onboarding/OnboardingDerivationPathSelect"
-import { blockExplorer } from "../../../../utils/constants"
+import { getBlockExplorerURL } from "../../../../utils/networks"
 import SharedCheckbox from "../../../../components/Shared/SharedCheckbox"
 
 const addressesPerPage = 6
@@ -123,6 +123,7 @@ function LedgerAccountList({
   })
   const [pageIndex, setPageIndex] = useState(0)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const blockExplorerURL = getBlockExplorerURL(selectedNetwork)
 
   const pageData = usePageData({
     device,
@@ -158,25 +159,25 @@ function LedgerAccountList({
                         {balance} {selectedNetwork.baseAsset.symbol}
                       </div>
                     )}
-                    <div className="etherscan_link_container">
-                      <SharedButton
-                        type="tertiaryGray"
-                        size="medium"
-                        iconMedium="new-tab"
-                        onClick={() => {
-                          window
-                            .open(
-                              `${
-                                blockExplorer[selectedNetwork.chainID].url
-                              }/address/${address}`,
-                              "_blank",
-                            )
-                            ?.focus()
-                        }}
-                      >
-                        {/* No label. FIXME: is this ok for a11y? */}
-                      </SharedButton>
-                    </div>
+                    {blockExplorerURL && (
+                      <div className="etherscan_link_container">
+                        <SharedButton
+                          type="tertiaryGray"
+                          size="medium"
+                          iconMedium="new-tab"
+                          onClick={() => {
+                            window
+                              .open(
+                                `${blockExplorerURL}/address/${address}`,
+                                "_blank",
+                              )
+                              ?.focus()
+                          }}
+                        >
+                          {/* No label. FIXME: is this ok for a11y? */}
+                        </SharedButton>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

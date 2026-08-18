@@ -245,6 +245,31 @@ export const CHAIN_ID_TO_RPC_URLS: {
 }
 
 /**
+ * The default block explorer URLs for each built-in chain. Like
+ * {@link DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID}, these are deliberately hardcoded
+ * and never user-editable; they are used ONLY to seed the stored network
+ * config the first time a chain is seen. Once a chain has a stored block
+ * explorer URL, that value is the sole source of truth and these defaults
+ * are never consulted again.
+ */
+export const DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID: {
+  [chainID: string]: string
+} = {
+  [ETHEREUM.chainID]: "https://etherscan.io",
+  [MEZO.chainID]: "https://explorer.mezo.org",
+  [MEZO_TESTNET.chainID]: "https://explorer.test.mezo.org",
+  [ROOTSTOCK.chainID]: "https://explorer.rsk.co",
+  [OPTIMISM.chainID]: "https://optimistic.etherscan.io",
+  [POLYGON.chainID]: "https://polygonscan.com",
+  [SEPOLIA.chainID]: "https://sepolia.etherscan.io",
+  [ARBITRUM_SEPOLIA.chainID]: "https://sepolia.arbiscan.io",
+  [ARBITRUM_ONE.chainID]: "https://arbiscan.io",
+  [AVALANCHE.chainID]: "https://snowtrace.io",
+  [BINANCE_SMART_CHAIN.chainID]: "https://bscscan.com",
+  [ARBITRUM_NOVA.chainID]: "https://nova.arbiscan.io",
+}
+
+/**
  * The default RPC endpoints for each built-in chain. These are deliberately
  * hardcoded and never user-editable; they are used ONLY to seed the stored
  * per-chain RPC endpoint config the first time a chain is seen. Once a chain

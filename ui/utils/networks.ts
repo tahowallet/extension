@@ -120,6 +120,7 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
 }
 
 export const getBlockExplorerURL = (network: EVMNetwork): string | undefined =>
-  DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+  network.blockExplorerURL ??
+  (DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
     ? blockExplorer[network.chainID].url
-    : network.blockExplorerURL
+    : undefined)

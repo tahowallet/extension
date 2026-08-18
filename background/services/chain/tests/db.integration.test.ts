@@ -400,6 +400,27 @@ describe("Chain Database ", () => {
       ])
     })
 
+    it("should seed the default block explorer URL only when none is stored", async () => {
+      await db.initialize()
+
+      expect(
+        (await db.getEVMNetworkByChainID(ETHEREUM.chainID))?.blockExplorerURL,
+      ).toEqual("https://etherscan.io")
+
+      // Replace the stored value; re-initialization must NOT restore the
+      // default.
+      await db.setBlockExplorerUrl(
+        ETHEREUM.chainID,
+        "https://custom-explorer.example.com",
+      )
+
+      await db.initialize()
+
+      expect(
+        (await db.getEVMNetworkByChainID(ETHEREUM.chainID))?.blockExplorerURL,
+      ).toEqual("https://custom-explorer.example.com")
+    })
+
     it("should replace endpoints via updateEVMNetwork", async () => {
       await db.addEVMNetwork({
         chainName: "Foo",

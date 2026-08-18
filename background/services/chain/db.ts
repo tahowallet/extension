@@ -16,6 +16,7 @@ import {
   CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
+  DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID,
   DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
   ETH,
   SEPOLIA,
@@ -59,6 +60,7 @@ export type ChainRpcConfig = {
 export class ChainDatabase extends Dexie {
   static defaultSettings = {
     DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
+    DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID,
     BASE_ASSETS,
     DEFAULT_NETWORKS,
   }
@@ -486,10 +488,32 @@ export class ChainDatabase extends Dexie {
     await Promise.all(
       ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
         async (defaultNetwork) => {
-          await this.networks.put(defaultNetwork)
+          // The block explorer URL follows the same rules as RPC endpoints:
+          // it is seeded from the hardcoded defaults only when no stored
+          // value exists, and the stored value is the sole source of truth
+          // from then on.
+          const existingNetwork = await this.networks.get(
+            defaultNetwork.chainID,
+          )
+          await this.networks.put({
+            ...defaultNetwork,
+            blockExplorerURL:
+              existingNetwork?.blockExplorerURL ??
+              ChainDatabase.defaultSettings
+                .DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID[
+                defaultNetwork.chainID
+              ],
+          })
         },
       ),
     )
+  }
+
+  async setBlockExplorerUrl(
+    chainID: string,
+    blockExplorerURL: string,
+  ): Promise<void> {
+    await this.networks.update(chainID, { blockExplorerURL })
   }
 
   async getRpcEndpointsByChainId(chainID: string): Promise<RpcEndpoint[]> {

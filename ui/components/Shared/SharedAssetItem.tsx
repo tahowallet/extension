@@ -5,7 +5,7 @@ import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
-import { blockExplorer } from "../../utils/constants"
+import { getBlockExplorerURL } from "../../utils/networks"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -53,7 +53,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const baseLink = blockExplorer[currentNetwork.chainID]?.url
+    const baseLink = getBlockExplorerURL(currentNetwork)
     if ("contractAddress" in asset && baseLink) {
       const contractBase =
         currentNetwork.chainID === ROOTSTOCK.chainID ? "address" : "token"
