@@ -558,6 +558,22 @@ describe("ChainService", () => {
       ).rejects.toThrow("could not be reached")
     })
 
+    it("rejects when an endpoint answers with a JSON-RPC error body", async () => {
+      fetchMock.mockResolvedValue({
+        json: async () => ({
+          jsonrpc: "2.0",
+          id: 1,
+          error: { code: -32051, message: "API key disabled" },
+        }),
+      })
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://error-body.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+    })
+
     it("does not probe WebSocket endpoints", async () => {
       mockProbeResult("0x1")
 

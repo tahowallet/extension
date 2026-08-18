@@ -54,6 +54,30 @@ export type ChainRpcConfig = {
   endpoints: RpcEndpoint[]
 }
 
+/**
+ * RPC endpoint URLs that are permanently gone and should be dropped from
+ * existing installs' stored endpoint lists. Removing a URL from the
+ * hardcoded defaults is not enough on its own: stored endpoint lists are
+ * seeded once and are the sole source of truth from then on, so a dead
+ * endpoint sticks around until it is explicitly scrubbed by a migration.
+ */
+export const DEAD_RPC_URLS = ["https://polygon-rpc.com"]
+
+/**
+ * Drops every endpoint whose URL exactly matches one of `deadUrls`, unless
+ * that would leave the chain with no endpoints at all; a chain with an empty
+ * endpoint list is unusable, so in that case the list is returned unchanged
+ * and the dead endpoints are left in place.
+ */
+export function scrubDeadEndpoints(
+  endpoints: RpcEndpoint[],
+  deadUrls: string[],
+): RpcEndpoint[] {
+  const liveEndpoints = endpoints.filter(({ url }) => !deadUrls.includes(url))
+
+  return liveEndpoints.length > 0 ? liveEndpoints : endpoints
+}
+
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction replacement / nonce invalidation
 
@@ -268,6 +292,22 @@ export class ChainDatabase extends Dexie {
             }
           }),
       )
+
+    // Scrubs permanently dead RPC endpoints from stored endpoint lists; see
+    // {@link DEAD_RPC_URLS} for why a migration is needed at all.
+    this.version(12).upgrade(async (tx) =>
+      tx
+        .table("rpcConfig")
+        .toCollection()
+        .modify((rpcConfig: Partial<ChainRpcConfig>) => {
+          const { endpoints } = rpcConfig
+          if (endpoints !== undefined) {
+            Object.assign(rpcConfig, {
+              endpoints: scrubDeadEndpoints(endpoints, DEAD_RPC_URLS),
+            })
+          }
+        }),
+    )
   }
 
   async initialize(): Promise<void> {

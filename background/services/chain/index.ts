@@ -2214,6 +2214,15 @@ export default class ChainService extends BaseService<Events> {
           clearTimeout(timeout)
 
           const { result } = await response.json()
+          // JSON-RPC error responses carry no result; treat them — and any
+          // other non-hex result — the same as an unreachable endpoint
+          // rather than reporting a nonsense chain ID.
+          if (
+            typeof result !== "string" ||
+            Number.isNaN(parseInt(result, 16))
+          ) {
+            throw new Error(`invalid eth_chainId result: ${result}`)
+          }
           reportedChainID = String(parseInt(result, 16))
         } catch (error) {
           logger.debug("RPC endpoint probe failed for", url, error)

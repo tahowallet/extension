@@ -1,3 +1,4 @@
+import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
 import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
 import {
@@ -450,6 +451,40 @@ describe("Chain Database ", () => {
       expect((await db.getEVMNetworkByChainID("12345"))?.name).toEqual("Foo2")
       expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
         { url: "https://replacement.example.com", capabilities: ["alchemy_"] },
+      ])
+    })
+
+    it("should scrub dead RPC endpoints from existing installs on upgrade", async () => {
+      // Stand up a v11-era database with the dead endpoint still stored, as
+      // an install that was seeded before it was dropped from the defaults
+      // would have.
+      const legacyDb = new Dexie("tally/chain", { indexedDB })
+      legacyDb.version(11).stores({ rpcConfig: "&chainID" })
+      await legacyDb.open()
+      await legacyDb.table("rpcConfig").bulkPut([
+        {
+          chainID: POLYGON.chainID,
+          endpoints: [
+            { url: "https://polygon-rpc.com" },
+            { url: "https://polygon.example.com" },
+          ],
+        },
+        {
+          chainID: ETHEREUM.chainID,
+          endpoints: [{ url: "https://polygon-rpc.com" }],
+        },
+      ])
+      legacyDb.close()
+
+      await db.open()
+
+      expect(await db.getRpcEndpointsByChainId(POLYGON.chainID)).toEqual([
+        { url: "https://polygon.example.com" },
+      ])
+      // Scrubbing the only endpoint would leave the chain unusable, so the
+      // row is left alone.
+      expect(await db.getRpcEndpointsByChainId(ETHEREUM.chainID)).toEqual([
+        { url: "https://polygon-rpc.com" },
       ])
     })
   })

@@ -208,12 +208,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://mezo-testnet.drpc.org",
     "wss://mezo-testnet.drpc.org",
   ],
-  [POLYGON.chainID]: [
-    "https://polygon.drpc.org",
-    // This one sometimes returns 0 for eth_getBalance
-    "https://polygon-rpc.com",
-    "https://1rpc.io/matic",
-  ],
+  [POLYGON.chainID]: ["https://polygon.drpc.org", "https://1rpc.io/matic"],
   [OPTIMISM.chainID]: [
     "https://optimism.drpc.org",
     "https://1rpc.io/op",
