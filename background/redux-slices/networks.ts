@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit"
 import type { RootState } from "."
 import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork, RpcEndpoint } from "../networks"
-import type { ValidatedAddEthereumChainParameter } from "../services/provider-bridge/utils"
 import { removeChainBalances } from "./accounts"
 import { selectCurrentNetwork } from "./selectors/uiSelectors"
 import { setSelectedNetwork } from "./ui"
@@ -104,65 +103,57 @@ export type ChainConfigUpdateResult =
 const toErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
-/**
- * Edits an existing custom chain's user-editable details. The chain ID and
- * family are immutable; the RPC endpoint list (when provided) replaces the
- * existing one and is used in priority order. Endpoints are probed for
- * reachability and chain ID agreement before being saved; failures are
- * reported via the returned result rather than thrown.
- */
-export const editCustomChain = createBackgroundAsyncThunk(
-  "networks/editCustomChain",
-  async (
-    {
-      chainInfo,
-      rpcEndpoints,
-    }: {
-      chainInfo: ValidatedAddEthereumChainParameter
-      rpcEndpoints?: RpcEndpoint[]
-    },
-    { getState, dispatch, extra: { main } },
-  ): Promise<ChainConfigUpdateResult> => {
-    try {
-      const updatedNetwork = await main.editEVMNetwork(chainInfo, rpcEndpoints)
-
-      const store = getState() as RootState
-      const currentNetwork = selectCurrentNetwork(store)
-
-      if (currentNetwork.chainID === chainInfo.chainId) {
-        // Refresh the selected network so its details reflect the edit.
-        await dispatch(setSelectedNetwork(updatedNetwork))
-      }
-
-      return { success: true }
-    } catch (error) {
-      return { success: false, error: toErrorMessage(error) }
-    }
-  },
-)
+export type NetworkSettingsUpdate = {
+  chainID: string
+  rpcEndpoints: RpcEndpoint[]
+  blockExplorerUrl: string
+  /**
+   * Identifying metadata, editable only for custom networks; the background
+   * rejects it for built-in chains.
+   */
+  metadata?: {
+    chainName: string
+    assetName: string
+    symbol: string
+    decimals: number
+    iconUrl?: string
+  }
+}
 
 /**
  * Updates the user-editable settings for any known network — built-in or
- * custom: the RPC endpoint list and, optionally, the block explorer URL.
- * Endpoints are probed for reachability and chain ID agreement before being
- * saved; failures are reported via the returned result rather than thrown.
+ * custom. The chain ID and family are immutable, and identifying metadata
+ * is only editable for custom networks. New endpoints are probed for
+ * reachability and chain ID agreement before being saved; failures are
+ * reported via the returned result rather than thrown.
  */
-export const updateChainSettings = createBackgroundAsyncThunk(
-  "networks/updateChainSettings",
+export const updateNetworkSettings = createBackgroundAsyncThunk(
+  "networks/updateNetworkSettings",
   async (
     {
       chainID,
       rpcEndpoints,
       blockExplorerUrl,
-    }: {
-      chainID: string
-      rpcEndpoints: RpcEndpoint[]
-      blockExplorerUrl?: string
-    },
-    { extra: { main } },
+      metadata,
+    }: NetworkSettingsUpdate,
+    { getState, dispatch, extra: { main } },
   ): Promise<ChainConfigUpdateResult> => {
     try {
-      await main.updateChainSettings(chainID, rpcEndpoints, blockExplorerUrl)
+      const updatedNetwork = await main.updateNetworkSettings(
+        chainID,
+        rpcEndpoints,
+        blockExplorerUrl,
+        metadata,
+      )
+
+      const store = getState() as RootState
+      const currentNetwork = selectCurrentNetwork(store)
+
+      if (currentNetwork.chainID === chainID) {
+        // Refresh the selected network so its details reflect the edit.
+        await dispatch(setSelectedNetwork(updatedNetwork))
+      }
+
       return { success: true }
     } catch (error) {
       return { success: false, error: toErrorMessage(error) }

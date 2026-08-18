@@ -683,7 +683,8 @@
           "required": "This field is required",
           "invalidDecimals": "Must be a whole number greater than 0",
           "invalidUrl": "Must be a valid http(s) URL",
-          "invalidRpcUrl": "Must be a valid http(s) or ws(s) URL"
+          "invalidRpcUrl": "Must be a valid http(s) or ws(s) URL",
+          "duplicateRpcUrl": "This endpoint is already listed"
         },
         "snackbar": {
           "success": "Network updated"

@@ -2086,48 +2086,15 @@ export default class ChainService extends BaseService<Events> {
     return network
   }
 
-  // Used to edit custom chains previously added via wallet_addEthereumChain.
-  // The chain ID and family are immutable; the RPC endpoint list replaces the
-  // existing one and is used in priority order.
-  async editCustomChain(
-    chainInfo: ValidatedAddEthereumChainParameter,
-    rpcEndpoints?: RpcEndpoint[],
-  ): Promise<EVMNetwork> {
-    if (DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainInfo.chainId)) {
-      throw new Error(
-        `Cannot edit built-in network with chain ID ${chainInfo.chainId}`,
-      )
-    }
-
-    const endpoints = rpcEndpoints ?? chainInfo.rpcUrls.map((url) => ({ url }))
-
-    await this.validateRpcEndpoints(chainInfo.chainId, endpoints)
-
-    const network = await this.db.updateEVMNetwork({
-      chainName: chainInfo.chainName,
-      chainID: chainInfo.chainId,
-      decimals: chainInfo.nativeCurrency.decimals,
-      symbol: chainInfo.nativeCurrency.symbol,
-      assetName: chainInfo.nativeCurrency.name,
-      rpcEndpoints: endpoints,
-      blockExplorerURL: chainInfo.blockExplorerUrl,
-      iconUrl: chainInfo.iconUrl,
-    })
-    await this.updateSupportedNetworks()
-
-    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
-      trackedNetwork.chainID === network.chainID ? network : trackedNetwork,
-    )
-
-    await this.rebuildProviderForChain(chainInfo.chainId, endpoints)
-
-    return network
-  }
-
   /**
    * Replaces the stored RPC endpoint list for any known network — built-in
    * or custom — and rebuilds the network's provider to use it. The list is
    * used in priority order; endpoints past the first act as fallbacks.
+   *
+   * Only endpoints that are not already part of the chain's stored list are
+   * probed for reachability and chain ID agreement: a pre-existing endpoint
+   * having a transient outage is exactly what runtime failover exists to
+   * tolerate, and must not block an unrelated settings change.
    */
   async setRpcEndpointsForChain(
     chainID: string,
@@ -2142,7 +2109,14 @@ export default class ChainService extends BaseService<Events> {
       throw new Error(`No network found for chain ID ${chainID}`)
     }
 
-    await this.validateRpcEndpoints(chainID, rpcEndpoints)
+    const storedUrls = new Set(
+      (await this.db.getRpcEndpointsByChainId(chainID).catch(() => [])).map(
+        ({ url }) => url,
+      ),
+    )
+    const newEndpoints = rpcEndpoints.filter(({ url }) => !storedUrls.has(url))
+
+    await this.validateRpcEndpoints(chainID, newEndpoints)
 
     await this.db.setRpcEndpoints(chainID, rpcEndpoints)
     await this.rebuildProviderForChain(chainID, rpcEndpoints)
@@ -2154,29 +2128,59 @@ export default class ChainService extends BaseService<Events> {
 
   /**
    * Updates the user-editable settings for any known network — the RPC
-   * endpoint list and, optionally, the block explorer URL. Like RPC
-   * endpoints, a stored block explorer URL takes precedence over the
-   * hardcoded defaults from then on.
+   * endpoint list, the block explorer URL, and, for custom networks only,
+   * the identifying metadata (name, currency details, icon). The chain ID
+   * and family are immutable for every network; metadata is immutable for
+   * built-in networks. Like RPC endpoints, a stored block explorer URL
+   * takes precedence over the hardcoded defaults from then on.
    */
-  async updateChainSettings(
+  async updateNetworkSettings(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
-    blockExplorerUrl?: string,
-  ): Promise<void> {
+    blockExplorerUrl: string,
+    metadata?: {
+      chainName: string
+      assetName: string
+      symbol: string
+      decimals: number
+      iconUrl?: string
+    },
+  ): Promise<EVMNetwork> {
+    if (metadata !== undefined && DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainID)) {
+      throw new Error(
+        `Cannot edit metadata of built-in network with chain ID ${chainID}`,
+      )
+    }
+
     await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
 
-    if (blockExplorerUrl !== undefined) {
+    if (metadata !== undefined) {
+      await this.db.updateEVMNetwork({
+        chainID,
+        chainName: metadata.chainName,
+        assetName: metadata.assetName,
+        symbol: metadata.symbol,
+        decimals: metadata.decimals,
+        iconUrl: metadata.iconUrl,
+        rpcEndpoints,
+        blockExplorerURL: blockExplorerUrl,
+      })
+    } else {
       await this.db.setBlockExplorerUrl(chainID, blockExplorerUrl)
-
-      const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
-      if (updatedNetwork !== undefined) {
-        this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
-          trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
-        )
-      }
-
-      await this.updateSupportedNetworks()
     }
+
+    const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
+    if (updatedNetwork === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
+      trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
+    )
+
+    await this.updateSupportedNetworks()
+
+    return updatedNetwork
   }
 
   /**

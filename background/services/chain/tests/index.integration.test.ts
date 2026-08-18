@@ -639,10 +639,28 @@ describe("ChainService", () => {
       }
     })
 
-    it("persists the block explorer URL via updateChainSettings", async () => {
+    it("does not probe endpoints that are already stored", async () => {
+      // A pre-existing endpoint having a transient outage must not block an
+      // unrelated settings change; only new endpoints are probed.
+      fetchMock.mockRejectedValue(new Error("connection refused"))
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+      expect(existingEndpoints.length).toBeGreaterThan(0)
+
+      await chainService.setRpcEndpointsForChain(
+        ETHEREUM.chainID,
+        existingEndpoints,
+      )
+
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("persists the block explorer URL via updateNetworkSettings", async () => {
       mockProbeResult("0x1")
 
-      await chainService.updateChainSettings(
+      await chainService.updateNetworkSettings(
         ETHEREUM.chainID,
         [{ url: "https://new-rpc.example.com" }],
         "https://custom-explorer.example.com",
@@ -653,6 +671,24 @@ describe("ChainService", () => {
           ({ chainID }) => chainID === ETHEREUM.chainID,
         )?.blockExplorerURL,
       ).toEqual("https://custom-explorer.example.com")
+    })
+
+    it("rejects metadata updates for built-in networks", async () => {
+      mockProbeResult("0x1")
+
+      await expect(
+        chainService.updateNetworkSettings(
+          ETHEREUM.chainID,
+          [{ url: "https://new-rpc.example.com" }],
+          "https://custom-explorer.example.com",
+          {
+            chainName: "Fauxthereum",
+            assetName: "Faux Ether",
+            symbol: "FETH",
+            decimals: 18,
+          },
+        ),
+      ).rejects.toThrow("Cannot edit metadata of built-in network")
     })
 
     it("rejects for unknown chains", async () => {

@@ -1,9 +1,8 @@
 import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { EVMNetwork, RpcEndpoint } from "@tallyho/tally-background/networks"
 import {
-  editCustomChain,
   getChainRpcConfig,
-  updateChainSettings,
+  updateNetworkSettings,
 } from "@tallyho/tally-background/redux-slices/networks"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
@@ -15,6 +14,7 @@ import React, {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
+import logger from "@tallyho/tally-background/lib/logger"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -179,9 +179,19 @@ export default function CustomNetworkEditForm({
     let isStale = false
 
     const loadRpcEndpoints = async () => {
-      const { rpcEndpoints, managedRpcEndpoints } = (await dispatch(
-        getChainRpcConfig(network.chainID),
-      )) as unknown as AsyncThunkFulfillmentType<typeof getChainRpcConfig>
+      let rpcEndpoints: RpcEndpoint[] = []
+      let managedRpcEndpoints: RpcEndpoint[] = []
+      try {
+        ;({ rpcEndpoints, managedRpcEndpoints } = (await dispatch(
+          getChainRpcConfig(network.chainID),
+        )) as unknown as AsyncThunkFulfillmentType<typeof getChainRpcConfig>)
+      } catch (error) {
+        // A network row with no stored endpoint config rejects the lookup
+        // (and a rejected background call surfaces here as an undefined
+        // payload). Fall back to a single empty row so the form stays
+        // usable and the user can enter endpoints from scratch.
+        logger.debug("Failed to load RPC endpoints for", network.chainID, error)
+      }
 
       if (isStale) {
         return
@@ -320,7 +330,22 @@ export default function CustomNetworkEditForm({
   }
 
   const rpcUrlErrors = new Map(
-    (rpcEndpointRows ?? []).map((row) => [row.id, rpcUrlError(row.url)]),
+    (rpcEndpointRows ?? []).map((row, index) => {
+      // Later duplicates of an earlier row's URL are flagged rather than
+      // silently merged away at save time, which would drop their
+      // capability flags.
+      const trimmedUrl = row.url.trim()
+      const isDuplicate =
+        trimmedUrl !== "" &&
+        (rpcEndpointRows ?? [])
+          .slice(0, index)
+          .some(({ url }) => url.trim() === trimmedUrl)
+
+      return [
+        row.id,
+        isDuplicate ? t("errors.duplicateRpcUrl") : rpcUrlError(row.url),
+      ]
+    }),
   )
 
   // A built-in network exposes only its block explorer for editing; the rest
@@ -373,28 +398,25 @@ export default function CustomNetworkEditForm({
     }))
 
     const result = (await dispatch(
-      isBuiltIn
-        ? updateChainSettings({
-            chainID: network.chainID,
-            rpcEndpoints,
-            blockExplorerUrl: fields.blockExplorerUrl.trim(),
-          })
-        : editCustomChain({
-            chainInfo: {
-              chainId: network.chainID,
-              chainName: fields.name.trim(),
-              blockExplorerUrl: fields.blockExplorerUrl.trim(),
-              iconUrl: trimmedIconUrl === "" ? undefined : trimmedIconUrl,
-              nativeCurrency: {
-                name: fields.currencyName.trim(),
+      updateNetworkSettings({
+        chainID: network.chainID,
+        rpcEndpoints,
+        blockExplorerUrl: fields.blockExplorerUrl.trim(),
+        // Identifying metadata is only editable — and only sent — for
+        // custom networks; the background rejects it for built-ins.
+        ...(isBuiltIn
+          ? {}
+          : {
+              metadata: {
+                chainName: fields.name.trim(),
+                assetName: fields.currencyName.trim(),
                 symbol: fields.currencySymbol.trim(),
                 decimals: Number(fields.currencyDecimals.trim()),
+                iconUrl: trimmedIconUrl === "" ? undefined : trimmedIconUrl,
               },
-              rpcUrls: rpcEndpoints.map(({ url }) => url),
-            },
-            rpcEndpoints,
-          }),
-    )) as unknown as AsyncThunkFulfillmentType<typeof updateChainSettings>
+            }),
+      }),
+    )) as unknown as AsyncThunkFulfillmentType<typeof updateNetworkSettings>
 
     setIsSaving(false)
 

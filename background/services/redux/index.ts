@@ -148,10 +148,7 @@ import {
   SignatureResponse,
   TXSignatureResponse,
 } from "../signing"
-import {
-  PermissionMap,
-  ValidatedAddEthereumChainParameter,
-} from "../provider-bridge/utils"
+import { PermissionMap } from "../provider-bridge/utils"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import {
   ActivityDetail,
@@ -1883,22 +1880,23 @@ export default class ReduxService extends BaseService<never> {
     await this.chainService.removeCustomChain(chainID)
   }
 
-  async editEVMNetwork(
-    chainInfo: ValidatedAddEthereumChainParameter,
-    rpcEndpoints?: RpcEndpoint[],
-  ): Promise<EVMNetwork> {
-    return this.chainService.editCustomChain(chainInfo, rpcEndpoints)
-  }
-
-  async updateChainSettings(
+  async updateNetworkSettings(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
-    blockExplorerUrl?: string,
-  ): Promise<void> {
-    return this.chainService.updateChainSettings(
+    blockExplorerUrl: string,
+    metadata?: {
+      chainName: string
+      assetName: string
+      symbol: string
+      decimals: number
+      iconUrl?: string
+    },
+  ): Promise<EVMNetwork> {
+    return this.chainService.updateNetworkSettings(
       chainID,
       rpcEndpoints,
       blockExplorerUrl,
+      metadata,
     )
   }
 

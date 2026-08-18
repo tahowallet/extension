@@ -40,10 +40,17 @@ const ETHEREUM_CUSTOM_EXPLORER = "https://eth.blockscout.com"
 /** An Alchemy-shaped endpoint, which should auto-check the Alchemy toggle. */
 const ALCHEMY_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/demo"
 
+/**
+ * A second shipped-default Ethereum endpoint, used where a test needs a valid
+ * URL that does not duplicate the first row's.
+ */
+const SECONDARY_ETHEREUM_RPC_URL = "https://1rpc.io/eth"
+
 /** The Alchemy explainer, which only appears inside a tooltip on hover. */
 const ALCHEMY_HINT_TEXT = "Check Alchemy APIs when an endpoint supports"
 const REMOVE_RPC_LABEL = "Remove RPC URL"
 const INVALID_RPC_URL_ERROR = "Must be a valid http(s) or ws(s) URL"
+const DUPLICATE_RPC_URL_ERROR = "This endpoint is already listed"
 
 /** The user-editable endpoint rows, which exclude Taho-managed ones. */
 const rpcRowsOf = (editForm: Locator): Locator =>
@@ -394,12 +401,32 @@ test.describe("Network RPC settings", () => {
       await expect(editForm.getByText(INVALID_RPC_URL_ERROR)).toBeVisible()
       await expect(saveButtonOf(editForm)).toHaveClass(/disabled/)
 
-      // Correcting the URL clears the error and re-enables saving.
+      // Correcting the URL clears the error and re-enables saving. The
+      // replacement must differ from row 1's URL, or the duplicate check
+      // below would keep the form blocked.
+      await editForm
+        .getByLabel("RPC URL 2", { exact: true })
+        .fill(SECONDARY_ETHEREUM_RPC_URL)
+
+      await expect(editForm.getByText(INVALID_RPC_URL_ERROR)).toBeHidden()
+      await expect(saveButtonOf(editForm)).not.toHaveClass(/disabled/)
+    })
+
+    await test.step("A duplicate URL is flagged and blocks saving", async () => {
+      // Row 1 already holds this URL.
       await editForm
         .getByLabel("RPC URL 2", { exact: true })
         .fill(ETHEREUM_RPC_URL)
 
-      await expect(editForm.getByText(INVALID_RPC_URL_ERROR)).toBeHidden()
+      await expect(editForm.getByText(DUPLICATE_RPC_URL_ERROR)).toBeVisible()
+      await expect(saveButtonOf(editForm)).toHaveClass(/disabled/)
+
+      // Differentiating the URL clears the error and re-enables saving.
+      await editForm
+        .getByLabel("RPC URL 2", { exact: true })
+        .fill(SECONDARY_ETHEREUM_RPC_URL)
+
+      await expect(editForm.getByText(DUPLICATE_RPC_URL_ERROR)).toBeHidden()
       await expect(saveButtonOf(editForm)).not.toHaveClass(/disabled/)
     })
 
