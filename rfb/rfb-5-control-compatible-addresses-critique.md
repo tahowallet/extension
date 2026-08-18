@@ -1,25 +1,80 @@
 # Critique: Implementing RFB 5 (Control-compatible addresses)
 
-This document reviews [RFB 5](./rfb-5-control-compatile-addresses.md) against
-the current state of the codebase and identifies the changes — both to the
-code and, in a few places, to the RFB's own design — that would be necessary
-to implement it successfully. File references point at the current `main`
-lineage of this repository.
+## Executive summary
 
-The short version: the RFB's conceptual split (control compatibility as a
-question the `SigningService` answers, transaction compatibility as a
-question each signer service answers) maps well onto the service
-architecture, and `AddressOnNetwork` / `NameOnNetwork` already exist and are
-used faithfully through most of the background services. However, the RFB
-was written against a codebase that has since drifted, it assumes background
-infrastructure ("which signer controls address X?") that does not actually
-exist as a queryable thing, its address-format precondition has no data to
-consult, and — most importantly — its flagship use case (gating recipient
-name resolution on the Send page) cannot be served by `SigningService` at
-all, because the wallet has no signer for third-party recipients. Each of
-these is elaborated below, followed by an executive summary.
+RFB 5's architecture — control compatibility answered by the
+`SigningService` using known evidence, transaction compatibility answered
+per signer service — fits the codebase well. The definition is sound as
+written: three sufficient conditions establish *known* compatibility, and
+everything else is simply not known, which the method reports as `false`.
+Five clusters of change are needed to make it real.
+
+**First, refresh the spec's references.** `KeyringService` is now
+`InternalSignerService`; the `private-key` and `read-only` signer types
+need covering (read-only contributes no evidence → not known); PR 2577's
+Ledger abstractions never merged; and the API must be async
+(`Promise<boolean>`), since the UI consumes state through synchronous
+selectors and will need compatibility mirrored into Redux.
+
+**Second, build the missing foundation: a background signer registry.**
+The first two compatibility conditions require answering "which signers
+control this address," and nothing in the background can — the only
+address→signer map is a UI Redux selector, and
+`SigningService.addressHandlers` is write-only dead code. A
+startup-hydrated, lock-independent registry supporting multiple signers per
+address is the prerequisite for both conditions.
+
+**Third, implement transaction compatibility honestly.** Internal signers
+trivially return true for EVM pairs. Ledger compatibility, however, is a
+property of each account's derivation path, not the signer type — the RFB's
+optional `AccountSigner` parameter should be mandatory — and the existing
+inline path check is vacuous (it compares against Ethereum's *undefined*
+path) and must be normalized, generalized, and applied to all signing
+methods.
+
+**Fourth, define the "not known" behavior per surface.** The RFB
+deliberately leaves this unstated, but implementation cannot: with the
+name-service-ownership condition deferred, every third-party Send
+recipient is "not known," so the Send page must take the RFB's own
+warn-don't-block adjustment or ENS recipients break on every network. Name
+fan-out and network-switch account cloning should act only on *known*
+compatibility. Supporting detail: the ENS resolver currently resolves on
+mainnet and relabels results with the requested network, so the name
+machinery's inputs must be made honest before any warning can be truthful.
+
+**Fifth, wire up consumers.** Persist the address book (an in-memory array
+today, lost on restart), thread `AddressOnNetwork` through the Send input
+stack, re-key address-only selectors, mirror compatibility into Redux,
+gate the network-switch account fan-out, and migrate existing incompatible
+tracked accounts.
+
+Sequenced this way, each step is independently shippable and the vision is
+achievable without disruptive rewrites.
 
 ---
+
+## Scope and method
+
+This document reviews [RFB 5](./rfb-5-control-compatile-addresses.md)
+against the current state of the codebase and identifies the changes —
+mostly to the code, in a few places to the RFB's text — necessary to
+implement it successfully. File references point at the current `main`
+lineage of this repository.
+
+One framing note that governs the rest of the document. The RFB defines
+control compatibility by enumerating the cases where the wallet should
+*assume* an address is control-compatible: the wallet holds private key
+material, a hardware wallet holds it and the networks are
+transaction-compatible, or (deferred) name-service ownership matches on
+both networks. These are sufficient conditions, not an exhaustive
+decision procedure — an address that matches none of them is *not known*
+to be control-compatible, and `isControlCompatible` correctly returns
+`false` for it. The signer registry discussed below is an implementation
+detail serving the first two conditions, just as resolution provenance
+(§6) is an implementation detail serving name handling; neither is a rival
+concept to control compatibility. What the RFB leaves unstated — and what
+implementation must decide surface by surface — is what the wallet *does*
+when compatibility is not known.
 
 ## 1. The RFB references a codebase that has drifted
 
@@ -39,9 +94,10 @@ implements from it:
   `ReadOnlyAccountSigner`, which has *no backing service* to which an
   `isTransactionCompatible` call could be delegated. The signing service
   uses `assertUnreachable` exhaustiveness switches, so an implementation
-  will be forced to decide: read-only accounts must short-circuit to
-  `false` (consistent with "no known signer → false"), and the RFB should
-  say so explicitly.
+  will be forced to decide. The decision is easy under the RFB's own
+  definition — a read-only "signer" contributes no evidence of control, so
+  it establishes nothing and the answer stays "not known" — but the RFB
+  should say so explicitly.
 - **PR 2577 never merged.** The RFB's footnote 2 says the PR "has introduced
   some distinctions at the Ledger level," but as of this writing the PR is
   still open with merge conflicts (last activity mid-2023). The only Ledger
@@ -57,11 +113,11 @@ implements from it:
   `rfb-5-control-compatile-addresses.md` — "compatile" — which is worth
   fixing while touching it.
 
-## 2. The hard prerequisite: the background cannot currently answer "which signer controls address X?"
+## 2. Prerequisite for the first two conditions: the background cannot currently answer "which signers control address X?"
 
-`isControlCompatible`'s second step — "if there is no known signer for that
-address, return `false`" — presumes an address→signer lookup in the
-background. That lookup does not exist:
+The RFB's first two compatibility conditions, and its algorithm step "if
+there is no known signer for that address, return `false`," presume an
+address→signer lookup in the background. That lookup does not exist:
 
 - `SigningService` never resolves signers. Every signing method takes an
   already-resolved `AccountSigner` from its caller and switches on
@@ -88,22 +144,23 @@ fan-out that queries `InternalSignerService` and `LedgerService`
 wrapper). Two wrinkles either way:
 
 1. **Lock state.** `InternalSignerService` throws when locked
-   (`requireUnlocked`). Control-compatibility answers must not vary with
-   lock state, or the UI will show different names/warnings before and
-   after unlock. A registry hydrated from persisted metadata (keyring/
-   private-key metadata is available without decrypting key material) is
-   the safer design.
+   (`requireUnlocked`). If the registry's answers vary with lock state, the
+   wallet's *knowledge* of control compatibility would appear and disappear
+   with unlock, and the UI would show different names/warnings before and
+   after. A registry hydrated from persisted metadata (keyring/private-key
+   metadata is available without decrypting key material) keeps the
+   knowledge stable.
 2. **Signer multiplicity.** One address can be controlled by several
    signers (the selector's priority hack exists precisely because of
-   this). The RFB implicitly assumes one signer per address.
-   `isControlCompatible` should be defined as "true if *any* known signer
-   for the address is transaction-compatible across the pair," and the RFB
-   text should say so.
+   this). The RFB implicitly assumes one signer per address. Since any one
+   of the RFB's conditions suffices, `isControlCompatible` should be
+   defined as "true if *any* known signer for the address establishes
+   compatibility across the pair," and the RFB text should say so.
 
 ## 3. The address-format precondition has no data to consult
 
-RFB step 1 — "if the two networks have incompatible address formats, return
-`false`" — is currently unimplementable as anything but a constant:
+RFB: "the 2 networks must have the same address format." This is currently
+implementable only as a constant:
 
 - `NetworkFamily` is a single-member union, `"EVM"`
   (`background/networks.ts:13-17`). `AddressOnNetwork` and `NameOnNetwork`
@@ -187,7 +244,7 @@ address globally. That is compatible with the per-account approach above,
 but forecloses "the same address reachable at different paths per network";
 if that ever matters, a schema migration is needed.
 
-## 5. API shape: the method cannot be synchronous, and the name overload doesn't belong on `SigningService`
+## 5. API shape: async, name handling, and the meaning of `false`
 
 - **`boolean` should be `Promise<boolean>`.** Every cross-service call in
   this codebase is async, and a registry-backed lookup (or worse, a Ledger
@@ -199,61 +256,84 @@ if that ever matters, a schema migration is needed.
   e.g., a per-address map of compatible chainIDs, or a
   `(signerType, path) → compatible-networks` table — recomputed when
   accounts or networks change, rather than pulled on demand.
-- **The `NameOnNetwork` overload requires name resolution, which is
-  `NameService`'s job.** Accepting `NameOnNetwork` means `SigningService`
-  must first resolve the name to an address on the source network —
-  introducing a `SigningService → NameService` dependency that doesn't
-  exist and inverts the natural layering (NameService is a leaf-ish service
-  today). Better: drop the overload; callers resolve the name first (they
-  already hold a `ResolvedAddressRecord` in every flow that matters) and
-  pass the `AddressOnNetwork`.
+- **The `NameOnNetwork` overload needs a resolution step the
+  `SigningService` doesn't have.** Checking a name means first resolving it
+  to an address on its network, which is `NameService`'s job — a dependency
+  `SigningService` doesn't currently carry. This is a layering decision,
+  not a spec problem: either inject `NameService` (which also positions the
+  service for the RFB's third condition, name-service ownership, if that is
+  ever implemented), or have callers resolve first and pass the
+  `AddressOnNetwork` — every flow that matters already holds a
+  `ResolvedAddressRecord`. The latter is less plumbing for the initial
+  implementation; the RFB doesn't need to change either way, but the
+  implementation should pick deliberately.
+- **`false` means "not known," and one sub-case is stronger.** Per the
+  RFB's definition, `false` covers everything from "no evidence at all" to
+  "the address formats differ, so compatibility is impossible." Those have
+  the same *safety* consequence (don't assume the same user controls the
+  address), so a boolean is a defensible v1. But UI copy will likely want
+  to distinguish "we can't verify this" from "this cannot be the same
+  address" — worth a note in the RFB, and an easy later extension (e.g. a
+  three-valued result) that shouldn't block the boolean version.
 
-## 6. The flagship use case (Send-page recipients) cannot be served by `SigningService` — the RFB conflates two different questions
+## 6. The unstated half of the spec: what to do when compatibility is not known
 
-This is the most consequential design gap. The RFB says:
+The RFB focuses, correctly, on identifying the cases where compatibility
+*is* known. It deliberately does not say what each surface should do when
+it isn't — and implementation cannot ship without deciding, because "not
+known" will be the overwhelmingly common answer on the highest-traffic
+surface:
 
-> when entering a recipient address in the Send page, the name should only
-> be considered resolved if a resolved name is returned that is
-> control-compatible to the requested network.
+- **Send-page recipients.** For a third-party recipient the wallet holds no
+  signer, and the RFB's only condition that could apply — name-service
+  ownership matching on both networks — is explicitly deferred ("most
+  likely not worth implementing at this time"). So until that condition
+  exists, essentially every external recipient resolves to "not known."
+  The RFB already anticipates the right behavior: "this might be adjusted
+  by giving the user warning feedback that the address is known (and
+  allowing the name to be used) but not guaranteed to be controlled by the
+  same person." That adjustment should be treated as the v1 requirement,
+  not an option — a strict reading ("only considered resolved if
+  control-compatible") would reject every ENS recipient on every network,
+  including mainnet, and no one will accept that regression.
+- **Name fan-out and account display** (§7) should act only on *known*
+  compatibility: show a saved account name on another network when the
+  compatibility conditions hold, fall back to per-network behavior when
+  they don't.
+- **Network switching** (§7) likewise: known-incompatible or unknown
+  accounts can still be cloned onto a new network (the user may control
+  them by other means), but the data recording that distinction should be
+  kept so the display layer — which the RFB explicitly leaves to the design
+  team — has something to work with.
 
-But `isControlCompatible` returns `false` whenever "there is no known signer
-for that address" — and the wallet essentially *never* has a signer for a
-third-party recipient. As specified, strict enforcement would mark every
-ENS-resolved recipient as unresolved on every network, and even on Ethereum
-mainnet itself. The RFB's third compatibility path (name-service ownership
-lookups on both networks) is the only mechanism that could ever answer this
-for external addresses, and the RFB itself defers it as "most likely not
-worth implementing at this time."
-
-What the Send page actually needs is a different, cheaper concept:
-**resolution provenance** — *on which network did this name actually
-resolve?* Today that information is manufactured rather than real:
+For the warning feedback to be *truthful*, the name machinery's inputs
+need fixing — an implementation detail of name handling, in the same way
+the signer registry is an implementation detail of the signer-backed
+conditions:
 
 - The ENS resolver hardcodes the Ethereum mainnet provider and then stamps
   the *caller's* network onto the result
   (`background/services/name/resolvers/ens.ts:50-67, 104-107`), so a
-  mainnet ENS record is silently relabeled as a Polygon/Rootstock/Mezo
-  address. This is precisely the Wintermute/Optimism failure mode the RFB
-  opens with, live in the resolver layer. The `NameResolver` contract
-  ("the resolver MUST return results for the same network that was passed,"
-  `name-resolver.ts:9-11`) is satisfied only nominally.
-- The UI then discards even that: `useAddressOrNameValidation` returns
-  `{ address, name? }` with no network (`ui/hooks/validation-hooks.ts:144,
-  192`), `Send.tsx` stores a bare string and re-attaches the *sender's*
-  current network (`ui/pages/Send.tsx:84-86, 150-159`).
-
-**Required changes:** (a) make resolvers report honest provenance — a
-`ResolvedAddressRecord` whose network reflects where the record actually
-lives, or an explicit `resolvedVia: NameOnNetwork` field alongside the
-requested network; (b) thread the full `AddressOnNetwork` (plus resolver
-system) through `useAddressOrNameValidation`, `SharedAddressInput`, and
-`Send.tsx`; and (c) implement the RFB's own softening — warn, don't block —
-because with provenance-mismatch as the only signal, blocking would break
-ENS recipients on all L2s, a UX regression nobody will accept. Reserve
-`isControlCompatible` (the signer-backed question) for *wallet-owned*
-accounts: name fan-out across networks, account-list display, and network
-switching. The RFB should be amended to separate these two concepts
-explicitly.
+  mainnet ENS record is reported as an address "on" Polygon, Rootstock, or
+  Mezo. The `NameResolver` contract ("the resolver MUST return results for
+  the same network that was passed," `name-resolver.ts:9-11`) is satisfied
+  only nominally; the network field is a passthrough of the request, not a
+  property of the resolution. The RFB's own rule — "if the ENS resolver on
+  Ethereum mainnet returns an address for the name, that address should be
+  considered to be valid on Ethereum mainnet" — requires resolvers to
+  report where a record actually resolved (e.g., a `resolvedOn`/
+  `resolvedVia` field alongside the requested network). This is also the
+  substrate the deferred name-service-ownership condition would need.
+- The UI then discards even the manufactured network:
+  `useAddressOrNameValidation` returns `{ address, name? }` with no network
+  (`ui/hooks/validation-hooks.ts:144, 192`), and `Send.tsx` stores a bare
+  string and re-attaches the *sender's* current network
+  (`ui/pages/Send.tsx:84-86, 150-159`). The RFB's fidelity rule ("the
+  network information … should be present so that fidelity is not lost")
+  needs to be applied through `useAddressOrNameValidation`,
+  `SharedAddressInput`, and `Send.tsx`, carrying the full
+  `AddressOnNetwork` plus resolver provenance to where the warning is
+  rendered.
 
 ## 7. The consuming side: names, selectors, and network switching all need plumbing
 
@@ -274,11 +354,11 @@ Even with both methods implemented, nothing can consume them yet:
   name-cache entry (`background/services/name/index.ts:131-137`). Two
   viable designs: write-time fan-out (on rename, `NameService` re-resolves
   the address on every tracked network, and the address-book resolver
-  answers for any network the signer registry reports control-compatible)
-  or read-time resolution (selectors consult a compatibility map in Redux).
-  Write-time fan-out fits the existing event flow better, but must also
-  fire when *new networks are added* (including custom chains), or names
-  will be missing on chains added after the rename.
+  answers for any network where compatibility is known) or read-time
+  resolution (selectors consult a compatibility map in Redux). Write-time
+  fan-out fits the existing event flow better, but must also fire when
+  *new networks are added* (including custom chains), or names will be
+  missing on chains added after the rename.
 - **Selectors are mis-keyed for the RFB's model.** `selectCurrentAccountSigner`
   indexes by address only, discarding `selectedAccount.network`
   (`signingSelectors.ts:117-122`); `ui/components/Signing/index.tsx:106`
@@ -293,12 +373,12 @@ Even with both methods implemented, nothing can consume them yet:
   unconditionally clones every address onto the newly selected network
   (`background/redux-slices/ui.ts:381-399`) — a Ledger Eth-path account gets
   tracked on Rootstock, where it cannot sign. Once `isControlCompatible`
-  exists, this loop should consult it and either skip incompatible
-  accounts or mark them (the RFB explicitly leaves the display question to
-  design; the *data* should still be recorded). Note the mirror-image
-  operations are inconsistent today and will need alignment:
-  `deleteAccount` and `ChainService.removeAccountToTrack(address)` remove
-  an address from *all* chains while taking per-network inputs.
+  exists, this loop should consult it and record the answer per §6 (the
+  RFB explicitly leaves the display question to design; the *data* should
+  still be recorded). Note the mirror-image operations are inconsistent
+  today and will need alignment: `deleteAccount` and
+  `ChainService.removeAccountToTrack(address)` remove an address from
+  *all* chains while taking per-network inputs.
 - **Existing user data needs a cleanup pass.** Users already have
   incompatible `(address, network)` tracking rows (e.g. Ledger accounts
   fanned onto Rootstock by past network switches). Implementation should
@@ -328,71 +408,23 @@ Even with both methods implemented, nothing can consume them yet:
 ## Suggested sequencing
 
 1. Refresh the RFB (service names, `private-key`/`read-only` types,
-   `Promise<boolean>`, drop the `NameOnNetwork` overload, mandatory
-   `AccountSigner` parameter, split "control compatibility" from
-   "resolution provenance", PR 2577 status).
+   `Promise<boolean>`, mandatory `AccountSigner` parameter, any-signer
+   semantics for multi-signer addresses, PR 2577 status; optionally, a
+   note on distinguishing "unknown" from "impossible" and a sentence
+   making warn-don't-block the specified Send behavior).
 2. Persist the address book (Dexie table + migration).
 3. Build the background signer registry (startup-hydrated,
    lock-independent) with `getSignersForAddress`.
 4. Implement `isTransactionCompatible` on `InternalSignerService`
    (constant `true`) and `LedgerService` (extract, normalize, and
    generalize the `signMessage` path check; apply it to all three signing
-   methods); `read-only` → `false` in the dispatcher.
+   methods); `read-only` contributes no evidence in the dispatcher.
 5. Implement `SigningService.isControlCompatible` with family-equality as
    the format check; mirror results into a Redux compatibility map for
    synchronous selector use.
 6. Fix resolver provenance (ENS especially) and thread
-   `AddressOnNetwork` through the Send input stack, with warn-don't-block
-   UX for provenance mismatches.
-7. Gate `setSelectedNetwork` fan-out and name fan-out on control
-   compatibility; reconcile existing tracked-account data; align the
-   removal paths.
-
----
-
-## Executive summary
-
-RFB 5's architecture — control compatibility answered by the
-`SigningService`, transaction compatibility answered per signer service —
-fits the codebase well, but five clusters of change are needed to make it
-real.
-
-**First, refresh the spec.** `KeyringService` is now
-`InternalSignerService`; the `private-key` and `read-only` signer types
-must be covered (read-only → not compatible); PR 2577's Ledger
-abstractions never merged; the API must be async
-(`Promise<boolean>`); and the `NameOnNetwork` overload should be dropped so
-`SigningService` doesn't grow a name-resolution dependency.
-
-**Second, build the missing foundation: a background signer registry.**
-Today nothing in the background can answer "which signer controls this
-address" — the only address→signer map is a UI Redux selector, and
-`SigningService.addressHandlers` is write-only dead code. A
-startup-hydrated, lock-independent registry supporting multiple signers per
-address is the prerequisite for everything else.
-
-**Third, implement transaction compatibility honestly.** Internal signers
-trivially return true for EVM pairs. Ledger compatibility, however, is a
-property of each account's derivation path, not the signer type — the RFB's
-optional `AccountSigner` parameter must be mandatory — and the existing
-inline path check is vacuous (it compares against Ethereum's *undefined*
-path) and must be normalized, generalized, and applied to all signing
-methods.
-
-**Fourth, split the RFB's flagship use case into two concepts.** For
-Send-page recipients the wallet has no signer, so `isControlCompatible`
-would reject every external recipient. Recipients need *resolution
-provenance* — the ENS resolver currently resolves on mainnet and silently
-relabels results with whatever network the user is viewing, recreating the
-Wintermute failure mode — surfaced as warnings, not blocks. Control
-compatibility proper applies to wallet-owned accounts: name fan-out,
-account display, and network switching.
-
-**Fifth, wire up consumers.** Persist the address book (it's an in-memory
-array today, lost on restart), thread `AddressOnNetwork` through the Send
-input stack, re-key address-only selectors, mirror compatibility into Redux
-for synchronous UI use, gate the network-switch account fan-out, and
-migrate existing incompatible tracked accounts.
-
-Sequenced this way, each step is independently shippable and the vision is
-achievable without disruptive rewrites.
+   `AddressOnNetwork` through the Send input stack, rendering the RFB's
+   warning feedback when compatibility is not known.
+7. Gate name fan-out on known compatibility; record compatibility during
+   `setSelectedNetwork` fan-out; reconcile existing tracked-account data;
+   align the removal paths.
