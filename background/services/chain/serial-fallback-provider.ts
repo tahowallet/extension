@@ -323,6 +323,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   private customProviderSupportedMethods: string[] = []
 
+  // The index of the custom provider creator that created the current custom
+  // provider. Used to fall back to later custom providers when the current
+  // one fails.
+  private currentCustomProviderIndex = 0
+
   private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
     {}
 
@@ -384,7 +389,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   supportsBoar = false
 
-  private customProviderCreator: (() => JsonRpcProvider) | undefined
+  // Functions that will create and initialize a new custom provider, in
+  // priority order. Custom providers past the first act as fallbacks for the
+  // ones before them.
+  private customProviderCreators: (() => JsonRpcProvider)[] = []
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -420,7 +428,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     private chainID: string,
     providerCreators: Array<ProviderCreator>,
   ) {
-    const customProviderCreator = providerCreators.find(
+    const customProviderCreators = providerCreators.filter(
       (creator) => creator.type === "custom",
     )
 
@@ -444,13 +452,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.boarProvider = this.boarProviderCreator()
     }
 
-    if (customProviderCreator) {
-      this.addCustomProvider(customProviderCreator)
+    if (customProviderCreators.length > 0) {
+      this.addCustomProviders(customProviderCreators)
     }
 
     setInterval(() => {
       this.attemptToReconnectToPrimaryProvider()
       this.attemptToReconnectToBoarProvider()
+      this.attemptToReconnectToPrimaryCustomProvider()
     }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
 
     setInterval(() => {
@@ -503,9 +512,35 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.customProvider &&
         customOrDefaultProvider(method, this.customProviderSupportedMethods)
       ) {
-        const result = await this.customProvider.send(method, params)
-        delete this.messagesToSend[messageId]
-        return result
+        try {
+          const result = await this.customProvider.send(method, params)
+          delete this.messagesToSend[messageId]
+          return result
+        } catch (error) {
+          // Fall over to the next custom provider when one is available;
+          // otherwise, let the error flow through the usual handling below.
+          if (
+            this.currentCustomProviderIndex + 1 <
+            this.customProviderCreators.length
+          ) {
+            this.currentCustomProviderIndex += 1
+            this.customProvider =
+              this.customProviderCreators[this.currentCustomProviderIndex]()
+
+            logger.debug(
+              "Falling back to custom provider",
+              this.currentCustomProviderIndex,
+              "on chain",
+              this.chainID,
+              "for",
+              method,
+            )
+
+            return await this.routeRpcCall(messageId)
+          }
+
+          throw error
+        }
       }
 
       if (
@@ -712,15 +747,33 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   addCustomProvider(customProviderCreator: ProviderCreator): void {
+    this.addCustomProviders([customProviderCreator])
+  }
+
+  /**
+   * Sets the custom providers for this network, replacing any existing ones.
+   * The creators are used in priority order: the first one is used until it
+   * fails, at which point later ones act as fallbacks.
+   */
+  addCustomProviders(customProviderCreators: ProviderCreator[]): void {
+    if (customProviderCreators.length === 0) {
+      this.removeCustomProvider()
+      return
+    }
+
     this.customProviderSupportedMethods =
-      customProviderCreator.supportedMethods ?? []
-    this.customProviderCreator = customProviderCreator.creator
-    this.customProvider = this.customProviderCreator()
+      customProviderCreators[0].supportedMethods ?? []
+    this.customProviderCreators = customProviderCreators.map(
+      ({ creator }) => creator,
+    )
+    this.currentCustomProviderIndex = 0
+    this.customProvider = this.customProviderCreators[0]()
   }
 
   removeCustomProvider(): void {
     this.customProviderSupportedMethods = []
-    this.customProviderCreator = undefined
+    this.customProviderCreators = []
+    this.currentCustomProviderIndex = 0
     this.customProvider = undefined
   }
 
@@ -1225,6 +1278,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  private async attemptToReconnectToPrimaryCustomProvider(): Promise<void> {
+    if (
+      this.customProvider &&
+      this.currentCustomProviderIndex !== 0 &&
+      this.customProviderCreators.length > 0
+    ) {
+      // Periodically drop back to the primary custom provider after a
+      // failover; if it is still down, the next failed call will walk back
+      // down the fallback list. No resubscription is needed since
+      // subscriptions live on the currentProvider.
+      this.currentCustomProviderIndex = 0
+      this.customProvider = this.customProviderCreators[0]()
+    }
+  }
+
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
     if (this.currentProviderIndex === 0) {
       // If we are already connected to the primary provider - don't resubscribe
@@ -1408,15 +1476,15 @@ export function makeSerialFallbackProvider(
       ]
     : []
 
-  const customProviderCreator: ProviderCreator[] = customRpc
-    ? [
-        {
-          type: "custom" as const,
-          supportedMethods: customRpc.supportedMethods ?? [],
-          creator: () => getProviderCreator(customRpc.rpcUrls[0]),
-        },
-      ]
-    : []
+  // One provider creator per custom RPC URL; URLs past the first act as
+  // fallbacks for the ones before them.
+  const customProviderCreators: ProviderCreator[] = (
+    customRpc?.rpcUrls ?? []
+  ).map((rpcUrl) => ({
+    type: "custom" as const,
+    supportedMethods: customRpc?.supportedMethods ?? [],
+    creator: () => getProviderCreator(rpcUrl),
+  }))
 
   const genericProviders: ProviderCreator[] = rpcUrls.map((rpcUrl) => ({
     type: "generic" as const,
@@ -1426,6 +1494,6 @@ export function makeSerialFallbackProvider(
   return new SerialFallbackProvider(chainID, [
     ...genericProviders,
     ...boarProviderCreators,
-    ...customProviderCreator,
+    ...customProviderCreators,
   ])
 }
