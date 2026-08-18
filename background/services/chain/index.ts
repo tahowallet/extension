@@ -92,6 +92,22 @@ import { ISLAND_NETWORK } from "../island/contracts"
 // accounts.
 const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 
+// The number of blocks to query at a time on networks with no Alchemy-capable
+// endpoint, where asset transfers are discovered by scanning ERC-20 `Transfer`
+// logs (see `lib/erc20-transfer-logs.ts`) instead of by a single enhanced-API
+// call.
+//
+// The two paths price block ranges completely differently. Alchemy's transfer
+// API answers any range in one request, so the range width above costs the
+// same as a narrow one. `eth_getLogs`, on the other hand, is capped per
+// request by every endpoint that serves it---10,000 blocks is a common
+// limit---so a range wider than the cap is rejected, halved, and retried until
+// the pieces fit, turning one logical lookup into dozens or thousands of
+// requests. Keeping each scan comfortably under the usual caps keeps it at one
+// request per direction, and the recurring recent/historic alarms below are
+// what extend coverage over time.
+const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
+
 // The number of blocks before the current block height to start looking for
 // asset transfers. This is important to allow nodes like Erigon and
 // OpenEthereum with tracing to catch up to where we are.
@@ -1518,7 +1534,12 @@ export default class ChainService extends BaseService<Events> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+    // A wide window is one enhanced-API call, but many `eth_getLogs` calls; see
+    // BLOCKS_PER_TRANSFER_LOG_SCAN.
+    const blocksToLookBack = this.supportsAlchemy(addressNetwork.network)
+      ? BLOCKS_FOR_TRANSACTION_HISTORY
+      : BLOCKS_PER_TRANSFER_LOG_SCAN
+    const fromBlock = Math.max(0, blockHeight - blocksToLookBack)
 
     try {
       return await this.loadAssetTransfers(
@@ -1552,8 +1573,30 @@ export default class ChainService extends BaseService<Events> {
       BigInt(await this.getBlockHeight(addressNetwork.network))
 
     if (oldest !== 0n) {
-      await this.loadAssetTransfers(addressNetwork, 0n, oldest)
+      // On networks that answer transfer lookups in a single enhanced-API call,
+      // ask for everything that is left in one go. On networks scanned via
+      // `eth_getLogs`, walk backwards one bounded chunk per invocation instead;
+      // each chunk is recorded by `loadAssetTransfers` below, so the oldest
+      // lookup moves back a chunk at a time and this alarm keeps extending
+      // coverage on later runs rather than asking for all of history at once.
+      const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
+      const startBlock =
+        this.supportsAlchemy(addressNetwork.network) || oldest <= chunkSize
+          ? 0n
+          : oldest - chunkSize
+
+      await this.loadAssetTransfers(addressNetwork, startBlock, oldest)
     }
+  }
+
+  /**
+   * True if the network's provider can serve Alchemy's enhanced APIs, which
+   * includes the transfer lookups used to discover asset transfers. When false,
+   * transfers are discovered by scanning ERC-20 `Transfer` logs, which is
+   * dramatically more sensitive to how many blocks a lookup covers.
+   */
+  private supportsAlchemy(network: EVMNetwork): boolean {
+    return this.providerForNetwork(network)?.supportsAlchemy ?? false
   }
 
   /**
