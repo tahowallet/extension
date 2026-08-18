@@ -399,5 +399,37 @@ describe("Chain Database ", () => {
         { url: "https://baz.example.com" },
       ])
     })
+
+    it("should replace endpoints via updateEVMNetwork", async () => {
+      await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: "12345",
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      await db.updateEVMNetwork({
+        chainName: "Foo2",
+        chainID: "12345",
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcEndpoints: [
+          {
+            url: "https://replacement.example.com",
+            capabilities: ["alchemy_"],
+          },
+        ],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      expect((await db.getEVMNetworkByChainID("12345"))?.name).toEqual("Foo2")
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://replacement.example.com", capabilities: ["alchemy_"] },
+      ])
+    })
   })
 })

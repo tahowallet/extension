@@ -29,7 +29,12 @@ import {
 } from ".."
 
 import { HexString, NormalizedEVMAddress } from "../../types"
-import { SignedTransaction, sameNetwork } from "../../networks"
+import {
+  EVMNetwork,
+  RpcEndpoint,
+  SignedTransaction,
+  sameNetwork,
+} from "../../networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { Eligible, ReferrerStats } from "../island/types"
 
@@ -143,7 +148,10 @@ import {
   SignatureResponse,
   TXSignatureResponse,
 } from "../signing"
-import { PermissionMap } from "../provider-bridge/utils"
+import {
+  PermissionMap,
+  ValidatedAddEthereumChainParameter,
+} from "../provider-bridge/utils"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import {
   ActivityDetail,
@@ -1873,6 +1881,13 @@ export default class ReduxService extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async editEVMNetwork(
+    chainInfo: ValidatedAddEthereumChainParameter,
+    rpcEndpoints?: RpcEndpoint[],
+  ): Promise<EVMNetwork> {
+    return this.chainService.editCustomChain(chainInfo, rpcEndpoints)
   }
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {

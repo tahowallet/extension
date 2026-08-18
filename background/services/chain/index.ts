@@ -19,6 +19,7 @@ import {
   SignedTransaction,
   toHexChainID,
   NetworkBaseAsset,
+  RpcEndpoint,
   sameChainID,
   sameNetwork,
 } from "../../networks"
@@ -37,6 +38,7 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -110,6 +112,10 @@ const GAS_POLLING_PERIOD = 1 // 1 minute
 // Transactions with priority for individual accounts will keep the order of loading
 // from adding accounts.
 const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
+
+// How long to wait for an RPC endpoint to answer an eth_chainId probe before
+// treating it as unreachable when validating user-provided endpoint lists.
+const RPC_PROBE_TIMEOUT = 5 * SECOND
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -2019,6 +2025,7 @@ export default class ChainService extends BaseService<Events> {
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
       blockExplorerURL: chainInfo.blockExplorerUrl,
+      iconUrl: chainInfo.iconUrl,
     })
     await this.updateSupportedNetworks()
 
@@ -2031,6 +2038,110 @@ export default class ChainService extends BaseService<Events> {
 
     this.emitter.emit("customChainAdded", chainInfo)
     return network
+  }
+
+  // Used to edit custom chains previously added via wallet_addEthereumChain.
+  // The chain ID and family are immutable; the RPC endpoint list replaces the
+  // existing one and is used in priority order.
+  async editCustomChain(
+    chainInfo: ValidatedAddEthereumChainParameter,
+    rpcEndpoints?: RpcEndpoint[],
+  ): Promise<EVMNetwork> {
+    if (DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainInfo.chainId)) {
+      throw new Error(
+        `Cannot edit built-in network with chain ID ${chainInfo.chainId}`,
+      )
+    }
+
+    const endpoints = rpcEndpoints ?? chainInfo.rpcUrls.map((url) => ({ url }))
+
+    await this.validateRpcEndpoints(chainInfo.chainId, endpoints)
+
+    const network = await this.db.updateEVMNetwork({
+      chainName: chainInfo.chainName,
+      chainID: chainInfo.chainId,
+      decimals: chainInfo.nativeCurrency.decimals,
+      symbol: chainInfo.nativeCurrency.symbol,
+      assetName: chainInfo.nativeCurrency.name,
+      rpcEndpoints: endpoints,
+      blockExplorerURL: chainInfo.blockExplorerUrl,
+      iconUrl: chainInfo.iconUrl,
+    })
+    await this.updateSupportedNetworks()
+
+    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
+      trackedNetwork.chainID === network.chainID ? network : trackedNetwork,
+    )
+
+    await this.rebuildProviderForChain(chainInfo.chainId, endpoints)
+
+    return network
+  }
+
+  private async rebuildProviderForChain(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const customRpcConfigs = await this.db.getAllCustomRpcUrls()
+    this.providers.evm[chainID] = makeSerialFallbackProvider(
+      chainID,
+      rpcEndpoints,
+      customRpcConfigs.find((config) => config.chainID === chainID),
+    )
+  }
+
+  /**
+   * Verifies that each http(s) RPC endpoint in the given list is reachable
+   * and reports the expected chain ID via eth_chainId. WebSocket endpoints
+   * are not probed. Throws an error naming the offending URL on mismatch or
+   * unreachability.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private async validateRpcEndpoints(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    await Promise.all(
+      rpcEndpoints.map(async ({ url }) => {
+        if (!/^https?:/.test(url)) {
+          return
+        }
+
+        let reportedChainID: string
+        try {
+          const abortController = new AbortController()
+          const timeout = setTimeout(
+            () => abortController.abort(),
+            RPC_PROBE_TIMEOUT,
+          )
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "omit",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "eth_chainId",
+              params: [],
+            }),
+            signal: abortController.signal,
+          })
+          clearTimeout(timeout)
+
+          const { result } = await response.json()
+          reportedChainID = String(parseInt(result, 16))
+        } catch (error) {
+          logger.debug("RPC endpoint probe failed for", url, error)
+          throw new Error(`RPC endpoint could not be reached: ${url}`)
+        }
+
+        if (reportedChainID !== chainID) {
+          throw new Error(
+            `RPC endpoint ${url} reports chain ID ${reportedChainID}, expected ${chainID}`,
+          )
+        }
+      }),
+    )
   }
 
   async removeCustomChain(chainID: string): Promise<void> {

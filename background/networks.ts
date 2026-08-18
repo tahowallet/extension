@@ -66,6 +66,11 @@ export type EVMNetwork = Network & {
    * Provided for custom networks
    */
   blockExplorerURL?: string
+  /**
+   * Provided for custom networks; a URL to a logo for the network, used in
+   * place of the bundled icons available for built-in networks.
+   */
+  iconUrl?: string
 }
 
 /**

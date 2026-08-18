@@ -106,7 +106,7 @@ export const getNetworkIconSquared = (network: EVMNetwork): string => {
     return `./images/networks/${iconName}-square@2x.png`
   }
 
-  return ""
+  return network.iconUrl ?? ""
 }
 
 export const getNetworkIcon = (network: EVMNetwork): string => {
@@ -116,7 +116,7 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
     return `./images/networks/${iconName}@2x.png`
   }
 
-  return FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
+  return network.iconUrl ?? FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
 }
 
 export const getBlockExplorerURL = (network: EVMNetwork): string | undefined =>

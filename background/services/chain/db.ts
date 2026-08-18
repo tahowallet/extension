@@ -310,6 +310,7 @@ export class ChainDatabase extends Dexie {
     assetName,
     rpcUrls,
     blockExplorerURL,
+    iconUrl,
   }: {
     chainName: string
     chainID: string
@@ -318,6 +319,7 @@ export class ChainDatabase extends Dexie {
     assetName: string
     rpcUrls: string[]
     blockExplorerURL: string
+    iconUrl?: string
   }): Promise<EVMNetwork> {
     const network: EVMNetwork = {
       name: chainName,
@@ -325,6 +327,7 @@ export class ChainDatabase extends Dexie {
       chainID,
       family: "EVM",
       blockExplorerURL,
+      iconUrl,
       baseAsset: {
         decimals,
         symbol,
@@ -340,6 +343,53 @@ export class ChainDatabase extends Dexie {
       chainID,
       rpcUrls.map((url) => ({ url })),
     )
+    return network
+  }
+
+  /**
+   * Updates the editable fields of an existing EVM network. The chain ID and
+   * family are fixed for the life of the network; the RPC URL list replaces
+   * the existing one wholesale.
+   */
+  async updateEVMNetwork({
+    chainName,
+    chainID,
+    decimals,
+    symbol,
+    assetName,
+    rpcEndpoints,
+    blockExplorerURL,
+    iconUrl,
+  }: {
+    chainName: string
+    chainID: string
+    decimals: number
+    symbol: string
+    assetName: string
+    rpcEndpoints: RpcEndpoint[]
+    blockExplorerURL: string
+    iconUrl?: string
+  }): Promise<EVMNetwork> {
+    const existingNetwork = await this.getEVMNetworkByChainID(chainID)
+    if (existingNetwork === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    const network: EVMNetwork = {
+      ...existingNetwork,
+      name: chainName,
+      blockExplorerURL,
+      iconUrl,
+      baseAsset: {
+        decimals,
+        symbol,
+        name: assetName,
+        chainID,
+      },
+    }
+    await this.networks.put(network)
+    await this.addBaseAsset(assetName, symbol, chainID, decimals)
+    await this.setRpcEndpoints(chainID, rpcEndpoints)
     return network
   }
 
