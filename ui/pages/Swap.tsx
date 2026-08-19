@@ -84,11 +84,17 @@ export default function Swap(): ReactElement {
   } = location.state ?? {}
   const locationAsset = ownedSellAssetAmounts.find(
     ({ asset: candidateAsset }) => {
-      if (typeof locationAssetContractAddress !== "undefined") {
+      // Tokens are identified by their contract address, base assets by their
+      // symbol. Base assets are allowed to carry a contract address of their
+      // own---MATIC on Polygon and ETH on Optimism both do---so an incoming
+      // address is only meaningful for candidates that really are tokens.
+      if (
+        typeof locationAssetContractAddress !== "undefined" &&
+        isSmartContractFungibleAsset(candidateAsset)
+      ) {
         return (
-          isSmartContractFungibleAsset(candidateAsset) &&
           normalizeEVMAddress(candidateAsset.contractAddress) ===
-            normalizeEVMAddress(locationAssetContractAddress)
+          normalizeEVMAddress(locationAssetContractAddress)
         )
       }
       return candidateAsset.symbol === locationAssetSymbol
@@ -179,7 +185,7 @@ export default function Swap(): ReactElement {
   )
   const isApprovalInProgress =
     sellAsset &&
-    "contractAddress" in sellAsset &&
+    isSmartContractFungibleAsset(sellAsset) &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
       normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 

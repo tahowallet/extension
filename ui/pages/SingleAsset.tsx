@@ -38,10 +38,14 @@ export default function SingleAsset(): ReactElement {
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
-  const contractAddress =
-    "contractAddress" in locationAsset
-      ? locationAsset.contractAddress
-      : undefined
+  // Network base assets can carry a contract address of their own---MATIC on
+  // Polygon and ETH on Optimism both do---so the presence of the field is not
+  // enough to conclude an asset is a smart contract asset. Only treat the
+  // address as a token address when the asset really is one, so that base
+  // assets keep being looked up (and linked to) as base assets.
+  const contractAddress = isSmartContractFungibleAsset(locationAsset)
+    ? locationAsset.contractAddress
+    : undefined
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
