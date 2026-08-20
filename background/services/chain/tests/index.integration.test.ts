@@ -492,6 +492,69 @@ describe("ChainService", () => {
     })
   })
 
+  describe("removeCustomChain", () => {
+    const CUSTOM_CHAIN = {
+      chainName: "Foo",
+      chainId: "12345",
+      nativeCurrency: { name: "FooCoin", symbol: "FOO", decimals: 18 },
+      rpcUrls: ["https://foo.example.com"],
+      blockExplorerUrl: "https://fooscanner.example.com",
+    }
+
+    it("retires the removed chain's provider and drops the entry", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+
+      const provider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+      expect(provider).toBeDefined()
+
+      const destroySpy = sandbox.spy(provider, "destroy")
+
+      await chainService.removeCustomChain(CUSTOM_CHAIN.chainId)
+
+      // The live provider is shut down, not just forgotten by the database.
+      expect(destroySpy.called).toBe(true)
+      expect(provider.isDestroyed).toBe(true)
+
+      expect(chainService.providers.evm[CUSTOM_CHAIN.chainId]).toBeUndefined()
+
+      // Nothing is left pointing at the retired provider, so the periodic
+      // polls cannot keep addressing a removed chain.
+      expect(
+        chainService.subscribedNetworks.filter(
+          ({ network }) => network.chainID === CUSTOM_CHAIN.chainId,
+        ),
+      ).toHaveLength(0)
+      expect(
+        chainService.subscribedAccounts.filter(
+          ({ provider: accountProvider }) => accountProvider === provider,
+        ),
+      ).toHaveLength(0)
+    })
+
+    it("replaces and retires the existing provider when a known chain is re-added", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+
+      const firstProvider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+
+      await chainService.addCustomChain({
+        ...CUSTOM_CHAIN,
+        rpcUrls: ["https://foo-replacement.example.com"],
+      })
+
+      const secondProvider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+
+      expect(secondProvider).not.toBe(firstProvider)
+      expect(firstProvider.isDestroyed).toBe(true)
+      expect(secondProvider.isDestroyed).toBe(false)
+    })
+  })
+
   describe("setRpcEndpointsForChain", () => {
     const originalFetch = globalThis.fetch
     let fetchMock: jest.Mock

@@ -182,4 +182,80 @@ describe("SerialFallbackProvider provider reuse", () => {
     expect(genericTeardown.called).toBe(true)
     expect(customTeardown.called).toBe(true)
   })
+
+  it("constructs nothing new once destroyed, even when an in-flight request fails", async () => {
+    // A request already in flight when the provider is retired must not walk
+    // the reconnect path into a creator: that would open a fresh connection to
+    // an endpoint the user has just removed, and keep it open for good.
+    let releaseFirstCall: (error: Error) => void = () => {}
+    const primarySend = sandbox.stub().callsFake(
+      () =>
+        new Promise((_, reject) => {
+          releaseFirstCall = reject
+        }),
+    )
+    const primaryProvider = stubProvider("http://primary.example", primarySend)
+    const fallbackProvider = stubProvider(
+      "http://fallback.example",
+      sandbox.stub().resolves("fallback"),
+    )
+    const primaryCreator = sandbox.stub().returns(primaryProvider)
+    const fallbackCreator = sandbox.stub().returns(fallbackProvider)
+
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "generic", creator: primaryCreator },
+      { type: "generic", creator: fallbackCreator },
+    ])
+
+    // The constructor builds the first provider eagerly; nothing else has
+    // been created yet.
+    expect(primaryCreator.callCount).toEqual(1)
+    expect(fallbackCreator.callCount).toEqual(0)
+
+    const inFlight = provider.send("eth_getBalance", ["0xDeadBeef", "latest"])
+
+    provider.destroy()
+    releaseFirstCall(new Error("bad response"))
+
+    await expect(inFlight).rejects.toThrow()
+
+    // No failover, no reconnect, no new connection to either endpoint.
+    expect(fallbackCreator.callCount).toEqual(0)
+    expect(primaryCreator.callCount).toEqual(1)
+  })
+
+  it("rejects new requests once destroyed rather than reconnecting", async () => {
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "generic", creator: () => genericProvider },
+    ])
+
+    provider.destroy()
+
+    expect(provider.isDestroyed).toBe(true)
+    await expect(
+      provider.send("eth_getBalance", ["0xDeadBeef"]),
+    ).rejects.toThrow("has been destroyed")
+    // The request never reached an underlying provider.
+    expect(genericSendStub.called).toBe(false)
+  })
+
+  it("takes no new custom endpoints once destroyed", () => {
+    const customProvider = stubProvider(
+      "http://custom.example",
+      sandbox.stub().resolves("custom"),
+    )
+    const customCreator = sandbox.stub().returns(customProvider)
+
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { type: "generic", creator: () => genericProvider },
+    ])
+
+    provider.destroy()
+
+    provider.addCustomProviders([
+      { type: "custom", supportedMethods: [], creator: customCreator },
+    ])
+
+    expect(customCreator.called).toBe(false)
+  })
 })

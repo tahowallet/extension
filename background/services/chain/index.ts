@@ -2075,6 +2075,11 @@ export default class ChainService extends BaseService<Events> {
     })
     await this.updateSupportedNetworks()
 
+    // Adding a chain that is already known replaces its provider outright, so
+    // retire the outgoing one rather than leaving it polling and reconnecting
+    // to the endpoints it was built with for the life of the service worker.
+    this.providers.evm[chainInfo.chainId]?.destroy()
+
     this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
       chainInfo.chainId,
       chainInfo.rpcUrls.map((url) => ({ url })),
@@ -2382,6 +2387,24 @@ export default class ChainService extends BaseService<Events> {
   async removeCustomChain(chainID: string): Promise<void> {
     this.trackedNetworks = this.trackedNetworks.filter(
       (network) => network.chainID !== chainID,
+    )
+
+    // Dropping the network from the database is not enough: the provider is a
+    // live object with its own reconnect and cache-cleanup timers and, for
+    // WebSocket endpoints, open sockets. Retire it and drop the entry, so
+    // nothing can keep talking to a chain the user has removed.
+    const removedProvider = this.providers.evm[chainID]
+    removedProvider?.destroy()
+    delete this.providers.evm[chainID]
+
+    // The subscription registries are what the periodic block and block-price
+    // polls read the provider from, so entries pointing at the retired one
+    // have to go with it.
+    this.subscribedNetworks = this.subscribedNetworks.filter(
+      ({ network }) => !sameChainID(network.chainID, chainID),
+    )
+    this.subscribedAccounts = this.subscribedAccounts.filter(
+      ({ provider }) => provider !== removedProvider,
     )
 
     await this.db.removeEVMNetwork(chainID)
