@@ -454,6 +454,140 @@ describe("Chain Database ", () => {
       ])
     })
 
+    it("should migrate name-keyed rows when a custom network is renamed", async () => {
+      const CHAIN_ID = "12345"
+
+      const originalNetwork = await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      const addressNetwork = {
+        address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+        network: originalNetwork,
+      }
+
+      await db.addAccountToTrack(addressNetwork)
+      await db.recordAccountAssetTransferLookup(addressNetwork, 0n, 100n)
+      await db.addBalance(
+        createAccountBalance({
+          address: addressNetwork.address,
+          network: originalNetwork,
+        }),
+      )
+      await db.addOrUpdateTransaction(
+        createAnyEVMTransaction({ network: originalNetwork }),
+        "local",
+      )
+      await db.addBlock(createAnyEVMBlock({ network: originalNetwork }))
+
+      // A rename that also changes the base asset, as the edit form allows.
+      const renamedNetwork = await db.updateEVMNetwork({
+        chainName: "Foo Renamed",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      expect(renamedNetwork.name).toEqual("Foo Renamed")
+
+      // The tracked account survives, exists only under the new name, and
+      // carries the updated network object.
+      const trackedAccounts = (await db.getAccountsToTrack()).filter(
+        ({ network }) => network.chainID === CHAIN_ID,
+      )
+      expect(trackedAccounts).toHaveLength(1)
+      expect(trackedAccounts[0].network.name).toEqual("Foo Renamed")
+      expect(trackedAccounts[0].network).toEqual(renamedNetwork)
+      expect(
+        await db.getTrackedAccountOnNetwork({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).not.toBeNull()
+      expect(
+        await db.getTrackedAccountOnNetwork({
+          address: addressNetwork.address,
+          network: originalNetwork,
+        }),
+      ).toBeNull()
+      expect(
+        await db.getTrackedAddressesOnNetwork(renamedNetwork),
+      ).toHaveLength(1)
+
+      // Transfer-lookup coverage survives, so discovery does not restart from
+      // the genesis block.
+      expect(
+        await db.getOldestAccountAssetTransferLookup({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).toEqual(0n)
+      expect(
+        await db.getNewestAccountAssetTransferLookup({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).toEqual(100n)
+
+      // The balance cache moves over rather than being orphaned.
+      const balances = await db.table("balances").toArray()
+      expect(balances).toHaveLength(1)
+      expect(balances[0].network.name).toEqual("Foo Renamed")
+
+      // Re-derivable caches keyed by the old name are dropped rather than
+      // duplicated under the new one.
+      expect(await db.table("chainTransactions").toArray()).toHaveLength(0)
+      expect(await db.table("blocks").toArray()).toHaveLength(0)
+    })
+
+    it("should leave name-keyed rows alone when a network is updated without a rename", async () => {
+      const CHAIN_ID = "12345"
+
+      const network = await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      await db.addAccountToTrack({
+        address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+        network,
+      })
+      await db.addOrUpdateTransaction(
+        createAnyEVMTransaction({ network }),
+        "local",
+      )
+
+      await db.updateEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        blockExplorerURL: "https://another-url.com",
+      })
+
+      expect(
+        (await db.getAccountsToTrack()).filter(
+          ({ network: accountNetwork }) => accountNetwork.chainID === CHAIN_ID,
+        ),
+      ).toHaveLength(1)
+      // Transaction history is only dropped by an actual rename.
+      expect(await db.table("chainTransactions").toArray()).toHaveLength(1)
+    })
+
     it("should scrub dead RPC endpoints from existing installs on upgrade", async () => {
       // Stand up a v11-era database with the dead endpoint still stored, as
       // an install that was seeded before it was dropped from the defaults

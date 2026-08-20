@@ -394,6 +394,10 @@ export class ChainDatabase extends Dexie {
    * are fixed for the life of the network. RPC endpoints are *not* touched
    * here; they are persisted separately via {@link setRpcEndpoints}, so a
    * settings save writes them exactly once.
+   *
+   * A rename is not just a field update. Several tables key or index rows by
+   * the network's *name*, so rows written under the old name become
+   * unreachable the moment it changes; see {@link migrateNetworkNameChange}.
    */
   async updateEVMNetwork({
     chainName,
@@ -430,10 +434,107 @@ export class ChainDatabase extends Dexie {
       },
     }
 
-    await this.networks.put(network)
-    await this.addBaseAsset(assetName, symbol, chainID, decimals)
+    const previousName = existingNetwork.name
+
+    // One transaction over everything a rename touches, so the network row and
+    // the rows keyed by its name can never disagree about which name is
+    // current.
+    await this.transaction(
+      "rw",
+      [
+        this.networks,
+        this.baseAssets,
+        this.accountsToTrack,
+        this.accountAssetTransferLookups,
+        this.balances,
+        this.chainTransactions,
+        this.blocks,
+      ],
+      async () => {
+        await this.networks.put(network)
+        await this.addBaseAsset(assetName, symbol, chainID, decimals)
+
+        if (previousName !== network.name) {
+          await this.migrateNetworkNameChange(previousName, network)
+        }
+      },
+    )
 
     return network
+  }
+
+  /**
+   * Moves every row that identifies its network by name off a custom network's
+   * old name and onto its new one.
+   *
+   * Per table, and why each is handled the way it is:
+   *
+   * - `accountsToTrack`: the compound primary key embeds `network.name`, so a
+   *   row cannot be updated in place — it is deleted and re-added under the new
+   *   key. Losing these rows would silently stop tracking the account.
+   * - `accountAssetTransferLookups`: auto-increment primary key, name only in
+   *   secondary indices, so the stored network is rewritten in place; Dexie
+   *   reindexes. Losing these would restart transfer discovery from scratch and
+   *   re-scan the whole chain.
+   * - `balances`: auto-increment primary key, name only in a secondary index,
+   *   so it is rewritten in place too — cheap, and it keeps the recent-balance
+   *   cache readable instead of forcing a refetch.
+   * - `chainTransactions` and `blocks`: the compound primary keys embed
+   *   `network.name`, and both are re-derivable caches. Old-name rows are
+   *   deleted rather than re-keyed, which avoids writing a second copy of the
+   *   same history under the new name.
+   */
+  private async migrateNetworkNameChange(
+    previousName: string,
+    network: EVMNetwork,
+  ): Promise<void> {
+    const { chainID } = network
+
+    const staleAccounts = await this.accountsToTrack
+      .where("network.name")
+      .equals(previousName)
+      .filter((account) => account.network.chainID === chainID)
+      .toArray()
+
+    await this.accountsToTrack
+      .where("network.name")
+      .equals(previousName)
+      .filter((account) => account.network.chainID === chainID)
+      .delete()
+
+    await this.accountsToTrack.bulkPut(
+      staleAccounts.map(({ address }) => ({ address, network })),
+    )
+
+    await this.accountAssetTransferLookups
+      .where("addressNetwork.network.name")
+      .equals(previousName)
+      .filter(
+        ({ addressNetwork }) => addressNetwork.network.chainID === chainID,
+      )
+      .modify((lookup) => {
+        Object.assign(lookup.addressNetwork, { network })
+      })
+
+    await this.balances
+      .where("network.name")
+      .equals(previousName)
+      .filter((balance) => balance.network.chainID === chainID)
+      .modify((balance) => {
+        Object.assign(balance, { network })
+      })
+
+    await this.chainTransactions
+      .where("network.name")
+      .equals(previousName)
+      .filter((transaction) => transaction.network.chainID === chainID)
+      .delete()
+
+    await this.blocks
+      .where("network.name")
+      .equals(previousName)
+      .filter((block) => block.network.chainID === chainID)
+      .delete()
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
