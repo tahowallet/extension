@@ -9,6 +9,7 @@ import getBlockPrices from "../../lib/gas"
 import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
+  ALCHEMY_CAPABILITY_NAMESPACE,
   AnyEVMBlock,
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -69,7 +70,6 @@ import type {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider, {
-  ALCHEMY_CAPABILITY_NAMESPACE,
   ProviderCreator,
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
@@ -2157,6 +2157,9 @@ export default class ChainService extends BaseService<Events> {
       )
     }
 
+    // Endpoints are probed, persisted, and applied to the provider here, and
+    // only here; the metadata update below deliberately leaves them alone
+    // rather than writing the same list a second time.
     await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
 
     if (metadata !== undefined) {
@@ -2167,7 +2170,6 @@ export default class ChainService extends BaseService<Events> {
         symbol: metadata.symbol,
         decimals: metadata.decimals,
         iconUrl: metadata.iconUrl,
-        rpcEndpoints,
         blockExplorerURL: blockExplorerUrl,
       })
     } else {
@@ -2383,7 +2385,7 @@ export default class ChainService extends BaseService<Events> {
           clearTimeout(timeout)
         }
 
-        if (reportedChainID !== chainID) {
+        if (!sameChainID(reportedChainID, chainID)) {
           throw new Error(
             `RPC endpoint ${url} reports chain ID ${reportedChainID}, expected ${chainID}`,
           )

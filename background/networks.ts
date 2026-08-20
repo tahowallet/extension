@@ -88,6 +88,14 @@ export type RpcEndpoint = {
 }
 
 /**
+ * The {@link RpcEndpoint.capabilities} entry for Alchemy-compatible enhanced
+ * APIs. It lives here, alongside the type it describes, rather than in the
+ * provider implementation, so UI code can name the capability without pulling
+ * the whole provider stack into the popup bundle.
+ */
+export const ALCHEMY_CAPABILITY_NAMESPACE = "alchemy_"
+
+/**
  * Union type that allows narrowing to particular network subtypes.
  */
 export type AnyNetwork = EVMNetwork

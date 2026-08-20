@@ -389,9 +389,11 @@ export class ChainDatabase extends Dexie {
   }
 
   /**
-   * Updates the editable fields of an existing EVM network. The chain ID and
-   * family are fixed for the life of the network; the RPC URL list replaces
-   * the existing one wholesale.
+   * Updates the editable metadata of an existing EVM network — its name,
+   * block explorer URL, icon, and base asset details. The chain ID and family
+   * are fixed for the life of the network. RPC endpoints are *not* touched
+   * here; they are persisted separately via {@link setRpcEndpoints}, so a
+   * settings save writes them exactly once.
    */
   async updateEVMNetwork({
     chainName,
@@ -399,7 +401,6 @@ export class ChainDatabase extends Dexie {
     decimals,
     symbol,
     assetName,
-    rpcEndpoints,
     blockExplorerURL,
     iconUrl,
   }: {
@@ -408,7 +409,6 @@ export class ChainDatabase extends Dexie {
     decimals: number
     symbol: string
     assetName: string
-    rpcEndpoints: RpcEndpoint[]
     blockExplorerURL: string
     iconUrl?: string
   }): Promise<EVMNetwork> {
@@ -429,9 +429,10 @@ export class ChainDatabase extends Dexie {
         chainID,
       },
     }
+
     await this.networks.put(network)
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
-    await this.setRpcEndpoints(chainID, rpcEndpoints)
+
     return network
   }
 

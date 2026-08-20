@@ -15,7 +15,11 @@ import {
   BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
-import { AnyEVMTransaction, RpcEndpoint } from "../../networks"
+import {
+  ALCHEMY_CAPABILITY_NAMESPACE,
+  AnyEVMTransaction,
+  RpcEndpoint,
+} from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
@@ -39,12 +43,6 @@ import {
   RequestFailureCategory,
 } from "../../lib/perf-metrics"
 import { CircuitBreaker } from "./circuit-breaker"
-
-/**
- * The capability namespace declared by RPC endpoints that serve
- * Alchemy-compatible enhanced APIs.
- */
-export const ALCHEMY_CAPABILITY_NAMESPACE = "alchemy_"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"

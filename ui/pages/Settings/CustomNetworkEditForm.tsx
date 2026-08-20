@@ -1,5 +1,9 @@
-import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
-import { EVMNetwork, RpcEndpoint } from "@tallyho/tally-background/networks"
+import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
+import {
+  ALCHEMY_CAPABILITY_NAMESPACE,
+  EVMNetwork,
+  RpcEndpoint,
+} from "@tallyho/tally-background/networks"
 import {
   getChainRpcConfig,
   updateNetworkSettings,
@@ -41,12 +45,6 @@ const MENU_CHROME_HEIGHT = 68
 
 const WEB_URL_PROTOCOLS = ["http:", "https:"]
 const RPC_URL_PROTOCOLS = ["http:", "https:", "ws:", "wss:"]
-
-/**
- * Capability tag marking an endpoint as serving Alchemy-compatible enhanced
- * APIs, i.e. the `alchemy_*` method namespace.
- */
-const ALCHEMY_CAPABILITY = "alchemy_"
 
 /**
  * Domains that serve Alchemy's enhanced APIs. A hostname matches when it is
@@ -101,7 +99,8 @@ const toManagedEndpointRows = (
       return [
         {
           origin: new URL(url).origin,
-          hasAlchemyApis: capabilities?.includes(ALCHEMY_CAPABILITY) ?? false,
+          hasAlchemyApis:
+            capabilities?.includes(ALCHEMY_CAPABILITY_NAMESPACE) ?? false,
         },
       ]
     } catch (error) {
@@ -144,7 +143,7 @@ export default function CustomNetworkEditForm({
 
   // Built-in networks' metadata is bundled with the extension and immutable;
   // only their RPC endpoint list can be edited here.
-  const isBuiltIn = DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
+  const isBuiltIn = isBuiltInNetwork(network)
 
   const [fields, setFields] = useState<EditableFields>({
     name: network.name,
@@ -206,7 +205,7 @@ export default function CustomNetworkEditForm({
               id: nextRpcEndpointRowId.current,
               url,
               hasAlchemyApis:
-                capabilities?.includes(ALCHEMY_CAPABILITY) ?? false,
+                capabilities?.includes(ALCHEMY_CAPABILITY_NAMESPACE) ?? false,
               isTouched: false,
             }
           },
@@ -394,7 +393,9 @@ export default function CustomNetworkEditForm({
       url: row.url.trim(),
       // Omitted entirely rather than set to an empty list when the endpoint
       // serves no enhanced APIs.
-      ...(row.hasAlchemyApis ? { capabilities: [ALCHEMY_CAPABILITY] } : {}),
+      ...(row.hasAlchemyApis
+        ? { capabilities: [ALCHEMY_CAPABILITY_NAMESPACE] }
+        : {}),
     }))
 
     const result = (await dispatch(

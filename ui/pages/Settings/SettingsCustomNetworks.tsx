@@ -1,4 +1,4 @@
-import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { removeCustomChain } from "@tallyho/tally-background/redux-slices/networks"
@@ -32,16 +32,13 @@ export default function SettingsCustomNetworks(): ReactElement {
 
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
 
-  const isBuiltIn = (network: EVMNetwork) =>
-    DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
-
   // One list for every network the wallet knows about. Built-ins keep their
   // bundled order and lead, with user-added networks trailing them, so adding
   // or removing a custom network never reshuffles the rest of the list.
   const orderedNetworks = useMemo(
     () => [
-      ...allNetworks.filter(isBuiltIn),
-      ...allNetworks.filter((network) => !isBuiltIn(network)),
+      ...allNetworks.filter(isBuiltInNetwork),
+      ...allNetworks.filter((network) => !isBuiltInNetwork(network)),
     ],
     [allNetworks],
   )
@@ -183,7 +180,7 @@ export default function SettingsCustomNetworks(): ReactElement {
 
               // Built-in networks ship with the extension: they carry a tag
               // rather than a type sublabel, and cannot be removed.
-              const isItemBuiltIn = isBuiltIn(item)
+              const isItemBuiltIn = isBuiltInNetwork(item)
 
               return (
                 <li className="custom_network_item" key={item.chainID}>

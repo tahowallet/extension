@@ -422,7 +422,9 @@ describe("Chain Database ", () => {
       ).toEqual("https://custom-explorer.example.com")
     })
 
-    it("should replace endpoints via updateEVMNetwork", async () => {
+    it("should leave endpoints alone when updateEVMNetwork changes metadata", async () => {
+      // Endpoints are persisted by `setRpcEndpoints` alone, so a metadata
+      // update does not rewrite them.
       await db.addEVMNetwork({
         chainName: "Foo",
         chainID: "12345",
@@ -433,18 +435,16 @@ describe("Chain Database ", () => {
         blockExplorerURL: "https://someurl.com",
       })
 
+      await db.setRpcEndpoints("12345", [
+        { url: "https://replacement.example.com", capabilities: ["alchemy_"] },
+      ])
+
       await db.updateEVMNetwork({
         chainName: "Foo2",
         chainID: "12345",
         decimals: 18,
         symbol: "BAR",
         assetName: "Foocoin",
-        rpcEndpoints: [
-          {
-            url: "https://replacement.example.com",
-            capabilities: ["alchemy_"],
-          },
-        ],
         blockExplorerURL: "https://someurl.com",
       })
 
