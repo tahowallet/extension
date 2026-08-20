@@ -216,7 +216,12 @@ export default function SingleAsset(): ReactElement {
                     iconSmall="swap"
                     linkTo={{
                       pathname: "/swap",
-                      state: asset,
+                      // The swap page treats an incoming contract address as
+                      // authoritative, so hand it the narrowed one rather than
+                      // the whole asset: a base asset's own pseudo-address
+                      // would otherwise read as a token address and match
+                      // nothing.
+                      state: { symbol, contractAddress },
                     }}
                   >
                     {t("shared.swap")}
