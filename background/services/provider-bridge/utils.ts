@@ -106,6 +106,38 @@ export type ValidatedAddEthereumChainParameter = {
   rpcUrls: string[]
 }
 
+/**
+ * The icon URL a dapp offers for a chain it is asking the wallet to add, if
+ * and only if it is an absolute `http:`/`https:` URL.
+ *
+ * This value is dapp-controlled and ends up in wallet UI as an image source,
+ * so anything that is not plainly fetchable web content is dropped rather
+ * than sanitized: `javascript:` and `data:` URLs, relative paths, and strings
+ * crafted to break out of the surrounding markup or CSS all yield
+ * `undefined`. What is accepted is returned in its parsed, normalized form,
+ * so the stored value can never carry raw control characters or unencoded
+ * delimiters even if a render site later mishandles it.
+ */
+function validatedChainIconUrl(iconUrls?: string[]): string | undefined {
+  const [iconUrl] = iconUrls ?? []
+
+  if (typeof iconUrl !== "string") {
+    return undefined
+  }
+
+  try {
+    const parsedIconUrl = new URL(iconUrl)
+
+    return parsedIconUrl.protocol === "http:" ||
+      parsedIconUrl.protocol === "https:"
+      ? parsedIconUrl.href
+      : undefined
+  } catch {
+    // Not a parseable absolute URL at all.
+    return undefined
+  }
+}
+
 export const validateAddEthereumChainParameter = ({
   chainId,
   chainName,
@@ -140,7 +172,7 @@ export const validateAddEthereumChainParameter = ({
     chainName,
     nativeCurrency,
     blockExplorerUrl: blockExplorerUrls[0],
-    iconUrl: iconUrls && iconUrls[0],
+    iconUrl: validatedChainIconUrl(iconUrls),
     rpcUrls,
   }
 }

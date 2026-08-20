@@ -279,7 +279,20 @@ export default function TopMenuConnectedDAppInfo(props: {
             })}
           >
             <div className="dapp_header">
-              <div className="favicon" />
+              {/* The favicon URL is supplied by the connected dapp, so it is
+              set as a React style property value rather than interpolated into
+              the styled-jsx template below, where it would become stylesheet
+              source a crafted URL could break out of. */}
+              <div
+                className="favicon"
+                style={{
+                  backgroundImage: `url("${
+                    faviconUrl === ""
+                      ? "./images/dapp_favicon_default@2x.png"
+                      : faviconUrl
+                  }")`,
+                }}
+              />
               <div className="dapp_details">
                 <div className="url ellipsis" title={url}>
                   {url}
@@ -384,9 +397,6 @@ export default function TopMenuConnectedDAppInfo(props: {
           box-sizing: border-box;
         }
         .favicon {
-          background: url("${faviconUrl === ""
-            ? "./images/dapp_favicon_default@2x.png"
-            : faviconUrl}");
           background-size: cover;
           width: 48px;
           height: 48px;
