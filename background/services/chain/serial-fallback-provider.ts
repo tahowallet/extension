@@ -833,17 +833,26 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       } else if (errorType === "invalid-response-error") {
         // Don't retry 4xx client errors on the same provider - they indicate
         // the provider is rejecting the request itself (bad or revoked key,
-        // unsupported call) and retrying it there won't help. Another
-        // provider may still serve it, though: with the Taho-managed
-        // endpoint heading the walk, a revoked key must not take down
-        // ordinary reads that the stored endpoints can answer. Fail over
-        // immediately when a fallback exists, and only reject once the walk
-        // is exhausted.
+        // unsupported call) and retrying it there won't help.
+        //
+        // Whether *another* provider is worth trying depends on which 4xx it
+        // is. An auth-shaped one (401, 403) says something about the endpoint,
+        // not the request — a missing, revoked, or wrong API key — and with the
+        // Taho-managed endpoint heading the walk, a revoked key must not take
+        // down ordinary reads the stored endpoints can answer. Every other 4xx
+        // (400, 404, 422, …) says the request itself is bad, and fanning a
+        // guaranteed rejection out across every configured endpoint only
+        // multiplies the failure and the load, so those reject on the spot.
         const statusCode = getHttpStatusCode(error)
         if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
-          if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          const isAuthFailure = statusCode === 401 || statusCode === 403
+
+          if (
+            isAuthFailure &&
+            this.currentProviderIndex + 1 < this.providerCreators.length
+          ) {
             logger.debug(
-              "Failing over after 4xx status",
+              "Failing over after auth-shaped 4xx status",
               statusCode,
               "on chain",
               this.chainID,

@@ -88,23 +88,27 @@ describe("Serial Fallback Provider", () => {
       })
     })
 
-    it("should fail over to the next provider on a 4xx client error", async () => {
-      // A revoked or placeholder key on the Taho-managed endpoint answers
-      // 4xx; the stored endpoints behind it must still serve the call.
-      boarSendStub
-        .withArgs("eth_getBalance")
-        .throws(Object.assign(new Error("bad response"), { status: 403 }))
+    it.each([401, 403])(
+      "should fail over to the next provider on an auth-shaped %i",
+      async (status) => {
+        // A revoked or placeholder key on the Taho-managed endpoint answers
+        // 401/403; that says nothing about the request, so the stored
+        // endpoints behind it must still serve the call.
+        boarSendStub
+          .withArgs("eth_getBalance")
+          .throws(Object.assign(new Error("bad response"), { status }))
 
-      await expect(
-        fallbackProvider.send("eth_getBalance", ["0xDeadBeef", "latest"]),
-      ).resolves.toEqual("success")
+        await expect(
+          fallbackProvider.send("eth_getBalance", ["0xDeadBeef", "latest"]),
+        ).resolves.toEqual("success")
 
-      // No same-provider retries: one rejected attempt, then failover.
-      expect(callsFor(boarSendStub, "eth_getBalance").length).toEqual(1)
-      expect(callsFor(genericSendStub, "eth_getBalance").length).toEqual(1)
-    })
+        // No same-provider retries: one rejected attempt, then failover.
+        expect(callsFor(boarSendStub, "eth_getBalance").length).toEqual(1)
+        expect(callsFor(genericSendStub, "eth_getBalance").length).toEqual(1)
+      },
+    )
 
-    it("should reject a 4xx client error once the walk is exhausted", async () => {
+    it("should reject an auth-shaped 4xx once the walk is exhausted", async () => {
       const error = Object.assign(new Error("bad response"), { status: 403 })
       boarSendStub.withArgs("eth_getBalance").throws(error)
       genericSendStub.withArgs("eth_getBalance").throws(error)
@@ -117,6 +121,24 @@ describe("Serial Fallback Provider", () => {
       expect(callsFor(boarSendStub, "eth_getBalance").length).toEqual(1)
       expect(callsFor(genericSendStub, "eth_getBalance").length).toEqual(1)
     })
+
+    it.each([400, 404, 422])(
+      "should reject a %i immediately without trying other providers",
+      async (status) => {
+        // A genuinely invalid request is invalid everywhere; fanning it out
+        // across every configured endpoint would only multiply a guaranteed
+        // rejection.
+        const error = Object.assign(new Error("bad response"), { status })
+        boarSendStub.withArgs("eth_getBalance").throws(error)
+
+        await expect(
+          fallbackProvider.send("eth_getBalance", ["0xDeadBeef", "latest"]),
+        ).rejects.toEqual(error)
+
+        expect(callsFor(boarSendStub, "eth_getBalance").length).toEqual(1)
+        expect(callsFor(genericSendStub, "eth_getBalance").length).toEqual(0)
+      },
+    )
 
     it("should try again if there is a bad response", async () => {
       boarSendStub.onCall(0).throws("bad response")
