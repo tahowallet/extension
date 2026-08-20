@@ -2338,13 +2338,20 @@ export default class ChainService extends BaseService<Events> {
           return
         }
 
+        const abortController = new AbortController()
+        // The timeout has to stay armed until the body has been read, not just
+        // until the response headers arrive: `fetch` resolves as soon as the
+        // headers land, and an endpoint that then trickles or stalls its body
+        // would hang `response.json()` — and with it the settings save — for
+        // as long as the socket stays open. Aborting the request aborts the
+        // body read too, which surfaces below as an unreachable endpoint.
+        const timeout = setTimeout(
+          () => abortController.abort(),
+          RPC_PROBE_TIMEOUT,
+        )
+
         let reportedChainID: string
         try {
-          const abortController = new AbortController()
-          const timeout = setTimeout(
-            () => abortController.abort(),
-            RPC_PROBE_TIMEOUT,
-          )
           const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -2357,7 +2364,6 @@ export default class ChainService extends BaseService<Events> {
             }),
             signal: abortController.signal,
           })
-          clearTimeout(timeout)
 
           const { result } = await response.json()
           // JSON-RPC error responses carry no result; treat them — and any
@@ -2373,6 +2379,8 @@ export default class ChainService extends BaseService<Events> {
         } catch (error) {
           logger.debug("RPC endpoint probe failed for", url, error)
           throw new Error(`RPC endpoint could not be reached: ${url}`)
+        } finally {
+          clearTimeout(timeout)
         }
 
         if (reportedChainID !== chainID) {

@@ -668,6 +668,41 @@ describe("ChainService", () => {
       ).rejects.toThrow("could not be reached")
     })
 
+    it("rejects when an endpoint stalls while sending its response body", async () => {
+      // `fetch` resolves as soon as the response headers land, so the probe's
+      // abort has to stay armed through the body read; otherwise an endpoint
+      // that trickles or never finishes its body leaves the settings save
+      // hanging forever with no way out.
+      fetchMock.mockImplementation(
+        async (_url: string, { signal }: { signal: AbortSignal }) => ({
+          json: () =>
+            // Never settles on its own; only the probe's abort resolves it.
+            new Promise((_, reject) => {
+              signal.addEventListener("abort", () =>
+                reject(
+                  Object.assign(new Error("Aborted"), { name: "AbortError" }),
+                ),
+              )
+            }),
+        }),
+      )
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://stalling-body.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+
+      // Nothing was persisted, so the form can be corrected and retried.
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual(existingEndpoints)
+    }, 20_000)
+
     it("does not probe WebSocket endpoints", async () => {
       mockProbeResult("0x1")
 
