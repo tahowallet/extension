@@ -13,6 +13,7 @@ import {
   createLegacyTransactionRequest,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
+import { BOAR_RPC_URLS } from "../../../lib/boar"
 import SerialFallbackProvider from "../serial-fallback-provider"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
@@ -488,6 +489,314 @@ describe("ChainService", () => {
       expect(
         networksToTrack.find((network) => network.chainID === "12345"),
       ).toBeTruthy()
+    })
+  })
+
+  describe("removeCustomChain", () => {
+    const CUSTOM_CHAIN = {
+      chainName: "Foo",
+      chainId: "12345",
+      nativeCurrency: { name: "FooCoin", symbol: "FOO", decimals: 18 },
+      rpcUrls: ["https://foo.example.com"],
+      blockExplorerUrl: "https://fooscanner.example.com",
+    }
+
+    it("retires the removed chain's provider and drops the entry", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+
+      const provider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+      expect(provider).toBeDefined()
+
+      const destroySpy = sandbox.spy(provider, "destroy")
+
+      await chainService.removeCustomChain(CUSTOM_CHAIN.chainId)
+
+      // The live provider is shut down, not just forgotten by the database.
+      expect(destroySpy.called).toBe(true)
+      expect(provider.isDestroyed).toBe(true)
+
+      expect(chainService.providers.evm[CUSTOM_CHAIN.chainId]).toBeUndefined()
+
+      // Nothing is left pointing at the retired provider, so the periodic
+      // polls cannot keep addressing a removed chain.
+      expect(
+        chainService.subscribedNetworks.filter(
+          ({ network }) => network.chainID === CUSTOM_CHAIN.chainId,
+        ),
+      ).toHaveLength(0)
+      expect(
+        chainService.subscribedAccounts.filter(
+          ({ provider: accountProvider }) => accountProvider === provider,
+        ),
+      ).toHaveLength(0)
+    })
+
+    it("replaces and retires the existing provider when a known chain is re-added", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+
+      const firstProvider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+
+      await chainService.addCustomChain({
+        ...CUSTOM_CHAIN,
+        rpcUrls: ["https://foo-replacement.example.com"],
+      })
+
+      const secondProvider = chainService.providers.evm[
+        CUSTOM_CHAIN.chainId
+      ] as SerialFallbackProvider
+
+      expect(secondProvider).not.toBe(firstProvider)
+      expect(firstProvider.isDestroyed).toBe(true)
+      expect(secondProvider.isDestroyed).toBe(false)
+    })
+  })
+
+  describe("setRpcEndpointsForChain", () => {
+    const originalFetch = globalThis.fetch
+    let fetchMock: jest.Mock
+
+    const mockProbeResult = (chainIDHex: string) => {
+      fetchMock.mockResolvedValue({
+        json: async () => ({ jsonrpc: "2.0", id: 1, result: chainIDHex }),
+      })
+    }
+
+    beforeEach(() => {
+      fetchMock = jest.fn()
+      globalThis.fetch = fetchMock as unknown as typeof fetch
+    })
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch
+    })
+
+    it("persists the new endpoint list and rebuilds the provider when the probe agrees", async () => {
+      mockProbeResult("0x1")
+
+      const previousProvider = chainService.providerForNetwork(ETHEREUM)
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual([
+        { url: "https://new-rpc.example.com", capabilities: ["alchemy_"] },
+      ])
+      expect(chainService.providerForNetwork(ETHEREUM)).not.toBe(
+        previousProvider,
+      )
+    })
+
+    it("retires the replaced provider and moves subscriptions onto the new one", async () => {
+      mockProbeResult("0x1")
+
+      const previousProvider = chainService.providerForNetwork(ETHEREUM)!
+      const destroySpy = sandbox.spy(previousProvider, "destroy")
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com" },
+      ])
+
+      const newProvider = chainService.providerForNetwork(ETHEREUM)
+
+      // The old provider's timers and connections are shut down rather than
+      // left running against the endpoints that were just replaced.
+      expect(destroySpy.called).toBe(true)
+
+      // The network subscription is moved over in place, not duplicated.
+      const ethereumSubscriptions = chainService.subscribedNetworks.filter(
+        ({ network }) => network.chainID === ETHEREUM.chainID,
+      )
+      expect(ethereumSubscriptions).toHaveLength(1)
+      expect(ethereumSubscriptions[0].provider).toBe(newProvider)
+
+      // No account subscription is left pointing at the retired provider.
+      expect(
+        chainService.subscribedAccounts.filter(
+          ({ provider }) => provider === previousProvider,
+        ),
+      ).toHaveLength(0)
+    })
+
+    it("rejects and does not persist when an endpoint reports the wrong chain ID", async () => {
+      mockProbeResult("0x89") // Polygon, not Ethereum
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://wrong-chain.example.com" },
+        ]),
+      ).rejects.toThrow("reports chain ID 137")
+
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual(existingEndpoints)
+    })
+
+    it("rejects when an endpoint is unreachable", async () => {
+      fetchMock.mockRejectedValue(new Error("connection refused"))
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://unreachable.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+    })
+
+    it("rejects when an endpoint answers with a JSON-RPC error body", async () => {
+      fetchMock.mockResolvedValue({
+        json: async () => ({
+          jsonrpc: "2.0",
+          id: 1,
+          error: { code: -32051, message: "API key disabled" },
+        }),
+      })
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://error-body.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+    })
+
+    it("rejects when an endpoint stalls while sending its response body", async () => {
+      // `fetch` resolves as soon as the response headers land, so the probe's
+      // abort has to stay armed through the body read; otherwise an endpoint
+      // that trickles or never finishes its body leaves the settings save
+      // hanging forever with no way out.
+      fetchMock.mockImplementation(
+        async (_url: string, { signal }: { signal: AbortSignal }) => ({
+          json: () =>
+            // Never settles on its own; only the probe's abort resolves it.
+            new Promise((_, reject) => {
+              signal.addEventListener("abort", () =>
+                reject(
+                  Object.assign(new Error("Aborted"), { name: "AbortError" }),
+                ),
+              )
+            }),
+        }),
+      )
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://stalling-body.example.com" },
+        ]),
+      ).rejects.toThrow("could not be reached")
+
+      // Nothing was persisted, so the form can be corrected and retried.
+      expect(
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+      ).toEqual(existingEndpoints)
+    }, 20_000)
+
+    it("does not probe WebSocket endpoints", async () => {
+      mockProbeResult("0x1")
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com" },
+        { url: "wss://ws-rpc.example.com" },
+      ])
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(fetchMock.mock.calls[0][0]).toEqual("https://new-rpc.example.com")
+    })
+
+    it("rejects an empty endpoint list", async () => {
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, []),
+      ).rejects.toThrow("At least one RPC endpoint is required")
+    })
+
+    it("reports Taho-managed endpoints alongside the stored list", async () => {
+      const { rpcEndpoints, managedRpcEndpoints } =
+        await chainService.getRpcConfigForChain(ETHEREUM.chainID)
+
+      expect(rpcEndpoints.length).toBeGreaterThan(0)
+
+      const boarRpcUrl = BOAR_RPC_URLS[ETHEREUM.chainID]
+      if (boarRpcUrl === undefined) {
+        expect(managedRpcEndpoints).toEqual([])
+      } else {
+        expect(managedRpcEndpoints).toEqual([
+          { url: boarRpcUrl, capabilities: ["alchemy_"] },
+        ])
+      }
+    })
+
+    it("does not probe endpoints that are already stored", async () => {
+      // A pre-existing endpoint having a transient outage must not block an
+      // unrelated settings change; only new endpoints are probed.
+      fetchMock.mockRejectedValue(new Error("connection refused"))
+
+      const existingEndpoints = await chainService.getRpcEndpointsForChain(
+        ETHEREUM.chainID,
+      )
+      expect(existingEndpoints.length).toBeGreaterThan(0)
+
+      await chainService.setRpcEndpointsForChain(
+        ETHEREUM.chainID,
+        existingEndpoints,
+      )
+
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("persists the block explorer URL via updateNetworkSettings", async () => {
+      mockProbeResult("0x1")
+
+      await chainService.updateNetworkSettings(
+        ETHEREUM.chainID,
+        [{ url: "https://new-rpc.example.com" }],
+        "https://custom-explorer.example.com",
+      )
+
+      expect(
+        chainService.supportedNetworks.find(
+          ({ chainID }) => chainID === ETHEREUM.chainID,
+        )?.blockExplorerURL,
+      ).toEqual("https://custom-explorer.example.com")
+    })
+
+    it("rejects metadata updates for built-in networks", async () => {
+      mockProbeResult("0x1")
+
+      await expect(
+        chainService.updateNetworkSettings(
+          ETHEREUM.chainID,
+          [{ url: "https://new-rpc.example.com" }],
+          "https://custom-explorer.example.com",
+          {
+            chainName: "Fauxthereum",
+            assetName: "Faux Ether",
+            symbol: "FETH",
+            decimals: 18,
+          },
+        ),
+      ).rejects.toThrow("Cannot edit metadata of built-in network")
+    })
+
+    it("rejects for unknown chains", async () => {
+      mockProbeResult("0x1")
+
+      await expect(
+        chainService.setRpcEndpointsForChain("999999", [
+          { url: "https://new-rpc.example.com" },
+        ]),
+      ).rejects.toThrow("No network found")
     })
   })
 })

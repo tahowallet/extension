@@ -1,6 +1,9 @@
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 import { AnyEVMTransaction, EVMNetwork } from "../../networks"
-import { SmartContractFungibleAsset } from "../../assets"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
+} from "../../assets"
 
 import ChainService from "../chain"
 import IndexingService from "../indexing"
@@ -126,9 +129,12 @@ export default class EnrichmentService extends BaseService<Events> {
       const assets = this.indexingService.getCachedAssets(ETHEREUM)
       const correspondingAsset = assets.find(
         (asset): asset is SmartContractFungibleAsset => {
+          // Network base assets can carry a contract address of their own
+          // without being tokens, so the narrowing this predicate promises
+          // has to come from the asset's type rather than the field.
           if (
             typedData.domain.verifyingContract &&
-            "contractAddress" in asset &&
+            isSmartContractFungibleAsset(asset) &&
             asset.contractAddress
           ) {
             return (

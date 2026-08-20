@@ -84,6 +84,13 @@ export default function Swap(): ReactElement {
   } = location.state ?? {}
   const locationAsset = ownedSellAssetAmounts.find(
     ({ asset: candidateAsset }) => {
+      // An incoming contract address is authoritative: it names exactly one
+      // token, and only producers that really are handing over a token pass
+      // one. Symbols are not unique---anyone can mint an ERC-20 called
+      // "MATIC"---so falling back to a symbol match when the address matches
+      // nothing could preselect a different asset than the one that was
+      // clicked. An unmatched address preselects nothing; an empty form is the
+      // correct answer there.
       if (typeof locationAssetContractAddress !== "undefined") {
         return (
           isSmartContractFungibleAsset(candidateAsset) &&
@@ -91,6 +98,9 @@ export default function Swap(): ReactElement {
             normalizeEVMAddress(locationAssetContractAddress)
         )
       }
+
+      // With no address, the caller means a base asset, which is identified by
+      // its symbol.
       return candidateAsset.symbol === locationAssetSymbol
     },
   )?.asset
@@ -179,7 +189,7 @@ export default function Swap(): ReactElement {
   )
   const isApprovalInProgress =
     sellAsset &&
-    "contractAddress" in sellAsset &&
+    isSmartContractFungibleAsset(sellAsset) &&
     normalizeEVMAddress(inProgressApprovalContract || "0x") ===
       normalizeEVMAddress(sellAsset?.contractAddress || "0x")
 

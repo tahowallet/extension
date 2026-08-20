@@ -29,7 +29,12 @@ import {
 } from ".."
 
 import { HexString, NormalizedEVMAddress } from "../../types"
-import { SignedTransaction, sameNetwork } from "../../networks"
+import {
+  EVMNetwork,
+  RpcEndpoint,
+  SignedTransaction,
+  sameNetwork,
+} from "../../networks"
 import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { Eligible, ReferrerStats } from "../island/types"
 
@@ -1873,6 +1878,33 @@ export default class ReduxService extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async updateNetworkSettings(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    blockExplorerUrl: string,
+    metadata?: {
+      chainName: string
+      assetName: string
+      symbol: string
+      decimals: number
+      iconUrl?: string
+    },
+  ): Promise<EVMNetwork> {
+    return this.chainService.updateNetworkSettings(
+      chainID,
+      rpcEndpoints,
+      blockExplorerUrl,
+      metadata,
+    )
+  }
+
+  async getRpcConfigForChain(chainID: string): Promise<{
+    rpcEndpoints: RpcEndpoint[]
+    managedRpcEndpoints: RpcEndpoint[]
+  }> {
+    return this.chainService.getRpcConfigForChain(chainID)
   }
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {

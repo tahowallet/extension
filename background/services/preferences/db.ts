@@ -480,6 +480,58 @@ export class PreferenceDatabase extends Dexie {
         }),
     )
 
+    // Drop token lists whose endpoints no longer serve a token list, and
+    // move lists off hosts the extension cannot actually fetch from: the
+    // Uniswap default list to its canonical host instead of an IPNS gateway
+    // that redirects to a non-JSON landing page, and the Taho community
+    // list to Taho-controlled hosting instead of a public IPFS gateway that
+    // answers browser user agents with a bot-protection challenge.
+    this.version(24).upgrade((tx) =>
+      tx
+        .table("preferences")
+        .toCollection()
+        .modify((storedPreferences: Partial<Preferences>) => {
+          // Preferences rows are append-keyed, so long-lived profiles carry
+          // rows written by much older versions whose shape predates
+          // tokenLists. Only the latest row is ever read back; leave rows
+          // that don't have a list to rewrite untouched rather than
+          // aborting the whole upgrade — a thrown error here rejects the
+          // database open and silently kills service startup.
+          const { tokenLists } = storedPreferences
+          if (tokenLists === undefined || !Array.isArray(tokenLists.urls)) {
+            return
+          }
+
+          const updatedURLs = tokenLists.urls
+            .filter(
+              (url) =>
+                // Behind a bot-protection challenge, never serves JSON.
+                !url.includes("messari.io/tokenlist") &&
+                // Now serves an index of Polygon token lists, none of which
+                // are in the Uniswap token list format.
+                !url.includes("api-polygon-tokens.polygon.technology"),
+            )
+            .map((url) => {
+              if (url.includes("ipns/tokens.uniswap.org")) {
+                return "https://tokens.uniswap.org"
+              }
+              if (
+                url.includes(
+                  "bafkreidtegyj34mqah5ejveukif5ht5quddggv2gcb5yfthj5zw43um3y4",
+                )
+              ) {
+                return "https://tokens.taho.xyz/tokens.json"
+              }
+              return url
+            })
+
+          Object.assign(tokenLists, {
+            // The rewrites can collide with already-canonical entries.
+            urls: [...new Set(updatedURLs)],
+          })
+        }),
+    )
+
     // This is the old version for populate
     // https://dexie.org/docs/Dexie/Dexie.on.populate-(old-version)
     // The this does not behave according the new docs, but works

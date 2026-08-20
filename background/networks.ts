@@ -66,7 +66,34 @@ export type EVMNetwork = Network & {
    * Provided for custom networks
    */
   blockExplorerURL?: string
+  /**
+   * Provided for custom networks; a URL to a logo for the network, used in
+   * place of the bundled icons available for built-in networks.
+   */
+  iconUrl?: string
 }
+
+/**
+ * A single JSON-RPC endpoint for a network, along with any non-standard
+ * method namespaces it serves.
+ */
+export type RpcEndpoint = {
+  url: string
+  /**
+   * Method-name prefixes for non-standard JSON-RPC namespaces this endpoint
+   * serves beyond the standard set — e.g. "alchemy_" for Alchemy-compatible
+   * enhanced APIs. Standard methods are always assumed to be supported.
+   */
+  capabilities?: string[]
+}
+
+/**
+ * The {@link RpcEndpoint.capabilities} entry for Alchemy-compatible enhanced
+ * APIs. It lives here, alongside the type it describes, rather than in the
+ * provider implementation, so UI code can name the capability without pulling
+ * the whole provider stack into the popup bundle.
+ */
+export const ALCHEMY_CAPABILITY_NAMESPACE = "alchemy_"
 
 /**
  * Union type that allows narrowing to particular network subtypes.

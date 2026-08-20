@@ -8,6 +8,7 @@ import {
   EVMNetwork,
   Network,
   NetworkBaseAsset,
+  RpcEndpoint,
 } from "../../networks"
 import { FungibleAsset } from "../../assets"
 import {
@@ -15,6 +16,8 @@ import {
   CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
   CHAIN_ID_TO_RPC_URLS,
   DEFAULT_NETWORKS,
+  DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID,
+  DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
   ETH,
   SEPOLIA,
   isBuiltInNetwork,
@@ -41,12 +44,47 @@ export type RpcConfig = {
   supportedMethods?: string[]
 }
 
+/**
+ * The stored per-chain RPC endpoint list. Once a row exists for a chain, it
+ * is the sole source of truth for that chain's RPC endpoints — the hardcoded
+ * defaults are only used to seed rows for chains that have none.
+ */
+export type ChainRpcConfig = {
+  chainID: string
+  endpoints: RpcEndpoint[]
+}
+
+/**
+ * RPC endpoint URLs that are permanently gone and should be dropped from
+ * existing installs' stored endpoint lists. Removing a URL from the
+ * hardcoded defaults is not enough on its own: stored endpoint lists are
+ * seeded once and are the sole source of truth from then on, so a dead
+ * endpoint sticks around until it is explicitly scrubbed by a migration.
+ */
+export const DEAD_RPC_URLS = ["https://polygon-rpc.com"]
+
+/**
+ * Drops every endpoint whose URL exactly matches one of `deadUrls`, unless
+ * that would leave the chain with no endpoints at all; a chain with an empty
+ * endpoint list is unusable, so in that case the list is returned unchanged
+ * and the dead endpoints are left in place.
+ */
+export function scrubDeadEndpoints(
+  endpoints: RpcEndpoint[],
+  deadUrls: string[],
+): RpcEndpoint[] {
+  const liveEndpoints = endpoints.filter(({ url }) => !deadUrls.includes(url))
+
+  return liveEndpoints.length > 0 ? liveEndpoints : endpoints
+}
+
 // TODO keep track of blocks invalidated by a reorg
 // TODO keep track of transaction replacement / nonce invalidation
 
 export class ChainDatabase extends Dexie {
   static defaultSettings = {
-    CHAIN_ID_TO_RPC_URLS,
+    DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
+    DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID,
     BASE_ASSETS,
     DEFAULT_NETWORKS,
   }
@@ -96,7 +134,7 @@ export class ChainDatabase extends Dexie {
 
   private baseAssets!: Dexie.Table<NetworkBaseAsset, string>
 
-  private rpcConfig!: Dexie.Table<RpcConfig, string>
+  private rpcConfig!: Dexie.Table<ChainRpcConfig, string>
 
   private customRpcConfig!: Dexie.Table<RpcConfig, string>
 
@@ -232,6 +270,44 @@ export class ChainDatabase extends Dexie {
           }
         }),
     )
+
+    // Converts stored per-chain RPC URL lists into capability-carrying
+    // endpoint lists ({ url, capabilities? } per endpoint).
+    this.version(11)
+      .stores({
+        rpcConfig: "&chainID",
+      })
+      .upgrade(async (tx) =>
+        tx
+          .table("rpcConfig")
+          .toCollection()
+          .modify((rpcConfig: RpcConfig & Partial<ChainRpcConfig>) => {
+            const { rpcUrls } = rpcConfig
+            if (rpcUrls !== undefined) {
+              Object.assign(rpcConfig, {
+                endpoints: rpcUrls.map((url) => ({ url })),
+              })
+              // eslint-disable-next-line no-param-reassign
+              delete (rpcConfig as Partial<RpcConfig>).rpcUrls
+            }
+          }),
+      )
+
+    // Scrubs permanently dead RPC endpoints from stored endpoint lists; see
+    // {@link DEAD_RPC_URLS} for why a migration is needed at all.
+    this.version(12).upgrade(async (tx) =>
+      tx
+        .table("rpcConfig")
+        .toCollection()
+        .modify((rpcConfig: Partial<ChainRpcConfig>) => {
+          const { endpoints } = rpcConfig
+          if (endpoints !== undefined) {
+            Object.assign(rpcConfig, {
+              endpoints: scrubDeadEndpoints(endpoints, DEAD_RPC_URLS),
+            })
+          }
+        }),
+    )
   }
 
   async initialize(): Promise<void> {
@@ -276,6 +352,7 @@ export class ChainDatabase extends Dexie {
     assetName,
     rpcUrls,
     blockExplorerURL,
+    iconUrl,
   }: {
     chainName: string
     chainID: string
@@ -284,6 +361,7 @@ export class ChainDatabase extends Dexie {
     assetName: string
     rpcUrls: string[]
     blockExplorerURL: string
+    iconUrl?: string
   }): Promise<EVMNetwork> {
     const network: EVMNetwork = {
       name: chainName,
@@ -291,6 +369,7 @@ export class ChainDatabase extends Dexie {
       chainID,
       family: "EVM",
       blockExplorerURL,
+      iconUrl,
       baseAsset: {
         decimals,
         symbol,
@@ -302,8 +381,160 @@ export class ChainDatabase extends Dexie {
     // A bit awkward that we are adding the base asset to the network as well
     // as to its own separate table - but lets forge on for now.
     await this.addBaseAsset(assetName, symbol, chainID, decimals)
-    await this.addRpcUrls(chainID, rpcUrls)
+    await this.addRpcEndpoints(
+      chainID,
+      rpcUrls.map((url) => ({ url })),
+    )
     return network
+  }
+
+  /**
+   * Updates the editable metadata of an existing EVM network — its name,
+   * block explorer URL, icon, and base asset details. The chain ID and family
+   * are fixed for the life of the network. RPC endpoints are *not* touched
+   * here; they are persisted separately via {@link setRpcEndpoints}, so a
+   * settings save writes them exactly once.
+   *
+   * A rename is not just a field update. Several tables key or index rows by
+   * the network's *name*, so rows written under the old name become
+   * unreachable the moment it changes; see {@link migrateNetworkNameChange}.
+   */
+  async updateEVMNetwork({
+    chainName,
+    chainID,
+    decimals,
+    symbol,
+    assetName,
+    blockExplorerURL,
+    iconUrl,
+  }: {
+    chainName: string
+    chainID: string
+    decimals: number
+    symbol: string
+    assetName: string
+    blockExplorerURL: string
+    iconUrl?: string
+  }): Promise<EVMNetwork> {
+    const existingNetwork = await this.getEVMNetworkByChainID(chainID)
+    if (existingNetwork === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    const network: EVMNetwork = {
+      ...existingNetwork,
+      name: chainName,
+      blockExplorerURL,
+      iconUrl,
+      baseAsset: {
+        decimals,
+        symbol,
+        name: assetName,
+        chainID,
+      },
+    }
+
+    const previousName = existingNetwork.name
+
+    // One transaction over everything a rename touches, so the network row and
+    // the rows keyed by its name can never disagree about which name is
+    // current.
+    await this.transaction(
+      "rw",
+      [
+        this.networks,
+        this.baseAssets,
+        this.accountsToTrack,
+        this.accountAssetTransferLookups,
+        this.balances,
+        this.chainTransactions,
+        this.blocks,
+      ],
+      async () => {
+        await this.networks.put(network)
+        await this.addBaseAsset(assetName, symbol, chainID, decimals)
+
+        if (previousName !== network.name) {
+          await this.migrateNetworkNameChange(previousName, network)
+        }
+      },
+    )
+
+    return network
+  }
+
+  /**
+   * Moves every row that identifies its network by name off a custom network's
+   * old name and onto its new one.
+   *
+   * Per table, and why each is handled the way it is:
+   *
+   * - `accountsToTrack`: the compound primary key embeds `network.name`, so a
+   *   row cannot be updated in place — it is deleted and re-added under the new
+   *   key. Losing these rows would silently stop tracking the account.
+   * - `accountAssetTransferLookups`: auto-increment primary key, name only in
+   *   secondary indices, so the stored network is rewritten in place; Dexie
+   *   reindexes. Losing these would restart transfer discovery from scratch and
+   *   re-scan the whole chain.
+   * - `balances`: auto-increment primary key, name only in a secondary index,
+   *   so it is rewritten in place too — cheap, and it keeps the recent-balance
+   *   cache readable instead of forcing a refetch.
+   * - `chainTransactions` and `blocks`: the compound primary keys embed
+   *   `network.name`, and both are re-derivable caches. Old-name rows are
+   *   deleted rather than re-keyed, which avoids writing a second copy of the
+   *   same history under the new name.
+   */
+  private async migrateNetworkNameChange(
+    previousName: string,
+    network: EVMNetwork,
+  ): Promise<void> {
+    const { chainID } = network
+
+    const staleAccounts = await this.accountsToTrack
+      .where("network.name")
+      .equals(previousName)
+      .filter((account) => account.network.chainID === chainID)
+      .toArray()
+
+    await this.accountsToTrack
+      .where("network.name")
+      .equals(previousName)
+      .filter((account) => account.network.chainID === chainID)
+      .delete()
+
+    await this.accountsToTrack.bulkPut(
+      staleAccounts.map(({ address }) => ({ address, network })),
+    )
+
+    await this.accountAssetTransferLookups
+      .where("addressNetwork.network.name")
+      .equals(previousName)
+      .filter(
+        ({ addressNetwork }) => addressNetwork.network.chainID === chainID,
+      )
+      .modify((lookup) => {
+        Object.assign(lookup.addressNetwork, { network })
+      })
+
+    await this.balances
+      .where("network.name")
+      .equals(previousName)
+      .filter((balance) => balance.network.chainID === chainID)
+      .modify((balance) => {
+        Object.assign(balance, { network })
+      })
+
+    await this.chainTransactions
+      .where("network.name")
+      .equals(previousName)
+      .filter((transaction) => transaction.network.chainID === chainID)
+      .delete()
+
+    await this.blocks
+      .where("network.name")
+      .equals(previousName)
+      .filter((block) => block.network.chainID === chainID)
+      .delete()
   }
 
   async removeEVMNetwork(chainID: string): Promise<void> {
@@ -375,13 +606,19 @@ export class ChainDatabase extends Dexie {
 
   private async initializeRPCs(): Promise<void> {
     await Promise.all(
-      Object.entries(ChainDatabase.defaultSettings.CHAIN_ID_TO_RPC_URLS).map(
-        async ([chainId, rpcUrls]) => {
-          if (rpcUrls) {
-            await this.addRpcUrls(chainId, rpcUrls)
+      Object.entries(
+        ChainDatabase.defaultSettings.DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID,
+      ).map(async ([chainID, endpoints]) => {
+        if (endpoints) {
+          // Seed only chains that have no stored endpoint list. Once a chain
+          // has one, the stored list is the sole source of truth; the
+          // hardcoded defaults are never merged back in.
+          const existingConfig = await this.rpcConfig.get(chainID)
+          if (existingConfig === undefined) {
+            await this.rpcConfig.put({ chainID, endpoints })
           }
-        },
-      ),
+        }
+      }),
     )
   }
 
@@ -393,30 +630,73 @@ export class ChainDatabase extends Dexie {
     await Promise.all(
       ChainDatabase.defaultSettings.DEFAULT_NETWORKS.map(
         async (defaultNetwork) => {
-          await this.networks.put(defaultNetwork)
+          // The block explorer URL follows the same rules as RPC endpoints:
+          // it is seeded from the hardcoded defaults only when no stored
+          // value exists, and the stored value is the sole source of truth
+          // from then on.
+          const existingNetwork = await this.networks.get(
+            defaultNetwork.chainID,
+          )
+          await this.networks.put({
+            ...defaultNetwork,
+            blockExplorerURL:
+              existingNetwork?.blockExplorerURL ??
+              ChainDatabase.defaultSettings
+                .DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID[
+                defaultNetwork.chainID
+              ],
+          })
         },
       ),
     )
   }
 
-  async getRpcUrlsByChainId(chainId: string): Promise<string[]> {
-    const rpcUrls = await this.rpcConfig.where({ chainId }).first()
-    if (rpcUrls) {
-      return rpcUrls.rpcUrls
-    }
-    throw new Error(`No RPC Found for ${chainId}`)
+  async setBlockExplorerUrl(
+    chainID: string,
+    blockExplorerURL: string,
+  ): Promise<void> {
+    await this.networks.update(chainID, { blockExplorerURL })
   }
 
-  private async addRpcUrls(chainID: string, rpcUrls: string[]): Promise<void> {
-    const existingRpcUrlsForChain = await this.rpcConfig.get(chainID)
-    if (existingRpcUrlsForChain) {
-      existingRpcUrlsForChain.rpcUrls.push(...rpcUrls)
-      existingRpcUrlsForChain.rpcUrls = [
-        ...new Set(existingRpcUrlsForChain.rpcUrls),
-      ]
-      await this.rpcConfig.put(existingRpcUrlsForChain)
+  async getRpcEndpointsByChainId(chainID: string): Promise<RpcEndpoint[]> {
+    const config = await this.rpcConfig.get(chainID)
+    if (config) {
+      return config.endpoints
+    }
+    throw new Error(`No RPC Found for ${chainID}`)
+  }
+
+  /**
+   * Replaces the stored RPC endpoint list for the given chain, unlike
+   * {@link addRpcEndpoints}, which merges with any existing list. Endpoints
+   * are deduplicated by URL, keeping the first occurrence's capabilities.
+   */
+  async setRpcEndpoints(
+    chainID: string,
+    endpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const dedupedEndpoints = endpoints.filter(
+      (endpoint, index) =>
+        endpoints.findIndex(({ url }) => url === endpoint.url) === index,
+    )
+    await this.rpcConfig.put({ chainID, endpoints: dedupedEndpoints })
+  }
+
+  private async addRpcEndpoints(
+    chainID: string,
+    endpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const existingConfig = await this.rpcConfig.get(chainID)
+    if (existingConfig) {
+      const mergedEndpoints = [...existingConfig.endpoints]
+      endpoints.forEach((endpoint) => {
+        if (!mergedEndpoints.some(({ url }) => url === endpoint.url)) {
+          mergedEndpoints.push(endpoint)
+        }
+      })
+      await this.rpcConfig.put({ chainID, endpoints: mergedEndpoints })
     } else {
-      await this.rpcConfig.put({ chainID, rpcUrls })
+      await this.rpcConfig.put({ chainID, endpoints })
     }
   }
 
@@ -436,7 +716,7 @@ export class ChainDatabase extends Dexie {
     return this.customRpcConfig.where({ chainID }).delete()
   }
 
-  async getAllRpcUrls(): Promise<{ chainID: string; rpcUrls: string[] }[]> {
+  async getAllRpcEndpoints(): Promise<ChainRpcConfig[]> {
     return this.rpcConfig.toArray()
   }
 

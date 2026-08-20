@@ -9,6 +9,7 @@ import getBlockPrices from "../../lib/gas"
 import { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
+  ALCHEMY_CAPABILITY_NAMESPACE,
   AnyEVMBlock,
   AnyEVMTransaction,
   EIP1559TransactionRequest,
@@ -19,6 +20,7 @@ import {
   SignedTransaction,
   toHexChainID,
   NetworkBaseAsset,
+  RpcEndpoint,
   sameChainID,
   sameNetwork,
 } from "../../networks"
@@ -37,6 +39,8 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
+  DEFAULT_NETWORKS_BY_CHAIN_ID,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
@@ -69,6 +73,7 @@ import SerialFallbackProvider, {
   ProviderCreator,
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
+import { BOAR_RPC_URLS } from "../../lib/boar"
 import AssetDataHelper from "./asset-data-helper"
 import {
   OPTIMISM_GAS_ORACLE_ABI,
@@ -86,6 +91,22 @@ import { ISLAND_NETWORK } from "../island/contracts"
 // transaction history will appear "slow" to show up for newly imported
 // accounts.
 const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
+
+// The number of blocks to query at a time on networks with no Alchemy-capable
+// endpoint, where asset transfers are discovered by scanning ERC-20 `Transfer`
+// logs (see `lib/erc20-transfer-logs.ts`) instead of by a single enhanced-API
+// call.
+//
+// The two paths price block ranges completely differently. Alchemy's transfer
+// API answers any range in one request, so the range width above costs the
+// same as a narrow one. `eth_getLogs`, on the other hand, is capped per
+// request by every endpoint that serves it---10,000 blocks is a common
+// limit---so a range wider than the cap is rejected, halved, and retried until
+// the pieces fit, turning one logical lookup into dozens or thousands of
+// requests. Keeping each scan comfortably under the usual caps keeps it at one
+// request per direction, and the recurring recent/historic alarms below are
+// what extend coverage over time.
+const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
 
 // The number of blocks before the current block height to start looking for
 // asset transfers. This is important to allow nodes like Erigon and
@@ -110,6 +131,10 @@ const GAS_POLLING_PERIOD = 1 // 1 minute
 // Transactions with priority for individual accounts will keep the order of loading
 // from adding accounts.
 const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
+
+// How long to wait for an RPC endpoint to answer an eth_chainId probe before
+// treating it as unreachable when validating user-provided endpoint lists.
+const RPC_PROBE_TIMEOUT = 5 * SECOND
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -369,7 +394,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async initializeNetworks(): Promise<void> {
-    const rpcUrls = await this.db.getAllRpcUrls()
+    const rpcEndpointConfigs = await this.db.getAllRpcEndpoints()
     const customRpcUrls = await this.db.getAllCustomRpcUrls()
 
     await this.updateSupportedNetworks()
@@ -385,7 +410,8 @@ export default class ChainService extends BaseService<Events> {
           network.chainID,
           makeSerialFallbackProvider(
             network.chainID,
-            rpcUrls.find((v) => v.chainID === network.chainID)?.rpcUrls || [],
+            rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
+              ?.endpoints || [],
             customRpcUrls.find((v) => v.chainID === network.chainID),
           ),
         ]),
@@ -1508,7 +1534,12 @@ export default class ChainService extends BaseService<Events> {
     const blockHeight =
       (await this.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    const fromBlock = blockHeight - BLOCKS_FOR_TRANSACTION_HISTORY
+    // A wide window is one enhanced-API call, but many `eth_getLogs` calls; see
+    // BLOCKS_PER_TRANSFER_LOG_SCAN.
+    const blocksToLookBack = this.supportsAlchemy(addressNetwork.network)
+      ? BLOCKS_FOR_TRANSACTION_HISTORY
+      : BLOCKS_PER_TRANSFER_LOG_SCAN
+    const fromBlock = Math.max(0, blockHeight - blocksToLookBack)
 
     try {
       return await this.loadAssetTransfers(
@@ -1542,8 +1573,30 @@ export default class ChainService extends BaseService<Events> {
       BigInt(await this.getBlockHeight(addressNetwork.network))
 
     if (oldest !== 0n) {
-      await this.loadAssetTransfers(addressNetwork, 0n, oldest)
+      // On networks that answer transfer lookups in a single enhanced-API call,
+      // ask for everything that is left in one go. On networks scanned via
+      // `eth_getLogs`, walk backwards one bounded chunk per invocation instead;
+      // each chunk is recorded by `loadAssetTransfers` below, so the oldest
+      // lookup moves back a chunk at a time and this alarm keeps extending
+      // coverage on later runs rather than asking for all of history at once.
+      const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
+      const startBlock =
+        this.supportsAlchemy(addressNetwork.network) || oldest <= chunkSize
+          ? 0n
+          : oldest - chunkSize
+
+      await this.loadAssetTransfers(addressNetwork, startBlock, oldest)
     }
+  }
+
+  /**
+   * True if the network's provider can serve Alchemy's enhanced APIs, which
+   * includes the transfer lookups used to discover asset transfers. When false,
+   * transfers are discovered by scanning ERC-20 `Transfer` logs, which is
+   * dramatically more sensitive to how many blocks a lookup covers.
+   */
+  private supportsAlchemy(network: EVMNetwork): boolean {
+    return this.providerForNetwork(network)?.supportsAlchemy ?? false
   }
 
   /**
@@ -2018,12 +2071,18 @@ export default class ChainService extends BaseService<Events> {
       assetName: chainInfo.nativeCurrency.name,
       rpcUrls: chainInfo.rpcUrls,
       blockExplorerURL: chainInfo.blockExplorerUrl,
+      iconUrl: chainInfo.iconUrl,
     })
     await this.updateSupportedNetworks()
 
+    // Adding a chain that is already known replaces its provider outright, so
+    // retire the outgoing one rather than leaving it polling and reconnecting
+    // to the endpoints it was built with for the life of the service worker.
+    this.providers.evm[chainInfo.chainId]?.destroy()
+
     this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
       chainInfo.chainId,
-      chainInfo.rpcUrls,
+      chainInfo.rpcUrls.map((url) => ({ url })),
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
@@ -2032,9 +2091,330 @@ export default class ChainService extends BaseService<Events> {
     return network
   }
 
+  /**
+   * Replaces the stored RPC endpoint list for any known network — built-in
+   * or custom — and rebuilds the network's provider to use it. The list is
+   * used in priority order; endpoints past the first act as fallbacks.
+   *
+   * Only endpoints that are not already part of the chain's stored list are
+   * probed for reachability and chain ID agreement: a pre-existing endpoint
+   * having a transient outage is exactly what runtime failover exists to
+   * tolerate, and must not block an unrelated settings change.
+   */
+  async setRpcEndpointsForChain(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    if (rpcEndpoints.length === 0) {
+      throw new Error("At least one RPC endpoint is required")
+    }
+
+    const network = await this.db.getEVMNetworkByChainID(chainID)
+    if (network === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    const storedUrls = new Set(
+      (await this.db.getRpcEndpointsByChainId(chainID).catch(() => [])).map(
+        ({ url }) => url,
+      ),
+    )
+    const newEndpoints = rpcEndpoints.filter(({ url }) => !storedUrls.has(url))
+
+    await this.validateRpcEndpoints(chainID, newEndpoints)
+
+    await this.db.setRpcEndpoints(chainID, rpcEndpoints)
+    await this.rebuildProviderForChain(chainID, rpcEndpoints)
+  }
+
+  async getRpcEndpointsForChain(chainID: string): Promise<RpcEndpoint[]> {
+    return this.db.getRpcEndpointsByChainId(chainID)
+  }
+
+  /**
+   * Updates the user-editable settings for any known network — the RPC
+   * endpoint list, the block explorer URL, and, for custom networks only,
+   * the identifying metadata (name, currency details, icon). The chain ID
+   * and family are immutable for every network; metadata is immutable for
+   * built-in networks. Like RPC endpoints, a stored block explorer URL
+   * takes precedence over the hardcoded defaults from then on.
+   */
+  async updateNetworkSettings(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    blockExplorerUrl: string,
+    metadata?: {
+      chainName: string
+      assetName: string
+      symbol: string
+      decimals: number
+      iconUrl?: string
+    },
+  ): Promise<EVMNetwork> {
+    if (metadata !== undefined && DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainID)) {
+      throw new Error(
+        `Cannot edit metadata of built-in network with chain ID ${chainID}`,
+      )
+    }
+
+    // Endpoints are probed, persisted, and applied to the provider here, and
+    // only here; the metadata update below deliberately leaves them alone
+    // rather than writing the same list a second time.
+    await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
+
+    if (metadata !== undefined) {
+      await this.db.updateEVMNetwork({
+        chainID,
+        chainName: metadata.chainName,
+        assetName: metadata.assetName,
+        symbol: metadata.symbol,
+        decimals: metadata.decimals,
+        iconUrl: metadata.iconUrl,
+        blockExplorerURL: blockExplorerUrl,
+      })
+    } else {
+      await this.db.setBlockExplorerUrl(chainID, blockExplorerUrl)
+    }
+
+    const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
+    if (updatedNetwork === undefined) {
+      throw new Error(`No network found for chain ID ${chainID}`)
+    }
+
+    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
+      trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
+    )
+
+    await this.updateSupportedNetworks()
+
+    return updatedNetwork
+  }
+
+  /**
+   * The user-editable RPC endpoints for a chain, alongside any Taho-managed
+   * endpoints (currently Boar, while it remains in service) that also serve
+   * the chain but are not part of the stored, editable list.
+   */
+  async getRpcConfigForChain(chainID: string): Promise<{
+    rpcEndpoints: RpcEndpoint[]
+    managedRpcEndpoints: RpcEndpoint[]
+  }> {
+    const rpcEndpoints = await this.db.getRpcEndpointsByChainId(chainID)
+
+    const boarRpcUrl = BOAR_RPC_URLS[chainID]
+    const managedRpcEndpoints =
+      boarRpcUrl === undefined
+        ? []
+        : [
+            {
+              url: boarRpcUrl,
+              capabilities: BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
+                ? []
+                : [ALCHEMY_CAPABILITY_NAMESPACE],
+            },
+          ]
+
+    return { rpcEndpoints, managedRpcEndpoints }
+  }
+
+  private async rebuildProviderForChain(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    const customRpcConfigs = await this.db.getAllCustomRpcUrls()
+    const previousProvider = this.providers.evm[chainID]
+
+    this.providers.evm[chainID] = makeSerialFallbackProvider(
+      chainID,
+      rpcEndpoints,
+      customRpcConfigs.find((config) => config.chainID === chainID),
+    )
+
+    // Nothing points at the replaced provider anymore, but its reconnect and
+    // cache-cleanup timers would keep running, and its WebSockets keep
+    // reopening, against endpoints the user just removed.
+    previousProvider?.destroy()
+
+    // Subscriptions are tracked alongside the provider they were made on, so
+    // they have to be moved over; otherwise gas polling and pending
+    // transaction watching would keep addressing the retired provider.
+    await this.resubscribeToChainEvents(chainID, previousProvider)
+  }
+
+  /**
+   * Re-establishes the network and account subscriptions that were made
+   * against a chain's previous provider on its replacement, updating the
+   * subscription registries in place instead of appending duplicate entries.
+   *
+   * Chains that had no subscriptions to begin with are left alone; a provider
+   * rebuild is not a reason to start tracking a network or an account.
+   */
+  private async resubscribeToChainEvents(
+    chainID: string,
+    previousProvider: SerialFallbackProvider | undefined,
+  ): Promise<void> {
+    const provider = this.providers.evm[chainID]
+    const networkSubscription = this.subscribedNetworks.find(
+      ({ network: subscribedNetwork }) =>
+        sameChainID(subscribedNetwork.chainID, chainID),
+    )
+    const network =
+      networkSubscription?.network ??
+      this.trackedNetworks.find((trackedNetwork) =>
+        sameChainID(trackedNetwork.chainID, chainID),
+      ) ??
+      this.supportedNetworks.find((supportedNetwork) =>
+        sameChainID(supportedNetwork.chainID, chainID),
+      )
+
+    if (provider === undefined || network === undefined) {
+      return
+    }
+
+    if (networkSubscription !== undefined) {
+      // Point the existing entry at the replacement instead of pushing a
+      // second one for the same network; block price polling reads the
+      // provider from here on every pass.
+      this.subscribedNetworks = this.subscribedNetworks.map((subscription) =>
+        subscription === networkSubscription
+          ? { network: subscription.network, provider }
+          : subscription,
+      )
+
+      // Read a fresh block and fresh block prices off the replacement, the
+      // way `subscribeToNewHeads` does for a newly subscribed network; both
+      // are fire-and-forget there as well, and the periodic poll picks the new
+      // provider up from `subscribedNetworks` on its next pass.
+      this.pollLatestBlock(network, provider).catch((error) =>
+        logger.error(
+          `Error reading the latest block from the rebuilt provider on chain ${chainID}`,
+          error,
+        ),
+      )
+      this.pollBlockPricesForNetwork(chainID).catch((error) =>
+        logger.error(
+          `Error reading block prices from the rebuilt provider on chain ${chainID}`,
+          error,
+        ),
+      )
+    }
+
+    // Account subscriptions have to be made again on the new provider, so drop
+    // the entries for the retired one and let `subscribeToAccountTransactions`
+    // record fresh ones.
+    const subscribedAddresses =
+      previousProvider === undefined
+        ? []
+        : this.subscribedAccounts
+            .filter(
+              ({ provider: accountProvider }) =>
+                accountProvider === previousProvider,
+            )
+            .map(({ account }) => account)
+
+    this.subscribedAccounts = this.subscribedAccounts.filter(
+      ({ provider: accountProvider }) => accountProvider !== previousProvider,
+    )
+
+    await Promise.allSettled(
+      subscribedAddresses.map((address) =>
+        this.subscribeToAccountTransactions({ address, network }),
+      ),
+    )
+  }
+
+  /**
+   * Verifies that each http(s) RPC endpoint in the given list is reachable
+   * and reports the expected chain ID via eth_chainId. WebSocket endpoints
+   * are not probed. Throws an error naming the offending URL on mismatch or
+   * unreachability.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  private async validateRpcEndpoints(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+  ): Promise<void> {
+    await Promise.all(
+      rpcEndpoints.map(async ({ url }) => {
+        if (!/^https?:/.test(url)) {
+          return
+        }
+
+        const abortController = new AbortController()
+        // The timeout has to stay armed until the body has been read, not just
+        // until the response headers arrive: `fetch` resolves as soon as the
+        // headers land, and an endpoint that then trickles or stalls its body
+        // would hang `response.json()` — and with it the settings save — for
+        // as long as the socket stays open. Aborting the request aborts the
+        // body read too, which surfaces below as an unreachable endpoint.
+        const timeout = setTimeout(
+          () => abortController.abort(),
+          RPC_PROBE_TIMEOUT,
+        )
+
+        let reportedChainID: string
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "omit",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "eth_chainId",
+              params: [],
+            }),
+            signal: abortController.signal,
+          })
+
+          const { result } = await response.json()
+          // JSON-RPC error responses carry no result; treat them — and any
+          // other non-hex result — the same as an unreachable endpoint
+          // rather than reporting a nonsense chain ID.
+          if (
+            typeof result !== "string" ||
+            Number.isNaN(parseInt(result, 16))
+          ) {
+            throw new Error(`invalid eth_chainId result: ${result}`)
+          }
+          reportedChainID = String(parseInt(result, 16))
+        } catch (error) {
+          logger.debug("RPC endpoint probe failed for", url, error)
+          throw new Error(`RPC endpoint could not be reached: ${url}`)
+        } finally {
+          clearTimeout(timeout)
+        }
+
+        if (!sameChainID(reportedChainID, chainID)) {
+          throw new Error(
+            `RPC endpoint ${url} reports chain ID ${reportedChainID}, expected ${chainID}`,
+          )
+        }
+      }),
+    )
+  }
+
   async removeCustomChain(chainID: string): Promise<void> {
     this.trackedNetworks = this.trackedNetworks.filter(
       (network) => network.chainID !== chainID,
+    )
+
+    // Dropping the network from the database is not enough: the provider is a
+    // live object with its own reconnect and cache-cleanup timers and, for
+    // WebSocket endpoints, open sockets. Retire it and drop the entry, so
+    // nothing can keep talking to a chain the user has removed.
+    const removedProvider = this.providers.evm[chainID]
+    removedProvider?.destroy()
+    delete this.providers.evm[chainID]
+
+    // The subscription registries are what the periodic block and block-price
+    // polls read the provider from, so entries pointing at the retired one
+    // have to go with it.
+    this.subscribedNetworks = this.subscribedNetworks.filter(
+      ({ network }) => !sameChainID(network.chainID, chainID),
+    )
+    this.subscribedAccounts = this.subscribedAccounts.filter(
+      ({ provider }) => provider !== removedProvider,
     )
 
     await this.db.removeEVMNetwork(chainID)

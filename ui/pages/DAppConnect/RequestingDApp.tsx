@@ -8,7 +8,20 @@ export default function RequestingDAppBlock(props: {
   const { title, url, faviconUrl } = props
   return (
     <div className="request_wrap">
-      <div className="dapp_favicon" />
+      {/* The favicon URL is supplied by the requesting dapp, so it is set as a
+      React style property value rather than interpolated into the styled-jsx
+      template below, where it would become stylesheet source a crafted URL
+      could break out of. */}
+      <div
+        className="dapp_favicon"
+        style={{
+          backgroundImage: `url("${
+            faviconUrl === ""
+              ? "./images/dapp_favicon_default@2x.png"
+              : faviconUrl
+          }")`,
+        }}
+      />
       <div className="info">
         <div className="dapp_title ellipsis_multiline" title={title}>
           {title}
@@ -24,9 +37,6 @@ export default function RequestingDAppBlock(props: {
           width: 100%;
         }
         .dapp_favicon {
-          background: url("${faviconUrl === ""
-            ? "./images/dapp_favicon_default@2x.png"
-            : faviconUrl}");
           background-size: cover;
           width: 48px;
           height: 48px;

@@ -34,6 +34,20 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
     addressNetwork: AddressOnNetwork,
     incomingOnly: boolean,
   ) => Promise<void>
+  loadHistoricAssetTransfers: (
+    addressNetwork: AddressOnNetwork,
+  ) => Promise<void>
+  loadAssetTransfers: (
+    addressNetwork: AddressOnNetwork,
+    startBlock: bigint,
+    endBlock: bigint,
+    incomingOnly?: boolean,
+  ) => Promise<void>
+  db: {
+    getOldestAccountAssetTransferLookup: (
+      addressNetwork: AddressOnNetwork,
+    ) => Promise<bigint | null>
+  }
   retrieveTransaction: (queuedTx: QueuedTxToRetrieve) => Promise<void>
   transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
   handleQueuedTransactionAlarm: () => Promise<void>
@@ -395,6 +409,140 @@ describe("Chain Service", () => {
               .transaction.hash,
           ).toBe(hashesForSecondAccount[idx + PRIORITY_MAX_COUNT])
         })
+      })
+    })
+  })
+
+  describe("asset transfer block ranges", () => {
+    // The block height the service is told the chain is at, with the skip
+    // applied to derive the end of a recent lookup.
+    const BLOCK_HEIGHT = 1_000_000
+    const RECENT_END_BLOCK = BigInt(BLOCK_HEIGHT - 20)
+
+    let chainServiceExternalized: ChainServiceExternalized
+    let loadAssetTransfersStub: sinon.SinonStub
+    let blockHeightStub: sinon.SinonStub
+
+    const stubAlchemySupport = (supportsAlchemy: boolean) =>
+      sandbox
+        .stub(chainService, "providerForNetwork")
+        .returns({ supportsAlchemy } as unknown as ReturnType<
+          ChainService["providerForNetwork"]
+        >)
+
+    beforeEach(() => {
+      chainServiceExternalized =
+        chainService as unknown as ChainServiceExternalized
+
+      blockHeightStub = sandbox
+        .stub(chainService, "getBlockHeight")
+        .resolves(BLOCK_HEIGHT)
+
+      loadAssetTransfersStub = sandbox
+        .stub(chainServiceExternalized, "loadAssetTransfers")
+        .resolves()
+    })
+
+    describe("loadRecentAssetTransfers", () => {
+      it("looks back the full transaction history window when the network has an Alchemy-capable endpoint", async () => {
+        stubAlchemySupport(true)
+
+        await chainServiceExternalized.loadRecentAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+          false,
+        )
+
+        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(endBlock).toEqual(RECENT_END_BLOCK)
+        expect(endBlock - startBlock).toEqual(128000n)
+      })
+
+      it("looks back a much shorter window when transfers have to be scanned from logs", async () => {
+        stubAlchemySupport(false)
+
+        await chainServiceExternalized.loadRecentAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+          false,
+        )
+
+        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(endBlock).toEqual(RECENT_END_BLOCK)
+        expect(endBlock - startBlock).toEqual(5000n)
+      })
+
+      it("never looks back past the genesis block", async () => {
+        stubAlchemySupport(true)
+        blockHeightStub.resolves(1000)
+
+        await chainServiceExternalized.loadRecentAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+          false,
+        )
+
+        const [, startBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(startBlock).toEqual(0n)
+      })
+    })
+
+    describe("loadHistoricAssetTransfers", () => {
+      it("asks for all remaining history at once when the network has an Alchemy-capable endpoint", async () => {
+        stubAlchemySupport(true)
+        sandbox
+          .stub(
+            chainServiceExternalized.db,
+            "getOldestAccountAssetTransferLookup",
+          )
+          .resolves(800_000n)
+
+        await chainServiceExternalized.loadHistoricAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+        )
+
+        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(startBlock).toEqual(0n)
+        expect(endBlock).toEqual(800_000n)
+      })
+
+      it("walks history back one bounded chunk at a time when transfers have to be scanned from logs", async () => {
+        stubAlchemySupport(false)
+        sandbox
+          .stub(
+            chainServiceExternalized.db,
+            "getOldestAccountAssetTransferLookup",
+          )
+          .resolves(800_000n)
+
+        await chainServiceExternalized.loadHistoricAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+        )
+
+        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(startBlock).toEqual(795_000n)
+        expect(endBlock).toEqual(800_000n)
+      })
+
+      it("stops at the genesis block on the final log-scanned chunk", async () => {
+        stubAlchemySupport(false)
+        sandbox
+          .stub(
+            chainServiceExternalized.db,
+            "getOldestAccountAssetTransferLookup",
+          )
+          .resolves(3000n)
+
+        await chainServiceExternalized.loadHistoricAssetTransfers(
+          createAddressOnNetwork({ network: ETHEREUM }),
+        )
+
+        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+
+        expect(startBlock).toEqual(0n)
+        expect(endBlock).toEqual(3000n)
       })
     })
   })
