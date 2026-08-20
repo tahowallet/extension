@@ -213,18 +213,22 @@ export default class AssetDataHelper {
     } catch (error) {
       logger.warn(
         "Problem resolving asset transfers via Alchemy-compatible helper; " +
-          "network may not support it.",
+          "falling back to Transfer log scanning.",
         error,
       )
 
-      // Rethrow as consumers like ChainService need the exception to manage
-      // retries. Eventually we may want retries to be handled here.
-      throw error
+      // Deliberately no rethrow: an endpoint that advertises the enhanced API
+      // but does not actually serve it — a mistagged capability, a revoked
+      // key — would otherwise disable transfer discovery for the network for
+      // good, since the caller retries the identical lookup on every alarm
+      // and never reaches the standard-RPC fallback below. Fall through to it
+      // instead; it rethrows on its own failure, which is what preserves the
+      // retry contract callers depend on.
     }
 
-    // Without an Alchemy-capable endpoint, fall back to scanning standard
-    // ERC-20 Transfer logs via eth_getLogs. Native-asset transfers are not
-    // captured this way.
+    // Without a working Alchemy-capable endpoint, fall back to scanning
+    // standard ERC-20 Transfer logs via eth_getLogs. Native-asset transfers
+    // are not captured this way.
     try {
       const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
 

@@ -22,8 +22,18 @@ export const ERC20_TRANSFER_TOPIC = ERC20_INTERFACE.getEventTopic("Transfer")
  * never past the point where a half would be smaller than this many blocks;
  * at that point the underlying error is allowed to propagate, as the failure
  * is unlikely to be a range-size problem.
+ *
+ * The value has to be low enough that halving can actually get under the
+ * range caps real endpoints advertise. Callers scan in 5000-block passes (see
+ * `BLOCKS_PER_TRANSFER_LOG_SCAN`), and halving 5000 walks 2500 → 1250 → 625 →
+ * 313 → 157; splitting stops once a half would fall below this floor, so a
+ * floor of 100 lets chunks reach ~156 blocks. That clears the 500- and
+ * 1000-block caps that are common among public endpoints. A floor of 1000
+ * stopped at ~1250-block chunks, which such an endpoint rejects every time —
+ * and since the caller retries the identical range on the next alarm, those
+ * endpoints could never make progress at all.
  */
-export const MINIMUM_LOG_BLOCK_RANGE = 1_000
+export const MINIMUM_LOG_BLOCK_RANGE = 100
 
 /**
  * Fetch logs matching the passed topics between `fromBlock` and `toBlock`

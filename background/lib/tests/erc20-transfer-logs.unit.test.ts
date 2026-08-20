@@ -191,6 +191,72 @@ describe("getAssetTransfersViaLogs", () => {
     expect(getLogs).toHaveBeenCalledTimes(1)
   })
 
+  it.each([500, 1_000])(
+    "completes a full scan pass against a provider capped at %i blocks",
+    async (blockCap) => {
+      // The caller scans in 5000-block passes; an endpoint that refuses
+      // anything wider than its cap has to be reachable by halving, or the
+      // identical range fails on every alarm forever.
+      const { getLogs, provider } = stubProvider()
+
+      const requestedRanges: number[] = []
+      getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          const blockCount = toBlock - fromBlock + 1
+          requestedRanges.push(blockCount)
+
+          return blockCount > blockCap
+            ? Promise.reject(
+                new Error(
+                  `exceeds max block range of ${blockCap}: ${blockCount}`,
+                ),
+              )
+            : Promise.resolve([])
+        },
+      )
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).resolves.toEqual([])
+
+      // Every range the provider actually served was within its cap, and the
+      // whole 5000-block span is covered by them.
+      const servedRanges = requestedRanges.filter(
+        (blockCount) => blockCount <= blockCap,
+      )
+      expect(servedRanges.length).toBeGreaterThan(0)
+      expect(servedRanges.reduce((sum, count) => sum + count, 0)).toEqual(5_000)
+    },
+  )
+
+  it("stops halving once a half would fall below the minimum range", async () => {
+    const { getLogs, provider } = stubProvider()
+    getLogs.mockRejectedValue(new Error("block range too wide"))
+
+    // A range exactly twice the minimum splits once, then each half is too
+    // small to split again.
+    await expect(
+      getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        MINIMUM_LOG_BLOCK_RANGE * 2 - 1,
+        true,
+      ),
+    ).rejects.toThrow("block range too wide")
+
+    // The full range, then the first half; the second half is never reached
+    // because the first one's failure propagates.
+    expect(getLogs).toHaveBeenCalledTimes(2)
+    expect(getLogs).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        fromBlock: 0,
+        toBlock: MINIMUM_LOG_BLOCK_RANGE - 1,
+      }),
+    )
+  })
+
   it("de-duplicates a self-transfer seen by both queries", async () => {
     const { getLogs, provider } = stubProvider()
 

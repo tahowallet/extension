@@ -99,6 +99,53 @@ describe("AssetDataHelper", () => {
       )
     })
 
+    it("falls back to Transfer log scanning when the Alchemy path fails", async () => {
+      // A mistagged endpoint — one advertising the enhanced API without
+      // serving it — must not permanently disable transfer discovery for the
+      // network; the standard-RPC path is still available.
+      mockedBoarAssetTransfers.mockRejectedValue(
+        new Error("Unsupported method: alchemy_getAssetTransfers"),
+      )
+
+      const provider = {
+        supportsAlchemy: true,
+        getBlockNumber: jest.fn(async () => 100),
+      }
+      const helper = makeHelperWithProvider(
+        provider as unknown as Partial<SerialFallbackProvider>,
+      )
+      const addressOnNetwork = createAddressOnNetwork()
+
+      await expect(
+        helper.getAssetTransfers(addressOnNetwork, 0, 50),
+      ).resolves.toEqual([])
+
+      expect(mockedLogAssetTransfers).toHaveBeenCalledWith(
+        provider,
+        addressOnNetwork,
+        0,
+        50,
+        false,
+      )
+    })
+
+    it("rejects when both the Alchemy path and the log fallback fail", async () => {
+      // The log fallback still rethrows, which is what lets callers like
+      // ChainService manage their own retries.
+      mockedBoarAssetTransfers.mockRejectedValue(new Error("bad capability"))
+      const logsError = new Error("range too wide")
+      mockedLogAssetTransfers.mockRejectedValueOnce(logsError)
+
+      const helper = makeHelperWithProvider({
+        supportsAlchemy: true,
+        getBlockNumber: jest.fn(async () => 100),
+      } as unknown as Partial<SerialFallbackProvider>)
+
+      await expect(
+        helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
+      ).rejects.toEqual(logsError)
+    })
+
     it("rethrows log-scanning errors so callers can manage retries", async () => {
       const error = new Error("range too wide")
       mockedLogAssetTransfers.mockRejectedValueOnce(error)
