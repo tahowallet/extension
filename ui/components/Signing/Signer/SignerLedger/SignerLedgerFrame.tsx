@@ -1,29 +1,17 @@
-import {
-  SignOperationType,
-  selectAdditionalSigningStatus,
-} from "@tallyho/tally-background/redux-slices/signing"
+import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import {
-  selectHasInsufficientFunds,
-  selectIsSigningNetworkUnreachable,
-  selectTransactionNetwork,
-} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
 import { LedgerAccountSigner } from "@tallyho/tally-background/services/ledger"
-import {
-  useBackgroundDispatch,
-  useBackgroundSelector,
-  useSigningLedgerState,
-} from "../../../../hooks"
+import { useBackgroundDispatch, useSigningLedgerState } from "../../../../hooks"
 import { SignerFrameProps } from ".."
-import NetworkUnreachableWarning from "../../../Shared/NetworkUnreachableWarning"
 import SharedButton from "../../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import SignerLedgerConnect from "./SignerLedgerConnect"
 import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
 import TransactionButton from "../TransactionButton"
+import useShouldBlockSigning from "../useShouldBlockSigning"
 
 export default function SignerLedgerFrame<
   T extends SignOperationType,
@@ -72,10 +60,7 @@ export default function SignerLedgerFrame<
       (typeof request.signingData !== "string" ||
         request.signingData.length > 0))
 
-  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
-  const additionalSigningStatus = useBackgroundSelector(
-    selectAdditionalSigningStatus,
-  )
+  const { shouldBlockSigning, messageI18nKey } = useShouldBlockSigning()
 
   const mustEnableArbitraryDataSigning =
     ledgerState.state === "available" &&
@@ -84,20 +69,6 @@ export default function SignerLedgerFrame<
 
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
-
-  const isNetworkUnreachable = useBackgroundSelector(
-    selectIsSigningNetworkUnreachable,
-  )
-  const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
-
-  // Unreachable takes precedence: unsaved fee edits are the user's own doing
-  // and reversible, while a chain we cannot read makes the fees and the nonce
-  // unverifiable no matter what they say.
-  const tooltip =
-    (isNetworkUnreachable && tSigning("networkUnreachableTooltip")) ||
-    (additionalSigningStatus === "editing" &&
-      tSigning("unsavedChangesTooltip")) ||
-    ""
 
   return (
     <>
@@ -150,51 +121,32 @@ export default function SignerLedgerFrame<
               {tSigning("reject")}
             </TransactionButton>
 
-            {/*
-             * The footer is laid out by a `:global()` rule in ../../index.tsx
-             * that spreads exactly two children apart; the warning shares the
-             * right-hand slot so adding it does not re-space the whole row. It
-             * belongs beside the Check Ledger button too — a chain that cannot
-             * be reached is a reason not to sign whatever the Ledger's state.
-             */}
-            <div className="sign_group">
-              {isNetworkUnreachable && transactionNetwork !== undefined && (
-                <NetworkUnreachableWarning
-                  chainID={transactionNetwork.chainID}
-                  linkToSettings={false}
-                  style={{ margin: 0 }}
-                  tooltipVerticalPosition="top"
-                />
-              )}
-              {ledgerCannotSign ? (
-                <SharedButton
-                  type="primary"
-                  size="large"
-                  onClick={() => {
-                    setIsSlideUpOpen(true)
-                  }}
-                >
-                  {t("checkLedger")}
-                </SharedButton>
-              ) : (
-                <TransactionButton
-                  type="primary"
-                  size="large"
-                  onClick={handleConfirm}
-                  isDisabled={
-                    hasInsufficientFunds ||
-                    additionalSigningStatus === "editing" ||
-                    isNetworkUnreachable
-                  }
-                  tooltip={tooltip}
-                  showLoadingOnClick
-                  showLoading
-                  reactOnWindowFocus
-                >
-                  {globalT(signingActionLabelI18nKey)}
-                </TransactionButton>
-              )}
-            </div>
+            {ledgerCannotSign ? (
+              <SharedButton
+                type="primary"
+                size="large"
+                onClick={() => {
+                  setIsSlideUpOpen(true)
+                }}
+              >
+                {t("checkLedger")}
+              </SharedButton>
+            ) : (
+              <TransactionButton
+                type="primary"
+                size="large"
+                onClick={handleConfirm}
+                isDisabled={shouldBlockSigning}
+                tooltip={
+                  messageI18nKey === undefined ? "" : globalT(messageI18nKey)
+                }
+                showLoadingOnClick
+                showLoading
+                reactOnWindowFocus
+              >
+                {globalT(signingActionLabelI18nKey)}
+              </TransactionButton>
+            )}
           </footer>
           <SharedSlideUpMenu
             isOpen={isSlideUpOpen && ledgerCannotSign}
@@ -211,11 +163,6 @@ export default function SignerLedgerFrame<
                  * deal with the drop shadow.
                  */
                 margin-bottom: 84px;
-              }
-              .sign_group {
-                display: flex;
-                align-items: center;
-                gap: 8px;
               }
             `}
           </style>

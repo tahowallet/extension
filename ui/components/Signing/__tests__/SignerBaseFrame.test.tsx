@@ -99,9 +99,6 @@ describe("SignerBaseFrame", () => {
     const ui = renderFrame({ transactionNetwork: OPTIMISM })
 
     expectSignable(ui)
-    expect(
-      ui.queryByLabelText("Network connection problem"),
-    ).not.toBeInTheDocument()
   })
 
   it("refuses to sign a transaction on a network it cannot read", () => {
@@ -112,8 +109,9 @@ describe("SignerBaseFrame", () => {
       unreachableChainID: OPTIMISM.chainID,
     })
 
+    // The warning icon lives on the network in the top bar, which this frame
+    // does not render; here the button and its tooltip carry the message.
     expectNotSignable(ui)
-    expect(ui.getByLabelText("Network connection problem")).toBeVisible()
   })
 
   it("still signs a message on a network it cannot read", () => {
@@ -122,9 +120,6 @@ describe("SignerBaseFrame", () => {
     const ui = renderFrame({ unreachableChainID: OPTIMISM.chainID })
 
     expectSignable(ui)
-    expect(
-      ui.queryByLabelText("Network connection problem"),
-    ).not.toBeInTheDocument()
   })
 
   it("leaves an unrelated network's outage out of it", () => {
