@@ -121,47 +121,6 @@ describe("NetworkReachabilityTracker", () => {
     expect(reported).toEqual([])
   })
 
-  it("treats a breaker closing as the success its probe was", () => {
-    const { tracker, reported, advance } = trackerOnATestClock()
-
-    tracker.recordExhaustedWalk()
-    advance(FLOOR_MS)
-    tracker.recordExhaustedWalk()
-    expect(tracker.getState()).toBe("unreachable")
-
-    // A breaker only reaches closed by way of a half-open probe that answered.
-    tracker.recordBreakerState(0, "closed")
-
-    expect(tracker.getState()).toBe("reachable")
-    expect(reported).toEqual(["unreachable", "reachable"])
-  })
-
-  it("does not let breaker state stand in for a verdict", () => {
-    const { tracker, reported, advance } = trackerOnATestClock()
-
-    advance(FLOOR_MS * 10)
-    tracker.recordBreakerState(0, "open")
-    tracker.recordBreakerState(1, "open")
-
-    // Every breaker open is not the same as nowhere left to go: the paths that
-    // bypass breakers entirely could still be serving this chain.
-    expect(tracker.getState()).toBe("reachable")
-    expect(reported).toEqual([])
-    expect(tracker.getOpenBreakerIndices()).toEqual([0, 1])
-  })
-
-  it("stops counting a breaker as open once it goes half-open", () => {
-    const { tracker } = trackerOnATestClock()
-
-    tracker.recordBreakerState(2, "open")
-    tracker.recordBreakerState(2, "half-open")
-
-    expect(tracker.getOpenBreakerIndices()).toEqual([])
-    // A half-open breaker has admitted a probe, not answered one, so it is no
-    // evidence either way.
-    expect(tracker.getState()).toBe("reachable")
-  })
-
   it("honors a caller-supplied threshold and floor", () => {
     const reported: NetworkReachabilityState[] = []
     let currentTime = START

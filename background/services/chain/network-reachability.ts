@@ -18,10 +18,11 @@
  * confined to one of them trips nothing. Walk exhaustion, by contrast, is
  * reached by exactly the paths that have nowhere left to go.
  *
- * Breaker transitions are still fed in as a corroborating signal: a breaker
- * closing means its half-open probe succeeded, which is a success under
- * another name, and the set of open breakers is worth having on hand when
- * explaining a verdict. The verdict itself does not depend on them.
+ * Breaker state is not consulted at all, corroborating or otherwise. A breaker
+ * only ever reaches `closed` by way of a half-open probe that answered, and
+ * the walk records that same answer as a success on the very next line, so
+ * there is nothing a breaker could tell us that we have not already been told
+ * by the path that asked it.
  *
  * A single exhausted walk is not enough to call a network unreachable — one
  * timed-out batch of requests would flicker the UI, which is precisely what
@@ -36,8 +37,6 @@
  * re-accumulate failures within a poll cycle or two, and whatever recovered in
  * the meantime should not be reported as down.
  */
-
-import { CircuitBreakerState } from "./circuit-breaker"
 
 export type NetworkReachabilityState = "reachable" | "unreachable"
 
@@ -69,8 +68,6 @@ export class NetworkReachabilityTracker {
   private exhaustedWalks = 0
 
   private lastSuccessAt: number
-
-  private openBreakerIndices = new Set<number>()
 
   private readonly options: NetworkReachabilityOptions
 
@@ -123,32 +120,6 @@ export class NetworkReachabilityTracker {
     ) {
       this.transitionTo("unreachable")
     }
-  }
-
-  /**
-   * Record a circuit breaker transition for one provider index. A breaker only
-   * reaches `closed` by way of a successful half-open probe, so that counts as
-   * a success; the rest is bookkeeping for {@link getOpenBreakerIndices}.
-   */
-  recordBreakerState(providerIndex: number, next: CircuitBreakerState): void {
-    if (next === "open") {
-      this.openBreakerIndices.add(providerIndex)
-      return
-    }
-
-    this.openBreakerIndices.delete(providerIndex)
-
-    if (next === "closed") {
-      this.recordSuccess()
-    }
-  }
-
-  /**
-   * The provider indices whose breakers are currently open. Corroborating
-   * detail for logs and diagnostics rather than an input to the verdict.
-   */
-  getOpenBreakerIndices(): number[] {
-    return [...this.openBreakerIndices]
   }
 
   private transitionTo(next: NetworkReachabilityState) {

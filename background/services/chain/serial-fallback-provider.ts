@@ -776,6 +776,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         throw error
       }
       breaker.recordSuccess()
+      // Recorded here, and at each of the other three send paths above, rather
+      // than once around `routeRpcCall` in `dispatchRequest`. A cache hit
+      // returns from this method without any provider having answered — as
+      // does `eth_chainId` — and counting those as proof the chain is
+      // reachable would let a total outage go unreported for as long as the
+      // cache stayed warm.
       this.#reachability.recordSuccess()
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
@@ -968,17 +974,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * Returns the circuit breaker for a given provider index, creating it the
    * first time it is requested. Each breaker wires its transitions into the
    * perf metrics collector so analytics can track how often providers go down
-   * and how quickly they recover, and into the reachability tracker, which
-   * treats them as corroborating detail on a verdict it reaches by other
-   * means.
+   * and how quickly they recover.
    */
   private breakerFor(providerIndex: number): CircuitBreaker {
     let breaker = this.#circuitBreakers.get(providerIndex)
     if (!breaker) {
-      breaker = new CircuitBreaker({}, (next) => {
-        recordCircuitBreakerTransition(this.chainID, providerIndex, next)
-        this.#reachability.recordBreakerState(providerIndex, next)
-      })
+      breaker = new CircuitBreaker({}, (next) =>
+        recordCircuitBreakerTransition(this.chainID, providerIndex, next),
+      )
       this.#circuitBreakers.set(providerIndex, breaker)
     }
     return breaker
