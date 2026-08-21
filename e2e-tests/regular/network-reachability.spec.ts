@@ -13,9 +13,11 @@ import FakeRpc from "../utils/fake-rpc"
  * the walk never runs out, so nothing done to a stored endpoint could make the
  * chain unreachable.
  *
- * The detection floor is forty-five seconds in a normal build; the e2e build
- * sets `NETWORK_UNREACHABLE_FLOOR_SECONDS` to two so this does not spend most
- * of a minute waiting on a timer that unit tests already cover.
+ * Detection deliberately waits out a floor — forty-five seconds without a
+ * success — before calling a network unreachable, so the slow test here spends
+ * about a minute getting there. `NETWORK_UNREACHABLE_FLOOR_SECONDS` can lower
+ * that for a local run; CI tests the extension it publishes, at the floor it
+ * ships with.
  */
 const NETWORK_LABEL = "Avalanche"
 const NETWORK_NAME = /^Avalanche$/
@@ -144,7 +146,7 @@ test.describe("Network reachability", () => {
   }) => {
     // Onboarding, a save round-trip, and two waits on the detection floor do
     // not fit the default per-test budget.
-    test.setTimeout(4 * 60 * 1000)
+    test.setTimeout(5 * 60 * 1000)
 
     await goToNetworks(popup, walletPageHelper)
     await pointNetworkAtFakeRpc(popup, rpc.url)
@@ -164,7 +166,7 @@ test.describe("Network reachability", () => {
 
       await expect(
         popup.getByText(`Taho can't reach ${NETWORK_LABEL}`),
-      ).toBeVisible({ timeout: 90_000 })
+      ).toBeVisible({ timeout: 150_000 })
 
       // The sigil on the network indicator, which is on screen throughout.
       await expect(popup.getByLabel(UNREACHABLE_LABEL).first()).toBeVisible()
@@ -201,7 +203,7 @@ test.describe("Network reachability", () => {
       await walletPageHelper.goToStartPage()
       await expect(
         popup.getByText(`Taho can't reach ${NETWORK_LABEL}`),
-      ).toBeHidden({ timeout: 90_000 })
+      ).toBeHidden({ timeout: 150_000 })
       await expect(popup.getByLabel(UNREACHABLE_LABEL)).toBeHidden()
     })
   })
