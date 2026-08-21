@@ -49,9 +49,9 @@ describe("ChainService", () => {
       // forever on a chain that recovered while the extension was asleep.
       const service = await createChainService()
       const reported: { chainID: string; status: string }[] = []
-      service.emitter.on("networkReachability", (payload) =>
-        reported.push(payload),
-      )
+      service.emitter.on("networkReachability", (payload) => {
+        reported.push(payload)
+      })
 
       await service.startService()
 
