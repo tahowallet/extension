@@ -429,6 +429,16 @@ export default class ChainService extends BaseService<Events> {
         ]),
       ),
     }
+
+    // Every chain starts out reachable, and every chain is said to be, because
+    // redux state outlives this service worker while the trackers that produce
+    // these verdicts do not. A tracker only reports transitions, so a stale
+    // `unreachable` restored from the last lifetime would never be contradicted
+    // and would sit there forever — banner up, balance withheld, signing
+    // blocked — on a chain that recovered while the extension was asleep.
+    this.supportedNetworks.forEach(({ chainID }) =>
+      this.emitReachability(chainID, "reachable"),
+    )
   }
 
   /**
@@ -2098,6 +2108,11 @@ export default class ChainService extends BaseService<Events> {
       undefined,
       (status) => this.emitReachability(chainInfo.chainId, status),
     )
+
+    // As in `rebuildProviderForChain`: the replacement has failed nothing yet,
+    // and re-adding a chain with a fresh endpoint list should not inherit the
+    // verdict on the list it replaced.
+    this.emitReachability(chainInfo.chainId, "reachable")
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 

@@ -42,6 +42,32 @@ describe("ChainService", () => {
   })
 
   describe("internalStartService", () => {
+    it("says every network is reachable, clearing whatever redux restored", async () => {
+      // Redux state outlives the service worker while the trackers producing
+      // these verdicts do not, and a tracker only reports transitions — so a
+      // stale `unreachable` would never be contradicted and would sit there
+      // forever on a chain that recovered while the extension was asleep.
+      const service = await createChainService()
+      const reported: { chainID: string; status: string }[] = []
+      service.emitter.on("networkReachability", (payload) =>
+        reported.push(payload),
+      )
+
+      await service.startService()
+
+      try {
+        expect(reported.length).toBeGreaterThan(0)
+        expect(reported.every(({ status }) => status === "reachable")).toBe(
+          true,
+        )
+        expect(new Set(reported.map(({ chainID }) => chainID))).toEqual(
+          new Set(service.supportedNetworks.map(({ chainID }) => chainID)),
+        )
+      } finally {
+        await service.stopService()
+      }
+    })
+
     it("should not add duplicate networks on startup", async () => {
       // Startup is simulated in the `beforeEach`
       expect(

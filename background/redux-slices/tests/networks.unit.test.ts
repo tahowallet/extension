@@ -6,6 +6,7 @@ import reducer, {
   NetworksState,
   setEVMNetworks,
 } from "../networks"
+import to37 from "../migrations/to-37"
 import {
   selectIsCurrentNetworkUnreachable,
   selectUnreachableNetworks,
@@ -119,6 +120,46 @@ describe("Networks redux slice", () => {
       expect(
         selectIsCurrentNetworkUnreachable(rootStateWith(networks, OPTIMISM)),
       ).toBe(true)
+    })
+  })
+
+  describe("migration to 37", () => {
+    it("gives the reachability map to state that predates it", () => {
+      // Persisted state replaces a slice's initial state rather than merging
+      // into it, so a missing key stays missing and every read of it finds
+      // undefined — including one on a component that renders on every screen.
+      const migrated = to37({
+        networks: { evmNetworks: {}, blockInfo: {} },
+        ui: {},
+      })
+
+      expect(migrated.networks.unreachableNetworks).toEqual({})
+    })
+
+    it("does not carry an outage across a restart", () => {
+      // The verdict comes from a tracker that dies with the service worker and
+      // only reports transitions, so a restored `unreachable` would never be
+      // contradicted.
+      const migrated = to37({
+        networks: {
+          evmNetworks: {},
+          blockInfo: {},
+          unreachableNetworks: { [OPTIMISM.chainID]: true },
+        },
+      })
+
+      expect(migrated.networks.unreachableNetworks).toEqual({})
+    })
+
+    it("leaves the rest of the slice alone", () => {
+      const migrated = to37({
+        networks: { evmNetworks: { "1": ETHEREUM }, blockInfo: { "1": {} } },
+        account: { accountsData: { evm: {} } },
+      })
+
+      expect(migrated.networks.evmNetworks).toEqual({ "1": ETHEREUM })
+      expect(migrated.networks.blockInfo).toEqual({ "1": {} })
+      expect(migrated.account).toEqual({ accountsData: { evm: {} } })
     })
   })
 })
