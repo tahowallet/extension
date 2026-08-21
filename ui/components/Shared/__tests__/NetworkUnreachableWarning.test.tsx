@@ -5,10 +5,13 @@ import userEvent from "@testing-library/user-event"
 import { OPTIMISM } from "@tallyho/tally-background/constants"
 import NetworkUnreachableWarning from "../NetworkUnreachableWarning"
 
-const renderWarning = () =>
+const renderWarning = (linkToSettings = true) =>
   render(
     <MemoryRouter>
-      <NetworkUnreachableWarning chainID={OPTIMISM.chainID} />
+      <NetworkUnreachableWarning
+        chainID={OPTIMISM.chainID}
+        linkToSettings={linkToSettings}
+      />
     </MemoryRouter>,
   )
 
@@ -41,5 +44,16 @@ describe("NetworkUnreachableWarning", () => {
     expect(
       ui.getByRole("link", { name: "checking the RPC configuration" }),
     ).toHaveAttribute("href", "/settings/custom-networks")
+  })
+
+  it("keeps the advice but drops the link where following it would cost something", async () => {
+    const ui = renderWarning(false)
+
+    await userEvent.hover(ui.getByTestId("tooltip_wrap"))
+
+    // Same sentence either way; a signing screen has no way back from a
+    // navigation, so there is nothing to navigate.
+    expect(ui.getByText(/checking the RPC configuration/)).toBeVisible()
+    expect(ui.queryByRole("link")).not.toBeInTheDocument()
   })
 })

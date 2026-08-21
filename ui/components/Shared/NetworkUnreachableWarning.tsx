@@ -17,6 +17,12 @@ type Props = {
    * margin and an 8px left margin that most callers need to undo.
    */
   style?: CSSProperties & Record<string, unknown>
+  /**
+   * Whether the tooltip's advice is a link to this chain's settings. Off where
+   * following it would abandon something the user has in flight — a pending
+   * signature request, most of all, which has no way back.
+   */
+  linkToSettings?: boolean
   tooltipWidth?: number
   tooltipHorizontalPosition?: "left" | "center" | "right"
   tooltipVerticalPosition?: "top" | "bottom"
@@ -36,6 +42,7 @@ export default function NetworkUnreachableWarning({
   chainID,
   size = 16,
   style,
+  linkToSettings = true,
   tooltipWidth = 200,
   tooltipHorizontalPosition = "left",
   tooltipVerticalPosition = "bottom",
@@ -72,7 +79,7 @@ export default function NetworkUnreachableWarning({
           t={t}
           i18nKey="tooltip"
           components={{
-            settings: (
+            settings: linkToSettings ? (
               // Straight to this chain's endpoint list. The list page owns the
               // edit form as a slide-up rather than a route, so the chain is
               // handed over as router state for it to act on.
@@ -82,6 +89,10 @@ export default function NetworkUnreachableWarning({
                   state: { editChainID: chainID },
                 }}
               />
+            ) : (
+              // Still sound advice without being a link; the sentence reads
+              // the same either way.
+              <span />
             ),
           }}
         />

@@ -161,6 +161,7 @@ export default function SignerLedgerFrame<
               {isNetworkUnreachable && transactionNetwork !== undefined && (
                 <NetworkUnreachableWarning
                   chainID={transactionNetwork.chainID}
+                  linkToSettings={false}
                   style={{ margin: 0 }}
                   tooltipVerticalPosition="top"
                 />
