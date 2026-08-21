@@ -202,7 +202,11 @@ test.describe("Network reachability", () => {
     await switchToNetwork(popup)
 
     await test.step("Nothing is said while the endpoint answers", async () => {
-      await expect(popup.getByLabel(UNREACHABLE_LABEL)).toBeHidden()
+      // Counted rather than asked of one element throughout: a route
+      // transition leaves the outgoing page mounted for its duration, so the
+      // warning and the banner both have moments where two of each are on the
+      // page, and `toBeHidden` refuses to choose between them.
+      await expect(popup.getByLabel(UNREACHABLE_LABEL)).toHaveCount(0)
     })
 
     await test.step("A dark endpoint is reported on the wallet view", async () => {
@@ -212,14 +216,14 @@ test.describe("Network reachability", () => {
       await rpc.setMode("hanging")
 
       await expect(
-        popup.getByText(`Taho can't reach ${NETWORK_LABEL}`),
+        popup.getByText(`Taho can't reach ${NETWORK_LABEL}`).first(),
       ).toBeVisible({ timeout: 150_000 })
 
       // The sigil on the network indicator, which is on screen throughout.
       await expect(popup.getByLabel(UNREACHABLE_LABEL).first()).toBeVisible()
 
       // A balance we cannot read is not reported as zero.
-      const balance = popup.getByTestId("wallet_balance")
+      const balance = popup.getByTestId("wallet_balance").first()
       await expect(balance).toContainText("—")
       await expect(balance).not.toContainText("$0")
     })
@@ -244,7 +248,7 @@ test.describe("Network reachability", () => {
       // button that will not do anything.
       await popup.getByRole("button", { name: "Send", exact: true }).click()
 
-      const sendFooter = popup.locator(".send_footer")
+      const sendFooter = popup.locator(".send_footer").first()
       await expect(sendFooter.getByLabel(UNREACHABLE_LABEL)).toBeVisible()
       // `SharedButton` styles its disabled state rather than setting the
       // attribute, so the class is what says the form will not submit.
@@ -259,8 +263,8 @@ test.describe("Network reachability", () => {
       await goToWallet(popup)
       await expect(
         popup.getByText(`Taho can't reach ${NETWORK_LABEL}`),
-      ).toBeHidden({ timeout: 150_000 })
-      await expect(popup.getByLabel(UNREACHABLE_LABEL)).toBeHidden()
+      ).toHaveCount(0, { timeout: 150_000 })
+      await expect(popup.getByLabel(UNREACHABLE_LABEL)).toHaveCount(0)
     })
   })
 })
