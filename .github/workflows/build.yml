@@ -195,13 +195,26 @@ jobs:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
           cache: "yarn"
       - run: yarn install --frozen-lockfile
+      - name: Use Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4"
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
-      - uses: actions/download-artifact@v4
-        with:
-          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+      # Built here rather than downloaded from the build job. The
+      # unreachable-network detection floor is baked in by dotenv-webpack at
+      # build time, so it cannot be lowered against a prebuilt artifact, and
+      # the artifact the build job publishes is one people install — it should
+      # carry the real forty-five seconds.
+      - name: Build extension for e2e
+        run: |
+          echo 'NETWORK_UNREACHABLE_FLOOR_SECONDS=2' >> .env
+          yarn build
+        env:
+          NETWORK_UNREACHABLE_FLOOR_SECONDS: 2
+          COMMIT_SHA: ${{ github.sha }}
       - name: Extract extension
-        run: unzip -o chrome.zip -d dist/chrome
+        run: unzip -o dist/chrome.zip -d dist/chrome
       # Some tests that we have configured in the `e2e-tests` folder may require
       # spending funds. Although they're desined to not spend much, with
       # frequent execution that can accumulate. We don't want to execute such
