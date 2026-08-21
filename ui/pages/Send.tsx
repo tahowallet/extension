@@ -39,6 +39,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
+import NetworkUnreachableWarning from "../components/Shared/NetworkUnreachableWarning"
 import SharedButton from "../components/Shared/SharedButton"
 import {
   useAddressOrNameValidation,
@@ -283,6 +284,17 @@ export default function Send(): ReactElement {
             )}
           </div>
           <div className="send_footer standard_width_padded">
+            {/*
+             * A disabled button with no explanation is its own kind of dead
+             * end; this page is not the wallet view, so the banner is not on
+             * screen to account for it.
+             */}
+            {isNetworkUnreachable && (
+              <NetworkUnreachableWarning
+                chainID={currentNetwork.chainID}
+                tooltipVerticalPosition="top"
+              />
+            )}
             <SharedButton
               type="primary"
               size="large"
@@ -434,6 +446,7 @@ export default function Send(): ReactElement {
           }
           .send_footer {
             display: flex;
+            align-items: center;
             justify-content: flex-end;
             margin-top: 21px;
             padding-bottom: 20px;
