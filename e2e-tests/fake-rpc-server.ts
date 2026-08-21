@@ -24,6 +24,14 @@
  * `hanging` accepts requests and never replies; `refusing` fails them at once.
  * Both read as unreachable to the wallet, but they are different failures and
  * the tests want to produce each.
+ *
+ * Every response carries permissive CORS headers, and preflights are answered
+ * even while hanging. The extension declares no `host_permissions`, so its
+ * service worker is subject to CORS like any page, and the public endpoints it
+ * normally talks to allow all origins. Without that here the browser refuses
+ * the request before the wallet ever sees it — and a preflight refused while
+ * hanging would fail fast, which is the opposite of the slow timeout that mode
+ * exists to produce.
  */
 
 /**
@@ -96,10 +104,21 @@ const replyTo = ({ id, method }: { id: unknown; method: string }): unknown => {
   return { jsonrpc: "2.0", id, result: results[method] }
 }
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+}
+
 const server = Bun.serve({
   port: 0,
   hostname: "127.0.0.1",
   async fetch(request) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: CORS_HEADERS })
+    }
+
     const { pathname } = new URL(request.url)
 
     if (pathname === "/__control") {
@@ -115,11 +134,11 @@ const server = Bun.serve({
         chainIdHex = `0x${Number(control.chainId).toString(16)}`
       }
 
-      return new Response("ok")
+      return new Response("ok", { headers: CORS_HEADERS })
     }
 
     if (mode === "refusing") {
-      return new Response(null, { status: 502 })
+      return new Response(null, { status: 502, headers: CORS_HEADERS })
     }
 
     if (mode === "hanging") {
@@ -137,7 +156,7 @@ const server = Bun.serve({
       ? body.map((single) => replyTo(single))
       : replyTo(body as { id: unknown; method: string })
 
-    return Response.json(result)
+    return Response.json(result, { headers: CORS_HEADERS })
   },
 })
 
