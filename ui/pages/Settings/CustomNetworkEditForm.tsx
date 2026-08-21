@@ -18,8 +18,9 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { useTranslation } from "react-i18next"
+import { TFunction, useTranslation } from "react-i18next"
 import logger from "@tallyho/tally-background/lib/logger"
+import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -92,6 +93,34 @@ type ManagedEndpointRow = {
   hasAlchemyApis: boolean
 }
 
+/**
+ * The sentence to show for a rejected save.
+ *
+ * The background rejects an endpoint by discriminant and URL rather than by
+ * sentence, so the sentence is written here, where there is a locale to write
+ * it in. An unrecognized failure has no copy of its own; passing its message
+ * through untranslated beats telling the user nothing went wrong.
+ */
+const saveErrorMessage = (
+  t: TFunction<"translation", "settings.customNetworksSettings.editModal">,
+  error: ChainConfigUpdateError,
+): string => {
+  switch (error.kind) {
+    case "unreachable":
+      return t("errors.unreachableEndpoint", { url: error.url })
+    case "chain-mismatch":
+      return t("errors.endpointChainMismatch", {
+        url: error.url,
+        reportedChainID: error.reportedChainID,
+        expectedChainID: error.expectedChainID,
+      })
+    case "unknown":
+      return t("errors.saveFailed", { message: error.message })
+    default:
+      return assertUnreachable(error)
+  }
+}
+
 const toManagedEndpointRows = (
   endpoints: RpcEndpoint[],
 ): ManagedEndpointRow[] =>
@@ -139,25 +168,6 @@ export default function CustomNetworkEditForm({
   const { t } = useTranslation("translation", {
     keyPrefix: "settings.customNetworksSettings.editModal",
   })
-
-  // The background rejects an endpoint by discriminant and URL rather than by
-  // sentence, so the sentence is written here, where there is a locale to
-  // write it in. An unrecognized failure has no copy of its own; passing its
-  // message through untranslated beats telling the user nothing went wrong.
-  const saveErrorMessage = (error: ChainConfigUpdateError): string => {
-    switch (error.kind) {
-      case "unreachable":
-        return t("errors.unreachableEndpoint", { url: error.url })
-      case "chain-mismatch":
-        return t("errors.endpointChainMismatch", {
-          url: error.url,
-          reportedChainID: error.reportedChainID,
-          expectedChainID: error.expectedChainID,
-        })
-      default:
-        return t("errors.saveFailed", { message: error.message })
-    }
-  }
 
   const dispatch = useBackgroundDispatch()
 
@@ -654,7 +664,7 @@ export default function CustomNetworkEditForm({
           <div className="form_controls">
             {saveError !== null && (
               <span className="save_error" role="alert">
-                {saveErrorMessage(saveError)}
+                {saveErrorMessage(t, saveError)}
               </span>
             )}
             <SharedButton
