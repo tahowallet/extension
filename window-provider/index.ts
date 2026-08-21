@@ -339,6 +339,16 @@ export default class TahoWindowProvider extends EventEmitter {
     this.chainId = chainId
     this.emit("chainChanged", chainId)
     this.emit("networkChanged", Number(chainId).toString())
+
+    // Whatever we last heard was about the chain the page was on, not this
+    // one, so a disconnect does not follow it across. Routed through the same
+    // handler so that a page told we were disconnected also gets told we are
+    // not any more, rather than having the flag flipped underneath it.
+    //
+    // A page switching onto a chain that is already dark hears nothing until
+    // that chain next changes state: the background reports transitions, not a
+    // current answer on request.
+    this.handleChainReachabilityChange(chainId, true)
   }
 
   handleAddressChange(address: Array<string>): void {

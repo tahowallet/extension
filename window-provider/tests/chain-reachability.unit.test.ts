@@ -131,4 +131,24 @@ describe("TahoWindowProvider chain reachability", () => {
     expect(events.map(({ name }) => name)).toEqual(["connect"])
     expect(provider.isConnected()).toBe(true)
   })
+
+  it("does not carry one chain's outage onto the next", () => {
+    const { provider, events } = providerOnChain("0x1")
+
+    provider.handleChainReachabilityChange("0x1", false)
+    provider.handleChainIdChange("0xa")
+
+    // Whatever we heard was about the chain the page was on. It is now on a
+    // different one, which we have heard nothing about — and the page is told
+    // so rather than left believing it is still disconnected.
+    expect(provider.isConnected()).toBe(true)
+    expect(events.map(({ name }) => name)).toEqual(["disconnect", "connect"])
+
+    provider.handleChainReachabilityChange("0xa", false)
+    expect(events.map(({ name }) => name)).toEqual([
+      "disconnect",
+      "connect",
+      "disconnect",
+    ])
+  })
 })
