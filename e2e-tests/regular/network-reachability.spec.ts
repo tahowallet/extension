@@ -83,6 +83,33 @@ const setSoleRpcEndpoint = async (
   await rows.first().getByRole("textbox").fill(url)
 }
 
+/** The network list behind the top menu's switcher. */
+const networkMenuOf = (popup: Page): Locator =>
+  popup
+    .getByTestId("slide_up_menu")
+    .filter({ has: popup.locator("ul.networks_list") })
+
+/**
+ * Returns to the wallet view through the tab bar.
+ *
+ * Reloading would not do it: the popup persists the route it was last on so
+ * that reopening it lands where the user left off, and every page these tests
+ * pass through — the network settings, the send form — is one of the pages
+ * that persists. Reloading from any of them comes back to that page, without
+ * the top menu the wallet view carries.
+ */
+const goToWallet = async (popup: Page): Promise<void> => {
+  await popup
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Wallet" })
+    .first()
+    .click()
+
+  await expect(
+    popup.getByTestId("top_menu_network_switcher").last(),
+  ).toBeVisible()
+}
+
 /** Points the network at the fake endpoint and confirms the save took. */
 const pointNetworkAtFakeRpc = async (
   popup: Page,
@@ -144,14 +171,15 @@ test.describe("Network reachability", () => {
     page: popup,
     walletPageHelper,
   }) => {
-    // Onboarding, a save round-trip, and two waits on the detection floor do
-    // not fit the default per-test budget.
-    test.setTimeout(5 * 60 * 1000)
+    // Onboarding, a save round-trip, the wait on the detection floor and the
+    // wait on the circuit breaker's cooldown before recovery is noticed do not
+    // fit the default per-test budget between them.
+    test.setTimeout(8 * 60 * 1000)
 
     await goToNetworks(popup, walletPageHelper)
     await pointNetworkAtFakeRpc(popup, rpc.url)
 
-    await walletPageHelper.goToStartPage()
+    await goToWallet(popup)
     await walletPageHelper.switchNetwork(NETWORK_NAME)
 
     await test.step("Nothing is said while the endpoint answers", async () => {
@@ -178,29 +206,38 @@ test.describe("Network reachability", () => {
     })
 
     await test.step("The network selector marks the offending row", async () => {
+      const networkMenu = networkMenuOf(popup)
+
       await popup.getByTestId("top_menu_network_switcher").last().click()
       await expect(
-        popup
+        networkMenu
           .locator("li")
           .filter({ hasText: NETWORK_LABEL })
           .getByLabel(UNREACHABLE_LABEL),
       ).toBeVisible()
+
+      await networkMenu.getByRole("button", { name: "Close menu" }).click()
     })
 
     await test.step("The send form says why it will not send", async () => {
       // The wallet view's Send shortcut only navigates; the gate is on the
       // form's own submit, and the warning beside it is what accounts for a
       // button that will not do anything.
-      await walletPageHelper.goToStartPage()
       await popup.getByRole("button", { name: "Send", exact: true }).click()
 
-      await expect(popup.getByLabel(UNREACHABLE_LABEL).last()).toBeVisible()
+      const sendFooter = popup.locator(".send_footer")
+      await expect(sendFooter.getByLabel(UNREACHABLE_LABEL)).toBeVisible()
+      // `SharedButton` styles its disabled state rather than setting the
+      // attribute, so the class is what says the form will not submit.
+      await expect(
+        sendFooter.getByRole("button", { name: "Continue" }),
+      ).toHaveClass(/disabled/)
     })
 
     await test.step("It clears once the endpoint answers again", async () => {
       await rpc.setMode("answering")
 
-      await walletPageHelper.goToStartPage()
+      await goToWallet(popup)
       await expect(
         popup.getByText(`Taho can't reach ${NETWORK_LABEL}`),
       ).toBeHidden({ timeout: 150_000 })
