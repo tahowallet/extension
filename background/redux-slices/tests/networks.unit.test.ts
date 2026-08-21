@@ -3,6 +3,7 @@ import type { RootState } from ".."
 import reducer, {
   initialState,
   networkReachabilityChanged,
+  networkReachabilityReset,
   NetworksState,
   setEVMNetworks,
 } from "../networks"
@@ -123,6 +124,19 @@ describe("Networks redux slice", () => {
     })
   })
 
+  describe("networkReachabilityReset", () => {
+    it("forgets every recorded outage", () => {
+      // Dispatched at startup: this map is persisted while the trackers that
+      // fill it are not, so nothing they said in a past lifetime still holds.
+      const state = reducer(
+        stateWith({ [OPTIMISM.chainID]: true, [POLYGON.chainID]: true }),
+        networkReachabilityReset(),
+      )
+
+      expect(state.unreachableNetworks).toEqual({})
+    })
+  })
+
   describe("migration to 37", () => {
     it("gives the reachability map to state that predates it", () => {
       // Persisted state replaces a slice's initial state rather than merging
@@ -136,10 +150,10 @@ describe("Networks redux slice", () => {
       expect(migrated.networks.unreachableNetworks).toEqual({})
     })
 
-    it("does not carry an outage across a restart", () => {
-      // The verdict comes from a tracker that dies with the service worker and
-      // only reports transitions, so a restored `unreachable` would never be
-      // contradicted.
+    it("starts the map empty even where one was already stored", () => {
+      // Only true of the migration itself, which runs once per version bump;
+      // keeping an outage from surviving any restart is
+      // `networkReachabilityReset`'s job, covered below.
       const migrated = to37({
         networks: {
           evmNetworks: {},

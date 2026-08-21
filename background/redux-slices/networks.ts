@@ -89,6 +89,17 @@ const networksSlice = createSlice({
       }
     },
     /**
+     * Forgets every recorded outage.
+     *
+     * Dispatched once at startup, because this map is persisted while the
+     * trackers that fill it are not: they live and die with the service worker
+     * and report only transitions, so a chain recorded unreachable in a past
+     * lifetime would have nothing left alive to contradict it.
+     */
+    networkReachabilityReset: (immerState) => {
+      immerState.unreachableNetworks = {}
+    },
+    /**
      * Receives all supported networks as the payload
      */
     setEVMNetworks: (immerState, { payload }: { payload: EVMNetwork[] }) => {
@@ -110,8 +121,12 @@ const networksSlice = createSlice({
   },
 })
 
-export const { blockSeen, networkReachabilityChanged, setEVMNetworks } =
-  networksSlice.actions
+export const {
+  blockSeen,
+  networkReachabilityChanged,
+  networkReachabilityReset,
+  setEVMNetworks,
+} = networksSlice.actions
 
 export default networksSlice.reducer
 

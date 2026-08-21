@@ -45,7 +45,7 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase, Transaction } from "./db"
+import { createDB, ChainDatabase, RpcConfig, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -419,25 +419,35 @@ export default class ChainService extends BaseService<Events> {
       evm: Object.fromEntries(
         this.supportedNetworks.map((network) => [
           network.chainID,
-          makeSerialFallbackProvider(
+          this.makeProviderForChain(
             network.chainID,
             rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
               ?.endpoints || [],
             customRpcUrls.find((v) => v.chainID === network.chainID),
-            (status) => this.emitReachability(network.chainID, status),
           ),
         ]),
       ),
     }
+  }
 
-    // Every chain starts out reachable, and every chain is said to be, because
-    // redux state outlives this service worker while the trackers that produce
-    // these verdicts do not. A tracker only reports transitions, so a stale
-    // `unreachable` restored from the last lifetime would never be contradicted
-    // and would sit there forever — banner up, balance withheld, signing
-    // blocked — on a chain that recovered while the extension was asleep.
-    this.supportedNetworks.forEach(({ chainID }) =>
-      this.emitReachability(chainID, "reachable"),
+  /**
+   * Builds a provider for a chain, wired to report the chain's reachability.
+   *
+   * Every provider this service holds is built here rather than by calling
+   * `makeSerialFallbackProvider` directly, so that a provider without that
+   * wiring — one whose outages nobody would hear about — cannot be created by
+   * forgetting an argument.
+   */
+  private makeProviderForChain(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    customRpc?: RpcConfig,
+  ): SerialFallbackProvider {
+    return makeSerialFallbackProvider(
+      chainID,
+      rpcEndpoints,
+      customRpc,
+      (status) => this.emitReachability(chainID, status),
     )
   }
 
@@ -2102,11 +2112,9 @@ export default class ChainService extends BaseService<Events> {
     // to the endpoints it was built with for the life of the service worker.
     this.providers.evm[chainInfo.chainId]?.destroy()
 
-    this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
+    this.providers.evm[chainInfo.chainId] = this.makeProviderForChain(
       chainInfo.chainId,
       chainInfo.rpcUrls.map((url) => ({ url })),
-      undefined,
-      (status) => this.emitReachability(chainInfo.chainId, status),
     )
 
     // As in `rebuildProviderForChain`: the replacement has failed nothing yet,
@@ -2253,11 +2261,10 @@ export default class ChainService extends BaseService<Events> {
     const customRpcConfigs = await this.db.getAllCustomRpcUrls()
     const previousProvider = this.providers.evm[chainID]
 
-    this.providers.evm[chainID] = makeSerialFallbackProvider(
+    this.providers.evm[chainID] = this.makeProviderForChain(
       chainID,
       rpcEndpoints,
       customRpcConfigs.find((config) => config.chainID === chainID),
-      (status) => this.emitReachability(chainID, status),
     )
 
     // Nothing points at the replaced provider anymore, but its reconnect and

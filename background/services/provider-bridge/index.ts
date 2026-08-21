@@ -425,14 +425,16 @@ export default class ProviderBridgeService extends BaseService<Events> {
    * connected to, so a dApp can stop showing a page's worth of zeroes as
    * though they were data.
    *
-   * Pages on some other network are told nothing rather than being told about
-   * a chain they are not on; EIP-1193's 4901 is explicitly about the chain the
-   * page is connected to, not about the wallet as a whole.
+   * EIP-1193's 4901 is explicitly about the chain the page is connected to
+   * rather than about the wallet as a whole, so only pages on that chain hear
+   * about it.
    */
   notifyContentScriptsAboutChainReachability(
     chainID: string,
     reachable: boolean,
   ): void {
+    const hexChainID = toHexChainID(chainID)
+
     this.openPorts.forEach(async (port) => {
       // we know that url exists because it was required to store the port
       const { origin } = new URL(port.sender?.url as string)
@@ -441,6 +443,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
           origin,
         )
 
+      // Pages on some other network are told nothing rather than told about a
+      // chain they are not on. Beyond being the wrong thing to say, it would
+      // hand every page a view of which chains the wallet is watching and how
+      // they are doing.
       if (portChainID !== chainID) {
         return
       }
@@ -449,7 +455,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
         id: "tallyHo",
         result: {
           method: "tally_chainReachabilityChanged",
-          chainId: toHexChainID(chainID),
+          chainId: hexChainID,
           reachable,
         },
       })

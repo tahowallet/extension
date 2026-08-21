@@ -70,6 +70,7 @@ import {
 import {
   blockSeen,
   networkReachabilityChanged,
+  networkReachabilityReset,
   setEVMNetworks,
 } from "../../redux-slices/networks"
 import {
@@ -499,6 +500,11 @@ export default class ReduxService extends BaseService<never> {
     )
 
     this.store.dispatch(clearApprovalInProgress())
+
+    // Same reasoning as the two above: state that persistence outlives its
+    // producer. Reachability comes from per-provider trackers that start over
+    // with every service worker, so nothing they said last time still holds.
+    this.store.dispatch(networkReachabilityReset())
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -696,15 +702,24 @@ export default class ReduxService extends BaseService<never> {
     })
 
     this.chainService.emitter.on("networkReachability", (payload) => {
+      const { chainID, status } = payload
+      const wasReachable =
+        this.store.getState().networks.unreachableNetworks[chainID] !== true
+
       this.store.dispatch(networkReachabilityChanged(payload))
 
-      // Connected pages get told too. A dApp that knows the chain is
-      // unreachable can say so instead of rendering an empty state as if it
-      // were the truth.
-      this.providerBridgeService.notifyContentScriptsAboutChainReachability(
-        payload.chainID,
-        payload.status === "reachable",
-      )
+      // Connected pages get told too, but only when the answer actually
+      // changed. Startup reports every chain reachable to clear whatever redux
+      // restored, and a provider rebuild reports the chain it rebuilt; telling
+      // pages about either would fan a message out to every open port —
+      // each one a database read to find the port's chain — to say something
+      // they already believe.
+      if (wasReachable !== (status === "reachable")) {
+        this.providerBridgeService.notifyContentScriptsAboutChainReachability(
+          chainID,
+          status === "reachable",
+        )
+      }
     })
 
     this.chainService.emitter.on("transactionSend", async () => {

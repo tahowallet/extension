@@ -21,10 +21,9 @@ type NewState = {
  * upgrading and every read of it — including one on a component that renders
  * on every screen — finds `undefined`.
  *
- * It starts empty, which is also what it should be after any restart: the
- * verdict comes from a per-provider tracker that lives and dies with the
- * service worker, so a chain that was unreachable when the extension last shut
- * down deserves to be tried again rather than assumed broken.
+ * Establishing the key is all this does. Migrations are version-gated and run
+ * once, so keeping the map from carrying an outage across a restart is the job
+ * of the `networkReachabilityReset` dispatched at startup, not of this.
  */
 export default (prevState: Record<string, unknown>): NewState => {
   const typedPrevState = prevState as OldState
