@@ -78,11 +78,20 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         </div>
       </div>
       {isUnreachable && (
-        <NetworkUnreachableWarning
-          chainID={network.chainID}
-          style={{ margin: "auto 0 auto auto" }}
-          tooltipVerticalPosition="top"
-        />
+        // The whole row selects the network on click, and the tooltip's link
+        // sits inside it: without this, following the link to fix the chain
+        // would first switch the user onto the broken one.
+        <div
+          className="warning_wrap"
+          onClick={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          <NetworkUnreachableWarning
+            chainID={network.chainID}
+            style={{ margin: 0 }}
+            tooltipVerticalPosition="top"
+          />
+        </div>
       )}
       <style jsx>
         {`
@@ -105,6 +114,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             margin-left: 10px;
           }
 
+          .warning_wrap {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            cursor: default;
+          }
           li {
             display: flex;
             margin-bottom: 0;

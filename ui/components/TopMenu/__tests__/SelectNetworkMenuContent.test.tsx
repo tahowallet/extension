@@ -1,18 +1,20 @@
 import React from "react"
 import { MemoryRouter } from "react-router-dom"
+import userEvent from "@testing-library/user-event"
 import { ETHEREUM, OPTIMISM } from "@tallyho/tally-background/constants"
 import { initialState as networksInitialState } from "@tallyho/tally-background/redux-slices/networks"
 import SelectNetworkMenuContent from "../SelectNetworkMenuContent"
 import { renderWithProviders } from "../../../tests/test-utils"
 
-const renderNetworkList = (unreachableNetworks: {
-  [chainID: string]: boolean
-}) =>
+const renderNetworkList = (
+  unreachableNetworks: { [chainID: string]: boolean },
+  onNetworkChange: () => void = () => {},
+) =>
   renderWithProviders(
     <MemoryRouter>
       <SelectNetworkMenuContent
         currentNetwork={ETHEREUM}
-        onNetworkChange={() => {}}
+        onNetworkChange={onNetworkChange}
       />
     </MemoryRouter>,
     {
@@ -44,5 +46,16 @@ describe("SelectNetworkMenuContent", () => {
     const ui = renderNetworkList({ [OPTIMISM.chainID]: true })
 
     expect(ui.getAllByLabelText("Network connection problem")).toHaveLength(1)
+  })
+
+  it("does not switch the user onto the broken chain on the way to fixing it", async () => {
+    // The whole row selects its network on click, and the warning's tooltip
+    // sits inside the row.
+    const onNetworkChange = jest.fn()
+    const ui = renderNetworkList({ [OPTIMISM.chainID]: true }, onNetworkChange)
+
+    await userEvent.click(ui.getByLabelText("Network connection problem"))
+
+    expect(onNetworkChange).not.toHaveBeenCalled()
   })
 })
