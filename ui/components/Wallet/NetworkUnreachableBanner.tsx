@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedBanner from "../Shared/SharedBanner"
 import SharedButton from "../Shared/SharedButton"
-import SharedIcon from "../Shared/SharedIcon"
 
 type Props = {
   network: EVMNetwork
@@ -28,46 +27,33 @@ export default function NetworkUnreachableBanner({
 
   return (
     <div className="container">
-      <SharedBanner style={{ width: "100%", boxSizing: "border-box" }}>
-        <div className="content_container" role="alert">
-          <SharedIcon
-            icon="icons/m/notif-attention.svg"
-            width={24}
-            color="var(--attention)"
-            style={{ flexShrink: 0 }}
-          />
-          <div className="content">
-            <h1>{t("title", { network: network.name })}</h1>
-            <span>{t("description")}</span>
-            <SharedButton
-              style={{ height: "auto", margin: "8px 0" }}
-              size="medium"
-              type="tertiary"
-              linkTo={{
-                pathname: "/settings/custom-networks",
-                state: { editChainID: network.chainID },
-              }}
-              iconSmall="settings"
-              iconPosition="left"
-            >
-              {t("settingsLink")}
-            </SharedButton>
-          </div>
+      {/* Note that SharedBanner prefixes `icons/m/` itself. */}
+      <SharedBanner
+        icon="notif-attention"
+        iconColor="var(--attention)"
+        style={{ width: "100%", boxSizing: "border-box" }}
+      >
+        <div role="alert">
+          <h1>{t("title", { network: network.name })}</h1>
+          <span>{t("description")}</span>
+          <SharedButton
+            style={{ height: "auto", margin: "8px 0" }}
+            size="medium"
+            type="tertiary"
+            linkTo={{
+              pathname: "/settings/custom-networks",
+              state: { editChainID: network.chainID },
+            }}
+            iconSmall="settings"
+            iconPosition="left"
+          >
+            {t("settingsLink")}
+          </SharedButton>
         </div>
       </SharedBanner>
       <style jsx>{`
         .container {
           margin: 0 8px 8px;
-        }
-        .content_container {
-          display: flex;
-          flex-direction: row;
-          align-items: start;
-        }
-        .content {
-          flex-direction: column;
-          flex-grow: 1;
-          margin: 0 8px;
         }
         h1 {
           font-weight: 500;

@@ -5,13 +5,17 @@ import userEvent from "@testing-library/user-event"
 import { OPTIMISM } from "@tallyho/tally-background/constants"
 import NetworkUnreachableWarning from "../NetworkUnreachableWarning"
 
-const renderWarning = (linkToSettings = true) =>
+const renderWarning = () =>
   render(
     <MemoryRouter>
-      <NetworkUnreachableWarning
-        chainID={OPTIMISM.chainID}
-        linkToSettings={linkToSettings}
-      />
+      <NetworkUnreachableWarning chainID={OPTIMISM.chainID} />
+    </MemoryRouter>,
+  )
+
+const renderChainlessWarning = () =>
+  render(
+    <MemoryRouter>
+      <NetworkUnreachableWarning />
     </MemoryRouter>,
   )
 
@@ -46,13 +50,14 @@ describe("NetworkUnreachableWarning", () => {
     ).toHaveAttribute("href", "/settings/custom-networks")
   })
 
-  it("keeps the advice but drops the link where following it would cost something", async () => {
-    const ui = renderWarning(false)
+  it("keeps the advice but drops the link when given no chain", async () => {
+    const ui = renderChainlessWarning()
 
     await userEvent.hover(ui.getByTestId("tooltip_wrap"))
 
-    // Same sentence either way; a signing screen has no way back from a
-    // navigation, so there is nothing to navigate.
+    // Same sentence either way. Callers omit the chain where following a link
+    // would cost the user something — a signing screen has no way back from a
+    // navigation.
     expect(ui.getByText(/checking the RPC configuration/)).toBeVisible()
     expect(ui.queryByRole("link")).not.toBeInTheDocument()
   })

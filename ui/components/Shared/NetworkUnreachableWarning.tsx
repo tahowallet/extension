@@ -1,29 +1,24 @@
-import React, { CSSProperties, ReactElement } from "react"
+import React, { CSSProperties, ReactElement, useCallback } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
 
 type Props = {
-  /** The chain this warning is about, so the tooltip can link straight to it. */
-  chainID: string
   /**
-   * Edge length of the icon in pixels. The 24px artwork is used above 16px,
-   * where the small one starts to look soft.
+   * The chain this warning is about. Given, the tooltip's advice links to that
+   * chain's endpoint settings; omitted, the same advice is plain text — which
+   * is what a caller wants where following a link would abandon something the
+   * user has in flight, a pending signature request most of all.
    */
+  chainID?: string
+  /** Edge length of the icon in pixels. */
   size?: number
   /**
-   * Applied to the tooltip's wrapper, whose own rule sets a negative vertical
-   * margin and an 8px left margin that most callers need to undo.
+   * Merged over the tooltip wrapper's own margin, which callers position
+   * against rather than around.
    */
   style?: CSSProperties & Record<string, unknown>
-  /**
-   * Whether the tooltip's advice is a link to this chain's settings. Off where
-   * following it would abandon something the user has in flight — a pending
-   * signature request, most of all, which has no way back.
-   */
-  linkToSettings?: boolean
-  tooltipWidth?: number
   tooltipHorizontalPosition?: "left" | "center" | "right"
   tooltipVerticalPosition?: "top" | "bottom"
 }
@@ -42,8 +37,6 @@ export default function NetworkUnreachableWarning({
   chainID,
   size = 16,
   style,
-  linkToSettings = true,
-  tooltipWidth = 200,
   tooltipHorizontalPosition = "left",
   tooltipVerticalPosition = "bottom",
 }: Props): ReactElement {
@@ -51,49 +44,51 @@ export default function NetworkUnreachableWarning({
     keyPrefix: "networkUnreachable",
   })
 
+  // Stable across renders: SharedTooltip renders this as an element type, so a
+  // fresh function each time would remount the icon on every render — and one
+  // of these sits in a list that re-renders on every block.
+  const iconComponent = useCallback(
+    () => (
+      <SharedIcon
+        icon="icons/s/notif-attention.svg"
+        width={size}
+        color="var(--attention)"
+        ariaLabel={t("iconAriaLabel")}
+        style={{ flexShrink: 0, display: "block" }}
+      />
+    ),
+    [size, t],
+  )
+
   return (
     <SharedTooltip
-      width={tooltipWidth}
+      width={200}
       horizontalPosition={tooltipHorizontalPosition}
       verticalPosition={tooltipVerticalPosition}
-      style={style}
-      IconComponent={() => (
-        // SharedIcon only labels itself when it is a button, and this one is
-        // not clickable — the tooltip is what it does.
-        <span role="img" aria-label={t("iconAriaLabel")}>
-          <SharedIcon
-            icon={
-              size > 16
-                ? "icons/m/notif-attention.svg"
-                : "icons/s/notif-attention.svg"
-            }
-            width={size}
-            color="var(--attention)"
-            style={{ flexShrink: 0, display: "block" }}
-          />
-        </span>
-      )}
+      style={{ margin: 0, ...style }}
+      IconComponent={iconComponent}
     >
       <div className="tooltip_content">
         <Trans
           t={t}
           i18nKey="tooltip"
           components={{
-            settings: linkToSettings ? (
-              // Straight to this chain's endpoint list. The list page owns the
-              // edit form as a slide-up rather than a route, so the chain is
-              // handed over as router state for it to act on.
-              <Link
-                to={{
-                  pathname: "/settings/custom-networks",
-                  state: { editChainID: chainID },
-                }}
-              />
-            ) : (
-              // Still sound advice without being a link; the sentence reads
-              // the same either way.
-              <span />
-            ),
+            settings:
+              chainID === undefined ? (
+                // Still sound advice without being a link; the sentence reads
+                // the same either way.
+                <span />
+              ) : (
+                // Straight to this chain's endpoint list. The list page owns
+                // the edit form as a slide-up rather than a route, so the
+                // chain is handed over as router state for it to act on.
+                <Link
+                  to={{
+                    pathname: "/settings/custom-networks",
+                    state: { editChainID: chainID },
+                  }}
+                />
+              ),
           }}
         />
         <style jsx>{`

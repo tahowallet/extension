@@ -47,8 +47,10 @@ export default function TopMenuProtocolSwitcher({
         <NetworkUnreachableWarning
           chainID={currentNetwork.chainID}
           size={12}
+          // Anchored to the wrapper rather than to the logo, since the badge
+          // is the button's sibling: the logo is the wrapper's first 24px, so
+          // this puts the badge over its bottom-right corner.
           style={{
-            margin: 0,
             position: "absolute",
             left: 14,
             top: "calc(50% + 4px)",
@@ -89,7 +91,6 @@ export default function TopMenuProtocolSwitcher({
             background-color: #fff;
           }
           .icon_wrap {
-            position: relative;
             width: 24px;
             height: 24px;
             border-radius: 4px;
