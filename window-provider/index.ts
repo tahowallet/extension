@@ -36,6 +36,15 @@ export default class TahoWindowProvider extends EventEmitter {
 
   connected = false
 
+  /**
+   * Whether the wallet can reach the chain this page is on, as last reported by
+   * the background. Kept apart from {@link connected}, which is set on the
+   * first response of any kind and means only that the extension is alive;
+   * without the distinction the next resolved request would silently reconnect
+   * a page whose chain is still dark.
+   */
+  private chainReachable = true
+
   isTally = true as const
 
   isTaho = true as const
@@ -191,7 +200,7 @@ export default class TahoWindowProvider extends EventEmitter {
     }
 
     // let's emit connected on the first successful response from background
-    if (!this.connected) {
+    if (!this.connected && this.chainReachable) {
       this.connected = true
       this.emit("connect", { chainId: this.chainId })
     }
@@ -357,10 +366,11 @@ export default class TahoWindowProvider extends EventEmitter {
       return
     }
 
-    if (reachable === this.connected) {
+    if (reachable === this.chainReachable) {
       return
     }
 
+    this.chainReachable = reachable
     this.connected = reachable
 
     if (reachable) {
