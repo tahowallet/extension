@@ -1,5 +1,9 @@
 import React from "react"
 import { MemoryRouter } from "react-router-dom"
+import { ETHEREUM, ETH } from "@tallyho/tally-background/constants"
+import { getFullAssetID } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
+import { initialState as uiInitialState } from "@tallyho/tally-background/redux-slices/ui"
+import { createAccountState, TEST_ADDRESS } from "../../../tests/factories"
 import WalletAccountBalanceControl from "../WalletAccountBalanceControl"
 import { renderWithProviders } from "../../../tests/test-utils"
 
@@ -27,6 +31,37 @@ const renderBalanceControl = (overrides: Partial<BalanceControlProps> = {}) => {
         isNetworkUnreachable={props.isNetworkUnreachable}
       />
     </MemoryRouter>,
+    {
+      preloadedState: {
+        account: createAccountState({
+          accountsData: {
+            evm: {
+              [ETHEREUM.chainID]: {
+                [TEST_ADDRESS]: {
+                  address: TEST_ADDRESS,
+                  network: ETHEREUM,
+                  balances: {
+                    [getFullAssetID(ETH)]: {
+                      amount: 1n,
+                      // 2023-03-14T09:26:00Z, so the rendered time is fixed
+                      retrievedAt: 1678785960000,
+                      dataSource: "local" as const,
+                    },
+                  },
+                  ens: {},
+                  defaultName: "Test",
+                  defaultAvatar: "",
+                },
+              },
+            },
+          },
+        }),
+        ui: {
+          ...uiInitialState,
+          selectedAccount: { address: TEST_ADDRESS, network: ETHEREUM },
+        },
+      },
+    },
   )
 }
 
@@ -72,5 +107,19 @@ describe("WalletAccountBalanceControl", () => {
     })
 
     expect(ui.getByTestId("account_balance_loader")).toBeInTheDocument()
+  })
+
+  it("says when the withheld balance was last a real one", () => {
+    // The placeholder alone says only that we cannot see; this says how old
+    // what we last saw is, which is what tells the user whether to worry.
+    const ui = renderBalanceControl({ isNetworkUnreachable: true })
+
+    expect(ui.getByText(/Last updated/)).toBeVisible()
+  })
+
+  it("says nothing about staleness while the network answers", () => {
+    const ui = renderBalanceControl()
+
+    expect(ui.queryByText(/Last updated/)).not.toBeInTheDocument()
   })
 })

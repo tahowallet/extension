@@ -394,11 +394,13 @@ export const selectCurrentAccountBalanceRetrievedAt = createSelector(
       return undefined
     }
 
-    const retrievedAts = Object.values(currentAccount.balances).map(
-      ({ retrievedAt }) => retrievedAt,
+    const newest = Object.values(currentAccount.balances).reduce(
+      (latest, { retrievedAt }) =>
+        retrievedAt > latest ? retrievedAt : latest,
+      -1,
     )
 
-    return retrievedAts.length === 0 ? undefined : Math.max(...retrievedAts)
+    return newest === -1 ? undefined : newest
   },
 )
 

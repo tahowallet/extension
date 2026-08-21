@@ -1,8 +1,6 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import dayjs from "dayjs"
 import {
-  selectCurrentAccountBalanceRetrievedAt,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -17,6 +15,7 @@ import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 import SharedSquareButton from "../Shared/SharedSquareButton"
 import SharedTooltip from "../Shared/SharedTooltip"
+import BalanceLastUpdated from "./BalanceLastUpdated"
 
 type ActionButtonsProps = {
   onReceive: () => void
@@ -148,9 +147,6 @@ export default function WalletAccountBalanceControl(
   const hasSavedSeed = true
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
-  const balanceRetrievedAt = useBackgroundSelector(
-    selectCurrentAccountBalanceRetrievedAt,
-  )
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -196,13 +192,7 @@ export default function WalletAccountBalanceControl(
               )}
             </span>
           </span>
-          {isNetworkUnreachable && balanceRetrievedAt !== undefined && (
-            <div className="balance_stale">
-              {tUnreachable("lastUpdated", {
-                time: dayjs(balanceRetrievedAt).format("MMM D, h:mm A"),
-              })}
-            </div>
-          )}
+          {isNetworkUnreachable && <BalanceLastUpdated />}
         </SharedSkeletonLoader>
 
         <SharedSkeletonLoader
@@ -261,14 +251,6 @@ export default function WalletAccountBalanceControl(
             font-weight: 400;
             line-height: 24px;
             text-align: center;
-          }
-          .balance_stale {
-            color: var(--green-40);
-            font-size: 14px;
-            font-weight: 400;
-            line-height: 16px;
-            text-align: center;
-            margin-bottom: 8px;
           }
           .dollar_sign {
             width: 14px;
