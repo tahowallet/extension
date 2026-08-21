@@ -67,7 +67,11 @@ import {
   updateInternalSigners,
   setKeyringToVerify,
 } from "../../redux-slices/internal-signer"
-import { blockSeen, setEVMNetworks } from "../../redux-slices/networks"
+import {
+  blockSeen,
+  networkReachabilityChanged,
+  setEVMNetworks,
+} from "../../redux-slices/networks"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -689,6 +693,10 @@ export default class ReduxService extends BaseService<never> {
 
     this.chainService.emitter.on("block", (block) => {
       this.store.dispatch(blockSeen(block))
+    })
+
+    this.chainService.emitter.on("networkReachability", (payload) => {
+      this.store.dispatch(networkReachabilityChanged(payload))
     })
 
     this.chainService.emitter.on("transactionSend", async () => {

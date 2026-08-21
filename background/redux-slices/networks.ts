@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import type { RootState } from "."
 import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork, RpcEndpoint } from "../networks"
+import { NetworkReachabilityState } from "../services/chain/network-reachability"
 import { removeChainBalances } from "./accounts"
 import { selectCurrentNetwork } from "./selectors/uiSelectors"
 import { setSelectedNetwork } from "./ui"
@@ -19,6 +20,14 @@ export type NetworksState = {
   blockInfo: {
     [chainID: string]: NetworkState
   }
+  /**
+   * The chains whose configured RPC endpoints cannot currently be reached,
+   * keyed by chain ID. A chain is absent until it has been heard from, so a
+   * network nobody has tried to reach is treated as fine rather than broken.
+   */
+  unreachableNetworks: {
+    [chainID: string]: boolean
+  }
 }
 
 export const initialState: NetworksState = {
@@ -29,6 +38,7 @@ export const initialState: NetworksState = {
       baseFeePerGas: null,
     },
   },
+  unreachableNetworks: {},
 }
 
 const networksSlice = createSlice({
@@ -57,6 +67,24 @@ const networksSlice = createSlice({
       }
     },
     /**
+     * Records whether a chain's RPC endpoints can be reached. The background
+     * only reports transitions, so this arrives rarely; a chain that recovers
+     * drops out of the map rather than being recorded as reachable, keeping
+     * "reachable" and "never heard from" the same thing for every reader.
+     */
+    networkReachabilityChanged: (
+      immerState,
+      {
+        payload: { chainID, status },
+      }: { payload: { chainID: string; status: NetworkReachabilityState } },
+    ) => {
+      if (status === "unreachable") {
+        immerState.unreachableNetworks[chainID] = true
+      } else {
+        delete immerState.unreachableNetworks[chainID]
+      }
+    },
+    /**
      * Receives all supported networks as the payload
      */
     setEVMNetworks: (immerState, { payload }: { payload: EVMNetwork[] }) => {
@@ -71,13 +99,15 @@ const networksSlice = createSlice({
         if (!chainIds.includes(chainID)) {
           delete immerState.evmNetworks[chainID]
           delete immerState.blockInfo[chainID]
+          delete immerState.unreachableNetworks[chainID]
         }
       })
     },
   },
 })
 
-export const { blockSeen, setEVMNetworks } = networksSlice.actions
+export const { blockSeen, networkReachabilityChanged, setEVMNetworks } =
+  networksSlice.actions
 
 export default networksSlice.reducer
 
