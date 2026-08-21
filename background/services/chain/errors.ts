@@ -103,3 +103,35 @@ export const getErrorType = (error: string, method: string): RPCErrorType => {
       return "unknown-error"
   }
 }
+
+/**
+ * Why an RPC endpoint the user asked us to save was rejected.
+ *
+ * A discriminant rather than a sentence, because the sentence has to be
+ * written in the user's language and the background has no business choosing
+ * words. Every field the copy needs to name is carried alongside.
+ */
+export type RpcEndpointValidationFailure =
+  | { kind: "unreachable"; url: string }
+  | {
+      kind: "chain-mismatch"
+      url: string
+      reportedChainID: string
+      expectedChainID: string
+    }
+
+/**
+ * Thrown when a user-provided RPC endpoint fails its pre-save probe.
+ *
+ * The message exists for logs and for anything that catches this without
+ * knowing what it is; {@link failure} is what the UI reads.
+ */
+export class RpcEndpointValidationError extends Error {
+  constructor(readonly failure: RpcEndpointValidationFailure) {
+    super(
+      failure.kind === "unreachable"
+        ? `RPC endpoint could not be reached: ${failure.url}`
+        : `RPC endpoint ${failure.url} reports chain ID ${failure.reportedChainID}, expected ${failure.expectedChainID}`,
+    )
+  }
+}

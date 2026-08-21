@@ -2,6 +2,10 @@ import { createSlice } from "@reduxjs/toolkit"
 import type { RootState } from "."
 import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork, RpcEndpoint } from "../networks"
+import {
+  RpcEndpointValidationError,
+  RpcEndpointValidationFailure,
+} from "../services/chain/errors"
 import { NetworkReachabilityState } from "../services/chain/network-reachability"
 import { removeChainBalances } from "./accounts"
 import { selectCurrentNetwork } from "./selectors/uiSelectors"
@@ -126,12 +130,30 @@ export const removeCustomChain = createBackgroundAsyncThunk(
   },
 )
 
+/**
+ * Why a settings save was rejected, in a form the UI can put into its own
+ * words. Endpoint probe failures carry their discriminant through from the
+ * background so they can be localized; anything else arrives as prose we can
+ * only pass along, which is at least better than nothing to report.
+ */
+export type ChainConfigUpdateError =
+  | RpcEndpointValidationFailure
+  | { kind: "unknown"; message: string }
+
 export type ChainConfigUpdateResult =
   | { success: true }
-  | { success: false; error: string }
+  | { success: false; error: ChainConfigUpdateError }
 
-const toErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
+const toUpdateError = (error: unknown): ChainConfigUpdateError => {
+  if (error instanceof RpcEndpointValidationError) {
+    return error.failure
+  }
+
+  return {
+    kind: "unknown",
+    message: error instanceof Error ? error.message : String(error),
+  }
+}
 
 export type NetworkSettingsUpdate = {
   chainID: string
@@ -186,7 +208,7 @@ export const updateNetworkSettings = createBackgroundAsyncThunk(
 
       return { success: true }
     } catch (error) {
-      return { success: false, error: toErrorMessage(error) }
+      return { success: false, error: toUpdateError(error) }
     }
   },
 )

@@ -695,7 +695,10 @@
           "invalidDecimals": "Must be a whole number greater than 0",
           "invalidUrl": "Must be a valid http(s) URL",
           "invalidRpcUrl": "Must be a valid http(s) or ws(s) URL",
-          "duplicateRpcUrl": "This endpoint is already listed"
+          "duplicateRpcUrl": "This endpoint is already listed",
+          "unreachableEndpoint": "Couldn't reach {{url}}",
+          "endpointChainMismatch": "{{url}} serves chain ID {{reportedChainID}}, not {{expectedChainID}}",
+          "saveFailed": "Couldn't save these settings: {{message}}"
         },
         "snackbar": {
           "success": "Network updated"

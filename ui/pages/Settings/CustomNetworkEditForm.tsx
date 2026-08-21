@@ -5,6 +5,7 @@ import {
   RpcEndpoint,
 } from "@tallyho/tally-background/networks"
 import {
+  ChainConfigUpdateError,
   getChainRpcConfig,
   updateNetworkSettings,
 } from "@tallyho/tally-background/redux-slices/networks"
@@ -139,6 +140,25 @@ export default function CustomNetworkEditForm({
     keyPrefix: "settings.customNetworksSettings.editModal",
   })
 
+  // The background rejects an endpoint by discriminant and URL rather than by
+  // sentence, so the sentence is written here, where there is a locale to
+  // write it in. An unrecognized failure has no copy of its own; passing its
+  // message through untranslated beats telling the user nothing went wrong.
+  const saveErrorMessage = (error: ChainConfigUpdateError): string => {
+    switch (error.kind) {
+      case "unreachable":
+        return t("errors.unreachableEndpoint", { url: error.url })
+      case "chain-mismatch":
+        return t("errors.endpointChainMismatch", {
+          url: error.url,
+          reportedChainID: error.reportedChainID,
+          expectedChainID: error.expectedChainID,
+        })
+      default:
+        return t("errors.saveFailed", { message: error.message })
+    }
+  }
+
   const dispatch = useBackgroundDispatch()
 
   // Built-in networks' metadata is bundled with the extension and immutable;
@@ -172,7 +192,9 @@ export default function CustomNetworkEditForm({
   const [isSaving, setIsSaving] = useState(false)
   // Set from a failed save; the background reports unreachable or mismatched
   // endpoints by URL rather than throwing.
-  const [saveError, setSaveError] = useState("")
+  const [saveError, setSaveError] = useState<ChainConfigUpdateError | null>(
+    null,
+  )
 
   useEffect(() => {
     let isStale = false
@@ -387,7 +409,7 @@ export default function CustomNetworkEditForm({
     }
 
     setIsSaving(true)
-    setSaveError("")
+    setSaveError(null)
 
     const rpcEndpoints: RpcEndpoint[] = rpcEndpointRows.map((row) => ({
       url: row.url.trim(),
@@ -630,9 +652,9 @@ export default function CustomNetworkEditForm({
             </div>
           </div>
           <div className="form_controls">
-            {saveError !== "" && (
+            {saveError !== null && (
               <span className="save_error" role="alert">
-                {saveError}
+                {saveErrorMessage(saveError)}
               </span>
             )}
             <SharedButton

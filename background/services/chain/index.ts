@@ -74,6 +74,7 @@ import SerialFallbackProvider, {
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
 import { NetworkReachabilityState } from "./network-reachability"
+import { RpcEndpointValidationError } from "./errors"
 import { BOAR_RPC_URLS } from "../../lib/boar"
 import AssetDataHelper from "./asset-data-helper"
 import {
@@ -2358,8 +2359,8 @@ export default class ChainService extends BaseService<Events> {
   /**
    * Verifies that each http(s) RPC endpoint in the given list is reachable
    * and reports the expected chain ID via eth_chainId. WebSocket endpoints
-   * are not probed. Throws an error naming the offending URL on mismatch or
-   * unreachability.
+   * are not probed. Throws an {@link RpcEndpointValidationError} naming the
+   * offending URL on mismatch or unreachability.
    */
   // eslint-disable-next-line class-methods-use-this
   private async validateRpcEndpoints(
@@ -2412,15 +2413,18 @@ export default class ChainService extends BaseService<Events> {
           reportedChainID = String(parseInt(result, 16))
         } catch (error) {
           logger.debug("RPC endpoint probe failed for", url, error)
-          throw new Error(`RPC endpoint could not be reached: ${url}`)
+          throw new RpcEndpointValidationError({ kind: "unreachable", url })
         } finally {
           clearTimeout(timeout)
         }
 
         if (!sameChainID(reportedChainID, chainID)) {
-          throw new Error(
-            `RPC endpoint ${url} reports chain ID ${reportedChainID}, expected ${chainID}`,
-          )
+          throw new RpcEndpointValidationError({
+            kind: "chain-mismatch",
+            url,
+            reportedChainID,
+            expectedChainID: chainID,
+          })
         }
       }),
     )
