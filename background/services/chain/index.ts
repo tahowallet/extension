@@ -73,6 +73,7 @@ import SerialFallbackProvider, {
   ProviderCreator,
   makeSerialFallbackProvider,
 } from "./serial-fallback-provider"
+import { NetworkReachabilityState } from "./network-reachability"
 import { BOAR_RPC_URLS } from "../../lib/boar"
 import AssetDataHelper from "./asset-data-helper"
 import {
@@ -168,6 +169,15 @@ interface Events extends ServiceLifecycleEvents {
   transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
   customChainAdded: ValidatedAddEthereumChainParameter
+  /**
+   * Whether a chain's configured RPC endpoints can be reached at all. Emitted
+   * only when the verdict changes, so a chain that has been dark for an hour
+   * reports once rather than once per failed call.
+   */
+  networkReachability: {
+    chainID: string
+    status: NetworkReachabilityState
+  }
 }
 
 export type QueuedTxToRetrieve = {
@@ -413,6 +423,7 @@ export default class ChainService extends BaseService<Events> {
             rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
               ?.endpoints || [],
             customRpcUrls.find((v) => v.chainID === network.chainID),
+            (status) => this.emitReachability(network.chainID, status),
           ),
         ]),
       ),
@@ -2083,6 +2094,8 @@ export default class ChainService extends BaseService<Events> {
     this.providers.evm[chainInfo.chainId] = makeSerialFallbackProvider(
       chainInfo.chainId,
       chainInfo.rpcUrls.map((url) => ({ url })),
+      undefined,
+      (status) => this.emitReachability(chainInfo.chainId, status),
     )
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
@@ -2228,6 +2241,7 @@ export default class ChainService extends BaseService<Events> {
       chainID,
       rpcEndpoints,
       customRpcConfigs.find((config) => config.chainID === chainID),
+      (status) => this.emitReachability(chainID, status),
     )
 
     // Nothing points at the replaced provider anymore, but its reconnect and
@@ -2239,6 +2253,24 @@ export default class ChainService extends BaseService<Events> {
     // they have to be moved over; otherwise gas polling and pending
     // transaction watching would keep addressing the retired provider.
     await this.resubscribeToChainEvents(chainID, previousProvider)
+
+    // The replacement starts out reachable and has never failed anything, so
+    // say so rather than leaving a warning up against endpoints that have not
+    // been tried yet. If the new list is no better than the old one, the walk
+    // will exhaust again soon enough and we will be back.
+    this.emitReachability(chainID, "reachable")
+  }
+
+  /**
+   * Announces a chain's reachability. Deduplication is the provider's job —
+   * its tracker only reports transitions — but a provider rebuild reports
+   * unconditionally, since the tracker it is replacing took its state with it.
+   */
+  private emitReachability(
+    chainID: string,
+    status: NetworkReachabilityState,
+  ): void {
+    this.emitter.emit("networkReachability", { chainID, status })
   }
 
   /**

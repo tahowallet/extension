@@ -43,6 +43,11 @@ import {
   RequestFailureCategory,
 } from "../../lib/perf-metrics"
 import { CircuitBreaker } from "./circuit-breaker"
+import {
+  NetworkReachabilityListener,
+  NetworkReachabilityState,
+  NetworkReachabilityTracker,
+} from "./network-reachability"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
@@ -426,6 +431,15 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this.#destroyed
   }
 
+  /**
+   * Whether this provider can currently reach its chain at all. See
+   * {@link NetworkReachabilityTracker} for what "currently" means; in
+   * particular a single failed call does not move this.
+   */
+  get reachability(): NetworkReachabilityState {
+    return this.#reachability.getState()
+  }
+
   #sendCache = new Map<string, CacheEntry>()
 
   /**
@@ -446,6 +460,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * primary breaker is open.
    */
   #circuitBreakers = new Map<number, CircuitBreaker>()
+
+  /**
+   * Turns this provider's walk outcomes into a single reachable /
+   * unreachable verdict for the chain, so callers that today log and
+   * swallow an exhausted walk have something to report to the user.
+   */
+  #reachability: NetworkReachabilityTracker
 
   #cacheSettings = new Map<string, number>(
     Object.entries({
@@ -537,6 +558,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // clashing with Ethers's own `network` stuff.
     private chainID: string,
     providerCreators: Array<ProviderCreator>,
+    onReachabilityChange?: NetworkReachabilityListener,
   ) {
     const customProviderCreators = providerCreators.filter(
       (creator) => creator.type === "custom",
@@ -552,6 +574,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     const firstProvider = firstProviderCreator()
 
     super(firstProvider.connection, firstProvider.network)
+
+    // A retired provider has no business reporting on a chain it no longer
+    // serves; its replacement speaks for the chain from here on.
+    this.#reachability = new NetworkReachabilityTracker({}, (next) => {
+      if (!this.#destroyed) {
+        onReachabilityChange?.(next)
+      }
+    })
 
     this.currentProvider = firstProvider
     this.cachedProvidersByIndex.set(0, firstProvider)
@@ -648,6 +678,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       ) {
         try {
           const result = await this.customProvider.send(method, params)
+          this.#reachability.recordSuccess()
           delete this.messagesToSend[messageId]
           return result
         } catch (error) {
@@ -689,6 +720,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             method,
             params,
           )
+          this.#reachability.recordSuccess()
           delete this.messagesToSend[messageId]
           return result
         } catch (error) {
@@ -711,6 +743,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         boarOrDefaultProvider(this.cachedChainId, method)
       ) {
         const result = await this.boarProvider.send(method, params)
+        this.#reachability.recordSuccess()
         delete this.messagesToSend[messageId]
         return result
       }
@@ -727,6 +760,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         // on an exhausted chain.
         this.currentProviderIndex = 0
         this.reconnectProvider()
+        this.#reachability.recordExhaustedWalk()
         delete this.messagesToSend[messageId]
         throw new Error("NETWORK_ERROR: circuit open and no fallback available")
       }
@@ -742,6 +776,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         throw error
       }
       breaker.recordSuccess()
+      this.#reachability.recordSuccess()
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
@@ -826,6 +861,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
         // Reconnect, but don't wait for the connection to go through.
         this.reconnectProvider()
+        this.#reachability.recordExhaustedWalk()
         delete this.messagesToSend[messageId]
         throw error
       } else if (errorType === "invalid-response-error") {
@@ -932,14 +968,17 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * Returns the circuit breaker for a given provider index, creating it the
    * first time it is requested. Each breaker wires its transitions into the
    * perf metrics collector so analytics can track how often providers go down
-   * and how quickly they recover.
+   * and how quickly they recover, and into the reachability tracker, which
+   * treats them as corroborating detail on a verdict it reaches by other
+   * means.
    */
   private breakerFor(providerIndex: number): CircuitBreaker {
     let breaker = this.#circuitBreakers.get(providerIndex)
     if (!breaker) {
-      breaker = new CircuitBreaker({}, (next) =>
-        recordCircuitBreakerTransition(this.chainID, providerIndex, next),
-      )
+      breaker = new CircuitBreaker({}, (next) => {
+        recordCircuitBreakerTransition(this.chainID, providerIndex, next)
+        this.#reachability.recordBreakerState(providerIndex, next)
+      })
       this.#circuitBreakers.set(providerIndex, breaker)
     }
     return breaker
@@ -1887,14 +1926,19 @@ export function makeSerialFallbackProvider(
   chainID: string,
   rpcEndpoints: RpcEndpoint[],
   customRpc?: RpcConfig,
+  onReachabilityChange?: NetworkReachabilityListener,
 ): SerialFallbackProvider {
   if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
-    return new SerialFallbackProvider(FORK.chainID, [
-      {
-        type: "generic" as const,
-        creator: () => new TahoRPCProvider(process.env.MAINNET_FORK_URL),
-      },
-    ])
+    return new SerialFallbackProvider(
+      FORK.chainID,
+      [
+        {
+          type: "generic" as const,
+          creator: () => new TahoRPCProvider(process.env.MAINNET_FORK_URL),
+        },
+      ],
+      onReachabilityChange,
+    )
   }
 
   if (
@@ -1908,12 +1952,16 @@ export function makeSerialFallbackProvider(
       "%c🦴 Using Tenderly fork as Arbitrum Sepolia provider",
       "background: #071111; color: #fff; font-weight: 900;",
     )
-    return new SerialFallbackProvider(ARBITRUM_SEPOLIA.chainID, [
-      {
-        type: "generic" as const,
-        creator: () => new TahoRPCProvider(process.env.ARBITRUM_FORK_RPC),
-      },
-    ])
+    return new SerialFallbackProvider(
+      ARBITRUM_SEPOLIA.chainID,
+      [
+        {
+          type: "generic" as const,
+          creator: () => new TahoRPCProvider(process.env.ARBITRUM_FORK_RPC),
+        },
+      ],
+      onReachabilityChange,
+    )
   }
 
   const boarRpcUrl = BOAR_RPC_URLS[chainID]
@@ -1950,9 +1998,9 @@ export function makeSerialFallbackProvider(
   // network settings UI promises about managed endpoints being the first
   // choice. Custom providers are not part of the walk; they are consulted
   // ahead of it for the methods they declare support for.
-  return new SerialFallbackProvider(chainID, [
-    ...boarProviderCreators,
-    ...genericProviders,
-    ...customProviderCreators,
-  ])
+  return new SerialFallbackProvider(
+    chainID,
+    [...boarProviderCreators, ...genericProviders, ...customProviderCreators],
+    onReachabilityChange,
+  )
 }
