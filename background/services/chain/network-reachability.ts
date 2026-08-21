@@ -47,10 +47,29 @@ export type NetworkReachabilityOptions = {
   successFloorMs: number
 }
 
+/**
+ * How long the last success has to be in the past, in seconds.
+ *
+ * Forty-five seconds unless something says otherwise, which is the value this
+ * is designed around: long enough, on top of the breakers' own thirty-second
+ * window, that nothing short of a genuinely dark chain reaches it. The e2e
+ * build lowers it, because a suite that gates every pull request should not
+ * spend most of a minute waiting out a timer whose behaviour is already
+ * covered by unit tests. Nothing else should.
+ */
+const DEFAULT_SUCCESS_FLOOR_SECONDS = 45
+
+const configuredFloorSeconds = Number(
+  process.env.NETWORK_UNREACHABLE_FLOOR_SECONDS,
+)
+
 export const DEFAULT_NETWORK_REACHABILITY_OPTIONS: NetworkReachabilityOptions =
   {
     exhaustedWalkThreshold: 2,
-    successFloorMs: 45_000,
+    successFloorMs:
+      (Number.isFinite(configuredFloorSeconds) && configuredFloorSeconds > 0
+        ? configuredFloorSeconds
+        : DEFAULT_SUCCESS_FLOOR_SECONDS) * 1000,
   }
 
 /**
