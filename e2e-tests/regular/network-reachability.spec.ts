@@ -110,6 +110,25 @@ const goToWallet = async (popup: Page): Promise<void> => {
   ).toBeVisible()
 }
 
+/**
+ * Switches the wallet onto the network under test.
+ *
+ * `WalletPageHelper.switchNetwork` picks the row by page-wide text, which is
+ * ambiguous here: the page being navigated away from stays mounted for the
+ * length of the transition, and the network settings it comes from name every
+ * network on screen. Scoping to the open list is the whole difference.
+ */
+const switchToNetwork = async (popup: Page): Promise<void> => {
+  const networkMenu = networkMenuOf(popup)
+
+  await popup.getByTestId("top_menu_network_switcher").last().click()
+  await networkMenu.getByText(NETWORK_NAME).click()
+
+  await expect(
+    popup.getByTestId("top_menu_network_switcher").last(),
+  ).toHaveText(NETWORK_NAME)
+}
+
 /** Points the network at the fake endpoint and confirms the save took. */
 const pointNetworkAtFakeRpc = async (
   popup: Page,
@@ -180,7 +199,7 @@ test.describe("Network reachability", () => {
     await pointNetworkAtFakeRpc(popup, rpc.url)
 
     await goToWallet(popup)
-    await walletPageHelper.switchNetwork(NETWORK_NAME)
+    await switchToNetwork(popup)
 
     await test.step("Nothing is said while the endpoint answers", async () => {
       await expect(popup.getByLabel(UNREACHABLE_LABEL)).toBeHidden()
