@@ -85,15 +85,19 @@ export default function SignerLedgerFrame<
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
 
-  const tooltip =
-    additionalSigningStatus === "editing"
-      ? tSigning("unsavedChangesTooltip")
-      : ""
-
   const isNetworkUnreachable = useBackgroundSelector(
     selectIsSigningNetworkUnreachable,
   )
   const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
+
+  // Unreachable takes precedence: unsaved fee edits are the user's own doing
+  // and reversible, while a chain we cannot read makes the fees and the nonce
+  // unverifiable no matter what they say.
+  const tooltip =
+    (isNetworkUnreachable && tSigning("networkUnreachableTooltip")) ||
+    (additionalSigningStatus === "editing" &&
+      tSigning("unsavedChangesTooltip")) ||
+    ""
 
   return (
     <>
@@ -178,7 +182,8 @@ export default function SignerLedgerFrame<
                   onClick={handleConfirm}
                   isDisabled={
                     hasInsufficientFunds ||
-                    additionalSigningStatus === "editing"
+                    additionalSigningStatus === "editing" ||
+                    isNetworkUnreachable
                   }
                   tooltip={tooltip}
                   showLoadingOnClick

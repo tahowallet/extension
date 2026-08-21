@@ -777,6 +777,7 @@
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
     "unsavedChangesTooltip": "You have unsaved changed",
+    "networkUnreachableTooltip": "Taho can't reach this network right now, so fees and the account's transaction count can't be confirmed.",
     "useFlashbots": "Use Flashbots RPC for this transaction",
     "spendApproval": {
       "title": "Approve asset spend",

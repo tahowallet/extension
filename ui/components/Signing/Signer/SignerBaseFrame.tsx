@@ -32,8 +32,13 @@ export default function SignerBaseFrame({
     selectIsSigningNetworkUnreachable,
   )
   const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
+  // Unreachable takes precedence: unsaved fee edits are the user's own doing
+  // and reversible, while a chain we cannot read makes the fees and the nonce
+  // unverifiable no matter what they say.
   const tooltip =
-    additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
+    (isNetworkUnreachable && t("networkUnreachableTooltip")) ||
+    (additionalSigningStatus === "editing" && t("unsavedChangesTooltip")) ||
+    ""
 
   return (
     <>
@@ -67,7 +72,9 @@ export default function SignerBaseFrame({
             size="large"
             onClick={onConfirm}
             isDisabled={
-              hasInsufficientFunds || additionalSigningStatus === "editing"
+              hasInsufficientFunds ||
+              additionalSigningStatus === "editing" ||
+              isNetworkUnreachable
             }
             tooltip={tooltip}
             showLoadingOnClick

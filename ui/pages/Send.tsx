@@ -33,6 +33,7 @@ import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
@@ -53,6 +54,11 @@ export default function Send(): ReactElement {
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  // Stop the send here rather than letting the user fill out the whole form and
+  // meet the same block on the signing screen.
+  const isNetworkUnreachable = useBackgroundSelector(
+    selectIsCurrentNetworkUnreachable,
+  )
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
@@ -284,7 +290,8 @@ export default function Send(): ReactElement {
                 currentAccountSigner === ReadOnlyAccountSigner ||
                 (assetType === "token" && Number(amount) === 0) ||
                 destinationAddress === undefined ||
-                hasError
+                hasError ||
+                isNetworkUnreachable
               }
               onClick={sendTransactionRequest}
               isFormSubmit
