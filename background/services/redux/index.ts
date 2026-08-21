@@ -697,6 +697,14 @@ export default class ReduxService extends BaseService<never> {
 
     this.chainService.emitter.on("networkReachability", (payload) => {
       this.store.dispatch(networkReachabilityChanged(payload))
+
+      // Connected pages get told too. A dApp that knows the chain is
+      // unreachable can say so instead of rendering an empty state as if it
+      // were the truth.
+      this.providerBridgeService.notifyContentScriptsAboutChainReachability(
+        payload.chainID,
+        payload.status === "reachable",
+      )
     })
 
     this.chainService.emitter.on("transactionSend", async () => {

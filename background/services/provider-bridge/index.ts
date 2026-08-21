@@ -420,6 +420,42 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
+  /**
+   * Tells every connected page whether the wallet can reach the chain it is
+   * connected to, so a dApp can stop showing a page's worth of zeroes as
+   * though they were data.
+   *
+   * Pages on some other network are told nothing rather than being told about
+   * a chain they are not on; EIP-1193's 4901 is explicitly about the chain the
+   * page is connected to, not about the wallet as a whole.
+   */
+  notifyContentScriptsAboutChainReachability(
+    chainID: string,
+    reachable: boolean,
+  ): void {
+    this.openPorts.forEach(async (port) => {
+      // we know that url exists because it was required to store the port
+      const { origin } = new URL(port.sender?.url as string)
+      const { chainID: portChainID } =
+        await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
+          origin,
+        )
+
+      if (portChainID !== chainID) {
+        return
+      }
+
+      port.postMessage({
+        id: "tallyHo",
+        result: {
+          method: "tally_chainReachabilityChanged",
+          chainId: toHexChainID(chainID),
+          reachable,
+        },
+      })
+    })
+  }
+
   async requestPermission(
     permissionRequest: PermissionRequest,
   ): Promise<unknown> {

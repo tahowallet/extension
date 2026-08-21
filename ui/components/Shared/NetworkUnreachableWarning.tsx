@@ -16,7 +16,7 @@ type Props = {
    * Applied to the tooltip's wrapper, whose own rule sets a negative vertical
    * margin and an 8px left margin that most callers need to undo.
    */
-  style?: CSSProperties
+  style?: CSSProperties & Record<string, unknown>
   tooltipWidth?: number
   tooltipHorizontalPosition?: "left" | "center" | "right"
   tooltipVerticalPosition?: "top" | "bottom"
