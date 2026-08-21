@@ -15,6 +15,7 @@ import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
 import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
+import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
 import MATSNET_NFT_CAMPAIGN from "@tallyho/tally-background/services/campaign/matsnet-nft"
@@ -28,6 +29,7 @@ import WalletAccountBalanceControl from "../components/Wallet/WalletAccountBalan
 import OnboardingOpenClaimFlowBanner from "../components/Onboarding/OnboardingOpenClaimFlowBanner"
 import WalletBanner from "../components/Wallet/Banner/WalletBanner"
 import WalletAnalyticsNotificationBanner from "../components/Wallet/WalletAnalyticsNotificationBanner"
+import NetworkUnreachableBanner from "../components/Wallet/NetworkUnreachableBanner"
 import NFTListCurrentWallet from "../components/NFTs/NFTListCurrentWallet"
 import WalletHiddenAssets from "../components/Wallet/WalletHiddenAssets"
 import SharedButton from "../components/Shared/SharedButton"
@@ -96,6 +98,10 @@ export default function Wallet(): ReactElement {
     (background) => background.ui?.initializationLoadingTimeExpired,
   )
 
+  const isCurrentNetworkUnreachable = useBackgroundSelector(
+    selectIsCurrentNetworkUnreachable,
+  )
+
   const showHiddenAssets = useMemo(
     () => showUnverifiedAssets && unverifiedAssetAmounts.length > 0,
     [showUnverifiedAssets, unverifiedAssetAmounts.length],
@@ -128,10 +134,14 @@ export default function Wallet(): ReactElement {
       <div className="page_content">
         {isEnabled(FeatureFlags.SHOW_ISLAND_UI) && <WalletSubspaceLink />}
         <WalletAnalyticsNotificationBanner />
+        {isCurrentNetworkUnreachable && (
+          <NetworkUnreachableBanner network={selectedNetwork} />
+        )}
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+            isNetworkUnreachable={isCurrentNetworkUnreachable}
           />
         </div>
         {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (

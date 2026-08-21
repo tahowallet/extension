@@ -379,6 +379,29 @@ export const selectAccountAndTimestampedActivities = createSelector(
     }
   },
 )
+/**
+ * When the current account's balances were last read from the chain, as the
+ * most recent `retrievedAt` across them, or undefined if it has none.
+ *
+ * Only interesting while a network is unreachable, where the numbers on screen
+ * are the last good ones rather than current ones and the difference is the
+ * whole point.
+ */
+export const selectCurrentAccountBalanceRetrievedAt = createSelector(
+  getCurrentAccountState,
+  (currentAccount) => {
+    if (currentAccount === undefined || currentAccount === "loading") {
+      return undefined
+    }
+
+    const retrievedAts = Object.values(currentAccount.balances).map(
+      ({ retrievedAt }) => retrievedAt,
+    )
+
+    return retrievedAts.length === 0 ? undefined : Math.max(...retrievedAts)
+  },
+)
+
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
   selectAssetEntities,

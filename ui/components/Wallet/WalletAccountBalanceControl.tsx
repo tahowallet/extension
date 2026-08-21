@@ -1,6 +1,8 @@
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
+import dayjs from "dayjs"
 import {
+  selectCurrentAccountBalanceRetrievedAt,
   selectCurrentAccountSigner,
   selectCurrentNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -126,6 +128,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
 interface Props {
   balance?: string
   initializationLoadingTimeExpired: boolean
+  isNetworkUnreachable: boolean
 }
 
 export default function WalletAccountBalanceControl(
@@ -134,20 +137,32 @@ export default function WalletAccountBalanceControl(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
-  const { balance, initializationLoadingTimeExpired } = props
+  const { t: tUnreachable } = useTranslation("translation", {
+    keyPrefix: "networkUnreachable",
+  })
+  const { balance, initializationLoadingTimeExpired, isNetworkUnreachable } =
+    props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
 
   // TODO When non-imported accounts are supported, generalize this.
   const hasSavedSeed = true
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const balanceRetrievedAt = useBackgroundSelector(
+    selectCurrentAccountBalanceRetrievedAt,
+  )
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
+  // Unreachable is a third state alongside loading and loaded, and the only
+  // one of the three we can say something useful about: there is no point
+  // spinning a skeleton for a number that is not coming.
   const shouldIndicateLoading =
-    !initializationLoadingTimeExpired && typeof balance === "undefined"
+    !isNetworkUnreachable &&
+    !initializationLoadingTimeExpired &&
+    typeof balance === "undefined"
 
   return (
     <>
@@ -166,10 +181,28 @@ export default function WalletAccountBalanceControl(
           <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance" data-testid="wallet_balance">
-              <span className="dollar_sign">$</span>
-              {balance ?? 0}
+              {/*
+               * A zero here would be a claim, and the wrong one: an
+               * unreachable chain tells us nothing about what this account
+               * holds, only that we cannot see it right now.
+               */}
+              {isNetworkUnreachable ? (
+                tUnreachable("balancePlaceholder")
+              ) : (
+                <>
+                  <span className="dollar_sign">$</span>
+                  {balance ?? 0}
+                </>
+              )}
             </span>
           </span>
+          {isNetworkUnreachable && balanceRetrievedAt !== undefined && (
+            <div className="balance_stale">
+              {tUnreachable("lastUpdated", {
+                time: dayjs(balanceRetrievedAt).format("MMM D, h:mm A"),
+              })}
+            </div>
+          )}
         </SharedSkeletonLoader>
 
         <SharedSkeletonLoader
@@ -228,6 +261,14 @@ export default function WalletAccountBalanceControl(
             font-weight: 400;
             line-height: 24px;
             text-align: center;
+          }
+          .balance_stale {
+            color: var(--green-40);
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 16px;
+            text-align: center;
+            margin-bottom: 8px;
           }
           .dollar_sign {
             width: 14px;

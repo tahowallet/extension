@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { MEZO_TESTNET } from "@tallyho/tally-background/constants"
+import NetworkUnreachableWarning from "../Shared/NetworkUnreachableWarning"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
@@ -14,6 +15,12 @@ type Props = {
   onSelect: (network: EVMNetwork) => void
   onMouseMove?: () => void
   showSelectedText?: boolean
+  /**
+   * Passed in rather than looked up here. The list this row belongs to reads
+   * reachability for every chain at once; a row asking on its own behalf would
+   * cost the whole list its memoization. See `selectUnreachableNetworks`.
+   */
+  isUnreachable?: boolean
 }
 
 const isFeaturedNetwork = (network: EVMNetwork) => {
@@ -34,6 +41,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
     onMouseMove,
     isDisabled,
     showSelectedText = true,
+    isUnreachable = false,
   } = props
 
   return (
@@ -69,6 +77,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           )}
         </div>
       </div>
+      {isUnreachable && (
+        <NetworkUnreachableWarning
+          style={{ margin: "auto 0 auto auto" }}
+          tooltipVerticalPosition="top"
+        />
+      )}
       <style jsx>
         {`
           .featured {

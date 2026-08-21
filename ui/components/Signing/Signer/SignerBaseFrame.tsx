@@ -1,8 +1,12 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectHasInsufficientFunds,
+  selectIsSigningNetworkUnreachable,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../../hooks"
+import NetworkUnreachableWarning from "../../Shared/NetworkUnreachableWarning"
 import TransactionButton from "./TransactionButton"
 
 type SignerBaseFrameProps = {
@@ -23,6 +27,9 @@ export default function SignerBaseFrame({
   const additionalSigningStatus = useBackgroundSelector(
     selectAdditionalSigningStatus,
   )
+  const isNetworkUnreachable = useBackgroundSelector(
+    selectIsSigningNetworkUnreachable,
+  )
   const tooltip =
     additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
 
@@ -39,21 +46,34 @@ export default function SignerBaseFrame({
           {t("reject")}
         </TransactionButton>
 
-        <TransactionButton
-          id="sign"
-          type="primaryGreen"
-          size="large"
-          onClick={onConfirm}
-          isDisabled={
-            hasInsufficientFunds || additionalSigningStatus === "editing"
-          }
-          tooltip={tooltip}
-          showLoadingOnClick
-          showLoading
-          reactOnWindowFocus
-        >
-          {signingActionLabel}
-        </TransactionButton>
+        {/*
+         * The footer is laid out by a `:global()` rule in ../index.tsx that
+         * spreads exactly two children apart; the warning shares the sign
+         * button's slot so adding it does not re-space the whole row.
+         */}
+        <div className="sign_group">
+          {isNetworkUnreachable && (
+            <NetworkUnreachableWarning
+              style={{ margin: 0 }}
+              tooltipVerticalPosition="top"
+            />
+          )}
+          <TransactionButton
+            id="sign"
+            type="primaryGreen"
+            size="large"
+            onClick={onConfirm}
+            isDisabled={
+              hasInsufficientFunds || additionalSigningStatus === "editing"
+            }
+            tooltip={tooltip}
+            showLoadingOnClick
+            showLoading
+            reactOnWindowFocus
+          >
+            {signingActionLabel}
+          </TransactionButton>
+        </div>
       </footer>
       <style jsx>
         {`
@@ -63,6 +83,11 @@ export default function SignerBaseFrame({
              * deal with the drop shadow.
              */
             margin-bottom: 84px;
+          }
+          .sign_group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
           }
         `}
       </style>

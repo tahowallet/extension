@@ -9,6 +9,7 @@ import {
   NetworkFeeSettings,
 } from "../transaction-construction"
 import { selectMainCurrencySymbol } from "./uiSelectors"
+import { selectUnreachableNetworks } from "./networks"
 import { selectAssetPricePoint } from "../prices"
 
 export const selectTransactionNetwork = createSelector(
@@ -128,6 +129,23 @@ export const selectCurrentlyChosenNetworkFees = createSelector(
       state.transactionConstruction.feeTypeSelected
     ],
   (feeData) => feeData,
+)
+
+/**
+ * Whether the network a pending transaction would be signed against cannot be
+ * reached.
+ *
+ * Composed on the transaction's own network rather than the selected one, which
+ * also settles a question the signing frame would otherwise have to ask: the
+ * frame is shared with message and typed-data signing, neither of which needs
+ * anything from the chain. Those requests carry no network, so this is false
+ * for them without any branching on request type.
+ */
+export const selectIsSigningNetworkUnreachable = createSelector(
+  selectTransactionNetwork,
+  selectUnreachableNetworks,
+  (network, unreachableNetworks) =>
+    network !== undefined && unreachableNetworks[network.chainID] === true,
 )
 
 export const selectHasInsufficientFunds = createSelector(

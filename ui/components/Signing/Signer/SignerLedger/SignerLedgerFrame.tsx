@@ -4,7 +4,10 @@ import {
 } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
+import {
+  selectHasInsufficientFunds,
+  selectIsSigningNetworkUnreachable,
+} from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
 import { LedgerAccountSigner } from "@tallyho/tally-background/services/ledger"
 import {
@@ -13,6 +16,7 @@ import {
   useSigningLedgerState,
 } from "../../../../hooks"
 import { SignerFrameProps } from ".."
+import NetworkUnreachableWarning from "../../../Shared/NetworkUnreachableWarning"
 import SharedButton from "../../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
 import SignerLedgerConnect from "./SignerLedgerConnect"
@@ -85,6 +89,10 @@ export default function SignerLedgerFrame<
       ? tSigning("unsavedChangesTooltip")
       : ""
 
+  const isNetworkUnreachable = useBackgroundSelector(
+    selectIsSigningNetworkUnreachable,
+  )
+
   return (
     <>
       <SignerLedgerConnectionStatus
@@ -136,32 +144,48 @@ export default function SignerLedgerFrame<
               {tSigning("reject")}
             </TransactionButton>
 
-            {ledgerCannotSign ? (
-              <SharedButton
-                type="primary"
-                size="large"
-                onClick={() => {
-                  setIsSlideUpOpen(true)
-                }}
-              >
-                {t("checkLedger")}
-              </SharedButton>
-            ) : (
-              <TransactionButton
-                type="primary"
-                size="large"
-                onClick={handleConfirm}
-                isDisabled={
-                  hasInsufficientFunds || additionalSigningStatus === "editing"
-                }
-                tooltip={tooltip}
-                showLoadingOnClick
-                showLoading
-                reactOnWindowFocus
-              >
-                {globalT(signingActionLabelI18nKey)}
-              </TransactionButton>
-            )}
+            {/*
+             * The footer is laid out by a `:global()` rule in ../../index.tsx
+             * that spreads exactly two children apart; the warning shares the
+             * right-hand slot so adding it does not re-space the whole row. It
+             * belongs beside the Check Ledger button too — a chain that cannot
+             * be reached is a reason not to sign whatever the Ledger's state.
+             */}
+            <div className="sign_group">
+              {isNetworkUnreachable && (
+                <NetworkUnreachableWarning
+                  style={{ margin: 0 }}
+                  tooltipVerticalPosition="top"
+                />
+              )}
+              {ledgerCannotSign ? (
+                <SharedButton
+                  type="primary"
+                  size="large"
+                  onClick={() => {
+                    setIsSlideUpOpen(true)
+                  }}
+                >
+                  {t("checkLedger")}
+                </SharedButton>
+              ) : (
+                <TransactionButton
+                  type="primary"
+                  size="large"
+                  onClick={handleConfirm}
+                  isDisabled={
+                    hasInsufficientFunds ||
+                    additionalSigningStatus === "editing"
+                  }
+                  tooltip={tooltip}
+                  showLoadingOnClick
+                  showLoading
+                  reactOnWindowFocus
+                >
+                  {globalT(signingActionLabelI18nKey)}
+                </TransactionButton>
+              )}
+            </div>
           </footer>
           <SharedSlideUpMenu
             isOpen={isSlideUpOpen && ledgerCannotSign}
@@ -178,6 +202,11 @@ export default function SignerLedgerFrame<
                  * deal with the drop shadow.
                  */
                 margin-bottom: 84px;
+              }
+              .sign_group {
+                display: flex;
+                align-items: center;
+                gap: 8px;
               }
             `}
           </style>

@@ -297,6 +297,17 @@
       "custom": "Custom"
     }
   },
+  "networkUnreachable": {
+    "iconAriaLabel": "Network connection problem",
+    "tooltip": "Taho is having trouble connecting to this network; consider <settings>checking the RPC configuration</settings>",
+    "balancePlaceholder": "—",
+    "lastUpdated": "Last updated {{time}}",
+    "banner": {
+      "title": "Taho can't reach {{network}}",
+      "description": "None of the RPC endpoints configured for this network are responding, so balances and fees may be out of date.",
+      "settingsLink": "Check RPC settings"
+    }
+  },
   "nfts": {
     "noTitle": "No title",
     "type1": "NFTs",
