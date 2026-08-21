@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectHasInsufficientFunds,
   selectIsSigningNetworkUnreachable,
+  selectTransactionNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
 import { LedgerAccountSigner } from "@tallyho/tally-background/services/ledger"
@@ -92,6 +93,7 @@ export default function SignerLedgerFrame<
   const isNetworkUnreachable = useBackgroundSelector(
     selectIsSigningNetworkUnreachable,
   )
+  const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
 
   return (
     <>
@@ -152,8 +154,9 @@ export default function SignerLedgerFrame<
              * be reached is a reason not to sign whatever the Ledger's state.
              */}
             <div className="sign_group">
-              {isNetworkUnreachable && (
+              {isNetworkUnreachable && transactionNetwork !== undefined && (
                 <NetworkUnreachableWarning
+                  chainID={transactionNetwork.chainID}
                   style={{ margin: 0 }}
                   tooltipVerticalPosition="top"
                 />

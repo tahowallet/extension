@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import {
   selectHasInsufficientFunds,
   selectIsSigningNetworkUnreachable,
+  selectTransactionNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { selectAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
 import { useBackgroundSelector } from "../../../hooks"
@@ -30,6 +31,7 @@ export default function SignerBaseFrame({
   const isNetworkUnreachable = useBackgroundSelector(
     selectIsSigningNetworkUnreachable,
   )
+  const transactionNetwork = useBackgroundSelector(selectTransactionNetwork)
   const tooltip =
     additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
 
@@ -52,8 +54,9 @@ export default function SignerBaseFrame({
          * button's slot so adding it does not re-space the whole row.
          */}
         <div className="sign_group">
-          {isNetworkUnreachable && (
+          {isNetworkUnreachable && transactionNetwork !== undefined && (
             <NetworkUnreachableWarning
+              chainID={transactionNetwork.chainID}
               style={{ margin: 0 }}
               tooltipVerticalPosition="top"
             />

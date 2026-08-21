@@ -45,6 +45,7 @@ export default function TopMenuProtocolSwitcher({
        */}
       {isUnreachable && (
         <NetworkUnreachableWarning
+          chainID={currentNetwork.chainID}
           size={12}
           style={{
             margin: 0,

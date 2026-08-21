@@ -79,6 +79,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
       </div>
       {isUnreachable && (
         <NetworkUnreachableWarning
+          chainID={network.chainID}
           style={{ margin: "auto 0 auto auto" }}
           tooltipVerticalPosition="top"
         />

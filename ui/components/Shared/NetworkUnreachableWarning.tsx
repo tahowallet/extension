@@ -5,6 +5,8 @@ import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
 
 type Props = {
+  /** The chain this warning is about, so the tooltip can link straight to it. */
+  chainID: string
   /**
    * Edge length of the icon in pixels. The 24px artwork is used above 16px,
    * where the small one starts to look soft.
@@ -31,6 +33,7 @@ type Props = {
  * separately.
  */
 export default function NetworkUnreachableWarning({
+  chainID,
   size = 16,
   style,
   tooltipWidth = 200,
@@ -68,7 +71,19 @@ export default function NetworkUnreachableWarning({
         <Trans
           t={t}
           i18nKey="tooltip"
-          components={{ settings: <Link to="/settings/custom-networks" /> }}
+          components={{
+            settings: (
+              // Straight to this chain's endpoint list. The list page owns the
+              // edit form as a slide-up rather than a route, so the chain is
+              // handed over as router state for it to act on.
+              <Link
+                to={{
+                  pathname: "/settings/custom-networks",
+                  state: { editChainID: chainID },
+                }}
+              />
+            ),
+          }}
         />
         <style jsx>{`
           .tooltip_content :global(a) {

@@ -43,7 +43,10 @@ export default function NetworkUnreachableBanner({
               style={{ height: "auto", margin: "8px 0" }}
               size="medium"
               type="tertiary"
-              linkTo="/settings/custom-networks"
+              linkTo={{
+                pathname: "/settings/custom-networks",
+                state: { editChainID: network.chainID },
+              }}
               iconSmall="settings"
               iconPosition="left"
             >
