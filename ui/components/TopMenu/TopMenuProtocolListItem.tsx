@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { MEZO_TESTNET } from "@tallyho/tally-background/constants"
+import NetworkUnreachableWarning from "../Shared/NetworkUnreachableWarning"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
@@ -14,6 +15,12 @@ type Props = {
   onSelect: (network: EVMNetwork) => void
   onMouseMove?: () => void
   showSelectedText?: boolean
+  /**
+   * Passed in rather than looked up here. The list this row belongs to reads
+   * reachability for every chain at once; a row asking on its own behalf would
+   * cost the whole list its memoization. See `selectUnreachableNetworks`.
+   */
+  isUnreachable?: boolean
 }
 
 const isFeaturedNetwork = (network: EVMNetwork) => {
@@ -34,6 +41,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
     onMouseMove,
     isDisabled,
     showSelectedText = true,
+    isUnreachable = false,
   } = props
 
   return (
@@ -42,6 +50,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         select: isSelected,
         highlighted: isHighlighted,
         disabled: isDisabled,
+        unreachable: isUnreachable,
       })}
       onClick={() => {
         if (isDisabled) return
@@ -65,10 +74,35 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="sub_title">
           {info}
           {isSelected && showSelectedText && (
-            <span className="status">{t("protocol.connected")}</span>
+            <span className="status">
+              {/*
+               * The row the user is on says whether the wallet is actually
+               * talking to it. Reading "Connected" in success green while the
+               * warning beside it says otherwise is worse than saying nothing.
+               */}
+              {isUnreachable
+                ? t("protocol.disconnected")
+                : t("protocol.connected")}
+            </span>
           )}
         </div>
       </div>
+      {isUnreachable && (
+        // The whole row selects the network on click, and the tooltip's link
+        // sits inside it: without this, following the link to fix the chain
+        // would first switch the user onto the broken one.
+        <div
+          className="warning_wrap"
+          onClick={(event) => event.stopPropagation()}
+          role="presentation"
+        >
+          <NetworkUnreachableWarning
+            chainID={network.chainID}
+            style={{ margin: 0 }}
+            tooltipVerticalPosition="top"
+          />
+        </div>
+      )}
       <style jsx>
         {`
           .featured {
@@ -90,6 +124,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             margin-left: 10px;
           }
 
+          .warning_wrap {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            cursor: default;
+          }
           li {
             display: flex;
             margin-bottom: 0;
@@ -148,6 +188,18 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           }
           .select .icon_wrap {
             border: 2px solid var(--success);
+          }
+          /*
+           * Recolours the ring the selected row already draws rather than
+           * giving unselected rows one they never had — a ring is how this
+           * list says "you are here", and lending it to every unreachable
+           * chain would say the user is on all of them.
+           */
+          .select.unreachable .icon_wrap {
+            border-color: var(--attention);
+          }
+          .unreachable .status {
+            color: var(--attention);
           }
           .disabled {
             cursor: default;

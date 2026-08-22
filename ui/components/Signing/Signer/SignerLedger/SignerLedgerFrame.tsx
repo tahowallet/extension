@@ -1,17 +1,9 @@
-import {
-  SignOperationType,
-  selectAdditionalSigningStatus,
-} from "@tallyho/tally-background/redux-slices/signing"
+import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
 import { useHistory } from "react-router-dom"
 import { LedgerAccountSigner } from "@tallyho/tally-background/services/ledger"
-import {
-  useBackgroundDispatch,
-  useBackgroundSelector,
-  useSigningLedgerState,
-} from "../../../../hooks"
+import { useBackgroundDispatch, useSigningLedgerState } from "../../../../hooks"
 import { SignerFrameProps } from ".."
 import SharedButton from "../../../Shared/SharedButton"
 import SharedSlideUpMenu from "../../../Shared/SharedSlideUpMenu"
@@ -19,6 +11,7 @@ import SignerLedgerConnect from "./SignerLedgerConnect"
 import SignerLedgerSigning from "./SignerLedgerSigning"
 import SignerLedgerConnectionStatus from "./SignerLedgerConnectionStatus"
 import TransactionButton from "../TransactionButton"
+import useShouldBlockSigning from "../useShouldBlockSigning"
 
 export default function SignerLedgerFrame<
   T extends SignOperationType,
@@ -67,10 +60,7 @@ export default function SignerLedgerFrame<
       (typeof request.signingData !== "string" ||
         request.signingData.length > 0))
 
-  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
-  const additionalSigningStatus = useBackgroundSelector(
-    selectAdditionalSigningStatus,
-  )
+  const { shouldBlockSigning, messageI18nKey } = useShouldBlockSigning()
 
   const mustEnableArbitraryDataSigning =
     ledgerState.state === "available" &&
@@ -79,11 +69,6 @@ export default function SignerLedgerFrame<
 
   const ledgerCannotSign =
     ledgerState.state !== "available" || mustEnableArbitraryDataSigning
-
-  const tooltip =
-    additionalSigningStatus === "editing"
-      ? tSigning("unsavedChangesTooltip")
-      : ""
 
   return (
     <>
@@ -151,10 +136,10 @@ export default function SignerLedgerFrame<
                 type="primary"
                 size="large"
                 onClick={handleConfirm}
-                isDisabled={
-                  hasInsufficientFunds || additionalSigningStatus === "editing"
+                isDisabled={shouldBlockSigning}
+                tooltip={
+                  messageI18nKey === undefined ? "" : globalT(messageI18nKey)
                 }
-                tooltip={tooltip}
                 showLoadingOnClick
                 showLoading
                 reactOnWindowFocus

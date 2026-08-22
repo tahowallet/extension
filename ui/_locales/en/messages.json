@@ -297,6 +297,17 @@
       "custom": "Custom"
     }
   },
+  "networkUnreachable": {
+    "iconAriaLabel": "Network connection problem",
+    "tooltip": "Taho is having trouble connecting to this network; consider <settings>checking the RPC configuration</settings>",
+    "balancePlaceholder": "—",
+    "lastUpdated": "Last updated {{time}}",
+    "banner": {
+      "title": "Taho can't reach {{network}}",
+      "description": "None of the RPC endpoints configured for this network are responding, so balances and fees may be out of date.",
+      "settingsLink": "Check RPC settings"
+    }
+  },
   "nfts": {
     "noTitle": "No title",
     "type1": "NFTs",
@@ -551,6 +562,7 @@
     "compatibleChain": "EVM-compatible blockchain",
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected",
+    "disconnected": "Disconnected",
     "newNetwork": "new"
   },
   "readOnly": "Read-only",
@@ -684,7 +696,10 @@
           "invalidDecimals": "Must be a whole number greater than 0",
           "invalidUrl": "Must be a valid http(s) URL",
           "invalidRpcUrl": "Must be a valid http(s) or ws(s) URL",
-          "duplicateRpcUrl": "This endpoint is already listed"
+          "duplicateRpcUrl": "This endpoint is already listed",
+          "unreachableEndpoint": "Couldn't reach {{url}}",
+          "endpointChainMismatch": "{{url}} serves chain ID {{reportedChainID}}, not {{expectedChainID}}",
+          "saveFailed": "Couldn't save these settings: {{message}}"
         },
         "snackbar": {
           "success": "Network updated"
@@ -766,6 +781,7 @@
     "refresh": "Refresh",
     "confirmButtonLabel": "Sign",
     "unsavedChangesTooltip": "You have unsaved changed",
+    "networkUnreachableTooltip": "Taho can't reach this network right now, so fees and the account's transaction count can't be confirmed.",
     "useFlashbots": "Use Flashbots RPC for this transaction",
     "spendApproval": {
       "title": "Approve asset spend",

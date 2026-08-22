@@ -15,6 +15,7 @@ import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import {
   selectProductionEVMNetworks,
   selectTestnetNetworks,
+  selectUnreachableNetworks,
 } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../../hooks"
@@ -34,6 +35,9 @@ export default function SelectNetworkMenuContent({
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
   const testnetNetworks = useBackgroundSelector(selectTestnetNetworks)
+  // Read once for the whole list rather than once per row; see
+  // `selectUnreachableNetworks` for why that distinction matters here.
+  const unreachableNetworks = useBackgroundSelector(selectUnreachableNetworks)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -161,6 +165,7 @@ export default function SelectNetworkMenuContent({
             onSelect={onNetworkChange}
             onMouseMove={() => setSelectedIndex(index)}
             isDisabled={false}
+            isUnreachable={unreachableNetworks[network.chainID] === true}
           />
         ))}
         {filteredCustomNetworks.length > 0 && (
@@ -186,6 +191,7 @@ export default function SelectNetworkMenuContent({
                   onSelect={onNetworkChange}
                   onMouseMove={() => setSelectedIndex(globalIndex)}
                   isDisabled={false}
+                  isUnreachable={unreachableNetworks[network.chainID] === true}
                 />
               )
             })}
@@ -217,6 +223,7 @@ export default function SelectNetworkMenuContent({
                   onSelect={onNetworkChange}
                   onMouseMove={() => setSelectedIndex(globalIndex)}
                   isDisabled={false}
+                  isUnreachable={unreachableNetworks[network.chainID] === true}
                 />
               )
             })}

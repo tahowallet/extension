@@ -13,6 +13,9 @@ import {
   isTahoInternalCommunication,
   TahoAccountPayload,
   isTahoAccountPayload,
+  EIP1193_ERROR_CODES,
+  isTahoChainReachabilityPayload,
+  TahoChainReachabilityPayload,
 } from "@tallyho/provider-bridge-shared"
 import { EventEmitter } from "events"
 
@@ -32,6 +35,15 @@ export default class TahoWindowProvider extends EventEmitter {
   selectedAddress: string | undefined
 
   connected = false
+
+  /**
+   * Whether the wallet can reach the chain this page is on, as last reported by
+   * the background. Kept apart from {@link connected}, which is set on the
+   * first response of any kind and means only that the extension is alive;
+   * without the distinction the next resolved request would silently reconnect
+   * a page whose chain is still dark.
+   */
+  private chainReachable = true
 
   isTally = true as const
 
@@ -73,7 +85,10 @@ export default class TahoWindowProvider extends EventEmitter {
     super()
 
     const internalListener = (event: unknown) => {
-      let result: TahoConfigPayload | TahoAccountPayload
+      let result:
+        | TahoConfigPayload
+        | TahoAccountPayload
+        | TahoChainReachabilityPayload
       if (
         isWindowResponseEvent(event) &&
         isTahoInternalCommunication(event.data)
@@ -131,6 +146,8 @@ export default class TahoWindowProvider extends EventEmitter {
         }
       } else if (isTahoAccountPayload(result)) {
         this.handleAddressChange(result.address)
+      } else if (isTahoChainReachabilityPayload(result)) {
+        this.handleChainReachabilityChange(result.chainId, result.reachable)
       }
     }
 
@@ -183,7 +200,7 @@ export default class TahoWindowProvider extends EventEmitter {
     }
 
     // let's emit connected on the first successful response from background
-    if (!this.connected) {
+    if (!this.connected && this.chainReachable) {
       this.connected = true
       this.emit("connect", { chainId: this.chainId })
     }
@@ -322,6 +339,16 @@ export default class TahoWindowProvider extends EventEmitter {
     this.chainId = chainId
     this.emit("chainChanged", chainId)
     this.emit("networkChanged", Number(chainId).toString())
+
+    // Whatever we last heard was about the chain the page was on, not this
+    // one, so a disconnect does not follow it across. Routed through the same
+    // handler so that a page told we were disconnected also gets told we are
+    // not any more, rather than having the flag flipped underneath it.
+    //
+    // A page switching onto a chain that is already dark hears nothing until
+    // that chain next changes state: the background reports transitions, not a
+    // current answer on request.
+    this.handleChainReachabilityChange(chainId, true)
   }
 
   handleAddressChange(address: Array<string>): void {
@@ -329,6 +356,37 @@ export default class TahoWindowProvider extends EventEmitter {
       // eslint-disable-next-line prefer-destructuring
       this.selectedAddress = address[0]
       this.emit("accountsChanged", address)
+    }
+  }
+
+  /**
+   * Reports the wallet losing or regaining its connection to the chain this
+   * page is on, per EIP-1193.
+   *
+   * 4901 rather than 4900: the wallet is still perfectly able to serve other
+   * chains, and telling a page we are disconnected from everything when we are
+   * not would have it give up on requests we could still answer. A page that
+   * ignores the event is no worse off than before; one that listens can say
+   * something honest instead of rendering an empty state as data.
+   */
+  handleChainReachabilityChange(chainId: string, reachable: boolean): void {
+    // Announcements about a chain this page is not on say nothing about this
+    // page's connection.
+    if (Number(chainId) !== Number(this.chainId)) {
+      return
+    }
+
+    if (reachable === this.chainReachable) {
+      return
+    }
+
+    this.chainReachable = reachable
+    this.connected = reachable
+
+    if (reachable) {
+      this.emit("connect", { chainId: this.chainId })
+    } else {
+      this.emit("disconnect", EIP1193_ERROR_CODES.chainDisconnected)
     }
   }
 }

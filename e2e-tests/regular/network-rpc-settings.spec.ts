@@ -333,9 +333,12 @@ test.describe("Network RPC settings", () => {
     await test.step("Save and confirm the mismatch is reported", async () => {
       await saveButtonOf(editForm).click()
 
+      // Copy comes from the locale file now that the background reports a
+      // discriminant and the URLs rather than an English sentence; see
+      // `settings.customNetworksSettings.editModal.errors.endpointChainMismatch`.
       const saveError = editForm.getByRole("alert")
       await expect(saveError).toContainText(POLYGON_RPC_URL)
-      await expect(saveError).toContainText("reports chain ID 137")
+      await expect(saveError).toContainText("serves chain ID 137, not 1")
 
       // The form stays open so the offending endpoint can be corrected.
       await expect(

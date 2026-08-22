@@ -33,11 +33,13 @@ import { useHistory, useLocation } from "react-router-dom"
 import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
+import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
+import NetworkUnreachableWarning from "../components/Shared/NetworkUnreachableWarning"
 import SharedButton from "../components/Shared/SharedButton"
 import {
   useAddressOrNameValidation,
@@ -53,6 +55,11 @@ export default function Send(): ReactElement {
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  // Stop the send here rather than letting the user fill out the whole form and
+  // meet the same block on the signing screen.
+  const isNetworkUnreachable = useBackgroundSelector(
+    selectIsCurrentNetworkUnreachable,
+  )
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
@@ -277,6 +284,17 @@ export default function Send(): ReactElement {
             )}
           </div>
           <div className="send_footer standard_width_padded">
+            {/*
+             * A disabled button with no explanation is its own kind of dead
+             * end; this page is not the wallet view, so the banner is not on
+             * screen to account for it.
+             */}
+            {isNetworkUnreachable && (
+              <NetworkUnreachableWarning
+                chainID={currentNetwork.chainID}
+                tooltipVerticalPosition="top"
+              />
+            )}
             <SharedButton
               type="primary"
               size="large"
@@ -284,7 +302,8 @@ export default function Send(): ReactElement {
                 currentAccountSigner === ReadOnlyAccountSigner ||
                 (assetType === "token" && Number(amount) === 0) ||
                 destinationAddress === undefined ||
-                hasError
+                hasError ||
+                isNetworkUnreachable
               }
               onClick={sendTransactionRequest}
               isFormSubmit
@@ -427,7 +446,10 @@ export default function Send(): ReactElement {
           }
           .send_footer {
             display: flex;
+            align-items: center;
             justify-content: flex-end;
+            /* Keeps the unreachable warning off the button it explains. */
+            gap: 10px;
             margin-top: 21px;
             padding-bottom: 20px;
           }

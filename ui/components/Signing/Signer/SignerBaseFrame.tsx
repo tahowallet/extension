@@ -1,9 +1,7 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-import { selectHasInsufficientFunds } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectAdditionalSigningStatus } from "@tallyho/tally-background/redux-slices/signing"
-import { useBackgroundSelector } from "../../../hooks"
 import TransactionButton from "./TransactionButton"
+import useShouldBlockSigning from "./useShouldBlockSigning"
 
 type SignerBaseFrameProps = {
   signingActionLabel: string
@@ -18,13 +16,9 @@ export default function SignerBaseFrame({
   onConfirm,
   onReject,
 }: SignerBaseFrameProps): ReactElement {
+  const { t: globalT } = useTranslation()
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
-  const hasInsufficientFunds = useBackgroundSelector(selectHasInsufficientFunds)
-  const additionalSigningStatus = useBackgroundSelector(
-    selectAdditionalSigningStatus,
-  )
-  const tooltip =
-    additionalSigningStatus === "editing" ? t("unsavedChangesTooltip") : ""
+  const { shouldBlockSigning, messageI18nKey } = useShouldBlockSigning()
 
   return (
     <>
@@ -44,10 +38,8 @@ export default function SignerBaseFrame({
           type="primaryGreen"
           size="large"
           onClick={onConfirm}
-          isDisabled={
-            hasInsufficientFunds || additionalSigningStatus === "editing"
-          }
-          tooltip={tooltip}
+          isDisabled={shouldBlockSigning}
+          tooltip={messageI18nKey === undefined ? "" : globalT(messageI18nKey)}
           showLoadingOnClick
           showLoading
           reactOnWindowFocus

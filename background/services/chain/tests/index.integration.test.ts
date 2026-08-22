@@ -652,6 +652,40 @@ describe("ChainService", () => {
       ).rejects.toThrow("could not be reached")
     })
 
+    it("says why an unreachable endpoint was rejected without saying it in English", async () => {
+      fetchMock.mockRejectedValue(new Error("connection refused"))
+
+      // The words the user reads have to come from their locale, so the
+      // rejection travels as a discriminant and the URL it is about.
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://unreachable.example.com" },
+        ]),
+      ).rejects.toMatchObject({
+        failure: {
+          kind: "unreachable",
+          url: "https://unreachable.example.com",
+        },
+      })
+    })
+
+    it("reports both chain IDs when an endpoint serves the wrong one", async () => {
+      mockProbeResult("0x89")
+
+      await expect(
+        chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+          { url: "https://wrong-chain.example.com" },
+        ]),
+      ).rejects.toMatchObject({
+        failure: {
+          kind: "chain-mismatch",
+          url: "https://wrong-chain.example.com",
+          reportedChainID: "137",
+          expectedChainID: ETHEREUM.chainID,
+        },
+      })
+    })
+
     it("rejects when an endpoint answers with a JSON-RPC error body", async () => {
       fetchMock.mockResolvedValue({
         json: async () => ({
