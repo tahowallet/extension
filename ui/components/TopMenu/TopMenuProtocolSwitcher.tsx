@@ -44,19 +44,38 @@ export default function TopMenuProtocolSwitcher({
        * turn up in all of them.
        */}
       {isUnreachable && (
-        <NetworkUnreachableWarning
-          chainID={currentNetwork.chainID}
-          size={12}
-          // Anchored to the wrapper rather than to the logo, since the badge
-          // is the button's sibling: the logo is the wrapper's first 24px, so
-          // this puts the badge over its bottom-right corner.
-          style={{
-            position: "absolute",
-            left: 14,
-            top: "calc(50% + 4px)",
-          }}
-          tooltipHorizontalPosition="right"
-        />
+        /*
+         * An overlay the size of the logo, so the sigil hangs off the logo's
+         * own corner rather than off this wrapper — which is as wide as the
+         * network name and the chevron besides. Only the sigil inside it takes
+         * a pointer; the overlay itself must not, or it would sit over the
+         * button and swallow clicks meant for the network list.
+         */
+        <div className="logo_overlay">
+          <NetworkUnreachableWarning
+            chainID={currentNetwork.chainID}
+            size={18}
+            style={{
+              position: "absolute",
+              /*
+               * Where the drawing lands, arrived at by looking at renders
+               * rather than by arithmetic — which is why the two offsets are
+               * not the same number, and why neither is round.
+               *
+               * `SharedTooltip` pads its wrapper five pixels above and below
+               * and it is the wrapper a caller positions, so the padding goes
+               * to zero: otherwise the offsets place the padding rather than
+               * the sigil, and the sigil holds pointer events over half again
+               * as much of the logo as it draws on.
+               */
+              padding: 0,
+              bottom: -4,
+              right: -9,
+              pointerEvents: "auto",
+            }}
+            tooltipHorizontalPosition="right"
+          />
+        </div>
       )}
       <style jsx>
         {`
@@ -89,6 +108,15 @@ export default function TopMenuProtocolSwitcher({
           }
           button:hover .icon_chevron_down {
             background-color: #fff;
+          }
+          .logo_overlay {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
           }
           .icon_wrap {
             width: 24px;

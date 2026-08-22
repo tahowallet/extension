@@ -12,7 +12,11 @@ type Props = {
    * user has in flight, a pending signature request most of all.
    */
   chainID?: string
-  /** Edge length of the icon in pixels. */
+  /**
+   * Edge length of the icon in pixels. The asset's own twenty-four unless a
+   * caller has reason to differ: the sigils are drawn smaller so they read as
+   * a mark on the logo rather than as something covering it.
+   */
   size?: number
   /**
    * Merged over the tooltip wrapper's own margin, which callers position
@@ -28,6 +32,10 @@ type Props = {
  * reached: beside its row in the network list, over its logo in the network
  * indicator, and next to the button that would sign against it.
  *
+ * Always the outlined triangle, whatever size it is drawn at. The 16px asset
+ * is a different, denser shape, and a warning that changes drawing depending
+ * on where it appears is a warning the user has to learn twice.
+ *
  * Purely presentational, and deliberately so. Whether a given chain is
  * unreachable is the caller's question to answer — the network list needs to
  * answer it for every row at once, which it cannot do if each row asks
@@ -35,7 +43,7 @@ type Props = {
  */
 export default function NetworkUnreachableWarning({
   chainID,
-  size = 16,
+  size = 24,
   style,
   tooltipHorizontalPosition = "left",
   tooltipVerticalPosition = "bottom",
@@ -50,7 +58,7 @@ export default function NetworkUnreachableWarning({
   const iconComponent = useCallback(
     () => (
       <SharedIcon
-        icon="icons/s/notif-attention.svg"
+        icon="icons/m/notif-attention.svg"
         width={size}
         color="var(--attention)"
         ariaLabel={t("iconAriaLabel")}

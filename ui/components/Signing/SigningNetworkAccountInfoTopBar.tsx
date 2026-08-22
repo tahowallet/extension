@@ -30,8 +30,15 @@ export default function SigningNetworkAccountInfoTopBar({
            */}
           {blockReason === "network-unreachable" && (
             <NetworkUnreachableWarning
-              size={12}
-              style={{ position: "absolute", bottom: -2, right: -2 }}
+              size={18}
+              // Kept in step with the network indicator in the top menu, which
+              // is where these numbers are explained.
+              style={{
+                position: "absolute",
+                padding: 0,
+                bottom: -4,
+                right: -9,
+              }}
               tooltipHorizontalPosition="right"
             />
           )}

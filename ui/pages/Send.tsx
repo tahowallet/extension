@@ -448,6 +448,8 @@ export default function Send(): ReactElement {
             display: flex;
             align-items: center;
             justify-content: flex-end;
+            /* Keeps the unreachable warning off the button it explains. */
+            gap: 10px;
             margin-top: 21px;
             padding-bottom: 20px;
           }
