@@ -10,4 +10,5 @@ app/extension-scripts/api/playground/
 .vscode
 playwright-report
 test-results/
+e2e-screenshots/
 ci/cache/

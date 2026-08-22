@@ -227,6 +227,16 @@ jobs:
           TESTNET_TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
           TESTNET_TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run yarn e2e:testnet
+      # What an unreachable network looks like, captured by the reachability
+      # spec as it walks through the states it asserts.
+      - name: Upload network state screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-state-screenshots
+          path: e2e-screenshots/
+          if-no-files-found: ignore
+          retention-days: 30
       - uses: actions/upload-artifact@v4
         if: ${{ failure() || cancelled() }}
         with:

@@ -83,6 +83,27 @@ const setSoleRpcEndpoint = async (
   await rows.first().getByRole("textbox").fill(url)
 }
 
+/**
+ * Where the state screenshots land, published by the e2e job as
+ * `network-state-screenshots`.
+ *
+ * Not under `test-results`: Playwright empties its output directory when it
+ * starts, and the testnet run that follows this one would take these with it.
+ */
+const SCREENSHOT_DIR = "e2e-screenshots"
+
+/**
+ * Records what the wallet looks like in the state just asserted.
+ *
+ * Asserting that a warning is on the page says nothing about whether it reads
+ * as a warning, and these three views are the whole of what an outage looks
+ * like to someone using the wallet. Cheap to keep, and the alternative is
+ * describing them in prose.
+ */
+const capture = async (popup: Page, name: string): Promise<void> => {
+  await popup.screenshot({ path: `${SCREENSHOT_DIR}/${name}.png` })
+}
+
 /** The network list behind the top menu's switcher. */
 const networkMenuOf = (popup: Page): Locator =>
   popup
@@ -226,6 +247,8 @@ test.describe("Network reachability", () => {
       const balance = popup.getByTestId("wallet_balance").first()
       await expect(balance).toContainText("—")
       await expect(balance).not.toContainText("$0")
+
+      await capture(popup, "wallet-view")
     })
 
     await test.step("The network selector marks the offending row", async () => {
@@ -238,6 +261,8 @@ test.describe("Network reachability", () => {
           .filter({ hasText: NETWORK_LABEL })
           .getByLabel(UNREACHABLE_LABEL),
       ).toBeVisible()
+
+      await capture(popup, "network-selector")
 
       await networkMenu.getByRole("button", { name: "Close menu" }).click()
     })
@@ -255,6 +280,8 @@ test.describe("Network reachability", () => {
       await expect(
         sendFooter.getByRole("button", { name: "Continue" }),
       ).toHaveClass(/disabled/)
+
+      await capture(popup, "send-form")
     })
 
     await test.step("It clears once the endpoint answers again", async () => {
