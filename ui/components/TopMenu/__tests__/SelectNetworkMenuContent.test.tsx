@@ -48,6 +48,20 @@ describe("SelectNetworkMenuContent", () => {
     expect(ui.getAllByLabelText("Network connection problem")).toHaveLength(1)
   })
 
+  it("stops calling the current network connected once it is not", () => {
+    const ui = renderNetworkList({ [ETHEREUM.chainID]: true })
+
+    expect(ui.queryByText("Connected")).not.toBeInTheDocument()
+    expect(ui.getByText("Disconnected")).toBeVisible()
+  })
+
+  it("still says connected while the current network answers", () => {
+    const ui = renderNetworkList({ [OPTIMISM.chainID]: true })
+
+    expect(ui.getByText("Connected")).toBeVisible()
+    expect(ui.queryByText("Disconnected")).not.toBeInTheDocument()
+  })
+
   it("does not switch the user onto the broken chain on the way to fixing it", async () => {
     // The whole row selects its network on click, and the warning's tooltip
     // sits inside the row.

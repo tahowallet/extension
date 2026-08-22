@@ -50,6 +50,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         select: isSelected,
         highlighted: isHighlighted,
         disabled: isDisabled,
+        unreachable: isUnreachable,
       })}
       onClick={() => {
         if (isDisabled) return
@@ -73,7 +74,16 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
         <div className="sub_title">
           {info}
           {isSelected && showSelectedText && (
-            <span className="status">{t("protocol.connected")}</span>
+            <span className="status">
+              {/*
+               * The row the user is on says whether the wallet is actually
+               * talking to it. Reading "Connected" in success green while the
+               * warning beside it says otherwise is worse than saying nothing.
+               */}
+              {isUnreachable
+                ? t("protocol.disconnected")
+                : t("protocol.connected")}
+            </span>
           )}
         </div>
       </div>
@@ -178,6 +188,18 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
           }
           .select .icon_wrap {
             border: 2px solid var(--success);
+          }
+          /*
+           * Recolours the ring the selected row already draws rather than
+           * giving unselected rows one they never had — a ring is how this
+           * list says "you are here", and lending it to every unreachable
+           * chain would say the user is on all of them.
+           */
+          .select.unreachable .icon_wrap {
+            border-color: var(--attention);
+          }
+          .unreachable .status {
+            color: var(--attention);
           }
           .disabled {
             cursor: default;
