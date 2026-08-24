@@ -6,6 +6,22 @@ import browser from "webextension-polyfill"
 
 const HOUR = 1000 * 60 * 60
 
+// Every level's blob is restricted to the last 50k characters to avoid
+// excess resource usage. This cap is part of the on-disk format contract:
+// serializeLogs and the log export UI both assume any stored blob is at most
+// this long.
+export const MAX_LOG_CHARACTERS = 50000
+
+// How long to wait after the *last* log line for a level before flushing its
+// buffered lines to storage (a trailing debounce: each new line pushes the
+// deadline back out).
+export const FLUSH_DEBOUNCE_MS = 2000
+
+// If buffered-but-unflushed data for a level grows past this many
+// characters, flush immediately rather than waiting out the debounce. This
+// bounds how much would be lost if the service worker were killed mid-burst.
+export const FLUSH_THRESHOLD_CHARACTERS = 16 * 1024
+
 const store = {
   async get(key: string): Promise<string> {
     const realKey = `logs-${key}`
@@ -24,8 +40,17 @@ const store = {
       ]),
     ) as { [key in Keys]: string }
   },
-  async set(key: string, value: string): Promise<void> {
-    browser.storage.local.set({ [`logs-${key}`]: value })
+  /**
+   * Writes one or more level blobs to storage in a single call. Flushing
+   * several levels through this at once (rather than one `storage.local.set`
+   * per level) is what lets bursts across levels coalesce into a single
+   * IPC round-trip instead of several.
+   */
+  async setMany(entries: Partial<Record<string, string>>): Promise<void> {
+    const payload = Object.fromEntries(
+      Object.entries(entries).map(([key, value]) => [`logs-${key}`, value]),
+    )
+    await browser.storage.local.set(payload)
   },
 }
 
@@ -156,7 +181,71 @@ const logDateRegExp = new RegExp(
   "m",
 )
 
-class Logger {
+type StorableLogLevel = Exclude<LogLevel, LogLevel.off>
+
+/**
+ * In-memory state for a single level's log blob. Storage is read at most
+ * once per level per `Logger` instance (see `ensureLevelLoaded`); after
+ * that, `blob` is the source of truth and storage is write-only, updated by
+ * `flushAllDirty` on a debounce/threshold/immediate trigger.
+ */
+interface LevelCacheEntry {
+  /** The full current blob for this level, once the initial load resolves. */
+  blob: string | undefined
+  /** In-flight initial load, so concurrent early appends for a level share
+   * one `storage.local.get` instead of racing to issue their own. */
+  loadPromise: Promise<string> | undefined
+  /** Characters appended since the blob was last written to storage. */
+  pendingCharacters: number
+}
+
+/**
+ * The logger buffers each level's log blob in memory and writes it to
+ * `browser.storage.local` only periodically, rather than doing a
+ * read-modify-write round-trip on every single log line. `storage.local` is
+ * a serialized IPC queue, so under load the old per-line
+ * get+append+truncate+set pattern could enqueue hundreds of ~100KB
+ * round-trips, starving every other consumer of storage.local (including the
+ * popup's redux state read) — this was measured backing up to 67-second
+ * single-op latencies under service-worker throttling.
+ *
+ * Flush triggers, in priority order:
+ *  - `error` logs flush immediately, bypassing the buffer entirely: they're
+ *    the lines most worth surviving a service-worker death.
+ *  - Any other level flushes immediately once its unflushed buffer exceeds
+ *    `FLUSH_THRESHOLD_CHARACTERS`, so a sustained burst can't grow the loss
+ *    window without bound.
+ *  - Otherwise, a level flushes after `FLUSH_DEBOUNCE_MS` of quiet (a
+ *    trailing debounce shared across levels), so a handful of log lines
+ *    coalesce into one write instead of one write apiece.
+ *  - Whenever any of the above fires, every other level with unflushed data
+ *    at that moment is opportunistically flushed in the same
+ *    `storage.local.set` call (see `store.setMany`), so bursts across
+ *    levels coalesce into one IPC round-trip rather than several.
+ *
+ * Accepted loss window: non-error levels can lose up to ~`FLUSH_DEBOUNCE_MS`
+ * (or `FLUSH_THRESHOLD_CHARACTERS`) worth of buffered lines if the service
+ * worker is terminated before a flush fires. MV3 gives no reliable
+ * "about to be killed" hook to flush on synchronously, so this is a
+ * deliberate trade: bounded data loss in the uncommon case in exchange for
+ * not starving storage.local for every other consumer in the common case.
+ * Note this loss is soft: each flush writes the *entire* in-memory blob, not
+ * a diff, so as long as a later flush succeeds while the data is still
+ * within the blob's 50k-character window, a previously-lost/failed flush is
+ * naturally recovered.
+ *
+ * Cross-context note: this module is instantiated separately in the
+ * background service worker and in each UI page (see `ui/index.ts` setting
+ * `logger.contextId = "UI"` on its own copy of this singleton) — they are
+ * different JS realms with independent in-memory caches, but both write the
+ * *same* `logs-<level>` storage keys. This was already last-writer-wins
+ * before this change (each line's read-modify-write picked up whatever was
+ * most recently stored); it still is, but the window in which one context's
+ * unflushed lines can be clobbered by the other's flush is now as wide as
+ * the debounce/threshold rather than a single log line. This is a knowing
+ * trade-off, not a bug: no cross-context locking is introduced here.
+ */
+export class Logger {
   /**
    * Minimum level to output
    */
@@ -167,6 +256,10 @@ class Logger {
   }
 
   private store = store
+
+  private levelCaches: Partial<Record<StorableLogLevel, LevelCacheEntry>> = {}
+
+  private flushTimer: ReturnType<typeof setTimeout> | undefined
 
   constructor(public contextId: string = "BG") {}
 
@@ -266,8 +359,100 @@ class Logger {
     this.saveLog(level, isoDateString, logLabel, input, stackTrace)
   }
 
+  private getOrCreateLevelCache(level: StorableLogLevel): LevelCacheEntry {
+    let entry = this.levelCaches[level]
+
+    if (!entry) {
+      entry = { blob: undefined, loadPromise: undefined, pendingCharacters: 0 }
+      this.levelCaches[level] = entry
+    }
+
+    return entry
+  }
+
+  /**
+   * Warms the in-memory cache for a level from storage, at most once per
+   * level for this `Logger` instance's lifetime. Concurrent calls for the
+   * same not-yet-loaded level share a single in-flight `storage.local.get`
+   * rather than each issuing their own.
+   */
+  private async ensureLevelLoaded(
+    level: StorableLogLevel,
+  ): Promise<LevelCacheEntry> {
+    const entry = this.getOrCreateLevelCache(level)
+
+    if (entry.blob === undefined) {
+      entry.loadPromise ??= this.store.get(level)
+
+      const loadedBlob = await entry.loadPromise
+
+      // Only populate from the load if nothing has set the blob in the
+      // meantime; defensive, since in practice the code between here and
+      // any write to `entry.blob` never awaits (see `saveLog`).
+      if (entry.blob === undefined) {
+        entry.blob = loadedBlob
+      }
+    }
+
+    return entry
+  }
+
+  private clearScheduledFlush(): void {
+    if (this.flushTimer !== undefined) {
+      clearTimeout(this.flushTimer)
+      this.flushTimer = undefined
+    }
+  }
+
+  private scheduleDebouncedFlush(): void {
+    // A trailing debounce: each call pushes the deadline back out, so a
+    // steady trickle of log lines only flushes once things go quiet (the
+    // threshold check elsewhere is what bounds a sustained burst instead).
+    this.clearScheduledFlush()
+    this.flushTimer = setTimeout(() => {
+      this.flushAllDirty().catch(() => {
+        // Best-effort: nothing to retry here immediately. Each flush writes
+        // the full in-memory blob rather than a diff, so a later successful
+        // flush (triggered by the next log line) will naturally include
+        // whatever this failed attempt was carrying, as long as it's still
+        // within the level's 50k-character window.
+      })
+    }, FLUSH_DEBOUNCE_MS)
+  }
+
+  /**
+   * Flushes every level with unflushed data to storage in a single
+   * `storage.local.set` call, opportunistically coalescing whichever levels
+   * happen to be dirty at the moment a flush is triggered (by debounce,
+   * threshold, or an immediate `error` log).
+   */
+  private flushAllDirty(): Promise<void> {
+    this.clearScheduledFlush()
+
+    const dirtyLevels = (
+      Object.keys(this.levelCaches) as StorableLogLevel[]
+    ).filter((level) => (this.levelCaches[level]?.pendingCharacters ?? 0) > 0)
+
+    if (dirtyLevels.length === 0) {
+      return Promise.resolve()
+    }
+
+    const payload: Partial<Record<StorableLogLevel, string>> = {}
+
+    dirtyLevels.forEach((level) => {
+      const entry = this.levelCaches[level]
+
+      if (entry) {
+        payload[level] = entry.blob ?? ""
+        entry.pendingCharacters = 0
+      }
+    })
+
+    return this.store.setMany(payload)
+  }
+
   private async saveLog(
-    level: LogLevel,
+    level: StorableLogLevel,
     isoDateString: string,
     logLabel: string,
     input: unknown[],
@@ -297,29 +482,50 @@ class Logger {
       .split("\n")
       .join("\n    ")
 
-    const existingLogs = await this.store.get(level)
-
     const fullPrefix = `[${isoDateString}] [${level.toUpperCase()}:${
       this.contextId
     }]`
 
-    // Note: we have to do everything from here to `store.set`
-    // synchronously, i.e. no promises, otherwise we risk losing logs between
-    // background and content/UI scripts.
     const purgedData = purgeSensitiveFailSafe(logData)
-    const updatedLogs =
-      `${existingLogs}${fullPrefix} ${logLabel}\n${purgedData}\n\n`
-        // Restrict each log level to hold the last 50k characters to avoid excess resource
-        // usage.
-        .slice(-50000)
+    const newEntry = `${fullPrefix} ${logLabel}\n${purgedData}\n\n`
 
-    await this.store.set(level, updatedLogs)
+    const entry = await this.ensureLevelLoaded(level)
+
+    // Note: we have to do everything from here to updating `entry.blob`
+    // synchronously, i.e. no promises, otherwise a concurrent `saveLog` call
+    // in this same context could interleave a read of `entry.blob` with a
+    // write to it and silently drop a line. (Cross-context interleaving —
+    // e.g. between the background service worker and a UI page — is a
+    // separate, already-accepted last-writer-wins trade-off; see the
+    // class-level comment.)
+    entry.blob = `${entry.blob}${newEntry}`
+      // Restrict each log level to hold the last 50k characters to avoid excess resource
+      // usage.
+      .slice(-MAX_LOG_CHARACTERS)
+    entry.pendingCharacters += newEntry.length
+
+    if (level === LogLevel.error) {
+      // Error lines are the ones most worth surviving a service-worker
+      // death, so they skip the debounce/threshold buffering and flush
+      // right away (opportunistically taking any other dirty level along
+      // for the ride).
+      await this.flushAllDirty()
+    } else if (entry.pendingCharacters >= FLUSH_THRESHOLD_CHARACTERS) {
+      await this.flushAllDirty()
+    } else {
+      this.scheduleDebouncedFlush()
+    }
   }
 
   async serializeLogs(): Promise<string> {
     type StoredLogData = {
       -readonly [level in Exclude<LogLevel, LogLevel.off>]: string
     }
+
+    // Flush this context's buffered-but-not-yet-persisted lines first, so
+    // export reflects logs generated moments ago rather than only what has
+    // already made it to storage.
+    await this.flushAllDirty()
 
     const logs: StoredLogData = await this.store.getAll(
       "debug",
