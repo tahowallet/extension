@@ -73,7 +73,7 @@ test.describe("Transactions", () => {
       )
 
       /**
-       *  Enter amount and receipient. Verify `Continue` isn't active.
+       *  Enter amount and recipient. Verify `Continue` isn't active.
        */
       await popup.locator("input.input_amount").fill("0.00001")
       await expect(
@@ -87,8 +87,8 @@ test.describe("Transactions", () => {
         .getByRole("button", { name: "Continue", exact: true })
         .click({ force: true })
 
-      const receipientAddress = "0x47745a7252e119431ccf973c0ebd4279638875a6"
-      await popup.locator("#send_address").fill(receipientAddress)
+      const recipientAddress = "0x47745a7252e119431ccf973c0ebd4279638875a6"
+      await popup.locator("#send_address").fill(recipientAddress)
 
       /**
        *  Click `Continue`.
