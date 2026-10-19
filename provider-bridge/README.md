@@ -50,7 +50,7 @@
 - [create an iframe in inpage and grab the used fn instances (postMessage(). addEventListener() from there](https://speakerdeck.com/fransrosen/owasp-appseceu-2018-attacking-modern-web-technologies?slide=95)
   - with this solution we don't have to worry about any modifications
   - this could be taken further and instantiate a communication provider there and in the inpage too and compare them as a measure to detect any modification
-- phising detection or blacklist would also be a good idea
+- phishing detection or a blacklist would also be a good idea
 - consider the size of content and inpage scripts as they get injected into every webpage
   - eg webextension-polyfill is 37KB which is comparable to the size spa web framewoks.
     > It's absolutely fine for now bc this way we get to use the same apis everywhere but good thing to have this consideration in the back of our minds
