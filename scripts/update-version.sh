@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Meant to be run as an package.json `version` script using `yarn version`.
+# Meant to be run as a package.json `version` script using `bun pm version`.
 # Expects $npm_package_version to be set.
 
 set -e # exit on any errored command
@@ -16,7 +16,7 @@ if [[ "$(git branch --show-current)" != "release-$npm_package_version" ]]; then
 fi
 
 # Update manifest version and stage for version bump commit.
-echo "$(jq ".version=\"$npm_package_version\"" manifest/manifest.json | yarn -s prettier --stdin-filepath=manifest.json)" > manifest/manifest.json
+echo "$(jq ".version=\"$npm_package_version\"" manifest/manifest.json | bun fmt --stdin-filepath=manifest.json)" > manifest/manifest.json
 git add manifest/manifest.json
 
 # Add version to bug template and stage for version bump commit.
