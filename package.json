@@ -31,7 +31,7 @@
     "lint:types": "bun check",
     "test": "bun run test:unit && bun run test:integration && bun run test:ui",
     "test:integration": "echo \"> Running Integration Tests\" && bash scripts/run-tests-isolated.sh integration.test",
-    "test:unit": "echo \"> Running Unit Tests\" && bun test \"unit.test\"",
+    "test:unit": "echo \"> Running Unit Tests\" && bun test --check \"unit.test\"",
     "test:ui": "echo \"> Running UI Tests\" && bash scripts/run-tests-isolated.sh .test.tsx",
     "test:e2e": "echo \"> Running e2e Tests\" && run-s e2e:*",
     "e2e:regular": "echo \"> Running base e2e Tests\" && playwright test --grep-invert '@testnet|@fork'",

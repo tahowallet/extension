@@ -15,7 +15,7 @@ files=$(find . -name "*.test.ts" -o -name "*.test.tsx" | grep -v node_modules | 
 
 for f in $files; do
   total_files=$((total_files + 1))
-  if ! bun test "$f" 2>&1; then
+  if ! bun test --check "$f" 2>&1; then
     failed=$((failed + 1))
   else
     passed=$((passed + 1))
