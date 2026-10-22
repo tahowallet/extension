@@ -28,6 +28,7 @@
     "lint:js:fix": "oxlint --type-aware --fix .",
     "lint:format": "oxfmt --check .",
     "lint:format:fix": "oxfmt --write .",
+    "lint:types": "bun check",
     "test": "bun run test:unit && bun run test:integration && bun run test:ui",
     "test:integration": "echo \"> Running Integration Tests\" && bash scripts/run-tests-isolated.sh integration.test",
     "test:unit": "echo \"> Running Unit Tests\" && bun test \"unit.test\"",
