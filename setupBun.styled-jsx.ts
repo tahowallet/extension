@@ -25,7 +25,7 @@ if (origCaptureStackTrace) {
     } catch {
       // If target isn't an Error, set .stack manually
       if (target && typeof target === "object") {
-        target.stack = new Error().stack
+        ;(target as { stack?: string }).stack = new Error().stack
       }
     }
   }

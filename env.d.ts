@@ -91,3 +91,7 @@ declare module "process/browser" {
   const process: NodeJS.Process
   export default process
 }
+
+// Provided at runtime by jest-webextension-mock (see setup-extension-mock.ts)
+// oxlint-disable-next-line no-var, typescript/no-explicit-any
+declare var chrome: any
