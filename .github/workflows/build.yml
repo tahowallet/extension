@@ -193,7 +193,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
       - uses: actions/download-artifact@v4
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
@@ -251,7 +251,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
       - uses: actions/download-artifact@v4
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
