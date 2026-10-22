@@ -13,6 +13,9 @@
     "web3",
     "dapp"
   ],
+  "scripts": {
+    "start": "bun --bun hardhat node --config hardhat.config.mts --network hardhat"
+  },
   "devDependencies": {
     "dotenv-defaults": "^5.0.2",
     "hardhat": "^2.14.0"

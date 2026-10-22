@@ -19,7 +19,7 @@ To run the extension on a forked Mainnet:
    `bun start` (or `bun run build`)  
    `cd ci`  
    `bun install`
-   `bunx hardhat node --network hardhat`
+   `bun start`
 
 3. Unpack `./dist/chrome` to Chrome Extensions.
 
