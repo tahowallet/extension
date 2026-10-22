@@ -9,7 +9,7 @@ repos:
         description: "Checks JS/TS code according to the package's linter configuration"
       - id: format
         name: "check formatting"
-        entry: /usr/bin/env bunx oxfmt --check
+        entry: /usr/bin/env bun fmt --check
         files: '\.jsx?$|\.tsx?$|\.json$|\.yaml$|\.yml$|\.md$'
         language: script
         description: "Checks file formatting"
