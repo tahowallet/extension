@@ -71,7 +71,11 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
           width: 100%;
           height: 100%;
 
-          background-color: color-mix(in srgb, var(--green-120), transparent 30%);
+          background-color: color-mix(
+            in srgb,
+            var(--green-120),
+            transparent 30%
+          );
 
           z-index: 4;
         }

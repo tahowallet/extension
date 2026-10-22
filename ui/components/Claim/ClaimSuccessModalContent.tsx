@@ -65,7 +65,8 @@ export default function ClaimSuccessModalContent({
           }
           .header_image {
             background:
-              url("./images/claim_success.png"), url("./images/dark_forest_bg@2x.png");
+              url("./images/claim_success.png"),
+              url("./images/dark_forest_bg@2x.png");
             background-repeat: no-repeat;
             background-size: cover;
             background-position: top;

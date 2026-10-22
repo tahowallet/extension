@@ -40,7 +40,11 @@ export function HeaderContainer({
                   rgba(255, 0, 153, 0) 100%
                 ),
               /* top-down light */
-              radial-gradient(93.95% 101.67% at 45.05% 0%, #1a968c 4.17%, #002522 120%);
+              radial-gradient(
+                  93.95% 101.67% at 45.05% 0%,
+                  #1a968c 4.17%,
+                  #002522 120%
+                );
           }
         `}
       </style>

@@ -47,9 +47,7 @@ export default function TabBar(): ReactElement {
           return false
       }
     },
-    [
-      /* abilityCount */
-    ],
+    [/* abilityCount */],
   )
 
   return (

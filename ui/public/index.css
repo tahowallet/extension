@@ -52,11 +52,7 @@
 body {
   margin: 0;
   font-family:
-    "Segment",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue",
-    sans-serif;
+    "Segment", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
   position: relative;
   color: var(--white);
   font-size: 16px;

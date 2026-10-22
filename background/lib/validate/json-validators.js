@@ -2582,7 +2582,7 @@ function validate11(
         let j0
         if (i2 > 1) {
           const indices0 = {}
-          for (; i2--; ) {
+          for (; i2--;) {
             let item0 = data8[i2]
             if (typeof item0 !== "string") {
               continue
