@@ -6,7 +6,7 @@ import SharedLoadingSpinner from "./SharedLoadingSpinner"
 import type { PropsWithIcon } from "./types"
 
 export type Props = {
-  children: React.ReactNode
+  children?: React.ReactNode
   id?: string
   type:
     | "primary"

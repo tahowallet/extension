@@ -107,7 +107,7 @@ export function Main(): ReactElement {
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
     const entries = routeHistoryEntities
       .reduce((agg: Partial<Location>[], entity) => {
-        const { ...entityCopy } = entity
+        const entityCopy: Partial<Location> = { ...entity }
         delete entityCopy.hash
         delete entityCopy.key
         agg.push(entityCopy)

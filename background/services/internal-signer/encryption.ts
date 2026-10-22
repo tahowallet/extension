@@ -28,7 +28,9 @@ export type SaltedKey = {
 }
 
 function bufferToBase64(array: Uint8Array | ArrayBuffer): string {
-  return Buffer.from(array).toString("base64")
+  return (
+    array instanceof ArrayBuffer ? Buffer.from(array) : Buffer.from(array)
+  ).toString("base64")
 }
 
 function base64ToBuffer(s: string): Uint8Array {
@@ -123,7 +125,7 @@ export async function deriveArgon2KeyFromPassword(
 
   const key = await crypto.subtle.importKey(
     "raw",
-    hash,
+    hash as BufferSource,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"],
@@ -230,9 +232,12 @@ export async function decryptVault<V>(vaultData: {
       : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64ToBuffer(initializationVector) },
+    {
+      name: "AES-GCM",
+      iv: base64ToBuffer(initializationVector) as BufferSource,
+    },
     key,
-    base64ToBuffer(cipherText),
+    base64ToBuffer(cipherText) as BufferSource,
   )
 
   return JSON.parse(new TextDecoder().decode(plaintext))
