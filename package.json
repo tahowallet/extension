@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "start": "run-p -n -l devtools \"dev {@}\" --",
-    "generate:validators": "ts-node background/generate-validators.ts",
+    "generate:validators": "bun background/generate-validators.ts",
     "build": "bun run build.ts --production",
     "dev": "bun run build.ts --watch",
     "typecheck": "bun check",
