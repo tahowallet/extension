@@ -557,7 +557,7 @@ describe("ChainService", () => {
 
   describe("setRpcEndpointsForChain", () => {
     const originalFetch = globalThis.fetch
-    let fetchMock: jest.Mock
+    let fetchMock: AnyMock
 
     const mockProbeResult = (chainIDHex: string) => {
       fetchMock.mockResolvedValue({
@@ -603,7 +603,7 @@ describe("ChainService", () => {
         { url: "https://new-rpc.example.com" },
       ])
 
-      const newProvider = chainService.providerForNetwork(ETHEREUM)
+      const newProvider = chainService.providerForNetwork(ETHEREUM)!
 
       // The old provider's timers and connections are shut down rather than
       // left running against the endpoints that were just replaced.

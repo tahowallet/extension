@@ -14,8 +14,8 @@ jest.mock("../../../lib/erc20-transfer-logs", () => ({
   getAssetTransfersViaLogs: jest.fn(async () => []),
 }))
 
-const mockedBoarAssetTransfers = getBoarAssetTransfers as jest.Mock
-const mockedLogAssetTransfers = getAssetTransfersViaLogs as jest.Mock
+const mockedBoarAssetTransfers = getBoarAssetTransfers as AnyMock
+const mockedLogAssetTransfers = getAssetTransfersViaLogs as AnyMock
 
 const makeHelperWithProvider = (provider: Partial<SerialFallbackProvider>) =>
   new AssetDataHelper({

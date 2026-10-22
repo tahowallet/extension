@@ -95,3 +95,8 @@ declare module "process/browser" {
 // Provided at runtime by jest-webextension-mock (see setup-extension-mock.ts)
 // oxlint-disable-next-line no-var, typescript/no-explicit-any
 declare var chrome: any
+
+// A loosely typed bun mock, for tests that stub APIs whose real signatures
+// they deliberately don't match (fetch, browser storage, module mocks).
+// oxlint-disable-next-line typescript/no-explicit-any
+type AnyMock = import("bun:test").Mock<(...args: any[]) => any>

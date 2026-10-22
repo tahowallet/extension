@@ -468,7 +468,7 @@ describe("Chain Service", () => {
         const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
 
         expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(endBlock - startBlock).toEqual(128000n)
+        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(128000n)
       })
 
       it("looks back a much shorter window when transfers have to be scanned from logs", async () => {
@@ -482,7 +482,7 @@ describe("Chain Service", () => {
         const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
 
         expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(endBlock - startBlock).toEqual(5000n)
+        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(5000n)
       })
 
       it("never looks back past the genesis block", async () => {
