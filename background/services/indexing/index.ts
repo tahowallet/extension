@@ -489,7 +489,7 @@ export default class IndexingService extends BaseService<Events> {
       "newAccountToTrack",
       async (addressOnNetwork) => {
         // Load balances, which also performs token discovery on
-        // networks that support Alchemy, then update prices.
+        // networks that support Boar, then update prices.
         await this.loadAccountBalancesFor(addressOnNetwork)
 
         this.scheduleUpdateAssetsPrices()
@@ -747,7 +747,7 @@ export default class IndexingService extends BaseService<Events> {
     )
 
     if (!customAsset) {
-      // pull metadata from Alchemy
+      // pull metadata from Boar
       customAsset =
         (await this.chainService.assetData.getTokenMetadata({
           contractAddress: normalizedAddress,
@@ -1116,7 +1116,7 @@ export default class IndexingService extends BaseService<Events> {
       this.chainService.getLatestBaseAccountBalance(addressOnNetwork)
 
     /**
-     * When the provider supports alchemy we can use alchemy_getTokenBalances
+     * When the provider supports Boar we can use alchemy_getTokenBalances
      * to query all erc20 token balances without specifying which assets we
      * need to check. If it fails, we try checking balances for every asset
      * we've seen in the network through multicall.

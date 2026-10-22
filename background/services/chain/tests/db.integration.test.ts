@@ -1,3 +1,4 @@
+import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
 import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
 import {
@@ -69,8 +70,8 @@ describe("Chain Database", () => {
       network: OPTIMISM,
     })
     it("should correctly persist transactions to indexedDB", async () => {
-      await db.addOrUpdateTransaction(addTransactionEth, "alchemy")
-      await db.addOrUpdateTransaction(addTransactionOpt, "alchemy")
+      await db.addOrUpdateTransaction(addTransactionEth, "boar")
+      await db.addOrUpdateTransaction(addTransactionOpt, "boar")
 
       const getEthTransaction = await db.getTransaction(
         addTransactionEth.network,
@@ -86,8 +87,8 @@ describe("Chain Database", () => {
       expect(getOptTransaction?.hash).toEqual(addTransactionOpt.hash)
     })
     it("should correctly update transactions in indexedDB", async () => {
-      await db.addOrUpdateTransaction(addTransactionEth, "alchemy")
-      await db.addOrUpdateTransaction(addTransactionOpt, "alchemy")
+      await db.addOrUpdateTransaction(addTransactionEth, "boar")
+      await db.addOrUpdateTransaction(addTransactionOpt, "boar")
 
       expect(addTransactionEth.gasPrice).toEqual(40300000000n)
       expect(addTransactionOpt.gasPrice).toEqual(40300000000n)
@@ -116,8 +117,8 @@ describe("Chain Database", () => {
         gasPrice: 40400000000n,
       })
 
-      await db.addOrUpdateTransaction(updateEth, "alchemy")
-      await db.addOrUpdateTransaction(updateOpt, "alchemy")
+      await db.addOrUpdateTransaction(updateEth, "boar")
+      await db.addOrUpdateTransaction(updateOpt, "boar")
       expect(updateEth.gasPrice).toEqual(40400000000n)
       expect(updateOpt.gasPrice).toEqual(40400000000n)
     })
@@ -152,10 +153,10 @@ describe("Chain Database", () => {
         network: OPTIMISM,
       })
 
-      await db.addOrUpdateTransaction(savedTransaction1, "alchemy")
-      await db.addOrUpdateTransaction(savedTransaction2, "alchemy")
-      await db.addOrUpdateTransaction(savedTransaction3, "alchemy")
-      await db.addOrUpdateTransaction(savedTransaction4, "alchemy")
+      await db.addOrUpdateTransaction(savedTransaction1, "boar")
+      await db.addOrUpdateTransaction(savedTransaction2, "boar")
+      await db.addOrUpdateTransaction(savedTransaction3, "boar")
+      await db.addOrUpdateTransaction(savedTransaction4, "boar")
 
       const allTransactions = await db.getAllSavedTransactionHashes()
 
@@ -256,10 +257,10 @@ describe("Chain Database", () => {
         blockHash: null,
       })
 
-      await db.addOrUpdateTransaction(pendingEthTx1, "alchemy")
-      await db.addOrUpdateTransaction(pendingEthTx2, "alchemy")
-      await db.addOrUpdateTransaction(completeEthTx, "alchemy")
-      await db.addOrUpdateTransaction(pendingOptimismTx1, "alchemy")
+      await db.addOrUpdateTransaction(pendingEthTx1, "boar")
+      await db.addOrUpdateTransaction(pendingEthTx2, "boar")
+      await db.addOrUpdateTransaction(completeEthTx, "boar")
+      await db.addOrUpdateTransaction(pendingOptimismTx1, "boar")
 
       const ethPendingTransactions =
         await db.getNetworkPendingTransactions(ETHEREUM)
@@ -348,12 +349,277 @@ describe("Chain Database", () => {
 
       expect(await db.getEVMNetworkByChainID("12345")).toBeTruthy()
       expect(
-        (await db.getAllRpcUrls()).find((rpcUrl) =>
-          rpcUrl.rpcUrls.includes("https://foo.com"),
+        (await db.getAllRpcEndpoints()).find((rpcConfig) =>
+          rpcConfig.endpoints.some(({ url }) => url === "https://foo.com"),
         ),
       ).toBeTruthy()
 
       expect(await db.getBaseAssetForNetwork("12345")).toBeTruthy()
+    })
+  })
+
+  describe("RPC endpoint config", () => {
+    it("should seed default endpoints only for chains with no stored list", async () => {
+      await db.initialize()
+
+      const seededEndpoints = await db.getRpcEndpointsByChainId(
+        ETHEREUM.chainID,
+      )
+      expect(seededEndpoints.length).toBeGreaterThan(0)
+
+      // Replace the stored list; re-initialization must NOT merge the
+      // defaults back in.
+      const userEndpoints = [
+        { url: "https://user-rpc.example.com", capabilities: ["alchemy_"] },
+      ]
+      await db.setRpcEndpoints(ETHEREUM.chainID, userEndpoints)
+
+      await db.initialize()
+
+      expect(await db.getRpcEndpointsByChainId(ETHEREUM.chainID)).toEqual(
+        userEndpoints,
+      )
+    })
+
+    it("should replace and dedupe endpoints in setRpcEndpoints", async () => {
+      await db.setRpcEndpoints("12345", [
+        { url: "https://foo.example.com" },
+        { url: "https://bar.example.com", capabilities: ["alchemy_"] },
+        // Duplicate URL; the first occurrence wins.
+        { url: "https://foo.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://foo.example.com" },
+        { url: "https://bar.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      await db.setRpcEndpoints("12345", [{ url: "https://baz.example.com" }])
+
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://baz.example.com" },
+      ])
+    })
+
+    it("should seed the default block explorer URL only when none is stored", async () => {
+      await db.initialize()
+
+      expect(
+        (await db.getEVMNetworkByChainID(ETHEREUM.chainID))?.blockExplorerURL,
+      ).toEqual("https://etherscan.io")
+
+      // Replace the stored value; re-initialization must NOT restore the
+      // default.
+      await db.setBlockExplorerUrl(
+        ETHEREUM.chainID,
+        "https://custom-explorer.example.com",
+      )
+
+      await db.initialize()
+
+      expect(
+        (await db.getEVMNetworkByChainID(ETHEREUM.chainID))?.blockExplorerURL,
+      ).toEqual("https://custom-explorer.example.com")
+    })
+
+    it("should leave endpoints alone when updateEVMNetwork changes metadata", async () => {
+      // Endpoints are persisted by `setRpcEndpoints` alone, so a metadata
+      // update does not rewrite them.
+      await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: "12345",
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      await db.setRpcEndpoints("12345", [
+        { url: "https://replacement.example.com", capabilities: ["alchemy_"] },
+      ])
+
+      await db.updateEVMNetwork({
+        chainName: "Foo2",
+        chainID: "12345",
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      expect((await db.getEVMNetworkByChainID("12345"))?.name).toEqual("Foo2")
+      expect(await db.getRpcEndpointsByChainId("12345")).toEqual([
+        { url: "https://replacement.example.com", capabilities: ["alchemy_"] },
+      ])
+    })
+
+    it("should migrate name-keyed rows when a custom network is renamed", async () => {
+      const CHAIN_ID = "12345"
+
+      const originalNetwork = await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      const addressNetwork = {
+        address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+        network: originalNetwork,
+      }
+
+      await db.addAccountToTrack(addressNetwork)
+      await db.recordAccountAssetTransferLookup(addressNetwork, 0n, 100n)
+      await db.addBalance(
+        createAccountBalance({
+          address: addressNetwork.address,
+          network: originalNetwork,
+        }),
+      )
+      await db.addOrUpdateTransaction(
+        createAnyEVMTransaction({ network: originalNetwork }),
+        "local",
+      )
+      await db.addBlock(createAnyEVMBlock({ network: originalNetwork }))
+
+      // A rename that also changes the base asset, as the edit form allows.
+      const renamedNetwork = await db.updateEVMNetwork({
+        chainName: "Foo Renamed",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      expect(renamedNetwork.name).toEqual("Foo Renamed")
+
+      // The tracked account survives, exists only under the new name, and
+      // carries the updated network object.
+      const trackedAccounts = (await db.getAccountsToTrack()).filter(
+        ({ network }) => network.chainID === CHAIN_ID,
+      )
+      expect(trackedAccounts).toHaveLength(1)
+      expect(trackedAccounts[0].network.name).toEqual("Foo Renamed")
+      expect(trackedAccounts[0].network).toEqual(renamedNetwork)
+      expect(
+        await db.getTrackedAccountOnNetwork({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).not.toBeNull()
+      expect(
+        await db.getTrackedAccountOnNetwork({
+          address: addressNetwork.address,
+          network: originalNetwork,
+        }),
+      ).toBeNull()
+      expect(
+        await db.getTrackedAddressesOnNetwork(renamedNetwork),
+      ).toHaveLength(1)
+
+      // Transfer-lookup coverage survives, so discovery does not restart from
+      // the genesis block.
+      expect(
+        await db.getOldestAccountAssetTransferLookup({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).toEqual(0n)
+      expect(
+        await db.getNewestAccountAssetTransferLookup({
+          address: addressNetwork.address,
+          network: renamedNetwork,
+        }),
+      ).toEqual(100n)
+
+      // The balance cache moves over rather than being orphaned.
+      const balances = await db.table("balances").toArray()
+      expect(balances).toHaveLength(1)
+      expect(balances[0].network.name).toEqual("Foo Renamed")
+
+      // Re-derivable caches keyed by the old name are dropped rather than
+      // duplicated under the new one.
+      expect(await db.table("chainTransactions").toArray()).toHaveLength(0)
+      expect(await db.table("blocks").toArray()).toHaveLength(0)
+    })
+
+    it("should leave name-keyed rows alone when a network is updated without a rename", async () => {
+      const CHAIN_ID = "12345"
+
+      const network = await db.addEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        rpcUrls: ["https://foo.com"],
+        blockExplorerURL: "https://someurl.com",
+      })
+
+      await db.addAccountToTrack({
+        address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+        network,
+      })
+      await db.addOrUpdateTransaction(
+        createAnyEVMTransaction({ network }),
+        "local",
+      )
+
+      await db.updateEVMNetwork({
+        chainName: "Foo",
+        chainID: CHAIN_ID,
+        decimals: 18,
+        symbol: "BAR",
+        assetName: "Foocoin",
+        blockExplorerURL: "https://another-url.com",
+      })
+
+      expect(
+        (await db.getAccountsToTrack()).filter(
+          ({ network: accountNetwork }) => accountNetwork.chainID === CHAIN_ID,
+        ),
+      ).toHaveLength(1)
+      // Transaction history is only dropped by an actual rename.
+      expect(await db.table("chainTransactions").toArray()).toHaveLength(1)
+    })
+
+    it("should scrub dead RPC endpoints from existing installs on upgrade", async () => {
+      // Stand up a v11-era database with the dead endpoint still stored, as
+      // an install that was seeded before it was dropped from the defaults
+      // would have.
+      const legacyDb = new Dexie("tally/chain", { indexedDB })
+      legacyDb.version(11).stores({ rpcConfig: "&chainID" })
+      await legacyDb.open()
+      await legacyDb.table("rpcConfig").bulkPut([
+        {
+          chainID: POLYGON.chainID,
+          endpoints: [
+            { url: "https://polygon-rpc.com" },
+            { url: "https://polygon.example.com" },
+          ],
+        },
+        {
+          chainID: ETHEREUM.chainID,
+          endpoints: [{ url: "https://polygon-rpc.com" }],
+        },
+      ])
+      legacyDb.close()
+
+      await db.open()
+
+      expect(await db.getRpcEndpointsByChainId(POLYGON.chainID)).toEqual([
+        { url: "https://polygon.example.com" },
+      ])
+      // Scrubbing the only endpoint would leave the chain unusable, so the
+      // row is left alone.
+      expect(await db.getRpcEndpointsByChainId(ETHEREUM.chainID)).toEqual([
+        { url: "https://polygon-rpc.com" },
+      ])
     })
   })
 })

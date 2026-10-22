@@ -176,7 +176,7 @@ export function sameBuiltInNetworkBaseAsset(
  * @param desiredDecimals The desired number of decimals of the formatted
  *        result.
  *
- * @return A localized representatin of the currency amount with the given
+ * @return A localized representation of the currency amount with the given
  *         currency symbol.
  */
 export function formatCurrencyAmount(
@@ -415,6 +415,20 @@ export const getFullAssetID = (
   }
 
   return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
+}
+
+/**
+ * Stable entity ID for any asset type. Network-specific assets use
+ * {@link getFullAssetID}; plain assets fall back to their symbol.
+ */
+export function getAssetEntityID(asset: AnyAsset): string {
+  if (isSmartContractFungibleAsset(asset)) {
+    return `${asset.homeNetwork.chainID}/${asset.contractAddress}`
+  }
+  if (isNetworkBaseAsset(asset)) {
+    return `${asset.chainID}/base`
+  }
+  return asset.symbol
 }
 
 // FIXME Unify once asset similarity code is unified.

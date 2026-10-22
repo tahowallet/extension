@@ -311,7 +311,7 @@ export const clearNotification = createBackgroundAsyncThunk(
   },
 )
 
-// Async thunk to bubble the setNewDefaultWalletValue action from  store to emitter.
+// Async thunk to bubble the setNewDefaultWalletValue action from store to emitter.
 export const setNewDefaultWalletValue = createBackgroundAsyncThunk(
   "ui/setNewDefaultWalletValue",
   async (defaultWallet: boolean, { dispatch }) => {

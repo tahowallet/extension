@@ -113,12 +113,12 @@ function reflectRedirectAndDevLog(
           const result = reflected.apply(reflectedObject, args)
 
           Promise.resolve(result)
-            .then((succesfulResult) => {
+            .then((successfulResult) => {
               clearInterval(timeLoggingInterval)
               // Logging for development purposes; should not appear on prod.
               // oxlint-disable-next-line no-console
               console.log(
-                `${labelString()}%c -> ${safeSerialize(succesfulResult)}`,
+                `${labelString()}%c -> ${safeSerialize(successfulResult)}`,
                 "background: #bada55; color: #222",
                 "background: #222; color: #bada55",
               )
@@ -395,7 +395,8 @@ function setupProviderWrapper() {
           if (
             this.currentProvider !== this.tahoProvider ||
             this.lastInjectedProvider === undefined ||
-            this.currentProvider === this.lastInjectedProvider
+            this.currentProvider === this.lastInjectedProvider ||
+            typeof this.lastInjectedProvider.emit !== "function"
           ) {
             return false
           }

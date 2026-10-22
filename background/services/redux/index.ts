@@ -28,14 +28,15 @@ import {
   AnalyticsService,
 } from ".."
 
-import type { HexString, NormalizedEVMAddress } from "../../types"
-import { SignedTransaction, sameNetwork } from "../../networks"
-import type {
-  AccountBalance,
-  AddressOnNetwork,
-  NameOnNetwork,
-} from "../../accounts"
-import type { Eligible, ReferrerStats } from "../island/types"
+import { HexString, NormalizedEVMAddress } from "../../types"
+import {
+  EVMNetwork,
+  RpcEndpoint,
+  SignedTransaction,
+  sameNetwork,
+} from "../../networks"
+import { AccountBalance, AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import { Eligible, ReferrerStats } from "../island/types"
 
 import {
   AccountType,
@@ -43,7 +44,6 @@ import {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
-  updateAccountAssetReferences,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
 import {
@@ -104,6 +104,7 @@ import {
   emitter as providerBridgeSliceEmitter,
   initializePermissions,
   revokePermissionsForAddress,
+  revokePermissionsForOrigin,
   setCurrentNetworkForOrigin,
 } from "../../redux-slices/dapp"
 import logger from "../../lib/logger"
@@ -149,8 +150,8 @@ import {
 } from "../signing"
 import { PermissionMap } from "../provider-bridge/utils"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
-import type { ActivityDetail } from "../../redux-slices/activities"
 import {
+  ActivityDetail,
   addActivity,
   initializeActivities,
   initializeActivitiesForAccount,
@@ -935,7 +936,6 @@ export default class ReduxService extends BaseService<never> {
 
         const smartContractAssets = assets.filter(isSmartContractFungibleAsset)
         if (smartContractAssets.length > 0) {
-          this.store.dispatch(updateAccountAssetReferences(smartContractAssets))
           this.store.dispatch(updatePriceAssetReferences(smartContractAssets))
         }
       },
@@ -1084,11 +1084,13 @@ export default class ReduxService extends BaseService<never> {
 
         const clear = () => {
           // Mutual dependency to handleAndClear.
+          // oxlint-disable-next-line @typescript-eslint/no-use-before-define
           this.signingService.emitter.off("signingTxResponse", handleAndClear)
 
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1142,12 +1144,14 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "signingDataResponse",
             // Mutual dependency to handleAndClear.
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1196,12 +1200,14 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "personalSigningResponse",
             // Mutual dependency to handleAndClear.
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1295,6 +1301,13 @@ export default class ReduxService extends BaseService<never> {
       "initializeAllowedPages",
       async (allowedPages: PermissionMap) => {
         this.store.dispatch(initializePermissions(allowedPages))
+      },
+    )
+
+    this.providerBridgeService.emitter.on(
+      "revokePermissionsForOrigin",
+      (origin: string) => {
+        this.store.dispatch(revokePermissionsForOrigin(origin))
       },
     )
 
@@ -1865,6 +1878,33 @@ export default class ReduxService extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+  }
+
+  async updateNetworkSettings(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    blockExplorerUrl: string,
+    metadata?: {
+      chainName: string
+      assetName: string
+      symbol: string
+      decimals: number
+      iconUrl?: string
+    },
+  ): Promise<EVMNetwork> {
+    return this.chainService.updateNetworkSettings(
+      chainID,
+      rpcEndpoints,
+      blockExplorerUrl,
+      metadata,
+    )
+  }
+
+  async getRpcConfigForChain(chainID: string): Promise<{
+    rpcEndpoints: RpcEndpoint[]
+    managedRpcEndpoints: RpcEndpoint[]
+  }> {
+    return this.chainService.getRpcConfigForChain(chainID)
   }
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {

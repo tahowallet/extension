@@ -1,7 +1,4 @@
-import {
-  DEFAULT_NETWORKS_BY_CHAIN_ID,
-  isBuiltInNetwork,
-} from "@tallyho/tally-background/constants"
+import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { blockExplorer } from "./constants"
 
@@ -72,6 +69,7 @@ export const FALLBACK_ICONS_BY_CHAINID: Record<string, string> = {
   "333999": "https://icons.llamao.fi/icons/chains/rsz_polis.jpg",
   "11297108109": "https://icons.llamao.fi/icons/chains/rsz_palm.jpg",
   "420420": "https://icons.llamao.fi/icons/chains/rsz_kekchain.jpg",
+  "31612": "https://icons.llamao.fi/icons/chains/rsz_mezo.jpg",
 }
 
 export const NETWORK_COLORS_FALLBACK = [
@@ -105,7 +103,7 @@ export const getNetworkIconSquared = (network: EVMNetwork): string => {
     return `./images/networks/${iconName}-square@2x.png`
   }
 
-  return ""
+  return network.iconUrl ?? ""
 }
 
 export const getNetworkIcon = (network: EVMNetwork): string => {
@@ -115,10 +113,9 @@ export const getNetworkIcon = (network: EVMNetwork): string => {
     return `./images/networks/${iconName}@2x.png`
   }
 
-  return FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
+  return network.iconUrl ?? FALLBACK_ICONS_BY_CHAINID[network.chainID] ?? ""
 }
 
 export const getBlockExplorerURL = (network: EVMNetwork): string | undefined =>
-  DEFAULT_NETWORKS_BY_CHAIN_ID.has(network.chainID)
-    ? blockExplorer[network.chainID].url
-    : network.blockExplorerURL
+  network.blockExplorerURL ??
+  (isBuiltInNetwork(network) ? blockExplorer[network.chainID].url : undefined)

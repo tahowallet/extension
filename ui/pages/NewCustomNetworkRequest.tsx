@@ -86,7 +86,15 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
           <div className="add_chain_imgs">
             <div className="new_chain_logo_wrapper">
               {iconUrl ? (
-                <div className="new_chain_logo" />
+                // The requesting dapp controls this URL, so it is passed as a
+                // React style property value rather than interpolated into the
+                // styled-jsx template below; a string spliced into stylesheet
+                // source could close the declaration and inject rules that
+                // apply to the rest of this confirmation screen.
+                <div
+                  className="new_chain_logo"
+                  style={{ backgroundImage: `url("${iconUrl}")` }}
+                />
               ) : (
                 <SharedNetworkIcon
                   size={50}
@@ -216,7 +224,9 @@ export default function NewCustomNetworkRequest(): JSX.Element | null {
           width: 56px;
           height: 56px;
           border-radius: 8px;
-          background: url("${iconUrl}") center / contain no-repeat;
+          background-position: center;
+          background-size: contain;
+          background-repeat: no-repeat;
         }
 
         .tally_logo {

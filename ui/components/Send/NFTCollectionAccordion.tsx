@@ -5,8 +5,9 @@ import {
   fetchNFTsFromCollection,
   NFTCached,
 } from "@tallyho/tally-background/redux-slices/nfts"
-import { useBackgroundDispatch } from "../../hooks"
-import { blockExplorer } from "../../utils/constants"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
+import { getBlockExplorerURL } from "../../utils/networks"
 import SharedAccordion from "../Shared/SharedAccordion"
 import SharedIcon from "../Shared/SharedIcon"
 import SharedLoadingDoggo from "../Shared/SharedLoadingDoggo"
@@ -22,6 +23,11 @@ export default function NFTCollectionAccordion({
 }): JSX.Element {
   const dispatch = useBackgroundDispatch()
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const network = useBackgroundSelector(selectEVMNetworks).find(
+    ({ chainID }) => chainID === collection.chainID,
+  )
+  const blockExplorerURL = network && getBlockExplorerURL(network)
 
   const [isLoading, setIsLoading] = useState(true)
 
@@ -92,7 +98,7 @@ export default function NFTCollectionAccordion({
           borderRadius: 6,
         }}
       />
-      {collection.owner && (
+      {collection.owner && blockExplorerURL && (
         <SharedIcon
           icon="icons/s/new-tab.svg"
           width={16}
@@ -102,9 +108,7 @@ export default function NFTCollectionAccordion({
           onClick={() => {
             const { contract } = collection.nfts[0] ?? {}
 
-            const url = `${
-              blockExplorer[collection.chainID].url
-            }/token/${contract}`
+            const url = `${blockExplorerURL}/token/${contract}`
 
             window.open(url, "_blank")?.focus()
           }}

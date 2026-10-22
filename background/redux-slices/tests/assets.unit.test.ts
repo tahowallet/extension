@@ -8,9 +8,13 @@ import {
   createPricePoint,
   createSmartContractAsset,
 } from "../../tests/factories"
-import reducer, { assetsLoaded, SingleAssetState } from "../assets"
+import reducer, {
+  assetsLoaded,
+  initialState,
+  SingleAssetState,
+} from "../assets"
 import { PricesState, selectAssetPricePoint } from "../prices"
-import { getFullAssetID } from "../utils/asset-utils"
+import { getAssetEntityID, getFullAssetID } from "../utils/asset-utils"
 
 const asset: SmartContractFungibleAsset = createSmartContractAsset()
 
@@ -30,11 +34,12 @@ describe("Reducers", () => {
   describe("assetsLoaded", () => {
     test("updates cached asset metadata", () => {
       const state = reducer(
-        [],
+        initialState,
         assetsLoaded({ assets: [asset], loadingScope: "incremental" }),
       )
 
-      expect(state[0].metadata?.verified).not.toBeDefined()
+      const id = getAssetEntityID(asset)
+      expect(state.entities[id]?.metadata?.verified).not.toBeDefined()
 
       const newState = reducer(
         state,
@@ -44,7 +49,7 @@ describe("Reducers", () => {
         }),
       )
 
-      expect(newState[0].metadata?.verified).toBeTruthy()
+      expect(newState.entities[id]?.metadata?.verified).toBeTruthy()
     })
   })
 })

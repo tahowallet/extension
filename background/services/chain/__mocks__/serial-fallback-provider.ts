@@ -5,6 +5,11 @@ import { makeEthersBlock, makeEthersFeeData } from "../../../tests/factories"
 import type SerialFallbackProvider from "../serial-fallback-provider"
 
 export default class MockSerialFallbackProvider implements Partial<SerialFallbackProvider> {
+  // Mirrors the real provider's retirement latch so callers that check whether
+  // a replaced or removed provider was actually retired see the same thing
+  // they would in production.
+  isDestroyed = false
+
   async getBlock(): Promise<Block> {
     return makeEthersBlock()
   }
@@ -27,6 +32,11 @@ export default class MockSerialFallbackProvider implements Partial<SerialFallbac
 
   async subscribeFullPendingTransactions(): Promise<void> {
     return Promise.resolve()
+  }
+
+  destroy(): void {
+    // Nothing to tear down in the mock; provider replacement still calls this.
+    this.isDestroyed = true
   }
 }
 

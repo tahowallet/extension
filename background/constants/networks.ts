@@ -1,5 +1,5 @@
 import { FeatureFlags, wrapIfEnabled } from "../features"
-import { EVMNetwork } from "../networks"
+import { EVMNetwork, RpcEndpoint } from "../networks"
 import {
   ARBITRUM_NOVA_ETH,
   ARBITRUM_ONE_ETH,
@@ -13,6 +13,7 @@ import {
   RBTC,
   ZK_SYNC_ETH,
   MEZO_BTC,
+  MEZO_MAINNET_BTC,
 } from "./currencies"
 
 export const ETHEREUM: EVMNetwork = {
@@ -110,8 +111,16 @@ export const MEZO_TESTNET: EVMNetwork = {
   family: "EVM",
 }
 
+export const MEZO: EVMNetwork = {
+  name: "Mezo",
+  baseAsset: MEZO_MAINNET_BTC,
+  chainID: "31612",
+  family: "EVM",
+}
+
 export const DEFAULT_NETWORKS = [
   ETHEREUM,
+  MEZO,
   ...wrapIfEnabled(FeatureFlags.SUPPORT_MEZO_NETWORK, MEZO_TESTNET),
   POLYGON,
   OPTIMISM,
@@ -168,20 +177,25 @@ export const NETWORK_BY_CHAIN_ID = {
   [FORK.chainID]: FORK,
   [ZK_SYNC.chainID]: ZK_SYNC,
   [MEZO_TESTNET.chainID]: MEZO_TESTNET,
+  [MEZO.chainID]: MEZO,
 }
 
 export const TEST_NETWORK_BY_CHAIN_ID = new Set(
   [MEZO_TESTNET, SEPOLIA, ARBITRUM_SEPOLIA].map((network) => network.chainID),
 )
 
-export const ALCHEMY_SUPPORTED_CHAIN_IDS = new Set(
-  [ETHEREUM, POLYGON, ARBITRUM_ONE, OPTIMISM, SEPOLIA].map(
+export const BOAR_SUPPORTED_CHAIN_IDS = new Set(
+  [ETHEREUM, OPTIMISM, POLYGON, ARBITRUM_ONE, SEPOLIA, MEZO].map(
     (network) => network.chainID,
   ),
 )
 
+export const BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS = new Set([MEZO.chainID])
+
 export const FLASHBOTS_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM.chainID])
+
 export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
+
 export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
@@ -194,12 +208,7 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://mezo-testnet.drpc.org",
     "wss://mezo-testnet.drpc.org",
   ],
-  [POLYGON.chainID]: [
-    "https://polygon.drpc.org",
-    // This one sometimes returns 0 for eth_getBalance
-    "https://polygon-rpc.com",
-    "https://1rpc.io/matic",
-  ],
+  [POLYGON.chainID]: ["https://polygon.drpc.org", "https://1rpc.io/matic"],
   [OPTIMISM.chainID]: [
     "https://optimism.drpc.org",
     "https://1rpc.io/op",
@@ -223,7 +232,53 @@ export const CHAIN_ID_TO_RPC_URLS: {
     "https://bsc.drpc.org",
     "https://bsc-dataseed.binance.org",
   ],
+  [MEZO.chainID]: [
+    "https://mezo.drpc.org",
+    "https://rpc-http.mezo.boar.network",
+    "https://mainnet.mezo.public.validationcloud.io",
+  ],
 }
+
+/**
+ * The default block explorer URLs for each built-in chain. Like
+ * {@link DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID}, these are deliberately hardcoded
+ * and never user-editable; they are used ONLY to seed the stored network
+ * config the first time a chain is seen. Once a chain has a stored block
+ * explorer URL, that value is the sole source of truth and these defaults
+ * are never consulted again.
+ */
+export const DEFAULT_BLOCK_EXPLORER_URLS_BY_CHAIN_ID: {
+  [chainID: string]: string
+} = {
+  [ETHEREUM.chainID]: "https://etherscan.io",
+  [MEZO.chainID]: "https://explorer.mezo.org",
+  [MEZO_TESTNET.chainID]: "https://explorer.test.mezo.org",
+  [ROOTSTOCK.chainID]: "https://explorer.rsk.co",
+  [OPTIMISM.chainID]: "https://optimistic.etherscan.io",
+  [POLYGON.chainID]: "https://polygonscan.com",
+  [SEPOLIA.chainID]: "https://sepolia.etherscan.io",
+  [ARBITRUM_SEPOLIA.chainID]: "https://sepolia.arbiscan.io",
+  [ARBITRUM_ONE.chainID]: "https://arbiscan.io",
+  [AVALANCHE.chainID]: "https://snowtrace.io",
+  [BINANCE_SMART_CHAIN.chainID]: "https://bscscan.com",
+  [ARBITRUM_NOVA.chainID]: "https://nova.arbiscan.io",
+}
+
+/**
+ * The default RPC endpoints for each built-in chain. These are deliberately
+ * hardcoded and never user-editable; they are used ONLY to seed the stored
+ * per-chain RPC endpoint config the first time a chain is seen. Once a chain
+ * has a stored endpoint list, that list is the sole source of truth and these
+ * defaults are never consulted or merged back in.
+ */
+export const DEFAULT_RPC_ENDPOINTS_BY_CHAIN_ID: {
+  [chainID: string]: RpcEndpoint[]
+} = Object.fromEntries(
+  Object.entries(CHAIN_ID_TO_RPC_URLS).map(([chainID, rpcUrls]) => [
+    chainID,
+    rpcUrls.map((url) => ({ url })),
+  ]),
+)
 
 // Taken from https://api.coingecko.com/api/v3/asset_platforms
 export const CHAIN_ID_TO_COINGECKO_PLATFORM_ID: {

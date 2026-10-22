@@ -2,6 +2,7 @@ import React, {
   ReactElement,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react"
@@ -38,27 +39,44 @@ export default function SelectNetworkMenuContent({
   const [selectedIndex, setSelectedIndex] = useState(0)
   const searchInput = useRef<HTMLInputElement | null>(null)
 
-  // Build the list of all networks
-  const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
-  const customNetworks = productionNetworks.filter(
-    (network) => !isBuiltInNetwork(network),
-  )
-  const testNetworks = showTestNetworks
-    ? [...TEST_NETWORK_BY_CHAIN_ID].flatMap(
-        (chainId) =>
-          testnetNetworks.find((network) => network.chainID === chainId) ?? [],
-      )
-    : []
-
-  const allNetworks = [...builtinNetworks, ...customNetworks, ...testNetworks]
-
-  // Filter networks by search term
-  const filteredNetworks =
-    searchTerm.trim() === ""
-      ? allNetworks
-      : allNetworks.filter((network) =>
-          network.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  // Build and filter networks by category
+  const {
+    filteredBuiltinNetworks,
+    filteredCustomNetworks,
+    filteredTestNetworks,
+    filteredNetworks,
+  } = useMemo(() => {
+    const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+    const customNetworks = productionNetworks.filter(
+      (network) => !isBuiltInNetwork(network),
+    )
+    const testNetworks = showTestNetworks
+      ? [...TEST_NETWORK_BY_CHAIN_ID].flatMap(
+          (chainId) =>
+            testnetNetworks.find((network) => network.chainID === chainId) ??
+            [],
         )
+      : []
+
+    const filterBySearchTerm = (networks: EVMNetwork[]) =>
+      searchTerm.trim() === ""
+        ? networks
+        : networks.filter((network) =>
+            network.name.toLowerCase().includes(searchTerm.toLowerCase()),
+          )
+
+    const builtin = filterBySearchTerm(builtinNetworks)
+    const custom = filterBySearchTerm(customNetworks)
+    const test = filterBySearchTerm(testNetworks)
+
+    return {
+      filteredBuiltinNetworks: builtin,
+      filteredCustomNetworks: custom,
+      filteredTestNetworks: test,
+      // Combined list for keyboard navigation index tracking
+      filteredNetworks: [...builtin, ...custom, ...test],
+    }
+  }, [productionNetworks, testnetNetworks, showTestNetworks, searchTerm])
 
   // Reset selection when search results change
   useEffect(() => {
@@ -127,7 +145,7 @@ export default function SelectNetworkMenuContent({
       </div>
       <div className="divider" />
       <ul className="networks_list">
-        {filteredNetworks.map((network, index) => (
+        {filteredBuiltinNetworks.map((network, index) => (
           <TopMenuProtocolListItem
             key={network.chainID}
             network={network}
@@ -145,6 +163,65 @@ export default function SelectNetworkMenuContent({
             isDisabled={false}
           />
         ))}
+        {filteredCustomNetworks.length > 0 && (
+          <>
+            <li className="protocol_divider">
+              <div className="divider_label">
+                {t("topMenu.protocolList.customNetworksSectionTitle")}
+              </div>
+              <div className="divider_line" />
+            </li>
+            {filteredCustomNetworks.map((network, index) => {
+              const globalIndex = filteredBuiltinNetworks.length + index
+              return (
+                <TopMenuProtocolListItem
+                  key={network.chainID}
+                  network={network}
+                  isSelected={
+                    currentNetwork !== undefined &&
+                    sameNetwork(currentNetwork, network)
+                  }
+                  isHighlighted={globalIndex === selectedIndex}
+                  info={t("protocol.compatibleChain")}
+                  onSelect={onNetworkChange}
+                  onMouseMove={() => setSelectedIndex(globalIndex)}
+                  isDisabled={false}
+                />
+              )
+            })}
+          </>
+        )}
+        {filteredTestNetworks.length > 0 && (
+          <>
+            <li className="protocol_divider">
+              <div className="divider_label">
+                {t("topMenu.protocolList.testnetsSectionTitle")}
+              </div>
+              <div className="divider_line" />
+            </li>
+            {filteredTestNetworks.map((network, index) => {
+              const globalIndex =
+                filteredBuiltinNetworks.length +
+                filteredCustomNetworks.length +
+                index
+              return (
+                <TopMenuProtocolListItem
+                  key={network.chainID}
+                  network={network}
+                  isSelected={
+                    currentNetwork !== undefined &&
+                    sameNetwork(currentNetwork, network)
+                  }
+                  isHighlighted={globalIndex === selectedIndex}
+                  info={t("protocol.compatibleChain")}
+                  onSelect={onNetworkChange}
+                  onMouseMove={() => setSelectedIndex(globalIndex)}
+                  isDisabled={false}
+                />
+              )
+            })}
+          </>
+        )}
       </ul>
       <style jsx>{`
         .search_label {
@@ -196,6 +273,26 @@ export default function SelectNetworkMenuContent({
           width: 100%;
           padding: 16px 24px;
           box-sizing: border-box;
+        }
+        .networks_list :global(.protocol_divider) {
+          display: flex;
+          margin-top: 8px;
+          margin-bottom: 16px;
+          gap: 15px;
+          position: relative;
+        }
+        .networks_list :global(.divider_line) {
+          flex-grow: 1;
+          align-self: center;
+          background: var(--green-120);
+          height: 1px;
+          margin-top: 1px;
+        }
+        .networks_list :global(.divider_label) {
+          color: var(--green-40);
+          font-size: 16px;
+          font-weight: 500;
+          line-height: 24px;
         }
       `}</style>
     </>

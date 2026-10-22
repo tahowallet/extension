@@ -46,7 +46,7 @@ export type Events = {
 
 export const emitter = new Emittery<Events>()
 
-// Async thunk to bubble the permissionGrant action from  store to emitter.
+// Async thunk to bubble the permissionGrant action from store to emitter.
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
   async (permission: PermissionRequest) => {
@@ -57,7 +57,7 @@ export const grantPermission = createBackgroundAsyncThunk(
   },
 )
 
-// Async thunk to bubble the permissionDenyOrRevoke action from  store to emitter.
+// Async thunk to bubble the permissionDenyOrRevoke action from store to emitter.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionDenyOrRevoke",
   async (permission: PermissionRequest) => {
@@ -126,6 +126,25 @@ const dappSlice = createSlice({
           immerState.allowed.evm[chainID] = withoutAddressToRemove
         }
       })
+    },
+    revokePermissionsForOrigin: (
+      immerState,
+      { payload: origin }: { payload: string },
+    ) => {
+      Object.keys(immerState.allowed.evm).forEach((chainID) => {
+        Object.keys(immerState.allowed.evm[chainID] ?? {}).forEach(
+          (address) => {
+            if (immerState.allowed.evm[chainID]?.[address]?.[origin]) {
+              const { [origin]: _, ...withoutOriginToRemove } =
+                immerState.allowed.evm[chainID][address]
+              immerState.allowed.evm[chainID][address] = withoutOriginToRemove
+            }
+          },
+        )
+      })
+      if (immerState.currentNetworkByOrigin !== undefined) {
+        delete immerState.currentNetworkByOrigin[origin]
+      }
     },
     setCurrentNetworkForOrigin: (
       immerState,
@@ -205,6 +224,7 @@ export const {
   requestPermission,
   initializePermissions,
   revokePermissionsForAddress,
+  revokePermissionsForOrigin,
   setCurrentNetworkForOrigin,
   clearCurrentNetworkForOrigin,
 } = dappSlice.actions

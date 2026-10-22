@@ -10,10 +10,10 @@ import {
   swapQuoteJSONSchema,
 } from "./lib/validate/0x-swap"
 import {
-  alchemyGetAssetTransfersJTD,
-  alchemyTokenBalanceJTD,
-  alchemyTokenMetadataJTD,
-} from "./lib/validate/alchemy"
+  boarGetAssetTransfersJTD,
+  boarTokenBalanceJTD,
+  boarTokenMetadataJTD,
+} from "./lib/validate/boar"
 import { metadataJTD } from "./lib/validate/erc721"
 import { coingeckoPriceSchema } from "./lib/validate/prices"
 
@@ -22,9 +22,9 @@ const ajvJTD = new AjvJTD({
   code: { source: true, es5: true },
 })
   .addSchema(metadataJTD, "isValidMetadata")
-  .addSchema(alchemyGetAssetTransfersJTD, "isValidAlchemyAssetTransferResponse")
-  .addSchema(alchemyTokenBalanceJTD, "isValidAlchemyTokenBalanceResponse")
-  .addSchema(alchemyTokenMetadataJTD, "isValidAlchemyTokenMetadataResponse")
+  .addSchema(boarGetAssetTransfersJTD, "isValidBoarAssetTransferResponse")
+  .addSchema(boarTokenBalanceJTD, "isValidBoarTokenBalanceResponse")
+  .addSchema(boarTokenMetadataJTD, "isValidBoarTokenMetadataResponse")
 
 const ajvJSON = new AjvJSON({
   allErrors: true,

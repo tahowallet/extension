@@ -1,8 +1,8 @@
 import {
-  getAssetTransfers as getAlchemyAssetTransfers,
-  getTokenBalances as getAlchemyTokenBalances,
-  getTokenMetadata as getAlchemyTokenMetadata,
-} from "../../lib/alchemy"
+  getAssetTransfers as getBoarAssetTransfers,
+  getTokenBalances as getBoarTokenBalances,
+  getTokenMetadata as getBoarTokenMetadata,
+} from "../../lib/boar"
 import SerialFallbackProvider from "./serial-fallback-provider"
 import {
   AssetTransfer,
@@ -18,6 +18,7 @@ import {
   getMetadata as getERC20Metadata,
   getTokenBalances,
 } from "../../lib/erc20"
+import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
 import { FeatureFlags, isEnabled } from "../../features"
 import { DOGGO, FORK } from "../../constants"
 
@@ -72,7 +73,7 @@ export default class AssetDataHelper {
     smartContractAddresses?: HexString[],
   ): Promise<{
     balances: SmartContractAmount[]
-    dataSource: "alchemy" | "generic-rpc" | "local"
+    dataSource: "boar" | "generic-rpc" | "local"
   }> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network,
@@ -84,13 +85,13 @@ export default class AssetDataHelper {
     try {
       if (provider.supportsAlchemy) {
         return {
-          balances: await getAlchemyTokenBalances(provider, addressOnNetwork),
-          dataSource: "alchemy",
+          balances: await getBoarTokenBalances(provider, addressOnNetwork),
+          dataSource: "boar",
         }
       }
     } catch (error) {
       logger.debug(
-        "Problem resolving asset balances on Alchemy supported network",
+        "Problem resolving asset balances on Alchemy-capable network",
         addressOnNetwork.network,
         error,
       )
@@ -162,7 +163,7 @@ export default class AssetDataHelper {
     }
 
     if (provider.supportsAlchemy) {
-      return getAlchemyTokenMetadata(provider, tokenSmartContract)
+      return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
     return getERC20Metadata(provider, tokenSmartContract)
@@ -188,7 +189,7 @@ export default class AssetDataHelper {
     try {
       if (provider.supportsAlchemy) {
         const promises = [
-          getAlchemyAssetTransfers(
+          getBoarAssetTransfers(
             provider,
             addressOnNetwork,
             "incoming",
@@ -198,7 +199,7 @@ export default class AssetDataHelper {
         ]
         if (!incomingOnly) {
           promises.push(
-            getAlchemyAssetTransfers(
+            getBoarAssetTransfers(
               provider,
               addressOnNetwork,
               "outgoing",
@@ -211,16 +212,43 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Alchemy helper; network may " +
+        "Problem resolving asset transfers via Alchemy-compatible helper; " +
+          "falling back to Transfer log scanning.",
+        error,
+      )
+
+      // Deliberately no rethrow: an endpoint that advertises the enhanced API
+      // but does not actually serve it — a mistagged capability, a revoked
+      // key — would otherwise disable transfer discovery for the network for
+      // good, since the caller retries the identical lookup on every alarm
+      // and never reaches the standard-RPC fallback below. Fall through to it
+      // instead; it rethrows on its own failure, which is what preserves the
+      // retry contract callers depend on.
+    }
+
+    // Without a working Alchemy-capable endpoint, fall back to scanning
+    // standard ERC-20 Transfer logs via eth_getLogs. Native-asset transfers
+    // are not captured this way.
+    try {
+      const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
+
+      return await getAssetTransfersViaLogs(
+        provider,
+        addressOnNetwork,
+        startBlock,
+        resolvedEndBlock,
+        incomingOnly,
+      )
+    } catch (error) {
+      logger.warn(
+        "Problem resolving asset transfers via Transfer logs; network may " +
           "not support it.",
         error,
       )
 
       // Rethrow as consumers like ChainService need the exception to manage
-      // retries. Eventually we may want retries to be handled here.
+      // retries.
       throw error
     }
-
-    return []
   }
 }

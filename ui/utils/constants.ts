@@ -4,6 +4,7 @@ import {
   AVALANCHE,
   BINANCE_SMART_CHAIN,
   ETHEREUM,
+  MEZO,
   SEPOLIA,
   ARBITRUM_SEPOLIA,
   OPTIMISM,
@@ -18,6 +19,7 @@ export const doggoTokenDecimalDigits = 18
 
 export const blockExplorer = {
   [ETHEREUM.chainID]: { title: "Etherscan", url: "https://etherscan.io" },
+  [MEZO.chainID]: { title: "Mezo explorer", url: "https://explorer.mezo.org" },
   [MEZO_TESTNET.chainID]: {
     title: "Mezo explorer",
     url: "https://explorer.test.mezo.org",

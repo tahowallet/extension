@@ -120,10 +120,16 @@ const MEZO_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
   },
 }
 
+const MEZO_MAINNET_BTC: NetworkBaseAsset & Required<CoinGeckoAsset> = {
+  ...MEZO_BTC,
+  chainID: "31612",
+}
+
 export const BASE_ASSETS_BY_CUSTOM_NAME = {
   ETH,
   MATIC,
   MEZO_BTC,
+  MEZO_MAINNET_BTC,
   RBTC,
   AVAX,
   BNB,

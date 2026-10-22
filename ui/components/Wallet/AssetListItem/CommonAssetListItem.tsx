@@ -49,10 +49,13 @@ export default function CommonAssetListItem(
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
 
-  const contractAddress =
-    "contractAddress" in assetAmount.asset
-      ? assetAmount.asset.contractAddress
-      : undefined
+  // Network base assets can carry a contract address of their own---MATIC on
+  // Polygon and ETH on Optimism both do---so only pass the address along when
+  // the asset really is a token; otherwise the swap page would look for a
+  // token that does not exist instead of preselecting the base asset.
+  const contractAddress = isSmartContractFungibleAsset(assetAmount.asset)
+    ? assetAmount.asset.contractAddress
+    : undefined
 
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
 

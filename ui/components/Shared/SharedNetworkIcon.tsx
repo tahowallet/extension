@@ -49,7 +49,17 @@ export default function SharedNetworkIcon(props: {
         <div className="icon_network_background" />
       )}
       {hasIconAvailable ? (
-        <div className="icon_network" />
+        // The icon URL of a custom network is dapp- or user-supplied, so it
+        // must never be interpolated into a styled-jsx template: that string
+        // becomes stylesheet source, and a crafted URL could close the
+        // declaration and add rules of its own anywhere in the wallet UI.
+        // Setting it through a React style object keeps it a property value —
+        // CSSOM drops it wholesale if it is not a valid one, and it cannot
+        // introduce a new declaration or selector.
+        <div
+          className="icon_network"
+          style={{ backgroundImage: `url("${sources[currentSource]}")` }}
+        />
       ) : (
         <div className="icon_fallback">
           {network.name[0].toUpperCase() ?? network.chainID}
@@ -86,7 +96,6 @@ export default function SharedNetworkIcon(props: {
           border-radius: 2px;
         }
         .icon_network {
-          background: url("${sources[currentSource]}");
           background-size: cover;
           height: ${size - padding}px;
           width: ${size - padding}px;

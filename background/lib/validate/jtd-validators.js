@@ -132,7 +132,7 @@ function validate57(data, valCxt) {
   validate57.errors = vErrors
   return errors === 0
 }
-exports.isValidAlchemyAssetTransferResponse = validate58
+exports.isValidBoarAssetTransferResponse = validate58
 var schema30 = {
   properties: {
     transfers: {
@@ -692,7 +692,7 @@ function validate58(data, valCxt) {
   validate58.errors = vErrors
   return errors === 0
 }
-exports.isValidAlchemyTokenBalanceResponse = validate59
+exports.isValidBoarTokenBalanceResponse = validate59
 var schema31 = {
   properties: {
     address: { type: "string" },
@@ -967,7 +967,7 @@ function validate59(data, valCxt) {
   validate59.errors = vErrors
   return errors === 0
 }
-exports.isValidAlchemyTokenMetadataResponse = validate60
+exports.isValidBoarTokenMetadataResponse = validate60
 var schema32 = {
   properties: {
     decimals: { type: "uint32", nullable: true },

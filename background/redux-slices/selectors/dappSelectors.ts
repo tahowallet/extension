@@ -3,6 +3,7 @@ import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { RootState } from ".."
 import { DAppPermissionState } from "../dapp"
 import { selectCurrentAccount } from "./uiSelectors"
+import { sameEVMAddress } from "../../lib/utils"
 
 export const getProviderBridgeState = (state: RootState): DAppPermissionState =>
   state.dapp
@@ -34,7 +35,7 @@ export const selectAllowedPages = createSelector(
 
     Object.keys(allowed.evm).forEach((chainId) => {
       Object.keys(allowed.evm[chainId]).forEach((address) => {
-        if (address === currentAccount.address) {
+        if (sameEVMAddress(address, currentAccount.address)) {
           Object.values(allowed.evm[chainId][address]).forEach((permission) => {
             permissions.push(permission)
           })

@@ -293,17 +293,17 @@ const schema12 = {
         name: {
           type: "string",
           description: "The name of the token",
-          minLength: 1,
-          maxLength: 40,
-          pattern: "^[ \\w.'+\\-%/À-ÖØ-öø-ÿ:&\\[\\]\\(\\)]+$",
+          minLength: 0,
+          maxLength: 60,
+          anyOf: [{ const: "" }, { pattern: "^[ \\S+]+$" }],
           examples: ["USD Coin"],
         },
         symbol: {
           type: "string",
-          description: "The symbol for the token; must be alphanumeric",
-          pattern: "^[a-zA-Z0-9+\\-%/$.]+$",
-          minLength: 1,
+          description: "The symbol for the token",
+          minLength: 0,
           maxLength: 20,
+          anyOf: [{ const: "" }, { pattern: "^\\S+$" }],
           examples: ["USDC"],
         },
         logoURI: {
@@ -327,7 +327,6 @@ const schema12 = {
     },
   },
   type: "object",
-  additionalProperties: false,
   properties: {
     name: {
       type: "string",
@@ -350,6 +349,27 @@ const schema12 = {
       items: { $ref: "#/definitions/TokenInfo" },
       minItems: 1,
       maxItems: 10000,
+    },
+    tokenMap: {
+      type: "object",
+      description:
+        "A mapping of key 'chainId_tokenAddress' to its corresponding token object",
+      minProperties: 1,
+      maxProperties: 10000,
+      propertyNames: { type: "string" },
+      additionalProperties: { $ref: "#/definitions/TokenInfo" },
+      examples: [
+        {
+          "4_0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984": {
+            name: "Uniswap",
+            address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+            symbol: "UNI",
+            decimals: 18,
+            chainId: 4,
+            logoURI: "ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg",
+          },
+        },
+      ],
     },
     keywords: {
       type: "array",
@@ -492,17 +512,17 @@ const schema14 = {
     name: {
       type: "string",
       description: "The name of the token",
-      minLength: 1,
-      maxLength: 40,
-      pattern: "^[ \\w.'+\\-%/À-ÖØ-öø-ÿ:&\\[\\]\\(\\)]+$",
+      minLength: 0,
+      maxLength: 60,
+      anyOf: [{ const: "" }, { pattern: "^[ \\S+]+$" }],
       examples: ["USD Coin"],
     },
     symbol: {
       type: "string",
-      description: "The symbol for the token; must be alphanumeric",
-      pattern: "^[a-zA-Z0-9+\\-%/$.]+$",
-      minLength: 1,
+      description: "The symbol for the token",
+      minLength: 0,
       maxLength: 20,
+      anyOf: [{ const: "" }, { pattern: "^\\S+$" }],
       examples: ["USDC"],
     },
     logoURI: {
@@ -525,8 +545,8 @@ const schema14 = {
   required: ["chainId", "address", "decimals", "name", "symbol"],
 }
 const pattern1 = new RegExp("^0x[a-fA-F0-9]{40}$", "u")
-const pattern2 = new RegExp("^[ \\w.'+\\-%/À-ÖØ-öø-ÿ:&\\[\\]\\(\\)]+$", "u")
-const pattern3 = new RegExp("^[a-zA-Z0-9+\\-%/$.]+$", "u")
+const pattern2 = new RegExp("^[ \\S+]+$", "u")
+const pattern3 = new RegExp("^\\S+$", "u")
 const schema16 = {
   type: "object",
   description:
@@ -1768,81 +1788,95 @@ function validate12(
     }
     if (data.name !== undefined) {
       let data3 = data.name
-      if (typeof data3 === "string") {
-        if (func4(data3) > 40) {
-          const err13 = {
-            instancePath: instancePath + "/name",
-            schemaPath: "#/properties/name/maxLength",
-            keyword: "maxLength",
-            params: { limit: 40 },
-            message: "must NOT have more than 40 characters",
-          }
-          if (vErrors === null) {
-            vErrors = [err13]
-          } else {
-            vErrors.push(err13)
-          }
-          errors++
-        }
-        if (func4(data3) < 1) {
-          const err14 = {
-            instancePath: instancePath + "/name",
-            schemaPath: "#/properties/name/minLength",
-            keyword: "minLength",
-            params: { limit: 1 },
-            message: "must NOT have fewer than 1 characters",
-          }
-          if (vErrors === null) {
-            vErrors = [err14]
-          } else {
-            vErrors.push(err14)
-          }
-          errors++
-        }
-        if (!pattern2.test(data3)) {
-          const err15 = {
-            instancePath: instancePath + "/name",
-            schemaPath: "#/properties/name/pattern",
-            keyword: "pattern",
-            params: { pattern: "^[ \\w.'+\\-%/À-ÖØ-öø-ÿ:&\\[\\]\\(\\)]+$" },
-            message:
-              'must match pattern "' +
-              "^[ \\w.'+\\-%/À-ÖØ-öø-ÿ:&\\[\\]\\(\\)]+$" +
-              '"',
-          }
-          if (vErrors === null) {
-            vErrors = [err15]
-          } else {
-            vErrors.push(err15)
-          }
-          errors++
-        }
-      } else {
-        const err16 = {
+      const _errs10 = errors
+      let valid1 = false
+      const _errs11 = errors
+      if ("" !== data3) {
+        const err13 = {
           instancePath: instancePath + "/name",
-          schemaPath: "#/properties/name/type",
-          keyword: "type",
-          params: { type: "string" },
-          message: "must be string",
+          schemaPath: "#/properties/name/anyOf/0/const",
+          keyword: "const",
+          params: { allowedValue: "" },
+          message: "must be equal to constant",
         }
         if (vErrors === null) {
-          vErrors = [err16]
+          vErrors = [err13]
         } else {
-          vErrors.push(err16)
+          vErrors.push(err13)
         }
         errors++
       }
-    }
-    if (data.symbol !== undefined) {
-      let data4 = data.symbol
-      if (typeof data4 === "string") {
-        if (func4(data4) > 20) {
-          const err17 = {
-            instancePath: instancePath + "/symbol",
-            schemaPath: "#/properties/symbol/maxLength",
+      var _valid0 = _errs11 === errors
+      valid1 = valid1 || _valid0
+      if (!valid1) {
+        const _errs12 = errors
+        if (typeof data3 === "string") {
+          if (!pattern2.test(data3)) {
+            const err14 = {
+              instancePath: instancePath + "/name",
+              schemaPath: "#/properties/name/anyOf/1/pattern",
+              keyword: "pattern",
+              params: { pattern: "^[ \\S+]+$" },
+              message: 'must match pattern "' + "^[ \\S+]+$" + '"',
+            }
+            if (vErrors === null) {
+              vErrors = [err14]
+            } else {
+              vErrors.push(err14)
+            }
+            errors++
+          }
+        }
+        var _valid0 = _errs12 === errors
+        valid1 = valid1 || _valid0
+      }
+      if (!valid1) {
+        const err15 = {
+          instancePath: instancePath + "/name",
+          schemaPath: "#/properties/name/anyOf",
+          keyword: "anyOf",
+          params: {},
+          message: "must match a schema in anyOf",
+        }
+        if (vErrors === null) {
+          vErrors = [err15]
+        } else {
+          vErrors.push(err15)
+        }
+        errors++
+      } else {
+        errors = _errs10
+        if (vErrors !== null) {
+          if (_errs10) {
+            vErrors.length = _errs10
+          } else {
+            vErrors = null
+          }
+        }
+      }
+      if (typeof data3 === "string") {
+        if (func4(data3) > 60) {
+          const err16 = {
+            instancePath: instancePath + "/name",
+            schemaPath: "#/properties/name/maxLength",
             keyword: "maxLength",
-            params: { limit: 20 },
-            message: "must NOT have more than 20 characters",
+            params: { limit: 60 },
+            message: "must NOT have more than 60 characters",
+          }
+          if (vErrors === null) {
+            vErrors = [err16]
+          } else {
+            vErrors.push(err16)
+          }
+          errors++
+        }
+        if (func4(data3) < 0) {
+          const err17 = {
+            instancePath: instancePath + "/name",
+            schemaPath: "#/properties/name/minLength",
+            keyword: "minLength",
+            params: { limit: 0 },
+            message: "must NOT have fewer than 0 characters",
           }
           if (vErrors === null) {
             vErrors = [err17]
@@ -1851,60 +1885,73 @@ function validate12(
           }
           errors++
         }
-        if (func4(data4) < 1) {
-          const err18 = {
-            instancePath: instancePath + "/symbol",
-            schemaPath: "#/properties/symbol/minLength",
-            keyword: "minLength",
-            params: { limit: 1 },
-            message: "must NOT have fewer than 1 characters",
-          }
-          if (vErrors === null) {
-            vErrors = [err18]
-          } else {
-            vErrors.push(err18)
-          }
-          errors++
-        }
-        if (!pattern3.test(data4)) {
-          const err19 = {
-            instancePath: instancePath + "/symbol",
-            schemaPath: "#/properties/symbol/pattern",
-            keyword: "pattern",
-            params: { pattern: "^[a-zA-Z0-9+\\-%/$.]+$" },
-            message: 'must match pattern "' + "^[a-zA-Z0-9+\\-%/$.]+$" + '"',
-          }
-          if (vErrors === null) {
-            vErrors = [err19]
-          } else {
-            vErrors.push(err19)
-          }
-          errors++
-        }
       } else {
-        const err20 = {
-          instancePath: instancePath + "/symbol",
-          schemaPath: "#/properties/symbol/type",
+        const err18 = {
+          instancePath: instancePath + "/name",
+          schemaPath: "#/properties/name/type",
           keyword: "type",
           params: { type: "string" },
           message: "must be string",
         }
         if (vErrors === null) {
-          vErrors = [err20]
+          vErrors = [err18]
         } else {
-          vErrors.push(err20)
+          vErrors.push(err18)
         }
         errors++
       }
     }
-    if (data.logoURI !== undefined) {
-      if (!(typeof data.logoURI === "string")) {
+    if (data.symbol !== undefined) {
+      let data4 = data.symbol
+      const _errs15 = errors
+      let valid2 = false
+      const _errs16 = errors
+      if ("" !== data4) {
+        const err19 = {
+          instancePath: instancePath + "/symbol",
+          schemaPath: "#/properties/symbol/anyOf/0/const",
+          keyword: "const",
+          params: { allowedValue: "" },
+          message: "must be equal to constant",
+        }
+        if (vErrors === null) {
+          vErrors = [err19]
+        } else {
+          vErrors.push(err19)
+        }
+        errors++
+      }
+      var _valid1 = _errs16 === errors
+      valid2 = valid2 || _valid1
+      if (!valid2) {
+        const _errs17 = errors
+        if (typeof data4 === "string") {
+          if (!pattern3.test(data4)) {
+            const err20 = {
+              instancePath: instancePath + "/symbol",
+              schemaPath: "#/properties/symbol/anyOf/1/pattern",
+              keyword: "pattern",
+              params: { pattern: "^\\S+$" },
+              message: 'must match pattern "' + "^\\S+$" + '"',
+            }
+            if (vErrors === null) {
+              vErrors = [err20]
+            } else {
+              vErrors.push(err20)
+            }
+            errors++
+          }
+        }
+        var _valid1 = _errs17 === errors
+        valid2 = valid2 || _valid1
+      }
+      if (!valid2) {
         const err21 = {
-          instancePath: instancePath + "/logoURI",
-          schemaPath: "#/properties/logoURI/type",
-          keyword: "type",
-          params: { type: "string" },
-          message: "must be string",
+          instancePath: instancePath + "/symbol",
+          schemaPath: "#/properties/symbol/anyOf",
+          keyword: "anyOf",
+          params: {},
+          message: "must match a schema in anyOf",
         }
         if (vErrors === null) {
           vErrors = [err21]
@@ -1912,18 +1959,24 @@ function validate12(
           vErrors.push(err21)
         }
         errors++
+      } else {
+        errors = _errs15
+        if (vErrors !== null) {
+          if (_errs15) {
+            vErrors.length = _errs15
+          } else {
+            vErrors = null
+          }
+        }
       }
-    }
-    if (data.tags !== undefined) {
-      let data6 = data.tags
-      if (Array.isArray(data6)) {
-        if (data6.length > 10) {
+      if (typeof data4 === "string") {
+        if (func4(data4) > 20) {
           const err22 = {
-            instancePath: instancePath + "/tags",
-            schemaPath: "#/properties/tags/maxItems",
-            keyword: "maxItems",
-            params: { limit: 10 },
-            message: "must NOT have more than 10 items",
+            instancePath: instancePath + "/symbol",
+            schemaPath: "#/properties/symbol/maxLength",
+            keyword: "maxLength",
+            params: { limit: 20 },
+            message: "must NOT have more than 20 characters",
           }
           if (vErrors === null) {
             vErrors = [err22]
@@ -1932,12 +1985,78 @@ function validate12(
           }
           errors++
         }
+        if (func4(data4) < 0) {
+          const err23 = {
+            instancePath: instancePath + "/symbol",
+            schemaPath: "#/properties/symbol/minLength",
+            keyword: "minLength",
+            params: { limit: 0 },
+            message: "must NOT have fewer than 0 characters",
+          }
+          if (vErrors === null) {
+            vErrors = [err23]
+          } else {
+            vErrors.push(err23)
+          }
+          errors++
+        }
+      } else {
+        const err24 = {
+          instancePath: instancePath + "/symbol",
+          schemaPath: "#/properties/symbol/type",
+          keyword: "type",
+          params: { type: "string" },
+          message: "must be string",
+        }
+        if (vErrors === null) {
+          vErrors = [err24]
+        } else {
+          vErrors.push(err24)
+        }
+        errors++
+      }
+    }
+    if (data.logoURI !== undefined) {
+      if (!(typeof data.logoURI === "string")) {
+        const err25 = {
+          instancePath: instancePath + "/logoURI",
+          schemaPath: "#/properties/logoURI/type",
+          keyword: "type",
+          params: { type: "string" },
+          message: "must be string",
+        }
+        if (vErrors === null) {
+          vErrors = [err25]
+        } else {
+          vErrors.push(err25)
+        }
+        errors++
+      }
+    }
+    if (data.tags !== undefined) {
+      let data6 = data.tags
+      if (Array.isArray(data6)) {
+        if (data6.length > 10) {
+          const err26 = {
+            instancePath: instancePath + "/tags",
+            schemaPath: "#/properties/tags/maxItems",
+            keyword: "maxItems",
+            params: { limit: 10 },
+            message: "must NOT have more than 10 items",
+          }
+          if (vErrors === null) {
+            vErrors = [err26]
+          } else {
+            vErrors.push(err26)
+          }
+          errors++
+        }
         const len0 = data6.length
         for (let i0 = 0; i0 < len0; i0++) {
           let data7 = data6[i0]
           if (typeof data7 === "string") {
             if (func4(data7) > 10) {
-              const err23 = {
+              const err27 = {
                 instancePath: instancePath + "/tags/" + i0,
                 schemaPath: "#/definitions/TagIdentifier/maxLength",
                 keyword: "maxLength",
@@ -1945,14 +2064,14 @@ function validate12(
                 message: "must NOT have more than 10 characters",
               }
               if (vErrors === null) {
-                vErrors = [err23]
+                vErrors = [err27]
               } else {
-                vErrors.push(err23)
+                vErrors.push(err27)
               }
               errors++
             }
             if (func4(data7) < 1) {
-              const err24 = {
+              const err28 = {
                 instancePath: instancePath + "/tags/" + i0,
                 schemaPath: "#/definitions/TagIdentifier/minLength",
                 keyword: "minLength",
@@ -1960,14 +2079,14 @@ function validate12(
                 message: "must NOT have fewer than 1 characters",
               }
               if (vErrors === null) {
-                vErrors = [err24]
+                vErrors = [err28]
               } else {
-                vErrors.push(err24)
+                vErrors.push(err28)
               }
               errors++
             }
             if (!pattern4.test(data7)) {
-              const err25 = {
+              const err29 = {
                 instancePath: instancePath + "/tags/" + i0,
                 schemaPath: "#/definitions/TagIdentifier/pattern",
                 keyword: "pattern",
@@ -1975,14 +2094,14 @@ function validate12(
                 message: 'must match pattern "' + "^[\\w]+$" + '"',
               }
               if (vErrors === null) {
-                vErrors = [err25]
+                vErrors = [err29]
               } else {
-                vErrors.push(err25)
+                vErrors.push(err29)
               }
               errors++
             }
           } else {
-            const err26 = {
+            const err30 = {
               instancePath: instancePath + "/tags/" + i0,
               schemaPath: "#/definitions/TagIdentifier/type",
               keyword: "type",
@@ -1990,15 +2109,15 @@ function validate12(
               message: "must be string",
             }
             if (vErrors === null) {
-              vErrors = [err26]
+              vErrors = [err30]
             } else {
-              vErrors.push(err26)
+              vErrors.push(err30)
             }
             errors++
           }
         }
       } else {
-        const err27 = {
+        const err31 = {
           instancePath: instancePath + "/tags",
           schemaPath: "#/properties/tags/type",
           keyword: "type",
@@ -2006,9 +2125,9 @@ function validate12(
           message: "must be array",
         }
         if (vErrors === null) {
-          vErrors = [err27]
+          vErrors = [err31]
         } else {
-          vErrors.push(err27)
+          vErrors.push(err31)
         }
         errors++
       }
@@ -2030,7 +2149,7 @@ function validate12(
       }
     }
   } else {
-    const err28 = {
+    const err32 = {
       instancePath,
       schemaPath: "#/type",
       keyword: "type",
@@ -2038,9 +2157,9 @@ function validate12(
       message: "must be object",
     }
     if (vErrors === null) {
-      vErrors = [err28]
+      vErrors = [err32]
     } else {
-      vErrors.push(err28)
+      vErrors.push(err32)
     }
     errors++
   }
@@ -2114,43 +2233,31 @@ function validate11(
       }
       errors++
     }
-    for (const key0 in data) {
-      if (
-        !(
-          key0 === "name" ||
-          key0 === "timestamp" ||
-          key0 === "version" ||
-          key0 === "tokens" ||
-          key0 === "keywords" ||
-          key0 === "tags" ||
-          key0 === "logoURI"
-        )
-      ) {
-        const err4 = {
-          instancePath,
-          schemaPath: "#/additionalProperties",
-          keyword: "additionalProperties",
-          params: { additionalProperty: key0 },
-          message: "must NOT have additional properties",
-        }
-        if (vErrors === null) {
-          vErrors = [err4]
-        } else {
-          vErrors.push(err4)
-        }
-        errors++
-      }
-    }
     if (data.name !== undefined) {
       let data0 = data.name
       if (typeof data0 === "string") {
         if (func4(data0) > 30) {
-          const err5 = {
+          const err4 = {
             instancePath: instancePath + "/name",
             schemaPath: "#/properties/name/maxLength",
             keyword: "maxLength",
             params: { limit: 30 },
             message: "must NOT have more than 30 characters",
+          }
+          if (vErrors === null) {
+            vErrors = [err4]
+          } else {
+            vErrors.push(err4)
+          }
+          errors++
+        }
+        if (func4(data0) < 1) {
+          const err5 = {
+            instancePath: instancePath + "/name",
+            schemaPath: "#/properties/name/minLength",
+            keyword: "minLength",
+            params: { limit: 1 },
+            message: "must NOT have fewer than 1 characters",
           }
           if (vErrors === null) {
             vErrors = [err5]
@@ -2159,13 +2266,13 @@ function validate11(
           }
           errors++
         }
-        if (func4(data0) < 1) {
+        if (!pattern0.test(data0)) {
           const err6 = {
             instancePath: instancePath + "/name",
-            schemaPath: "#/properties/name/minLength",
-            keyword: "minLength",
-            params: { limit: 1 },
-            message: "must NOT have fewer than 1 characters",
+            schemaPath: "#/properties/name/pattern",
+            keyword: "pattern",
+            params: { pattern: "^[\\w ]+$" },
+            message: 'must match pattern "' + "^[\\w ]+$" + '"',
           }
           if (vErrors === null) {
             vErrors = [err6]
@@ -2174,25 +2281,27 @@ function validate11(
           }
           errors++
         }
-        if (!pattern0.test(data0)) {
-          const err7 = {
-            instancePath: instancePath + "/name",
-            schemaPath: "#/properties/name/pattern",
-            keyword: "pattern",
-            params: { pattern: "^[\\w ]+$" },
-            message: 'must match pattern "' + "^[\\w ]+$" + '"',
-          }
-          if (vErrors === null) {
-            vErrors = [err7]
-          } else {
-            vErrors.push(err7)
-          }
-          errors++
-        }
       } else {
-        const err8 = {
+        const err7 = {
           instancePath: instancePath + "/name",
           schemaPath: "#/properties/name/type",
+          keyword: "type",
+          params: { type: "string" },
+          message: "must be string",
+        }
+        if (vErrors === null) {
+          vErrors = [err7]
+        } else {
+          vErrors.push(err7)
+        }
+        errors++
+      }
+    }
+    if (data.timestamp !== undefined) {
+      if (!(typeof data.timestamp === "string")) {
+        const err8 = {
+          instancePath: instancePath + "/timestamp",
+          schemaPath: "#/properties/timestamp/type",
           keyword: "type",
           params: { type: "string" },
           message: "must be string",
@@ -2205,33 +2314,31 @@ function validate11(
         errors++
       }
     }
-    if (data.timestamp !== undefined) {
-      if (!(typeof data.timestamp === "string")) {
-        const err9 = {
-          instancePath: instancePath + "/timestamp",
-          schemaPath: "#/properties/timestamp/type",
-          keyword: "type",
-          params: { type: "string" },
-          message: "must be string",
-        }
-        if (vErrors === null) {
-          vErrors = [err9]
-        } else {
-          vErrors.push(err9)
-        }
-        errors++
-      }
-    }
     if (data.version !== undefined) {
       let data2 = data.version
       if (data2 && typeof data2 == "object" && !Array.isArray(data2)) {
         if (data2.major === undefined) {
-          const err10 = {
+          const err9 = {
             instancePath: instancePath + "/version",
             schemaPath: "#/definitions/Version/required",
             keyword: "required",
             params: { missingProperty: "major" },
             message: "must have required property '" + "major" + "'",
+          }
+          if (vErrors === null) {
+            vErrors = [err9]
+          } else {
+            vErrors.push(err9)
+          }
+          errors++
+        }
+        if (data2.minor === undefined) {
+          const err10 = {
+            instancePath: instancePath + "/version",
+            schemaPath: "#/definitions/Version/required",
+            keyword: "required",
+            params: { missingProperty: "minor" },
+            message: "must have required property '" + "minor" + "'",
           }
           if (vErrors === null) {
             vErrors = [err10]
@@ -2240,13 +2347,13 @@ function validate11(
           }
           errors++
         }
-        if (data2.minor === undefined) {
+        if (data2.patch === undefined) {
           const err11 = {
             instancePath: instancePath + "/version",
             schemaPath: "#/definitions/Version/required",
             keyword: "required",
-            params: { missingProperty: "minor" },
-            message: "must have required property '" + "minor" + "'",
+            params: { missingProperty: "patch" },
+            message: "must have required property '" + "patch" + "'",
           }
           if (vErrors === null) {
             vErrors = [err11]
@@ -2255,34 +2362,19 @@ function validate11(
           }
           errors++
         }
-        if (data2.patch === undefined) {
-          const err12 = {
-            instancePath: instancePath + "/version",
-            schemaPath: "#/definitions/Version/required",
-            keyword: "required",
-            params: { missingProperty: "patch" },
-            message: "must have required property '" + "patch" + "'",
-          }
-          if (vErrors === null) {
-            vErrors = [err12]
-          } else {
-            vErrors.push(err12)
-          }
-          errors++
-        }
-        for (const key1 in data2) {
-          if (!(key1 === "major" || key1 === "minor" || key1 === "patch")) {
-            const err13 = {
+        for (const key0 in data2) {
+          if (!(key0 === "major" || key0 === "minor" || key0 === "patch")) {
+            const err12 = {
               instancePath: instancePath + "/version",
               schemaPath: "#/definitions/Version/additionalProperties",
               keyword: "additionalProperties",
-              params: { additionalProperty: key1 },
+              params: { additionalProperty: key0 },
               message: "must NOT have additional properties",
             }
             if (vErrors === null) {
-              vErrors = [err13]
+              vErrors = [err12]
             } else {
-              vErrors.push(err13)
+              vErrors.push(err12)
             }
             errors++
           }
@@ -2297,7 +2389,7 @@ function validate11(
               isFinite(data3)
             )
           ) {
-            const err14 = {
+            const err13 = {
               instancePath: instancePath + "/version/major",
               schemaPath: "#/definitions/Version/properties/major/type",
               keyword: "type",
@@ -2305,15 +2397,15 @@ function validate11(
               message: "must be integer",
             }
             if (vErrors === null) {
-              vErrors = [err14]
+              vErrors = [err13]
             } else {
-              vErrors.push(err14)
+              vErrors.push(err13)
             }
             errors++
           }
           if (typeof data3 == "number" && isFinite(data3)) {
             if (data3 < 0 || isNaN(data3)) {
-              const err15 = {
+              const err14 = {
                 instancePath: instancePath + "/version/major",
                 schemaPath: "#/definitions/Version/properties/major/minimum",
                 keyword: "minimum",
@@ -2321,9 +2413,9 @@ function validate11(
                 message: "must be >= 0",
               }
               if (vErrors === null) {
-                vErrors = [err15]
+                vErrors = [err14]
               } else {
-                vErrors.push(err15)
+                vErrors.push(err14)
               }
               errors++
             }
@@ -2339,7 +2431,7 @@ function validate11(
               isFinite(data4)
             )
           ) {
-            const err16 = {
+            const err15 = {
               instancePath: instancePath + "/version/minor",
               schemaPath: "#/definitions/Version/properties/minor/type",
               keyword: "type",
@@ -2347,15 +2439,15 @@ function validate11(
               message: "must be integer",
             }
             if (vErrors === null) {
-              vErrors = [err16]
+              vErrors = [err15]
             } else {
-              vErrors.push(err16)
+              vErrors.push(err15)
             }
             errors++
           }
           if (typeof data4 == "number" && isFinite(data4)) {
             if (data4 < 0 || isNaN(data4)) {
-              const err17 = {
+              const err16 = {
                 instancePath: instancePath + "/version/minor",
                 schemaPath: "#/definitions/Version/properties/minor/minimum",
                 keyword: "minimum",
@@ -2363,9 +2455,9 @@ function validate11(
                 message: "must be >= 0",
               }
               if (vErrors === null) {
-                vErrors = [err17]
+                vErrors = [err16]
               } else {
-                vErrors.push(err17)
+                vErrors.push(err16)
               }
               errors++
             }
@@ -2381,7 +2473,7 @@ function validate11(
               isFinite(data5)
             )
           ) {
-            const err18 = {
+            const err17 = {
               instancePath: instancePath + "/version/patch",
               schemaPath: "#/definitions/Version/properties/patch/type",
               keyword: "type",
@@ -2389,15 +2481,15 @@ function validate11(
               message: "must be integer",
             }
             if (vErrors === null) {
-              vErrors = [err18]
+              vErrors = [err17]
             } else {
-              vErrors.push(err18)
+              vErrors.push(err17)
             }
             errors++
           }
           if (typeof data5 == "number" && isFinite(data5)) {
             if (data5 < 0 || isNaN(data5)) {
-              const err19 = {
+              const err18 = {
                 instancePath: instancePath + "/version/patch",
                 schemaPath: "#/definitions/Version/properties/patch/minimum",
                 keyword: "minimum",
@@ -2405,16 +2497,16 @@ function validate11(
                 message: "must be >= 0",
               }
               if (vErrors === null) {
-                vErrors = [err19]
+                vErrors = [err18]
               } else {
-                vErrors.push(err19)
+                vErrors.push(err18)
               }
               errors++
             }
           }
         }
       } else {
-        const err20 = {
+        const err19 = {
           instancePath: instancePath + "/version",
           schemaPath: "#/definitions/Version/type",
           keyword: "type",
@@ -2422,9 +2514,9 @@ function validate11(
           message: "must be object",
         }
         if (vErrors === null) {
-          vErrors = [err20]
+          vErrors = [err19]
         } else {
-          vErrors.push(err20)
+          vErrors.push(err19)
         }
         errors++
       }
@@ -2433,7 +2525,7 @@ function validate11(
       let data6 = data.tokens
       if (Array.isArray(data6)) {
         if (data6.length > 10000) {
-          const err21 = {
+          const err20 = {
             instancePath: instancePath + "/tokens",
             schemaPath: "#/properties/tokens/maxItems",
             keyword: "maxItems",
@@ -2441,14 +2533,14 @@ function validate11(
             message: "must NOT have more than 10000 items",
           }
           if (vErrors === null) {
-            vErrors = [err21]
+            vErrors = [err20]
           } else {
-            vErrors.push(err21)
+            vErrors.push(err20)
           }
           errors++
         }
         if (data6.length < 1) {
-          const err22 = {
+          const err21 = {
             instancePath: instancePath + "/tokens",
             schemaPath: "#/properties/tokens/minItems",
             keyword: "minItems",
@@ -2456,9 +2548,9 @@ function validate11(
             message: "must NOT have fewer than 1 items",
           }
           if (vErrors === null) {
-            vErrors = [err22]
+            vErrors = [err21]
           } else {
-            vErrors.push(err22)
+            vErrors.push(err21)
           }
           errors++
         }
@@ -2480,7 +2572,7 @@ function validate11(
           }
         }
       } else {
-        const err23 = {
+        const err22 = {
           instancePath: instancePath + "/tokens",
           schemaPath: "#/properties/tokens/type",
           keyword: "type",
@@ -2488,23 +2580,38 @@ function validate11(
           message: "must be array",
         }
         if (vErrors === null) {
-          vErrors = [err23]
+          vErrors = [err22]
         } else {
-          vErrors.push(err23)
+          vErrors.push(err22)
         }
         errors++
       }
     }
-    if (data.keywords !== undefined) {
-      let data8 = data.keywords
-      if (Array.isArray(data8)) {
-        if (data8.length > 20) {
+    if (data.tokenMap !== undefined) {
+      let data8 = data.tokenMap
+      if (data8 && typeof data8 == "object" && !Array.isArray(data8)) {
+        if (Object.keys(data8).length > 10000) {
+          const err23 = {
+            instancePath: instancePath + "/tokenMap",
+            schemaPath: "#/properties/tokenMap/maxProperties",
+            keyword: "maxProperties",
+            params: { limit: 10000 },
+            message: "must NOT have more than 10000 items",
+          }
+          if (vErrors === null) {
+            vErrors = [err23]
+          } else {
+            vErrors.push(err23)
+          }
+          errors++
+        }
+        if (Object.keys(data8).length < 1) {
           const err24 = {
-            instancePath: instancePath + "/keywords",
-            schemaPath: "#/properties/keywords/maxItems",
-            keyword: "maxItems",
-            params: { limit: 20 },
-            message: "must NOT have more than 20 items",
+            instancePath: instancePath + "/tokenMap",
+            schemaPath: "#/properties/tokenMap/minProperties",
+            keyword: "minProperties",
+            params: { limit: 1 },
+            message: "must NOT have fewer than 1 items",
           }
           if (vErrors === null) {
             vErrors = [err24]
@@ -2513,12 +2620,100 @@ function validate11(
           }
           errors++
         }
-        const len1 = data8.length
+        for (const key1 in data8) {
+          const _errs20 = errors
+          if (typeof key1 !== "string") {
+            const err25 = {
+              instancePath: instancePath + "/tokenMap",
+              schemaPath: "#/properties/tokenMap/propertyNames/type",
+              keyword: "type",
+              params: { type: "string" },
+              message: "must be string",
+              propertyName: key1,
+            }
+            if (vErrors === null) {
+              vErrors = [err25]
+            } else {
+              vErrors.push(err25)
+            }
+            errors++
+          }
+          var valid5 = _errs20 === errors
+          if (!valid5) {
+            const err26 = {
+              instancePath: instancePath + "/tokenMap",
+              schemaPath: "#/properties/tokenMap/propertyNames",
+              keyword: "propertyNames",
+              params: { propertyName: key1 },
+              message: "property name must be valid",
+            }
+            if (vErrors === null) {
+              vErrors = [err26]
+            } else {
+              vErrors.push(err26)
+            }
+            errors++
+          }
+        }
+        for (const key2 in data8) {
+          if (
+            !validate12(data8[key2], {
+              instancePath:
+                instancePath +
+                "/tokenMap/" +
+                key2.replace(/~/g, "~0").replace(/\//g, "~1"),
+              parentData: data8,
+              parentDataProperty: key2,
+              rootData,
+            })
+          ) {
+            vErrors =
+              vErrors === null
+                ? validate12.errors
+                : vErrors.concat(validate12.errors)
+            errors = vErrors.length
+          }
+        }
+      } else {
+        const err27 = {
+          instancePath: instancePath + "/tokenMap",
+          schemaPath: "#/properties/tokenMap/type",
+          keyword: "type",
+          params: { type: "object" },
+          message: "must be object",
+        }
+        if (vErrors === null) {
+          vErrors = [err27]
+        } else {
+          vErrors.push(err27)
+        }
+        errors++
+      }
+    }
+    if (data.keywords !== undefined) {
+      let data10 = data.keywords
+      if (Array.isArray(data10)) {
+        if (data10.length > 20) {
+          const err28 = {
+            instancePath: instancePath + "/keywords",
+            schemaPath: "#/properties/keywords/maxItems",
+            keyword: "maxItems",
+            params: { limit: 20 },
+            message: "must NOT have more than 20 items",
+          }
+          if (vErrors === null) {
+            vErrors = [err28]
+          } else {
+            vErrors.push(err28)
+          }
+          errors++
+        }
+        const len1 = data10.length
         for (let i1 = 0; i1 < len1; i1++) {
-          let data9 = data8[i1]
-          if (typeof data9 === "string") {
-            if (func4(data9) > 20) {
-              const err25 = {
+          let data11 = data10[i1]
+          if (typeof data11 === "string") {
+            if (func4(data11) > 20) {
+              const err29 = {
                 instancePath: instancePath + "/keywords/" + i1,
                 schemaPath: "#/properties/keywords/items/maxLength",
                 keyword: "maxLength",
@@ -2526,14 +2721,14 @@ function validate11(
                 message: "must NOT have more than 20 characters",
               }
               if (vErrors === null) {
-                vErrors = [err25]
+                vErrors = [err29]
               } else {
-                vErrors.push(err25)
+                vErrors.push(err29)
               }
               errors++
             }
-            if (func4(data9) < 1) {
-              const err26 = {
+            if (func4(data11) < 1) {
+              const err30 = {
                 instancePath: instancePath + "/keywords/" + i1,
                 schemaPath: "#/properties/keywords/items/minLength",
                 keyword: "minLength",
@@ -2541,14 +2736,14 @@ function validate11(
                 message: "must NOT have fewer than 1 characters",
               }
               if (vErrors === null) {
-                vErrors = [err26]
+                vErrors = [err30]
               } else {
-                vErrors.push(err26)
+                vErrors.push(err30)
               }
               errors++
             }
-            if (!pattern0.test(data9)) {
-              const err27 = {
+            if (!pattern0.test(data11)) {
+              const err31 = {
                 instancePath: instancePath + "/keywords/" + i1,
                 schemaPath: "#/properties/keywords/items/pattern",
                 keyword: "pattern",
@@ -2556,14 +2751,14 @@ function validate11(
                 message: 'must match pattern "' + "^[\\w ]+$" + '"',
               }
               if (vErrors === null) {
-                vErrors = [err27]
+                vErrors = [err31]
               } else {
-                vErrors.push(err27)
+                vErrors.push(err31)
               }
               errors++
             }
           } else {
-            const err28 = {
+            const err32 = {
               instancePath: instancePath + "/keywords/" + i1,
               schemaPath: "#/properties/keywords/items/type",
               keyword: "type",
@@ -2571,25 +2766,25 @@ function validate11(
               message: "must be string",
             }
             if (vErrors === null) {
-              vErrors = [err28]
+              vErrors = [err32]
             } else {
-              vErrors.push(err28)
+              vErrors.push(err32)
             }
             errors++
           }
         }
-        let i2 = data8.length
+        let i2 = data10.length
         let j0
         if (i2 > 1) {
           const indices0 = {}
           for (; i2--;) {
-            let item0 = data8[i2]
+            let item0 = data10[i2]
             if (typeof item0 !== "string") {
               continue
             }
             if (typeof indices0[item0] == "number") {
               j0 = indices0[item0]
-              const err29 = {
+              const err33 = {
                 instancePath: instancePath + "/keywords",
                 schemaPath: "#/properties/keywords/uniqueItems",
                 keyword: "uniqueItems",
@@ -2602,9 +2797,9 @@ function validate11(
                   " are identical)",
               }
               if (vErrors === null) {
-                vErrors = [err29]
+                vErrors = [err33]
               } else {
-                vErrors.push(err29)
+                vErrors.push(err33)
               }
               errors++
               break
@@ -2613,7 +2808,7 @@ function validate11(
           }
         }
       } else {
-        const err30 = {
+        const err34 = {
           instancePath: instancePath + "/keywords",
           schemaPath: "#/properties/keywords/type",
           keyword: "type",
@@ -2621,18 +2816,18 @@ function validate11(
           message: "must be array",
         }
         if (vErrors === null) {
-          vErrors = [err30]
+          vErrors = [err34]
         } else {
-          vErrors.push(err30)
+          vErrors.push(err34)
         }
         errors++
       }
     }
     if (data.tags !== undefined) {
-      let data10 = data.tags
-      if (data10 && typeof data10 == "object" && !Array.isArray(data10)) {
-        if (Object.keys(data10).length > 20) {
-          const err31 = {
+      let data12 = data.tags
+      if (data12 && typeof data12 == "object" && !Array.isArray(data12)) {
+        if (Object.keys(data12).length > 20) {
+          const err35 = {
             instancePath: instancePath + "/tags",
             schemaPath: "#/properties/tags/maxProperties",
             keyword: "maxProperties",
@@ -2640,109 +2835,39 @@ function validate11(
             message: "must NOT have more than 20 items",
           }
           if (vErrors === null) {
-            vErrors = [err31]
+            vErrors = [err35]
           } else {
-            vErrors.push(err31)
+            vErrors.push(err35)
           }
           errors++
         }
-        for (const key2 in data10) {
-          const _errs25 = errors
-          if (typeof key2 === "string") {
-            if (func4(key2) > 10) {
-              const err32 = {
+        for (const key3 in data12) {
+          const _errs30 = errors
+          if (typeof key3 === "string") {
+            if (func4(key3) > 10) {
+              const err36 = {
                 instancePath: instancePath + "/tags",
                 schemaPath: "#/definitions/TagIdentifier/maxLength",
                 keyword: "maxLength",
                 params: { limit: 10 },
                 message: "must NOT have more than 10 characters",
-                propertyName: key2,
+                propertyName: key3,
               }
               if (vErrors === null) {
-                vErrors = [err32]
+                vErrors = [err36]
               } else {
-                vErrors.push(err32)
+                vErrors.push(err36)
               }
               errors++
             }
-            if (func4(key2) < 1) {
-              const err33 = {
+            if (func4(key3) < 1) {
+              const err37 = {
                 instancePath: instancePath + "/tags",
                 schemaPath: "#/definitions/TagIdentifier/minLength",
                 keyword: "minLength",
                 params: { limit: 1 },
                 message: "must NOT have fewer than 1 characters",
-                propertyName: key2,
-              }
-              if (vErrors === null) {
-                vErrors = [err33]
-              } else {
-                vErrors.push(err33)
-              }
-              errors++
-            }
-            if (!pattern4.test(key2)) {
-              const err34 = {
-                instancePath: instancePath + "/tags",
-                schemaPath: "#/definitions/TagIdentifier/pattern",
-                keyword: "pattern",
-                params: { pattern: "^[\\w]+$" },
-                message: 'must match pattern "' + "^[\\w]+$" + '"',
-                propertyName: key2,
-              }
-              if (vErrors === null) {
-                vErrors = [err34]
-              } else {
-                vErrors.push(err34)
-              }
-              errors++
-            }
-          } else {
-            const err35 = {
-              instancePath: instancePath + "/tags",
-              schemaPath: "#/definitions/TagIdentifier/type",
-              keyword: "type",
-              params: { type: "string" },
-              message: "must be string",
-              propertyName: key2,
-            }
-            if (vErrors === null) {
-              vErrors = [err35]
-            } else {
-              vErrors.push(err35)
-            }
-            errors++
-          }
-          var valid8 = _errs25 === errors
-          if (!valid8) {
-            const err36 = {
-              instancePath: instancePath + "/tags",
-              schemaPath: "#/properties/tags/propertyNames",
-              keyword: "propertyNames",
-              params: { propertyName: key2 },
-              message: "property name must be valid",
-            }
-            if (vErrors === null) {
-              vErrors = [err36]
-            } else {
-              vErrors.push(err36)
-            }
-            errors++
-          }
-        }
-        for (const key3 in data10) {
-          let data11 = data10[key3]
-          if (data11 && typeof data11 == "object" && !Array.isArray(data11)) {
-            if (data11.name === undefined) {
-              const err37 = {
-                instancePath:
-                  instancePath +
-                  "/tags/" +
-                  key3.replace(/~/g, "~0").replace(/\//g, "~1"),
-                schemaPath: "#/definitions/TagDefinition/required",
-                keyword: "required",
-                params: { missingProperty: "name" },
-                message: "must have required property '" + "name" + "'",
+                propertyName: key3,
               }
               if (vErrors === null) {
                 vErrors = [err37]
@@ -2751,16 +2876,14 @@ function validate11(
               }
               errors++
             }
-            if (data11.description === undefined) {
+            if (!pattern4.test(key3)) {
               const err38 = {
-                instancePath:
-                  instancePath +
-                  "/tags/" +
-                  key3.replace(/~/g, "~0").replace(/\//g, "~1"),
-                schemaPath: "#/definitions/TagDefinition/required",
-                keyword: "required",
-                params: { missingProperty: "description" },
-                message: "must have required property '" + "description" + "'",
+                instancePath: instancePath + "/tags",
+                schemaPath: "#/definitions/TagIdentifier/pattern",
+                keyword: "pattern",
+                params: { pattern: "^[\\w]+$" },
+                message: 'must match pattern "' + "^[\\w]+$" + '"',
+                propertyName: key3,
               }
               if (vErrors === null) {
                 vErrors = [err38]
@@ -2769,102 +2892,90 @@ function validate11(
               }
               errors++
             }
-            for (const key4 in data11) {
-              if (!(key4 === "name" || key4 === "description")) {
-                const err39 = {
-                  instancePath:
-                    instancePath +
-                    "/tags/" +
-                    key3.replace(/~/g, "~0").replace(/\//g, "~1"),
-                  schemaPath:
-                    "#/definitions/TagDefinition/additionalProperties",
-                  keyword: "additionalProperties",
-                  params: { additionalProperty: key4 },
-                  message: "must NOT have additional properties",
-                }
-                if (vErrors === null) {
-                  vErrors = [err39]
-                } else {
-                  vErrors.push(err39)
-                }
-                errors++
-              }
+          } else {
+            const err39 = {
+              instancePath: instancePath + "/tags",
+              schemaPath: "#/definitions/TagIdentifier/type",
+              keyword: "type",
+              params: { type: "string" },
+              message: "must be string",
+              propertyName: key3,
             }
-            if (data11.name !== undefined) {
-              let data12 = data11.name
-              if (typeof data12 === "string") {
-                if (func4(data12) > 20) {
-                  const err40 = {
-                    instancePath:
-                      instancePath +
-                      "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/name",
-                    schemaPath:
-                      "#/definitions/TagDefinition/properties/name/maxLength",
-                    keyword: "maxLength",
-                    params: { limit: 20 },
-                    message: "must NOT have more than 20 characters",
-                  }
-                  if (vErrors === null) {
-                    vErrors = [err40]
-                  } else {
-                    vErrors.push(err40)
-                  }
-                  errors++
-                }
-                if (func4(data12) < 1) {
-                  const err41 = {
-                    instancePath:
-                      instancePath +
-                      "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/name",
-                    schemaPath:
-                      "#/definitions/TagDefinition/properties/name/minLength",
-                    keyword: "minLength",
-                    params: { limit: 1 },
-                    message: "must NOT have fewer than 1 characters",
-                  }
-                  if (vErrors === null) {
-                    vErrors = [err41]
-                  } else {
-                    vErrors.push(err41)
-                  }
-                  errors++
-                }
-                if (!pattern10.test(data12)) {
-                  const err42 = {
-                    instancePath:
-                      instancePath +
-                      "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/name",
-                    schemaPath:
-                      "#/definitions/TagDefinition/properties/name/pattern",
-                    keyword: "pattern",
-                    params: { pattern: "^[ \\w]+$" },
-                    message: 'must match pattern "' + "^[ \\w]+$" + '"',
-                  }
-                  if (vErrors === null) {
-                    vErrors = [err42]
-                  } else {
-                    vErrors.push(err42)
-                  }
-                  errors++
-                }
+            if (vErrors === null) {
+              vErrors = [err39]
+            } else {
+              vErrors.push(err39)
+            }
+            errors++
+          }
+          var valid10 = _errs30 === errors
+          if (!valid10) {
+            const err40 = {
+              instancePath: instancePath + "/tags",
+              schemaPath: "#/properties/tags/propertyNames",
+              keyword: "propertyNames",
+              params: { propertyName: key3 },
+              message: "property name must be valid",
+            }
+            if (vErrors === null) {
+              vErrors = [err40]
+            } else {
+              vErrors.push(err40)
+            }
+            errors++
+          }
+        }
+        for (const key4 in data12) {
+          let data13 = data12[key4]
+          if (data13 && typeof data13 == "object" && !Array.isArray(data13)) {
+            if (data13.name === undefined) {
+              const err41 = {
+                instancePath:
+                  instancePath +
+                  "/tags/" +
+                  key4.replace(/~/g, "~0").replace(/\//g, "~1"),
+                schemaPath: "#/definitions/TagDefinition/required",
+                keyword: "required",
+                params: { missingProperty: "name" },
+                message: "must have required property '" + "name" + "'",
+              }
+              if (vErrors === null) {
+                vErrors = [err41]
               } else {
+                vErrors.push(err41)
+              }
+              errors++
+            }
+            if (data13.description === undefined) {
+              const err42 = {
+                instancePath:
+                  instancePath +
+                  "/tags/" +
+                  key4.replace(/~/g, "~0").replace(/\//g, "~1"),
+                schemaPath: "#/definitions/TagDefinition/required",
+                keyword: "required",
+                params: { missingProperty: "description" },
+                message: "must have required property '" + "description" + "'",
+              }
+              if (vErrors === null) {
+                vErrors = [err42]
+              } else {
+                vErrors.push(err42)
+              }
+              errors++
+            }
+            for (const key5 in data13) {
+              if (!(key5 === "name" || key5 === "description")) {
                 const err43 = {
                   instancePath:
                     instancePath +
                     "/tags/" +
-                    key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                    "/name",
+                    key4.replace(/~/g, "~0").replace(/\//g, "~1"),
                   schemaPath:
-                    "#/definitions/TagDefinition/properties/name/type",
-                  keyword: "type",
-                  params: { type: "string" },
-                  message: "must be string",
+                    "#/definitions/TagDefinition/additionalProperties",
+                  keyword: "additionalProperties",
+                  params: { additionalProperty: key5 },
+                  message: "must NOT have additional properties",
                 }
                 if (vErrors === null) {
                   vErrors = [err43]
@@ -2874,21 +2985,21 @@ function validate11(
                 errors++
               }
             }
-            if (data11.description !== undefined) {
-              let data13 = data11.description
-              if (typeof data13 === "string") {
-                if (func4(data13) > 200) {
+            if (data13.name !== undefined) {
+              let data14 = data13.name
+              if (typeof data14 === "string") {
+                if (func4(data14) > 20) {
                   const err44 = {
                     instancePath:
                       instancePath +
                       "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/description",
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/name",
                     schemaPath:
-                      "#/definitions/TagDefinition/properties/description/maxLength",
+                      "#/definitions/TagDefinition/properties/name/maxLength",
                     keyword: "maxLength",
-                    params: { limit: 200 },
-                    message: "must NOT have more than 200 characters",
+                    params: { limit: 20 },
+                    message: "must NOT have more than 20 characters",
                   }
                   if (vErrors === null) {
                     vErrors = [err44]
@@ -2897,15 +3008,15 @@ function validate11(
                   }
                   errors++
                 }
-                if (func4(data13) < 1) {
+                if (func4(data14) < 1) {
                   const err45 = {
                     instancePath:
                       instancePath +
                       "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/description",
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/name",
                     schemaPath:
-                      "#/definitions/TagDefinition/properties/description/minLength",
+                      "#/definitions/TagDefinition/properties/name/minLength",
                     keyword: "minLength",
                     params: { limit: 1 },
                     message: "must NOT have fewer than 1 characters",
@@ -2917,18 +3028,18 @@ function validate11(
                   }
                   errors++
                 }
-                if (!pattern11.test(data13)) {
+                if (!pattern10.test(data14)) {
                   const err46 = {
                     instancePath:
                       instancePath +
                       "/tags/" +
-                      key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                      "/description",
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/name",
                     schemaPath:
-                      "#/definitions/TagDefinition/properties/description/pattern",
+                      "#/definitions/TagDefinition/properties/name/pattern",
                     keyword: "pattern",
-                    params: { pattern: "^[ \\w\\.,:]+$" },
-                    message: 'must match pattern "' + "^[ \\w\\.,:]+$" + '"',
+                    params: { pattern: "^[ \\w]+$" },
+                    message: 'must match pattern "' + "^[ \\w]+$" + '"',
                   }
                   if (vErrors === null) {
                     vErrors = [err46]
@@ -2942,10 +3053,10 @@ function validate11(
                   instancePath:
                     instancePath +
                     "/tags/" +
-                    key3.replace(/~/g, "~0").replace(/\//g, "~1") +
-                    "/description",
+                    key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                    "/name",
                   schemaPath:
-                    "#/definitions/TagDefinition/properties/description/type",
+                    "#/definitions/TagDefinition/properties/name/type",
                   keyword: "type",
                   params: { type: "string" },
                   message: "must be string",
@@ -2958,27 +3069,111 @@ function validate11(
                 errors++
               }
             }
+            if (data13.description !== undefined) {
+              let data15 = data13.description
+              if (typeof data15 === "string") {
+                if (func4(data15) > 200) {
+                  const err48 = {
+                    instancePath:
+                      instancePath +
+                      "/tags/" +
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/description",
+                    schemaPath:
+                      "#/definitions/TagDefinition/properties/description/maxLength",
+                    keyword: "maxLength",
+                    params: { limit: 200 },
+                    message: "must NOT have more than 200 characters",
+                  }
+                  if (vErrors === null) {
+                    vErrors = [err48]
+                  } else {
+                    vErrors.push(err48)
+                  }
+                  errors++
+                }
+                if (func4(data15) < 1) {
+                  const err49 = {
+                    instancePath:
+                      instancePath +
+                      "/tags/" +
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/description",
+                    schemaPath:
+                      "#/definitions/TagDefinition/properties/description/minLength",
+                    keyword: "minLength",
+                    params: { limit: 1 },
+                    message: "must NOT have fewer than 1 characters",
+                  }
+                  if (vErrors === null) {
+                    vErrors = [err49]
+                  } else {
+                    vErrors.push(err49)
+                  }
+                  errors++
+                }
+                if (!pattern11.test(data15)) {
+                  const err50 = {
+                    instancePath:
+                      instancePath +
+                      "/tags/" +
+                      key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                      "/description",
+                    schemaPath:
+                      "#/definitions/TagDefinition/properties/description/pattern",
+                    keyword: "pattern",
+                    params: { pattern: "^[ \\w\\.,:]+$" },
+                    message: 'must match pattern "' + "^[ \\w\\.,:]+$" + '"',
+                  }
+                  if (vErrors === null) {
+                    vErrors = [err50]
+                  } else {
+                    vErrors.push(err50)
+                  }
+                  errors++
+                }
+              } else {
+                const err51 = {
+                  instancePath:
+                    instancePath +
+                    "/tags/" +
+                    key4.replace(/~/g, "~0").replace(/\//g, "~1") +
+                    "/description",
+                  schemaPath:
+                    "#/definitions/TagDefinition/properties/description/type",
+                  keyword: "type",
+                  params: { type: "string" },
+                  message: "must be string",
+                }
+                if (vErrors === null) {
+                  vErrors = [err51]
+                } else {
+                  vErrors.push(err51)
+                }
+                errors++
+              }
+            }
           } else {
-            const err48 = {
+            const err52 = {
               instancePath:
                 instancePath +
                 "/tags/" +
-                key3.replace(/~/g, "~0").replace(/\//g, "~1"),
+                key4.replace(/~/g, "~0").replace(/\//g, "~1"),
               schemaPath: "#/definitions/TagDefinition/type",
               keyword: "type",
               params: { type: "object" },
               message: "must be object",
             }
             if (vErrors === null) {
-              vErrors = [err48]
+              vErrors = [err52]
             } else {
-              vErrors.push(err48)
+              vErrors.push(err52)
             }
             errors++
           }
         }
       } else {
-        const err49 = {
+        const err53 = {
           instancePath: instancePath + "/tags",
           schemaPath: "#/properties/tags/type",
           keyword: "type",
@@ -2986,16 +3181,16 @@ function validate11(
           message: "must be object",
         }
         if (vErrors === null) {
-          vErrors = [err49]
+          vErrors = [err53]
         } else {
-          vErrors.push(err49)
+          vErrors.push(err53)
         }
         errors++
       }
     }
     if (data.logoURI !== undefined) {
       if (!(typeof data.logoURI === "string")) {
-        const err50 = {
+        const err54 = {
           instancePath: instancePath + "/logoURI",
           schemaPath: "#/properties/logoURI/type",
           keyword: "type",
@@ -3003,15 +3198,15 @@ function validate11(
           message: "must be string",
         }
         if (vErrors === null) {
-          vErrors = [err50]
+          vErrors = [err54]
         } else {
-          vErrors.push(err50)
+          vErrors.push(err54)
         }
         errors++
       }
     }
   } else {
-    const err51 = {
+    const err55 = {
       instancePath,
       schemaPath: "#/type",
       keyword: "type",
@@ -3019,16 +3214,16 @@ function validate11(
       message: "must be object",
     }
     if (vErrors === null) {
-      vErrors = [err51]
+      vErrors = [err55]
     } else {
-      vErrors.push(err51)
+      vErrors.push(err55)
     }
     errors++
   }
   validate11.errors = vErrors
   return errors === 0
 }
-exports.isValid0xSwapPriceResponse = validate22
+exports.isValid0xSwapPriceResponse = validate23
 const schema28 = {
   $schema: "http://json-schema.org/draft-07/schema#",
   oneOf: [
@@ -3257,7 +3452,7 @@ const schema28 = {
   ],
 }
 const func32 = Object.prototype.hasOwnProperty
-function validate22(
+function validate23(
   data,
   { instancePath = "", parentData, parentDataProperty, rootData = data } = {},
 ) {
@@ -6688,10 +6883,10 @@ function validate22(
       }
     }
   }
-  validate22.errors = vErrors
+  validate23.errors = vErrors
   return errors === 0
 }
-exports.isValid0xSwapQuoteResponse = validate23
+exports.isValid0xSwapQuoteResponse = validate24
 const schema29 = {
   $schema: "http://json-schema.org/draft-07/schema#",
   oneOf: [
@@ -6929,7 +7124,7 @@ const schema29 = {
   ],
 }
 const func0 = require("ajv/dist/runtime/equal").default
-function validate23(
+function validate24(
   data,
   { instancePath = "", parentData, parentDataProperty, rootData = data } = {},
 ) {
@@ -10639,6 +10834,6 @@ function validate23(
       }
     }
   }
-  validate23.errors = vErrors
+  validate24.errors = vErrors
   return errors === 0
 }

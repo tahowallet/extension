@@ -20,6 +20,9 @@ export enum AnalyticsEvent {
   CAMPAIGN_MEZO_NFT_ELIGIBLE_BANNER = "in_wallet-claim_sats",
   CAMPAIGN_MEZO_NFT_BORROW_BANNER = "in_wallet-borrow_musd",
   CAMPAIGN_MEZO_NFT_CLAIM_NFT_BANNER = "in_wallet-visit_store",
+  // Aggregate performance counters flushed periodically from the chain
+  // provider layer. Payload shape is defined by PerfMetricsSnapshot.
+  PERF_METRICS_FLUSH = "Performance Metrics Flush",
 }
 
 export enum OneTimeAnalyticsEvent {

@@ -62,9 +62,7 @@ function expectBase64String(
 }
 
 const mockAlarms = () => {
-  browser.alarms.create = jest.fn(
-    async () => {},
-  ) as typeof browser.alarms.create
+  browser.alarms.create = jest.fn(() => Promise.resolve())
   browser.alarms.onAlarm.addListener = jest.fn(() => ({}))
 }
 
@@ -361,9 +359,7 @@ describe("InternalSignerService when autolocking", () => {
 
   beforeEach(async () => {
     mockLocalStorage()
-    browser.alarms.create = jest.fn(
-      async () => {},
-    ) as typeof browser.alarms.create
+    browser.alarms.create = jest.fn(() => Promise.resolve())
 
     browser.alarms.onAlarm.addListener = jest.fn((handler) => {
       callAutolockHandler = (timeSinceInitialMock) => {

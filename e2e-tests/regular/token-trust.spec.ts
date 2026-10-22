@@ -173,7 +173,7 @@ test.describe("Token Trust", () => {
         /^Polygon$/,
         account1.name,
         /^MATIC$/,
-        /^(\d|,)+(\.\d{2,4)*$/,
+        /^(\d|,)+(\.\d{2,4})*$/,
         "base",
       )
       await popup.getByRole("button", { name: "Back", exact: true }).click()

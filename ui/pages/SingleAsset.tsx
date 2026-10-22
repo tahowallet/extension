@@ -14,7 +14,6 @@ import {
 } from "@tallyho/tally-background/assets"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useTranslation } from "react-i18next"
-import { DEFAULT_NETWORKS_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isTrustedAsset,
@@ -27,6 +26,7 @@ import WalletActivityList from "../components/Wallet/WalletActivityList"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import { blockExplorer } from "../utils/constants"
+import { getBlockExplorerURL } from "../utils/networks"
 import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 import { trimWithEllipsis } from "../utils/textUtils"
 import AssetWarningWrapper from "../components/Wallet/UnverifiedAsset/AssetWarningWrapper"
@@ -38,10 +38,14 @@ export default function SingleAsset(): ReactElement {
   const location = useLocation<AnyAsset>()
   const locationAsset = location.state
   const { symbol } = locationAsset
-  const contractAddress =
-    "contractAddress" in locationAsset
-      ? locationAsset.contractAddress
-      : undefined
+  // Network base assets can carry a contract address of their own---MATIC on
+  // Polygon and ETH on Optimism both do---so the presence of the field is not
+  // enough to conclude an asset is a smart contract asset. Only treat the
+  // address as a token address when the asset really is one, so that base
+  // assets keep being looked up (and linked to) as base assets.
+  const contractAddress = isSmartContractFungibleAsset(locationAsset)
+    ? locationAsset.contractAddress
+    : undefined
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
@@ -95,6 +99,8 @@ export default function SingleAsset(): ReactElement {
       localizedDecimalAmount: undefined,
     }
 
+  const blockExplorerURL = getBlockExplorerURL(currentNetwork)
+
   const isTrusted = asset && isTrustedAsset(asset)
   const isVerified = asset && isVerifiedAsset(asset)
   const [warnedAsset, setWarnedAsset] =
@@ -138,11 +144,9 @@ export default function SingleAsset(): ReactElement {
                     <a
                       className="new_tab_link"
                       href={
-                        DEFAULT_NETWORKS_BY_CHAIN_ID.has(currentNetwork.chainID)
-                          ? `${
-                              blockExplorer[currentNetwork.chainID].url
-                            }/token/${contractAddress}`
-                          : currentNetwork.blockExplorerURL
+                        blockExplorerURL
+                          ? `${blockExplorerURL}/token/${contractAddress}`
+                          : undefined
                       }
                       target="_blank"
                       rel="noreferrer"
@@ -212,7 +216,12 @@ export default function SingleAsset(): ReactElement {
                     iconSmall="swap"
                     linkTo={{
                       pathname: "/swap",
-                      state: asset,
+                      // The swap page treats an incoming contract address as
+                      // authoritative, so hand it the narrowed one rather than
+                      // the whole asset: a base asset's own pseudo-address
+                      // would otherwise read as a token address and match
+                      // nothing.
+                      state: { symbol, contractAddress },
                     }}
                   >
                     {t("shared.swap")}

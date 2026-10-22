@@ -7,12 +7,13 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import { Activity } from "@tallyho/tally-background/redux-slices/activities"
-import { ALCHEMY_SUPPORTED_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { BOAR_SUPPORTED_CHAIN_IDS } from "@tallyho/tally-background/constants"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
 import { blockExplorer } from "../../utils/constants"
+import { getBlockExplorerURL } from "../../utils/networks"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
@@ -36,7 +37,9 @@ export default function WalletActivityList({
     useState(true)
 
   const network = useBackgroundSelector(selectCurrentNetwork)
-  const blockExplorerInfo = blockExplorer[network.chainID]
+  const blockExplorerURL = getBlockExplorerURL(network)
+  // Only the built-in explorer map carries a display name for the explorer.
+  const blockExplorerTitle = blockExplorer[network.chainID]?.title
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
@@ -48,12 +51,9 @@ export default function WalletActivityList({
 
   const openExplorer = useCallback(() => {
     window
-      .open(
-        `${blockExplorerInfo.url}/address/${activityInitiatorAddress}`,
-        "_blank",
-      )
+      .open(`${blockExplorerURL}/address/${activityInitiatorAddress}`, "_blank")
       ?.focus()
-  }, [blockExplorerInfo, activityInitiatorAddress])
+  }, [blockExplorerURL, activityInitiatorAddress])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
@@ -70,7 +70,7 @@ export default function WalletActivityList({
   if (!activities || activities.length === 0)
     return (
       <span>
-        {ALCHEMY_SUPPORTED_CHAIN_IDS.has(network.chainID)
+        {BOAR_SUPPORTED_CHAIN_IDS.has(network.chainID)
           ? t("historicalActivityExplainer")
           : t("defaultHistoricalActivityExplainer")}
         <style jsx>{`
@@ -123,7 +123,7 @@ export default function WalletActivityList({
       <span>
         <div className="hand">✋</div>
         <div>{t("endOfList")}</div>
-        {blockExplorerInfo && (
+        {blockExplorerURL && blockExplorerTitle && (
           <div className="row">
             {t("moreHistory")}
             <SharedButton
@@ -133,7 +133,7 @@ export default function WalletActivityList({
               onClick={openExplorer}
               style={{ padding: 0, fontWeight: 400 }}
             >
-              {blockExplorerInfo?.title}
+              {blockExplorerTitle}
             </SharedButton>
           </div>
         )}

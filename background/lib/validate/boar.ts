@@ -1,6 +1,6 @@
-// JSON Type Definition for the Alchemy assetTransfers API.
-// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/transfers-api
-const alchemyAssetTransferJTD = {
+// JSON Type Definition for the Boar assetTransfers API.
+// Response format is compatible with Alchemy's transfers API.
+const boarAssetTransferJTD = {
   properties: {
     asset: { type: "string", nullable: true },
     hash: { type: "string" },
@@ -22,18 +22,17 @@ const alchemyAssetTransferJTD = {
   additionalProperties: true,
 } as const
 
-export const alchemyGetAssetTransfersJTD = {
+export const boarGetAssetTransfersJTD = {
   properties: {
     transfers: {
-      elements: alchemyAssetTransferJTD,
+      elements: boarAssetTransferJTD,
     },
   },
   additionalProperties: true,
 } as const
 
-// JSON Type Definition for the Alchemy token balance API.
-// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api
-export const alchemyTokenBalanceJTD = {
+// JSON Type Definition for the Boar token balance API.
+export const boarTokenBalanceJTD = {
   properties: {
     address: { type: "string" },
     tokenBalances: {
@@ -54,9 +53,8 @@ export const alchemyTokenBalanceJTD = {
   additionalProperties: false,
 } as const
 
-// JSON Type Definition for the Alchemy token metadata API.
-// https://docs.alchemy.com/alchemy/documentation/enhanced-apis/token-api#alchemy_gettokenmetadata
-export const alchemyTokenMetadataJTD = {
+// JSON Type Definition for the Boar token metadata API.
+export const boarTokenMetadataJTD = {
   properties: {
     decimals: { type: "uint32", nullable: true },
     name: { type: "string" },

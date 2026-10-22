@@ -5,33 +5,55 @@ import {
   WebSocketProvider,
 } from "@ethersproject/providers"
 import { utils } from "ethers"
-import { getNetwork } from "@ethersproject/networks"
 import {
   SECOND,
-  ALCHEMY_SUPPORTED_CHAIN_IDS,
   FLASHBOTS_RPC_URL,
   ARBITRUM_ONE,
   OPTIMISM,
   FORK,
   ARBITRUM_SEPOLIA,
+  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
-import { AnyEVMTransaction } from "../../networks"
-import type { AddressOnNetwork } from "../../accounts"
+import {
+  ALCHEMY_CAPABILITY_NAMESPACE,
+  AnyEVMTransaction,
+  RpcEndpoint,
+} from "../../networks"
+import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
 import {
-  ALCHEMY_KEY,
-  transactionFromAlchemyWebsocketTransaction,
-} from "../../lib/alchemy"
+  BOAR_RPC_URLS,
+  transactionFromBoarWebsocketTransaction,
+} from "../../lib/boar"
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
-import TahoAlchemyProvider from "./taho-provider"
+import TahoBoarProvider from "./taho-boar-provider"
 import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
+import {
+  recordCircuitBreakerTransition,
+  recordReconnectAttempt,
+  recordReconnectFailed,
+  recordReconnectSucceeded,
+  recordRequestFailed,
+  recordRequestSent,
+  recordRequestSucceeded,
+  recordSingleFlightCoalesce,
+  RequestFailureCategory,
+} from "../../lib/perf-metrics"
+import { CircuitBreaker } from "./circuit-breaker"
 
 export type ProviderCreator = {
-  type: "alchemy" | "custom" | "generic"
+  type: "boar" | "custom" | "generic"
   supportedMethods?: string[]
+  /**
+   * For generic providers, method-name prefixes for non-standard JSON-RPC
+   * namespaces the underlying endpoint serves beyond the standard set (e.g.
+   * "alchemy_"). Methods in these namespaces are routed to declaring
+   * endpoints rather than walked across the full generic list.
+   */
+  capabilities?: string[]
   creator: () => JsonRpcProvider
 }
 
@@ -40,19 +62,37 @@ const isWebSocketProvider = (
 ): provider is WebSocketProvider => provider instanceof WebSocketProvider
 
 /**
+ * Tears down a provider that is being dropped or replaced. Listeners drive
+ * Ethers' polling loop on HTTP providers and its message handling on WebSocket
+ * ones, so they are always removed; WebSocket providers additionally own a
+ * socket that stays open until it is explicitly destroyed.
+ */
+function teardownProvider(provider: JsonRpcProvider | undefined): void {
+  if (provider === undefined) {
+    return
+  }
+
+  provider.removeAllListeners()
+
+  if (isWebSocketProvider(provider)) {
+    provider.destroy()
+  }
+}
+
+/**
  * Method list, to describe which rpc method calls on which networks should
- * prefer alchemy provider over the generic ones.
+ * prefer the Boar provider over the generic ones.
  *
  * The method names can be full or the starting parts of the method name.
  * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
  *
  * The structure is network specific with an extra `everyChain` option.
- * The methods in this array will be directed towards alchemy on every network.
+ * The methods in this array will be directed towards Boar on every network.
  */
-export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
+export const BOAR_RPC_METHOD_PROVIDER_ROUTING = {
   everyChain: [
     "alchemy_", // alchemy specific api calls start with this
-    "eth_sendRawTransaction", // broadcast should always go to alchemy
+    "eth_sendRawTransaction", // broadcast should always go to boar
     "eth_subscribe", // generic http providers do not support this, but dapps need this
     "eth_estimateGas", // just want to be safe, when setting up a transaction
     "eth_getLogs", // to avoid eth_getLogs block range limitations
@@ -64,6 +104,28 @@ export const ALCHEMY_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
   ],
 } as const
+/**
+ * Methods that must never be coalesced into a shared in-flight request.
+ *
+ * Subscription lifecycle methods produce per-call state (subscription ids)
+ * that cannot be shared between callers. Signing and broadcasting methods
+ * either have side effects or must produce an independent response per call
+ * to support user-visible confirmation flows.
+ */
+const NON_COALESCEABLE_METHODS = new Set([
+  "eth_subscribe",
+  "eth_unsubscribe",
+  "eth_sendTransaction",
+  "eth_sendRawTransaction",
+  "eth_sign",
+  "eth_signTransaction",
+  "eth_signTypedData",
+  "eth_signTypedData_v1",
+  "eth_signTypedData_v3",
+  "eth_signTypedData_v4",
+  "personal_sign",
+])
+
 // Back off by this amount as a base, exponentiated by attempts and jittered.
 const BASE_BACKOFF_MS = 400
 // Retry 3 times before falling back to the next provider.
@@ -122,7 +184,7 @@ function getRPCCacheKey(method: string, params: unknown) {
     if (typeof val === "object" && !Array.isArray(val)) {
       const keys = Object.keys(val)
       keys.sort()
-      // oxlint-disable-next-line typescript/no-explicit-any
+      // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       return keys.reduce<any>((acc, key) => {
         acc[key] = val[key]
         return acc
@@ -143,6 +205,18 @@ type CacheEntry = {
  */
 function backedOffMs(): number {
   return BASE_BACKOFF_MS + 400 * Math.random()
+}
+
+/**
+ * Normalize an arbitrary error thrown during RPC routing into one of the
+ * categories tracked by the perf metrics collector. Unrecognized errors map
+ * to `"unknown-error"`; this stays in sync with {@link getErrorType}.
+ */
+function categorizeError(
+  error: unknown,
+  method: string,
+): RequestFailureCategory {
+  return getErrorType(String(error), method)
 }
 
 /**
@@ -208,21 +282,60 @@ function isConnectingWebSocketProvider(provider: JsonRpcProvider): boolean {
 }
 
 /**
- * Return the decision whether a given RPC call should be routed to the alchemy provider
+ * Returns the provider produced by the creator at the given index, creating it
+ * on first use and caching it for later ones.
+ *
+ * `new WebSocketProvider(url)` opens a socket as soon as it is constructed, so
+ * calling a creator on every failover or reconnect cycle accumulates live
+ * connections to an endpoint that may well be down. Reusing the cached
+ * instance keeps at most one provider per endpoint. The one instance that
+ * genuinely cannot be reused is a WebSocket provider whose socket has closed,
+ * since Ethers will not reopen it; that one is destroyed before a fresh
+ * instance replaces it.
+ */
+function cachedProviderAtIndex(
+  cache: Map<number, JsonRpcProvider>,
+  creators: (() => JsonRpcProvider)[],
+  index: number,
+): JsonRpcProvider {
+  const cached = cache.get(index)
+
+  if (cached !== undefined) {
+    if (!isClosedOrClosingWebSocketProvider(cached)) {
+      return cached
+    }
+
+    teardownProvider(cached)
+  }
+
+  const created = creators[index]()
+  cache.set(index, created)
+
+  return created
+}
+
+/**
+ * Return the decision whether a given RPC call should be routed to the Boar provider
  * or the generic provider.
  *
- * Checking whether is alchemy supported is a non concern for this function!
+ * Checking whether Boar is supported is a non concern for this function!
  *
  * @param chainID string chainID to handle chain specific routings
  * @param method the current RPC method
- * @returns true | false whether the method on a given network should be routed to alchemy or can be sent over the generic provider
+ * @returns true | false whether the method on a given network should be routed to Boar or can be sent over the generic provider
  */
-function alchemyOrDefaultProvider(chainID: string, method: string): boolean {
+function boarOrDefaultProvider(chainID: string, method: string): boolean {
+  if (
+    method.startsWith("alchemy_") &&
+    BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
+  ) {
+    return false
+  }
   return (
-    ALCHEMY_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
+    BOAR_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
       method.startsWith(m),
     ) ||
-    (ALCHEMY_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
+    (BOAR_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
       (m: string) => method.startsWith(m),
     )
   )
@@ -232,7 +345,7 @@ function customOrDefaultProvider(
   method: string,
   supportedMethods: string[] = [],
 ): boolean {
-  // Alchemy's methods have to go through Alchemy
+  // Boar's methods have to go through Boar
   if (method.startsWith("alchemy_")) {
     return false
   }
@@ -266,16 +379,73 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // currentProviderIndex.
   private currentProvider: JsonRpcProvider
 
-  private alchemyProvider: JsonRpcProvider | undefined
+  private boarProvider: JsonRpcProvider | undefined
 
   private customProvider: JsonRpcProvider | undefined
 
   private customProviderSupportedMethods: string[] = []
 
-  private cachedProvidersByIndex: Record<string, JsonRpcProvider | undefined> =
-    {}
+  // The index of the custom provider creator that created the current custom
+  // provider. Used to fall back to later custom providers when the current
+  // one fails.
+  private currentCustomProviderIndex = 0
+
+  private cachedProvidersByIndex = new Map<number, JsonRpcProvider>()
+
+  // Providers already created for the custom endpoint creators, keyed by
+  // creator index, so failing over and dropping back to the primary reuse the
+  // instance a creator has already produced instead of connecting anew.
+  private cachedCustomProvidersByIndex = new Map<number, JsonRpcProvider>()
+
+  // The same, per non-standard namespace, for the capability providers.
+  private cachedCapabilityProvidersByIndex = new Map<
+    string,
+    Map<number, JsonRpcProvider>
+  >()
+
+  // Handles for the periodic reconnect and cache-cleanup timers, so `destroy`
+  // can stop them when this provider is replaced.
+  private intervalHandles: ReturnType<typeof setInterval>[] = []
+
+  /**
+   * Set once {@link destroy} has run and never cleared. Tearing the underlying
+   * providers down is not enough on its own: the creators stay callable, so any
+   * path that would build a provider — a reconnect, a failover, an in-flight
+   * request retrying — would happily open a brand new connection to an endpoint
+   * the user has just removed, and keep it open for the life of the service
+   * worker. Every such path checks this latch first.
+   */
+  #destroyed = false
+
+  /**
+   * True once this provider has been retired by {@link destroy}. A destroyed
+   * provider constructs nothing and serves nothing; callers holding one must
+   * fetch the current provider for the chain instead.
+   */
+  get isDestroyed(): boolean {
+    return this.#destroyed
+  }
 
   #sendCache = new Map<string, CacheEntry>()
+
+  /**
+   * Promises for RPC requests that are currently in flight, keyed by a
+   * canonical method+params signature. New callers issuing the same request
+   * while one is still outstanding receive the in-flight promise rather than
+   * initiating a second provider call.
+   *
+   * Only methods that are safe to share (not signing, not broadcasting, not
+   * subscription lifecycle) are stored here; see {@link NON_COALESCEABLE_METHODS}.
+   */
+  #inFlightRequests = new Map<string, Promise<unknown>>()
+
+  /**
+   * One circuit breaker per provider index, created lazily. Protects each
+   * provider from being retried into the ground while it is known to be
+   * failing, and suppresses the periodic primary-recovery attempt while the
+   * primary breaker is open.
+   */
+  #circuitBreakers = new Map<number, CircuitBreaker>()
 
   #cacheSettings = new Map<string, number>(
     Object.entries({
@@ -310,11 +480,29 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   } = {}
 
-  private alchemyProviderCreator: (() => JsonRpcProvider) | undefined
+  private boarProviderCreator: (() => JsonRpcProvider) | undefined
 
-  supportsAlchemy = false
+  supportsBoar = false
 
-  private customProviderCreator: (() => JsonRpcProvider) | undefined
+  // Functions that will create and initialize a new custom provider, in
+  // priority order. Custom providers past the first act as fallbacks for the
+  // ones before them.
+  private customProviderCreators: (() => JsonRpcProvider)[] = []
+
+  // Creators for generic providers whose endpoints declare support for
+  // non-standard method namespaces (e.g. "alchemy_"), keyed by namespace, in
+  // priority order.
+  private capabilityProviderCreators: {
+    [namespace: string]: (() => JsonRpcProvider)[]
+  } = {}
+
+  // Lazily-created providers used for non-standard namespace routing, along
+  // with the index of the creator that produced each, for failover.
+  private capabilityProviders: {
+    [namespace: string]:
+      | { provider: JsonRpcProvider; creatorIndex: number }
+      | undefined
+  } = {}
 
   /**
    * Since our architecture follows a pattern of using distinct provider instances
@@ -350,12 +538,12 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     private chainID: string,
     providerCreators: Array<ProviderCreator>,
   ) {
-    const customProviderCreator = providerCreators.find(
+    const customProviderCreators = providerCreators.filter(
       (creator) => creator.type === "custom",
     )
 
-    const alchemyProviderCreator = providerCreators.find(
-      (creator) => creator.type === "alchemy",
+    const boarProviderCreator = providerCreators.find(
+      (creator) => creator.type === "boar",
     )
 
     const [firstProviderCreator, ...remainingProviderCreators] =
@@ -366,26 +554,43 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     super(firstProvider.connection, firstProvider.network)
 
     this.currentProvider = firstProvider
-    this.cachedProvidersByIndex[0] = firstProvider
+    this.cachedProvidersByIndex.set(0, firstProvider)
 
-    if (alchemyProviderCreator) {
-      this.supportsAlchemy = true
-      this.alchemyProviderCreator = alchemyProviderCreator.creator
-      this.alchemyProvider = this.alchemyProviderCreator()
+    if (boarProviderCreator) {
+      this.supportsBoar = true
+      this.boarProviderCreator = boarProviderCreator.creator
+      // Note that when the Boar creator heads the list — the standard
+      // production arrangement, see `makeSerialFallbackProvider` — this is a
+      // second instance of the same endpoint, kept deliberately separate from
+      // the walk's index 0 so that failing the walk over to a stored endpoint
+      // does not tear down the routing path for Boar-required methods.
+      this.boarProvider = this.boarProviderCreator()
     }
 
-    if (customProviderCreator) {
-      this.addCustomProvider(customProviderCreator)
+    if (customProviderCreators.length > 0) {
+      this.addCustomProviders(customProviderCreators)
     }
 
-    setInterval(() => {
-      this.attemptToReconnectToPrimaryProvider()
-      this.attemptToReconnectToAlchemyProvider()
-    }, PRIMARY_PROVIDER_RECONNECT_INTERVAL)
+    providerCreators
+      .filter((creator) => creator.type === "generic")
+      .forEach(({ capabilities, creator }) => {
+        capabilities?.forEach((namespace) => {
+          this.capabilityProviderCreators[namespace] ??= []
+          this.capabilityProviderCreators[namespace].push(creator)
+        })
+      })
 
-    setInterval(() => {
-      this.cleanupStaleCacheEntries()
-    }, CACHE_CLEANUP_INTERVAL)
+    this.intervalHandles.push(
+      setInterval(() => {
+        this.attemptToReconnectToPrimaryProvider()
+        this.attemptToReconnectToBoarProvider()
+        this.attemptToReconnectToPrimaryCustomProvider()
+        this.attemptToReconnectToPrimaryCapabilityProviders()
+      }, PRIMARY_PROVIDER_RECONNECT_INTERVAL),
+      setInterval(() => {
+        this.cleanupStaleCacheEntries()
+      }, CACHE_CLEANUP_INTERVAL),
+    )
 
     this.cachedChainId = utils.hexlify(Number(chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
@@ -400,6 +605,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * @returns The result of sending the message to a given provider
    */
   private async routeRpcCall(messageId: symbol): Promise<unknown> {
+    if (this.#destroyed) {
+      // Retired mid-flight, or entered from a backoff retry scheduled before
+      // the retirement. Either way, reject rather than route: every route
+      // ends in a provider construction against a removed endpoint.
+      delete this.messagesToSend[messageId]
+      throw this.destroyedError()
+    }
+
     const { method, params } = this.messagesToSend[messageId]
 
     /*
@@ -433,28 +646,118 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.customProvider &&
         customOrDefaultProvider(method, this.customProviderSupportedMethods)
       ) {
-        const result = await this.customProvider.send(method, params)
-        delete this.messagesToSend[messageId]
-        return result
+        try {
+          const result = await this.customProvider.send(method, params)
+          delete this.messagesToSend[messageId]
+          return result
+        } catch (error) {
+          // Fall over to the next custom provider when one is available;
+          // otherwise, let the error flow through the usual handling below.
+          if (
+            this.currentCustomProviderIndex + 1 <
+            this.customProviderCreators.length
+          ) {
+            this.currentCustomProviderIndex += 1
+            this.customProvider = this.customProviderAtIndex(
+              this.currentCustomProviderIndex,
+            )
+
+            logger.debug(
+              "Falling back to custom provider",
+              this.currentCustomProviderIndex,
+              "on chain",
+              this.chainID,
+              "for",
+              method,
+            )
+
+            return await this.routeRpcCall(messageId)
+          }
+
+          throw error
+        }
+      }
+
+      const capabilityNamespace = Object.keys(
+        this.capabilityProviderCreators,
+      ).find((namespace) => method.startsWith(namespace))
+
+      if (capabilityNamespace !== undefined) {
+        try {
+          const result = await this.sendViaCapabilityProviders(
+            capabilityNamespace,
+            method,
+            params,
+          )
+          delete this.messagesToSend[messageId]
+          return result
+        } catch (error) {
+          if (
+            !(
+              this.boarProvider &&
+              boarOrDefaultProvider(this.cachedChainId, method)
+            )
+          ) {
+            throw error
+          }
+          // Otherwise, fall through to the Boar branch below as a last
+          // resort for this namespace.
+        }
       }
 
       if (
-        // Force some methods to be handled by alchemy if we're on an alchemy supported chain
-        this.alchemyProvider &&
-        alchemyOrDefaultProvider(this.cachedChainId, method)
+        // Force some methods to be handled by Boar if we're on a Boar supported chain
+        this.boarProvider &&
+        boarOrDefaultProvider(this.cachedChainId, method)
       ) {
-        const result = await this.alchemyProvider.send(method, params)
+        const result = await this.boarProvider.send(method, params)
         delete this.messagesToSend[messageId]
         return result
       }
 
-      const result = await this.currentProvider.send(method, params)
+      const breaker = this.breakerFor(this.currentProviderIndex)
+      if (!breaker.canRequest()) {
+        // The current provider is known-bad. Skip straight to the existing
+        // fallback path so we do not issue a request guaranteed to fail and
+        // do not pile onto whatever outage it is sitting out.
+        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+        // No more providers to try this cycle; reset and fail as we would
+        // on an exhausted chain.
+        this.currentProviderIndex = 0
+        this.reconnectProvider()
+        delete this.messagesToSend[messageId]
+        throw new Error("NETWORK_ERROR: circuit open and no fallback available")
+      }
+
+      let result: unknown
+      try {
+        result = await this.currentProvider.send(method, params)
+      } catch (error) {
+        // Any thrown error here represents the breaker's view of a failure;
+        // feeding it into the breaker keeps state machines aligned with the
+        // behavior observed by the existing error-classification path below.
+        breaker.recordFailure()
+        throw error
+      }
+      breaker.recordSuccess()
       // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
       // cleaning up the messageToSend object seems like a great job for a decorator
       delete this.messagesToSend[messageId]
       return result
     } catch (error) {
       // Awful, but what can ya do.
+
+      if (this.#destroyed) {
+        // Retired while this request was in flight. Every recovery path below
+        // — backoff and retry, failover, reconnect — would construct a
+        // provider for an endpoint that is no longer configured, so fail the
+        // request instead. Callers see a normal failure and will reissue
+        // against whatever provider now serves the chain.
+        delete this.messagesToSend[messageId]
+        throw error
+      }
 
       const stringifiedError = String(error)
 
@@ -526,10 +829,37 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         delete this.messagesToSend[messageId]
         throw error
       } else if (errorType === "invalid-response-error") {
-        // Don't retry on 4xx client errors - these indicate the request itself
-        // is invalid and retrying won't help
+        // Don't retry 4xx client errors on the same provider - they indicate
+        // the provider is rejecting the request itself (bad or revoked key,
+        // unsupported call) and retrying it there won't help.
+        //
+        // Whether *another* provider is worth trying depends on which 4xx it
+        // is. An auth-shaped one (401, 403) says something about the endpoint,
+        // not the request — a missing, revoked, or wrong API key — and with the
+        // Taho-managed endpoint heading the walk, a revoked key must not take
+        // down ordinary reads the stored endpoints can answer. Every other 4xx
+        // (400, 404, 422, …) says the request itself is bad, and fanning a
+        // guaranteed rejection out across every configured endpoint only
+        // multiplies the failure and the load, so those reject on the spot.
         const statusCode = getHttpStatusCode(error)
         if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
+          const isAuthFailure = statusCode === 401 || statusCode === 403
+
+          if (
+            isAuthFailure &&
+            this.currentProviderIndex + 1 < this.providerCreators.length
+          ) {
+            logger.debug(
+              "Failing over after auth-shaped 4xx status",
+              statusCode,
+              "on chain",
+              this.chainID,
+              "for",
+              method,
+            )
+            return await this.attemptToSendMessageOnNewProvider(messageId)
+          }
+
           logger.debug(
             "Not retrying invalid-response-error with 4xx status",
             statusCode,
@@ -598,17 +928,249 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
+  /**
+   * Returns the circuit breaker for a given provider index, creating it the
+   * first time it is requested. Each breaker wires its transitions into the
+   * perf metrics collector so analytics can track how often providers go down
+   * and how quickly they recover.
+   */
+  private breakerFor(providerIndex: number): CircuitBreaker {
+    let breaker = this.#circuitBreakers.get(providerIndex)
+    if (!breaker) {
+      breaker = new CircuitBreaker({}, (next) =>
+        recordCircuitBreakerTransition(this.chainID, providerIndex, next),
+      )
+      this.#circuitBreakers.set(providerIndex, breaker)
+    }
+    return breaker
+  }
+
+  /**
+   * The error every path rejects with once this provider has been retired.
+   */
+  private destroyedError(): Error {
+    return new Error(
+      `Provider for chain ${this.chainID} has been destroyed and cannot serve requests`,
+    )
+  }
+
+  /**
+   * Throws if this provider has been retired, guarding every path that would
+   * otherwise construct a fresh underlying provider — and so reopen a
+   * connection to an endpoint that is no longer configured.
+   */
+  private assertNotDestroyed(): void {
+    if (this.#destroyed) {
+      throw this.destroyedError()
+    }
+  }
+
+  /**
+   * The provider for the custom endpoint creator at the given index, reused
+   * across failovers and primary-reconnect cycles rather than recreated.
+   */
+  private customProviderAtIndex(index: number): JsonRpcProvider {
+    this.assertNotDestroyed()
+
+    return cachedProviderAtIndex(
+      this.cachedCustomProvidersByIndex,
+      this.customProviderCreators,
+      index,
+    )
+  }
+
+  /**
+   * The provider for a namespace's capability creator at the given index,
+   * reused across failovers and primary-reconnect cycles rather than
+   * recreated.
+   */
+  private capabilityProviderAtIndex(
+    namespace: string,
+    index: number,
+  ): JsonRpcProvider {
+    this.assertNotDestroyed()
+
+    let cache = this.cachedCapabilityProvidersByIndex.get(namespace)
+
+    if (cache === undefined) {
+      cache = new Map<number, JsonRpcProvider>()
+      this.cachedCapabilityProvidersByIndex.set(namespace, cache)
+    }
+
+    return cachedProviderAtIndex(
+      cache,
+      this.capabilityProviderCreators[namespace],
+      index,
+    )
+  }
+
+  /**
+   * True if this network can serve Alchemy enhanced API calls (alchemy_*),
+   * either via an endpoint that declares the "alchemy_" capability or via
+   * Boar while it remains available.
+   */
+  get supportsAlchemy(): boolean {
+    return (
+      (this.capabilityProviderCreators[ALCHEMY_CAPABILITY_NAMESPACE] ?? [])
+        .length > 0 ||
+      (this.supportsBoar &&
+        !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(this.chainID))
+    )
+  }
+
+  /**
+   * Sends a method belonging to a non-standard namespace via the providers
+   * whose endpoints declare that capability, in priority order, falling over
+   * to the next one when the current one fails. Throws the final provider's
+   * error once all are exhausted.
+   */
+  private async sendViaCapabilityProviders(
+    namespace: string,
+    method: string,
+    params: unknown[],
+  ): Promise<unknown> {
+    const creators = this.capabilityProviderCreators[namespace]
+
+    let current = this.capabilityProviders[namespace]
+    if (current === undefined) {
+      current = {
+        provider: this.capabilityProviderAtIndex(namespace, 0),
+        creatorIndex: 0,
+      }
+      this.capabilityProviders[namespace] = current
+    }
+
+    for (;;) {
+      try {
+        // oxlint-disable-next-line no-await-in-loop
+        return await current.provider.send(method, params)
+      } catch (error) {
+        if (current.creatorIndex + 1 >= creators.length) {
+          throw error
+        }
+
+        current = {
+          provider: this.capabilityProviderAtIndex(
+            namespace,
+            current.creatorIndex + 1,
+          ),
+          creatorIndex: current.creatorIndex + 1,
+        }
+        this.capabilityProviders[namespace] = current
+
+        logger.debug(
+          "Falling back to",
+          namespace,
+          "capability provider",
+          current.creatorIndex,
+          "on chain",
+          this.chainID,
+          "for",
+          method,
+        )
+      }
+    }
+  }
+
   addCustomProvider(customProviderCreator: ProviderCreator): void {
+    this.addCustomProviders([customProviderCreator])
+  }
+
+  /**
+   * Sets the custom providers for this network, replacing any existing ones.
+   * The creators are used in priority order: the first one is used until it
+   * fails, at which point later ones act as fallbacks.
+   */
+  addCustomProviders(customProviderCreators: ProviderCreator[]): void {
+    if (this.#destroyed) {
+      // A retired provider takes no new endpoints; whoever is configuring the
+      // chain should be holding its replacement.
+      return
+    }
+
+    if (customProviderCreators.length === 0) {
+      this.removeCustomProvider()
+      return
+    }
+
     this.customProviderSupportedMethods =
-      customProviderCreator.supportedMethods ?? []
-    this.customProviderCreator = customProviderCreator.creator
-    this.customProvider = this.customProviderCreator()
+      customProviderCreators[0].supportedMethods ?? []
+    // The creator list is being replaced wholesale, so anything cached for the
+    // old one is both stale and, for WebSockets, still connected.
+    this.clearCachedCustomProviders()
+    this.customProviderCreators = customProviderCreators.map(
+      ({ creator }) => creator,
+    )
+    this.currentCustomProviderIndex = 0
+    this.customProvider = this.customProviderAtIndex(0)
   }
 
   removeCustomProvider(): void {
     this.customProviderSupportedMethods = []
-    this.customProviderCreator = undefined
+    this.customProviderCreators = []
+    this.currentCustomProviderIndex = 0
+    this.clearCachedCustomProviders()
     this.customProvider = undefined
+  }
+
+  /**
+   * Drops every cached custom provider, tearing down any live connections they
+   * hold.
+   */
+  private clearCachedCustomProviders(): void {
+    this.cachedCustomProvidersByIndex.forEach(teardownProvider)
+    this.cachedCustomProvidersByIndex.clear()
+  }
+
+  /**
+   * Retires this provider for good.
+   *
+   * Latches the instance as destroyed, clears the periodic reconnect and
+   * cache-cleanup timers, then tears down every underlying provider this
+   * instance holds — current, cached fallbacks, Boar, custom, and capability
+   * providers — dropping their listeners and closing any WebSockets. Without
+   * this, a replaced provider keeps polling and reconnecting to endpoints that
+   * are no longer configured for the lifetime of the service worker; see
+   * `ChainService.rebuildProviderForChain`.
+   *
+   * The latch is what makes retirement permanent: tearing the underlying
+   * providers down leaves the creators callable, so a request still in flight
+   * on this instance would otherwise walk reconnect → cache miss → creator and
+   * open a fresh connection to the removed endpoint. Once latched, every path
+   * that would construct a provider is a no-op or an immediate rejection, and
+   * the instance is never usable again.
+   */
+  destroy(): void {
+    this.#destroyed = true
+
+    this.intervalHandles.forEach((handle) => clearInterval(handle))
+    this.intervalHandles = []
+
+    teardownProvider(this.currentProvider)
+    teardownProvider(this.boarProvider)
+    teardownProvider(this.customProvider)
+
+    this.cachedProvidersByIndex.forEach(teardownProvider)
+    this.cachedCustomProvidersByIndex.forEach(teardownProvider)
+    this.cachedCapabilityProvidersByIndex.forEach((cache) =>
+      cache.forEach(teardownProvider),
+    )
+    Object.values(this.capabilityProviders).forEach((current) =>
+      teardownProvider(current?.provider),
+    )
+
+    this.cachedProvidersByIndex.clear()
+    this.cachedCustomProvidersByIndex.clear()
+    this.cachedCapabilityProvidersByIndex.clear()
+    this.capabilityProviders = {}
+    this.customProvider = undefined
+    this.boarProvider = undefined
+
+    // Stop tracking subscriptions so nothing gets restored onto a retired
+    // provider, and drop the listeners registered on this instance itself.
+    this.subscriptions = []
+    this.eventSubscriptions = []
+    this.removeAllListeners()
   }
 
   /**
@@ -688,19 +1250,26 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private async attemptToSendMessageOnNewProvider(
     messageId: symbol,
   ): Promise<unknown> {
+    this.assertNotDestroyed()
+
     this.disconnectCurrentProvider()
     this.currentProviderIndex += 1
     // Try again with the next provider.
     await this.reconnectProvider()
 
-    const isAlchemyFallback =
-      this.alchemyProvider && this.currentProvider === this.alchemyProvider
+    const isBoarFallback =
+      this.boarProvider && this.currentProvider === this.boarProvider
 
     return this.routeRpcCall(messageId).finally(() => {
-      // If every other provider failed and we're on the alchemy provider,
+      // If every other provider failed and we're on the Boar provider,
       // reconnect to the first provider once we've handled this request
-      // as we should limit relying on alchemy as a fallback
-      if (isAlchemyFallback && this.currentProviderIndex !== 0) {
+      // as we should limit relying on Boar as a fallback.
+      //
+      // Note that with the Boar creator leading the list, as
+      // `makeSerialFallbackProvider` arranges it, this cannot trigger: failing
+      // over walks away from Boar rather than toward it, and it is
+      // `attemptToReconnectToPrimaryProvider` that walks traffic back to it.
+      if (isBoarFallback && this.currentProviderIndex !== 0) {
         this.currentProviderIndex = 0
         this.reconnectProvider()
       }
@@ -721,6 +1290,48 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       return this.cachedChainId
     }
 
+    // A retired provider answers nothing; anything else would mean connecting
+    // to an endpoint that is no longer configured for this chain.
+    this.assertNotDestroyed()
+
+    // Coalesce concurrent identical requests into a single in-flight call.
+    // This is safe for idempotent reads and explicitly skipped for subscription
+    // lifecycle and side-effecting (signing / broadcast) methods so those always
+    // produce an independent provider call per invocation.
+    if (!NON_COALESCEABLE_METHODS.has(method)) {
+      const key = getRPCCacheKey(method, params)
+      const existing = this.#inFlightRequests.get(key)
+      if (existing !== undefined) {
+        recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex)
+        return existing
+      }
+
+      const flight = this.dispatchRequest(method, params)
+      this.#inFlightRequests.set(key, flight)
+      // Clear the slot on both success and failure so the next caller makes
+      // a fresh request. Use `then(cleanup, cleanup)` rather than `finally`
+      // so a rejection does not escape as an unhandled promise on the
+      // cleanup chain; callers still observe the rejection on `flight`.
+      const cleanup = () => {
+        this.#inFlightRequests.delete(key)
+      }
+      flight.then(cleanup, cleanup)
+      return flight
+    }
+
+    return this.dispatchRequest(method, params)
+  }
+
+  /**
+   * Executes a single logical RPC request end-to-end, including metrics and
+   * result caching. Callers must never invoke this directly for coalesceable
+   * methods; {@link send} is responsible for single-flight deduplication
+   * before handing off here.
+   */
+  private async dispatchRequest(
+    method: string,
+    params: unknown[],
+  ): Promise<unknown> {
     // Generate a unique symbol to track the message and store message information
     const id = Symbol(method)
     this.messagesToSend[id] = {
@@ -730,13 +1341,34 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       providerIndex: this.currentProviderIndex,
     }
 
-    // Start routing message down our waterfall of rpc providers
-    const result = await this.routeRpcCall(id)
+    const startingProviderIndex = this.currentProviderIndex
+    recordRequestSent(this.chainID, startingProviderIndex)
+    const startTime = Date.now()
 
-    // Cache results for method/param combinations that are frequently called subsequently
-    this.conditionallyCacheResult(result, { method, params })
+    try {
+      // Start routing message down our waterfall of rpc providers
+      const result = await this.routeRpcCall(id)
 
-    return result
+      // Record against the provider that actually served the request, which
+      // may differ from the starting index if we failed over.
+      recordRequestSucceeded(
+        this.chainID,
+        this.currentProviderIndex,
+        Date.now() - startTime,
+      )
+
+      // Cache results for method/param combinations that are frequently called subsequently
+      this.conditionallyCacheResult(result, { method, params })
+
+      return result
+    } catch (error) {
+      recordRequestFailed(
+        this.chainID,
+        this.currentProviderIndex,
+        categorizeError(error, method),
+      )
+      throw error
+    }
   }
 
   /**
@@ -752,6 +1384,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     const subscription = { tag, param, processFunc }
 
     if (isWebSocketProvider(this.currentProvider)) {
+      // oxlint-disable-next-line no-underscore-dangle
       await this.currentProvider._subscribe(tag, param, processFunc)
       this.subscriptions.push(subscription)
     } else {
@@ -787,15 +1420,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       )
       return
     }
-    const alchemySubscription =
-      await this.alchemySubscribeFullPendingTransactions(
-        { address, network },
-        handler,
-      )
+    const boarSubscription = await this.boarSubscribeFullPendingTransactions(
+      { address, network },
+      handler,
+    )
 
-    if (alchemySubscription === "unsupported") {
+    if (boarSubscription === "unsupported") {
       // Fall back on a standard pending transaction subscription if the
-      // Alchemy version is unsupported.
+      // Boar version is unsupported.
       this.on("pending", async (transactionHash: unknown) => {
         try {
           if (typeof transactionHash === "string") {
@@ -941,7 +1573,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           ({ eventName: storedEventName, listener, once }) =>
             eventName !== storedEventName ||
             listener !== wrappedListener ||
-            !once,
+            once !== true,
         )
       }
     }
@@ -956,10 +1588,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * has been somehow set out of range, resets it to 0.
    */
   private async reconnectProvider() {
+    if (this.#destroyed) {
+      // Reconnecting a retired provider would open a connection to an
+      // endpoint that is no longer configured.
+      return
+    }
+
     this.disconnectCurrentProvider()
     if (this.currentProviderIndex >= this.providerCreators.length) {
       this.currentProviderIndex = 0
     }
+
+    recordReconnectAttempt(this.chainID, this.currentProviderIndex)
 
     logger.debug(
       "Reconnecting provider at index",
@@ -969,15 +1609,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       "...",
     )
 
-    const cachedProvider =
-      this.cachedProvidersByIndex[this.currentProviderIndex] ??
-      this.providerCreators[this.currentProviderIndex]()
+    this.currentProvider = cachedProviderAtIndex(
+      this.cachedProvidersByIndex,
+      this.providerCreators,
+      this.currentProviderIndex,
+    )
 
-    this.cachedProvidersByIndex[this.currentProviderIndex] = cachedProvider
-
-    this.currentProvider = cachedProvider
-
-    await this.resubscribe(this.currentProvider)
+    const resubscribed = await this.resubscribe(this.currentProvider)
+    if (resubscribed) {
+      recordReconnectSucceeded(this.chainID, this.currentProviderIndex)
+    } else {
+      recordReconnectFailed(this.chainID, this.currentProviderIndex)
+    }
 
     // TODO After a longer backoff, attempt to reset the current provider to 0.
   }
@@ -1014,6 +1657,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
             waitAnd(backedOffMs(), () =>
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
+              // oxlint-disable-next-line no-underscore-dangle
               provider._subscribe(tag, param, processFunc),
             ),
           ),
@@ -1022,6 +1666,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     this.eventSubscriptions.forEach(({ eventName, listener, once }) => {
+      // Providers are reused across reconnects, so a provider coming back into
+      // service may still carry these listeners from an earlier stint; Ethers
+      // would happily attach a second copy and fire each event twice.
+      provider.off(eventName, listener)
+
       if (once) {
         provider.once(eventName, listener)
       } else {
@@ -1033,30 +1682,86 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return true
   }
 
-  private async attemptToReconnectToAlchemyProvider(): Promise<void> {
+  private async attemptToReconnectToBoarProvider(): Promise<void> {
+    if (this.#destroyed) {
+      return
+    }
+
     if (
-      this.alchemyProvider &&
-      this.alchemyProviderCreator &&
-      isClosedOrClosingWebSocketProvider(this.alchemyProvider)
+      this.boarProvider &&
+      this.boarProviderCreator &&
+      isClosedOrClosingWebSocketProvider(this.boarProvider)
     ) {
       // Always reconnect without resubscribing - since subscriptions
       // should live on the currentProvider
-      this.alchemyProvider = this.alchemyProviderCreator()
+      teardownProvider(this.boarProvider)
+      this.boarProvider = this.boarProviderCreator()
+    }
+  }
+
+  private async attemptToReconnectToPrimaryCapabilityProviders(): Promise<void> {
+    if (this.#destroyed) {
+      return
+    }
+
+    Object.entries(this.capabilityProviders).forEach(([namespace, current]) => {
+      if (current !== undefined && current.creatorIndex !== 0) {
+        // Periodically drop back to the primary provider for this
+        // namespace after a failover; if it is still down, the next failed
+        // call will walk back down the fallback list.
+        this.capabilityProviders[namespace] = {
+          provider: this.capabilityProviderAtIndex(namespace, 0),
+          creatorIndex: 0,
+        }
+      }
+    })
+  }
+
+  private async attemptToReconnectToPrimaryCustomProvider(): Promise<void> {
+    if (this.#destroyed) {
+      return
+    }
+
+    if (
+      this.customProvider &&
+      this.currentCustomProviderIndex !== 0 &&
+      this.customProviderCreators.length > 0
+    ) {
+      // Periodically drop back to the primary custom provider after a
+      // failover; if it is still down, the next failed call will walk back
+      // down the fallback list. No resubscription is needed since
+      // subscriptions live on the currentProvider.
+      this.currentCustomProviderIndex = 0
+      this.customProvider = this.customProviderAtIndex(0)
     }
   }
 
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
+    if (this.#destroyed) {
+      return null
+    }
     if (this.currentProviderIndex === 0) {
       // If we are already connected to the primary provider - don't resubscribe
       return null
     }
-    const primaryProvider = this.providerCreators[0]()
+    if (!this.breakerFor(0).canRequest()) {
+      // Primary is still in cooldown; skip this cycle so the reconnect loop
+      // does not itself become a source of request pressure on a down endpoint.
+      return null
+    }
+    recordReconnectAttempt(this.chainID, 0)
+    const primaryProvider = cachedProviderAtIndex(
+      this.cachedProvidersByIndex,
+      this.providerCreators,
+      0,
+    )
     // We need to wait before attempting to resubscribe of the primaryProvider's
     // websocket connection will almost always still be in a CONNECTING state when
     // resubscribing.
     return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
       const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
       if (!subscriptionsSuccessful) {
+        recordReconnectFailed(this.chainID, 0)
         return
       }
       // Cleanup the subscriptions on the backup provider.
@@ -1064,6 +1769,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       // only set if subscriptions are successful
       this.currentProvider = primaryProvider
       this.currentProviderIndex = 0
+      recordReconnectSucceeded(this.chainID, 0)
     })
   }
 
@@ -1105,11 +1811,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Attempts to subscribe to pending transactions in an Alchemy-specific
+   * Attempts to subscribe to pending transactions in a Boar-specific
    * way. Returns `subscribed` if the subscription succeeded, or `unsupported`
-   * if the underlying provider did not support Alchemy-specific subscriptions.
+   * if the underlying provider did not support Boar-specific subscriptions.
    */
-  private async alchemySubscribeFullPendingTransactions(
+  private async boarSubscribeFullPendingTransactions(
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void,
   ): Promise<"subscribed" | "unsupported"> {
@@ -1124,7 +1830,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           // TODO use proper provider string
           // handle incoming transactions for an account
           try {
-            const transaction = transactionFromAlchemyWebsocketTransaction(
+            const transaction = transactionFromBoarWebsocketTransaction(
               result,
               network,
             )
@@ -1179,7 +1885,7 @@ export function makeFlashbotsProviderCreator(): ProviderCreator {
 
 export function makeSerialFallbackProvider(
   chainID: string,
-  rpcUrls: string[],
+  rpcEndpoints: RpcEndpoint[],
   customRpc?: RpcConfig,
 ): SerialFallbackProvider {
   if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
@@ -1210,35 +1916,43 @@ export function makeSerialFallbackProvider(
     ])
   }
 
-  const alchemyProviderCreators: ProviderCreator[] =
-    ALCHEMY_SUPPORTED_CHAIN_IDS.has(chainID)
-      ? [
-          {
-            type: "alchemy" as const,
-            creator: () =>
-              new TahoAlchemyProvider(getNetwork(Number(chainID)), ALCHEMY_KEY),
-          },
-        ]
-      : []
-
-  const customProviderCreator: ProviderCreator[] = customRpc
+  const boarRpcUrl = BOAR_RPC_URLS[chainID]
+  const boarProviderCreators: ProviderCreator[] = boarRpcUrl
     ? [
         {
-          type: "custom" as const,
-          supportedMethods: customRpc.supportedMethods ?? [],
-          creator: () => getProviderCreator(customRpc.rpcUrls[0]),
+          type: "boar" as const,
+          creator: () => new TahoBoarProvider(boarRpcUrl),
         },
       ]
     : []
 
-  const genericProviders: ProviderCreator[] = rpcUrls.map((rpcUrl) => ({
-    type: "generic" as const,
+  // One provider creator per custom RPC URL; URLs past the first act as
+  // fallbacks for the ones before them.
+  const customProviderCreators: ProviderCreator[] = (
+    customRpc?.rpcUrls ?? []
+  ).map((rpcUrl) => ({
+    type: "custom" as const,
+    supportedMethods: customRpc?.supportedMethods ?? [],
     creator: () => getProviderCreator(rpcUrl),
   }))
 
+  const genericProviders: ProviderCreator[] = rpcEndpoints.map(
+    ({ url, capabilities }) => ({
+      type: "generic" as const,
+      capabilities,
+      creator: () => getProviderCreator(url),
+    }),
+  )
+
+  // The Taho-managed (Boar) endpoint leads the serial walk, so it serves every
+  // method first when it is available for the chain, with the user-visible,
+  // stored endpoints acting as fallbacks behind it. This matches what the
+  // network settings UI promises about managed endpoints being the first
+  // choice. Custom providers are not part of the walk; they are consulted
+  // ahead of it for the methods they declare support for.
   return new SerialFallbackProvider(chainID, [
+    ...boarProviderCreators,
     ...genericProviders,
-    ...alchemyProviderCreators,
-    ...customProviderCreator,
+    ...customProviderCreators,
   ])
 }

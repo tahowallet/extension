@@ -1,11 +1,15 @@
 import React, { ReactElement, useEffect, useState } from "react"
-import { AnyAsset, AnyAssetAmount } from "@tallyho/tally-background/assets"
+import {
+  AnyAsset,
+  AnyAssetAmount,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
-import { blockExplorer } from "../../utils/constants"
+import { getBlockExplorerURL } from "../../utils/networks"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -53,8 +57,10 @@ export default function SharedAssetItem<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const baseLink = blockExplorer[currentNetwork.chainID]?.url
-    if ("contractAddress" in asset && baseLink) {
+    const baseLink = getBlockExplorerURL(currentNetwork)
+    // Only smart contract assets have a token page to link to; network base
+    // assets can carry a contract address of their own without being tokens.
+    if (isSmartContractFungibleAsset(asset) && baseLink) {
       const contractBase =
         currentNetwork.chainID === ROOTSTOCK.chainID ? "address" : "token"
       setContractLink(`${baseLink}/${contractBase}/${asset.contractAddress}`)
