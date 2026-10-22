@@ -14,11 +14,13 @@ pre-commit install --install-hooks
 echo "Installing nvm..."
 brew list nvm &>/dev/null || brew install nvm
 
-echo "Setting up nvm, yarn, and dependencies..."
-nvm use
-if ! [ -x "$(command -v yarn)" ]; then
-  npm install -g yarn
+echo "Installing bun..."
+if ! [ -x "$(command -v bun)" ]; then
+  brew install bun
 fi
-yarn install
+
+echo "Setting up nvm and dependencies..."
+nvm use
+bun install
 
 echo "Ready to rock! See above for any extra environment-related instructions."
