@@ -291,7 +291,9 @@ describe("IndexingService", () => {
       expect(spy).toHaveBeenCalled()
 
       jest.advanceTimersByTime(6000)
-      await jest.advanceTimersToNextTimerAsync()
+      jest.advanceTimersToNextTimer()
+      // bun has no async variant; let any awaited work settle
+      await Promise.resolve()
       jest.useRealTimers()
 
       expect(
