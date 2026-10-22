@@ -213,6 +213,10 @@ export default class LedgerService extends BaseService<Events> {
       }
 
       try {
+        // A transport left open keeps its USB interface claimed, which makes
+        // creating the next one fail with "Unable to claim interface".
+        await this.#closeTransport("replacing")
+
         this.transport = await TransportWebUSB.create()
 
         const eth = new Eth(this.transport)
@@ -260,9 +264,38 @@ export default class LedgerService extends BaseService<Events> {
           "Treating Ledger as having disconnected due to a connection error:",
           error,
         )
+        await this.#closeTransport("failed-connection")
         await this.#handleUSBDisconnect()
       }
     })
+  }
+
+  /**
+   * Closes the current transport, if there is one. Closing releases the USB
+   * interface, which fails once the device is unplugged, so failures are
+   * expected when replacing a possibly stale transport or after a disconnect
+   * and only logged at debug level. A failure to close after a failed
+   * connection attempt is unexpected, and warns.
+   */
+  async #closeTransport(
+    reason: "replacing" | "disconnected" | "failed-connection",
+  ): Promise<void> {
+    const { transport } = this
+    if (transport === undefined) {
+      return
+    }
+
+    this.transport = undefined
+
+    try {
+      await transport.close()
+    } catch (error) {
+      if (reason === "failed-connection") {
+        logger.warn("Failed to close Ledger transport:", error)
+      } else {
+        logger.debug(`Failed to close Ledger transport (${reason}):`, error)
+      }
+    }
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
@@ -287,6 +320,8 @@ export default class LedgerService extends BaseService<Events> {
     if (!this.#currentLedgerId) {
       return
     }
+
+    await this.#closeTransport("disconnected")
 
     this.emitter.emit("disconnected", {
       id: this.#currentLedgerId,
