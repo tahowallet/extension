@@ -20,7 +20,7 @@
     "generate:validators": "ts-node background/generate-validators.ts",
     "build": "bun run build.ts --production",
     "dev": "bun run build.ts --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check",
     "devtools": "redux-devtools --hostname=localhost --port=8000",
     "lint": "run-p lint:*",
     "lint-fix": "run-p lint:*:fix",
