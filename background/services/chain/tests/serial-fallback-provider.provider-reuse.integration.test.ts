@@ -217,7 +217,7 @@ describe("SerialFallbackProvider provider reuse", () => {
     provider.destroy()
     releaseFirstCall(new Error("bad response"))
 
-    await expect(inFlight).rejects.toThrow()
+    await expect(inFlight).rejects.toThrow("bad response")
 
     // No failover, no reconnect, no new connection to either endpoint.
     expect(fallbackCreator.callCount).toEqual(0)
