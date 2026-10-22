@@ -8,13 +8,16 @@ import {
   jest,
 } from "bun:test"
 
-const fetchJsonMock = mock(() => {})
+const fetchJsonMock = mock(
+  (..._args: unknown[]): Promise<unknown> => Promise.resolve(),
+)
 mock.module("@ethersproject/web", () => {
   const actual = require("@ethersproject/web")
   fetchJsonMock.mockImplementation(actual.fetchJson)
   return { ...actual, fetchJson: fetchJsonMock }
 })
 
+import type { PricePoint } from "../assets"
 import logger from "../lib/logger"
 import { ETH, FIAT_CURRENCIES, USD } from "../constants"
 import { getPrices } from "../lib/prices"
@@ -28,7 +31,7 @@ describe("lib/prices.ts", () => {
     jest.spyOn(Date, "now").mockReturnValue(dateNow)
 
     // just to keep the output nice and tidy
-    jest.spyOn(logger, "warn").mockImplementation()
+    jest.spyOn(logger, "warn").mockImplementation(() => {})
   })
   describe("CoinGecko Price response validation", () => {
     it("passes for correct simple price response", () => {
@@ -160,7 +163,7 @@ describe("lib/prices.ts", () => {
         },
       }
 
-      const getPricesResponse = [
+      const getPricesResponse: PricePoint[] = [
         {
           amounts: [639090000000000n, 100000000n],
           pair: [
@@ -211,7 +214,7 @@ describe("lib/prices.ts", () => {
           last_updated_at: 1634672101,
         },
       }
-      const getPricesResponse = [
+      const getPricesResponse: PricePoint[] = [
         {
           amounts: [38365300000000n, 1000000000000000000n],
           pair: [

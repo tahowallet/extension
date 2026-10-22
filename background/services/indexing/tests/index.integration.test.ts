@@ -1,5 +1,6 @@
 import {
   mock,
+  type Mock,
   describe,
   beforeEach,
   afterEach,
@@ -30,10 +31,7 @@ import { ChainDatabase } from "../../chain/db"
 import PreferenceService from "../../preferences"
 import { getOrCreateDb as getIndexingDB } from "../db"
 
-type MethodSpy<T extends (...args: unknown[]) => unknown> = jest.SpyInstance<
-  ReturnType<T>,
-  Parameters<T>
->
+type MethodSpy<T extends (...args: unknown[]) => unknown> = Mock<T>
 
 // oxlint-disable-next-line typescript/no-explicit-any
 const getPrivateMethodSpy = <T extends (...args: any[]) => unknown>(
@@ -325,7 +323,7 @@ describe("IndexingService", () => {
       getPrivateMethodSpy<IndexingService["scheduleUpdateAssetsPrices"]>(
         indexingService,
         "scheduleUpdateAssetsPrices",
-      ).mockResolvedValue(Promise.resolve())
+      ).mockResolvedValue(undefined)
 
       await Promise.all([
         chainService.startService(),

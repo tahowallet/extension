@@ -212,7 +212,7 @@ describe("ChainService", () => {
     })
 
     it("should create a provider for the new chain", async () => {
-      expect(chainService.providers.evm["250"]).toBe(undefined)
+      expect(chainService.providers.evm["250"]).toBeUndefined()
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
       expect(chainService.providers.evm["250"]).toBeInstanceOf(
         SerialFallbackProvider,
@@ -296,7 +296,7 @@ describe("ChainService", () => {
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
         ],
-      ).toBe(undefined)
+      ).toBeUndefined()
     })
 
     it("should set the nonce for tx request for chains with a mempool", async () => {
@@ -370,7 +370,7 @@ describe("ChainService", () => {
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
         ],
-      ).toBe(undefined)
+      ).toBeUndefined()
     })
   })
 

@@ -34,7 +34,7 @@ describe("AnalyticsService", () => {
   let preferenceService: PreferenceService
 
   beforeAll(() => {
-    global.fetch = jest.fn()
+    global.fetch = jest.fn() as unknown as typeof fetch
     // We need this set otherwise the posthog lib won't send the events
     process.env.POSTHOG_API_KEY = "hey hey hey"
   })

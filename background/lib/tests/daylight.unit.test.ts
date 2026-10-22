@@ -1,6 +1,8 @@
 import { mock, describe, it, expect } from "bun:test"
 
-const fetchJsonMock = mock(() => {})
+const fetchJsonMock = mock(
+  (..._args: unknown[]): Promise<unknown> => Promise.resolve(),
+)
 mock.module("@ethersproject/web", () => {
   const actual = require("@ethersproject/web")
   fetchJsonMock.mockImplementation(actual.fetchJson)
