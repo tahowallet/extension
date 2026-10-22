@@ -63,6 +63,16 @@ import { mock } from "bun:test"
 // between the __mocks__ file and this factories file.
 mock.module("../services/chain/serial-fallback-provider", () => {
   class MockSerialFallbackProvider {
+    // Mirrors the real provider's retirement latch so callers that check whether
+    // a replaced or removed provider was actually retired see the same thing
+    // they would in production.
+    isDestroyed = false
+
+    destroy(): void {
+      // Nothing to tear down in the mock; provider replacement still calls this.
+      this.isDestroyed = true
+    }
+
     async getBlock() {
       // Lazily import to break circular dependency
       const { makeEthersBlock } = require("./factories")
