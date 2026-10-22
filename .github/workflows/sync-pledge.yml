@@ -23,7 +23,7 @@ jobs:
       - run: bun install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
       - name: Sync pledge addresses
-        run: node pledge-sync.js
+        run: bun pledge-sync.js
         working-directory: .github/workflows/pledge-signer-sync
         env:
           GALXE_ACCESS_TOKEN: ${{ secrets.GALXE_ACCESS_TOKEN }}
