@@ -85,3 +85,8 @@ declare namespace NodeJS {
     NODE_ENV: "production" | "development" | "test"
   }
 }
+
+declare module "process/browser" {
+  const process: NodeJS.Process
+  export default process
+}
