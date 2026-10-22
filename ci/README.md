@@ -15,11 +15,11 @@ To run the extension on a forked Mainnet:
    not specified, current block will be used)
 
 2. Run the following commands from root:  
-   `yarn install`  
-   `yarn start` (or `yarn build`)  
+   `bun install`  
+   `bun start` (or `bun run build`)  
    `cd ci`  
-   `yarn install`
-   `yarn hardhat node --network hardhat`
+   `bun install`
+   `bunx hardhat node --network hardhat`
 
 3. Unpack `./dist/chrome` to Chrome Extensions.
 
@@ -43,7 +43,7 @@ The E2E tests are located in the `../e2e-tests` directory. The tests use
 `test.skip` expression, which decides whether a given test should be run based
 on the value of a `USE_MAINNET_FORK` environment variable.
 
-To run specific test, go to root and run `npx playwright test <file_name>`.
+To run specific test, go to root and run `bunx playwright test <file_name>`.
 
 To run all tests designed for the fork, make sure `USE_MAINNET_FORK` is set to
-`true` and run `yarn run test:e2e`.
+`true` and run `bun run test:e2e`.

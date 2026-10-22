@@ -13,13 +13,13 @@ The important configuration is in `hardhat.config.js`.
 
 ## Setup
 
-> This project is intentionally not part of the yarn workspace, because it's not part of the application,
+> This project is intentionally not part of the root workspace, because it's not part of the application,
 > but a simple a tool for development. Because of this, it needs to be setup as a separate node project.
 
 ```
 $ cd dev-utils/local-chain
-$ yarn install
-$ yarn start
+$ bun install
+$ bun start
 ```
 
 ## API key for alchemy
