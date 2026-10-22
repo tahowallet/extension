@@ -120,6 +120,7 @@ export function initializeStore<ThunkArgType>(
   const baseStore = configureStore({
     preloadedState,
     reducer: rootReducer,
+    // @ts-expect-error -- MiddlewareArray is not assignable to RTK 1.x's middleware tuple under TS 6
     middleware: (getDefaultMiddleware) => {
       const middleware = getDefaultMiddleware({
         serializableCheck: {
@@ -145,6 +146,7 @@ export function initializeStore<ThunkArgType>(
       return middleware
     },
     devTools: false,
+    // @ts-expect-error -- the empty-array arm is not assignable to RTK 1.x's enhancer tuple under TS 6
     enhancers:
       process.env.NODE_ENV === "development"
         ? [

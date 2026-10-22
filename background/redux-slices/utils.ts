@@ -172,6 +172,7 @@ export function createBackgroundAsyncThunk<
         throw error
       }
     },
+    // @ts-expect-error -- RTK 1.x serializeError generics are not assignable under TS 6
     options,
   )
 
