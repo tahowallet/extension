@@ -1,4 +1,5 @@
 /// <reference types="styled-jsx" />
+/// <reference types="bun-types/test-globals" />
 
 declare module "webext-redux/lib/strategies/deepDiff/diff" {
   // This should be : DiffStrategy, but importing webext-redux to reuse

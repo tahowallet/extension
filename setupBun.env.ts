@@ -22,7 +22,9 @@ it.flaky = function checkFlaky(label: string, testCase: () => unknown): void {
 }
 
 declare module "bun:test" {
-  interface It {
+  // T must be declared to merge with bun-types' Test<T>, but is unused here.
+  // oxlint-disable-next-line no-unused-vars
+  interface Test<T extends ReadonlyArray<unknown>> {
     /**
      * Used for debugging flaky tests
      */
