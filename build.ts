@@ -349,6 +349,7 @@ async function buildForBrowser(browser: string) {
     target: "browser",
     sourcemap,
     minify: shouldMinify,
+    check: true,
     plugins: [styledJsxPlugin, nodePolyfillsPlugin, wasmBase64Plugin],
     define: {
       ...envDefines,
