@@ -256,7 +256,7 @@ export async function getPrice({
 
   if (!isValid0xSwapPriceResponse(apiData)) {
     logger.warn(
-      "0x Swap quote API call didn't validate, did the 0x API change?",
+      "0x Swap price API call didn't validate, did the 0x API change?",
       apiData,
       isValid0xSwapPriceResponse.errors,
     )

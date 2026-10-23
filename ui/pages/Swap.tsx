@@ -381,6 +381,9 @@ export default function Swap(): ReactElement {
             estimatedPriceImpact: quote.priceDetails?.priceImpact,
           }),
         )
+      } else {
+        // The background has already told the user why there's no quote.
+        setIsLoading(false)
       }
     }
   }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])

@@ -84,6 +84,8 @@ const swapSlice = createSlice({
   },
 })
 
+const INSUFFICIENT_LIQUIDITY_MESSAGE = "Insufficient liquidity for this trade"
+
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
@@ -110,14 +112,18 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
 
-    // TODO: Handle lack of liquidity, errors
-
     const apiData = await getQuote({
       ...quoteRequest,
       taker: tradeAddress,
     })
 
-    if (!apiData) {
+    // getQuote has already logged why the response didn't validate.
+    if (apiData === null) {
+      dispatch(setSnackbarMessage("Couldn't get a swap quote"))
+      return null
+    }
+    if (!apiData.liquidityAvailable) {
+      dispatch(setSnackbarMessage(INSUFFICIENT_LIQUIDITY_MESSAGE))
       return null
     }
 
@@ -238,8 +244,13 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     try {
       quote = await getPrice({ ...quoteRequest, taker })
 
-      if (!quote || !quote.liquidityAvailable) {
-        dispatch(setSnackbarMessage("Insufficient liquidity for this trade"))
+      // getPrice has already logged why the response didn't validate.
+      if (quote === null) {
+        dispatch(setSnackbarMessage("Couldn't get a swap price"))
+        return undefined
+      }
+      if (!quote.liquidityAvailable) {
+        dispatch(setSnackbarMessage(INSUFFICIENT_LIQUIDITY_MESSAGE))
         return undefined
       }
 
