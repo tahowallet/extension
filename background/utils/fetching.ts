@@ -1,4 +1,4 @@
-import { logger } from "ethers"
+import { errors, logger } from "ethers"
 
 const DEFAULT_TIMEOUT = 10000
 
@@ -22,3 +22,26 @@ export const makeFetchWithTimeout = (timeoutMs: number) =>
   }
 
 export const fetchWithTimeout = makeFetchWithTimeout(DEFAULT_TIMEOUT)
+
+/**
+ * Whether an error thrown by ethers' `fetchJson` is likely transient and worth
+ * retrying: a timeout, a request that got no response at all, or a 5xx.
+ * `fetchJson` already retries rate limited (429) responses itself, and other
+ * 4xx responses won't change on a retry.
+ */
+export function isTransientFetchJsonError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false
+  }
+
+  if (error.code === errors.TIMEOUT) {
+    return true
+  }
+
+  if (error.code !== errors.SERVER_ERROR) {
+    return false
+  }
+
+  const status = "status" in error ? error.status : undefined
+  return typeof status !== "number" || status >= 500
+}
