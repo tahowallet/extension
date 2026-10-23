@@ -2,6 +2,7 @@ import browser, { Runtime } from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   PermissionRequest,
+  DeniedPermission,
   AllowedQueryParamPage,
   PortRequestEvent,
   PortResponseEvent,
@@ -37,6 +38,7 @@ import {
 import { EVMNetwork, toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
+import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
   requestPermission: PermissionRequest
@@ -452,22 +454,27 @@ export default class ProviderBridgeService extends BaseService<Events> {
     this.#pendingPermissionsRequests[permission.origin]?.(permission)
   }
 
-  async denyOrRevokePermission(permission: PermissionRequest): Promise<void> {
-    // FIXME proper error handling if this happens - should not tho
-    if (permission.state !== "deny" || !permission.accountAddress) {
-      return
-    }
-
-    const { address } = await this.preferenceService.getSelectedAccount()
-
-    // TODO make this multi-network friendly
+  async denyOrRevokePermission(permission: DeniedPermission): Promise<void> {
+    // Delete the rows of the account the permission belongs to, which isn't
+    // necessarily the selected one: connected sites can be revoked for any
+    // account from settings.
     const deleted = await this.db.deletePermission(
       permission.origin,
-      address,
+      permission.accountAddress,
       permission.chainID,
     )
 
     this.#pendingPermissionsRequests[permission.origin]?.("Time to move on")
+
+    const { address: selectedAddress } =
+      await this.preferenceService.getSelectedAccount()
+
+    // Sites only ever see the selected account, so revoking another account's
+    // permission changes nothing they can observe. Leave their current
+    // network and accounts alone in that case.
+    if (!sameEVMAddress(permission.accountAddress, selectedAddress)) {
+      return
+    }
 
     // If the removed permission is for the origin's current network, clear
     // that state so the origin isn't stuck on a disconnected network.

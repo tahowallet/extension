@@ -383,4 +383,111 @@ describe("ProviderBridgeService", () => {
       )
     })
   })
+
+  describe("denyOrRevokePermission", () => {
+    const origin = "https://revoke.test"
+    const ACCOUNT_A = "0x1111111111111111111111111111111111111111"
+    const ACCOUNT_B = "0x2222222222222222222222222222222222222222"
+    const NETWORKS = [ETHEREUM, POLYGON]
+
+    const permissionFor = (
+      accountAddress: string,
+      chainID: string,
+    ): PermissionRequest => ({
+      ...BASE_DATA.enablingPermission,
+      key: `${origin}_${accountAddress}_${chainID}`,
+      origin,
+      accountAddress,
+      chainID,
+    })
+
+    const storedPermission = (accountAddress: string, chainID: string) =>
+      // @ts-expect-error private access to inspect stored rows directly
+      providerBridgeService.db.checkPermission(origin, accountAddress, chainID)
+
+    // Mirrors the redux fan-out, which revokes a permission on every
+    // supported network.
+    const revokeOnAllNetworks = (accountAddress: string) =>
+      Promise.all(
+        NETWORKS.map((network) =>
+          providerBridgeService.denyOrRevokePermission({
+            ...permissionFor(accountAddress, network.chainID),
+            state: "deny",
+          }),
+        ),
+      )
+
+    let notifySpy: ReturnType<typeof jest.spyOn>
+    let unsetNetworkSpy: ReturnType<typeof jest.spyOn>
+
+    beforeEach(async () => {
+      jest
+        // @ts-expect-error private access to reference the service
+        .spyOn(providerBridgeService.preferenceService, "getSelectedAccount")
+        .mockImplementation(() =>
+          Promise.resolve({ address: ACCOUNT_B, network: ETHEREUM }),
+        )
+      notifySpy = jest.spyOn(
+        providerBridgeService,
+        "notifyContentScriptsAboutAddressChange",
+      )
+      unsetNetworkSpy = jest.spyOn(
+        // @ts-expect-error private access to reference the service
+        providerBridgeService.internalEthereumProviderService,
+        "unsetCurrentNetworkForOrigin",
+      )
+
+      await Promise.all(
+        [ACCOUNT_A, ACCOUNT_B].flatMap((accountAddress) =>
+          NETWORKS.map((network) =>
+            providerBridgeService.grantPermission(
+              permissionFor(accountAddress, network.chainID),
+            ),
+          ),
+        ),
+      )
+    })
+
+    afterEach(async () => {
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+    })
+
+    it("should revoke a non-selected account's permission on every chain", async () => {
+      await revokeOnAllNetworks(ACCOUNT_A)
+
+      await Promise.all(
+        NETWORKS.map(async (network) => {
+          expect(
+            await storedPermission(ACCOUNT_A, network.chainID),
+          ).toBeUndefined()
+          expect(
+            await storedPermission(ACCOUNT_B, network.chainID),
+          ).toMatchObject({ state: "allow", accountAddress: ACCOUNT_B })
+        }),
+      )
+
+      // The site only sees the selected account, so nothing it can observe
+      // has changed.
+      expect(notifySpy).not.toHaveBeenCalled()
+      expect(unsetNetworkSpy).not.toHaveBeenCalled()
+    })
+
+    it("should revoke the selected account's permission and notify the site", async () => {
+      await revokeOnAllNetworks(ACCOUNT_B)
+
+      await Promise.all(
+        NETWORKS.map(async (network) => {
+          expect(
+            await storedPermission(ACCOUNT_B, network.chainID),
+          ).toBeUndefined()
+          expect(
+            await storedPermission(ACCOUNT_A, network.chainID),
+          ).toMatchObject({ state: "allow", accountAddress: ACCOUNT_A })
+        }),
+      )
+
+      expect(notifySpy).toHaveBeenCalled()
+      expect(unsetNetworkSpy).toHaveBeenCalledTimes(NETWORKS.length)
+    })
+  })
 })
