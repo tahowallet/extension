@@ -158,10 +158,8 @@ async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
 }
 
 /**
- * Fails, the way signing does when no Ledger is connected, unless the Ledger
- * still has the Ethereum app open. The user can quit the app, or the device
- * can lock, without any USB event, so the service can believe a Ledger is
- * connected when it can no longer sign. This costs one APDU per signature.
+ * Throws unless the Ledger still has the Ethereum app open, which can change
+ * without any USB event.
  */
 async function requireEthereumApp(transport: Transport): Promise<void> {
   if (!(await isEthereumAppOpen(transport))) {
@@ -172,12 +170,8 @@ async function requireEthereumApp(transport: Transport): Promise<void> {
 }
 
 /**
- * How often, and for how long, the service polls a Ledger that's plugged in
- * but locked or not on the Ethereum app. Unlocking the device and opening or
- * quitting apps fire no USB events, so polling is the only way to notice
- * them. Polling starts fast, while the user is most likely busy with the
- * device, slows down after a while, and stops a while after the last
- * plug-in or refresh.
+ * How often and how long to poll a Ledger that's locked or not on the
+ * Ethereum app.
  */
 export const READINESS_POLL_FAST_INTERVAL_MS = 1_000
 export const READINESS_POLL_FAST_PERIOD_MS = 30_000
@@ -185,11 +179,8 @@ export const READINESS_POLL_SLOW_INTERVAL_MS = 3_000
 export const READINESS_POLL_DURATION_MS = 120_000
 
 /**
- * Sorts an error from talking to the Ledger into whether the Ledger just
- * isn't ready yet (locked, on the dashboard or another app, or busy), has
- * gone away, or failed some other way. Ledger errors are matched by name,
- * since hw-transport and the app packages can each bring their own copy of
- * @ledgerhq/errors.
+ * Matches errors by name because hw-transport and the app packages can each
+ * bring their own copy of @ledgerhq/errors.
  */
 function classifyLedgerError(error: unknown): "not-ready" | "gone" | "failed" {
   const name =
@@ -292,10 +283,9 @@ export default class LedgerService extends BaseService<Events> {
   #currentDevice: USBDevice | undefined = undefined
 
   /**
-   * Set while the transport is open on a Ledger that's locked or not on the
-   * Ethereum app, and the service is polling it until it's ready. Polling is
-   * private to the service: until the Ledger is ready, it looks just as it
-   * did before polling existed, disconnected.
+   * Set while polling a Ledger that's locked or not on the Ethereum app.
+   * Unlocking it or opening an app fires no USB event. Polling doesn't change
+   * whether the Ledger looks connected.
    */
   #readinessPoll: ReadinessPoll | null = null
 
@@ -362,8 +352,8 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   /**
-   * Connects to the Ledger if it's unlocked and on the Ethereum app, and
-   * disconnects it on any other error.
+   * Connects to the Ledger if it's unlocked and on the Ethereum app. Any error
+   * other than a not-ready one disconnects it.
    */
   async #connectIfReady(): Promise<"connected" | "not-ready" | "failed"> {
     const { transport } = this
@@ -399,10 +389,6 @@ export default class LedgerService extends BaseService<Events> {
     return "not-ready"
   }
 
-  /**
-   * Finishes connecting to a Ledger with the Ethereum app open, identifying
-   * it and announcing it as connected (and as added, if it's new).
-   */
   async #completeConnection(transport: Transport): Promise<void> {
     const eth = new Eth(transport)
 
@@ -445,11 +431,7 @@ export default class LedgerService extends BaseService<Events> {
     }
   }
 
-  /**
-   * Treats the Ledger as disconnected after an error connecting to it,
-   * closing the transport. A Ledger that went away mid-connection is
-   * expected and only logged at info level.
-   */
+  /** Closes the transport and reports the Ledger as disconnected. */
   async #handleConnectionError(error: unknown): Promise<void> {
     if (classifyLedgerError(error) === "gone") {
       logger.info("Ledger went away while connecting:", error)
@@ -541,10 +523,8 @@ export default class LedgerService extends BaseService<Events> {
   /**
    * Closes the current transport, if there is one. Closing releases the USB
    * interface, which fails once the device is unplugged, so failures are
-   * expected when replacing a possibly stale transport or after a disconnect
-   * and only logged at debug level, as they are when giving up on a Ledger
-   * that never became ready. A failure to close after a failed
-   * connection attempt is unexpected, and warns.
+   * expected and only logged at debug level. A failure to close after a
+   * failed connection attempt is unexpected, and warns.
    */
   async #closeTransport(
     reason: "replacing" | "disconnected" | "failed-connection" | "timed-out",
@@ -889,8 +869,6 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Unsupported network for Ledger signing")
     }
 
-    // Serialized like the other signing methods, so it never talks to the
-    // Ledger while a connection attempt or readiness poll is.
     return this.runSerialized(async () => {
       if (!this.transport) {
         throw new Error("Uninitialized transport!")
