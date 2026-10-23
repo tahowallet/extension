@@ -20,6 +20,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - uses: mshick/add-pr-comment@v2
+      - uses: mshick/add-pr-comment@v3
         with:
           message-path: ./.github/workflows/test-list/release-test-list.md
