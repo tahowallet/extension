@@ -22,11 +22,20 @@ runs:
     # A cache hit already has the browser, so only the system packages are
     # installed. Each attempt is capped, since a stalled apt mirror or browser
     # download otherwise hangs the job with no output.
+    #
+    # The cap stops the Playwright CLI, but the sudo'd apt-get it started can
+    # outlive it and keep holding the dpkg lock while it finishes a slow
+    # download. Rather than failing on that lock, later attempts wait for it
+    # (DPkg::Lock::Timeout), which also lets the earlier apt-get finish its
+    # work instead of being killed mid-install.
     - name: Install Chromium and system dependencies
       shell: bash
       env:
         CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
       run: |
+        echo 'DPkg::Lock::Timeout "180";' |
+          sudo tee /etc/apt/apt.conf.d/90-playwright-lock-timeout > /dev/null
+
         if [ "$CACHE_HIT" = "true" ]; then
           install=(bunx playwright install-deps chromium)
         else
