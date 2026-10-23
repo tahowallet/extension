@@ -1,9 +1,6 @@
-FROM oven/bun:1 AS bun-base
-FROM node:16-alpine AS build
+FROM oven/bun:1.4.4-alpine AS build
 
 WORKDIR /tally-ho
-
-COPY --from=bun-base /usr/local/bin/bun /usr/local/bin/bun
 
 COPY . .
 
