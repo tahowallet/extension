@@ -48,6 +48,28 @@ export type LedgerAccountSigner = {
 
 export const isLedgerSupported = typeof navigator.usb === "object"
 
+type USBConnectionHandler = (event: USBConnectionEvent) => Promise<void>
+
+/**
+ * Manifest V3 only delivers events to a background service worker's
+ * listeners if they were added during the worker script's initial
+ * evaluation; Chrome warns about, and won't wake the worker for, listeners
+ * added later. LedgerService is created after asynchronous setup, so the
+ * navigator.usb listeners are added here, when the module is evaluated, and
+ * forward each event to whichever handlers the service has attached.
+ */
+const usbConnectHandlers = new Set<USBConnectionHandler>()
+const usbDisconnectHandlers = new Set<USBConnectionHandler>()
+
+if (isLedgerSupported) {
+  navigator.usb.addEventListener("connect", (event) => {
+    usbConnectHandlers.forEach((handler) => handler(event))
+  })
+  navigator.usb.addEventListener("disconnect", (event) => {
+    usbDisconnectHandlers.forEach((handler) => handler(event))
+  })
+}
+
 const TestedProductId = (productId: number): boolean =>
   identifyUSBProductId(productId) != null
 
@@ -113,6 +135,26 @@ async function deriveAddressOnLedger(path: string, eth: Eth) {
   const derivedIdentifiers = await eth.getAddress(path)
   const address = ethersGetAddress(derivedIdentifiers.address)
   return address
+}
+
+/**
+ * Whether the Ledger currently has the Ethereum app open, using the
+ * dashboard-level GET APP NAME command (CLA 0xb0, INS 0x01).
+ *
+ * Adapted from @ledgerhq/live-common.
+ */
+async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
+  const response = await transport.send(0xb0, 0x01, 0x00, 0x00)
+
+  const format = response[0]
+  if (format !== 1) {
+    return false
+  }
+
+  const nameLength = response[1]
+  const name = response.subarray(2, 2 + nameLength).toString("ascii")
+
+  return name === "Ethereum"
 }
 
 async function generateLedgerId(
@@ -194,8 +236,8 @@ export default class LedgerService extends BaseService<Events> {
   private constructor(private db: LedgerDatabase) {
     super()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    usbConnectHandlers.add(this.#handleUSBConnect)
+    usbDisconnectHandlers.add(this.#handleUSBDisconnect)
 
     // Block serial operations until the service is started, in case a
     // connection or disconnection event occurs to soon.
@@ -227,9 +269,21 @@ export default class LedgerService extends BaseService<Events> {
         // creating the next one fail with "Unable to claim interface".
         await this.#closeTransport("replacing")
 
-        this.transport = await TransportWebUSB.create()
-        if (this.transport instanceof TransportWebUSB) {
-          this.#currentDevice = this.transport.device
+        // Only a Ledger the browser has already paired can be opened from
+        // the background; pairing a new one needs a user gesture in a page.
+        const transport = await TransportWebUSB.openConnected()
+        if (transport === null) {
+          return
+        }
+        this.transport = transport
+        this.#currentDevice = transport.device
+
+        // Checked after taking the transport so that a failure here goes
+        // through the failed-connection handling below, which closes it.
+        if (!(await isEthereumAppOpen(transport))) {
+          throw new Error(
+            "The Ledger doesn't have the Ethereum app open; open it to connect.",
+          )
         }
 
         const eth = new Eth(this.transport)
@@ -367,8 +421,8 @@ export default class LedgerService extends BaseService<Events> {
   protected override async internalStopService(): Promise<void> {
     await super.internalStopService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
+    usbDisconnectHandlers.delete(this.#handleUSBDisconnect)
+    usbConnectHandlers.delete(this.#handleUSBConnect)
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
