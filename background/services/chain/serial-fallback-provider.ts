@@ -360,6 +360,30 @@ function customOrDefaultProvider(
 }
 
 /**
+ * Matches JSON-RPC "method not found" (-32601) and "method not supported"
+ * (-32004, EIP-1474) errors. Ethers wraps RPC errors as SERVER_ERROR, so the
+ * RPC code usually only survives in a nested `error` or the message body;
+ * check all three, plus the wording common providers use.
+ */
+const METHOD_UNSUPPORTED_REGEXP =
+  /-32601|-32004|method not found|does not exist\/is not available|method .*does not exist|not supported|unsupported method/i
+
+function isMethodUnsupportedError(err: unknown): boolean {
+  const { code, error, message } = (err ?? {}) as {
+    code?: unknown
+    error?: { code?: unknown }
+    message?: unknown
+  }
+  return (
+    code === -32601 ||
+    code === -32004 ||
+    error?.code === -32601 ||
+    error?.code === -32004 ||
+    METHOD_UNSUPPORTED_REGEXP.test(String(message ?? err))
+  )
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of providers in case previous ones fail.
  *
@@ -1306,20 +1330,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.#ethSimulateV1Supported = true
         return true
       } catch (err) {
-        const message = String(
-          (err as { message?: unknown })?.message ?? err,
-        ).toLowerCase()
-        const code = (err as { code?: unknown })?.code
-        const methodUnsupported =
-          code === -32601 ||
-          code === -32004 ||
-          message.includes("method not found") ||
-          message.includes("method does not exist") ||
-          message.includes("method not supported") ||
-          message.includes("not supported") ||
-          message.includes("unsupported method")
-
-        if (methodUnsupported) {
+        if (isMethodUnsupportedError(err)) {
           this.#ethSimulateV1Supported = false
           return false
         }

@@ -86,6 +86,10 @@ describe("Serial Fallback Provider", () => {
         await fallbackProvider.send("eth_estimateGas", [])
         expect(boarSendStub.called).toBe(true)
       })
+      it("eth_simulateV1", async () => {
+        await fallbackProvider.send("eth_simulateV1", [])
+        expect(alchemySendStub.called).toBe(true)
+      })
     })
 
     it.each([401, 403])(
@@ -292,6 +296,63 @@ describe("Serial Fallback Provider", () => {
       // Accessing private property
       // oxlint-disable-next-line typescript/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(1)
+    })
+  })
+
+  describe("supportsEthSimulateV1", () => {
+    const simulateCalls = () =>
+      alchemySendStub
+        .getCalls()
+        .filter(({ args: [method] }) => method === "eth_simulateV1")
+
+    it("should report support and memoize a successful probe", async () => {
+      alchemySendStub.callsFake(async () => [])
+
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
+      expect(simulateCalls()).toHaveLength(1)
+    })
+
+    it("should share one probe between concurrent callers", async () => {
+      alchemySendStub.callsFake(async () => [])
+
+      const results = await Promise.all([
+        fallbackProvider.supportsEthSimulateV1(),
+        fallbackProvider.supportsEthSimulateV1(),
+      ])
+
+      expect(results).toEqual([true, true])
+      expect(simulateCalls()).toHaveLength(1)
+    })
+
+    it("should cache a method-not-found response as unsupported", async () => {
+      // Shaped like the SERVER_ERROR ethers raises for a JSON-RPC error.
+      alchemySendStub.callsFake(async () => {
+        throw Object.assign(
+          new Error(
+            'processing response error (body="{\\"jsonrpc\\":\\"2.0\\",\\"id\\":42,\\"error\\":{\\"code\\":-32601,\\"message\\":\\"the method eth_simulateV1 does not exist/is not available\\"}}", code=SERVER_ERROR)',
+          ),
+          { code: "SERVER_ERROR" },
+        )
+      })
+
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(false)
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(false)
+      expect(simulateCalls()).toHaveLength(1)
+    })
+
+    it("should not cache an inconclusive error", async () => {
+      alchemySendStub
+        .onFirstCall()
+        .callsFake(async () => {
+          throw new Error("something unexpected")
+        })
+        .onSecondCall()
+        .callsFake(async () => [])
+
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(false)
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
+      expect(simulateCalls()).toHaveLength(2)
     })
   })
 })

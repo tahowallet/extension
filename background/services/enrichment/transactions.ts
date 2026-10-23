@@ -37,6 +37,7 @@ import {
 } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
+import type { SimulationResult } from "./simulation"
 
 async function buildSubannotations(
   chainService: ChainService,
@@ -183,10 +184,10 @@ export async function annotationsFromLogs(
  * Resolve an annotation for a partial transaction request, or a pending
  * or mined transaction.
  *
- * `simulatedLogs` supplies logs produced by an off-chain simulation (e.g.
- * `eth_simulateV1`) for pending requests that don't yet have real logs; they
- * are fed through the same log-to-subannotation pipeline used for mined
- * transactions.
+ * `simulation` carries the result of an off-chain simulation (e.g.
+ * `eth_simulateV1`) for pending requests that don't yet have real logs.
+ * Successful simulation logs are fed through the same log-to-subannotation
+ * pipeline used for mined transactions; a revert adds a warning.
  */
 export default async function resolveTransactionAnnotation(
   chainService: ChainService,
@@ -202,7 +203,7 @@ export default async function resolveTransactionAnnotation(
         blockHash?: string
       }),
   desiredDecimals: number,
-  simulatedLogs?: EVMLog[],
+  simulation?: SimulationResult,
 ): Promise<TransactionAnnotation> {
   const assets = await indexingService.getCachedAssets(network)
 
@@ -258,6 +259,21 @@ export default async function resolveTransactionAnnotation(
     txAnnotation.warnings = txAnnotation.warnings.filter(
       (warning) => warning !== "insufficient-funds",
     )
+  }
+
+  // Annotations can be carried over between re-enrichments of the same
+  // request (e.g. after a fee change), so clear stale simulation state.
+  const otherWarnings = txAnnotation.warnings.filter(
+    (warning) => warning !== "simulation-reverted",
+  )
+  txAnnotation = {
+    ...txAnnotation,
+    warnings:
+      simulation?.status === "reverted"
+        ? [...otherWarnings, "simulation-reverted"]
+        : otherWarnings,
+    simulationRevertReason:
+      simulation?.status === "reverted" ? simulation.revertReason : undefined,
   }
 
   // If the transaction has been mined, get the block and set the timestamp
@@ -461,10 +477,18 @@ export default async function resolveTransactionAnnotation(
   // Look up logs and resolve subannotations, if available. Prefer real
   // confirmed-tx logs when present; otherwise fall back to any logs we got
   // from off-chain simulation of a pending request.
-  const logsForAnnotations =
+  const hasConfirmedLogs =
     "logs" in transaction && typeof transaction.logs !== "undefined"
-      ? transaction.logs
-      : simulatedLogs
+  const simulatedLogs =
+    simulation?.status === "success" ? simulation.logs : undefined
+  const logsForAnnotations = hasConfirmedLogs ? transaction.logs : simulatedLogs
+
+  // As above, don't let a previous simulation's transfers outlive it on a
+  // signature request (which, unlike a broadcast transaction, has no hash).
+  if (!hasConfirmedLogs && !("hash" in transaction)) {
+    txAnnotation = { ...txAnnotation, subannotations: undefined }
+  }
+
   if (logsForAnnotations !== undefined) {
     const subannotations = await annotationsFromLogs(
       chainService,

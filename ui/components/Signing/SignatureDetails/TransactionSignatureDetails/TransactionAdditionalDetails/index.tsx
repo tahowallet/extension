@@ -1,20 +1,24 @@
 import React, { ReactElement } from "react"
 import { TransactionSignatureSummaryProps } from "../TransactionSignatureSummary/TransactionSignatureSummaryProps"
 import SwapAssetDetails from "./SwapAssetDetails"
+import SimulatedBalanceChanges from "./SimulatedBalanceChanges"
 
 export default function TransactionAdditionalDetails({
   transactionRequest,
   annotation,
 }: TransactionSignatureSummaryProps): ReactElement | null {
-  switch (annotation?.type) {
-    case "asset-swap":
-      return (
+  return (
+    <>
+      {annotation?.type === "asset-swap" && (
         <SwapAssetDetails
           transactionRequest={transactionRequest}
           annotation={annotation}
         />
-      )
-    default:
-      return null
-  }
+      )}
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={annotation}
+      />
+    </>
+  )
 }

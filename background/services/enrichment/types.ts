@@ -40,6 +40,11 @@ export type BaseTransactionAnnotation = {
    *
    */
   warnings?: Warning[]
+  /**
+   * The revert reason reported by an off-chain simulation of a pending
+   * request, if the simulation reverted and the provider supplied one.
+   */
+  simulationRevertReason?: string
 }
 
 export type Warning =
@@ -47,6 +52,7 @@ export type Warning =
   | "send-to-contract"
   | "approve-eoa"
   | "insufficient-funds"
+  | "simulation-reverted"
 
 export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"

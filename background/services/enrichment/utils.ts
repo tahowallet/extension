@@ -2,6 +2,7 @@ import dayjs from "dayjs"
 import type {
   EIP2612SignTypedDataAnnotation,
   EnrichedEVMTransaction,
+  TransactionAnnotation,
 } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
@@ -11,6 +12,7 @@ import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type { AddressOnNetwork } from "../../accounts"
+import { isDefined } from "../../lib/utils/type-guards"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData,
@@ -162,4 +164,41 @@ export function getRelevantTransactionAddresses(
         sameEVMAddress(senderAddress, address),
     )
     .map(({ address }) => normalizeEVMAddress(address))
+}
+
+export type AssetTransferForAddress = {
+  direction: "in" | "out"
+  assetSymbol: string
+  assetLogoUrl?: string
+  localizedDecimalAmount: string
+}
+
+/**
+ * Pick out the asset-transfer subannotations that move funds into or out of
+ * the given address, tagged with their direction relative to that address.
+ */
+export function getAssetTransfersForAddress(
+  subannotations: TransactionAnnotation[] | undefined,
+  address: HexString,
+): AssetTransferForAddress[] {
+  return (subannotations ?? [])
+    .map((subannotation): AssetTransferForAddress | undefined => {
+      if (
+        subannotation.type === "asset-transfer" &&
+        (sameEVMAddress(subannotation.sender.address, address) ||
+          sameEVMAddress(subannotation.recipient.address, address))
+      ) {
+        return {
+          direction: sameEVMAddress(subannotation.sender.address, address)
+            ? "out"
+            : "in",
+          assetSymbol: subannotation.assetAmount.asset.symbol,
+          assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
+          localizedDecimalAmount:
+            subannotation.assetAmount.localizedDecimalAmount,
+        }
+      }
+      return undefined
+    })
+    .filter(isDefined)
 }

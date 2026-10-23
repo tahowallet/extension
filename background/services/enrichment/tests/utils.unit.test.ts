@@ -1,0 +1,78 @@
+import { ETHEREUM } from "../../../constants"
+import { createSmartContractAsset } from "../../../tests/factories"
+import { AssetTransfer, EnrichedAddressOnNetwork } from "../types"
+import { getAssetTransfersForAddress } from "../utils"
+
+const USER = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
+const OTHER = "0x9eef87f4c08d8934cb2a3309df4dec5635338115"
+const THIRD = "0x22f9dcf4647084d6c31b2765f6910cd85c178c18"
+
+const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
+  address,
+  network: ETHEREUM,
+  annotation: {
+    timestamp: 0,
+    hasCode: false,
+    balance: {
+      address,
+      network: ETHEREUM,
+      assetAmount: { asset: ETHEREUM.baseAsset, amount: 0n },
+      dataSource: "local",
+      retrievedAt: 0,
+    },
+  },
+})
+
+const transfer = (
+  sender: string,
+  recipient: string,
+  symbol: string,
+  localizedDecimalAmount: string,
+): AssetTransfer => ({
+  type: "asset-transfer",
+  timestamp: 0,
+  blockTimestamp: undefined,
+  sender: enrichedAddress(sender),
+  recipient: enrichedAddress(recipient),
+  assetAmount: {
+    asset: createSmartContractAsset({ symbol }),
+    amount: 1n,
+    decimalAmount: 1,
+    localizedDecimalAmount,
+  },
+})
+
+describe("getAssetTransfersForAddress", () => {
+  it("tags transfers by direction relative to the address", () => {
+    const transfers = getAssetTransfersForAddress(
+      [
+        transfer(USER, OTHER, "USDC", "100"),
+        transfer(OTHER, USER.toUpperCase().replace("0X", "0x"), "DAI", "99"),
+      ],
+      USER,
+    )
+
+    expect(transfers).toEqual([
+      expect.objectContaining({
+        direction: "out",
+        assetSymbol: "USDC",
+        localizedDecimalAmount: "100",
+      }),
+      expect.objectContaining({
+        direction: "in",
+        assetSymbol: "DAI",
+        localizedDecimalAmount: "99",
+      }),
+    ])
+  })
+
+  it("ignores transfers that don't involve the address", () => {
+    expect(
+      getAssetTransfersForAddress([transfer(OTHER, THIRD, "USDC", "1")], USER),
+    ).toEqual([])
+  })
+
+  it("handles missing subannotations", () => {
+    expect(getAssetTransfersForAddress(undefined, USER)).toEqual([])
+  })
+})

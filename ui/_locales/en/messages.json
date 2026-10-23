@@ -803,6 +803,8 @@
       "exchangeRoute": "Exchange route"
     },
     "transactionLikelyFails": "This transaction is likely to fail",
+    "simulationReverted": "Simulation shows this transaction will fail",
+    "simulatedBalanceChanges": "Simulated balance changes",
     "gasErrorCopied": "Error details copied to clipboard",
     "copyError": "Copy error"
   },

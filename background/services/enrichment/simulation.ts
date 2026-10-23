@@ -23,24 +23,29 @@ type SimulateV1BlockResult = {
   calls?: SimulateV1CallResult[]
 }
 
+export type SimulationResult =
+  | { status: "success"; logs: EVMLog[] }
+  | { status: "reverted"; revertReason?: string }
+
 function toHexQuantity(value: bigint | number): HexString {
   return utils.hexValue(BigNumber.from(value))
 }
 
 /**
- * Run `eth_simulateV1` for a pending signature request and return the resulting
- * logs in `EVMLog` shape, so the standard `annotationsFromLogs` pipeline can
- * produce subannotations.
+ * Run `eth_simulateV1` for a pending signature request. On success, returns
+ * the resulting logs in `EVMLog` shape so the standard `annotationsFromLogs`
+ * pipeline can produce subannotations; on revert, returns the revert reason
+ * when the provider supplies one.
  *
- * Returns `undefined` if simulation is unavailable, the simulation reverted, or
- * anything about the response is malformed — the caller is expected to fall
- * back to the existing calldata heuristics in that case.
+ * Returns `undefined` if simulation is unavailable or anything about the
+ * response is malformed — the caller is expected to fall back to the existing
+ * calldata heuristics in that case.
  */
-export default async function simulateSignatureRequestLogs(
+export default async function simulateSignatureRequest(
   chainService: ChainService,
   network: EVMNetwork,
   transaction: PartialTransactionRequestWithFrom,
-): Promise<EVMLog[] | undefined> {
+): Promise<SimulationResult | undefined> {
   const provider = chainService.providerForNetwork(network)
   if (!provider) return undefined
 
@@ -57,9 +62,9 @@ export default async function simulateSignatureRequestLogs(
   if (typeof transaction.value === "bigint") {
     call.value = toHexQuantity(transaction.value)
   }
-  if (typeof transaction.gasLimit === "bigint") {
-    call.gas = toHexQuantity(transaction.gasLimit)
-  }
+  // The gas limit is deliberately omitted: it's our own estimate, and a low
+  // one would surface as a spurious revert. Gas estimation failures are
+  // already reported separately.
 
   try {
     const results = (await chainService.send(
@@ -78,16 +83,18 @@ export default async function simulateSignatureRequestLogs(
 
     const callResult = results?.[0]?.calls?.[0]
     if (!callResult) return undefined
-    // A reverted simulation tells us nothing useful about transfers; defer to
-    // the heuristic path so we can still show a best-effort annotation.
-    if (callResult.status !== "0x1") return undefined
-    if (!callResult.logs) return []
+    if (callResult.status !== "0x1") {
+      return { status: "reverted", revertReason: callResult.error?.message }
+    }
 
-    return callResult.logs.map((log) => ({
-      contractAddress: log.address,
-      data: log.data,
-      topics: log.topics,
-    }))
+    return {
+      status: "success",
+      logs: (callResult.logs ?? []).map((log) => ({
+        contractAddress: log.address,
+        data: log.data,
+        topics: log.topics,
+      })),
+    }
   } catch (err) {
     logger.debug(
       "eth_simulateV1 call failed, falling back to calldata heuristics",
