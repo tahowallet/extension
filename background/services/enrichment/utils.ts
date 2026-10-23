@@ -93,7 +93,9 @@ export const getERC20LogsForAddresses = (
   logs: ERC20TransferLog[],
   addresses: string[],
 ): ERC20TransferLog[] => {
-  const relevantAddresses = new Set(addresses)
+  // Normalize both sides: callers pass addresses in whatever case they came
+  // in (a checksummed Safe address from a dapp, for one).
+  const relevantAddresses = new Set(addresses.map(normalizeEVMAddress))
 
   return logs.filter(
     (log) =>

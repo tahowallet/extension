@@ -1,7 +1,7 @@
 import { ETHEREUM } from "../../../constants"
 import { createSmartContractAsset } from "../../../tests/factories"
 import { AssetTransfer, EnrichedAddressOnNetwork } from "../types"
-import { getAssetTransfersForAddress } from "../utils"
+import { getAssetTransfersForAddress, getERC20LogsForAddresses } from "../utils"
 
 const USER = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const OTHER = "0x9eef87f4c08d8934cb2a3309df4dec5635338115"
@@ -93,5 +93,25 @@ describe("getAssetTransfersForAddress", () => {
 
   it("handles missing subannotations", () => {
     expect(getAssetTransfersForAddress(undefined, USER)).toEqual([])
+  })
+})
+
+describe("getERC20LogsForAddresses", () => {
+  // Placeholder addresses; the checksummed form mixes case.
+  const LOWER = "0xabcdef0123456789abcdef0123456789abcdef01"
+  const CHECKSUMMED = "0xABcdEF0123456789aBcdEf0123456789aBCDEF01"
+  const log = {
+    contractAddress: "0x5555555555555555555555555555555555555555",
+    amount: 1n,
+    senderAddress: LOWER,
+    recipientAddress: OTHER,
+  }
+
+  it("matches addresses regardless of case", () => {
+    expect(getERC20LogsForAddresses([log], [CHECKSUMMED])).toEqual([log])
+  })
+
+  it("leaves out logs that involve none of the addresses", () => {
+    expect(getERC20LogsForAddresses([log], [THIRD])).toEqual([])
   })
 })
