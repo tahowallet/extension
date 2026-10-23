@@ -71,6 +71,7 @@ export default function BalanceChangesList({
                 address={transfer.counterparty.address}
                 name={transfer.counterparty.name}
                 nameResolverSystem={transfer.counterparty.nameResolverSystem}
+                compact
               />
             </div>
           </div>
@@ -123,7 +124,6 @@ export default function BalanceChangesList({
           gap: 4px;
           flex-shrink: 0;
           color: var(--green-40);
-          font-size: 12px;
         }
       `}</style>
     </>
