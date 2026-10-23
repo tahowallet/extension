@@ -157,6 +157,50 @@ async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
   return name === "Ethereum"
 }
 
+/**
+ * How often, and for how long, the service polls a Ledger that's plugged in
+ * but locked or not on the Ethereum app. Unlocking the device and opening or
+ * quitting apps fire no USB events, so polling is the only way to notice
+ * them. Polling starts fast, while the user is most likely busy with the
+ * device, slows down after a while, and stops a while after the last
+ * plug-in or refresh.
+ */
+export const READINESS_POLL_FAST_INTERVAL_MS = 1_000
+export const READINESS_POLL_FAST_PERIOD_MS = 30_000
+export const READINESS_POLL_SLOW_INTERVAL_MS = 3_000
+export const READINESS_POLL_DURATION_MS = 120_000
+
+/**
+ * Sorts an error from talking to the Ledger into whether the Ledger just
+ * isn't ready yet (locked, on the dashboard or another app, or busy), has
+ * gone away, or failed some other way. Ledger errors are matched by name,
+ * since hw-transport and the app packages can each bring their own copy of
+ * @ledgerhq/errors.
+ */
+function classifyLedgerError(error: unknown): "not-ready" | "gone" | "failed" {
+  const name =
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    typeof error.name === "string"
+      ? error.name
+      : undefined
+
+  switch (name) {
+    case "LockedDeviceError":
+    case "TransportStatusError":
+    case "TransportRaceCondition":
+      return "not-ready"
+    case "DisconnectedDevice":
+    case "DisconnectedDeviceDuringOperation":
+    case "TransportInterfaceNotAvailable":
+    case "NotFoundError":
+      return "gone"
+    default:
+      return "failed"
+  }
+}
+
 async function generateLedgerId(
   transport: Transport,
   eth: Eth,
@@ -228,6 +272,18 @@ export default class LedgerService extends BaseService<Events> {
    */
   #currentDevice: USBDevice | undefined = undefined
 
+  /**
+   * Set while the transport is open on a Ledger that's locked or not on the
+   * Ethereum app, and the service is polling it until it's ready. Polling is
+   * private to the service: until the Ledger is ready, it looks just as it
+   * did before polling existed, disconnected.
+   */
+  #readinessPoll: {
+    /** When polling was last started or extended by a plug-in or refresh. */
+    triggeredAt: number
+    timer: ReturnType<typeof setTimeout> | undefined
+  } | null = null
+
   #lastOperationPromise = Promise.resolve()
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> = async () =>
@@ -273,78 +329,202 @@ export default class LedgerService extends BaseService<Events> {
         // the background; pairing a new one needs a user gesture in a page.
         const transport = await openConnectedLedgerTransport()
         if (transport === null) {
+          this.#stopReadinessPolling()
           return
         }
         this.transport = transport
         this.#currentDevice = transport.device
-
-        // Checked after taking the transport so that a failure here goes
-        // through the failed-connection handling below, which closes it.
-        if (!(await isEthereumAppOpen(transport))) {
-          throw new Error(
-            "The Ledger doesn't have the Ethereum app open; open it to connect.",
-          )
-        }
-
-        const eth = new Eth(this.transport)
-
-        const [id, type] = await generateLedgerId(this.transport, eth)
-
-        if (!id) {
-          throw new Error("Can't derive meaningful identification address!")
-        }
-
-        const appData = await eth.getAppConfiguration()
-
-        const normalizedID = normalizeEVMAddress(id)
-
-        const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
-        this.#currentLedger = { id: ledgerId, type }
-
-        this.emitter.emit("connected", {
-          id: ledgerId,
-          type,
-          metadata: {
-            ethereumVersion: appData.version,
-            isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-            displayDetails: DisplayDetailsByLedgerType[type],
-          },
-        })
-
-        const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
-
-        if (!knownAddresses.length) {
-          this.emitter.emit("ledgerAdded", {
-            id: ledgerId,
-            type,
-            accountIDs: [idDerivationPath],
-            metadata: {
-              ethereumVersion: appData.version,
-              isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-              displayDetails: DisplayDetailsByLedgerType[type],
-            },
-          })
-        }
       } catch (error) {
-        logger.error(
-          "Treating Ledger as having disconnected due to a connection error:",
-          error,
-        )
-        await this.#closeTransport("failed-connection")
-        await this.#handleUSBDisconnect()
+        this.#stopReadinessPolling()
+        await this.#handleConnectionError(error)
+        return
       }
+
+      await this.#connectWhenReady(true)
     })
+  }
+
+  /**
+   * Connects to the Ledger on the open transport if it's unlocked and on the
+   * Ethereum app, and otherwise keeps the transport open and polls until it
+   * is. `trigger` is true for a plug-in or refresh, which starts polling or
+   * extends its deadline, and false for a poll. Must run serialized.
+   */
+  async #connectWhenReady(trigger: boolean): Promise<void> {
+    const { transport } = this
+    if (transport === undefined) {
+      this.#stopReadinessPolling()
+      return
+    }
+
+    try {
+      if (await isEthereumAppOpen(transport)) {
+        await this.#completeConnection(transport)
+        if (this.#readinessPoll !== null) {
+          logger.info("Ledger is now unlocked with the Ethereum app open.")
+        }
+        this.#stopReadinessPolling()
+        return
+      }
+    } catch (error) {
+      if (classifyLedgerError(error) !== "not-ready") {
+        this.#stopReadinessPolling()
+        await this.#handleConnectionError(error)
+        return
+      }
+      logger.debug("Ledger isn't ready:", error)
+    }
+
+    await this.#waitForReadiness(trigger)
+  }
+
+  /**
+   * Finishes connecting to a Ledger with the Ethereum app open, identifying
+   * it and announcing it as connected (and as added, if it's new).
+   */
+  async #completeConnection(transport: Transport): Promise<void> {
+    const eth = new Eth(transport)
+
+    const [id, type] = await generateLedgerId(transport, eth)
+
+    if (!id) {
+      throw new Error("Can't derive meaningful identification address!")
+    }
+
+    const appData = await eth.getAppConfiguration()
+
+    const normalizedID = normalizeEVMAddress(id)
+
+    const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+    this.#currentLedger = { id: ledgerId, type }
+
+    this.emitter.emit("connected", {
+      id: ledgerId,
+      type,
+      metadata: {
+        ethereumVersion: appData.version,
+        isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+        displayDetails: DisplayDetailsByLedgerType[type],
+      },
+    })
+
+    const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
+
+    if (!knownAddresses.length) {
+      this.emitter.emit("ledgerAdded", {
+        id: ledgerId,
+        type,
+        accountIDs: [idDerivationPath],
+        metadata: {
+          ethereumVersion: appData.version,
+          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+          displayDetails: DisplayDetailsByLedgerType[type],
+        },
+      })
+    }
+  }
+
+  /**
+   * Treats the Ledger as disconnected after an error connecting to it,
+   * closing the transport. A Ledger that went away mid-connection is
+   * expected and only logged at info level.
+   */
+  async #handleConnectionError(error: unknown): Promise<void> {
+    if (classifyLedgerError(error) === "gone") {
+      logger.info("Ledger went away while connecting:", error)
+    } else {
+      logger.error(
+        "Treating Ledger as having disconnected due to a connection error:",
+        error,
+      )
+    }
+    await this.#closeTransport("failed-connection")
+    await this.#handleUSBDisconnect()
+  }
+
+  /**
+   * Keeps polling a Ledger that isn't ready yet, starting polling if
+   * `trigger` is set and it isn't running, and resetting the deadline on
+   * every trigger. A Ledger that was connected until now is reported as
+   * disconnected, as a failed connection attempt always did. Once the
+   * deadline passes, polling stops and the transport is closed quietly. Must
+   * run serialized.
+   */
+  async #waitForReadiness(trigger: boolean): Promise<void> {
+    const currentLedger = this.#currentLedger
+    if (currentLedger !== null) {
+      this.#currentLedger = null
+      void this.emitter.emit("disconnected", {
+        id: currentLedger.id,
+        type: currentLedger.type,
+      })
+    }
+
+    if (this.transport === undefined) {
+      // The Ledger was unplugged while it was being checked.
+      this.#stopReadinessPolling()
+      return
+    }
+
+    let poll = this.#readinessPoll
+    if (poll === null) {
+      if (!trigger) {
+        // Polling was stopped while this poll was in flight.
+        return
+      }
+      logger.info(
+        "Ledger is locked or not on the Ethereum app; waiting for it to be ready.",
+      )
+      poll = { triggeredAt: Date.now(), timer: undefined }
+      this.#readinessPoll = poll
+    } else if (trigger) {
+      poll.triggeredAt = Date.now()
+    }
+
+    const elapsed = Date.now() - poll.triggeredAt
+    if (elapsed >= READINESS_POLL_DURATION_MS) {
+      logger.info(
+        "Ledger didn't become ready in time; closing its transport until it's plugged in or refreshed.",
+      )
+      this.#stopReadinessPolling()
+      await this.#closeTransport("timed-out")
+      return
+    }
+
+    clearTimeout(poll.timer)
+    poll.timer = setTimeout(
+      () => {
+        void this.runSerialized(async () => {
+          const currentPoll = this.#readinessPoll
+          if (currentPoll === null) {
+            return
+          }
+          currentPoll.timer = undefined
+          logger.debug("Polling Ledger readiness.")
+          await this.#connectWhenReady(false)
+        })
+      },
+      elapsed < READINESS_POLL_FAST_PERIOD_MS
+        ? READINESS_POLL_FAST_INTERVAL_MS
+        : READINESS_POLL_SLOW_INTERVAL_MS,
+    )
+  }
+
+  #stopReadinessPolling(): void {
+    clearTimeout(this.#readinessPoll?.timer)
+    this.#readinessPoll = null
   }
 
   /**
    * Closes the current transport, if there is one. Closing releases the USB
    * interface, which fails once the device is unplugged, so failures are
    * expected when replacing a possibly stale transport or after a disconnect
-   * and only logged at debug level. A failure to close after a failed
+   * and only logged at debug level, as they are when giving up on a Ledger
+   * that never became ready. A failure to close after a failed
    * connection attempt is unexpected, and warns.
    */
   async #closeTransport(
-    reason: "replacing" | "disconnected" | "failed-connection",
+    reason: "replacing" | "disconnected" | "failed-connection" | "timed-out",
   ): Promise<void> {
     const { transport } = this
     if (transport === undefined) {
@@ -382,23 +562,33 @@ export default class LedgerService extends BaseService<Events> {
    * no event. A disconnect only disconnects the Ledger when it's the device
    * the transport was opened on; other USB devices, including other Ledgers,
    * coming and going don't affect it. WebUSB uses a single USBDevice object
-   * per device, so the event's device can be compared directly.
+   * per device, so the event's device can be compared directly. Either way,
+   * readiness polling stops; a Ledger that was still being polled was never
+   * reported as connected, so its transport is closed without a
+   * `disconnected` event.
    */
   #handleUSBDisconnect = async (event?: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
-    const currentLedger = this.#currentLedger
-    if (currentLedger === null) {
-      return
-    }
-
     if (
       event !== undefined &&
       this.#currentDevice !== undefined &&
       event.device !== this.#currentDevice
     ) {
+      return
+    }
+
+    const wasPolling = this.#readinessPoll !== null
+    this.#stopReadinessPolling()
+
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
+      if (wasPolling) {
+        logger.info("Ledger was unplugged before it became ready.")
+        await this.#closeTransport("disconnected")
+      }
       return
     }
 
@@ -423,6 +613,7 @@ export default class LedgerService extends BaseService<Events> {
 
     usbDisconnectHandlers.delete(this.#handleUSBDisconnect)
     usbConnectHandlers.delete(this.#handleUSBConnect)
+    this.#stopReadinessPolling()
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
