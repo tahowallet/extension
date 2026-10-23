@@ -13,20 +13,34 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+
 jobs:
   post-link:
-    # Only builds for pull requests have a PR to link from; builds for pushes
-    # to main or tags are skipped. Manual dispatches always run.
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
+    # Only completed builds for pull requests have a PR and build to link;
+    # builds for pushes to main or tags, and cancelled or skipped builds, are
+    # skipped. Manual dispatches always run, and the script makes the same
+    # checks against the run they name.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled' &&
+      github.event.workflow_run.conclusion != 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      # No dependencies are installed: the script only needs bun and fetch.
       - name: Post artifact link to PR if available
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const postBuildLink = require("./.github/workflows/builds/post-build-link.js")
-            await postBuildLink({ github, context })
+        run: bun scripts/workflows/post-build-link.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_RUN_ID: ${{ inputs.workflow_run_id || github.event.workflow_run.id }}
