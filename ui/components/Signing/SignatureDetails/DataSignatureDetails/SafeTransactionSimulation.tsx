@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import type { SafeTransactionSignTypedDataAnnotation } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
 import BalanceChangesList from "../BalanceChangesList"
+import SimulationHeading from "../SimulationHeading"
 import TransactionSignatureDetailsWarning from "../TransactionSignatureDetails/TransactionSignatureDetailsWarning"
 
 type SafeTransactionSimulationProps = {
@@ -29,6 +30,7 @@ export default function SafeTransactionSimulation({
 
   return (
     <div className="safe_simulation">
+      {simulation !== undefined && <SimulationHeading />}
       {nonceAlreadyUsed && (
         <TransactionSignatureDetailsWarning message={t("nonceAlreadyUsed")} />
       )}
@@ -48,8 +50,9 @@ export default function SafeTransactionSimulation({
         ))}
       {simulation?.status === "success" && (
         <BalanceChangesList
-          label={tShared("simulatedSafeBalanceChanges")}
+          label={tShared("safeBalanceChanges")}
           transfers={simulation.balanceChanges}
+          emptyMessage={tShared("noBalanceChanges")}
         />
       )}
       {simulation !== undefined && (

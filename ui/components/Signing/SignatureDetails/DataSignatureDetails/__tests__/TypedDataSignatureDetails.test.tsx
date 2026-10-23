@@ -67,7 +67,6 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
       />,
     )
 
-    expect(ui.getByText("Simulated Safe balance changes")).toBeInTheDocument()
     expect(ui.getByText("-1.5")).toBeInTheDocument()
     expect(
       ui.getByText("Simulated as if all required owners had signed."),
@@ -84,7 +83,8 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
     expect(cards).toHaveLength(2)
     const [simulationCard, fieldsCard] = cards
     expect(simulationCard).toHaveTextContent("Your signature is required")
-    expect(simulationCard).toHaveTextContent("Simulated Safe balance changes")
+    expect(within(simulationCard).getByText("Simulation")).toBeTruthy()
+    expect(within(simulationCard).getByText("Safe")).toBeTruthy()
     expect(simulationCard).not.toHaveTextContent("SafeTx")
     // The recipient of the outflow, by name.
     expect(within(simulationCard).getByText("To")).toBeTruthy()
@@ -93,6 +93,20 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
     expect(fieldsCard).toHaveTextContent("Safe")
     expect(fieldsCard).toHaveTextContent("SafeTx")
     expect(precedes(simulationCard, fieldsCard)).toBe(true)
+  })
+
+  it("shows the empty state beside the Safe label when nothing moves", () => {
+    const ui = renderWithProviders(
+      <TypedDataSignatureDetails
+        typedDataRequest={safeTxRequest({
+          simulation: { status: "success", balanceChanges: [] },
+        })}
+      />,
+    )
+
+    expect(
+      ui.getByText("No balance changes").closest(".simulated_changes_row"),
+    ).toHaveTextContent("Safe")
   })
 
   it("keeps a single card when there's nothing simulated to show", () => {
@@ -123,7 +137,7 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
     expect(
       ui.getByText("Simulation shows this Safe transaction will fail"),
     ).toBeInTheDocument()
-    expect(ui.queryByText("Simulated Safe balance changes")).toBeNull()
+    expect(ui.container.querySelector(".simulated_changes")).toBeNull()
   })
 
   it("warns about a used nonce even without a simulation", () => {

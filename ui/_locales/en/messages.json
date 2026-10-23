@@ -811,7 +811,6 @@
     },
     "transactionLikelyFails": "This transaction is likely to fail",
     "simulationReverted": "Simulation shows this transaction will fail",
-    "simulatedSafeBalanceChanges": "Simulated Safe balance changes",
     "balanceChangeTo": "To",
     "balanceChangeFrom": "From",
     "safe": {

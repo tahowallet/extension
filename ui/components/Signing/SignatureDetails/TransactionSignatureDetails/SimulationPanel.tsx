@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
 import SimulatedBalanceChanges from "./TransactionAdditionalDetails/SimulatedBalanceChanges"
+import SimulationHeading from "../SimulationHeading"
 
 /**
  * The simulation's outcome, shown below the transaction details. A revert
@@ -20,7 +21,7 @@ export default function SimulationPanel({
 
   return (
     <div className="simulation_panel standard_width_padded">
-      <div className="simulation_heading">{t("simulationHeading")}</div>
+      <SimulationHeading />
       {annotation?.simulationStatus === "success" ? (
         <SimulatedBalanceChanges
           transactionRequest={transactionRequest}
@@ -35,12 +36,8 @@ export default function SimulationPanel({
           flex-direction: column;
           gap: 16px;
           margin-top: 21px;
-        }
-        .simulation_heading {
-          color: var(--green-20);
-          font-weight: 500;
-          font-size: 16px;
-          line-height: 24px;
+          /* A little room below the last row when scrolled to the bottom. */
+          padding-bottom: 16px;
         }
         .simulation_empty {
           color: var(--green-40);
