@@ -15,6 +15,9 @@ on:
 
 jobs:
   post-link:
+    # Only builds for pull requests have a PR to link from; builds for pushes
+    # to main or tags are skipped. Manual dispatches always run.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

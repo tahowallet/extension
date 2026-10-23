@@ -50,9 +50,13 @@ module.exports = async function postBuildLink({ github, context }) {
     )
   }
 
-  const matchArtifact = allArtifacts.filter((artifact) =>
-    artifact.name.startsWith("extension-builds-"),
-  )[0]
+  // Builds upload both the regular bundle (extension-builds-<PR or commit>)
+  // and a mainnet fork bundle (extension-builds-fork-<PR or commit>), and the
+  // API doesn't list them in a stable order, so match the regular bundle's
+  // name exactly rather than taking whichever comes first.
+  const matchArtifact = allArtifacts.find((artifact) =>
+    /^extension-builds-[0-9a-f]+$/.test(artifact.name),
+  )
 
   if (matchArtifact === undefined || matchArtifact === null) {
     throw new Error(
