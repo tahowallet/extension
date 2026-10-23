@@ -28,13 +28,25 @@ export type SaltedKey = {
 }
 
 function bufferToBase64(array: Uint8Array | ArrayBuffer): string {
+  // Wrapping an ArrayBuffer in a Uint8Array creates a view, not a copy.
   return (
-    array instanceof ArrayBuffer ? Buffer.from(array) : Buffer.from(array)
-  ).toString("base64")
+    array instanceof ArrayBuffer ? new Uint8Array(array) : array
+  ).toBase64()
 }
 
-function base64ToBuffer(s: string): Uint8Array {
-  return Buffer.from(s, "base64")
+function base64ToBuffer(s: string): Uint8Array<ArrayBuffer> {
+  return Uint8Array.fromBase64(s)
+}
+
+/**
+ * WebCrypto only accepts byte arrays backed by a plain ArrayBuffer, which
+ * Uint8Array's default typing doesn't guarantee. Checks it at runtime rather
+ * than asserting it, without copying.
+ */
+function isArrayBufferBacked(
+  bytes: Uint8Array,
+): bytes is Uint8Array<ArrayBuffer> {
+  return bytes.buffer instanceof ArrayBuffer
 }
 
 async function generateSalt(): Promise<string> {
@@ -123,9 +135,14 @@ export async function deriveArgon2KeyFromPassword(
     hashLen: 32,
   })
 
+  // argon2-browser returns a freshly allocated array, but types it loosely.
+  if (!isArrayBufferBacked(hash)) {
+    throw new Error("Argon2 returned a hash that WebCrypto can't import.")
+  }
+
   const key = await crypto.subtle.importKey(
     "raw",
-    hash as BufferSource,
+    hash,
     { name: "AES-GCM", length: 256 },
     false,
     ["encrypt", "decrypt"],
@@ -232,12 +249,9 @@ export async function decryptVault<V>(vaultData: {
       : passwordOrSaltedKey
 
   const plaintext = await crypto.subtle.decrypt(
-    {
-      name: "AES-GCM",
-      iv: base64ToBuffer(initializationVector) as BufferSource,
-    },
+    { name: "AES-GCM", iv: base64ToBuffer(initializationVector) },
     key,
-    base64ToBuffer(cipherText) as BufferSource,
+    base64ToBuffer(cipherText),
   )
 
   return JSON.parse(new TextDecoder().decode(plaintext))
