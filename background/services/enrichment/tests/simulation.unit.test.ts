@@ -3,6 +3,7 @@ import { ETHEREUM } from "../../../constants"
 import { createTransactionRequest } from "../../../tests/factories"
 import ChainService from "../../chain"
 import simulateSignatureRequest from "../simulation"
+import { encodeExecTransaction } from "../safe"
 
 const TRANSFER_LOG = {
   address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -75,7 +76,7 @@ describe("simulateSignatureRequest", () => {
     expect(payload.blockStateCalls[0].calls[0]).toEqual({
       from: request.from,
       to: request.to,
-      data: "0xa9059cbb",
+      input: "0xa9059cbb",
       value: "0xa",
     })
   })
@@ -138,5 +139,45 @@ describe("simulateSignatureRequest", () => {
     expect(
       await simulateSignatureRequest(malformed, ETHEREUM, request),
     ).toBeUndefined()
+  })
+
+  it("tags an execTransaction call with the Safe and checks its return", async () => {
+    const safe = "0x1111111111111111111111111111111111111111"
+    const zero = "0x0000000000000000000000000000000000000000"
+    const execRequest = createTransactionRequest({
+      to: safe,
+      input: encodeExecTransaction(
+        {
+          to: "0x9eef87f4c08d8934cb2a3309df4dec5635338115",
+          value: 0n,
+          data: "0x",
+          operation: 0,
+          safeTxGas: 50_000n,
+          baseGas: 0n,
+          gasPrice: 0n,
+          gasToken: zero,
+          refundReceiver: zero,
+        },
+        "0x",
+      ),
+    })
+    // execTransaction returning false: the inner call failed, but with
+    // safeTxGas set the outer call still succeeds.
+    const returnedFalse = `0x${"0".repeat(64)}`
+    const { chainService } = makeChainService({
+      send: sandbox
+        .stub()
+        .resolves([
+          { calls: [{ status: "0x1", returnData: returnedFalse, logs: [] }] },
+        ]),
+    })
+
+    expect(
+      await simulateSignatureRequest(chainService, ETHEREUM, execRequest),
+    ).toEqual({
+      status: "reverted",
+      revertReason: "A call in this Safe transaction reverts",
+      safeAddress: safe,
+    })
   })
 })

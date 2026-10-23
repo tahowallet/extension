@@ -38,6 +38,15 @@ import {
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
 import type { SimulationResult } from "./simulation"
+import type { HexString } from "../../types"
+
+/**
+ * The pseudo-address `eth_simulateV1` (with `traceTransfers`) uses for native
+ * asset transfers, per ERC-7528. No real contract can emit from it, so it
+ * never appears in mined transaction logs.
+ */
+const NATIVE_TRANSFER_PSEUDO_ADDRESS =
+  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 async function buildSubannotations(
   chainService: ChainService,
@@ -61,14 +70,20 @@ async function buildSubannotations(
           senderAddress,
           recipientAddress,
         }) => {
-          // See if the address matches a fungible asset.
-          const matchingFungibleAsset = assets.find(
-            (asset): asset is SmartContractFungibleAsset =>
-              isSmartContractFungibleAsset(asset) &&
-              sameEVMAddress(asset.contractAddress, contractAddress),
+          // See if the address matches a fungible asset, or is a simulated
+          // native asset transfer.
+          const matchingAsset: AnyAsset | undefined = sameEVMAddress(
+            contractAddress,
+            NATIVE_TRANSFER_PSEUDO_ADDRESS,
           )
+            ? network.baseAsset
+            : assets.find(
+                (asset): asset is SmartContractFungibleAsset =>
+                  isSmartContractFungibleAsset(asset) &&
+                  sameEVMAddress(asset.contractAddress, contractAddress),
+              )
 
-          if (!matchingFungibleAsset) {
+          if (!matchingAsset) {
             return undefined
           }
 
@@ -92,7 +107,7 @@ async function buildSubannotations(
             type: "asset-transfer" as const,
             assetAmount: enrichAssetAmountWithDecimalValues(
               {
-                asset: matchingFungibleAsset,
+                asset: matchingAsset,
                 amount,
               },
               desiredDecimals,
@@ -122,12 +137,17 @@ export async function annotationsFromLogs(
   desiredDecimals: number,
   resolvedTime: number,
   block: AnyEVMBlock | undefined,
+  /** Addresses whose transfers matter besides the tracked accounts. */
+  additionalRelevantAddresses: HexString[] = [],
 ): Promise<TransactionAnnotation[]> {
   const assets = indexingService.getCachedAssets(network)
 
-  const accountAddresses = (await chainService.getAccountsToTrack()).map(
-    (account) => account.address,
-  )
+  const accountAddresses = [
+    ...(await chainService.getAccountsToTrack()).map(
+      (account) => account.address,
+    ),
+    ...additionalRelevantAddresses,
+  ]
 
   const tokenTransferLogs = [
     ...parseLogsForERC20Transfers(logs),
@@ -274,6 +294,7 @@ export default async function resolveTransactionAnnotation(
         : otherWarnings,
     simulationRevertReason:
       simulation?.status === "reverted" ? simulation.revertReason : undefined,
+    simulatedSafeAddress: simulation?.safeAddress,
   }
 
   // If the transaction has been mined, get the block and set the timestamp
@@ -499,6 +520,11 @@ export default async function resolveTransactionAnnotation(
       desiredDecimals,
       txAnnotation.timestamp,
       block,
+      // A Safe isn't usually a tracked account, but its transfers are the
+      // point of simulating its transaction.
+      hasConfirmedLogs || simulation?.safeAddress === undefined
+        ? []
+        : [simulation.safeAddress],
     )
 
     if (subannotations.length > 0) {

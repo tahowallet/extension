@@ -152,5 +152,35 @@ describe("Enrichment Service Transactions", () => {
       expect(resimulated.simulationRevertReason).toBeUndefined()
       expect(resimulated.subannotations).toBeUndefined()
     })
+
+    it("records the Safe a simulation executed, and drops it once it doesn't", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+      const safe = "0x1111111111111111111111111111111111111111"
+
+      const viaSafe = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        request(),
+        2,
+        { status: "success", logs: [], safeAddress: safe },
+      )
+      const direct = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        {
+          ...request(),
+          annotation: viaSafe,
+        } as Parameters<typeof resolveTransactionAnnotation>[4],
+        2,
+        { status: "success", logs: [] },
+      )
+
+      expect(viaSafe.simulatedSafeAddress).toBe(safe)
+      expect(direct.simulatedSafeAddress).toBeUndefined()
+    })
   })
 })

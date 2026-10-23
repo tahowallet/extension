@@ -79,6 +79,23 @@ describe("SimulatedBalanceChanges", () => {
     expect(ui.getByText("+99.5")).toBeInTheDocument()
   })
 
+  it("lists the Safe's changes separately when the request executes a Safe transaction", () => {
+    const SAFE = "0x1111111111111111111111111111111111111111"
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={{
+          ...annotationWith([transfer(SAFE, POOL, "USDC", "250")]),
+          simulatedSafeAddress: SAFE,
+        }}
+      />,
+    )
+
+    expect(ui.queryByText("Simulated balance changes")).toBeNull()
+    expect(ui.getByText("Simulated Safe balance changes")).toBeInTheDocument()
+    expect(ui.getByText("-250")).toBeInTheDocument()
+  })
+
   it("renders nothing without transfers involving the user", () => {
     const ui = renderWithProviders(
       <SimulatedBalanceChanges

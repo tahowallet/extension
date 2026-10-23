@@ -11,9 +11,10 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import type { UNIXTime } from "../../types"
+import type { HexString, UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import { ResolvedNameRecord } from "../name"
+import type { AssetTransferForAddress } from "./utils"
 
 export type BaseTransactionAnnotation = {
   /**
@@ -45,6 +46,11 @@ export type BaseTransactionAnnotation = {
    * request, if the simulation reverted and the provider supplied one.
    */
   simulationRevertReason?: string
+  /**
+   * When the simulated request executes a Safe transaction, the Safe whose
+   * balance changes the simulation's subannotations include.
+   */
+  simulatedSafeAddress?: HexString
 }
 
 export type Warning =
@@ -165,7 +171,35 @@ export type EIP2612SignTypedDataAnnotation = {
   }
 }
 
-export type SignTypedDataAnnotation = EIP2612SignTypedDataAnnotation
+/**
+ * An EIP-712 `SafeTx` signature request: an owner proposing or confirming a
+ * Safe transaction.
+ */
+export type SafeTransactionSignTypedDataAnnotation = {
+  type: "safe-transaction"
+  safeAddress: HexString
+  /**
+   * The outcome of simulating the transaction as if it had enough signatures;
+   * undefined when simulation wasn't possible.
+   */
+  simulation?: {
+    status: "success" | "reverted"
+    revertReason?: string
+    /** Simulated transfers into and out of the Safe. */
+    balanceChanges: AssetTransferForAddress[]
+  }
+  /**
+   * How many of the Safe's transactions must execute before this one. The
+   * simulation runs against current state, so it doesn't reflect them.
+   */
+  queuedBefore?: number
+  /** The transaction's nonce has already been used; it can never execute. */
+  nonceAlreadyUsed?: boolean
+}
+
+export type SignTypedDataAnnotation =
+  | EIP2612SignTypedDataAnnotation
+  | SafeTransactionSignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation?: SignTypedDataAnnotation

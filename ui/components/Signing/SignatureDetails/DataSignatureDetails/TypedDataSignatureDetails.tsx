@@ -6,6 +6,7 @@ import { capitalize } from "../../../../utils/textUtils"
 import SharedAddress from "../../../Shared/SharedAddress"
 import SharedIcon from "../../../Shared/SharedIcon"
 import DataSignatureDetails from "."
+import SafeTransactionSimulation from "./SafeTransactionSimulation"
 
 function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
   const { t } = useTranslation("translation")
@@ -141,6 +142,18 @@ export default function TypedDataSignatureDetails({
             primaryType={typedData.primaryType}
             fieldsToDisplay={annotation.displayFields}
           />
+        </DataSignatureDetails>
+      )
+    case "safe-transaction":
+      return (
+        <DataSignatureDetails
+          requestingSource={typedData.domain.name ?? "Safe"}
+        >
+          <BasicTypedDataDetails
+            primaryType={typedData.primaryType}
+            fieldsToDisplay={typedData.message}
+          />
+          <SafeTransactionSimulation annotation={annotation} />
         </DataSignatureDetails>
       )
     default:

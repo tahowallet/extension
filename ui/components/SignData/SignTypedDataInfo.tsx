@@ -18,7 +18,7 @@ export default function SignTypedDataInfo({
   const { typedData, annotation } = typedDataRequest
 
   const fieldsToDisplay =
-    annotation !== undefined
+    annotation?.type === "EIP-2612"
       ? annotation.displayFields
       : (typedData.message ?? {})
 

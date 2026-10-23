@@ -1,41 +1,26 @@
-import { BigNumber, utils } from "ethers"
-import { EVMLog, EVMNetwork } from "../../networks"
-import { HexString } from "../../types"
-import ChainService from "../chain"
-import { PartialTransactionRequestWithFrom } from "./types"
-import logger from "../../lib/logger"
+import type { EVMNetwork } from "../../networks"
+import type ChainService from "../chain"
+import type { PartialTransactionRequestWithFrom } from "./types"
+import { isSafeExecTransactionCalldata, interpretSafeExecution } from "./safe"
+import {
+  type SimulationCall,
+  type SimulationResult,
+  simulateCall,
+  toHexQuantity,
+  toSimulationResult,
+} from "./simulate-v1"
 
-type SimulateV1Log = {
-  address: HexString
-  topics: HexString[]
-  data: HexString
-}
-
-type SimulateV1CallResult = {
-  status: HexString
-  returnData?: HexString
-  gasUsed?: HexString
-  logs?: SimulateV1Log[]
-  error?: { code: number; message: string; data?: HexString }
-}
-
-type SimulateV1BlockResult = {
-  calls?: SimulateV1CallResult[]
-}
-
-export type SimulationResult =
-  | { status: "success"; logs: EVMLog[] }
-  | { status: "reverted"; revertReason?: string }
-
-function toHexQuantity(value: bigint | number): HexString {
-  return utils.hexValue(BigNumber.from(value))
-}
+export type { SimulationResult }
 
 /**
  * Run `eth_simulateV1` for a pending signature request. On success, returns
  * the resulting logs in `EVMLog` shape so the standard `annotationsFromLogs`
  * pipeline can produce subannotations; on revert, returns the revert reason
  * when the provider supplies one.
+ *
+ * A call to a Safe's `execTransaction` is simulated as sent, since it carries
+ * the owners' real signatures, and the result is tagged with the Safe so its
+ * balance changes can be shown.
  *
  * Returns `undefined` if simulation is unavailable or anything about the
  * response is malformed — the caller is expected to fall back to the existing
@@ -46,18 +31,12 @@ export default async function simulateSignatureRequest(
   network: EVMNetwork,
   transaction: PartialTransactionRequestWithFrom,
 ): Promise<SimulationResult | undefined> {
-  const provider = chainService.providerForNetwork(network)
-  if (!provider) return undefined
-
-  const supported = await provider.supportsEthSimulateV1()
-  if (!supported) return undefined
-
-  const call: Record<string, string> = { from: transaction.from }
+  const call: SimulationCall = { from: transaction.from }
   if (typeof transaction.to === "string") {
     call.to = transaction.to
   }
   if (typeof transaction.input === "string" && transaction.input !== "0x") {
-    call.data = transaction.input
+    call.input = transaction.input
   }
   if (typeof transaction.value === "bigint") {
     call.value = toHexQuantity(transaction.value)
@@ -66,40 +45,10 @@ export default async function simulateSignatureRequest(
   // one would surface as a spurious revert. Gas estimation failures are
   // already reported separately.
 
-  try {
-    const results = (await chainService.send(
-      "eth_simulateV1",
-      [
-        {
-          blockStateCalls: [{ calls: [call] }],
-          traceTransfers: true,
-          validation: false,
-          returnFullTransactions: false,
-        },
-        "latest",
-      ],
-      network,
-    )) as SimulateV1BlockResult[] | undefined
+  const callResult = await simulateCall(chainService, network, call)
+  if (!callResult) return undefined
 
-    const callResult = results?.[0]?.calls?.[0]
-    if (!callResult) return undefined
-    if (callResult.status !== "0x1") {
-      return { status: "reverted", revertReason: callResult.error?.message }
-    }
-
-    return {
-      status: "success",
-      logs: (callResult.logs ?? []).map((log) => ({
-        contractAddress: log.address,
-        data: log.data,
-        topics: log.topics,
-      })),
-    }
-  } catch (err) {
-    logger.debug(
-      "eth_simulateV1 call failed, falling back to calldata heuristics",
-      err,
-    )
-    return undefined
-  }
+  return call.to !== undefined && isSafeExecTransactionCalldata(call.input)
+    ? interpretSafeExecution(callResult, call.to)
+    : toSimulationResult(callResult)
 }
