@@ -8,6 +8,13 @@ on:
     tags:
       - v*
 
+# A new push to a pull request supersedes its in-progress build. Pushes to
+# main and tags each get their own group, so none of them are cancelled or
+# replaced while queued.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 # Jobs get a read-only token unless they ask for more below.
 permissions:
   contents: read
