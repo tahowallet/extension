@@ -144,6 +144,57 @@ const get0xAssetAddress = (asset: SwappableAsset) => {
   return asset.contractAddress
 }
 
+function isWrapOrUnwrap(
+  { sellAsset, buyAsset }: SwapQuoteRequest["assets"],
+  { wrappedBaseAssetAddress: wrappedBaseAsset }: EVMNetwork,
+): boolean {
+  const [baseAsset, otherAsset] = isNetworkBaseAsset(sellAsset)
+    ? [sellAsset, buyAsset]
+    : [buyAsset, sellAsset]
+
+  return (
+    wrappedBaseAsset !== undefined &&
+    isNetworkBaseAsset(baseAsset) &&
+    !isNetworkBaseAsset(otherAsset) &&
+    get0xAssetAddress(otherAsset)?.toLowerCase() === wrappedBaseAsset
+  )
+}
+
+/**
+ * Builds the amount parameter of a 0x price or quote request from whichever
+ * side of the swap the user entered. 0x rejects `buyAmount` for wrapping and
+ * unwrapping, which trade 1:1, so those always send `sellAmount`.
+ */
+export function getSwapAmountParams({
+  assets,
+  amount,
+  network,
+}: Pick<SwapQuoteRequest, "assets" | "amount" | "network">):
+  | { sellAmount: string }
+  | { buyAmount: string } {
+  if ("sellAmount" in amount) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.sellAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  if (isWrapOrUnwrap(assets, network)) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.buyAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  return {
+    buyAmount: utils
+      .parseUnits(amount.buyAmount, assets.buyAsset.decimals)
+      .toString(),
+  }
+}
+
 export async function getPrice({
   assets,
   amount,
@@ -151,18 +202,10 @@ export async function getPrice({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -171,7 +214,7 @@ export async function getPrice({
     sellToken,
     buyToken,
     chainId: Number(network.chainID),
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
   }
 
   const url = new URL("swap/allowance-holder/price", API_BASE_URL)
@@ -214,18 +257,10 @@ export async function getQuote({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -235,7 +270,7 @@ export async function getQuote({
     buyToken,
     chainId: Number(network.chainID),
     slippageBps: slippageTolerance * 100,
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
     taker,
     gasPrice: gasPrice.toString(),
     ...getGatedParameters(network.chainID),
