@@ -29,8 +29,6 @@ Taho will be
 Try this.
 
 ```sh
-$ nvm use
-$ nvm install
 $ brew install bun # if you don't have bun installed; see https://bun.com/docs/installation
 $ bun install # install all dependencies
 $ bun start # start a continuous build that will auto-update with changes
@@ -116,7 +114,7 @@ If you can't use the macOS setup script, here is the software you'll need to
 install:
 
 - `jq`: [Instructions](https://stedolan.github.io/jq/download/)
-- `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `bun`: [Instructions](https://bun.com/docs/installation)
 - `pre-commit`: [Instructions](https://pre-commit.com/#install)
 
 #### Installing pre-commit hooks

@@ -11,16 +11,12 @@ echo "Installing pre-commit and specified hooks..."
 brew list pre-commit &>/dev/null || brew install pre-commit
 pre-commit install --install-hooks
 
-echo "Installing nvm..."
-brew list nvm &>/dev/null || brew install nvm
-
 echo "Installing bun..."
 if ! [ -x "$(command -v bun)" ]; then
   brew install bun
 fi
 
-echo "Setting up nvm and dependencies..."
-nvm use
+echo "Installing dependencies..."
 bun install
 
 echo "Ready to rock! See above for any extra environment-related instructions."
