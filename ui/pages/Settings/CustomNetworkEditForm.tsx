@@ -5,6 +5,7 @@ import {
   RpcEndpoint,
 } from "@tallyho/tally-background/networks"
 import {
+  ChainConfigUpdateError,
   getChainRpcConfig,
   updateNetworkSettings,
 } from "@tallyho/tally-background/redux-slices/networks"
@@ -17,8 +18,9 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { useTranslation } from "react-i18next"
+import { TFunction, useTranslation } from "react-i18next"
 import logger from "@tallyho/tally-background/lib/logger"
+import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedCheckbox from "../../components/Shared/SharedCheckbox"
 import SharedIcon from "../../components/Shared/SharedIcon"
@@ -89,6 +91,34 @@ function isPositiveInteger(value: string): boolean {
 type ManagedEndpointRow = {
   origin: string
   hasAlchemyApis: boolean
+}
+
+/**
+ * The sentence to show for a rejected save.
+ *
+ * The background rejects an endpoint by discriminant and URL rather than by
+ * sentence, so the sentence is written here, where there is a locale to write
+ * it in. An unrecognized failure has no copy of its own; passing its message
+ * through untranslated beats telling the user nothing went wrong.
+ */
+const saveErrorMessage = (
+  t: TFunction<"translation", "settings.customNetworksSettings.editModal">,
+  error: ChainConfigUpdateError,
+): string => {
+  switch (error.kind) {
+    case "unreachable":
+      return t("errors.unreachableEndpoint", { url: error.url })
+    case "chain-mismatch":
+      return t("errors.endpointChainMismatch", {
+        url: error.url,
+        reportedChainID: error.reportedChainID,
+        expectedChainID: error.expectedChainID,
+      })
+    case "unknown":
+      return t("errors.saveFailed", { message: error.message })
+    default:
+      return assertUnreachable(error)
+  }
 }
 
 const toManagedEndpointRows = (
@@ -172,7 +202,9 @@ export default function CustomNetworkEditForm({
   const [isSaving, setIsSaving] = useState(false)
   // Set from a failed save; the background reports unreachable or mismatched
   // endpoints by URL rather than throwing.
-  const [saveError, setSaveError] = useState("")
+  const [saveError, setSaveError] = useState<ChainConfigUpdateError | null>(
+    null,
+  )
 
   useEffect(() => {
     let isStale = false
@@ -387,7 +419,7 @@ export default function CustomNetworkEditForm({
     }
 
     setIsSaving(true)
-    setSaveError("")
+    setSaveError(null)
 
     const rpcEndpoints: RpcEndpoint[] = rpcEndpointRows.map((row) => ({
       url: row.url.trim(),
@@ -630,9 +662,9 @@ export default function CustomNetworkEditForm({
             </div>
           </div>
           <div className="form_controls">
-            {saveError !== "" && (
+            {saveError !== null && (
               <span className="save_error" role="alert">
-                {saveError}
+                {saveErrorMessage(t, saveError)}
               </span>
             )}
             <SharedButton

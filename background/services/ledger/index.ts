@@ -1,5 +1,4 @@
 import Transport from "@ledgerhq/hw-transport"
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
 import { DeviceModelId, identifyUSBProductId } from "@ledgerhq/devices"
 import {
@@ -23,6 +22,7 @@ import BaseService from "../base"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
+import openConnectedLedgerTransport from "./transport"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -157,6 +157,60 @@ async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
   return name === "Ethereum"
 }
 
+/**
+ * Throws unless the Ledger still has the Ethereum app open, which can change
+ * without any USB event.
+ */
+async function requireEthereumApp(transport: Transport): Promise<void> {
+  if (!(await isEthereumAppOpen(transport))) {
+    throw new Error(
+      "The Ledger doesn't have the Ethereum app open; open it to sign.",
+    )
+  }
+}
+
+/**
+ * How often and how long to poll a Ledger that's locked or not on the
+ * Ethereum app.
+ */
+export const READINESS_POLL_FAST_INTERVAL_MS = 1_000
+export const READINESS_POLL_FAST_PERIOD_MS = 30_000
+export const READINESS_POLL_SLOW_INTERVAL_MS = 3_000
+export const READINESS_POLL_DURATION_MS = 120_000
+
+/**
+ * Matches errors by name because hw-transport and the app packages can each
+ * bring their own copy of @ledgerhq/errors.
+ */
+function classifyLedgerError(error: unknown): "not-ready" | "gone" | "failed" {
+  const name =
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    typeof error.name === "string"
+      ? error.name
+      : undefined
+
+  switch (name) {
+    case "LockedDeviceError":
+    case "TransportStatusError":
+    case "TransportRaceCondition":
+      return "not-ready"
+    case "DisconnectedDevice":
+    case "DisconnectedDeviceDuringOperation":
+    case "TransportInterfaceNotAvailable":
+    case "NotFoundError":
+      return "gone"
+    default:
+      return "failed"
+  }
+}
+
+type ReadinessPoll = {
+  startedAt: number
+  timer: ReturnType<typeof setTimeout> | undefined
+}
+
 async function generateLedgerId(
   transport: Transport,
   eth: Eth,
@@ -228,6 +282,13 @@ export default class LedgerService extends BaseService<Events> {
    */
   #currentDevice: USBDevice | undefined = undefined
 
+  /**
+   * Set while polling a Ledger that's locked or not on the Ethereum app.
+   * Unlocking it or opening an app fires no USB event. Polling doesn't change
+   * whether the Ledger looks connected.
+   */
+  #readinessPoll: ReadinessPoll | null = null
+
   #lastOperationPromise = Promise.resolve()
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> = async () =>
@@ -271,80 +332,202 @@ export default class LedgerService extends BaseService<Events> {
 
         // Only a Ledger the browser has already paired can be opened from
         // the background; pairing a new one needs a user gesture in a page.
-        const transport = await TransportWebUSB.openConnected()
+        const transport = await openConnectedLedgerTransport()
         if (transport === null) {
+          this.#stopReadinessPolling()
           return
         }
         this.transport = transport
         this.#currentDevice = transport.device
-
-        // Checked after taking the transport so that a failure here goes
-        // through the failed-connection handling below, which closes it.
-        if (!(await isEthereumAppOpen(transport))) {
-          throw new Error(
-            "The Ledger doesn't have the Ethereum app open; open it to connect.",
-          )
-        }
-
-        const eth = new Eth(this.transport)
-
-        const [id, type] = await generateLedgerId(this.transport, eth)
-
-        if (!id) {
-          throw new Error("Can't derive meaningful identification address!")
-        }
-
-        const appData = await eth.getAppConfiguration()
-
-        const normalizedID = normalizeEVMAddress(id)
-
-        const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
-        this.#currentLedger = { id: ledgerId, type }
-
-        this.emitter.emit("connected", {
-          id: ledgerId,
-          type,
-          metadata: {
-            ethereumVersion: appData.version,
-            isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-            displayDetails: DisplayDetailsByLedgerType[type],
-          },
-        })
-
-        const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
-
-        if (!knownAddresses.length) {
-          this.emitter.emit("ledgerAdded", {
-            id: ledgerId,
-            type,
-            accountIDs: [idDerivationPath],
-            metadata: {
-              ethereumVersion: appData.version,
-              isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-              displayDetails: DisplayDetailsByLedgerType[type],
-            },
-          })
-        }
       } catch (error) {
-        logger.error(
-          "Treating Ledger as having disconnected due to a connection error:",
-          error,
-        )
-        await this.#closeTransport("failed-connection")
-        await this.#handleUSBDisconnect()
+        this.#stopReadinessPolling()
+        await this.#handleConnectionError(error)
+        return
+      }
+
+      if ((await this.#connectIfReady()) === "not-ready") {
+        this.#startPolling()
       }
     })
   }
 
   /**
+   * Connects to the Ledger if it's unlocked and on the Ethereum app. Any error
+   * other than a not-ready one disconnects it.
+   */
+  async #connectIfReady(): Promise<"connected" | "not-ready" | "failed"> {
+    const { transport } = this
+    if (transport === undefined) {
+      this.#stopReadinessPolling()
+      return "failed"
+    }
+
+    try {
+      if (await isEthereumAppOpen(transport)) {
+        await this.#completeConnection(transport)
+        if (this.#readinessPoll !== null) {
+          logger.info("Ledger is now unlocked with the Ethereum app open.")
+        }
+        this.#stopReadinessPolling()
+        return "connected"
+      }
+    } catch (error) {
+      if (classifyLedgerError(error) !== "not-ready") {
+        this.#stopReadinessPolling()
+        await this.#handleConnectionError(error)
+        return "failed"
+      }
+      logger.debug("Ledger isn't ready:", error)
+    }
+
+    if (this.transport === undefined) {
+      // The Ledger was unplugged while it was being checked.
+      this.#stopReadinessPolling()
+      return "failed"
+    }
+
+    return "not-ready"
+  }
+
+  async #completeConnection(transport: Transport): Promise<void> {
+    const eth = new Eth(transport)
+
+    const [id, type] = await generateLedgerId(transport, eth)
+
+    if (!id) {
+      throw new Error("Can't derive meaningful identification address!")
+    }
+
+    const appData = await eth.getAppConfiguration()
+
+    const normalizedID = normalizeEVMAddress(id)
+
+    const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+    this.#currentLedger = { id: ledgerId, type }
+
+    this.emitter.emit("connected", {
+      id: ledgerId,
+      type,
+      metadata: {
+        ethereumVersion: appData.version,
+        isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+        displayDetails: DisplayDetailsByLedgerType[type],
+      },
+    })
+
+    const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
+
+    if (!knownAddresses.length) {
+      this.emitter.emit("ledgerAdded", {
+        id: ledgerId,
+        type,
+        accountIDs: [idDerivationPath],
+        metadata: {
+          ethereumVersion: appData.version,
+          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+          displayDetails: DisplayDetailsByLedgerType[type],
+        },
+      })
+    }
+  }
+
+  /** Closes the transport and reports the Ledger as disconnected. */
+  async #handleConnectionError(error: unknown): Promise<void> {
+    if (classifyLedgerError(error) === "gone") {
+      logger.info("Ledger went away while connecting:", error)
+    } else {
+      logger.error(
+        "Treating Ledger as having disconnected due to a connection error:",
+        error,
+      )
+    }
+    await this.#closeTransport("failed-connection")
+    await this.#handleUSBDisconnect()
+  }
+
+  /** Starts polling, or restarts the clock if it's already running. */
+  #startPolling(): void {
+    if (this.#readinessPoll === null) {
+      logger.info(
+        "Ledger is locked or not on the Ethereum app; waiting for it to be ready.",
+      )
+      this.#readinessPoll = { startedAt: Date.now(), timer: undefined }
+    } else {
+      this.#readinessPoll.startedAt = Date.now()
+    }
+
+    this.#scheduleNextPoll(this.#readinessPoll)
+  }
+
+  #pollReadiness(): Promise<void> {
+    return this.runSerialized(async () => {
+      const poll = this.#readinessPoll
+      if (poll === null) {
+        return
+      }
+      poll.timer = undefined
+
+      logger.debug("Polling Ledger readiness.")
+      if (
+        (await this.#connectIfReady()) !== "not-ready" ||
+        this.#readinessPoll !== poll
+      ) {
+        return
+      }
+
+      if (Date.now() - poll.startedAt >= READINESS_POLL_DURATION_MS) {
+        logger.info(
+          "Ledger didn't become ready in time; closing its transport until it's plugged in or refreshed.",
+        )
+        this.#stopReadinessPolling()
+        await this.#closeTransport("timed-out")
+        this.#clearCurrentLedger()
+        return
+      }
+
+      this.#scheduleNextPoll(poll)
+    })
+  }
+
+  #scheduleNextPoll(poll: ReadinessPoll): void {
+    clearTimeout(poll.timer)
+    poll.timer = setTimeout(
+      () => {
+        void this.#pollReadiness()
+      },
+      Date.now() - poll.startedAt < READINESS_POLL_FAST_PERIOD_MS
+        ? READINESS_POLL_FAST_INTERVAL_MS
+        : READINESS_POLL_SLOW_INTERVAL_MS,
+    )
+  }
+
+  /** Forgets the current Ledger, if any, and reports it as disconnected. */
+  #clearCurrentLedger(): void {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
+      return
+    }
+
+    this.#currentLedger = null
+    void this.emitter.emit("disconnected", {
+      id: currentLedger.id,
+      type: currentLedger.type,
+    })
+  }
+
+  #stopReadinessPolling(): void {
+    clearTimeout(this.#readinessPoll?.timer)
+    this.#readinessPoll = null
+  }
+
+  /**
    * Closes the current transport, if there is one. Closing releases the USB
    * interface, which fails once the device is unplugged, so failures are
-   * expected when replacing a possibly stale transport or after a disconnect
-   * and only logged at debug level. A failure to close after a failed
-   * connection attempt is unexpected, and warns.
+   * expected and only logged at debug level. A failure to close after a
+   * failed connection attempt is unexpected, and warns.
    */
   async #closeTransport(
-    reason: "replacing" | "disconnected" | "failed-connection",
+    reason: "replacing" | "disconnected" | "failed-connection" | "timed-out",
   ): Promise<void> {
     const { transport } = this
     if (transport === undefined) {
@@ -389,11 +572,6 @@ export default class LedgerService extends BaseService<Events> {
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
-    const currentLedger = this.#currentLedger
-    if (currentLedger === null) {
-      return
-    }
-
     if (
       event !== undefined &&
       this.#currentDevice !== undefined &&
@@ -402,14 +580,18 @@ export default class LedgerService extends BaseService<Events> {
       return
     }
 
+    const wasPolling = this.#readinessPoll !== null
+    this.#stopReadinessPolling()
+
+    if (this.#currentLedger === null) {
+      if (!wasPolling) {
+        return
+      }
+      logger.info("Ledger was unplugged before it became ready.")
+    }
+
     await this.#closeTransport("disconnected")
-
-    this.emitter.emit("disconnected", {
-      id: currentLedger.id,
-      type: currentLedger.type,
-    })
-
-    this.#currentLedger = null
+    this.#clearCurrentLedger()
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -423,6 +605,7 @@ export default class LedgerService extends BaseService<Events> {
 
     usbDisconnectHandlers.delete(this.#handleUSBDisconnect)
     usbConnectHandlers.delete(this.#handleUSBConnect)
+    this.#stopReadinessPolling()
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
@@ -533,6 +716,8 @@ export default class LedgerService extends BaseService<Events> {
 
         this.checkCanSign(accountData, derivationPath, deviceID)
 
+        await requireEthereumApp(this.transport)
+
         const eth = new Eth(this.transport)
         const signature = await eth.signTransaction(
           derivationPath,
@@ -625,6 +810,8 @@ export default class LedgerService extends BaseService<Events> {
 
       this.checkCanSign(accountData, derivationPath, deviceID)
 
+      await requireEthereumApp(this.transport)
+
       const signature = await eth.signEIP712HashedMessage(
         derivationPath,
         hashedDomain,
@@ -682,37 +869,41 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Unsupported network for Ledger signing")
     }
 
-    if (!this.transport) {
-      throw new Error("Uninitialized transport!")
-    }
+    return this.runSerialized(async () => {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
 
-    if (this.#currentLedger === null) {
-      throw new Error("Uninitialized Ledger ID!")
-    }
+      if (this.#currentLedger === null) {
+        throw new Error("Uninitialized Ledger ID!")
+      }
 
-    const accountData = await this.db.getAccountByAddress(address)
+      const accountData = await this.db.getAccountByAddress(address)
 
-    if (!accountData) {
-      throw new Error(
-        `Address "${address}" doesn't have corresponding derivation path!`,
+      if (!accountData) {
+        throw new Error(
+          `Address "${address}" doesn't have corresponding derivation path!`,
+        )
+      }
+
+      await requireEthereumApp(this.transport)
+
+      const eth = new Eth(this.transport)
+
+      const signature = await eth.signPersonalMessage(
+        accountData.path,
+        // Ledger requires unprefixed hex, so make sure that's what we pass.
+        hexDataToSign.replace(/^0x/, ""),
       )
-    }
 
-    const eth = new Eth(this.transport)
+      const signatureHex = joinSignature({
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
+        v: signature.v,
+      })
+      this.emitter.emit("signedData", signatureHex)
 
-    const signature = await eth.signPersonalMessage(
-      accountData.path,
-      // Ledger requires unprefixed hex, so make sure that's what we pass.
-      hexDataToSign.replace(/^0x/, ""),
-    )
-
-    const signatureHex = joinSignature({
-      r: `0x${signature.r}`,
-      s: `0x${signature.s}`,
-      v: signature.v,
+      return signatureHex
     })
-    this.emitter.emit("signedData", signatureHex)
-
-    return signatureHex
   }
 }

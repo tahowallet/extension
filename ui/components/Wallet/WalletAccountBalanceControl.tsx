@@ -15,6 +15,7 @@ import Receive from "../../pages/Receive"
 import ReadOnlyNotice from "../Shared/ReadOnlyNotice"
 import SharedSquareButton from "../Shared/SharedSquareButton"
 import SharedTooltip from "../Shared/SharedTooltip"
+import BalanceLastUpdated from "./BalanceLastUpdated"
 
 type ActionButtonsProps = {
   onReceive: () => void
@@ -126,6 +127,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
 interface Props {
   balance?: string
   initializationLoadingTimeExpired: boolean
+  isNetworkUnreachable: boolean
 }
 
 export default function WalletAccountBalanceControl(
@@ -134,7 +136,11 @@ export default function WalletAccountBalanceControl(
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet",
   })
-  const { balance, initializationLoadingTimeExpired } = props
+  const { t: tUnreachable } = useTranslation("translation", {
+    keyPrefix: "networkUnreachable",
+  })
+  const { balance, initializationLoadingTimeExpired, isNetworkUnreachable } =
+    props
   const [openReceiveMenu, setOpenReceiveMenu] = useState(false)
 
   // TODO When non-imported accounts are supported, generalize this.
@@ -146,8 +152,13 @@ export default function WalletAccountBalanceControl(
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
   }, [])
 
+  // Unreachable is a third state alongside loading and loaded, and the only
+  // one of the three we can say something useful about: there is no point
+  // spinning a skeleton for a number that is not coming.
   const shouldIndicateLoading =
-    !initializationLoadingTimeExpired && typeof balance === "undefined"
+    !isNetworkUnreachable &&
+    !initializationLoadingTimeExpired &&
+    typeof balance === "undefined"
 
   return (
     <>
@@ -166,10 +177,22 @@ export default function WalletAccountBalanceControl(
           <div className="balance_label">{t("totalAccountBalance")}</div>
           <span className="balance_area">
             <span className="balance" data-testid="wallet_balance">
-              <span className="dollar_sign">$</span>
-              {balance ?? 0}
+              {/*
+               * A zero here would be a claim, and the wrong one: an
+               * unreachable chain tells us nothing about what this account
+               * holds, only that we cannot see it right now.
+               */}
+              {isNetworkUnreachable ? (
+                tUnreachable("balancePlaceholder")
+              ) : (
+                <>
+                  <span className="dollar_sign">$</span>
+                  {balance ?? 0}
+                </>
+              )}
             </span>
           </span>
+          {isNetworkUnreachable && <BalanceLastUpdated />}
         </SharedSkeletonLoader>
 
         <SharedSkeletonLoader

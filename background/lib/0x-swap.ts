@@ -11,6 +11,8 @@ import { isNetworkBaseAsset } from "../redux-slices/utils/asset-utils"
 import type { HexString } from "../types"
 import { GetPriceParams, GetQuoteParams } from "./0x-swap-types"
 import logger from "./logger"
+import { retryWithBackoff } from "./retry"
+import { isTransientFetchJsonError } from "../utils/fetching"
 import {
   isValid0xSwapPriceResponse,
   isValid0xSwapQuoteResponse,
@@ -129,13 +131,17 @@ export async function getPrice({
     url.searchParams.append(k, String(v)),
   )
 
-  const apiData: unknown = await fetchJson({
-    url: url.toString(),
-    headers: {
-      "0x-api-key": API_KEY,
-      "0x-version": "v2",
-    },
-  })
+  const apiData: unknown = await retryWithBackoff(
+    () =>
+      fetchJson({
+        url: url.toString(),
+        headers: {
+          "0x-api-key": API_KEY,
+          "0x-version": "v2",
+        },
+      }),
+    { shouldRetry: isTransientFetchJsonError },
+  )
 
   if (!isValid0xSwapPriceResponse(apiData)) {
     logger.warn(
@@ -193,13 +199,17 @@ export async function getQuote({
   )
 
   // TODO: Add errorPassThrough and handle Errors
-  const apiData: unknown = await fetchJson({
-    url: url.toString(),
-    headers: {
-      "0x-api-key": API_KEY,
-      "0x-version": "v2",
-    },
-  })
+  const apiData: unknown = await retryWithBackoff(
+    () =>
+      fetchJson({
+        url: url.toString(),
+        headers: {
+          "0x-api-key": API_KEY,
+          "0x-version": "v2",
+        },
+      }),
+    { shouldRetry: isTransientFetchJsonError },
+  )
 
   if (!isValid0xSwapQuoteResponse(apiData)) {
     logger.warn(

@@ -59,7 +59,7 @@ export type EthersSendCallback = (error: unknown, response: unknown) => void
 
 export type TahoInternalCommunication = {
   id: "tallyHo"
-  result: TahoConfigPayload | TahoAccountPayload
+  result: TahoConfigPayload | TahoAccountPayload | TahoChainReachabilityPayload
 }
 
 export type TahoConfigPayload = {
@@ -73,4 +73,14 @@ export type TahoConfigPayload = {
 export type TahoAccountPayload = {
   method: "tally_accountChanged"
   address: Array<string>
+}
+
+/**
+ * Whether the wallet can currently reach the chain a page is connected to.
+ * Carries the chain so a page on some other network can ignore it.
+ */
+export type TahoChainReachabilityPayload = {
+  method: "tally_chainReachabilityChanged"
+  chainId: string
+  reachable: boolean
 }
