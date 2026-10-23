@@ -34,20 +34,6 @@
  * exists to produce.
  */
 
-/**
- * The slice of Bun's API this uses, declared here rather than pulled from
- * `bun-types`. Keeps the file dependency-free, which is the point of it, and
- * gives the repo's own typecheck — which knows nothing about Bun — something
- * to go on.
- */
-declare const Bun: {
-  serve(options: {
-    port: number
-    hostname: string
-    fetch: (request: Request) => Response | Promise<Response>
-  }): { port: number }
-}
-
 type Mode = "answering" | "hanging" | "refusing"
 
 const chainIdArgument = process.argv[2]
