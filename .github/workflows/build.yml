@@ -135,8 +135,6 @@ jobs:
         working-directory: .github/workflows/pledge-signer-sync
       - run: bun install --frozen-lockfile
         working-directory: scripts/key-generation
-      - run: bun install --frozen-lockfile
-        working-directory: ci
       - run: bun run lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
