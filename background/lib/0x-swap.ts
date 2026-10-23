@@ -9,7 +9,13 @@ import { EVMNetwork } from "../networks"
 import { SwapQuoteRequest } from "../redux-slices/utils/0x-swap-utils"
 import { isNetworkBaseAsset } from "../redux-slices/utils/asset-utils"
 import type { HexString } from "../types"
-import { GetPriceParams, GetQuoteParams } from "./0x-swap-types"
+import {
+  GetPriceParams,
+  GetQuoteParams,
+  LiquidSwapPrice,
+  LiquidSwapQuote,
+  SwapRouteFill,
+} from "./0x-swap-types"
 import logger from "./logger"
 import {
   isValid0xSwapPriceResponse,
@@ -51,6 +57,48 @@ export function networkSupportsSwaps(param: EVMNetwork | string): boolean {
   const chainId = typeof param === "string" ? param : param.chainID
 
   return NETWORKS_SUPPORTING_SWAPS.has(chainId)
+}
+
+/**
+ * The most sell token a price or quote can spend, which is also the allowance
+ * the swap needs.
+ */
+export function getMaxSellAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out" ? quote.maxSellAmount : quote.sellAmount
+}
+
+/**
+ * The sell token amount a price or quote expects to spend; exact-out swaps
+ * refund whatever they don't use.
+ */
+export function getEstimatedSellAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out"
+    ? quote.estimatedNetSellAmount
+    : quote.sellAmount
+}
+
+/**
+ * The least buy token a price or quote can deliver.
+ */
+export function getMinBuyAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out" ? quote.buyAmount : quote.minBuyAmount
+}
+
+/**
+ * The liquidity sources a price or quote fills the swap from.
+ */
+export function getRouteFills(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): SwapRouteFill[] {
+  return quote.mode === "exact-out"
+    ? quote.routes.forward.fills
+    : quote.route.fills
 }
 
 const API_BASE_URL = "https://api.0x.org/"
