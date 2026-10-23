@@ -18,6 +18,7 @@
   "scripts": {
     "start": "run-p -n -l devtools \"dev {@}\" --",
     "generate:validators": "bun background/generate-validators.ts",
+    "update:0x-schema": "bun scripts/update-0x-schema.ts",
     "build": "bun run build.ts --production",
     "dev": "bun run build.ts --watch",
     "typecheck": "bun check",
@@ -112,6 +113,7 @@
     "jsdom": "20.0.3",
     "npm": "^7.5.6",
     "npm-run-all": "^4.1.5",
+    "openapi-typescript": "7.13.0",
     "oxlint": "^1.50.0",
     "oxlint-tsgolint": "^0.15.0",
     "process": "^0.11.10",
