@@ -183,6 +183,9 @@
       },
     },
   },
+  "trustedDependencies": [
+    "sqlite3",
+  ],
   "patchedDependencies": {
     "jsan@3.1.14": "patches/jsan@3.1.14.patch",
     "@ethersproject/providers@5.7.2": "patches/@ethersproject%2Fproviders@5.7.2.patch",
