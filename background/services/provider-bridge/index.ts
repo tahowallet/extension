@@ -34,7 +34,7 @@ import {
   ValidatedAddEthereumChainParameter,
   parseRPCRequestParams,
 } from "./utils"
-import { toHexChainID } from "../../networks"
+import { EVMNetwork, toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
@@ -505,6 +505,22 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return this.db.checkPermission(origin, currentAddress, chainID)
   }
 
+  /**
+   * Rejects with 4100 (unauthorized), without switching or granting anything,
+   * when `origin` has no allowed permission for the selected account on
+   * `network`. 4902 is left for chains Taho doesn't know.
+   */
+  private async assertPermittedOnNetwork(
+    origin: string,
+    network: EVMNetwork,
+  ): Promise<void> {
+    const permission = await this.checkPermission(origin, network.chainID)
+
+    if (permission?.state !== "allow") {
+      throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+    }
+  }
+
   async revokePermissionsForChain(chainId: string): Promise<void> {
     await this.db.deletePermissionsByChain(chainId)
   }
@@ -693,12 +709,31 @@ export default class ProviderBridgeService extends BaseService<Events> {
             showExtensionPopup(AllowedQueryParamPage.signTransaction),
           )
 
-        case "wallet_switchEthereumChain":
+        case "wallet_switchEthereumChain": {
+          const [switchParameter]: unknown[] = params
+
+          const targetNetwork =
+            typeof switchParameter === "object" &&
+            switchParameter !== null &&
+            "chainId" in switchParameter &&
+            typeof switchParameter.chainId === "string"
+              ? await this.internalEthereumProviderService.getTrackedNetworkByChainId(
+                  switchParameter.chainId,
+                )
+              : undefined
+
+          // Unknown chains are left to the internal provider, which reports
+          // them as unrecognized so the dapp can offer to add them.
+          if (targetNetwork !== undefined) {
+            await this.assertPermittedOnNetwork(origin, targetNetwork)
+          }
+
           return await this.internalEthereumProviderService.routeSafeRPCRequest(
             method,
             params,
             origin,
           )
+        }
 
         case "wallet_addEthereumChain": {
           const id = this.addNetworkRequestId.toString()
@@ -716,7 +751,10 @@ export default class ProviderBridgeService extends BaseService<Events> {
             )
 
           if (supportedNetwork) {
-            // If the network is already added - just switch to it.
+            // If the network is already added - just switch to it, as long as
+            // the dapp is allowed on it.
+            await this.assertPermittedOnNetwork(origin, supportedNetwork)
+
             return await this.internalEthereumProviderService.routeSafeRPCRequest(
               method,
               params,

@@ -8,10 +8,13 @@ import { waitFor } from "@testing-library/dom"
 import * as popupUtils from "../show-popup"
 import * as featureFlags from "../../../features"
 import { createProviderBridgeService } from "../../../tests/factories"
-import { AddEthereumChainParameter } from "../../internal-ethereum-provider"
+import InternalEthereumProviderService, {
+  AddEthereumChainParameter,
+} from "../../internal-ethereum-provider"
 import ProviderBridgeService from "../index"
 import { validateAddEthereumChainParameter } from "../utils"
-import { ETHEREUM } from "../../../constants"
+import { ETHEREUM, POLYGON } from "../../../constants"
+import { sameChainID, toHexChainID } from "../../../networks"
 
 const WINDOW = {
   focused: true,
@@ -207,6 +210,13 @@ describe("ProviderBridgeService", () => {
         internalEthereumProvider,
         "routeSafeRPCRequest",
       )
+      jest
+        // @ts-expect-error private access to reference the service
+        .spyOn(providerBridgeService.preferenceService, "getSelectedAccount")
+        .mockImplementation(() =>
+          Promise.resolve({ address: ADDRESS, network: ETHEREUM }),
+        )
+      await providerBridgeService.grantPermission(enablingPermission)
 
       const request = providerBridgeService.routeContentScriptRPCRequest(
         {
@@ -228,6 +238,133 @@ describe("ProviderBridgeService", () => {
       // expect no popup
       expect(showPopupSpy).not.toHaveBeenCalled()
       await expect(request).resolves.toEqual(null) // resolves without errors
+
+      await providerBridgeService.revokePermissionsForOrigin(BASE_DATA.origin)
+    })
+  })
+
+  describe.each([
+    {
+      method: "wallet_switchEthereumChain",
+      paramsFor: (chainID: string): unknown[] => [
+        { chainId: toHexChainID(chainID) },
+      ],
+    },
+    {
+      method: "wallet_addEthereumChain",
+      paramsFor: (chainID: string): unknown[] => [
+        {
+          chainId: toHexChainID(chainID),
+          chainName: "Polygon",
+          nativeCurrency: { name: "Matic", symbol: "MATIC", decimals: 18 },
+          rpcUrls: ["https://polygon-rpc.com"],
+          blockExplorerUrls: ["https://polygonscan.com"],
+        },
+        ADDRESS,
+        "Test",
+        "https://switch.test/favicon.png",
+      ],
+    },
+  ])("$method to a tracked chain", ({ method, paramsFor }) => {
+    const origin = "https://switch.test"
+    const enablingPermission: PermissionRequest = {
+      ...BASE_DATA.enablingPermission,
+      key: `${origin}_${ADDRESS}_${ETHEREUM.chainID}`,
+      origin,
+      chainID: ETHEREUM.chainID,
+    }
+
+    let internalEthereumProvider: InternalEthereumProviderService
+
+    beforeEach(async () => {
+      internalEthereumProvider =
+        // @ts-expect-error private access to reference the service
+        providerBridgeService.internalEthereumProviderService
+
+      jest.spyOn(featureFlags, "isEnabled").mockImplementation(() => true)
+      jest
+        // @ts-expect-error private access to reference the service
+        .spyOn(providerBridgeService.preferenceService, "getSelectedAccount")
+        .mockImplementation(() =>
+          Promise.resolve({ address: ADDRESS, network: ETHEREUM }),
+        )
+      jest
+        .spyOn(internalEthereumProvider, "getTrackedNetworkByChainId")
+        .mockImplementation((chainID) =>
+          Promise.resolve(
+            [ETHEREUM, POLYGON].find((network) =>
+              sameChainID(network.chainID, chainID),
+            ),
+          ),
+        )
+      jest
+        // @ts-expect-error private access to reference the service
+        .spyOn(internalEthereumProvider.chainService, "markAccountActivity")
+        .mockImplementation(() => Promise.resolve())
+
+      // The origin is connected on Ethereum only, as if Polygon had been
+      // added after the site was connected.
+      await providerBridgeService.grantPermission(enablingPermission)
+      await internalEthereumProvider.switchToSupportedNetwork(origin, ETHEREUM)
+    })
+
+    afterEach(async () => {
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+    })
+
+    it("should reject a chain the origin has no permission on", async () => {
+      const switchSpy = jest.spyOn(
+        internalEthereumProvider,
+        "switchToSupportedNetwork",
+      )
+      const showPopupSpy = jest.spyOn(popupUtils, "default")
+
+      const response = await providerBridgeService.routeContentScriptRPCRequest(
+        enablingPermission,
+        method,
+        paramsFor(POLYGON.chainID),
+        origin,
+      )
+
+      expect(response).toEqual(EIP1193_ERROR_CODES.unauthorized)
+      expect(switchSpy).not.toHaveBeenCalled()
+      expect(showPopupSpy).not.toHaveBeenCalled()
+      expect(
+        (
+          await internalEthereumProvider.getCurrentOrDefaultNetworkForOrigin(
+            origin,
+          )
+        ).chainID,
+      ).toEqual(ETHEREUM.chainID)
+      expect(
+        await providerBridgeService.checkPermission(origin, POLYGON.chainID),
+      ).toBeUndefined()
+    })
+
+    it("should switch to a chain the origin has permission on", async () => {
+      await providerBridgeService.grantPermission({
+        ...enablingPermission,
+        key: `${origin}_${ADDRESS}_${POLYGON.chainID}`,
+        chainID: POLYGON.chainID,
+      })
+
+      const response = await providerBridgeService.routeContentScriptRPCRequest(
+        enablingPermission,
+        method,
+        paramsFor(POLYGON.chainID),
+        origin,
+      )
+
+      expect(response).toBeNull()
+      await waitFor(async () =>
+        expect(
+          (
+            await internalEthereumProvider.getCurrentOrDefaultNetworkForOrigin(
+              origin,
+            )
+          ).chainID,
+        ).toEqual(POLYGON.chainID),
+      )
     })
   })
 })
