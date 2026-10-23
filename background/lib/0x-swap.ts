@@ -142,6 +142,83 @@ const get0xAssetAddress = (asset: SwappableAsset) => {
   return asset.contractAddress
 }
 
+/**
+ * The wrapped base asset of each network in NETWORKS_SUPPORTING_SWAPS.
+ */
+const WRAPPED_BASE_ASSET_BY_CHAIN_ID: Record<string, HexString> = {
+  "1": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", // WETH
+  "42161": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1", // WETH
+  "43114": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7", // WAVAX
+  "8453": "0x4200000000000000000000000000000000000006", // WETH
+  "80094": "0x6969696969696969696969696969696969696969", // WBERA
+  "81457": "0x4300000000000000000000000000000000000004", // WETH
+  "56": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c", // WBNB
+  "57073": "0x4200000000000000000000000000000000000006", // WETH
+  "59144": "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f", // WETH
+  "5000": "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8", // WMNT
+  "34443": "0x4200000000000000000000000000000000000006", // WETH
+  "143": "0x3bd359c1119da7da1d913d1c4d2b7c461115433a", // WMON
+  "10": "0x4200000000000000000000000000000000000006", // WETH
+  "9745": "0x6100e367285b01f48d07953803a2d8dca5d19873", // WXPL
+  "137": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270", // WPOL
+  "534352": "0x5300000000000000000000000000000000000004", // WETH
+  "146": "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38", // wS
+  "130": "0x4200000000000000000000000000000000000006", // WETH
+  "480": "0x4200000000000000000000000000000000000006", // WETH
+}
+
+function isWrapOrUnwrap(
+  { sellAsset, buyAsset }: SwapQuoteRequest["assets"],
+  chainID: string,
+): boolean {
+  const wrappedBaseAsset = WRAPPED_BASE_ASSET_BY_CHAIN_ID[chainID]
+  const [baseAsset, otherAsset] = isNetworkBaseAsset(sellAsset)
+    ? [sellAsset, buyAsset]
+    : [buyAsset, sellAsset]
+
+  return (
+    wrappedBaseAsset !== undefined &&
+    isNetworkBaseAsset(baseAsset) &&
+    !isNetworkBaseAsset(otherAsset) &&
+    get0xAssetAddress(otherAsset)?.toLowerCase() === wrappedBaseAsset
+  )
+}
+
+/**
+ * Builds the amount parameter of a 0x price or quote request from whichever
+ * side of the swap the user entered. 0x rejects `buyAmount` for wrapping and
+ * unwrapping, which trade 1:1, so those always send `sellAmount`.
+ */
+export function getSwapAmountParams({
+  assets,
+  amount,
+  network,
+}: Pick<SwapQuoteRequest, "assets" | "amount" | "network">):
+  | { sellAmount: string }
+  | { buyAmount: string } {
+  if ("sellAmount" in amount) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.sellAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  if (isWrapOrUnwrap(assets, network.chainID)) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.buyAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  return {
+    buyAmount: utils
+      .parseUnits(amount.buyAmount, assets.buyAsset.decimals)
+      .toString(),
+  }
+}
+
 export async function getPrice({
   assets,
   amount,
@@ -149,18 +226,10 @@ export async function getPrice({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -169,7 +238,7 @@ export async function getPrice({
     sellToken,
     buyToken,
     chainId: Number(network.chainID),
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
   }
 
   const url = new URL("swap/allowance-holder/price", API_BASE_URL)
@@ -208,18 +277,10 @@ export async function getQuote({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -229,7 +290,7 @@ export async function getQuote({
     buyToken,
     chainId: Number(network.chainID),
     slippageBps: slippageTolerance * 100,
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
     taker,
     gasPrice: gasPrice.toString(),
     ...getGatedParameters(network.chainID),
