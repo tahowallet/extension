@@ -176,6 +176,12 @@ export default class LedgerService extends BaseService<Events> {
 
   transport: Transport | undefined = undefined
 
+  /**
+   * The USB device the current transport was opened on, used to tell whether
+   * a USB disconnect is the Ledger going away or some other device.
+   */
+  #currentDevice: USBDevice | undefined = undefined
+
   #lastOperationPromise = Promise.resolve()
 
   static create: ServiceCreatorFunction<Events, LedgerService, []> = async () =>
@@ -218,6 +224,9 @@ export default class LedgerService extends BaseService<Events> {
         await this.#closeTransport("replacing")
 
         this.transport = await TransportWebUSB.create()
+        if (this.transport instanceof TransportWebUSB) {
+          this.#currentDevice = this.transport.device
+        }
 
         const eth = new Eth(this.transport)
 
@@ -286,6 +295,7 @@ export default class LedgerService extends BaseService<Events> {
     }
 
     this.transport = undefined
+    this.#currentDevice = undefined
 
     try {
       await transport.close()
@@ -310,14 +320,27 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  #handleUSBDisconnect = async (
-    /* event: USBConnectionEvent */
-  ): Promise<void> => {
+  /**
+   * Handles a USB device going away, or a failed connection when called with
+   * no event. A disconnect only disconnects the Ledger when it's the device
+   * the transport was opened on; other USB devices, including other Ledgers,
+   * coming and going don't affect it. WebUSB uses a single USBDevice object
+   * per device, so the event's device can be compared directly.
+   */
+  #handleUSBDisconnect = async (event?: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
     if (!this.#currentLedgerId) {
+      return
+    }
+
+    if (
+      event !== undefined &&
+      this.#currentDevice !== undefined &&
+      event.device !== this.#currentDevice
+    ) {
       return
     }
 
