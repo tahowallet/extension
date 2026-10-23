@@ -137,6 +137,26 @@ async function deriveAddressOnLedger(path: string, eth: Eth) {
   return address
 }
 
+/**
+ * Whether the Ledger currently has the Ethereum app open, using the
+ * dashboard-level GET APP NAME command (CLA 0xb0, INS 0x01).
+ *
+ * Adapted from @ledgerhq/live-common.
+ */
+async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
+  const response = await transport.send(0xb0, 0x01, 0x00, 0x00)
+
+  const format = response[0]
+  if (format !== 1) {
+    return false
+  }
+
+  const nameLength = response[1]
+  const name = response.subarray(2, 2 + nameLength).toString("ascii")
+
+  return name === "Ethereum"
+}
+
 async function generateLedgerId(
   transport: Transport,
   eth: Eth,
@@ -257,6 +277,14 @@ export default class LedgerService extends BaseService<Events> {
         }
         this.transport = transport
         this.#currentDevice = transport.device
+
+        // Checked after taking the transport so that a failure here goes
+        // through the failed-connection handling below, which closes it.
+        if (!(await isEthereumAppOpen(transport))) {
+          throw new Error(
+            "The Ledger doesn't have the Ethereum app open; open it to connect.",
+          )
+        }
 
         const eth = new Eth(this.transport)
 
