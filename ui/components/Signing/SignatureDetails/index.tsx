@@ -19,7 +19,7 @@ import {
   SignTypedDataRequest,
 } from "@tallyho/tally-background/utils/signing"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
-import { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import { AnyAction } from "redux"
 import TransactionSignatureDetails from "./TransactionSignatureDetails"
 import MessageDataSignatureDetails from "./DataSignatureDetails/MessageDataSignatureDetails"

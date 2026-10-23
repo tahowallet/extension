@@ -1,11 +1,25 @@
 import sinon from "sinon"
+import {
+  mock,
+  describe,
+  beforeEach,
+  afterEach,
+  it,
+  expect,
+  jest,
+} from "bun:test"
 import ChainService, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from ".."
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON, SECOND } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
-import * as gas from "../../../lib/gas"
+
+const getBlockPricesMock = mock(() => {})
+mock.module("../../../lib/gas", () => {
+  const actual = require("../../../lib/gas")
+  return { ...actual, default: getBlockPricesMock }
+})
 import {
   createAddressOnNetwork,
   createArrayWith0xHash,
@@ -13,12 +27,12 @@ import {
   createChainService,
   createTransactionsToRetrieve,
 } from "../../../tests/factories"
-import { UNIXTime } from "../../../types"
+import type { UNIXTime } from "../../../types"
 import {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
-import { AddressOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork } from "../../../accounts"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
@@ -60,6 +74,7 @@ describe("Chain Service", () => {
   let chainService: ChainService
   beforeEach(async () => {
     sandbox.restore()
+    getBlockPricesMock.mockReset()
 
     chainService = await createChainService()
   })
@@ -166,12 +181,10 @@ describe("Chain Service", () => {
       const externalized = chainService as unknown as ChainServiceExternalized
       externalized.lastUserActivityOnNetwork[ETHEREUM.chainID] =
         Date.now() - 10 * MINUTE
-      const getBlockPricesStub = sandbox
-        .stub(gas, "default")
-        .callsFake(async () => createBlockPrices())
+      getBlockPricesMock.mockImplementation(async () => createBlockPrices())
 
       await chainService.markNetworkActivity(ETHEREUM.chainID)
-      expect(getBlockPricesStub.called).toEqual(true)
+      expect(getBlockPricesMock).toHaveBeenCalled()
     })
   })
 
@@ -455,7 +468,7 @@ describe("Chain Service", () => {
         const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
 
         expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(endBlock - startBlock).toEqual(128000n)
+        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(128000n)
       })
 
       it("looks back a much shorter window when transfers have to be scanned from logs", async () => {
@@ -469,7 +482,7 @@ describe("Chain Service", () => {
         const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
 
         expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(endBlock - startBlock).toEqual(5000n)
+        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(5000n)
       })
 
       it("never looks back past the genesis block", async () => {

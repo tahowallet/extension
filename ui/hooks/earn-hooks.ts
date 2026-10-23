@@ -1,4 +1,4 @@
-/* eslint-disable import/prefer-default-export */
+/* oxlint-disable import/prefer-default-export */
 import {
   EnrichedAvailableVault,
   selectAvailableVaults,
@@ -23,7 +23,7 @@ export const useAllEarnVaults = (): EnrichedAvailableVault[] => {
       )) as unknown as EnrichedAvailableVault[]
       setVaults(updatedVaults)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, isValutDataStale])
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
 
-import { UNIXTime } from "../../types"
-import { AccountBalance, AddressOnNetwork } from "../../accounts"
+import type { UNIXTime } from "../../types"
+import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
   AnyEVMBlock,
   AnyEVMTransaction,

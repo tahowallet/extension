@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
     "target": "esnext",
+    "module": "esnext",
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "strict": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "noImplicitOverride": true
+    "noImplicitOverride": true,
+    "skipLibCheck": true
   },
   "exclude": ["dev-utils", "ci"]
 }

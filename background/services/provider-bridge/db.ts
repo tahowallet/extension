@@ -65,7 +65,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
           .toCollection()
           .modify((permission) => {
             // param reassignment is the recommended way to use `modify` https://dexie.org/docs/Collection/Collection.modify()
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             permission.chainID = ETHEREUM.chainID
           }),
       )

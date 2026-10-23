@@ -1,7 +1,7 @@
 import { BigNumber, ethers } from "ethers"
 import { EventFragment, Fragment, FunctionFragment } from "ethers/lib/utils"
 import { EVMLog } from "../networks"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import { ERC20_FUNCTIONS } from "./erc20"
 
 // This seems to be the general ABI for wrapped assets.  There is no standard or EIP - but it seems to be

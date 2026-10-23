@@ -288,7 +288,7 @@ export default class TransactionsHelper {
     await expect(
       timestampRow
         .locator(".right")
-        // eslint-disable-next-line no-irregular-whitespace
+        // oxlint-disable-next-line no-irregular-whitespace
         .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/),
     ).toBeVisible()
   }

@@ -4,7 +4,7 @@ import { browser } from "@tallyho/tally-background"
 import { selectAllowedPages } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector } from "./redux-hooks"
 
-// eslint-disable-next-line import/prefer-default-export
+// oxlint-disable-next-line import/prefer-default-export
 export function useDappPermission(): {
   isConnected: boolean
   currentPermission: PermissionRequest | undefined

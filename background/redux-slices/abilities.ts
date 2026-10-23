@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { Ability, ABILITY_TYPES_ENABLED } from "../abilities"
-import { HexString, NormalizedEVMAddress } from "../types"
+import type { HexString, NormalizedEVMAddress } from "../types"
 import { InternalSignerState } from "./internal-signer"
 import { LedgerState } from "./ledger"
 import { createBackgroundAsyncThunk } from "./utils"

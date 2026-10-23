@@ -239,7 +239,7 @@ export default class TahoRPCProvider extends JsonRpcProvider {
       this.pending.push({
         resolve,
         reject,
-        // eslint-disable-next-line no-plusplus, no-underscore-dangle
+        // oxlint-disable-next-line no-plusplus
         payload: { method, params, id: this._nextId++, jsonrpc: "2.0" },
       })
     })

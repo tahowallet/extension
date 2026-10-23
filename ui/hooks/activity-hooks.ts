@@ -1,4 +1,4 @@
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import {
   Activity,
   INFINITE_VALUE,

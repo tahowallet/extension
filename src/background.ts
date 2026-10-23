@@ -24,8 +24,7 @@ browser.runtime.onInstalled.addListener((obj) => {
   ) {
     Object.keys(RuntimeFlag).forEach(
       // Holding until the approach can be reworked around browser.storage.local.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      (flagName) => "", // localStorage.removeItem(flagName),
+      (_flagName) => "", // localStorage.removeItem(flagName),
     )
   }
 })

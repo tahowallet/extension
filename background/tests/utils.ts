@@ -7,7 +7,7 @@ export function mockLocalStorage(): LocalStorageMock {
 
   browser.storage.local.get = jest.fn((key) => {
     if (typeof key === "string" && key in localStorage) {
-      return Promise.resolve({ [key]: localStorage[key] } || {})
+      return Promise.resolve({ [key]: localStorage[key] })
     }
     return Promise.resolve({})
   })
@@ -33,7 +33,7 @@ export function mockLocalStorageWithCalls(): {
 
   browser.storage.local.get = jest.fn((key) => {
     if (typeof key === "string" && key in localStorage) {
-      return Promise.resolve({ [key]: localStorage[key] } || {})
+      return Promise.resolve({ [key]: localStorage[key] })
     }
     return Promise.resolve({})
   })

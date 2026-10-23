@@ -29,7 +29,7 @@ type PageList = {
   path: string
   // Tricky to handle all props components are
   // accepting here.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   Component: (...args: any[]) => ReactElement | null
   hasTabBar: boolean
   hasTopBar: boolean

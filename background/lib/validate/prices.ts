@@ -12,6 +12,7 @@ import { JSONSchemaType } from "ajv"
 // https://github.com/ajv-validator/ajv/issues/1664, which should be fixed in
 // Ajv v9 via
 // https://github.com/ajv-validator/ajv/commit/b4b806fd03a9906e9126ad86cef233fa405c9a3e
+// @ts-expect-error -- Ajv 8 JSONSchemaType rejects this nullable-optional workaround under TS 6
 export const coingeckoPriceSchema: JSONSchemaType<CoingeckoPriceData> = {
   type: "object",
   required: [],

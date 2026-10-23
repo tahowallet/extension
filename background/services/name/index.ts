@@ -1,18 +1,18 @@
-import { HexString, UNIXTime } from "../../types"
+import type { HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
-import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { SECOND } from "../../constants"
 
 import { NameResolver } from "./name-resolver"
+import type { NameResolverSystem } from "./resolvers"
 import {
-  NameResolverSystem,
   knownContractResolverFor,
   addressBookResolverFor,
   ensResolverFor,
@@ -24,7 +24,7 @@ import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
 import { wrapIfEnabled } from "../../features"
 
-export { NameResolverSystem }
+export type { NameResolverSystem }
 
 export type ResolvedAddressRecord = {
   from: NameOnNetwork

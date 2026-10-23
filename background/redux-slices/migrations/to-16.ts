@@ -72,7 +72,6 @@ export default (prevState: Record<string, unknown>): NewState => {
         return
       }
       Object.keys(typedPrevState.activities[address][chainID].entities).forEach(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (_) => {
           Object.values(
             typedPrevState.activities[address][chainID].entities,

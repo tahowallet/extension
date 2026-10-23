@@ -1,9 +1,12 @@
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 
 import ChainService from "../chain"
 import NameService from "../name"
 
-import { AddressOnNetworkAnnotation, EnrichedAddressOnNetwork } from "./types"
+import type {
+  AddressOnNetworkAnnotation,
+  EnrichedAddressOnNetwork,
+} from "./types"
 
 // TODO look up whether contracts are verified on EtherScan
 // TODO ABIs

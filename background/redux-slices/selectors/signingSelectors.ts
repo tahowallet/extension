@@ -7,7 +7,7 @@ import {
 } from "../../services/internal-signer"
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 import {
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,

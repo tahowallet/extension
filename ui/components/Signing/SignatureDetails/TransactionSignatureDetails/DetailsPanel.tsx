@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* oxlint-disable react-hooks/exhaustive-deps */
 import React, { ReactElement, useEffect, useState } from "react"
 import {
   selectEstimatedFeesPerGas,
@@ -71,7 +71,7 @@ export default function DetailPanel({
       dispatch(updateTransactionData(transactionRequest))
     }
     // Should trigger only on gas updates. If `transactionDetails` is a dependency, this will run constantly.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [
     updateNum,
     dispatch,

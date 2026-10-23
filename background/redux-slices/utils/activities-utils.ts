@@ -10,7 +10,7 @@ import { isDefined } from "../../lib/utils/type-guards"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import { getRecipient, getSender } from "../../services/enrichment/utils"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 enum TxStatus {
   FAIL = 0,

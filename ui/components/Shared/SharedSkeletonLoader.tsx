@@ -22,7 +22,7 @@ export default function SharedSkeletonLoader(props: {
 
   // Want to return a ReactElement to make this maximally easy to integrate,
   // whereas children can be a ReactNode; Fragment will let us achieve that.
-  // eslint-disable-next-line react/jsx-no-useless-fragment
+  // oxlint-disable-next-line react/jsx-no-useless-fragment
   if (isLoaded) return <>{children}</>
 
   return (

@@ -1,5 +1,5 @@
 import ChainService from "../../chain"
-import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import {
   ARBITRUM_ONE,
   AVALANCHE,
@@ -73,9 +73,9 @@ export default function ensResolverFor(
       const { name } =
         "name" in addressOrNameOnNetwork
           ? addressOrNameOnNetwork
-          : (await this.lookUpNameForAddress(addressOrNameOnNetwork)) ?? {
+          : ((await this.lookUpNameForAddress(addressOrNameOnNetwork)) ?? {
               name: undefined,
-            }
+            })
 
       // Hard-coded to ETHEREUM to support ENS names on ETH L2's.
       const provider = chainService.providerForNetwork(ETHEREUM)

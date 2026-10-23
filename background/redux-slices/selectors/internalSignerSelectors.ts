@@ -5,7 +5,7 @@ import {
   PrivateKey,
   SignerImportSource,
 } from "../../services/internal-signer"
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 export const selectInternalSignerStatus = createSelector(
   (state: RootState) => state.internalSigner.status,
@@ -62,8 +62,8 @@ export const selectSourcesByAddress = createSelector(
           keyring.addresses.map((address) => [
             address,
             // Guaranteed to exist by the filter above
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            metadata[keyring.id!]?.source,
+            // oxlint-disable-next-line typescript/no-non-null-assertion
+            metadata[keyring.id]?.source,
           ]),
         ),
     ),

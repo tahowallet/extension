@@ -2,7 +2,7 @@ import browser from "webextension-polyfill"
 
 import { Store as ProxyStore } from "webext-redux"
 import { produce } from "immer"
-import { Action, AnyAction, ThunkAction, ThunkDispatch } from "@reduxjs/toolkit"
+import { Action, ThunkAction, ThunkDispatch } from "@reduxjs/toolkit"
 
 import { Delta, patch as patchDeepDiff } from "./services/redux/differ"
 import ReduxService from "./services/redux"
@@ -37,13 +37,10 @@ type BackgroundAsyncThunkDispatch<S, E, A extends Action> = {
 //   behaves a little differently from AsyncThunk by producing its result
 //   directly at the dispatch site, instead of producing a triplet of
 //   fulfilled/rejected/complete functions.
-type BackgroundAsyncThunkDispatchify<T> = T extends ThunkDispatch<
-  infer S,
-  infer E,
-  infer A
->
-  ? BackgroundAsyncThunkDispatch<S, E, A>
-  : never
+type BackgroundAsyncThunkDispatchify<T> =
+  T extends ThunkDispatch<infer S, infer E, infer A>
+    ? BackgroundAsyncThunkDispatch<S, E, A>
+    : never
 
 export type BackgroundDispatch = BackgroundAsyncThunkDispatchify<
   ReduxService["store"]["dispatch"]
@@ -58,9 +55,7 @@ export type BackgroundDispatch = BackgroundAsyncThunkDispatchify<
  * The returned Promise resolves once the proxy store is ready and hydrated
  * with the current background store data.
  */
-export async function newProxyStore(): Promise<
-  ProxyStore<RootState, AnyAction>
-> {
+export async function newProxyStore(): Promise<ProxyStore<RootState>> {
   const proxyStore = new ProxyStore({
     serializer: encodeJSON,
     deserializer: decodeJSON,

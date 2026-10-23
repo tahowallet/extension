@@ -10,7 +10,7 @@ import { SignerFrameProps } from "."
 // The explicit prop and component types ease the linter rule's concern around
 // forwarding unintended props. Disable the rule for the rest of the file
 // accordingly.
-/* eslint-disable react/jsx-props-no-spreading */
+/* oxlint-disable react/jsx-props-no-spreading */
 
 /**
  * A component that dispatches to the appropriate signer-specific frame for

@@ -1,4 +1,4 @@
-/* eslint-disable no-empty-pattern */
+/* oxlint-disable no-empty-pattern */
 import { test as base, chromium, Page, Request, Worker } from "@playwright/test"
 import path from "path"
 import WalletPageHelper from "./utils/walletPageHelper"

@@ -270,7 +270,7 @@ export async function getUSDPriceForTokens(
     }
     // FIXME: If a lookup fails, retry?
     if (
-      response.success !== true ||
+      !response.success ||
       ethers.BigNumber.from(response.returnData).isZero()
     ) {
       // Don't add price point if we don't have a valid response or if rate is zero

@@ -213,7 +213,7 @@ describe("ChainService", () => {
     })
 
     it("should create a provider for the new chain", async () => {
-      expect(chainService.providers.evm["250"]).toBe(undefined)
+      expect(chainService.providers.evm["250"]).toBeUndefined()
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
       expect(chainService.providers.evm["250"]).toBeInstanceOf(
         SerialFallbackProvider,
@@ -297,7 +297,7 @@ describe("ChainService", () => {
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
         ],
-      ).toBe(undefined)
+      ).toBeUndefined()
     })
 
     it("should set the nonce for tx request for chains with a mempool", async () => {
@@ -371,7 +371,7 @@ describe("ChainService", () => {
         chainServiceExternalized.evmChainLastSeenNoncesByNormalizedAddress[
           transactionRequest.chainID
         ],
-      ).toBe(undefined)
+      ).toBeUndefined()
     })
   })
 
@@ -557,7 +557,7 @@ describe("ChainService", () => {
 
   describe("setRpcEndpointsForChain", () => {
     const originalFetch = globalThis.fetch
-    let fetchMock: jest.Mock
+    let fetchMock: AnyMock
 
     const mockProbeResult = (chainIDHex: string) => {
       fetchMock.mockResolvedValue({
@@ -603,7 +603,7 @@ describe("ChainService", () => {
         { url: "https://new-rpc.example.com" },
       ])
 
-      const newProvider = chainService.providerForNetwork(ETHEREUM)
+      const newProvider = chainService.providerForNetwork(ETHEREUM)!
 
       // The old provider's timers and connections are shut down rather than
       // left running against the endpoints that were just replaced.

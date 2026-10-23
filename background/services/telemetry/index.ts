@@ -1,5 +1,5 @@
 import { RootState } from "../../redux-slices"
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import BaseService from "../base"
 import logger from "../../lib/logger"
 import { encodeJSON } from "../../lib/utils"

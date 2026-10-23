@@ -1,7 +1,7 @@
 import Dexie, { DexieOptions } from "dexie"
 import { TokenList } from "@uniswap/token-lists"
 
-import { AccountBalance } from "../../accounts"
+import type { AccountBalance } from "../../accounts"
 import { EVMNetwork } from "../../networks"
 import {
   AnyAsset,
@@ -11,7 +11,7 @@ import {
   SmartContractFungibleAsset,
   TokenListCitation,
 } from "../../assets"
-import { DeepWriteable } from "../../types"
+import type { DeepWriteable } from "../../types"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 import { normalizeEVMAddress } from "../../lib/utils"
 
@@ -173,7 +173,7 @@ export class IndexingDatabase extends Dexie {
         .modify((storedTokenList: DeepWriteable<CachedTokenList>) => {
           if (storedTokenList.url === polygonTokenListURL) {
             // This is how migrations are expected to work
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             storedTokenList.list.tokens = fixPolygonWETHIssue(
               storedTokenList.list.tokens,
             )
@@ -252,7 +252,7 @@ export class IndexingDatabase extends Dexie {
         .table("customAssets")
         .toCollection()
         .modify((customAsset: CustomAsset) => {
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           delete customAsset.metadata?.discoveryTxHash
         }),
     )
@@ -395,10 +395,10 @@ export class IndexingDatabase extends Dexie {
   async getLatestTokenLists(
     urls: string[],
   ): Promise<{ url: string; tokenList: TokenList }[]> {
-    const candidateLists = (await this.tokenLists
+    const candidateLists = await this.tokenLists
       .where("url")
       .anyOf(urls)
-      .toArray()) as CachedTokenList[]
+      .toArray()
     return Object.entries(
       candidateLists.reduce(
         (acc, cachedList) => {
@@ -426,7 +426,7 @@ export class IndexingDatabase extends Dexie {
       ),
     ).map(([k, v]) => ({
       url: k,
-      tokenList: v as TokenList,
+      tokenList: v,
     }))
   }
 }

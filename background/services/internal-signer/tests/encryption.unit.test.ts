@@ -9,7 +9,7 @@ describe.each([VaultVersion.PBKDF2, VaultVersion.Argon2])(
   "Encryption utils",
   (vaultVersion) => {
     it("derives symmetric keys", async () => {
-      /* eslint-disable no-await-in-loop */
+      /* oxlint-disable no-await-in-loop */
       for (let i = 0; i < 5; i += 1) {
         const password = Buffer.from(
           global.crypto.getRandomValues(new Uint8Array(16)),

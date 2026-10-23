@@ -277,7 +277,7 @@ describe("Serial Fallback Provider", () => {
       genericSendStub.onCall(1).returns("success")
 
       // Accessing private property
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(0)
 
       await waitFor(() => expect(boarSendStub.called).toEqual(true))
@@ -290,7 +290,7 @@ describe("Serial Fallback Provider", () => {
       // stored endpoint behind it; the periodic primary reconnect is what
       // eventually walks traffic back to index 0.
       // Accessing private property
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       expect((fallbackProvider as any).currentProviderIndex).toEqual(1)
     })
   })

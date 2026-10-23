@@ -1,13 +1,16 @@
 import dayjs from "dayjs"
-import { EIP2612SignTypedDataAnnotation, EnrichedEVMTransaction } from "./types"
+import type {
+  EIP2612SignTypedDataAnnotation,
+  EnrichedEVMTransaction,
+} from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
 import NameService from "../name"
-import { EIP712TypedData, HexString } from "../../types"
+import type { EIP712TypedData, HexString } from "../../types"
 import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData,

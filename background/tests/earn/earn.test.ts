@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* oxlint-disable typescript/ban-ts-comment */
 import { BigNumber } from "ethers"
 import * as getTokenPrice from "../../redux-slices/earn-utils/getTokenPrice"
 import { getDoggoPrice, getPoolAPR } from "../../redux-slices/earn-utils"
@@ -11,10 +11,10 @@ import * as contractUtils from "../../redux-slices/utils/contract-utils"
 const mainCurrencySymbol = "USD"
 
 describe("Earn", () => {
-  global.fetch = () =>
+  global.fetch = (() =>
     Promise.resolve({
       json: () => Promise.resolve([]),
-    }) as Promise<Response>
+    }) as Promise<Response>) as unknown as typeof fetch
   describe("getDoggoPrice", () => {
     beforeEach(() => jest.resetAllMocks())
 

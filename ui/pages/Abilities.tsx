@@ -75,7 +75,8 @@ export default function Abilities(): ReactElement {
           section {
             height: 544px;
             width: 100%;
-            background: radial-gradient(
+            background:
+              radial-gradient(
                 103.39% 72.17% at -5.73% -7.67%,
                 rgb(247, 103, 52, 0.5) 0%,
                 rgba(19, 48, 46, 0) 100%

@@ -8,7 +8,7 @@ import {
   deriveArgon2KeyFromPassword,
   encryptVault,
 } from "./encryption"
-import { UNIXTime } from "../../types"
+import type { UNIXTime } from "../../types"
 import logger from "../../lib/logger"
 
 export type SerializedEncryptedVault = {

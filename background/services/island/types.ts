@@ -1,4 +1,4 @@
-import { HexString } from "../../types"
+import type { HexString } from "../../types"
 
 export type ReferrerStats = {
   bonusTotal: bigint

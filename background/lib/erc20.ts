@@ -10,8 +10,8 @@ import {
 } from "ethers/lib/utils"
 import { SmartContractAmount, SmartContractFungibleAsset } from "../assets"
 import { EVMLog, SmartContract } from "../networks"
-import { HexString } from "../types"
-import { AddressOnNetwork } from "../accounts"
+import type { HexString } from "../types"
+import type { AddressOnNetwork } from "../accounts"
 import {
   AggregateContractResponse,
   CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES,
@@ -114,7 +114,7 @@ export async function getMetadata(
     }
   } catch (error) {
     logger.warn("Invalid metadata for token", tokenSmartContract)
-    throw new Error("Could not retrieve erc20 token metadata")
+    throw new Error("Could not retrieve erc20 token metadata", { cause: error })
   }
 }
 
@@ -231,7 +231,7 @@ export const getTokenBalances = async (
       )) as AggregateContractResponse
 
       return response.returnData.flatMap((data, i) => {
-        if (data.success !== true) {
+        if (!data.success) {
           return []
         }
 

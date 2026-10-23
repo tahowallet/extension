@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { EVMNetwork } from "../networks"
 import { DisplayDetails } from "../services/ledger"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import { enrichAssetAmountWithDecimalValues } from "./utils/asset-utils"
 
@@ -67,10 +67,10 @@ const ledgerSlice = createSlice({
     resetLedgerState: (immerState) => {
       immerState.currentDeviceID = null
       Object.values(immerState.devices).forEach((device) => {
-        device.status = "disconnected" // eslint-disable-line no-param-reassign
+        device.status = "disconnected" // oxlint-disable-line no-param-reassign
         Object.values(device.accounts).forEach((account) => {
-          account.fetchingAddress = false // eslint-disable-line no-param-reassign
-          account.fetchingBalance = false // eslint-disable-line no-param-reassign
+          account.fetchingAddress = false // oxlint-disable-line no-param-reassign
+          account.fetchingBalance = false // oxlint-disable-line no-param-reassign
         })
       })
     },

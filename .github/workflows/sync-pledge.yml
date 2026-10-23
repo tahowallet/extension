@@ -12,18 +12,11 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Read .nvmrc
-        run: echo "NVMRC=$(cat ./.nvmrc)" >> $GITHUB_OUTPUT
-        id: nvm
-      - name: Use Node + Yarn
-        uses: actions/setup-node@v3
-        with:
-          node-version: "${{ steps.nvm.outputs.NVMRC }}"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
       - name: Sync pledge addresses
-        run: node pledge-sync.js
+        run: bun pledge-sync.js
         working-directory: .github/workflows/pledge-signer-sync
         env:
           GALXE_ACCESS_TOKEN: ${{ secrets.GALXE_ACCESS_TOKEN }}

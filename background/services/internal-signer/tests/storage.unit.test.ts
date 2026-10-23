@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill"
 import {
   EncryptedVault,
   VaultVersion,
@@ -105,7 +106,7 @@ describe("Storage utils", () => {
 
     expect(migrationData.migrated).toEqual(false)
     expect(
-      migrationData.migrated === false && migrationData.errorMessage,
+      !migrationData.migrated && migrationData.errorMessage,
     ).toBeUndefined()
     expect(version).toEqual(VaultVersion.Argon2)
     expect(vaults[0].vault).toEqual(vaultEncryptedWithArgon2)
@@ -124,10 +125,10 @@ describe("Storage utils", () => {
 
     expect(migrationData.migrated).toEqual(false)
     expect(
-      migrationData.migrated === false && migrationData.errorMessage,
+      !migrationData.migrated && migrationData.errorMessage,
     ).not.toBeUndefined()
     expect(
-      migrationData.migrated === false &&
+      !migrationData.migrated &&
         migrationData.errorMessage !== undefined &&
         migrationData.errorMessage.length,
     ).toBeGreaterThan(1)

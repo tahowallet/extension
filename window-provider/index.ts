@@ -326,7 +326,7 @@ export default class TahoWindowProvider extends EventEmitter {
 
   handleAddressChange(address: Array<string>): void {
     if (this.selectedAddress !== address[0]) {
-      // eslint-disable-next-line prefer-destructuring
+      // oxlint-disable-next-line prefer-destructuring
       this.selectedAddress = address[0]
       this.emit("accountsChanged", address)
     }

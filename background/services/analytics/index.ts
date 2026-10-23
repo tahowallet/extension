@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid"
 import browser from "webextension-polyfill"
 
-import { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
+import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 
 import BaseService from "../base"
 import { AnalyticsDatabase, getOrCreateDB } from "./db"

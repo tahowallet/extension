@@ -1,4 +1,4 @@
-import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../accounts"
 import { Network } from "../../networks"
 
 /**

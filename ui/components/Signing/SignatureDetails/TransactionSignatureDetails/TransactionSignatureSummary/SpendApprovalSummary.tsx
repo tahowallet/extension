@@ -244,8 +244,9 @@ export default function SpendApprovalSummary({
       <style jsx>
         {`
           .site_icon {
-            background: url(${dappFavicon ??
-            "./images/dapp_favicon_default@2x.png"});
+            background: url(${
+              dappFavicon ?? "./images/dapp_favicon_default@2x.png"
+            });
             background-size: cover;
             width: 48px;
             height: 48px;

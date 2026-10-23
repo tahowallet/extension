@@ -48,7 +48,7 @@ describe(formatCurrencyAmount, () => {
 })
 
 describe(enrichAssetAmountWithMainCurrencyValues, () => {
-  test("should add localized price and currency data to an asset amount ", () => {
+  test("should add localized price and currency data to an asset amount", () => {
     const assetAmount = createAssetAmount()
     const pricePoint = createPricePoint(assetAmount.asset, 1637.7)
 

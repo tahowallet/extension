@@ -1,6 +1,6 @@
 import { keyBy } from "lodash"
 import { TokenList } from "@uniswap/token-lists"
-import { UNIXTime, HexString } from "./types"
+import type { UNIXTime, HexString } from "./types"
 import {
   NetworkSpecific,
   SmartContract,
@@ -145,7 +145,6 @@ export type AnyAsset =
   | Asset
   | NetworkSpecificAsset
   | FiatCurrency
-  | FungibleAsset
   | SmartContractFungibleAsset
   | NetworkBaseAsset
 

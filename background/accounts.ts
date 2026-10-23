@@ -1,6 +1,6 @@
 import type { AnyAssetAmount, SmartContractFungibleAsset } from "./assets"
 import { EVMNetwork, NetworkBaseAsset } from "./networks"
-import { HexString } from "./types"
+import type { HexString } from "./types"
 
 /**
  * An account balance at a particular time and block height, on a particular

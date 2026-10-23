@@ -5,6 +5,6 @@
 /background/services/internal-signer/* @tahowallet/extension-security-auditors
 # Any changes to dependencies deserve extra scrutiny to help prevent supply
 # chain attacks
-yarn.lock @tahowallet/extension-dependency-auditors
+bun.lock @tahowallet/extension-dependency-auditors
 # Any changes to code owners deserve extra scrutiny
 .github/CODEOWNERS @tahowallet/extension-security-auditors

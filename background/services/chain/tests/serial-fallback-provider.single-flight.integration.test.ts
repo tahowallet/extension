@@ -169,8 +169,25 @@ describe("SerialFallbackProvider single-flight coalescing", () => {
     // uncategorized failure so it propagates directly to our callers.
     gate.reject(new Error("single-flight terminal failure"))
 
-    await expect(first).rejects.toThrow("single-flight terminal failure")
-    await expect(second).rejects.toThrow("single-flight terminal failure")
+    // Settle both callers before asserting. Bun fails a test on a rejection
+    // that has no handler yet, and awaiting `expect(first).rejects` first
+    // leaves `second` rejected and unhandled until its own expect runs.
+    const [firstError, secondError] = await Promise.all([
+      first.then(
+        () => undefined,
+        (error: unknown) => error,
+      ),
+      second.then(
+        () => undefined,
+        (error: unknown) => error,
+      ),
+    ])
+    expect(firstError).toBeInstanceOf(Error)
+    expect((firstError as Error).message).toBe("single-flight terminal failure")
+    expect(secondError).toBeInstanceOf(Error)
+    expect((secondError as Error).message).toBe(
+      "single-flight terminal failure",
+    )
 
     // Now that the in-flight slot has been cleared, a subsequent call goes
     // to the provider again rather than inheriting the rejected promise.

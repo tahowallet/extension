@@ -1,47 +1,33 @@
 # Local chain for development
 
-This is a sample hardhat project that has been modified to run a local fork of the mainnet.
+This runs a local fork of Ethereum mainnet with [anvil](https://getfoundry.sh/anvil/overview).
 The extension can interact with this chain and contracts can be deployed to it.
-The chain loses it's state on restart.
+The chain loses its state on restart.
 
-The important configuration is in `hardhat.config.js`.
+The important configuration is in the `start` script in `package.json`.
 
-- `chainId: 1337`: At the moment we know that this works but chainId 1 does not. (03/06/2022)
+- `--chain-id 1337`: At the moment we know that this works but chainId 1 does not. (03/06/2022)
   - With `chainId: 1` if there is almost any wallet communication — at the moment — the fork becomes unresponsive quickly.
-    The time it takes is not deterministric. Had it working for hours but usually it breaks after a couple of seconds.
-- `mining.auto: false;` and `mining.interval: 5000` is set so it's easy to see if the chain becomes unresponsive.
+    The time it takes is not deterministic. Had it working for hours but usually it breaks after a couple of seconds.
+- `--block-time 5` mines a block every 5 seconds instead of on every transaction, so it's easy to see if the chain
+  becomes unresponsive.
+
+The funded development accounts are anvil's defaults, which are the same as Hardhat's.
 
 ## Setup
 
-> This project is intentionally not part of the yarn workspace, because it's not part of the application,
-> but a simple a tool for development. Because of this, it needs to be setup as a separate node project.
+> This project is intentionally not part of the root workspace, because it's not part of the application,
+> but a simple tool for development.
+
+Install Foundry, which provides anvil, by following
+[its installation instructions](https://getfoundry.sh/introduction/installation). Then point `CHAIN_API_URL` at
+an Ethereum mainnet RPC endpoint and start the chain:
 
 ```
 $ cd dev-utils/local-chain
-$ yarn install
-$ yarn start
+$ CHAIN_API_URL=<mainnet RPC URL> bun start
 ```
 
-## API key for alchemy
-
-There is a separate application for this, and that api key is used in the config.
-
-## Original README
-
-(Basic Sample Hardhat Project)
-
-https://hardhat.org/getting-started/
-
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+The fork starts at the latest block, so any up-to-date mainnet endpoint works, including Boar's. A non-archive
+endpoint can only serve recent state, though, so a long-running fork may eventually fail to read state at the block
+it forked from; restarting the chain moves the fork up to the latest block again.

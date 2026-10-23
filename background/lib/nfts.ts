@@ -1,4 +1,4 @@
-import { AddressOnNetwork } from "../accounts"
+import type { AddressOnNetwork } from "../accounts"
 import {
   getSimpleHashCollections,
   getSimpleHashNFTs,
@@ -12,7 +12,7 @@ import {
   NFTCollection,
   TransferredNFT,
 } from "../nfts"
-import { UNIXTime } from "../types"
+import type { UNIXTime } from "../types"
 import { MEZO_TESTNET } from "../constants"
 import { NFT_COLLECTION_ID } from "../services/campaign/matsnet-nft"
 
