@@ -249,10 +249,14 @@ export default class LedgerService extends BaseService<Events> {
         // creating the next one fail with "Unable to claim interface".
         await this.#closeTransport("replacing")
 
-        this.transport = await TransportWebUSB.create()
-        if (this.transport instanceof TransportWebUSB) {
-          this.#currentDevice = this.transport.device
+        // Only a Ledger the browser has already paired can be opened from
+        // the background; pairing a new one needs a user gesture in a page.
+        const transport = await TransportWebUSB.openConnected()
+        if (transport === null) {
+          return
         }
+        this.transport = transport
+        this.#currentDevice = transport.device
 
         const eth = new Eth(this.transport)
 
