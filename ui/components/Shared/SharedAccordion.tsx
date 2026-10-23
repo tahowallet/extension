@@ -92,9 +92,9 @@ export default function SharedAccordion({
       </div>
       <style jsx>{`
         .accordion {
-          background-color: ${isOpen
-            ? "var(--background, var(--green-120))"
-            : ""};
+          background-color: ${
+            isOpen ? "var(--background, var(--green-120))" : ""
+          };
         }
 
         .accordion:not([aria-expanded="true"]):hover {

@@ -1,0 +1,13 @@
+{
+  "semi": false,
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "dist",
+    "ui/_locales/**/*.json",
+    "!.github",
+    "ci/cache",
+    ".vscode",
+    "size-plugin.json"
+  ]
+}

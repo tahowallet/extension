@@ -106,11 +106,11 @@ export default class TransactionsHelper {
       .click()
 
     await expect(async () => {
-      const clipboardReceipientAddress = await this.popup.evaluate(() =>
+      const clipboardRecipientAddress = await this.popup.evaluate(() =>
         navigator.clipboard.readText(),
       )
 
-      expect(clipboardReceipientAddress.toLowerCase()).toBe(
+      expect(clipboardRecipientAddress.toLowerCase()).toBe(
         sendToAddressFull.toLowerCase(),
       ) // We need `toLowerCase()`, because for non-base assets the capitalization of the address may differ from the entered one.
     }).toPass()
@@ -221,21 +221,21 @@ export default class TransactionsHelper {
     }).toPass()
 
     /**
-     * Assert receipient's address.
+     * Assert recipient's address.
      */
-    const receipientButton = assetActivityItemPopup
+    const recipientButton = assetActivityItemPopup
       .getByTestId("tx_participant_wrap")
       .filter({ hasText: "To:" })
       .getByRole("button", { name: sendToAddressShortened })
 
-    await expect(receipientButton).toHaveAttribute(
+    await expect(recipientButton).toHaveAttribute(
       "title",
       dedent(`
         Copy to clipboard:
         ${sendToAddressFull}
       `),
     )
-    await receipientButton.click()
+    await recipientButton.click()
     await expect(async () => {
       const clipboardSendToAddress = await this.popup.evaluate(() =>
         navigator.clipboard.readText(),
@@ -288,7 +288,7 @@ export default class TransactionsHelper {
     await expect(
       timestampRow
         .locator(".right")
-        // eslint-disable-next-line no-irregular-whitespace
+        // oxlint-disable-next-line no-irregular-whitespace
         .getByText(/^\d{1,2}\/\d{1,2}\/\d{4}, \d{1,2}:\d{2}:\d{2}( AM| PM)*$/),
     ).toBeVisible()
   }

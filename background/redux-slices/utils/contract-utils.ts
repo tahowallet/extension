@@ -4,11 +4,11 @@ import Emittery from "emittery"
 import TallyWeb3Provider from "../../tally-provider"
 
 type InternalProviderPortEvents = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   message: any
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any,@typescript-eslint/explicit-module-boundary-types */
+/* oxlint-disable typescript/no-explicit-any,typescript/explicit-module-boundary-types */
 // This is a compatibility shim that allows treating the internal provider as
 // if it's communicating over a port, so that the TallyWindowProvider can
 // interact with it directly.

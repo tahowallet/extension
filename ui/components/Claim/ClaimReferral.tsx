@@ -7,7 +7,7 @@ import {
 import { formatCurrencyAmount } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectMainCurrencySymbol } from "@tallyho/tally-background/redux-slices/selectors"
 import classNames from "classnames"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import ClaimAmountBanner from "./ClaimAmountBanner"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedAddressInput from "../Shared/SharedAddressInput"
@@ -78,7 +78,7 @@ function getInitialCustomDAO(selectedForBonus: DAO | null, DAOs: DAO[]) {
   )
 
   return isCustom
-    ? selectedForBonus.name ?? selectedForBonus.address
+    ? (selectedForBonus.name ?? selectedForBonus.address)
     : undefined
 }
 

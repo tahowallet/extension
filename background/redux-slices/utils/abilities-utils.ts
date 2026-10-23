@@ -9,15 +9,9 @@ const isExpired = (ability: Ability): boolean =>
 export const filterByState = (ability: Ability, state: State): boolean => {
   switch (state) {
     case "open":
-      return (
-        !isDeleted(ability) &&
-        !isExpired(ability) &&
-        ability.completed === false
-      )
+      return !isDeleted(ability) && !isExpired(ability) && !ability.completed
     case "completed":
-      return (
-        !isDeleted(ability) && !isExpired(ability) && ability.completed === true
-      )
+      return !isDeleted(ability) && !isExpired(ability) && ability.completed
     case "expired":
       return !isDeleted(ability) && isExpired(ability)
     case "deleted":

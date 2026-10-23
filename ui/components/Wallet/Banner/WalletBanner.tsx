@@ -165,18 +165,18 @@ export default function WalletBanner(): ReactElement {
           width: 84px;
         }
         .thumbnail_front {
-          background: ${thumbnails[0]
-            ? `url(${thumbnails[0]})`
-            : "transparent"};
+          background: ${
+            thumbnails[0] ? `url(${thumbnails[0]})` : "transparent"
+          };
           top: 12px;
         }
         .thumbnail_front.centered {
           top: 0;
         }
         .thumbnail_back {
-          background: ${thumbnails[1]
-            ? `url(${thumbnails[1]})`
-            : "transparent"};
+          background: ${
+            thumbnails[1] ? `url(${thumbnails[1]})` : "transparent"
+          };
           left: 7px;
         }
         .thumbnail {

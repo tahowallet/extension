@@ -6,7 +6,7 @@ import {
   NFTsWithPagesResponse,
   TransferredNFT,
 } from "../nfts"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import logger from "./logger"
 import { sameEVMAddress } from "./utils"
 

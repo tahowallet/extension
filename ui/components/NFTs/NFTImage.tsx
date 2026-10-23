@@ -68,7 +68,7 @@ export default function NFTImage({
           width={width}
           height={height}
           onError={({ currentTarget }) => {
-            // eslint-disable-next-line no-param-reassign
+            // oxlint-disable-next-line no-param-reassign
             currentTarget.onerror = null // prevents looping
             setImageUrl("./images/no_preview.svg")
             setIsLoading(false)

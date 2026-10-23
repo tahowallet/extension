@@ -1115,13 +1115,13 @@ export default class ReduxService extends BaseService<never> {
 
         const clear = () => {
           // Mutual dependency to handleAndClear.
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          // oxlint-disable-next-line @typescript-eslint/no-use-before-define
           this.signingService.emitter.off("signingTxResponse", handleAndClear)
 
           transactionConstructionSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1175,14 +1175,14 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "signingDataResponse",
             // Mutual dependency to handleAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1231,14 +1231,14 @@ export default class ReduxService extends BaseService<never> {
           this.signingService.emitter.off(
             "personalSigningResponse",
             // Mutual dependency to handleAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             handleAndClear,
           )
 
           signingSliceEmitter.off(
             "signatureRejected",
             // Mutual dependency to rejectAndClear.
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            // oxlint-disable-next-line @typescript-eslint/no-use-before-define
             rejectAndClear,
           )
         }
@@ -1455,7 +1455,7 @@ export default class ReduxService extends BaseService<never> {
           )
 
           if (!supportedNetwork) {
-            // eslint-disable-next-line prefer-destructuring
+            // oxlint-disable-next-line prefer-destructuring
             supportedNetwork = this.chainService.supportedNetworks[0]
           }
 

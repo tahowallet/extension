@@ -102,7 +102,7 @@ function debounce<T>(setStateFn: (V: T) => void, ms: number) {
 export const useDebounce = <T>(initial: T, wait = 300): [T, (v: T) => void] => {
   const [state, setState] = useState(initial)
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
   const debounceCallback = useCallback(
     debounce((prop: T) => setState(prop), wait),
     [debounce, wait],

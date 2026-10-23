@@ -1,6 +1,6 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import { Contract, utils, constants } from "ethers"
-import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { NameResolver } from "../name-resolver"
 import logger from "../../../lib/logger"
 

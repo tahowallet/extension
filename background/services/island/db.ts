@@ -1,7 +1,7 @@
 import Dexie from "dexie"
-import { AddressOnNetwork } from "../../accounts"
+import type { AddressOnNetwork } from "../../accounts"
 import { normalizeEVMAddress } from "../../lib/utils"
-import { ReferrerStats } from "./types"
+import type { ReferrerStats } from "./types"
 
 export class IslandDatabase extends Dexie {
   private referralBonuses!: Dexie.Table<

@@ -20,7 +20,7 @@ test.describe("Transactions @fork", () => {
 
     test.fixme(!localNodeAlive, "Local node must be up")
 
-    const wallet = Wallet.fromEncryptedJsonSync(WALLET_JSON!, WALLET_PASSWORD!)
+    const wallet = Wallet.fromEncryptedJsonSync(WALLET_JSON, WALLET_PASSWORD)
 
     const forkEnv = new ForkEnvHelper(context)
 
@@ -53,8 +53,8 @@ test.describe("Transactions @fork", () => {
 
       await walletPageHelper.onboardWithJSON(
         "custom",
-        WALLET_JSON!,
-        WALLET_PASSWORD!,
+        WALLET_JSON,
+        WALLET_PASSWORD,
       )
 
       await walletPageHelper.goToStartPage()
@@ -234,8 +234,8 @@ test.describe("Transactions @fork", () => {
        */
       await walletPageHelper.onboardWithJSON(
         "custom",
-        WALLET_JSON!,
-        WALLET_PASSWORD!,
+        WALLET_JSON,
+        WALLET_PASSWORD,
       )
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()
@@ -371,8 +371,8 @@ test.describe("Transactions @fork", () => {
        */
       await walletPageHelper.onboardWithJSON(
         "custom",
-        WALLET_JSON!,
-        WALLET_PASSWORD!,
+        WALLET_JSON,
+        WALLET_PASSWORD,
       )
       await walletPageHelper.goToStartPage()
       await walletPageHelper.setViewportSize()

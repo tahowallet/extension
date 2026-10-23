@@ -1,7 +1,6 @@
 import { getAllAddresses } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
-// eslint-disable-next-line import/no-extraneous-dependencies
 import css from "styled-jsx/css"
 import WalletShortcut from "../../../components/Onboarding/WalletShortcut"
 import { useBackgroundSelector } from "../../../hooks"

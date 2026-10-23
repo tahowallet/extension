@@ -1,5 +1,5 @@
 {
-  "minimum_chrome_version": "107",
+  "minimum_chrome_version": "141",
   "externally_connectable": {
     "ids": []
   }

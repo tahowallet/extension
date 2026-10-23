@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { Wallet } from "ethers"
 import { test, expect } from "../utils"
 import { getOnboardingPage } from "../utils/onboarding"
@@ -100,11 +99,10 @@ test.describe("Onboarding", () => {
       wordsToVerify.slice(-2).reverse(),
     )
 
-    // eslint-disable-next-line no-restricted-syntax
     for (const wordPos of wordsInWrongOrder) {
       const word = seedWords[wordPos - 1]
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await page
         .getByTestId("remaining_seed_words")
         .getByRole("button", { name: word })
@@ -119,20 +117,18 @@ test.describe("Onboarding", () => {
     ).toBeVisible()
 
     // Remove all to start over in valid order
-    // eslint-disable-next-line no-restricted-syntax
     for (const placeholder of await seedWordPlaceholders.all()) {
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await placeholder.click()
     }
 
     // Focus first placeholder
     await seedWordPlaceholders.first().click()
 
-    // eslint-disable-next-line no-restricted-syntax
     for (const wordPos of wordsToVerify) {
       const word = seedWords[wordPos - 1]
 
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       await page
         .getByTestId("remaining_seed_words")
         .getByRole("button", { name: word })

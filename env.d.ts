@@ -1,4 +1,5 @@
 /// <reference types="styled-jsx" />
+/// <reference types="bun-types/test-globals" />
 
 declare module "webext-redux/lib/strategies/deepDiff/diff" {
   // This should be : DiffStrategy, but importing webext-redux to reuse
@@ -85,3 +86,17 @@ declare namespace NodeJS {
     NODE_ENV: "production" | "development" | "test"
   }
 }
+
+declare module "process/browser" {
+  const process: NodeJS.Process
+  export default process
+}
+
+// Provided at runtime by jest-webextension-mock (see setup-extension-mock.ts)
+// oxlint-disable-next-line no-var, typescript/no-explicit-any
+declare var chrome: any
+
+// A loosely typed bun mock, for tests that stub APIs whose real signatures
+// they deliberately don't match (fetch, browser storage, module mocks).
+// oxlint-disable-next-line typescript/no-explicit-any
+type AnyMock = import("bun:test").Mock<(...args: any[]) => any>

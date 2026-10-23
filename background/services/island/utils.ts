@@ -1,5 +1,5 @@
-import { IPFSLinkItem } from "./types"
-import { HexString } from "../../types"
+import type { IPFSLinkItem } from "./types"
+import type { HexString } from "../../types"
 import { fetchWithTimeout } from "../../utils/fetching"
 
 export const IPFSFileDirectoryIPFSHash = process.env.FILE_DIRECTORY_IPFS_HASH
@@ -89,7 +89,7 @@ export async function getClaimFromFileHash(
       }
       // Seems reasonable to await inside of the while loop
       // with the idea of avoiding reading everything.
-      // eslint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop
       result = await reader.read()
     }
   }

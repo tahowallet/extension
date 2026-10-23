@@ -62,7 +62,7 @@ describe("InternalSignerService", () => {
         internalSignerService.getSignerSourceForAddress(
           keyrings[0].addresses[0],
         ),
-      ).toBe("internal")
+      ).toBe(SignerImportSource.internal)
     })
   })
 
@@ -83,7 +83,7 @@ describe("InternalSignerService", () => {
         internalSignerService.getSignerSourceForAddress(
           HD_WALLET_MOCK.addresses[0],
         ),
-      ).toBe("import")
+      ).toBe(SignerImportSource.import)
     })
     it("should be able to derive next address", async () => {
       const [keyring] = internalSignerService.getKeyrings()
@@ -185,7 +185,7 @@ describe("InternalSignerService", () => {
     it("should classify pk wallet as imported", async () => {
       expect(
         internalSignerService.getSignerSourceForAddress(PK_WALLET_MOCK.address),
-      ).toBe("import")
+      ).toBe(SignerImportSource.import)
     })
     it("should be able to remove pk wallet and add it again", async () => {
       await internalSignerService.removeAccount(PK_WALLET_MOCK.address)

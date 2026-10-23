@@ -1,28 +1,28 @@
 import "jest-webextension-mock"
 
-global.chrome.runtime.id = "mocked-extension-runtime-id"
+chrome.runtime.id = "mocked-extension-runtime-id"
 
-Object.assign(global.chrome, {
-  ...global.chrome,
+Object.assign(chrome, {
+  ...chrome,
   runtime: {
-    ...global.chrome.runtime,
+    ...chrome.runtime,
     setUninstallURL: jest.fn(),
   },
   windows: {
-    ...global.chrome.windows,
+    ...chrome.windows,
     getCurrent: jest.fn(),
     create: jest.fn(),
     onRemoved: {
-      ...(global.chrome.windows?.onRemoved ?? {}),
+      ...(chrome.windows?.onRemoved ?? {}),
       addListener: jest.fn(),
     },
   },
   alarms: {
-    ...global.chrome.alarms,
+    ...chrome.alarms,
     create: jest.fn(),
     clear: jest.fn(),
     onAlarm: {
-      ...(global.chrome.alarms?.onAlarm ?? {}),
+      ...(chrome.alarms?.onAlarm ?? {}),
       addListener: jest.fn(),
       removeListener: jest.fn(),
     },

@@ -59,7 +59,7 @@ export default function SharedSelect(props: Props): ReactElement {
               value: option,
               label: option,
             },
-      ) as Option[],
+      ),
     [initialOptions],
   )
 

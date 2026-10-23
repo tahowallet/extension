@@ -10,7 +10,7 @@ import { ERC20_ABI } from "../lib/erc20"
 import { fromFixedPointNumber } from "../lib/fixed-point"
 import VAULT_ABI from "../lib/vault"
 import APPROVAL_TARGET_ABI from "../lib/approvalTarget"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
 import {
   getContract,
@@ -689,7 +689,6 @@ export const permitVaultDeposit = createBackgroundAsyncThunk(
     }
 
     // _signTypedData is the ethers function name, once the official release will be ready _ will be dropped
-    // eslint-disable-next-line no-underscore-dangle
     const tx = await signer._signTypedData(domain, types, message)
 
     const splitSignature = ethers.utils.splitSignature(tx)

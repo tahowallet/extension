@@ -37,8 +37,8 @@ associated cryptocurrency funds.
 In order to produce a keystore file run:
 
 ```sh
-$ yarn install # installs dependencies
-$ PRIVATE_KEY="<private key without the 0x prefix>" PASSWORD="<password>" yarn run generate # executes the script
+$ bun install # installs dependencies
+$ PRIVATE_KEY="<private key without the 0x prefix>" PASSWORD="<password>" bun run generate # executes the script
 ```
 
 As a result a JSON keystore file encoding the provided private key with the

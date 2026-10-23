@@ -225,7 +225,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     try {
       quote = await getPrice({ ...quoteRequest, taker })
 
-      if (!quote || quote.liquidityAvailable === false) {
+      if (!quote || !quote.liquidityAvailable) {
         dispatch(setSnackbarMessage("Insufficient liquidity for this trade"))
         return undefined
       }

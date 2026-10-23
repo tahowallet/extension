@@ -20,7 +20,7 @@ import {
   setSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"

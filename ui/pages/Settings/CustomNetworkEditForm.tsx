@@ -613,7 +613,7 @@ export default function CustomNetworkEditForm({
                         label={t("rpcUrl", { index: index + 1 })}
                         value={row.url}
                         errorMessage={
-                          row.isTouched ? rpcUrlErrors.get(row.id) ?? "" : ""
+                          row.isTouched ? (rpcUrlErrors.get(row.id) ?? "") : ""
                         }
                         onChange={(value) =>
                           updateRpcEndpointUrl(row.id, value)

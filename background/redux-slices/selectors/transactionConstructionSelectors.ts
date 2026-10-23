@@ -47,7 +47,7 @@ export const selectDefaultNetworkFeeSettings = createSelector(
             ? (
                 transactionConstruction.transactionRequest as LegacyEVMTransactionRequest
               )?.gasPrice
-            : selectedFeesPerGas?.price ?? 0n,
+            : (selectedFeesPerGas?.price ?? 0n),
         baseFeePerGas:
           networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas ??
           undefined,

@@ -37,7 +37,7 @@ export default function setAnimationConditions(
   const isGoingBack =
     entries &&
     entries[entries.length - 1] &&
-    entries[entries.length - 1]?.state?.isBack === true
+    entries[entries.length - 1]?.state?.isBack
 
   if (isGoingBack) {
     setIsDirectionRight(true)

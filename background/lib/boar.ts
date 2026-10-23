@@ -20,7 +20,7 @@ import { AddressOnNetwork } from "../accounts"
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output. Each chain URL must be
 // referenced explicitly so the bundler can inline the values.
-// eslint-disable-next-line prefer-destructuring
+// oxlint-disable-next-line prefer-destructuring
 export const BOAR_RPC_URLS: Readonly<Record<string, string | undefined>> = {
   "1": process.env.BOAR_RPC_URL_ETHEREUM,
   "10": process.env.BOAR_RPC_URL_OPTIMISM,
@@ -186,7 +186,7 @@ export async function getTokenBalances(
   let response: Awaited<ReturnType<typeof fetchAndValidate>>
 
   do {
-    // eslint-disable-next-line no-await-in-loop
+    // oxlint-disable-next-line no-await-in-loop
     response = await fetchAndValidate(addressOnNetwork.address, currentPageKey)
 
     if (!response) {

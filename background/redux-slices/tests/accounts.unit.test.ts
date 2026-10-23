@@ -1,4 +1,4 @@
-import { AccountBalance } from "../../accounts"
+import type { AccountBalance } from "../../accounts"
 import { SmartContractFungibleAsset } from "../../assets"
 import { ETH, ETHEREUM } from "../../constants"
 import {

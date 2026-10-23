@@ -2,7 +2,7 @@ import React, { ComponentProps, ReactElement, useState } from "react"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import SharedInput from "./SharedInput"
-import { Simplify } from "./types"
+import type { Simplify } from "./types"
 
 type PasswordInputProps = Simplify<
   { hasPreview?: boolean } & Omit<ComponentProps<typeof SharedInput>, "type">
@@ -17,7 +17,7 @@ export default function PasswordInput(props: PasswordInputProps): ReactElement {
   return (
     <div className="wrapper">
       <SharedInput
-        // eslint-disable-next-line react/jsx-props-no-spreading
+        // oxlint-disable-next-line react/jsx-props-no-spreading
         {...inputProps}
         type={passwordInputType}
       />

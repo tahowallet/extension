@@ -26,7 +26,7 @@ const getAccountsList = (accountsTotal: AccountTotalList) => {
   )
 
   list.forEach((accountTotal) => {
-    // eslint-disable-next-line no-param-reassign
+    // oxlint-disable-next-line no-param-reassign
     accountTotal.percent = Math.round(
       totalsSum ? (accountTotal.total / totalsSum) * 100 : 0,
     )

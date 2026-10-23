@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill"
 import { FiatCurrency } from "../../assets"
-import { AddressOnNetwork, NameOnNetwork } from "../../accounts"
-import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
+import type { AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import type { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
 
 import {
   AnalyticsPreferences,
@@ -22,11 +22,11 @@ import {
   BINANCE_SMART_CHAIN,
 } from "../../constants"
 import { EVMNetwork, sameNetwork } from "../../networks"
-import { HexString, UNIXTime } from "../../types"
+import type { HexString, UNIXTime } from "../../types"
 import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 
-export {
+export type {
   AnalyticsPreferences,
   ManuallyDismissableItem,
   SingleShotItem,

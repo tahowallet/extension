@@ -8,7 +8,7 @@ import {
   SignerImportMetadata,
   SignerImportSource,
 } from "../services/internal-signer/index"
-import { HexString } from "../types"
+import type { HexString } from "../types"
 import { UIState, setNewSelectedAccount } from "./ui"
 
 type KeyringToVerify = {

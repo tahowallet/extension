@@ -3,7 +3,7 @@ import { BaseProvider } from "@ethersproject/providers"
 import { fetchJson } from "@ethersproject/web"
 
 import logger from "./logger"
-import { HexString, URI } from "../types"
+import type { HexString, URI } from "../types"
 import { isValidMetadata } from "./validate"
 
 const abi = [

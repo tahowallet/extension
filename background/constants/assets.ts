@@ -6,7 +6,7 @@ import { WEBSITE_ORIGIN } from "./website"
  * The primary token for the wallet's DAO.
  */
 // We expect more assets later.
-// eslint-disable-next-line import/prefer-default-export
+// oxlint-disable-next-line import/prefer-default-export
 export const DOGGO: SmartContractFungibleAsset = {
   name: "Doggo",
   symbol: "DOGGO",

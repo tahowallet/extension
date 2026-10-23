@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers"
-import { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
-import { Eligible, ReferrerStats } from "./types"
+import type { ServiceLifecycleEvents, ServiceCreatorFunction } from "../types"
+import type { Eligible, ReferrerStats } from "./types"
 import BaseService from "../base"
 import { getFileHashProspect, getClaimFromFileHash } from "./utils"
 import ChainService from "../chain"
@@ -16,8 +16,8 @@ import {
 import IndexingService from "../indexing"
 import { initialVaults } from "../../redux-slices/earn"
 import logger from "../../lib/logger"
-import { HexString } from "../../types"
-import { AddressOnNetwork } from "../../accounts"
+import type { HexString } from "../../types"
+import type { AddressOnNetwork } from "../../accounts"
 import { IslandDatabase, getOrCreateDB } from "./db"
 import { normalizeEVMAddress } from "../../lib/utils"
 import { FeatureFlags, isDisabled, isEnabled } from "../../features"
@@ -29,7 +29,7 @@ export {
   TestnetTahoDeployer as TahoDeployer,
 } from "./contracts"
 
-export { ReferrerStats } from "./types"
+export type { ReferrerStats } from "./types"
 
 interface Events extends ServiceLifecycleEvents {
   newEligibility: Eligible

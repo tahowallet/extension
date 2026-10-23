@@ -8,7 +8,7 @@
   "license": "GPL-3.0",
   "private": true,
   "scripts": {
-    "generate": "node export-key-as-json.js"
+    "generate": "bun export-key-as-json.js"
   },
   "dependencies": {
     "ethereumjs-wallet": "^1.0.2"

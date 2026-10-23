@@ -104,7 +104,7 @@ describe("getAssetTransfersViaLogs", () => {
       200,
     )
 
-    expect(transfers).toEqual([
+    expect(transfers as unknown).toEqual([
       {
         network: ETHEREUM,
         assetAmount: {

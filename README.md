@@ -29,12 +29,9 @@ Taho will be
 Try this.
 
 ```sh
-$ nvm use
-$ nvm install
-$ npm install -g yarn # if you don't have yarn globally installed
-$ yarn install # install all dependencies; rerun with --ignore-scripts if
-               # scrypt node-gyp failures prevent the install from completing
-$ yarn start # start a continuous webpack build that will auto-update with changes
+$ brew install bun # if you don't have bun installed; see https://bun.com/docs/installation
+$ bun install # install all dependencies
+$ bun start # start a continuous build that will auto-update with changes
 ```
 
 Once the build is running, you can install the extension in your browser of choice:
@@ -47,27 +44,24 @@ Once the build is running, you can install the extension in your browser of choi
 
 Extension bundles for each browser are in `dist/<browser>`.
 
-By default, the `yarn start` command rebuilds the extension for each browser on
-save. You can target a particular browser by specifying it in the command, e.g.
-to only rebuild the Firefox extension on change:
+By default, the `bun start` command rebuilds the Chrome extension on save; the
+Chrome bundle also serves Brave, Edge, and Opera. To build the Firefox
+extension as well, set `SUPPORT_BROWSER`:
 
 ```sh
-# On change, rebuild the firefox extension but not others.
-$ yarn start --config-name firefox
-# On change, rebuild the firefox and brave extensions but not others.
-$ yarn start --config-name firefox --config-name brave
-# On change, rebuild the chrome
-$ yarn start --config-name chrome
+# On change, rebuild the chrome and firefox extensions.
+$ SUPPORT_BROWSER=firefox bun start
 ```
 
 ### Note for some Linux distributions
 
 In some Linux distributions such as Ubuntu 20.04, you need to explicitly
-tell npm where your `python3` executable is located before running the above
-commands successfully:
+tell node-gyp, which builds a few native dependencies during install, where
+your `python3` executable is located before running the above commands
+successfully:
 
 ```sh
-$ npm config set python /usr/bin/python3
+$ export npm_config_python=/usr/bin/python3
 ```
 
 ## Package Structure, Build Structure, and Threat Model
@@ -84,8 +78,8 @@ only interact with key material via a carefully maintained API.
 
 The `background` package is also intended to minimize external dependencies
 where possible, reducing the surface exposed to a supply chain attack.
-Dependencies are generally version-pinned, and `yarn` is used to ensure the
-integrity of builds.
+Dependencies are generally version-pinned, and `bun.lock` (installed with
+`--frozen-lockfile` in CI) is used to ensure the integrity of builds.
 
 ## Building and Developing
 
@@ -108,7 +102,8 @@ If you need to create or update a validation function then:
 - You need to write the schema in the `.ts` file to have correct typing.
 - Add the new schema with the validator function name to the `generate-validators.ts` file
 - You need to update the `jtd-validators.d.ts` or `json-validators.d.ts` files with the typing definition
-- run `yarn run generate:validators`
+- run `bun run generate:validators`, then `bun fmt background/lib/validate` to
+  format the generated output
 - import it in your code and happy validating :)
 
 This setup is necessary so we don't need to include `unsafe-eval` in the CSP policy.
@@ -119,7 +114,7 @@ If you can't use the macOS setup script, here is the software you'll need to
 install:
 
 - `jq`: [Instructions](https://stedolan.github.io/jq/download/)
-- `nvm`: [Instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `bun`: [Instructions](https://bun.com/docs/installation)
 - `pre-commit`: [Instructions](https://pre-commit.com/#install)
 
 #### Installing pre-commit hooks
@@ -136,8 +131,7 @@ Quick Start:
 
 ```
 $ cd dev-utils/local-chain
-$ yarn install
-$ yarn start
+$ CHAIN_API_URL=<mainnet RPC URL> bun start # requires anvil from Foundry
 ```
 
 ### Commit signing
@@ -149,11 +143,11 @@ to get it set up.
 
 ### Releasing a version
 
-This repository uses `yarn version` to create new versions. Typical usage:
+This repository uses `bun pm version` to create new versions. Typical usage:
 
 ```sh
-$ yarn version --patch # bump patch version, e.g. 0.0.5->0.0.6
-$ yarn version --minor # bump minor version, e.g. 0.1.5->0.2.0
+$ bun pm version patch # bump patch version, e.g. 0.0.5->0.0.6
+$ bun pm version minor # bump minor version, e.g. 0.1.5->0.2.0
 ```
 
 Major releases generally require more discussion than this automation allows,
@@ -175,16 +169,16 @@ new version to extension directories (as relevant).
 ### Additional Scripts
 
 ```sh
-$ yarn build # create a production build of the extension
+$ bun run build # create a production build of the extension
 ```
 
 The build script will generate a ZIP file for each browser bundle under the
 `dist/` directory.
 
 ```sh
-$ yarn lint # lint all sources in all projects
-$ yarn lint-fix # auto-fix any auto-fixable lint issues
-$ yarn test # run all tests in all projects
+$ bun run lint # lint and type check all sources in all projects
+$ bun run lint-fix # auto-fix any auto-fixable lint and formatting issues
+$ bun run test # run all tests in all projects
 
 ```
 
@@ -294,8 +288,8 @@ Here is a light guide to the directory structure:
 ```
 .github/ # GitHub-specific tooling
 
-package.json      # private extension package
-webpack.config.js # Webpack build for extension
+package.json # private extension package
+build.ts     # Bun build for extension
 
 src/ # extension source files
   background.js # entry file for the background extension script; should be
@@ -304,17 +298,13 @@ src/ # extension source files
                 # the functionality in @tallyho/tally-ui
 
 dist/ # output directory for builds
-  brave/   # browser-specific
-  chrome/  # build
-  edge/    # directories
-  firefox/
-  brave.zip  # browser-specific
-  chrome.zip # production
-  edge.zip   # bundles
-  firefox.zip
+  chrome/  # browser-specific build directories; firefox/ is only
+  firefox/ # built when SUPPORT_BROWSER=firefox
+  chrome.zip  # browser-specific
+  firefox.zip # production bundles
 
-build-utils/ # build-related helpers, used in webpack.config.js
-  *.js
+build-plugins/ # Bun build plugins, used in build.ts
+  *.ts
 dev-utils/          # dev-mode helpers for the extension
   extension-reload.js # LiveReload support for the extension.
 manifest/         # extension manifest data

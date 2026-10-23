@@ -94,7 +94,7 @@ export default (state: Record<string, unknown>): ActivitiesEntityState => {
           // The activity slice at this moment can be big (~2 mb for the dev account which has ~150 tx at the moment.)
           // We are intentionally modifying the previous state to avoid the costly construction of the new object.
           // For a user with ~23mb store size a the debug script ran for 25s > this migration could be in the same magnitude
-          // eslint-disable-next-line no-param-reassign
+          // oxlint-disable-next-line no-param-reassign
           typedState.activities[address][networkID].entities[transactionHash] =
             pick(originalTx, transactionPropertiesForUI)
         },

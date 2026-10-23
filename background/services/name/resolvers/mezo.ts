@@ -1,5 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
-import { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import { MEZO_TESTNET } from "../../../constants"
 import { sameNetwork } from "../../../networks"
 import { NameResolver } from "../name-resolver"

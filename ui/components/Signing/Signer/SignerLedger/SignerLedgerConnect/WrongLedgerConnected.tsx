@@ -1,5 +1,5 @@
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
-import { HexString } from "@tallyho/tally-background/types"
+import type { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import SharedButton from "../../../../Shared/SharedButton"
