@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Keeps GitHub Actions, including the commit SHAs third-party actions are
+  # pinned to, up to date, in one weekly pull request.
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/install-playwright
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
