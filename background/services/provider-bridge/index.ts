@@ -56,6 +56,33 @@ type Events = ServiceLifecycleEvents & {
   revokePermissionsForOrigin: string
 }
 
+type ProviderBridgeRPCHandler = (
+  origin: string,
+  enablingPermission: PermissionRequest,
+) => Promise<unknown>
+
+type PermittedRPCHandler = (
+  params: RPCRequest["params"],
+  origin: string,
+  enablingPermission: PermissionRequest,
+) => Promise<unknown>
+
+const accountsPermissionFor: ProviderBridgeRPCHandler = async (
+  _,
+  enablingPermission,
+) => [
+  {
+    parentCapability: "eth_accounts",
+    caveats: [
+      {
+        type: "restrictReturnedAccounts",
+        value: [enablingPermission.accountAddress],
+      },
+    ],
+    date: Date.now(),
+  },
+]
+
 export type AddChainRequestData = ValidatedAddEthereumChainParameter & {
   favicon: string
   siteTitle: string
@@ -101,6 +128,185 @@ export default class ProviderBridgeService extends BaseService<Events> {
   > = new Map()
 
   private addNetworkRequestId = 0
+
+  /**
+   * RPC methods the provider bridge answers itself rather than routing to the
+   * internal provider.
+   */
+  private readonly ownRPCHandlers = {
+    eth_requestAccounts: async (_, enablingPermission) => [
+      enablingPermission.accountAddress,
+    ],
+    wallet_requestPermissions: accountsPermissionFor,
+    wallet_getPermissions: accountsPermissionFor,
+    wallet_revokePermissions: async (origin: string) => {
+      await this.revokePermissionsForOrigin(origin)
+      return null
+    },
+  } satisfies Record<string, ProviderBridgeRPCHandler>
+
+  private readonly signTypedDataHandler =
+    (method: string): PermittedRPCHandler =>
+    async (params, origin, enablingPermission) => {
+      checkPermissionSignTypedData(params[0] as HexString, enablingPermission)
+
+      return this.routeSafeRequest(
+        method,
+        params,
+        origin,
+        showExtensionPopup(AllowedQueryParamPage.signData),
+      )
+    }
+
+  private readonly signTransactionHandler =
+    (method: string): PermittedRPCHandler =>
+    async (params, origin, enablingPermission) => {
+      checkPermissionSignTransaction(
+        {
+          // A dApp can't know what should be the next nonce because it can't
+          // access the information about how many tx are in the signing
+          // process inside the wallet. Nonce should be assigned only by the
+          // wallet.
+          ...(params[0] as EthersTransactionRequest),
+          nonce: undefined,
+        },
+        enablingPermission,
+      )
+
+      return this.routeSafeRequest(
+        method,
+        params,
+        origin,
+        showExtensionPopup(AllowedQueryParamPage.signTransaction),
+      )
+    }
+
+  /**
+   * RPC methods that need the origin's permission and that the provider
+   * bridge handles before or instead of the internal provider.
+   */
+  private readonly permittedRPCHandlers = {
+    eth_accounts: async (_, __, enablingPermission) => [
+      enablingPermission.accountAddress,
+    ],
+    eth_signTypedData: this.signTypedDataHandler("eth_signTypedData"),
+    eth_signTypedData_v1: this.signTypedDataHandler("eth_signTypedData_v1"),
+    eth_signTypedData_v3: this.signTypedDataHandler("eth_signTypedData_v3"),
+    eth_signTypedData_v4: this.signTypedDataHandler("eth_signTypedData_v4"),
+    eth_sign: async (params, origin, enablingPermission) => {
+      checkPermissionSign(params[0] as HexString, enablingPermission)
+
+      return this.routeSafeRequest(
+        "eth_sign",
+        params,
+        origin,
+        showExtensionPopup(AllowedQueryParamPage.personalSignData),
+      )
+    },
+    personal_sign: async (params, origin, enablingPermission) => {
+      checkPermissionSign(params[1] as HexString, enablingPermission)
+
+      return this.routeSafeRequest(
+        "personal_sign",
+        params,
+        origin,
+        showExtensionPopup(AllowedQueryParamPage.personalSignData),
+      )
+    },
+    eth_signTransaction: this.signTransactionHandler("eth_signTransaction"),
+    eth_sendTransaction: this.signTransactionHandler("eth_sendTransaction"),
+    wallet_switchEthereumChain: async (params, origin) => {
+      const [switchParameter]: unknown[] = params
+
+      const targetNetwork =
+        typeof switchParameter === "object" &&
+        switchParameter !== null &&
+        "chainId" in switchParameter &&
+        typeof switchParameter.chainId === "string"
+          ? await this.internalEthereumProviderService.getTrackedNetworkByChainId(
+              switchParameter.chainId,
+            )
+          : undefined
+
+      // Unknown chains are left to the internal provider, which reports
+      // them as unrecognized so the dapp can offer to add them.
+      if (targetNetwork !== undefined) {
+        await this.assertPermittedOnNetwork(origin, targetNetwork)
+      }
+
+      return this.internalEthereumProviderService.routeSafeRPCRequest(
+        "wallet_switchEthereumChain",
+        params,
+        origin,
+      )
+    },
+    wallet_addEthereumChain: async (params, origin, enablingPermission) => {
+      const id = this.addNetworkRequestId.toString()
+
+      this.addNetworkRequestId += 1
+
+      const [rawChainData, address, siteTitle, favicon] = params
+      const validatedData = validateAddEthereumChainParameter(
+        rawChainData as AddEthereumChainParameter,
+      )
+
+      const supportedNetwork =
+        await this.internalEthereumProviderService.getTrackedNetworkByChainId(
+          validatedData.chainId,
+        )
+
+      if (supportedNetwork) {
+        // If the network is already added - just switch to it, as long as
+        // the dapp is allowed on it.
+        await this.assertPermittedOnNetwork(origin, supportedNetwork)
+
+        return this.internalEthereumProviderService.routeSafeRPCRequest(
+          "wallet_addEthereumChain",
+          params,
+          origin,
+        )
+      }
+
+      const window = await showExtensionPopup(
+        AllowedQueryParamPage.addNewChain,
+        { requestId: id.toString() },
+      )
+
+      browser.windows.onRemoved.addListener((removed) => {
+        if (removed === window.id) {
+          this.handleAddNetworkRequest(id, false)
+        }
+      })
+
+      const userConfirmation = new Promise<void>((resolve, reject) => {
+        this.#pendingAddNetworkRequests[id] = {
+          resolve,
+          reject,
+          data: {
+            ...validatedData,
+            favicon: favicon as string,
+            siteTitle: siteTitle as string,
+          },
+        }
+      })
+
+      await userConfirmation
+
+      const account = await this.preferenceService.getSelectedAccount()
+
+      await this.grantPermission({
+        ...enablingPermission,
+        key: `${origin}_${account.address}_${validatedData.chainId}`,
+        chainID: validatedData.chainId,
+      })
+
+      return this.internalEthereumProviderService.routeSafeRPCRequest(
+        "wallet_addEthereumChain",
+        [validatedData, address],
+        origin,
+      )
+    },
+  } satisfies Record<string, PermittedRPCHandler>
 
   openPorts: Array<Runtime.Port> = []
 
@@ -213,12 +419,21 @@ export default class ProviderBridgeService extends BaseService<Events> {
             `Unknown method ${event.request.method} in 'ProviderBridgeService'`,
           )
       }
+    } else if (!this.isSupportedRPCMethod(event.request.method)) {
+      // Methods Taho doesn't implement are reported as unsupported whether or
+      // not the dapp is connected. Answering 4100 to an unconnected dapp
+      // suggests that connecting would make the method work, and dapps probing
+      // for optional features (wallet_getCapabilities, for example) treat 4200
+      // as "not available" and move on.
+      response.result = new EIP1193Error(
+        EIP1193_ERROR_CODES.unsupportedMethod,
+      ).toJSON()
     } else if (event.request.method === "wallet_revokePermissions") {
       // wallet_revokePermissions is handled before the permission check
       // because it should succeed regardless of whether the dapp currently
       // has permissions (revoking when already disconnected is a no-op).
-      await this.revokePermissionsForOrigin(origin)
-      response.result = null
+      response.result =
+        await this.ownRPCHandlers.wallet_revokePermissions(origin)
     } else if (
       event.request.method === "eth_chainId" ||
       event.request.method === "net_version"
@@ -642,184 +857,54 @@ export default class ProviderBridgeService extends BaseService<Events> {
     rawParams: RPCRequest["params"],
     origin: string,
   ): Promise<unknown> {
+    if (!this.isSupportedRPCMethod(method)) {
+      return EIP1193_ERROR_CODES.unsupportedMethod
+    }
+
     const params = parseRPCRequestParams(enablingPermission, method, rawParams)
 
     try {
-      switch (method) {
-        case "eth_requestAccounts":
-        case "eth_accounts":
-          return [enablingPermission.accountAddress]
-        case "wallet_requestPermissions":
-        case "wallet_getPermissions":
-          return [
-            {
-              parentCapability: "eth_accounts",
-              caveats: [
-                {
-                  type: "restrictReturnedAccounts",
-                  value: [enablingPermission.accountAddress],
-                },
-              ],
-              date: Date.now(),
-            },
-          ]
-        case "eth_signTypedData":
-        case "eth_signTypedData_v1":
-        case "eth_signTypedData_v3":
-        case "eth_signTypedData_v4":
-          checkPermissionSignTypedData(
-            params[0] as HexString,
-            enablingPermission,
-          )
-
-          return await this.routeSafeRequest(
-            method,
-            params,
-            origin,
-            showExtensionPopup(AllowedQueryParamPage.signData),
-          )
-        case "eth_sign":
-          checkPermissionSign(params[0] as HexString, enablingPermission)
-
-          return await this.routeSafeRequest(
-            method,
-            params,
-            origin,
-            showExtensionPopup(AllowedQueryParamPage.personalSignData),
-          )
-        case "personal_sign":
-          checkPermissionSign(params[1] as HexString, enablingPermission)
-
-          return await this.routeSafeRequest(
-            method,
-            params,
-            origin,
-            showExtensionPopup(AllowedQueryParamPage.personalSignData),
-          )
-        case "eth_signTransaction":
-        case "eth_sendTransaction":
-          checkPermissionSignTransaction(
-            {
-              // A dApp can't know what should be the next nonce because it can't access
-              // the information about how many tx are in the signing process inside the
-              // wallet. Nonce should be assigned only by the wallet.
-              ...(params[0] as EthersTransactionRequest),
-              nonce: undefined,
-            },
-            enablingPermission,
-          )
-
-          return await this.routeSafeRequest(
-            method,
-            params,
-            origin,
-            showExtensionPopup(AllowedQueryParamPage.signTransaction),
-          )
-
-        case "wallet_switchEthereumChain": {
-          const [switchParameter]: unknown[] = params
-
-          const targetNetwork =
-            typeof switchParameter === "object" &&
-            switchParameter !== null &&
-            "chainId" in switchParameter &&
-            typeof switchParameter.chainId === "string"
-              ? await this.internalEthereumProviderService.getTrackedNetworkByChainId(
-                  switchParameter.chainId,
-                )
-              : undefined
-
-          // Unknown chains are left to the internal provider, which reports
-          // them as unrecognized so the dapp can offer to add them.
-          if (targetNetwork !== undefined) {
-            await this.assertPermittedOnNetwork(origin, targetNetwork)
-          }
-
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            method,
-            params,
-            origin,
-          )
-        }
-
-        case "wallet_addEthereumChain": {
-          const id = this.addNetworkRequestId.toString()
-
-          this.addNetworkRequestId += 1
-
-          const [rawChainData, address, siteTitle, favicon] = params
-          const validatedData = validateAddEthereumChainParameter(
-            rawChainData as AddEthereumChainParameter,
-          )
-
-          const supportedNetwork =
-            await this.internalEthereumProviderService.getTrackedNetworkByChainId(
-              validatedData.chainId,
-            )
-
-          if (supportedNetwork) {
-            // If the network is already added - just switch to it, as long as
-            // the dapp is allowed on it.
-            await this.assertPermittedOnNetwork(origin, supportedNetwork)
-
-            return await this.internalEthereumProviderService.routeSafeRPCRequest(
-              method,
-              params,
-              origin,
-            )
-          }
-
-          const window = await showExtensionPopup(
-            AllowedQueryParamPage.addNewChain,
-            { requestId: id.toString() },
-          )
-
-          browser.windows.onRemoved.addListener((removed) => {
-            if (removed === window.id) {
-              this.handleAddNetworkRequest(id, false)
-            }
-          })
-
-          const userConfirmation = new Promise<void>((resolve, reject) => {
-            this.#pendingAddNetworkRequests[id] = {
-              resolve,
-              reject,
-              data: {
-                ...validatedData,
-                favicon: favicon as string,
-                siteTitle: siteTitle as string,
-              },
-            }
-          })
-
-          await userConfirmation
-
-          const account = await this.preferenceService.getSelectedAccount()
-
-          await this.grantPermission({
-            ...enablingPermission,
-            key: `${origin}_${account.address}_${validatedData.chainId}`,
-            chainID: validatedData.chainId,
-          })
-
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            method,
-            [validatedData, address],
-            origin,
-          )
-        }
-        default: {
-          return await this.internalEthereumProviderService.routeSafeRPCRequest(
-            method,
-            params,
-            origin,
-          )
-        }
+      if (this.isOwnRPCMethod(method)) {
+        return await this.ownRPCHandlers[method](origin, enablingPermission)
       }
+
+      if (this.isPermittedRPCMethod(method)) {
+        return await this.permittedRPCHandlers[method](
+          params,
+          origin,
+          enablingPermission,
+        )
+      }
+
+      return await this.internalEthereumProviderService.routeSafeRPCRequest(
+        method,
+        params,
+        origin,
+      )
     } catch (error) {
       logger.error("Error processing request", error)
       return handleRPCErrorResponse(error)
     }
+  }
+
+  private isOwnRPCMethod(
+    method: string,
+  ): method is keyof ProviderBridgeService["ownRPCHandlers"] {
+    return Object.hasOwn(this.ownRPCHandlers, method)
+  }
+
+  private isPermittedRPCMethod(
+    method: string,
+  ): method is keyof ProviderBridgeService["permittedRPCHandlers"] {
+    return Object.hasOwn(this.permittedRPCHandlers, method)
+  }
+
+  private isSupportedRPCMethod(method: string): boolean {
+    return (
+      this.isOwnRPCMethod(method) ||
+      this.isPermittedRPCMethod(method) ||
+      this.internalEthereumProviderService.isSupportedRPCMethod(method)
+    )
   }
 
   getNewCustomRPCDetails(requestId: string): AddChainRequestData {

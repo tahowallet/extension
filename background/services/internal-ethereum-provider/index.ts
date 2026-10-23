@@ -67,6 +67,15 @@ type JsonRpcTransactionRequest = Omit<EthersTransactionRequest, "gasLimit"> & {
   annotation?: string
 }
 
+type RPCHandler = (
+  method: string,
+  params: RPCRequest["params"],
+  origin: string,
+) => Promise<unknown>
+
+export type InternalProviderRPCMethod =
+  keyof InternalEthereumProviderService["rpcHandlers"]
+
 // https://eips.ethereum.org/EIPS/eip-3326
 export type SwitchEthereumChainParameter = {
   chainId: string
@@ -166,212 +175,209 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     })
   }
 
+  private readonly passthroughRPCRequest: RPCHandler = async (
+    method,
+    params,
+    origin,
+  ) =>
+    this.chainService.send(
+      method,
+      params,
+      await this.getCurrentOrDefaultNetworkForOrigin(origin),
+    )
+
+  private readonly signTypedDataRPCRequest: RPCHandler = async (
+    _,
+    params,
+    origin,
+  ) =>
+    this.signTypedData({
+      account: {
+        address: params[0] as string,
+        network: await this.getCurrentOrDefaultNetworkForOrigin(origin),
+      },
+      typedData: JSON.parse(params[1] as string),
+    })
+
+  private readonly rpcHandlers = {
+    // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
+    eth_signTypedData: this.signTypedDataRPCRequest,
+    eth_signTypedData_v1: this.signTypedDataRPCRequest,
+    eth_signTypedData_v3: this.signTypedDataRPCRequest,
+    eth_signTypedData_v4: this.signTypedDataRPCRequest,
+    eth_chainId: async (_, __, origin) =>
+      toHexChainID(
+        (await this.getCurrentOrDefaultNetworkForOrigin(origin)).chainID,
+      ),
+    eth_blockNumber: this.passthroughRPCRequest,
+    eth_call: this.passthroughRPCRequest,
+    eth_estimateGas: this.passthroughRPCRequest,
+    eth_feeHistory: this.passthroughRPCRequest,
+    eth_gasPrice: this.passthroughRPCRequest,
+    eth_getBalance: this.passthroughRPCRequest,
+    eth_getBlockByHash: this.passthroughRPCRequest,
+    eth_getBlockByNumber: this.passthroughRPCRequest,
+    eth_getBlockTransactionCountByHash: this.passthroughRPCRequest,
+    eth_getBlockTransactionCountByNumber: this.passthroughRPCRequest,
+    eth_getCode: this.passthroughRPCRequest,
+    eth_getFilterChanges: this.passthroughRPCRequest,
+    eth_getFilterLogs: this.passthroughRPCRequest,
+    eth_getLogs: this.passthroughRPCRequest,
+    eth_getProof: this.passthroughRPCRequest,
+    eth_getStorageAt: this.passthroughRPCRequest,
+    eth_getTransactionByBlockHashAndIndex: this.passthroughRPCRequest,
+    eth_getTransactionByBlockNumberAndIndex: this.passthroughRPCRequest,
+    eth_getTransactionByHash: this.passthroughRPCRequest,
+    eth_getTransactionCount: this.passthroughRPCRequest,
+    eth_getTransactionReceipt: this.passthroughRPCRequest,
+    eth_getUncleByBlockHashAndIndex: this.passthroughRPCRequest,
+    eth_getUncleByBlockNumberAndIndex: this.passthroughRPCRequest,
+    eth_getUncleCountByBlockHash: this.passthroughRPCRequest,
+    eth_getUncleCountByBlockNumber: this.passthroughRPCRequest,
+    eth_maxPriorityFeePerGas: this.passthroughRPCRequest,
+    eth_newBlockFilter: this.passthroughRPCRequest,
+    eth_newFilter: this.passthroughRPCRequest,
+    eth_newPendingTransactionFilter: this.passthroughRPCRequest,
+    eth_protocolVersion: this.passthroughRPCRequest,
+    eth_sendRawTransaction: this.passthroughRPCRequest,
+    eth_subscribe: this.passthroughRPCRequest,
+    eth_syncing: this.passthroughRPCRequest,
+    eth_uninstallFilter: this.passthroughRPCRequest,
+    eth_unsubscribe: this.passthroughRPCRequest,
+    net_listening: this.passthroughRPCRequest,
+    net_version: this.passthroughRPCRequest,
+    web3_clientVersion: this.passthroughRPCRequest,
+    web3_sha3: this.passthroughRPCRequest,
+    eth_accounts: async () => {
+      const { address } = await this.preferenceService.getSelectedAccount()
+      return [address]
+    },
+    eth_sendTransaction: async (_, params, origin) =>
+      this.signTransaction(
+        {
+          ...(params[0] as JsonRpcTransactionRequest),
+        },
+        origin,
+        true,
+      ).then(async (signed) => {
+        await this.chainService.broadcastSignedTransaction(signed)
+        return signed.hash
+      }),
+    eth_signTransaction: async (_, params, origin) =>
+      this.signTransaction(
+        params[0] as JsonRpcTransactionRequest,
+        origin,
+        false,
+      ).then((signedTransaction) =>
+        serializeEthersTransaction(
+          ethersTransactionFromSignedTransaction(signedTransaction),
+          {
+            r: signedTransaction.r,
+            s: signedTransaction.s,
+            v: signedTransaction.v,
+          },
+        ),
+      ),
+    // --- important wallet methods ---
+    eth_sign: async (_, params, origin) =>
+      this.signData(
+        {
+          input: params[1] as string,
+          account: params[0] as string,
+        },
+        origin,
+      ),
+    personal_sign: async (_, params, origin) =>
+      this.signData(
+        {
+          input: params[0] as string,
+          account: params[1] as string,
+        },
+        origin,
+      ),
+    wallet_addEthereumChain: async (_, params, origin) => {
+      const chainInfo = params[0] as ValidatedAddEthereumChainParameter
+      const { chainId } = chainInfo
+      const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
+      if (supportedNetwork) {
+        await this.switchToSupportedNetwork(origin, supportedNetwork)
+        this.emitter.emit("selectedNetwork", supportedNetwork)
+        return null
+      }
+      try {
+        const customNetwork = await this.chainService.addCustomChain(chainInfo)
+        this.emitter.emit("selectedNetwork", customNetwork)
+        return null
+      } catch (e) {
+        logger.error(e)
+        throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+      }
+    },
+    wallet_switchEthereumChain: async (_, params, origin) => {
+      const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
+      const supportedNetwork = await this.getTrackedNetworkByChainId(newChainId)
+      if (supportedNetwork) {
+        // Only report success once the switch is persisted, so a dapp that
+        // asks for eth_chainId right away sees the new chain.
+        await this.switchToSupportedNetwork(origin, supportedNetwork)
+        return null
+      }
+
+      throw new EIP1193Error(EIP1193_ERROR_CODES.unrecognizedChainId)
+    },
+    wallet_watchAsset: async (_, params, origin) => {
+      const { type, options } = params[0]
+        ? (params[0] as WatchAssetParameters)
+        : // some dapps send the object directly instead of an array
+          (params as unknown as WatchAssetParameters)
+      if (type !== "ERC20") {
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+      }
+
+      if (options.chainId) {
+        const supportedNetwork = await this.getTrackedNetworkByChainId(
+          String(options.chainId),
+        )
+        if (!supportedNetwork) {
+          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+        }
+        this.emitter.emit("watchAssetRequest", {
+          contractAddress: normalizeHexAddress(options.address),
+          network: supportedNetwork,
+        })
+        return true
+      }
+
+      // if chainID is not specified, we assume the current network - as per EIP-747
+      const network = await this.getCurrentOrDefaultNetworkForOrigin(origin)
+
+      this.emitter.emit("watchAssetRequest", {
+        contractAddress: normalizeHexAddress(options.address),
+        network,
+      })
+      return true
+    },
+  } satisfies Record<string, RPCHandler>
+
+  isSupportedRPCMethod(method: string): method is InternalProviderRPCMethod {
+    return Object.hasOwn(this.rpcHandlers, method)
+  }
+
   async routeSafeRPCRequest(
     method: string,
     params: RPCRequest["params"],
     origin: string,
   ): Promise<unknown> {
-    switch (method) {
-      // supported alchemy methods: https://docs.alchemy.com/alchemy/apis/ethereum
-      case "eth_signTypedData":
-      case "eth_signTypedData_v1":
-      case "eth_signTypedData_v3":
-      case "eth_signTypedData_v4":
-        return this.signTypedData({
-          account: {
-            address: params[0] as string,
-            network: await this.getCurrentOrDefaultNetworkForOrigin(origin),
-          },
-          typedData: JSON.parse(params[1] as string),
-        })
-      case "eth_chainId":
-        // TODO Decide on a better way to track whether a particular chain is
-        // allowed to have an RPC call made to it. Ideally this would be based
-        // on a user's idea of a dApp connection rather than a network-specific
-        // modality, requiring it to be constantly "switched"
-        return toHexChainID(
-          (await this.getCurrentOrDefaultNetworkForOrigin(origin)).chainID,
-        )
-      case "eth_blockNumber":
-      case "eth_call":
-      case "eth_estimateGas":
-      case "eth_feeHistory":
-      case "eth_gasPrice":
-      case "eth_getBalance":
-      case "eth_getBlockByHash":
-      case "eth_getBlockByNumber":
-      case "eth_getBlockTransactionCountByHash":
-      case "eth_getBlockTransactionCountByNumber":
-      case "eth_getCode":
-      case "eth_getFilterChanges":
-      case "eth_getFilterLogs":
-      case "eth_getLogs":
-      case "eth_getProof":
-      case "eth_getStorageAt":
-      case "eth_getTransactionByBlockHashAndIndex":
-      case "eth_getTransactionByBlockNumberAndIndex":
-      case "eth_getTransactionByHash":
-      case "eth_getTransactionCount":
-      case "eth_getTransactionReceipt":
-      case "eth_getUncleByBlockHashAndIndex":
-      case "eth_getUncleByBlockNumberAndIndex":
-      case "eth_getUncleCountByBlockHash":
-      case "eth_getUncleCountByBlockNumber":
-      case "eth_maxPriorityFeePerGas":
-      case "eth_newBlockFilter":
-      case "eth_newFilter":
-      case "eth_newPendingTransactionFilter":
-      case "eth_protocolVersion":
-      case "eth_sendRawTransaction":
-      case "eth_subscribe":
-      case "eth_syncing":
-      case "eth_uninstallFilter":
-      case "eth_unsubscribe":
-      case "net_listening":
-      case "net_version":
-      case "web3_clientVersion":
-      case "web3_sha3":
-        return this.chainService.send(
-          method,
-          params,
-          await this.getCurrentOrDefaultNetworkForOrigin(origin),
-        )
-      case "eth_accounts": {
-        // This is a special method, because Alchemy provider DO support it, but always return null (because they do not store keys.)
-        const { address } = await this.preferenceService.getSelectedAccount()
-        return [address]
-      }
-      case "eth_sendTransaction":
-        return this.signTransaction(
-          {
-            ...(params[0] as JsonRpcTransactionRequest),
-          },
-          origin,
-          true,
-        ).then(async (signed) => {
-          await this.chainService.broadcastSignedTransaction(signed)
-          return signed.hash
-        })
-      case "eth_signTransaction":
-        return this.signTransaction(
-          params[0] as JsonRpcTransactionRequest,
-          origin,
-          false,
-        ).then((signedTransaction) =>
-          serializeEthersTransaction(
-            ethersTransactionFromSignedTransaction(signedTransaction),
-            {
-              r: signedTransaction.r,
-              s: signedTransaction.s,
-              v: signedTransaction.v,
-            },
-          ),
-        )
-      case "eth_sign": // --- important wallet methods ---
-        return this.signData(
-          {
-            input: params[1] as string,
-            account: params[0] as string,
-          },
-          origin,
-        )
-      case "personal_sign":
-        return this.signData(
-          {
-            input: params[0] as string,
-            account: params[1] as string,
-          },
-          origin,
-        )
-      // TODO - actually allow adding a new ethereum chain - for now wallet_addEthereumChain
-      // will just switch to a chain if we already support it - but not add a new one
-      case "wallet_addEthereumChain": {
-        const chainInfo = params[0] as ValidatedAddEthereumChainParameter
-        const { chainId } = chainInfo
-        const supportedNetwork = await this.getTrackedNetworkByChainId(chainId)
-        if (supportedNetwork) {
-          await this.switchToSupportedNetwork(origin, supportedNetwork)
-          this.emitter.emit("selectedNetwork", supportedNetwork)
-          return null
-        }
-        try {
-          const customNetwork =
-            await this.chainService.addCustomChain(chainInfo)
-          this.emitter.emit("selectedNetwork", customNetwork)
-          return null
-        } catch (e) {
-          logger.error(e)
-          throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
-        }
-      }
-      case "wallet_switchEthereumChain": {
-        const newChainId = (params[0] as SwitchEthereumChainParameter).chainId
-        const supportedNetwork =
-          await this.getTrackedNetworkByChainId(newChainId)
-        if (supportedNetwork) {
-          // Only report success once the switch is persisted, so a dapp that
-          // asks for eth_chainId right away sees the new chain.
-          await this.switchToSupportedNetwork(origin, supportedNetwork)
-          return null
-        }
-
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unrecognizedChainId)
-      }
-      case "wallet_watchAsset": {
-        const { type, options } = params[0]
-          ? (params[0] as WatchAssetParameters)
-          : // some dapps send the object directly instead of an array
-            (params as unknown as WatchAssetParameters)
-        if (type !== "ERC20") {
-          throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
-        }
-
-        if (options.chainId) {
-          const supportedNetwork = await this.getTrackedNetworkByChainId(
-            String(options.chainId),
-          )
-          if (!supportedNetwork) {
-            throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
-          }
-          this.emitter.emit("watchAssetRequest", {
-            contractAddress: normalizeHexAddress(options.address),
-            network: supportedNetwork,
-          })
-          return true
-        }
-
-        // if chainID is not specified, we assume the current network - as per EIP-747
-        const network = await this.getCurrentOrDefaultNetworkForOrigin(origin)
-
-        this.emitter.emit("watchAssetRequest", {
-          contractAddress: normalizeHexAddress(options.address),
-          network,
-        })
-        return true
-      }
-      case "metamask_getProviderState": // --- important MM only methods ---
-      case "metamask_sendDomainMetadata":
-      case "wallet_requestPermissions":
-      case "estimateGas": // --- eip1193-bridge only method --
-      case "eth_coinbase": // --- MM only methods ---
-      case "eth_decrypt":
-      case "eth_getEncryptionPublicKey":
-      case "eth_getWork":
-      case "eth_hashrate":
-      case "eth_mining":
-      case "eth_submitHashrate":
-      case "eth_submitWork":
-      case "metamask_accountsChanged":
-      case "metamask_chainChanged":
-      case "metamask_logWeb3ShimUsage":
-      case "metamask_unlockStateChanged":
-      case "metamask_watchAsset":
-      case "net_peerCount":
-      case "wallet_accountsChanged":
-      case "wallet_registerOnboarding":
-      default:
-        throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
+    if (!this.isSupportedRPCMethod(method)) {
+      // Among others, this covers MetaMask-only methods
+      // (metamask_getProviderState, eth_decrypt, eth_getEncryptionPublicKey,
+      // ...), PoW-era methods (eth_getWork, eth_hashrate, eth_mining, ...),
+      // wallet_requestPermissions (handled by the provider bridge) and newer
+      // wallet methods like wallet_getCapabilities and wallet_sendCalls.
+      throw new EIP1193Error(EIP1193_ERROR_CODES.unsupportedMethod)
     }
+
+    return this.rpcHandlers[method](method, params, origin)
   }
 
   private async getCurrentInternalNetwork(): Promise<EVMNetwork> {

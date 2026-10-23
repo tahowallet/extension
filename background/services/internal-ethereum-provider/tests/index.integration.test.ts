@@ -98,6 +98,25 @@ describe("Internal Ethereum Provider Service", () => {
     )
   })
 
+  it.each([
+    "wallet_getCapabilities",
+    "eth_decrypt",
+    "wallet_requestPermissions",
+  ])("should reject unsupported method %s with 4200", async (method) => {
+    const error: unknown = await IEPService.routeSafeRPCRequest(
+      method,
+      [],
+      "https://unsupported.test",
+    ).then(
+      () => undefined,
+      (rejection: unknown) => rejection,
+    )
+
+    expect(error).toMatchObject({
+      eip1193Error: EIP1193_ERROR_CODES.unsupportedMethod,
+    })
+  })
+
   it("should reject a wallet_switchEthereumChain to an unknown chain with 4902", async () => {
     jest
       .spyOn(IEPService, "getTrackedNetworkByChainId")

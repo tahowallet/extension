@@ -490,4 +490,98 @@ describe("ProviderBridgeService", () => {
       expect(unsetNetworkSpy).toHaveBeenCalledTimes(NETWORKS.length)
     })
   })
+
+  describe("onMessageListener", () => {
+    const origin = "https://messages.test"
+
+    const send = async (method: string, params: unknown[] = []) => {
+      const postMessage = jest.fn()
+      const portEvent = () => ({
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        hasListener: jest.fn(() => false),
+        hasListeners: jest.fn(() => false),
+      })
+      const port: Required<browser.Runtime.Port> = {
+        name: "test",
+        sender: { url: `${origin}/page` },
+        error: new Error("unused"),
+        postMessage,
+        disconnect: jest.fn(),
+        onMessage: portEvent(),
+        onDisconnect: portEvent(),
+      }
+
+      await providerBridgeService.onMessageListener(port, {
+        id: "1",
+        request: { method, params },
+      })
+      expect(postMessage).toHaveBeenCalledTimes(1)
+      return postMessage.mock.calls[0][0].result
+    }
+
+    beforeEach(() => {
+      jest
+        // @ts-expect-error private access to reference the service
+        .spyOn(providerBridgeService.preferenceService, "getSelectedAccount")
+        .mockImplementation(() =>
+          Promise.resolve({ address: ADDRESS, network: ETHEREUM }),
+        )
+    })
+
+    afterEach(async () => {
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+    })
+
+    describe("for a site that isn't connected", () => {
+      it.each(["wallet_getCapabilities", "wallet_sendCalls"])(
+        "should reject unsupported %s with 4200",
+        async (method) => {
+          expect(await send(method)).toMatchObject({
+            code: EIP1193_ERROR_CODES.unsupportedMethod.code,
+          })
+        },
+      )
+
+      it("should reject supported methods with 4100", async () => {
+        expect(
+          await send("eth_sendTransaction", PARAMS.eth_sendTransaction),
+        ).toMatchObject({ code: EIP1193_ERROR_CODES.unauthorized.code })
+      })
+    })
+
+    describe("for a connected site", () => {
+      beforeEach(async () => {
+        await providerBridgeService.grantPermission({
+          ...BASE_DATA.enablingPermission,
+          key: `${origin}_${ADDRESS}_${ETHEREUM.chainID}`,
+          origin,
+          chainID: ETHEREUM.chainID,
+        })
+      })
+
+      it("should reject unsupported methods with 4200", async () => {
+        expect(await send("wallet_getCapabilities")).toMatchObject({
+          code: EIP1193_ERROR_CODES.unsupportedMethod.code,
+        })
+      })
+
+      it.each([
+        "eth_requestAccounts",
+        "wallet_requestPermissions",
+        "wallet_getPermissions",
+      ])("should handle provider bridge method %s", async (method) => {
+        expect(await send(method, ["Test", "favicon.png"])).toEqual(
+          expect.arrayContaining([expect.anything()]),
+        )
+      })
+
+      it("should handle wallet_revokePermissions", async () => {
+        expect(await send("wallet_revokePermissions")).toBeNull()
+        expect(
+          await providerBridgeService.checkPermission(origin, ETHEREUM.chainID),
+        ).toBeUndefined()
+      })
+    })
+  })
 })
