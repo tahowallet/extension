@@ -2,10 +2,14 @@ import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { removeCustomChain } from "@tallyho/tally-background/redux-slices/networks"
-import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import {
+  selectEVMNetworks,
+  selectUnreachableNetworks,
+} from "@tallyho/tally-background/redux-slices/selectors/networks"
 import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useLocation } from "react-router-dom"
+import NetworkUnreachableWarning from "../../components/Shared/NetworkUnreachableWarning"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedLink from "../../components/Shared/SharedLink"
@@ -32,6 +36,7 @@ export default function SettingsCustomNetworks(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
+  const unreachableNetworks = useBackgroundSelector(selectUnreachableNetworks)
 
   // One list for every network the wallet knows about. Built-ins keep their
   // bundled order and lead, with user-added networks trailing them, so adding
@@ -222,6 +227,11 @@ export default function SettingsCustomNetworks(): ReactElement {
                     )}
                   </div>
                   <div className="actions">
+                    {unreachableNetworks[item.chainID] && (
+                      // No link: it would only lead back to this page, and
+                      // the edit button beside it already opens the form.
+                      <NetworkUnreachableWarning tooltipVerticalPosition="top" />
+                    )}
                     <SharedIcon
                       width={16}
                       onClick={() => {
