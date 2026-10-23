@@ -48,6 +48,28 @@ export type LedgerAccountSigner = {
 
 export const isLedgerSupported = typeof navigator.usb === "object"
 
+type USBConnectionHandler = (event: USBConnectionEvent) => Promise<void>
+
+/**
+ * Manifest V3 only delivers events to a background service worker's
+ * listeners if they were added during the worker script's initial
+ * evaluation; Chrome warns about, and won't wake the worker for, listeners
+ * added later. LedgerService is created after asynchronous setup, so the
+ * navigator.usb listeners are added here, when the module is evaluated, and
+ * forward each event to whichever handlers the service has attached.
+ */
+const usbConnectHandlers = new Set<USBConnectionHandler>()
+const usbDisconnectHandlers = new Set<USBConnectionHandler>()
+
+if (isLedgerSupported) {
+  navigator.usb.addEventListener("connect", (event) => {
+    usbConnectHandlers.forEach((handler) => handler(event))
+  })
+  navigator.usb.addEventListener("disconnect", (event) => {
+    usbDisconnectHandlers.forEach((handler) => handler(event))
+  })
+}
+
 const TestedProductId = (productId: number): boolean =>
   identifyUSBProductId(productId) != null
 
@@ -115,6 +137,26 @@ async function deriveAddressOnLedger(path: string, eth: Eth) {
   return address
 }
 
+/**
+ * Whether the Ledger currently has the Ethereum app open, using the
+ * dashboard-level GET APP NAME command (CLA 0xb0, INS 0x01).
+ *
+ * Adapted from @ledgerhq/live-common.
+ */
+async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
+  const response = await transport.send(0xb0, 0x01, 0x00, 0x00)
+
+  const format = response[0]
+  if (format !== 1) {
+    return false
+  }
+
+  const nameLength = response[1]
+  const name = response.subarray(2, 2 + nameLength).toString("ascii")
+
+  return name === "Ethereum"
+}
+
 async function generateLedgerId(
   transport: Transport,
   eth: Eth,
@@ -172,9 +214,19 @@ async function generateLedgerId(
  *     which device will respond to its requests
  */
 export default class LedgerService extends BaseService<Events> {
-  #currentLedgerId: string | null = null
+  /**
+   * The connected Ledger's id and type, which are always set and cleared
+   * together.
+   */
+  #currentLedger: { id: string; type: LedgerType } | null = null
 
   transport: Transport | undefined = undefined
+
+  /**
+   * The USB device the current transport was opened on, used to tell whether
+   * a USB disconnect is the Ledger going away or some other device.
+   */
+  #currentDevice: USBDevice | undefined = undefined
 
   #lastOperationPromise = Promise.resolve()
 
@@ -184,8 +236,8 @@ export default class LedgerService extends BaseService<Events> {
   private constructor(private db: LedgerDatabase) {
     super()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    usbConnectHandlers.add(this.#handleUSBConnect)
+    usbDisconnectHandlers.add(this.#handleUSBDisconnect)
 
     // Block serial operations until the service is started, in case a
     // connection or disconnection event occurs to soon.
@@ -213,7 +265,26 @@ export default class LedgerService extends BaseService<Events> {
       }
 
       try {
-        this.transport = await TransportWebUSB.create()
+        // A transport left open keeps its USB interface claimed, which makes
+        // creating the next one fail with "Unable to claim interface".
+        await this.#closeTransport("replacing")
+
+        // Only a Ledger the browser has already paired can be opened from
+        // the background; pairing a new one needs a user gesture in a page.
+        const transport = await TransportWebUSB.openConnected()
+        if (transport === null) {
+          return
+        }
+        this.transport = transport
+        this.#currentDevice = transport.device
+
+        // Checked after taking the transport so that a failure here goes
+        // through the failed-connection handling below, which closes it.
+        if (!(await isEthereumAppOpen(transport))) {
+          throw new Error(
+            "The Ledger doesn't have the Ethereum app open; open it to connect.",
+          )
+        }
 
         const eth = new Eth(this.transport)
 
@@ -227,10 +298,11 @@ export default class LedgerService extends BaseService<Events> {
 
         const normalizedID = normalizeEVMAddress(id)
 
-        this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        this.#currentLedger = { id: ledgerId, type }
 
         this.emitter.emit("connected", {
-          id: this.#currentLedgerId,
+          id: ledgerId,
           type,
           metadata: {
             ethereumVersion: appData.version,
@@ -239,13 +311,11 @@ export default class LedgerService extends BaseService<Events> {
           },
         })
 
-        const knownAddresses = await this.db.getAllAccountsByLedgerId(
-          this.#currentLedgerId,
-        )
+        const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
 
         if (!knownAddresses.length) {
           this.emitter.emit("ledgerAdded", {
-            id: this.#currentLedgerId,
+            id: ledgerId,
             type,
             accountIDs: [idDerivationPath],
             metadata: {
@@ -260,9 +330,39 @@ export default class LedgerService extends BaseService<Events> {
           "Treating Ledger as having disconnected due to a connection error:",
           error,
         )
+        await this.#closeTransport("failed-connection")
         await this.#handleUSBDisconnect()
       }
     })
+  }
+
+  /**
+   * Closes the current transport, if there is one. Closing releases the USB
+   * interface, which fails once the device is unplugged, so failures are
+   * expected when replacing a possibly stale transport or after a disconnect
+   * and only logged at debug level. A failure to close after a failed
+   * connection attempt is unexpected, and warns.
+   */
+  async #closeTransport(
+    reason: "replacing" | "disconnected" | "failed-connection",
+  ): Promise<void> {
+    const { transport } = this
+    if (transport === undefined) {
+      return
+    }
+
+    this.transport = undefined
+    this.#currentDevice = undefined
+
+    try {
+      await transport.close()
+    } catch (error) {
+      if (reason === "failed-connection") {
+        logger.warn("Failed to close Ledger transport:", error)
+      } else {
+        logger.debug(`Failed to close Ledger transport (${reason}):`, error)
+      }
+    }
   }
 
   #handleUSBConnect = async (event: USBConnectionEvent): Promise<void> => {
@@ -277,23 +377,39 @@ export default class LedgerService extends BaseService<Events> {
     this.onConnection(event.device.productId)
   }
 
-  #handleUSBDisconnect = async (
-    /* event: USBConnectionEvent */
-  ): Promise<void> => {
+  /**
+   * Handles a USB device going away, or a failed connection when called with
+   * no event. A disconnect only disconnects the Ledger when it's the device
+   * the transport was opened on; other USB devices, including other Ledgers,
+   * coming and going don't affect it. WebUSB uses a single USBDevice object
+   * per device, so the event's device can be compared directly.
+   */
+  #handleUSBDisconnect = async (event?: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
-    if (!this.#currentLedgerId) {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
       return
     }
 
+    if (
+      event !== undefined &&
+      this.#currentDevice !== undefined &&
+      event.device !== this.#currentDevice
+    ) {
+      return
+    }
+
+    await this.#closeTransport("disconnected")
+
     this.emitter.emit("disconnected", {
-      id: this.#currentLedgerId,
-      type: LedgerType.LEDGER_NANO_S,
+      id: currentLedger.id,
+      type: currentLedger.type,
     })
 
-    this.#currentLedgerId = null
+    this.#currentLedger = null
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -305,8 +421,8 @@ export default class LedgerService extends BaseService<Events> {
   protected override async internalStopService(): Promise<void> {
     await super.internalStopService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
+    usbDisconnectHandlers.delete(this.#handleUSBDisconnect)
+    usbConnectHandlers.delete(this.#handleUSBConnect)
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
@@ -322,7 +438,7 @@ export default class LedgerService extends BaseService<Events> {
       await this.onConnection(usbDeviceArray[0].productId)
     }
 
-    return this.#currentLedgerId
+    return this.#currentLedger?.id ?? null
   }
 
   async deriveAddress({
@@ -335,7 +451,8 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Uninitialized transport!")
         }
 
-        if (!this.#currentLedgerId) {
+        const currentLedger = this.#currentLedger
+        if (currentLedger === null) {
           throw new Error("Uninitialized Ledger ID!")
         }
 
@@ -346,7 +463,7 @@ export default class LedgerService extends BaseService<Events> {
         )
 
         this.emitter.emit("address", {
-          ledgerID: this.#currentLedgerId,
+          ledgerID: currentLedger.id,
           derivationPath,
           address: accountAddress,
         })
@@ -355,7 +472,7 @@ export default class LedgerService extends BaseService<Events> {
       } catch (err) {
         logger.error(
           `Error encountered deriving address at path ${derivationPath}! ledgerID: ${
-            this.#currentLedgerId
+            this.#currentLedger?.id ?? null
           } error: ${err}`,
         )
         throw err
@@ -364,11 +481,12 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
-    if (!this.#currentLedgerId) {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
       throw new Error("No Ledger id is set!")
     }
 
-    await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
+    await this.db.addAccount({ ledgerId: currentLedger.id, path, address })
   }
 
   async removeAddress(address: HexString): Promise<void> {
@@ -390,7 +508,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Uninitialized transport!")
         }
 
-        if (!this.#currentLedgerId) {
+        if (this.#currentLedger === null) {
           throw new Error("Uninitialized Ledger ID!")
         }
 
@@ -473,7 +591,7 @@ export default class LedgerService extends BaseService<Events> {
       } catch (err) {
         logger.error(
           `Error encountered! ledgerID: ${
-            this.#currentLedgerId
+            this.#currentLedger?.id ?? null
           } transactionRequest: ${transactionRequest} error: ${err}`,
         )
 
@@ -492,7 +610,7 @@ export default class LedgerService extends BaseService<Events> {
         throw new Error("Uninitialized transport!")
       }
 
-      if (!this.#currentLedgerId) {
+      if (this.#currentLedger === null) {
         throw new Error("Uninitialized Ledger ID!")
       }
 
@@ -543,7 +661,7 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Signing method mismatch!")
     }
 
-    if (deviceID !== this.#currentLedgerId) {
+    if (deviceID !== this.#currentLedger?.id) {
       throw new Error("Cannot sign on wrong device attached!")
     }
   }
@@ -568,7 +686,7 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Uninitialized transport!")
     }
 
-    if (!this.#currentLedgerId) {
+    if (this.#currentLedger === null) {
       throw new Error("Uninitialized Ledger ID!")
     }
 
