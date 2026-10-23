@@ -2,7 +2,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "webextension@tally.cash",
-      "strict_min_version": "68.0"
+      "strict_min_version": "144.0"
     }
   },
   "permissions": ["https://*/*"]
