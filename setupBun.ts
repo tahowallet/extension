@@ -25,11 +25,11 @@ Object.defineProperty(window, "TextDecoder", {
 })
 
 // Mock navigator.usb on both window.navigator and the global navigator
-// (bun has its own native navigator that may differ from jsdom's).
-const usbMock = {
+// (bun has its own native navigator that may differ from jsdom's). It's an
+// EventTarget so tests can dispatch USB connect and disconnect events.
+const usbMock = Object.assign(new EventTarget(), {
   getDevices: () => [],
-  addEventListener: () => {},
-}
+})
 Object.defineProperty(window.navigator, "usb", {
   writable: true,
   value: usbMock,
