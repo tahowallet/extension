@@ -7,7 +7,8 @@ import { ETHEREUM } from "../../constants"
 import { createSmartContractAsset } from "../../tests/factories"
 import priceExactIn from "../../lib/tests/fixtures/0x/price-exact-in.json"
 import priceExactOut from "../../lib/tests/fixtures/0x/price-exact-out.json"
-import { LiquidSwapPrice } from "../../lib/0x-swap-types"
+import priceNoLiquidity from "../../lib/tests/fixtures/0x/price-no-liquidity.json"
+import { LiquidSwapPrice, SwapPriceResponse } from "../../lib/0x-swap-types"
 import { fetchSwapPrice } from "../0x-swap"
 import { allAliases } from "../utils"
 import * as contractUtils from "../utils/contract-utils"
@@ -57,18 +58,27 @@ describe("fetchSwapPrice", () => {
     jest.restoreAllMocks()
   })
 
-  const fetchNeedsApproval = async (price: LiquidSwapPrice) => {
+  const runFetchSwapPrice = async (price: SwapPriceResponse | null) => {
     jest.spyOn(zeroExSwap, "getPrice").mockResolvedValue(price)
 
+    const dispatch = jest.fn()
     const runThunk = allAliases[fetchSwapPrice.typePrefix]
     const action = await runThunk(fetchSwapPrice({ quoteRequest }))(
-      jest.fn(),
+      dispatch,
       () => ({ prices: { pricePoints: {} } }),
       undefined,
     )
 
-    return fetchSwapPrice.fulfilled.match(action)
-      ? action.payload?.needsApproval
+    return { action, dispatch }
+  }
+
+  const fetchNeedsApproval = async (price: LiquidSwapPrice) => {
+    const { action } = await runFetchSwapPrice(price)
+
+    return fetchSwapPrice.fulfilled.match(action) &&
+      action.payload !== undefined &&
+      "needsApproval" in action.payload
+      ? action.payload.needsApproval
       : undefined
   }
 
@@ -97,5 +107,20 @@ describe("fetchSwapPrice", () => {
 
     allowance = BigInt(price.sellAmount) - 1n
     expect(await fetchNeedsApproval(price)).toBe(true)
+  })
+
+  it("should report insufficient liquidity only when 0x reports it", async () => {
+    if (!isValid0xSwapPriceResponse(priceNoLiquidity)) {
+      throw new Error("Expected a valid 0x price.")
+    }
+    const { action } = await runFetchSwapPrice(priceNoLiquidity)
+
+    expect(action.payload).toEqual({ failure: "insufficientLiquidity" })
+  })
+
+  it("should report a price that didn't validate as a failed price lookup", async () => {
+    const { action } = await runFetchSwapPrice(null)
+
+    expect(action.payload).toEqual({ failure: "invalidResponse" })
   })
 })

@@ -24,7 +24,10 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectSlippageTolerance,
+  setSnackbarMessage,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { OPTIMISM, SECOND } from "@tallyho/tally-background/constants"
 
@@ -359,7 +362,12 @@ export default function Swap(): ReactElement {
     if (sellAsset && buyAsset && quote) {
       const finalQuote = await dispatch(fetchSwapQuote(quote.quoteRequest))
 
-      if (finalQuote?.liquidityAvailable) {
+      if ("failure" in finalQuote) {
+        dispatch(
+          setSnackbarMessage(t(`swap.error.quote.${finalQuote.failure}`)),
+        )
+        setIsLoading(false)
+      } else {
         const { transaction } = finalQuote
 
         await dispatch(
@@ -383,7 +391,7 @@ export default function Swap(): ReactElement {
         )
       }
     }
-  }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
+  }, [dispatch, t, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
   if (!networkSupportsSwaps(currentNetwork.chainID)) {
     return <Redirect to="/" />

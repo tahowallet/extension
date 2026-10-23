@@ -20,8 +20,10 @@ import {
   PriceDetails,
   SwapQuoteRequest,
 } from "@tallyho/tally-background/redux-slices/utils/0x-swap-utils"
+import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { debounce, DebouncedFunc } from "lodash"
 import { useState, useRef, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import {
   isSameAsset,
@@ -168,7 +170,7 @@ export const fetchQuote = async ({
     amount,
   }
 
-  if (updatedQuoteData) {
+  if (updatedQuoteData && !("failure" in updatedQuoteData)) {
     if (
       updatedQuoteData.quote.gas &&
       settings.networkSettings.gasLimit !== BigInt(updatedQuoteData.quote.gas)
@@ -224,6 +226,7 @@ export function useSwapQuote(useSwapConfig: {
   >
 } {
   const dispatch = useBackgroundDispatch()
+  const { t } = useTranslation("translation", { keyPrefix: "swap.error" })
   const [initialTransactionSettings] = useState(
     useSwapConfig.initialSwapSettings,
   )
@@ -284,10 +287,15 @@ export function useSwapQuote(useSwapConfig: {
           amount,
           sellAsset,
           buyAsset,
-          getQuoteFn: (quoteRequest) =>
-            dispatch(fetchSwapPrice({ quoteRequest })) as unknown as Promise<
-              AsyncThunkFulfillmentType<typeof fetchSwapPrice>
-            >,
+          getQuoteFn: async (quoteRequest) => {
+            const price = (await dispatch(
+              fetchSwapPrice({ quoteRequest }),
+            )) as unknown as AsyncThunkFulfillmentType<typeof fetchSwapPrice>
+            if (price !== undefined && "failure" in price) {
+              dispatch(setSnackbarMessage(t(`price.${price.failure}`)))
+            }
+            return price
+          },
           network: requestContext.network,
           settings: transactionSettings,
         })
@@ -305,7 +313,7 @@ export function useSwapQuote(useSwapConfig: {
         })
       }
     },
-    [dispatch, requestContextRef, mountedRef, setQuoteRequestState],
+    [dispatch, t, requestContextRef, mountedRef, setQuoteRequestState],
   )
 
   const [debouncedRequest] = useState(() => {

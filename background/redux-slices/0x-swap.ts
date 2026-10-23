@@ -23,7 +23,6 @@ import logger from "../lib/logger"
 import { getUSDPriceForTokens } from "../lib/priceOracle"
 import { getPricePoint } from "../lib/prices"
 import { PricesState, selectAssetPricePoint } from "./prices"
-import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import { PriceDetails, SwapQuoteRequest } from "./utils/0x-swap-utils"
 import {
@@ -84,6 +83,13 @@ const swapSlice = createSlice({
   },
 })
 
+/**
+ * Why a swap price or quote couldn't be had. The UI chooses the words.
+ */
+export type SwapLookupFailure = {
+  failure: "invalidResponse" | "insufficientLiquidity" | "requestFailed"
+}
+
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
@@ -106,19 +112,23 @@ export default swapSlice.reducer
  */
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
-  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
+  async (
+    quoteRequest: SwapQuoteRequest,
+    { dispatch },
+  ): Promise<LiquidSwapQuote | SwapLookupFailure> => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
-
-    // TODO: Handle lack of liquidity, errors
 
     const apiData = await getQuote({
       ...quoteRequest,
       taker: tradeAddress,
     })
 
-    if (!apiData) {
-      return null
+    if (apiData === null) {
+      return { failure: "invalidResponse" }
+    }
+    if (!apiData.liquidityAvailable) {
+      return { failure: "insufficientLiquidity" }
     }
 
     dispatch(setFinalSwapQuote(apiData))
@@ -150,6 +160,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
         needsApproval: boolean
         priceDetails: PriceDetails
       }
+    | SwapLookupFailure
     | undefined
   > => {
     const signer = getProvider().getSigner()
@@ -238,9 +249,11 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     try {
       quote = await getPrice({ ...quoteRequest, taker })
 
-      if (!quote || !quote.liquidityAvailable) {
-        dispatch(setSnackbarMessage("Insufficient liquidity for this trade"))
-        return undefined
+      if (quote === null) {
+        return { failure: "invalidResponse" }
+      }
+      if (!quote.liquidityAvailable) {
+        return { failure: "insufficientLiquidity" }
       }
 
       const priceDetails = getPriceDetails(quote)
@@ -273,13 +286,8 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     } catch (error) {
       logger.warn("Swap price API call threw an error!", quote, error)
 
-      try {
-        if (typeof error === "object" && error !== null && "body" in error) {
-          // TODO: i18n this string
-          dispatch(setSnackbarMessage("Error while fetching swap prices"))
-        }
-      } catch (e) {
-        logger.warn("0x Api Response Parsing Failed")
+      if (typeof error === "object" && error !== null && "body" in error) {
+        return { failure: "requestFailed" }
       }
 
       return undefined
