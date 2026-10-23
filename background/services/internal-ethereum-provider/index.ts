@@ -315,7 +315,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
           return null
         }
 
-        throw new EIP1193Error(EIP1193_ERROR_CODES.chainDisconnected)
+        throw new EIP1193Error(EIP1193_ERROR_CODES.unrecognizedChainId)
       }
       case "wallet_watchAsset": {
         const { type, options } = params[0]

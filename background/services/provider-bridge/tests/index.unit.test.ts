@@ -241,6 +241,26 @@ describe("ProviderBridgeService", () => {
 
       await providerBridgeService.revokePermissionsForOrigin(BASE_DATA.origin)
     })
+
+    it("should report a switch to an unknown chain as unrecognized", async () => {
+      const { enablingPermission, origin } = BASE_DATA
+
+      const internalEthereumProvider =
+        // @ts-expect-error private access to reference the service
+        providerBridgeService.internalEthereumProviderService
+      jest
+        .spyOn(internalEthereumProvider, "getTrackedNetworkByChainId")
+        .mockImplementation(() => Promise.resolve(undefined))
+
+      const response = await providerBridgeService.routeContentScriptRPCRequest(
+        enablingPermission,
+        "wallet_switchEthereumChain",
+        [{ chainId: "0x1a4" }],
+        origin,
+      )
+
+      expect(response).toEqual(EIP1193_ERROR_CODES.unrecognizedChainId)
+    })
   })
 
   describe.each([

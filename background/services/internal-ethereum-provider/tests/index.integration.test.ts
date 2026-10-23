@@ -1,4 +1,5 @@
 import sinon from "sinon"
+import { EIP1193_ERROR_CODES } from "@tallyho/provider-bridge-shared"
 import InternalEthereumProviderService from ".."
 import * as featureFlags from "../../../features"
 import { waitFor } from "@testing-library/dom"
@@ -95,6 +96,26 @@ describe("Internal Ethereum Provider Service", () => {
         network: POLYGON,
       }),
     )
+  })
+
+  it("should reject a wallet_switchEthereumChain to an unknown chain with 4902", async () => {
+    jest
+      .spyOn(IEPService, "getTrackedNetworkByChainId")
+      .mockImplementation(() => Promise.resolve(undefined))
+
+    const error: unknown = await IEPService.routeSafeRPCRequest(
+      "wallet_switchEthereumChain",
+      [{ chainId: "0x1a4" }],
+      "https://switch.test",
+    ).then(
+      () => undefined,
+      (rejection: unknown) => rejection,
+    )
+
+    expect(error).toMatchObject({
+      eip1193Error: EIP1193_ERROR_CODES.unrecognizedChainId,
+    })
+    expect(EIP1193_ERROR_CODES.unrecognizedChainId.code).toEqual(4902)
   })
 
   it.each(["", "_v1", "_v3", "_v4"])(
