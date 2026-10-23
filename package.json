@@ -66,6 +66,7 @@
   },
   "resolutions": {
     "@ledgerhq/devices": "8.10.0",
+    "@ledgerhq/errors": "6.37.0",
     "@types/node": "25.3.0",
     "@uniswap/token-lists": "1.0.0-beta.34"
   },
@@ -75,7 +76,6 @@
   "patchedDependencies": {
     "jsan@3.1.14": "patches/jsan@3.1.14.patch",
     "@ethersproject/providers@5.7.2": "patches/@ethersproject%2Fproviders@5.7.2.patch",
-    "@ledgerhq/hw-app-eth@6.33.4": "patches/@ledgerhq%2Fhw-app-eth@6.33.4.patch",
     "webext-redux@4.0.0": "patches/webext-redux@4.0.0.patch"
   },
   "devDependencies": {

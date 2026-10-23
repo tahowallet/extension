@@ -75,10 +75,10 @@
         "@ethersproject/transactions": "5.7.0",
         "@ethersproject/web": "^5.7.1",
         "@ledgerhq/devices": "8.10.0",
-        "@ledgerhq/errors": "6.12.6",
-        "@ledgerhq/hw-app-eth": "6.33.4",
-        "@ledgerhq/hw-transport": "6.28.4",
-        "@ledgerhq/hw-transport-webusb": "6.27.14",
+        "@ledgerhq/errors": "6.37.0",
+        "@ledgerhq/hw-app-eth": "6.47.1",
+        "@ledgerhq/hw-transport": "6.31.13",
+        "@ledgerhq/hw-transport-webusb": "6.29.13",
         "@redux-devtools/remote": "^0.7.4",
         "@tallyho/hd-keyring": "0.5.0",
         "@tallyho/provider-bridge-shared": "0.0.1",
@@ -143,7 +143,7 @@
         "@ethersproject/hdnode": "5.7.0",
         "@ethersproject/units": "5.7.0",
         "@ethersproject/web": "5.7.1",
-        "@ledgerhq/devices": "8.0.3",
+        "@ledgerhq/devices": "8.10.0",
         "@reduxjs/toolkit": "^1.9.4",
         "@tallyho/provider-bridge-shared": "0.0.1",
         "@tallyho/tally-background": "0.0.1",
@@ -190,10 +190,10 @@
     "jsan@3.1.14": "patches/jsan@3.1.14.patch",
     "@ethersproject/providers@5.7.2": "patches/@ethersproject%2Fproviders@5.7.2.patch",
     "webext-redux@4.0.0": "patches/webext-redux@4.0.0.patch",
-    "@ledgerhq/hw-app-eth@6.33.4": "patches/@ledgerhq%2Fhw-app-eth@6.33.4.patch",
   },
   "overrides": {
     "@ledgerhq/devices": "8.10.0",
+    "@ledgerhq/errors": "6.37.0",
     "@types/node": "25.3.0",
     "@uniswap/token-lists": "1.0.0-beta.34",
   },
@@ -490,21 +490,23 @@
 
     "@ledgerhq/client-ids": ["@ledgerhq/client-ids@0.5.1", "", { "dependencies": { "@ledgerhq/live-env": "^2.27.0", "@reduxjs/toolkit": "2.11.2", "uuid": "^9.0.0" } }, "sha512-G1+2GJj3VuYIuUwnuWVRBSKTpxMiqznv5oS1gHc8B2SCBjjvu3opZcCWYNfzJZACCf1Bn08ZrjM097wfbn0UVg=="],
 
-    "@ledgerhq/cryptoassets": ["@ledgerhq/cryptoassets@9.13.0", "", { "dependencies": { "invariant": "2" } }, "sha512-MzGJyc48OGU/FLYGYwEJyfOgbJzlR8XJ9Oo6XpNpNUM1/E5NDqvD72V0D+0uWIJYN3e2NtyqHXShLZDu7P95YA=="],
+    "@ledgerhq/cryptoassets-evm-signatures": ["@ledgerhq/cryptoassets-evm-signatures@13.7.1", "", { "dependencies": { "@ledgerhq/live-env": "^2.21.0", "axios": "1.12.2" } }, "sha512-ehLn62L15fOlTH6u5D1eV1d4/QIju6aaUKWy7CpVLSiRmkWEBaORhOL/l9TvBrRIvNLHVBQEhiBaJcJ4hGrlEw=="],
 
     "@ledgerhq/devices": ["@ledgerhq/devices@8.10.0", "", { "dependencies": { "@ledgerhq/errors": "^6.29.0", "@ledgerhq/logs": "^6.14.0", "rxjs": "7.8.2", "semver": "7.7.3" } }, "sha512-ytT66KI8MizFX6dGJKthOzPDw5uNRmmg+RaMta62jbFePKYqfXtYTp6Wc0ErTXaL8nFS3IujHENwKthPmsj6jw=="],
 
     "@ledgerhq/domain-service": ["@ledgerhq/domain-service@1.6.4", "", { "dependencies": { "@ledgerhq/errors": "^6.29.0", "@ledgerhq/logs": "^6.14.0", "@ledgerhq/types-live": "^6.97.0", "axios": "1.13.2", "eip55": "^2.1.1", "react": "18.3.1", "react-dom": "18.3.1" } }, "sha512-9vAY3qFEnOonH/gvVzuHVP+8cEssh2kcm2QEFHhYgUan8+dwQ06Nio9JkbZq2lMF5G4Bc1hpmr2WNu1jci5/+Q=="],
 
-    "@ledgerhq/errors": ["@ledgerhq/errors@6.12.6", "", {}, "sha512-D+r2B09vaRO06wfGoss+rNgwqWSoK0bCtsaJWzlD2hv1zxTtucqVtSztbRFypIqxWTCb3ix5Nh2dWHEJVTp2Xw=="],
+    "@ledgerhq/errors": ["@ledgerhq/errors@6.37.0", "", {}, "sha512-T5yiKI5UX7ugeocdTF3TUsCIN2BH41Bio4ZeN410YFjFOf3es08n/5JyMzzKwzRgP0blG3HfBf7s7vJKqCSAeg=="],
 
-    "@ledgerhq/hw-app-eth": ["@ledgerhq/hw-app-eth@6.33.4", "", { "dependencies": { "@ethersproject/abi": "^5.5.0", "@ethersproject/rlp": "^5.5.0", "@ledgerhq/cryptoassets": "^9.6.0", "@ledgerhq/domain-service": "^1.1.2", "@ledgerhq/errors": "^6.12.6", "@ledgerhq/hw-transport": "^6.28.4", "@ledgerhq/hw-transport-mocker": "^6.27.15", "@ledgerhq/logs": "^6.10.1", "axios": "^1.3.4", "bignumber.js": "^9.1.0", "crypto-js": "^4.1.1" } }, "sha512-87/vW9nZS4AS9j3SwuP7ugd6KOkeSGqIzqGCr3ejWt0o70hgp56/9jK2fcv3oCaESLjjQDyyutrTaKTIds1Y+A=="],
+    "@ledgerhq/evm-tools": ["@ledgerhq/evm-tools@1.15.1", "", { "dependencies": { "@ethersproject/constants": "^5.7.0", "@ethersproject/hash": "^5.7.0", "@ledgerhq/live-env": "4.1.0", "axios": "1.20.0", "crypto-js": "4.2.0" } }, "sha512-kpZEeBm9ektX9uyXovq7bMahpw6ET4/CGGm1S+H24WGWeZYkic0XxBYPZ6TNmHbwSJB0x3pTKT5Z0nH9TL/dcg=="],
 
-    "@ledgerhq/hw-transport": ["@ledgerhq/hw-transport@6.28.4", "", { "dependencies": { "@ledgerhq/devices": "^8.0.3", "@ledgerhq/errors": "^6.12.6", "events": "^3.3.0" } }, "sha512-fB2H92YQjidmae2GFCmOGPwkZWk0lvTu0tlLlzfiY0wRheAG+DEgjnqhdU8wmydkPLIj0WUjRgldtnJtg/a2iQ=="],
+    "@ledgerhq/hw-app-eth": ["@ledgerhq/hw-app-eth@6.47.1", "", { "dependencies": { "@ethersproject/abi": "^5.7.0", "@ethersproject/rlp": "^5.7.0", "@ethersproject/transactions": "^5.7.0", "@ledgerhq/cryptoassets-evm-signatures": "^13.7.1", "@ledgerhq/domain-service": "^1.4.1", "@ledgerhq/errors": "^6.27.0", "@ledgerhq/evm-tools": "^1.8.1", "@ledgerhq/hw-transport": "6.31.13", "@ledgerhq/hw-transport-mocker": "^6.29.13", "@ledgerhq/logs": "^6.13.0", "@ledgerhq/types-live": "^6.89.0", "axios": "1.12.2", "bignumber.js": "^9.1.2", "semver": "^7.3.5" } }, "sha512-uTgXZwiEBuXoouZOzd/wi06FGyUdP8THDkzPcHfbt4hcIwiPMfRc/vrOXJtCq/LaM8nVEuf8xk+H1sAgJzPCkw=="],
+
+    "@ledgerhq/hw-transport": ["@ledgerhq/hw-transport@6.31.13", "", { "dependencies": { "@ledgerhq/devices": "8.7.0", "@ledgerhq/errors": "^6.27.0", "@ledgerhq/logs": "^6.13.0", "events": "^3.3.0" } }, "sha512-MrJRDk74wY980ofiFPRpTHQBbRw1wDuKbdag1zqlO1xtJglymwwY03K2kvBNvkm1RTSCPUp/nAoNG+WThZuuew=="],
 
     "@ledgerhq/hw-transport-mocker": ["@ledgerhq/hw-transport-mocker@6.31.0", "", { "dependencies": { "@ledgerhq/hw-transport": "6.32.0", "@ledgerhq/logs": "^6.14.0", "rxjs": "7.8.2" } }, "sha512-mgLH9I3V8BQHkxw+I0shin7C175NPkR3fF8bZyfxQKznfx4aju6hGKgsUnLYA975eW81DhoyPepwJLAMvNsSnw=="],
 
-    "@ledgerhq/hw-transport-webusb": ["@ledgerhq/hw-transport-webusb@6.27.14", "", { "dependencies": { "@ledgerhq/devices": "^8.0.2", "@ledgerhq/errors": "^6.12.5", "@ledgerhq/hw-transport": "^6.28.3", "@ledgerhq/logs": "^6.10.1" } }, "sha512-uSpjyiR0FhNXNtXxWqbmatyfCPcjeyADm8E+czuCCM7Wwf0S05AeD+2qLiEa0U1DspBZvz65WgkhPfeSmUsbZA=="],
+    "@ledgerhq/hw-transport-webusb": ["@ledgerhq/hw-transport-webusb@6.29.13", "", { "dependencies": { "@ledgerhq/devices": "8.7.0", "@ledgerhq/errors": "^6.27.0", "@ledgerhq/hw-transport": "6.31.13", "@ledgerhq/logs": "^6.13.0" } }, "sha512-RhQMCX2kjpI5N+4EvepDtIH9opTJxmCAEWIip4Im+ScjoSvBI1wveE5aDFhjDsHJUcKIQzIbB5jSuv0DZaajFA=="],
 
     "@ledgerhq/live-env": ["@ledgerhq/live-env@2.27.0", "", { "dependencies": { "rxjs": "7.8.2", "utility-types": "^3.10.0" } }, "sha512-b6FZB3/bQOvG5IshJFrNxgY9Zrq070XjAq3g3TXm0cvO3cG2eOhVj7WK2cF7Rz5osZ9XGQjh9dnpvNxGmYjfxw=="],
 
@@ -956,7 +958,7 @@
 
     "available-typed-arrays": ["available-typed-arrays@1.0.7", "", { "dependencies": { "possible-typed-array-names": "^1.0.0" } }, "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ=="],
 
-    "axios": ["axios@1.13.5", "", { "dependencies": { "follow-redirects": "^1.15.11", "form-data": "^4.0.5", "proxy-from-env": "^1.1.0" } }, "sha512-cz4ur7Vb0xS4/KUN0tPWe44eqxrIu31me+fbang3ijiNscE129POzipJJA6zniq2C/Z6sJCjMimjS8Lc/GAs8Q=="],
+    "axios": ["axios@1.12.2", "", { "dependencies": { "follow-redirects": "^1.15.6", "form-data": "^4.0.4", "proxy-from-env": "^1.1.0" } }, "sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw=="],
 
     "babel-plugin-macros": ["babel-plugin-macros@3.1.0", "", { "dependencies": { "@babel/runtime": "^7.12.5", "cosmiconfig": "^7.0.0", "resolve": "^1.19.0" } }, "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg=="],
 
@@ -1521,8 +1523,6 @@
     "internmap": ["internmap@2.0.3", "", {}, "sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg=="],
 
     "interpret": ["interpret@2.2.0", "", {}, "sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw=="],
-
-    "invariant": ["invariant@2.2.4", "", { "dependencies": { "loose-envify": "^1.0.0" } }, "sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA=="],
 
     "ip-address": ["ip-address@10.1.0", "", {}, "sha512-XXADHxXmvT9+CRxhXg56LJovE+bmWnEWB78LB83VZTprKTmaC5QfruXocxzTZ2Kl0DNwKuBdlIhjL8LeY8Sf8Q=="],
 
@@ -2502,21 +2502,19 @@
 
     "@ledgerhq/client-ids/@reduxjs/toolkit": ["@reduxjs/toolkit@2.11.2", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "@standard-schema/utils": "^0.3.0", "immer": "^11.0.0", "redux": "^5.0.1", "redux-thunk": "^3.1.0", "reselect": "^5.1.0" }, "peerDependencies": { "react": "^16.9.0 || ^17.0.0 || ^18 || ^19", "react-redux": "^7.2.1 || ^8.1.3 || ^9.0.0" }, "optionalPeers": ["react", "react-redux"] }, "sha512-Kd6kAHTA6/nUpp8mySPqj3en3dm0tdMIgbttnQ1xFMVpufoj+ADi8pXLBsd4xzTRHQa7t/Jv8W5UnCuW4kuWMQ=="],
 
-    "@ledgerhq/devices/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
-
     "@ledgerhq/devices/semver": ["semver@7.7.3", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q=="],
-
-    "@ledgerhq/domain-service/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
 
     "@ledgerhq/domain-service/axios": ["axios@1.13.2", "", { "dependencies": { "follow-redirects": "^1.15.6", "form-data": "^4.0.4", "proxy-from-env": "^1.1.0" } }, "sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA=="],
 
-    "@ledgerhq/hw-app-eth/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
+    "@ledgerhq/evm-tools/@ethersproject/constants": ["@ethersproject/constants@5.8.0", "", { "dependencies": { "@ethersproject/bignumber": "^5.8.0" } }, "sha512-wigX4lrf5Vu+axVTIvNsuL6YrV4O5AXl5ubcURKMEME5TnWBouUh0CDTWxZ2GpnRn1kcCgE7l8O5+VbV9QTTcg=="],
 
-    "@ledgerhq/hw-transport/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
+    "@ledgerhq/evm-tools/@ledgerhq/live-env": ["@ledgerhq/live-env@4.1.0", "", {}, "sha512-PhmQNymmw5M7jM/Uj4B1ghrVxA+x4tE20GYUJFEoCIBHHVS8Z5cKCulJqcJ5Nj/yI8BOxbRRuZW88OpbyBQ0Bw=="],
+
+    "@ledgerhq/evm-tools/axios": ["axios@1.20.0", "", { "dependencies": { "follow-redirects": "^1.16.0", "form-data": "^4.0.6", "https-proxy-agent": "^5.0.1", "proxy-from-env": "^2.1.0" } }, "sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg=="],
+
+    "@ledgerhq/hw-app-eth/semver": ["semver@7.7.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA=="],
 
     "@ledgerhq/hw-transport-mocker/@ledgerhq/hw-transport": ["@ledgerhq/hw-transport@6.32.0", "", { "dependencies": { "@ledgerhq/devices": "8.10.0", "@ledgerhq/errors": "^6.29.0", "@ledgerhq/logs": "^6.14.0", "events": "^3.3.0" } }, "sha512-bf2nxzDQ21DV/bsmExfWI0tatoVeoqhu/ePWalD/nPgPnTn/ZIDq7VBU+TY5p0JZaE87NQwmRUAjm6C1Exe61A=="],
-
-    "@ledgerhq/hw-transport-webusb/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
 
     "@npmcli/fs/semver": ["semver@7.7.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA=="],
 
@@ -3214,7 +3212,13 @@
 
     "@ledgerhq/client-ids/@reduxjs/toolkit/reselect": ["reselect@5.1.1", "", {}, "sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w=="],
 
-    "@ledgerhq/hw-transport-mocker/@ledgerhq/hw-transport/@ledgerhq/errors": ["@ledgerhq/errors@6.29.0", "", {}, "sha512-mmDsGN662zd0XGKyjzSKkg+5o1/l9pvV1HkVHtbzaydvHAtRypghmVoWMY9XAQDLXiUBXGIsLal84NgmGeuKWA=="],
+    "@ledgerhq/evm-tools/@ethersproject/constants/@ethersproject/bignumber": ["@ethersproject/bignumber@5.8.0", "", { "dependencies": { "@ethersproject/bytes": "^5.8.0", "@ethersproject/logger": "^5.8.0", "bn.js": "^5.2.1" } }, "sha512-ZyaT24bHaSeJon2tGPKIiHszWjD/54Sz8t57Toch475lCLljC6MgPmxk7Gtzz+ddNN5LuHea9qhAe0x3D+uYPA=="],
+
+    "@ledgerhq/evm-tools/axios/follow-redirects": ["follow-redirects@1.16.1", "", { "peerDependencies": { "debug": "*" }, "optionalPeers": ["debug"] }, "sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg=="],
+
+    "@ledgerhq/evm-tools/axios/form-data": ["form-data@4.0.6", "", { "dependencies": { "asynckit": "^0.4.0", "combined-stream": "^1.0.8", "es-set-tostringtag": "^2.1.0", "hasown": "^2.0.4", "mime-types": "^2.1.35" } }, "sha512-vKatAh4SlVfgbv+YtmhiRjhEMJsYpsG1Y2rMQtR+SVSbytsSD1YGzDIcrAJmdFec88u/+VoGmxnl+80gL1tRCQ=="],
+
+    "@ledgerhq/evm-tools/axios/proxy-from-env": ["proxy-from-env@2.1.0", "", {}, "sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA=="],
 
     "@redux-devtools/app/jsondiffpatch/chalk": ["chalk@3.0.0", "", { "dependencies": { "ansi-styles": "^4.1.0", "supports-color": "^7.1.0" } }, "sha512-4D3B6Wf41KOYRFdszmDqMCGq5VV/uMAB273JILmO+3jAlh8X4qDtdtgCR3fxtbLEMzSx22QdhnDcJvu2u1fVwg=="],
 
@@ -3451,6 +3455,12 @@
     "@ethersproject/web/@ethersproject/strings/@ethersproject/constants/@ethersproject/bignumber": ["@ethersproject/bignumber@5.8.0", "", { "dependencies": { "@ethersproject/bytes": "^5.8.0", "@ethersproject/logger": "^5.8.0", "bn.js": "^5.2.1" } }, "sha512-ZyaT24bHaSeJon2tGPKIiHszWjD/54Sz8t57Toch475lCLljC6MgPmxk7Gtzz+ddNN5LuHea9qhAe0x3D+uYPA=="],
 
     "@ethersproject/wordlists/@ethersproject/strings/@ethersproject/constants/@ethersproject/bignumber": ["@ethersproject/bignumber@5.8.0", "", { "dependencies": { "@ethersproject/bytes": "^5.8.0", "@ethersproject/logger": "^5.8.0", "bn.js": "^5.2.1" } }, "sha512-ZyaT24bHaSeJon2tGPKIiHszWjD/54Sz8t57Toch475lCLljC6MgPmxk7Gtzz+ddNN5LuHea9qhAe0x3D+uYPA=="],
+
+    "@ledgerhq/evm-tools/@ethersproject/constants/@ethersproject/bignumber/@ethersproject/bytes": ["@ethersproject/bytes@5.8.0", "", { "dependencies": { "@ethersproject/logger": "^5.8.0" } }, "sha512-vTkeohgJVCPVHu5c25XWaWQOZ4v+DkGoC42/TS2ond+PARCxTJvgTFUNDZovyQ/uAQ4EcpqqowKydcdmRKjg7A=="],
+
+    "@ledgerhq/evm-tools/@ethersproject/constants/@ethersproject/bignumber/@ethersproject/logger": ["@ethersproject/logger@5.8.0", "", {}, "sha512-Qe6knGmY+zPPWTC+wQrpitodgBfH7XoceCGL5bJVejmH+yCS3R8jJm8iiWuvWbG76RUmyEG53oqv6GMVWqunjA=="],
+
+    "@ledgerhq/evm-tools/axios/form-data/hasown": ["hasown@2.0.4", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A=="],
 
     "@redux-devtools/app/jsondiffpatch/chalk/ansi-styles": ["ansi-styles@4.3.0", "", { "dependencies": { "color-convert": "^2.0.1" } }, "sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg=="],
 
