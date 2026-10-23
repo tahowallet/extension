@@ -2,13 +2,18 @@ import * as sinon from "sinon"
 import { utils } from "ethers"
 import { ETHEREUM } from "../../../constants"
 import {
+  createAnyEVMBlock,
+  createAnyEVMTransaction,
   createChainService,
   createIndexingService,
   createNameService,
 } from "../../../tests/factories"
 import annotateSafeTxSignTypedDataRequest from "../safe-annotation"
 import type { SafeTypedDataTransaction } from "../safe"
-import { annotationsFromLogs } from "../transactions"
+import resolveTransactionAnnotation, {
+  annotationsFromLogs,
+} from "../transactions"
+import { encodeExecTransaction } from "../safe"
 
 const SAFE = "0x1111111111111111111111111111111111111111"
 const OWNER = "0x2222222222222222222222222222222222222222"
@@ -186,6 +191,92 @@ describe("Safe transaction enrichment", () => {
           { additionalRelevantAddresses: [SAFE], resolveUntrackedAssets: true },
         ),
       ).toEqual([])
+    })
+  })
+
+  describe("resolveTransactionAnnotation for a mined Safe execution", () => {
+    const TOKEN = "0x5555555555555555555555555555555555555555"
+    // Checksummed, as stored transactions carry it.
+    const CHECKSUMMED_SAFE = utils.getAddress(SAFE)
+    const tokenTransferLog = {
+      contractAddress: TOKEN,
+      topics: [TRANSFER_TOPIC, topicFor(SAFE), topicFor(RECIPIENT)],
+      data: utils.hexZeroPad(utils.hexlify(42n), 32),
+    }
+    const minedTransaction = (input: string, to: string) =>
+      ({
+        ...createAnyEVMTransaction({
+          network: ETHEREUM,
+          from: OWNER,
+          to,
+          input,
+        }),
+        gasUsed: 100_000n,
+        status: 1,
+        logs: [tokenTransferLog],
+      }) as Parameters<typeof resolveTransactionAnnotation>[4]
+
+    const stubMinedLookups = (services: Awaited<ReturnType<typeof setUp>>) => {
+      sandbox
+        .stub(services.chainService, "providerForNetworkOrThrow")
+        .returns({ getCode: async () => "0x" } as never)
+      sandbox
+        .stub(services.chainService, "getBlockData")
+        .resolves(createAnyEVMBlock())
+      return sandbox
+        .stub(services.chainService.assetData, "getTokenMetadata")
+        .resolves({
+          contractAddress: TOKEN,
+          homeNetwork: ETHEREUM,
+          symbol: "MYST",
+          name: "Mystery",
+          decimals: 0,
+        })
+    }
+
+    it("includes the Safe's transfers, untracked tokens and all", async () => {
+      const services = await setUp()
+      stubMinedLookups(services)
+
+      const annotation = await resolveTransactionAnnotation(
+        services.chainService,
+        services.indexingService,
+        services.nameService,
+        ETHEREUM,
+        minedTransaction(
+          encodeExecTransaction(safeTx(0n).params, "0x"),
+          CHECKSUMMED_SAFE,
+        ),
+        2,
+      )
+
+      expect(annotation.subannotations).toEqual([
+        expect.objectContaining({
+          type: "asset-transfer",
+          untrackedAsset: true,
+          assetAmount: expect.objectContaining({
+            asset: expect.objectContaining({ symbol: "MYST" }),
+            amount: 42n,
+          }),
+        }),
+      ])
+    })
+
+    it("leaves other mined transactions to tracked tokens and accounts", async () => {
+      const services = await setUp()
+      const getTokenMetadata = stubMinedLookups(services)
+
+      const annotation = await resolveTransactionAnnotation(
+        services.chainService,
+        services.indexingService,
+        services.nameService,
+        ETHEREUM,
+        minedTransaction("0xa9059cbb", CHECKSUMMED_SAFE),
+        2,
+      )
+
+      expect(annotation.subannotations).toBeUndefined()
+      expect(getTokenMetadata.called).toBe(false)
     })
   })
 

@@ -8,10 +8,12 @@ import {
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import {
+  type AssetTransferForAddress,
   getAssetTransfersForAddress,
   getRecipient,
   getSender,
 } from "../../services/enrichment/utils"
+import { getExecutedSafeAddress } from "../../services/enrichment/safe"
 import type { HexString } from "../../types"
 
 enum TxStatus {
@@ -40,6 +42,8 @@ export type Activity = {
 
 export type ActivityDetail = {
   assetIconUrl?: string
+  /** The symbol for the asset icon, when the label isn't just the symbol. */
+  assetSymbol?: string
   label: string
   value: string
 }
@@ -218,6 +222,26 @@ export function getActivityDetails(
     tx.annotation?.subannotations,
     tx.from,
   )
+  // When the transaction executes a Safe transaction, the Safe's own
+  // transfers are usually the point of it; the executor's balances may not
+  // change at all.
+  const safeAddress = getExecutedSafeAddress(tx)
+  const safeTransfers =
+    safeAddress === undefined
+      ? []
+      : getAssetTransfersForAddress(tx.annotation?.subannotations, safeAddress)
+
+  const transferDetail =
+    (labelPrefix: string) =>
+    (transfer: AssetTransferForAddress): ActivityDetail => ({
+      assetIconUrl: transfer.assetLogoUrl ?? "",
+      assetSymbol: transfer.assetSymbol,
+      label: `${labelPrefix}${transfer.assetSymbol}`,
+      value:
+        transfer.direction === "in"
+          ? transfer.localizedDecimalAmount
+          : `-${transfer.localizedDecimalAmount}`,
+    })
 
   return [
     { label: "Block Height", value: getBlockHeight(tx) },
@@ -228,13 +252,7 @@ export function getActivityDetails(
     { label: "Nonce", value: tx.nonce.toString() },
     { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
   ].concat(
-    assetTransfers.map((transfer) => ({
-      assetIconUrl: transfer.assetLogoUrl ?? "",
-      label: transfer.assetSymbol,
-      value:
-        transfer.direction === "in"
-          ? transfer.localizedDecimalAmount
-          : `-${transfer.localizedDecimalAmount}`,
-    })),
+    assetTransfers.map(transferDetail("")),
+    safeTransfers.map(transferDetail("Safe · ")),
   )
 }

@@ -15,13 +15,17 @@ import useActivityViewDetails from "../../hooks/activity-hooks"
 import { getBlockExplorerURL } from "../../utils/networks"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
-  const { assetIconUrl, label, value } = props
+  const { assetIconUrl, assetSymbol, label, value } = props
 
   return (
     <li>
       <div className="label">
         {assetIconUrl !== undefined && (
-          <SharedAssetIcon symbol={label} logoURL={assetIconUrl} size={24} />
+          <SharedAssetIcon
+            symbol={assetSymbol ?? label}
+            logoURL={assetIconUrl}
+            size={24}
+          />
         )}
         {label}
       </div>
@@ -182,10 +186,13 @@ export default function WalletActivityDetails(
               style={{ margin: "10px 0 15px" }}
             />
           ))}
-        {details.map(({ assetIconUrl, label, value }) => (
+        {details.map(({ assetIconUrl, assetSymbol, label, value }, index) => (
           <DetailRowItem
-            key={label}
+            // Labels repeat when the same token moves more than once.
+            // eslint-disable-next-line react/no-array-index-key
+            key={`${label}-${index}`}
             assetIconUrl={assetIconUrl}
+            assetSymbol={assetSymbol}
             label={label}
             value={value}
           />
