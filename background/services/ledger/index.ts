@@ -1,5 +1,4 @@
 import Transport from "@ledgerhq/hw-transport"
-import TransportWebUSB from "@ledgerhq/hw-transport-webusb"
 import Eth from "@ledgerhq/hw-app-eth"
 import { DeviceModelId, identifyUSBProductId } from "@ledgerhq/devices"
 import {
@@ -23,6 +22,7 @@ import BaseService from "../base"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import logger from "../../lib/logger"
 import { getOrCreateDB, LedgerAccount, LedgerDatabase } from "./db"
+import openConnectedLedgerTransport from "./transport"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -271,7 +271,7 @@ export default class LedgerService extends BaseService<Events> {
 
         // Only a Ledger the browser has already paired can be opened from
         // the background; pairing a new one needs a user gesture in a page.
-        const transport = await TransportWebUSB.openConnected()
+        const transport = await openConnectedLedgerTransport()
         if (transport === null) {
           return
         }
