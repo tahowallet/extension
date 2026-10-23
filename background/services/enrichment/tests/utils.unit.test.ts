@@ -82,6 +82,7 @@ describe("getAssetTransfersForAddress", () => {
     expect(getAssetTransfersForAddress([named], USER)[0].counterparty).toEqual({
       address: OTHER,
       name: "pool.eth",
+      nameResolverSystem: "ENS",
     })
   })
 

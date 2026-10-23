@@ -12,6 +12,7 @@ import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type { AddressOnNetwork } from "../../accounts"
+import type { NameResolverSystem } from "../name"
 import { isDefined } from "../../lib/utils/type-guards"
 
 export function isEIP2612TypedData(
@@ -173,8 +174,15 @@ export type AssetTransferForAddress = {
   assetSymbol: string
   assetLogoUrl?: string
   localizedDecimalAmount: string
-  /** The other side of the transfer: its recipient, or its sender if "in". */
-  counterparty: { address: HexString; name?: string }
+  /**
+   * The other side of the transfer: its recipient, or its sender if "in",
+   * with the name it resolved to and where that name came from, if any.
+   */
+  counterparty: {
+    address: HexString
+    name?: string
+    nameResolverSystem?: NameResolverSystem
+  }
   /** See `AssetTransfer.untrackedAsset`. */
   untrackedAsset?: boolean
 }
@@ -198,13 +206,15 @@ export function getAssetTransfersForAddress(
         const counterparty = isOutgoing
           ? subannotation.recipient
           : subannotation.sender
-        const name =
-          counterparty.annotation.nameRecord?.resolved.nameOnNetwork.name
+        const { nameRecord } = counterparty.annotation
         return {
           direction: isOutgoing ? "out" : "in",
           counterparty: {
             address: counterparty.address,
-            ...(name !== undefined && { name }),
+            ...(nameRecord !== undefined && {
+              name: nameRecord.resolved.nameOnNetwork.name,
+              nameResolverSystem: nameRecord.system,
+            }),
           },
           ...(subannotation.untrackedAsset && { untrackedAsset: true }),
           assetSymbol: subannotation.assetAmount.asset.symbol,

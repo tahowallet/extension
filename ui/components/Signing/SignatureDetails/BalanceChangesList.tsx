@@ -7,7 +7,7 @@ import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 type BalanceChangesListProps = {
   label: string
   transfers: AssetTransferForAddress[]
-  /** Shown under the label when nothing moved; without it, nothing renders. */
+  /** Shown beside the label when nothing moved; without it, nothing renders. */
   emptyMessage?: string
 }
 
@@ -25,9 +25,13 @@ export default function BalanceChangesList({
   return (
     <>
       <div className="simulated_changes">
-        <div className="simulated_changes_label">{label}</div>
-        {transfers.length === 0 && (
-          <div className="simulated_changes_empty">{emptyMessage}</div>
+        {transfers.length === 0 ? (
+          <div className="simulated_changes_row">
+            <div className="simulated_changes_label">{label}</div>
+            <div className="simulated_changes_empty">{emptyMessage}</div>
+          </div>
+        ) : (
+          <div className="simulated_changes_label">{label}</div>
         )}
         {transfers.map((transfer, index) => (
           <div
@@ -35,29 +39,29 @@ export default function BalanceChangesList({
             // than once in a single transaction.
             // eslint-disable-next-line react/no-array-index-key
             key={`${transfer.assetSymbol}-${index}`}
-            className="simulated_changes_entry"
+            className="simulated_changes_row"
           >
-            <div className="simulated_changes_row">
-              <div className="simulated_changes_asset">
-                <SharedAssetIcon
-                  size="small"
-                  logoURL={transfer.assetLogoUrl ?? ""}
-                  symbol={transfer.assetSymbol}
-                />
-                {transfer.assetSymbol}
-                {transfer.untrackedAsset && (
-                  <span
-                    className="simulated_changes_untracked"
-                    title={t("untrackedTokenExplanation")}
-                  >
-                    {t("untrackedToken")}
-                  </span>
-                )}
-              </div>
-              <div className={`simulated_changes_amount ${transfer.direction}`}>
+            <div className="simulated_changes_asset">
+              <SharedAssetIcon
+                size={24}
+                logoURL={transfer.assetLogoUrl ?? ""}
+                symbol={transfer.assetSymbol}
+              />
+              <span
+                className={`simulated_changes_amount ${transfer.direction}`}
+              >
                 {transfer.direction === "in" ? "+" : "-"}
                 {transfer.localizedDecimalAmount}
-              </div>
+              </span>
+              {transfer.assetSymbol}
+              {transfer.untrackedAsset && (
+                <span
+                  className="simulated_changes_untracked"
+                  title={t("untrackedTokenExplanation")}
+                >
+                  {t("untrackedToken")}
+                </span>
+              )}
             </div>
             <div className="simulated_changes_counterparty">
               {transfer.direction === "in"
@@ -66,6 +70,7 @@ export default function BalanceChangesList({
               <SharedAddress
                 address={transfer.counterparty.address}
                 name={transfer.counterparty.name}
+                nameResolverSystem={transfer.counterparty.nameResolverSystem}
               />
             </div>
           </div>
@@ -88,40 +93,37 @@ export default function BalanceChangesList({
           color: var(--green-40);
           font-weight: 400;
         }
-        .simulated_changes_untracked {
-          color: var(--attention);
-          font-size: 12px;
-        }
-        .simulated_changes_entry {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .simulated_changes_counterparty {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding-left: 32px;
-          color: var(--green-40);
-          font-size: 12px;
-        }
         .simulated_changes_row {
           width: 100%;
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 8px;
         }
         .simulated_changes_asset {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 5px;
           color: var(--green-20);
+          min-width: 0;
+        }
+        .simulated_changes_untracked {
+          color: var(--attention);
+          font-size: 12px;
         }
         .simulated_changes_amount.in {
           color: var(--success);
         }
         .simulated_changes_amount.out {
           color: var(--error);
+        }
+        .simulated_changes_counterparty {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
+          color: var(--green-40);
+          font-size: 12px;
         }
       `}</style>
     </>

@@ -122,6 +122,53 @@ describe("SimulatedBalanceChanges", () => {
     expect(ui.getAllByText("No balance changes")).toHaveLength(2)
   })
 
+  it("puts the amount beside the token and the counterparty on the same row", () => {
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={annotationWith([transfer(USER, POOL, "USDC", "100")])}
+      />,
+    )
+
+    const row = ui.getByText("-100").closest(".simulated_changes_row")
+    expect(row).toHaveTextContent(/-100\s*USDC.*To/)
+    // The icon is scaled to the text rather than the 32px "small" size.
+    expect(row?.querySelector(".token_icon_wrap.custom_size")).not.toBeNull()
+  })
+
+  it("shows the empty state beside its label", () => {
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={annotationWith([])}
+      />,
+    )
+
+    expect(
+      ui.getByText("No balance changes").closest(".simulated_changes_row"),
+    ).toHaveTextContent("Your account")
+  })
+
+  it("shows a counterparty's resolved name in place of its address", () => {
+    const named = transfer(USER, POOL, "USDC", "100")
+    named.recipient.annotation.nameRecord = {
+      from: { addressOnNetwork: { address: POOL, network: ETHEREUM } },
+      resolved: {
+        nameOnNetwork: { name: "pool.eth", network: ETHEREUM },
+        expiresAt: Number.MAX_SAFE_INTEGER,
+      },
+      system: "ENS",
+    }
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={annotationWith([named])}
+      />,
+    )
+
+    expect(ui.getByText("pool.eth")).toBeInTheDocument()
+  })
+
   it("marks tokens the wallet doesn't track", () => {
     const untracked = {
       ...transfer(USER, POOL, "USDC", "100"),
