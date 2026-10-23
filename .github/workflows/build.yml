@@ -226,28 +226,23 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           cache: false
+      # FORKING_BLOCK and MAINNET_FORK_CHAIN_ID, shared with start-anvil.sh.
+      - name: Load fork settings
+        run: grep -v '^#' ci/fork.env | grep . >> "$GITHUB_ENV"
       - name: Restore Anvil cache
         uses: actions/cache/restore@v3
         with:
           path: /home/runner/.foundry/cache
-          key: anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
+          key: anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-${{ github.sha }}
           restore-keys: |
-            anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
-            anvil-21802314-${{ github.ref_name }}-
-            anvil-21802314-
+            anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-${{ github.sha }}
+            anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-
+            anvil-${{ env.FORKING_BLOCK }}-
       - name: Run Anvil
         env:
           CHAIN_API_URL: https://eth-mainnet.g.alchemy.com/v2/${{ secrets.DEV_ALCHEMY_API_KEY }}
-          MAINNET_FORK_CHAIN_ID: 1337
-          # We're using a fixed block number as a start of the fork to get
-          # consistent behavior in tests. The `21802314` block is a block at
-          # which the state of the chain allows the tests to pass
-          FORKING_BLOCK: 21802314
         run: |
-          anvil -q -s 10 --chain-id $MAINNET_FORK_CHAIN_ID --port 8545 \
-          --fork-block-number $FORKING_BLOCK --fork-url $CHAIN_API_URL \
-          --fork-chain-id 1 --fork-retry-backoff 100 --timeout 40000 \
-          --gas-limit 65000000 &
+          ./ci/start-anvil.sh &
           sleep 5
       - name: Run Playwright tests designed for fork
         env:
@@ -275,4 +270,4 @@ jobs:
         if: always()
         with:
           path: /home/runner/.foundry/cache
-          key: anvil-21802314-${{ github.ref_name }}-${{ github.sha }}
+          key: anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-${{ github.sha }}
