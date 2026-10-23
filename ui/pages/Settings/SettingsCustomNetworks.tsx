@@ -5,7 +5,7 @@ import { removeCustomChain } from "@tallyho/tally-background/redux-slices/networ
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import React, { ReactElement, useEffect, useMemo, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
-import { useHistory } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedIcon from "../../components/Shared/SharedIcon"
 import SharedLink from "../../components/Shared/SharedLink"
@@ -30,7 +30,6 @@ export default function SettingsCustomNetworks(): ReactElement {
   const { t: sharedT } = useTranslation("translation")
 
   const dispatch = useBackgroundDispatch()
-  const history = useHistory()
 
   const allNetworks = useBackgroundSelector(selectEVMNetworks)
 
@@ -56,29 +55,23 @@ export default function SettingsCustomNetworks(): ReactElement {
   )
   const [networkToEdit, setNetworkToEdit] = useState<EVMNetwork | null>(null)
 
-  // The edit form is a slide-up owned by this page rather than a route of its
-  // own, so somewhere else asking to open it — the unreachable-network warning,
-  // for one — has to say so through router state and let us do the opening.
-  // Same shape as the wallet page's `goTo`.
-  const editChainID = (
-    history.location.state as { editChainID?: string } | null
-  )?.editChainID
+  // Set by links that open a network's edit form, like the unreachable-network
+  // warning. Not cleared with history.replace, which would remount this page.
+  const location = useLocation<{ editChainID?: string } | undefined>()
+  const [pendingEditChainID, setPendingEditChainID] = useState(
+    location.state?.editChainID,
+  )
 
   useEffect(() => {
-    if (editChainID === undefined) {
-      return
-    }
-
-    const network = allNetworks.find(({ chainID }) => chainID === editChainID)
+    const network = allNetworks.find(
+      ({ chainID }) => chainID === pendingEditChainID,
+    )
 
     if (network !== undefined) {
       setNetworkToEdit(network)
+      setPendingEditChainID(undefined)
     }
-
-    // Consume it, so that closing the form and coming back to this page does
-    // not reopen it, and neither does any later render.
-    history.replace(history.location.pathname)
-  }, [editChainID, allNetworks, history])
+  }, [pendingEditChainID, allNetworks])
 
   const handleModalConfirm = () => {
     if (networkToDelete) {

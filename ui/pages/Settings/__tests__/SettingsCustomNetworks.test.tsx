@@ -1,7 +1,11 @@
 import React from "react"
+import { act } from "@testing-library/react"
 import { MemoryRouter, Route } from "react-router-dom"
 import { ETHEREUM, OPTIMISM } from "@tallyho/tally-background/constants"
-import { initialState as networksInitialState } from "@tallyho/tally-background/redux-slices/networks"
+import {
+  initialState as networksInitialState,
+  setEVMNetworks,
+} from "@tallyho/tally-background/redux-slices/networks"
 import SettingsCustomNetworks from "../SettingsCustomNetworks"
 import { renderWithProviders } from "../../../tests/test-utils"
 
@@ -49,6 +53,18 @@ describe("SettingsCustomNetworks", () => {
     // A bare push would land on the list and leave the user to find the row
     // themselves, which defeats the point of linking from a warning.
     const ui = renderCustomNetworks({ editChainID: OPTIMISM.chainID })
+
+    expect(ui.getByText("network edit form")).toBeVisible()
+  })
+
+  it("waits for the network it was sent here for to load", () => {
+    const ui = renderCustomNetworks({ editChainID: "31337" })
+
+    act(() => {
+      ui.store.dispatch(
+        setEVMNetworks([ETHEREUM, OPTIMISM, { ...OPTIMISM, chainID: "31337" }]),
+      )
+    })
 
     expect(ui.getByText("network edit form")).toBeVisible()
   })
