@@ -19,6 +19,7 @@ jobs:
     # to main or tags are skipped. Manual dispatches always run.
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:

@@ -22,6 +22,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       # Creating releases on tags.
       contents: write
@@ -138,6 +139,7 @@ jobs:
           path: dist/*.zip
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -147,6 +149,7 @@ jobs:
       - run: bun run test
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -160,6 +163,7 @@ jobs:
       - run: bun run lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
       # paths-filter lists a pull request's changed files through the API.
