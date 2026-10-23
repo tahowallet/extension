@@ -311,6 +311,7 @@ export default class SigningService extends BaseService<Events> {
           signedData = await this.ledgerService.signMessage(
             addressOnNetwork,
             hexDataToSign,
+            accountSigner,
           )
           break
         case "private-key":

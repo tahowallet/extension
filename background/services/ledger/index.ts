@@ -896,12 +896,11 @@ export default class LedgerService extends BaseService<Events> {
   async signMessage(
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString,
+    { deviceID, path: derivationPath }: LedgerAccountSigner,
   ): Promise<string> {
     // Currently the service assumes the Eth app, which requires a network that
     // uses the same derivation path as Ethereum, or one that starts with the
     // same components.
-    // FIXME This should take a `LedgerAccountSigner` and use `checkCanSign`
-    // FIXME like other signing methods.
     if (
       network.derivationPath !== ETHEREUM.derivationPath &&
       !network.derivationPath?.startsWith(ETHEREUM.derivationPath ?? "")
@@ -920,18 +919,14 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(address)
 
-      if (!accountData) {
-        throw new Error(
-          `Address "${address}" doesn't have corresponding derivation path!`,
-        )
-      }
+      this.checkCanSign(accountData, derivationPath, deviceID)
 
       await requireEthereumApp(this.transport)
 
       const eth = new Eth(this.transport)
 
       const signature = await eth.signPersonalMessage(
-        accountData.path,
+        derivationPath,
         // Ledger requires unprefixed hex, so make sure that's what we pass.
         hexDataToSign.replace(/^0x/, ""),
       )
