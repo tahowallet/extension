@@ -24,8 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      # Creating releases on tags.
-      contents: write
+      contents: read
       # Reading the PR description for its testing env block.
       pull-requests: read
     steps:
@@ -71,16 +70,8 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
           POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
-      - name: Create Release and Upload Artifacts
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: dist/*.zip
-          draft: true
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
+      # Uploaded for tags too, for the release job to publish.
       - name: Upload build asset
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: actions/upload-artifact@v7
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
@@ -122,6 +113,27 @@ jobs:
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
+  # Creating a release needs a write token, so it runs in its own job, only
+  # for tags, rather than giving every build that permission.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+          path: dist
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
