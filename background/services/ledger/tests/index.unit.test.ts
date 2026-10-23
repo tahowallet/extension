@@ -302,7 +302,7 @@ describe("LedgerService readiness polling", () => {
     expect(emittedNames()).toEqual([])
   })
 
-  it("reports a connected Ledger that's no longer ready as disconnected, then reconnects", async () => {
+  async function connectThenLeaveEthereumApp() {
     ledger.state.locked = false
     ledger.state.app = "Ethereum"
     await ledgerService.onConnection(NANO_X_PRODUCT_ID)
@@ -310,12 +310,47 @@ describe("LedgerService readiness polling", () => {
     emitted.length = 0
 
     ledger.state.app = "BOLOS"
-    await ledgerService.refreshConnectedLedger()
-    expect(emittedNames()).toEqual(["disconnected"])
+    const ledgerId = await ledgerService.refreshConnectedLedger()
+    expect(ledgerId).not.toBeNull()
+    await clock.tickAsync(READINESS_POLL_FAST_INTERVAL_MS)
+    expect(appNamePolls(ledger.commands)).toBe(3)
+    expect(emittedNames()).toEqual([])
+    return ledgerId
+  }
+
+  it("keeps a connected Ledger connected while polling it, then reconnects", async () => {
+    await connectThenLeaveEthereumApp()
 
     ledger.state.app = "Ethereum"
     await clock.tickAsync(READINESS_POLL_FAST_INTERVAL_MS)
-    expect(emittedNames()).toEqual(["disconnected", "connected"])
+    expect(emittedNames()).toEqual(["connected"])
+  })
+
+  it("disconnects a connected Ledger that doesn't become ready in time", async () => {
+    const ledgerId = await connectThenLeaveEthereumApp()
+
+    await clock.tickAsync(READINESS_POLL_DURATION_MS)
+    expect(ledger.usbCalls.slice(-2)).toEqual(["releaseInterface", "close"])
+    expect(emitted).toEqual([
+      { name: "disconnected", data: expect.objectContaining({ id: ledgerId }) },
+    ])
+  })
+
+  it("disconnects a connected Ledger unplugged while polling it", async () => {
+    const ledgerId = await connectThenLeaveEthereumApp()
+
+    navigator.usb.dispatchEvent(
+      Object.assign(new Event("disconnect"), { device: ledger.device }),
+    )
+    await clock.tickAsync(0)
+
+    expect(ledger.usbCalls.slice(-2)).toEqual(["releaseInterface", "close"])
+    expect(emitted).toEqual([
+      { name: "disconnected", data: expect.objectContaining({ id: ledgerId }) },
+    ])
+    const polls = appNamePolls(ledger.commands)
+    await clock.tickAsync(READINESS_POLL_DURATION_MS)
+    expect(appNamePolls(ledger.commands)).toBe(polls)
   })
 
   it("serializes polls with signing", async () => {

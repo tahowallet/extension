@@ -215,6 +215,11 @@ function classifyLedgerError(error: unknown): "not-ready" | "gone" | "failed" {
   }
 }
 
+type ReadinessPoll = {
+  startedAt: number
+  timer: ReturnType<typeof setTimeout> | undefined
+}
+
 async function generateLedgerId(
   transport: Transport,
   eth: Eth,
@@ -292,11 +297,7 @@ export default class LedgerService extends BaseService<Events> {
    * private to the service: until the Ledger is ready, it looks just as it
    * did before polling existed, disconnected.
    */
-  #readinessPoll: {
-    /** When polling was last started or extended by a plug-in or refresh. */
-    triggeredAt: number
-    timer: ReturnType<typeof setTimeout> | undefined
-  } | null = null
+  #readinessPoll: ReadinessPoll | null = null
 
   #lastOperationPromise = Promise.resolve()
 
@@ -354,21 +355,21 @@ export default class LedgerService extends BaseService<Events> {
         return
       }
 
-      await this.#connectWhenReady(true)
+      if ((await this.#connectIfReady()) === "not-ready") {
+        this.#startPolling()
+      }
     })
   }
 
   /**
-   * Connects to the Ledger on the open transport if it's unlocked and on the
-   * Ethereum app, and otherwise keeps the transport open and polls until it
-   * is. `trigger` is true for a plug-in or refresh, which starts polling or
-   * extends its deadline, and false for a poll. Must run serialized.
+   * Connects to the Ledger if it's unlocked and on the Ethereum app, and
+   * disconnects it on any other error.
    */
-  async #connectWhenReady(trigger: boolean): Promise<void> {
+  async #connectIfReady(): Promise<"connected" | "not-ready" | "failed"> {
     const { transport } = this
     if (transport === undefined) {
       this.#stopReadinessPolling()
-      return
+      return "failed"
     }
 
     try {
@@ -378,18 +379,24 @@ export default class LedgerService extends BaseService<Events> {
           logger.info("Ledger is now unlocked with the Ethereum app open.")
         }
         this.#stopReadinessPolling()
-        return
+        return "connected"
       }
     } catch (error) {
       if (classifyLedgerError(error) !== "not-ready") {
         this.#stopReadinessPolling()
         await this.#handleConnectionError(error)
-        return
+        return "failed"
       }
       logger.debug("Ledger isn't ready:", error)
     }
 
-    await this.#waitForReadiness(trigger)
+    if (this.transport === undefined) {
+      // The Ledger was unplugged while it was being checked.
+      this.#stopReadinessPolling()
+      return "failed"
+    }
+
+    return "not-ready"
   }
 
   /**
@@ -456,72 +463,74 @@ export default class LedgerService extends BaseService<Events> {
     await this.#handleUSBDisconnect()
   }
 
-  /**
-   * Keeps polling a Ledger that isn't ready yet, starting polling if
-   * `trigger` is set and it isn't running, and resetting the deadline on
-   * every trigger. A Ledger that was connected until now is reported as
-   * disconnected, as a failed connection attempt always did. Once the
-   * deadline passes, polling stops and the transport is closed quietly. Must
-   * run serialized.
-   */
-  async #waitForReadiness(trigger: boolean): Promise<void> {
-    const currentLedger = this.#currentLedger
-    if (currentLedger !== null) {
-      this.#currentLedger = null
-      void this.emitter.emit("disconnected", {
-        id: currentLedger.id,
-        type: currentLedger.type,
-      })
-    }
-
-    if (this.transport === undefined) {
-      // The Ledger was unplugged while it was being checked.
-      this.#stopReadinessPolling()
-      return
-    }
-
-    let poll = this.#readinessPoll
-    if (poll === null) {
-      if (!trigger) {
-        // Polling was stopped while this poll was in flight.
-        return
-      }
+  /** Starts polling, or restarts the clock if it's already running. */
+  #startPolling(): void {
+    if (this.#readinessPoll === null) {
       logger.info(
         "Ledger is locked or not on the Ethereum app; waiting for it to be ready.",
       )
-      poll = { triggeredAt: Date.now(), timer: undefined }
-      this.#readinessPoll = poll
-    } else if (trigger) {
-      poll.triggeredAt = Date.now()
+      this.#readinessPoll = { startedAt: Date.now(), timer: undefined }
+    } else {
+      this.#readinessPoll.startedAt = Date.now()
     }
 
-    const elapsed = Date.now() - poll.triggeredAt
-    if (elapsed >= READINESS_POLL_DURATION_MS) {
-      logger.info(
-        "Ledger didn't become ready in time; closing its transport until it's plugged in or refreshed.",
-      )
-      this.#stopReadinessPolling()
-      await this.#closeTransport("timed-out")
-      return
-    }
+    this.#scheduleNextPoll(this.#readinessPoll)
+  }
 
+  #pollReadiness(): Promise<void> {
+    return this.runSerialized(async () => {
+      const poll = this.#readinessPoll
+      if (poll === null) {
+        return
+      }
+      poll.timer = undefined
+
+      logger.debug("Polling Ledger readiness.")
+      if (
+        (await this.#connectIfReady()) !== "not-ready" ||
+        this.#readinessPoll !== poll
+      ) {
+        return
+      }
+
+      if (Date.now() - poll.startedAt >= READINESS_POLL_DURATION_MS) {
+        logger.info(
+          "Ledger didn't become ready in time; closing its transport until it's plugged in or refreshed.",
+        )
+        this.#stopReadinessPolling()
+        await this.#closeTransport("timed-out")
+        this.#clearCurrentLedger()
+        return
+      }
+
+      this.#scheduleNextPoll(poll)
+    })
+  }
+
+  #scheduleNextPoll(poll: ReadinessPoll): void {
     clearTimeout(poll.timer)
     poll.timer = setTimeout(
       () => {
-        void this.runSerialized(async () => {
-          const currentPoll = this.#readinessPoll
-          if (currentPoll === null) {
-            return
-          }
-          currentPoll.timer = undefined
-          logger.debug("Polling Ledger readiness.")
-          await this.#connectWhenReady(false)
-        })
+        void this.#pollReadiness()
       },
-      elapsed < READINESS_POLL_FAST_PERIOD_MS
+      Date.now() - poll.startedAt < READINESS_POLL_FAST_PERIOD_MS
         ? READINESS_POLL_FAST_INTERVAL_MS
         : READINESS_POLL_SLOW_INTERVAL_MS,
     )
+  }
+
+  /** Forgets the current Ledger, if any, and reports it as disconnected. */
+  #clearCurrentLedger(): void {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
+      return
+    }
+
+    this.#currentLedger = null
+    void this.emitter.emit("disconnected", {
+      id: currentLedger.id,
+      type: currentLedger.type,
+    })
   }
 
   #stopReadinessPolling(): void {
@@ -576,10 +585,7 @@ export default class LedgerService extends BaseService<Events> {
    * no event. A disconnect only disconnects the Ledger when it's the device
    * the transport was opened on; other USB devices, including other Ledgers,
    * coming and going don't affect it. WebUSB uses a single USBDevice object
-   * per device, so the event's device can be compared directly. Either way,
-   * readiness polling stops; a Ledger that was still being polled was never
-   * reported as connected, so its transport is closed without a
-   * `disconnected` event.
+   * per device, so the event's device can be compared directly.
    */
   #handleUSBDisconnect = async (event?: USBConnectionEvent): Promise<void> => {
     this.emitter.emit(
@@ -597,23 +603,15 @@ export default class LedgerService extends BaseService<Events> {
     const wasPolling = this.#readinessPoll !== null
     this.#stopReadinessPolling()
 
-    const currentLedger = this.#currentLedger
-    if (currentLedger === null) {
-      if (wasPolling) {
-        logger.info("Ledger was unplugged before it became ready.")
-        await this.#closeTransport("disconnected")
+    if (this.#currentLedger === null) {
+      if (!wasPolling) {
+        return
       }
-      return
+      logger.info("Ledger was unplugged before it became ready.")
     }
 
     await this.#closeTransport("disconnected")
-
-    this.emitter.emit("disconnected", {
-      id: currentLedger.id,
-      type: currentLedger.type,
-    })
-
-    this.#currentLedger = null
+    this.#clearCurrentLedger()
   }
 
   protected override async internalStartService(): Promise<void> {
