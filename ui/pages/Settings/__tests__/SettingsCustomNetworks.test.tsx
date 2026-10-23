@@ -1,7 +1,11 @@
 import React from "react"
+import { act, within } from "@testing-library/react"
 import { MemoryRouter, Route } from "react-router-dom"
 import { ETHEREUM, OPTIMISM } from "@tallyho/tally-background/constants"
-import { initialState as networksInitialState } from "@tallyho/tally-background/redux-slices/networks"
+import {
+  initialState as networksInitialState,
+  setEVMNetworks,
+} from "@tallyho/tally-background/redux-slices/networks"
 import SettingsCustomNetworks from "../SettingsCustomNetworks"
 import { renderWithProviders } from "../../../tests/test-utils"
 
@@ -19,7 +23,10 @@ jest.mock("../CustomNetworkEditForm", () => ({
 
 const PATH = "/settings/custom-networks"
 
-const renderCustomNetworks = (state?: { editChainID: string }) =>
+const renderCustomNetworks = (
+  state?: { editChainID: string },
+  unreachableNetworks: { [chainID: string]: boolean } = {},
+) =>
   renderWithProviders(
     <MemoryRouter initialEntries={[{ pathname: PATH, state }]}>
       <Route path={PATH} component={SettingsCustomNetworks} />
@@ -32,6 +39,7 @@ const renderCustomNetworks = (state?: { editChainID: string }) =>
             [ETHEREUM.chainID]: ETHEREUM,
             [OPTIMISM.chainID]: OPTIMISM,
           },
+          unreachableNetworks,
         },
       },
     },
@@ -53,9 +61,39 @@ describe("SettingsCustomNetworks", () => {
     expect(ui.getByText("network edit form")).toBeVisible()
   })
 
+  it("waits for the network it was sent here for to load", () => {
+    const ui = renderCustomNetworks({ editChainID: "31337" })
+
+    act(() => {
+      ui.store.dispatch(
+        setEVMNetworks([ETHEREUM, OPTIMISM, { ...OPTIMISM, chainID: "31337" }]),
+      )
+    })
+
+    expect(ui.getByText("network edit form")).toBeVisible()
+  })
+
   it("ignores a network it does not know about", () => {
     const ui = renderCustomNetworks({ editChainID: "31337" })
 
     expect(ui.queryByText("network edit form")).not.toBeInTheDocument()
+  })
+
+  it("marks the networks it cannot reach", () => {
+    const ui = renderCustomNetworks(undefined, { [OPTIMISM.chainID]: true })
+
+    const rowOf = (name: string) =>
+      within(
+        ui
+          .getAllByRole("listitem")
+          .filter((row) => row.textContent?.includes(name))[0],
+      )
+
+    expect(
+      rowOf(OPTIMISM.name).getByLabelText("Network connection problem"),
+    ).toBeVisible()
+    expect(
+      rowOf(ETHEREUM.name).queryByLabelText("Network connection problem"),
+    ).not.toBeInTheDocument()
   })
 })
