@@ -268,7 +268,6 @@ export default function Settings(): ReactElement {
     component: () => (
       <SettingButton
         label={t("settings.needHelp")}
-        ariaLabel={t("settings.needHelp")}
         icon="new-tab"
         onClick={() => window.open(FAQ_URL, "_blank")?.focus()}
       />
@@ -281,7 +280,6 @@ export default function Settings(): ReactElement {
       <SettingButton
         link="/settings/export-logs"
         label={t("settings.bugReport")}
-        ariaLabel={t("settings.exportLogs.ariaLabel")}
         icon="continue"
       />
     ),
@@ -293,7 +291,6 @@ export default function Settings(): ReactElement {
       <SettingButton
         link="/settings/connected-websites"
         label={t("settings.connectedWebsites")}
-        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
         icon="continue"
       />
     ),
@@ -305,7 +302,6 @@ export default function Settings(): ReactElement {
       <SettingButton
         link="/settings/add-custom-asset"
         label={t("settings.addCustomAsset")}
-        ariaLabel={t("settings.connectedWebsitesSettings.ariaLabel")}
         icon="continue"
       />
     ),
@@ -317,7 +313,6 @@ export default function Settings(): ReactElement {
       <SettingButton
         link="/settings/analytics"
         label={t("settings.analytics")}
-        ariaLabel={t("settings.analyticsSetUp.ariaLabel")}
         icon="continue"
       />
     ),
@@ -377,7 +372,6 @@ export default function Settings(): ReactElement {
       <SettingButton
         link="/settings/custom-networks"
         label={t("settings.customNetworks")}
-        ariaLabel={t("settings.customNetworksSettings.ariaLabel")}
         icon="continue"
       />
     ),

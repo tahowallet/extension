@@ -5,6 +5,7 @@ import {
   TahoConfigPayload,
   TahoInternalCommunication,
   TahoAccountPayload,
+  TahoChainReachabilityPayload,
 } from "./types"
 
 export function getType(arg: unknown): string {
@@ -95,5 +96,16 @@ export function isTahoAccountPayload(arg: unknown): arg is TahoAccountPayload {
     isObject(arg) &&
     arg.method === "tally_accountChanged" &&
     isArray(arg.address)
+  )
+}
+
+export function isTahoChainReachabilityPayload(
+  arg: unknown,
+): arg is TahoChainReachabilityPayload {
+  return (
+    isObject(arg) &&
+    arg.method === "tally_chainReachabilityChanged" &&
+    typeof arg.chainId === "string" &&
+    typeof arg.reachable === "boolean"
   )
 }

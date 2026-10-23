@@ -68,8 +68,28 @@ export default function SharedIcon(props: Props): ReactElement {
     )
   }
 
+  const { ariaLabel } = props
+
   return (
-    <i id={id} className="icon" style={style}>
+    /*
+     * Either this icon carries meaning of its own or it does not, and which
+     * one is the caller's to say. Given a label it is announced as an image
+     * by that name; given none it is hidden outright, rather than left as an
+     * unnamed element for assistive technology to guess at.
+     *
+     * The distinction has to be explicit because a labelled icon is not
+     * free: an accessible name inside a button becomes part of that button's
+     * name. An icon that merely decorates text already naming the action —
+     * every row on the settings page — has to say so, or it renames the row.
+     */
+    <i
+      id={id}
+      className="icon"
+      style={style}
+      role={ariaLabel === undefined ? undefined : "img"}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel === undefined || undefined}
+    >
       <style jsx>{`
         .icon {
           display: inline-block;
