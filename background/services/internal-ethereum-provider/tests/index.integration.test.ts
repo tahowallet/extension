@@ -1,13 +1,14 @@
 import sinon from "sinon"
 import InternalEthereumProviderService from ".."
 import * as featureFlags from "../../../features"
-import { EVMNetwork } from "../../../networks"
+import { waitFor } from "@testing-library/dom"
+import { EVMNetwork, toHexChainID } from "../../../networks"
 import {
   createChainService,
   createInternalEthereumProviderService,
 } from "../../../tests/factories"
 import { validateAddEthereumChainParameter } from "../../provider-bridge/utils"
-import { ETHEREUM } from "../../../constants"
+import { ETHEREUM, POLYGON } from "../../../constants"
 import { SignTypedDataRequest } from "../../../utils/signing"
 import type { EIP712TypedData } from "../../../types"
 
@@ -62,6 +63,38 @@ describe("Internal Ethereum Provider Service", () => {
         (network: EVMNetwork) => network.name === "Fantom Opera",
       ),
     ).toBeTruthy()
+  })
+
+  it("should persist a wallet_switchEthereumChain before resolving it", async () => {
+    const origin = "https://switch.test"
+
+    jest
+      .spyOn(IEPService, "getTrackedNetworkByChainId")
+      .mockImplementation(() => Promise.resolve(POLYGON))
+    // Listeners can take a while; the switch shouldn't wait on them.
+    const switchedListener = jest.fn(() => new Promise<void>(() => {}))
+    IEPService.emitter.on("networkSwitchedForOrigin", switchedListener)
+
+    const switchResult = await IEPService.routeSafeRPCRequest(
+      "wallet_switchEthereumChain",
+      [{ chainId: toHexChainID(POLYGON.chainID) }],
+      origin,
+    )
+    expect(switchResult).toBeNull()
+
+    const chainId = await IEPService.routeSafeRPCRequest(
+      "eth_chainId",
+      [],
+      origin,
+    )
+    expect(chainId).toEqual(toHexChainID(POLYGON.chainID))
+
+    await waitFor(() =>
+      expect(switchedListener).toHaveBeenCalledWith({
+        origin,
+        network: POLYGON,
+      }),
+    )
   })
 
   it.each(["", "_v1", "_v3", "_v4"])(

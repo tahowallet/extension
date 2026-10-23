@@ -297,10 +297,6 @@ describe("ProviderBridgeService", () => {
             ),
           ),
         )
-      jest
-        // @ts-expect-error private access to reference the service
-        .spyOn(internalEthereumProvider.chainService, "markAccountActivity")
-        .mockImplementation(() => Promise.resolve())
 
       // The origin is connected on Ethereum only, as if Polygon had been
       // added after the site was connected.

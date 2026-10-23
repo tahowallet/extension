@@ -309,7 +309,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
         const supportedNetwork =
           await this.getTrackedNetworkByChainId(newChainId)
         if (supportedNetwork) {
-          this.switchToSupportedNetwork(origin, supportedNetwork)
+          // Only report success once the switch is persisted, so a dapp that
+          // asks for eth_chainId right away sees the new chain.
+          await this.switchToSupportedNetwork(origin, supportedNetwork)
           return null
         }
 
@@ -537,11 +539,6 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     origin: string,
     supportedNetwork: EVMNetwork,
   ): Promise<void> {
-    const { address } = await this.preferenceService.getSelectedAccount()
-    await this.chainService.markAccountActivity({
-      address,
-      network: supportedNetwork,
-    })
     await this.db.setCurrentChainIdForOrigin(origin, supportedNetwork)
     this.emitter.emit("networkSwitchedForOrigin", {
       origin,

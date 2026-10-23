@@ -1253,6 +1253,20 @@ export default class ReduxService extends BaseService<never> {
         )
       },
     )
+    this.internalEthereumProviderService.emitter.on(
+      "networkSwitchedForOrigin",
+      async ({ network }) => {
+        const { address } = await this.preferenceService.getSelectedAccount()
+        this.chainService
+          .markAccountActivity({ address, network })
+          .catch((error) => {
+            logger.error(
+              "Failed to mark account activity after switching networks",
+              error,
+            )
+          })
+      },
+    )
 
     uiSliceEmitter.on("newSelectedNetwork", (network) => {
       this.internalEthereumProviderService.routeSafeRPCRequest(
