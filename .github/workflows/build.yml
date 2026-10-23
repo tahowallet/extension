@@ -22,7 +22,7 @@ jobs:
       - name: Detect env block
         id: env-block
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         with:
           script: |
             const detectEnvBlock = require("./.github/workflows/builds/detect-env-block.js")
