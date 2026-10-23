@@ -19,7 +19,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: mshick/add-pr-comment@v2
         with:
           message-path: ./.github/workflows/test-list/release-test-list.md
