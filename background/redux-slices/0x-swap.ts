@@ -6,8 +6,18 @@ import {
   PricePoint,
   SwappableAsset,
 } from "../assets"
-import { getPrice, getQuote } from "../lib/0x-swap"
-import { SwapPriceResponse, SwapQuoteResponse } from "../lib/0x-swap-types"
+import {
+  getEstimatedSellAmount,
+  getMaxSellAmount,
+  getPrice,
+  getQuote,
+  getRouteFills,
+} from "../lib/0x-swap"
+import {
+  LiquidSwapPrice,
+  LiquidSwapQuote,
+  SwapQuoteResponse,
+} from "../lib/0x-swap-types"
 import { ERC20_ABI } from "../lib/erc20"
 import logger from "../lib/logger"
 import { getUSDPriceForTokens } from "../lib/priceOracle"
@@ -136,7 +146,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     { dispatch, getState },
   ): Promise<
     | {
-        quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>
+        quote: LiquidSwapPrice
         needsApproval: boolean
         priceDetails: PriceDetails
       }
@@ -148,9 +158,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       prices: PricesState
     }
 
-    const getPriceDetails = async (
-      quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>,
-    ) => {
+    const getPriceDetails = async (quote: LiquidSwapPrice) => {
       const { buyAsset, sellAsset } = quoteRequest.assets
 
       let [buyAssetPricePoint, sellAssetPricePoint] = [] as (
@@ -192,13 +200,18 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           )
         : undefined
 
-      const sellEnriched = sellAssetPricePoint
-        ? enrichAssetAmountWithMainCurrencyValues(
-            { asset: sellAsset, amount: BigInt(quote.sellAmount) },
-            sellAssetPricePoint,
-            2,
-          )
-        : undefined
+      const enrichSellAmount = (amount: string) =>
+        sellAssetPricePoint
+          ? enrichAssetAmountWithMainCurrencyValues(
+              { asset: sellAsset, amount: BigInt(amount) },
+              sellAssetPricePoint,
+              2,
+            )
+          : undefined
+
+      const sellEnriched = enrichSellAmount(getEstimatedSellAmount(quote))
+      // The swap form shows the most an exact-out swap can spend.
+      const maxSellEnriched = enrichSellAmount(getMaxSellAmount(quote))
 
       // Calculate price impact as percentage loss in USD value
       let priceImpact = 0
@@ -216,7 +229,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       return {
         priceImpact,
         buyCurrencyAmount: buyEnriched?.localizedMainCurrencyAmount,
-        sellCurrencyAmount: sellEnriched?.localizedMainCurrencyAmount,
+        sellCurrencyAmount: maxSellEnriched?.localizedMainCurrencyAmount,
       }
     }
 
@@ -251,7 +264,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
             quote.allowanceTarget,
           )
 
-        needsApproval = existingAllowance.lt(quote.sellAmount)
+        needsApproval = existingAllowance.lt(getMaxSellAmount(quote))
       }
 
       dispatch(setLatestQuoteRequest(quoteRequest))
@@ -332,7 +345,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
-    quote: Exclude<SwapQuoteResponse, { liquidityAvailable: false }> & {
+    quote: LiquidSwapQuote & {
       sellAsset: SwappableAsset
       buyAsset: SwappableAsset
       chainId: string
@@ -346,7 +359,7 @@ export const executeSwap = createBackgroundAsyncThunk(
     const sellAssetAmount = enrichAssetAmountWithDecimalValues(
       {
         asset: quote.sellAsset,
-        amount: BigInt(quote.sellAmount),
+        amount: BigInt(getEstimatedSellAmount(quote)),
       },
       2,
     )
@@ -374,7 +387,7 @@ export const executeSwap = createBackgroundAsyncThunk(
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
         estimatedPriceImpact: quote.estimatedPriceImpact ?? 0,
-        sources: quote.route.fills
+        sources: getRouteFills(quote)
           .map(({ source, proportionBps }) => ({
             name: source,
             percentage:

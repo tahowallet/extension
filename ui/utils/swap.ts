@@ -6,6 +6,7 @@ import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constant
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import logger from "@tallyho/tally-background/lib/logger"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { getMaxSellAmount } from "@tallyho/tally-background/lib/0x-swap"
 import { fetchSwapPrice } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -114,7 +115,7 @@ export const fetchQuote = async ({
       quote:
         type === "getSellAmount"
           ? fixedPointNumberToString({
-              amount: BigInt(updatedQuoteData.quote.sellAmount),
+              amount: BigInt(getMaxSellAmount(updatedQuoteData.quote)),
               decimals: sellAsset.decimals,
             })
           : fixedPointNumberToString({
