@@ -96,7 +96,7 @@ export const BOAR_RPC_METHOD_PROVIDER_ROUTING = {
     "eth_subscribe", // generic http providers do not support this, but dapps need this
     "eth_estimateGas", // just want to be safe, when setting up a transaction
     "eth_getLogs", // to avoid eth_getLogs block range limitations
-    "eth_simulateV1", // prefer alchemy for simulation where available
+    "eth_simulateV1", // prefer boar for simulation where available
   ],
   [OPTIMISM.chainID]: [
     "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
@@ -358,6 +358,10 @@ function customOrDefaultProvider(
 
   return supportedMethods.some((m: string) => method.startsWith(m))
 }
+
+// How long to wait before re-probing eth_simulateV1 after an inconclusive
+// probe error.
+const ETH_SIMULATE_V1_PROBE_RETRY_MS = 60 * SECOND
 
 /**
  * Matches JSON-RPC "method not found" (-32601) and "method not supported"
@@ -1307,11 +1311,18 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // In-flight probe promise, so concurrent callers share a single request.
   #ethSimulateV1Probe: Promise<boolean> | undefined = undefined
 
+  // After an inconclusive probe, don't re-probe before this time. Every
+  // thrown error counts against the provider's circuit breaker, and requests
+  // are re-enriched on each fee change, so retrying immediately could trip
+  // the breaker on an otherwise healthy provider.
+  #ethSimulateV1RetryAfter = 0
+
   /**
    * Probes the underlying provider stack for `eth_simulateV1` support and
    * memoizes the result. A method-not-found response (JSON-RPC -32601, or the
    * various string variants providers return) is treated as a definitive "no"
-   * and cached; transient errors are not cached so a later probe can retry.
+   * and cached; inconclusive errors are treated as "no" for a short cooldown,
+   * after which a later call probes again.
    */
   async supportsEthSimulateV1(): Promise<boolean> {
     if (this.#ethSimulateV1Supported !== undefined) {
@@ -1319,6 +1330,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
     if (this.#ethSimulateV1Probe !== undefined) {
       return this.#ethSimulateV1Probe
+    }
+    if (Date.now() < this.#ethSimulateV1RetryAfter) {
+      return false
     }
 
     this.#ethSimulateV1Probe = (async () => {
@@ -1334,7 +1348,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           this.#ethSimulateV1Supported = false
           return false
         }
-        // Transient — don't cache so a later call can retry.
+        // Inconclusive — don't cache, but hold off before probing again.
+        this.#ethSimulateV1RetryAfter =
+          Date.now() + ETH_SIMULATE_V1_PROBE_RETRY_MS
         logger.debug(
           "eth_simulateV1 probe errored without a clear unsupported signal on chain",
           this.chainID,

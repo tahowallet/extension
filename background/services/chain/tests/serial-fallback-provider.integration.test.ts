@@ -88,7 +88,7 @@ describe("Serial Fallback Provider", () => {
       })
       it("eth_simulateV1", async () => {
         await fallbackProvider.send("eth_simulateV1", [])
-        expect(alchemySendStub.called).toBe(true)
+        expect(boarSendStub.called).toBe(true)
       })
     })
 
@@ -300,13 +300,10 @@ describe("Serial Fallback Provider", () => {
   })
 
   describe("supportsEthSimulateV1", () => {
-    const simulateCalls = () =>
-      alchemySendStub
-        .getCalls()
-        .filter(({ args: [method] }) => method === "eth_simulateV1")
+    const simulateCalls = () => callsFor(boarSendStub, "eth_simulateV1")
 
     it("should report support and memoize a successful probe", async () => {
-      alchemySendStub.callsFake(async () => [])
+      boarSendStub.callsFake(async () => [])
 
       expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
       expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
@@ -314,7 +311,7 @@ describe("Serial Fallback Provider", () => {
     })
 
     it("should share one probe between concurrent callers", async () => {
-      alchemySendStub.callsFake(async () => [])
+      boarSendStub.callsFake(async () => [])
 
       const results = await Promise.all([
         fallbackProvider.supportsEthSimulateV1(),
@@ -327,7 +324,7 @@ describe("Serial Fallback Provider", () => {
 
     it("should cache a method-not-found response as unsupported", async () => {
       // Shaped like the SERVER_ERROR ethers raises for a JSON-RPC error.
-      alchemySendStub.callsFake(async () => {
+      boarSendStub.callsFake(async () => {
         throw Object.assign(
           new Error(
             'processing response error (body="{\\"jsonrpc\\":\\"2.0\\",\\"id\\":42,\\"error\\":{\\"code\\":-32601,\\"message\\":\\"the method eth_simulateV1 does not exist/is not available\\"}}", code=SERVER_ERROR)',
@@ -341,8 +338,12 @@ describe("Serial Fallback Provider", () => {
       expect(simulateCalls()).toHaveLength(1)
     })
 
-    it("should not cache an inconclusive error", async () => {
-      alchemySendStub
+    it("should re-probe an inconclusive error only after a cooldown", async () => {
+      const clock = sandbox.useFakeTimers({
+        now: Date.now(),
+        toFake: ["Date"],
+      })
+      boarSendStub
         .onFirstCall()
         .callsFake(async () => {
           throw new Error("something unexpected")
@@ -351,6 +352,11 @@ describe("Serial Fallback Provider", () => {
         .callsFake(async () => [])
 
       expect(await fallbackProvider.supportsEthSimulateV1()).toBe(false)
+      // Within the cooldown: answered without another request.
+      expect(await fallbackProvider.supportsEthSimulateV1()).toBe(false)
+      expect(simulateCalls()).toHaveLength(1)
+
+      clock.tick(61_000)
       expect(await fallbackProvider.supportsEthSimulateV1()).toBe(true)
       expect(simulateCalls()).toHaveLength(2)
     })

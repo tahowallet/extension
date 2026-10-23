@@ -1,4 +1,4 @@
-import sinon from "sinon"
+import * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import { createTransactionRequest } from "../../../tests/factories"
 import ChainService from "../../chain"
