@@ -846,6 +846,13 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "loadingQuote": "Fetching price",
+    "quoteAmounts": {
+      "receiveEstimate": "You receive ≈ {{amount}} {{symbol}}",
+      "minimumReceived": "Minimum received: {{amount}} {{symbol}}",
+      "receiveExact": "You receive exactly {{amount}} {{symbol}}",
+      "payEstimate": "You pay ≈ {{amount}} {{symbol}} (at most {{maxAmount}})",
+      "refundNote": "Any {{symbol}} the swap doesn't use is refunded."
+    },
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",

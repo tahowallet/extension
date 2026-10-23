@@ -6,7 +6,12 @@ import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constant
 import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
 import logger from "@tallyho/tally-background/lib/logger"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
-import { getMaxSellAmount } from "@tallyho/tally-background/lib/0x-swap"
+import {
+  getEstimatedSellAmount,
+  getMaxSellAmount,
+  getMinBuyAmount,
+} from "@tallyho/tally-background/lib/0x-swap"
+import { LiquidSwapPrice } from "@tallyho/tally-background/lib/0x-swap-types"
 import { fetchSwapPrice } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -27,9 +32,76 @@ import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
 const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 500
 
+const QUOTE_AMOUNT_DISPLAY_DECIMALS = 8
+
+export type QuoteAmounts =
+  | {
+      mode: "exact-in"
+      buyAmount: string
+      minBuyAmount: string
+    }
+  | {
+      mode: "exact-out"
+      buyAmount: string
+      estimatedSellAmount: string
+      maxSellAmount: string
+    }
+
+/**
+ * Formats a token amount for display. A maximum rounds up so that it stays a
+ * true bound; everything else rounds down.
+ */
+function formatQuoteAmount(
+  amount: string,
+  decimals: number,
+  roundingMode: "floor" | "ceil" = "floor",
+): string {
+  // A decimal string keeps full precision, where a Number wouldn't.
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: QUOTE_AMOUNT_DISPLAY_DECIMALS,
+    roundingMode,
+  }).format(
+    fixedPointNumberToString({
+      amount: BigInt(amount),
+      decimals,
+    }) as Intl.StringNumericLiteral,
+  )
+}
+
+export function getQuoteAmounts(
+  quote: LiquidSwapPrice,
+  sellAsset: SwappableAsset,
+  buyAsset: SwappableAsset,
+): QuoteAmounts {
+  const buyAmount = formatQuoteAmount(quote.buyAmount, buyAsset.decimals)
+
+  if (quote.mode === "exact-out") {
+    return {
+      mode: quote.mode,
+      buyAmount,
+      estimatedSellAmount: formatQuoteAmount(
+        getEstimatedSellAmount(quote),
+        sellAsset.decimals,
+      ),
+      maxSellAmount: formatQuoteAmount(
+        getMaxSellAmount(quote),
+        sellAsset.decimals,
+        "ceil",
+      ),
+    }
+  }
+
+  return {
+    mode: quote.mode,
+    buyAmount,
+    minBuyAmount: formatQuoteAmount(getMinBuyAmount(quote), buyAsset.decimals),
+  }
+}
+
 export type QuoteUpdate = {
   type: QuoteType
   quote?: string
+  amounts?: QuoteAmounts
   priceDetails?: PriceDetails
   needsApproval: boolean
   approvalTarget?: string
@@ -112,6 +184,7 @@ export const fetchQuote = async ({
       priceDetails: updatedQuoteData.priceDetails,
       needsApproval: updatedQuoteData.needsApproval,
       approvalTarget: updatedQuoteData.quote.allowanceTarget ?? undefined,
+      amounts: getQuoteAmounts(updatedQuoteData.quote, sellAsset, buyAsset),
       quote:
         type === "getSellAmount"
           ? fixedPointNumberToString({
