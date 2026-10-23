@@ -34,6 +34,7 @@ import {
   validateAddEthereumChainParameter,
   ValidatedAddEthereumChainParameter,
   parseRPCRequestParams,
+  toStoredPermission,
 } from "./utils"
 import { EVMNetwork, toHexChainID } from "../../networks"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
@@ -664,7 +665,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     // FIXME proper error handling if this happens - should not tho
     if (permission.state !== "allow" || !permission.accountAddress) return
 
-    await this.db.setPermission(permission)
+    await this.db.setPermission(toStoredPermission(permission))
 
     this.#pendingPermissionsRequests[permission.origin]?.(permission)
   }

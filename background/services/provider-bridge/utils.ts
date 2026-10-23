@@ -20,6 +20,17 @@ export type PermissionMap = {
   }
 }
 
+/**
+ * Returns `permission` without the details that only describe the request
+ * for it, ready to be stored.
+ */
+export function toStoredPermission({
+  forAdditionalNetwork: _,
+  ...permission
+}: PermissionRequest): PermissionRequest {
+  return permission
+}
+
 export const keyPermissionsByChainIdAddressOrigin = (
   permissions: PermissionRequest[],
   permissionMap?: PermissionMap,

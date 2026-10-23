@@ -5,7 +5,10 @@ import {
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
-import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
+import {
+  keyPermissionsByChainIdAddressOrigin,
+  toStoredPermission,
+} from "../services/provider-bridge/utils"
 import {
   ARBITRUM_NOVA,
   AVALANCHE,
@@ -177,21 +180,25 @@ const dappSlice = createSlice({
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
-          // Support all networks regardless of which one initiated grant request
-          const permissions = [
-            ETHEREUM,
-            ROOTSTOCK,
-            POLYGON,
-            OPTIMISM,
-            AVALANCHE,
-            BINANCE_SMART_CHAIN,
-            SEPOLIA,
-            ARBITRUM_SEPOLIA,
-            ARBITRUM_NOVA,
-          ].map((network) => ({
-            ...permission,
-            chainID: network.chainID,
-          }))
+          // A request for an additional network covers that network alone.
+          // Otherwise, support all networks regardless of which one initiated
+          // the grant request.
+          const permissions = permission.forAdditionalNetwork
+            ? [toStoredPermission(permission)]
+            : [
+                ETHEREUM,
+                ROOTSTOCK,
+                POLYGON,
+                OPTIMISM,
+                AVALANCHE,
+                BINANCE_SMART_CHAIN,
+                SEPOLIA,
+                ARBITRUM_SEPOLIA,
+                ARBITRUM_NOVA,
+              ].map((network) => ({
+                ...toStoredPermission(permission),
+                chainID: network.chainID,
+              }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
             permissions,

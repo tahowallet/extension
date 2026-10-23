@@ -384,6 +384,28 @@ describe("ProviderBridgeService", () => {
     })
   })
 
+  describe("grantPermission", () => {
+    it("should store a request for an additional network as a plain permission", async () => {
+      const { enablingPermission, origin } = BASE_DATA
+
+      await providerBridgeService.grantPermission({
+        ...enablingPermission,
+        forAdditionalNetwork: true,
+      })
+
+      expect(
+        // @ts-expect-error private access to inspect stored rows directly
+        await providerBridgeService.db.checkPermission(
+          origin,
+          ADDRESS,
+          enablingPermission.chainID,
+        ),
+      ).toEqual(enablingPermission)
+
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+    })
+  })
+
   describe("denyOrRevokePermission", () => {
     const origin = "https://revoke.test"
     const ACCOUNT_A = "0x1111111111111111111111111111111111111111"

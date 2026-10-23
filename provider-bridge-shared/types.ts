@@ -6,6 +6,14 @@ export type PermissionRequest = {
   title: string
   state: "request" | "allow" | "deny"
   accountAddress: string
+  /**
+   * Set on a pending request from a site that is already connected for
+   * `accountAddress` on another chain and is asking to use `chainID` as
+   * well. Granting such a request allows `chainID` alone, and rejecting it
+   * leaves the site's other permissions untouched. It describes the request,
+   * not the permission, so it is dropped when the permission is stored.
+   */
+  forAdditionalNetwork?: boolean
 }
 
 export type DeniedPermission = PermissionRequest & { state: "deny" }
