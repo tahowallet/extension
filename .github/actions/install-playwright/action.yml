@@ -1,0 +1,54 @@
+name: Install Playwright Chromium
+description: >-
+  Installs Playwright's Chromium and its system dependencies, caching the
+  browser download by Playwright version and retrying installs that fail or
+  stall.
+
+runs:
+  using: composite
+  steps:
+    - name: Read Playwright version
+      id: version
+      shell: bash
+      run: echo "version=$(bun -e 'console.log(require("@playwright/test/package.json").version)')" >> "$GITHUB_OUTPUT"
+
+    - name: Restore Playwright browser cache
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-chromium-${{ runner.os }}-${{ steps.version.outputs.version }}
+
+    # A cache hit already has the browser, so only the system packages are
+    # installed. Each attempt is capped, since a stalled apt mirror or browser
+    # download otherwise hangs the job with no output.
+    - name: Install Chromium and system dependencies
+      shell: bash
+      env:
+        CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+      run: |
+        if [ "$CACHE_HIT" = "true" ]; then
+          install=(bunx playwright install-deps chromium)
+        else
+          install=(bunx playwright install --with-deps chromium)
+        fi
+
+        for attempt in 1 2 3; do
+          if timeout 180 "${install[@]}"; then
+            exit 0
+          fi
+          echo "::warning::Playwright install attempt $attempt failed or timed out"
+          sleep $((attempt * 10))
+        done
+
+        echo "::error::Playwright install failed after 3 attempts"
+        exit 1
+
+    # Saved right after installing rather than at the end of the job, so the
+    # cache is populated even when the tests themselves fail.
+    - name: Save Playwright browser cache
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.cache.outputs.cache-primary-key }}
