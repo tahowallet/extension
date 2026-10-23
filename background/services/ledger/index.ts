@@ -48,6 +48,28 @@ export type LedgerAccountSigner = {
 
 export const isLedgerSupported = typeof navigator.usb === "object"
 
+type USBConnectionHandler = (event: USBConnectionEvent) => Promise<void>
+
+/**
+ * Manifest V3 only delivers events to a background service worker's
+ * listeners if they were added during the worker script's initial
+ * evaluation; Chrome warns about, and won't wake the worker for, listeners
+ * added later. LedgerService is created after asynchronous setup, so the
+ * navigator.usb listeners are added here, when the module is evaluated, and
+ * forward each event to whichever handlers the service has attached.
+ */
+const usbConnectHandlers = new Set<USBConnectionHandler>()
+const usbDisconnectHandlers = new Set<USBConnectionHandler>()
+
+if (isLedgerSupported) {
+  navigator.usb.addEventListener("connect", (event) => {
+    usbConnectHandlers.forEach((handler) => handler(event))
+  })
+  navigator.usb.addEventListener("disconnect", (event) => {
+    usbDisconnectHandlers.forEach((handler) => handler(event))
+  })
+}
+
 const TestedProductId = (productId: number): boolean =>
   identifyUSBProductId(productId) != null
 
@@ -194,8 +216,8 @@ export default class LedgerService extends BaseService<Events> {
   private constructor(private db: LedgerDatabase) {
     super()
 
-    navigator.usb.addEventListener("connect", this.#handleUSBConnect)
-    navigator.usb.addEventListener("disconnect", this.#handleUSBDisconnect)
+    usbConnectHandlers.add(this.#handleUSBConnect)
+    usbDisconnectHandlers.add(this.#handleUSBDisconnect)
 
     // Block serial operations until the service is started, in case a
     // connection or disconnection event occurs to soon.
@@ -367,8 +389,8 @@ export default class LedgerService extends BaseService<Events> {
   protected override async internalStopService(): Promise<void> {
     await super.internalStopService() // Not needed, but better to stick to the patterns
 
-    navigator.usb.removeEventListener("disconnect", this.#handleUSBDisconnect)
-    navigator.usb.removeEventListener("connect", this.#handleUSBConnect)
+    usbDisconnectHandlers.delete(this.#handleUSBDisconnect)
+    usbConnectHandlers.delete(this.#handleUSBConnect)
   }
 
   async refreshConnectedLedger(): Promise<string | null> {
