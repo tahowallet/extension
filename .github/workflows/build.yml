@@ -43,10 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
       - name: Dev build
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          printf "%s\n" "$ENV_BLOCK" > .env
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
+        run: scripts/workflows/build-extension.sh dev
         env:
           ENV_BLOCK: ${{ steps.env-block.outputs.block }}
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://ethereum-mainnet.boar.network/placeholder-key' }}
@@ -60,9 +57,7 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
       - name: Production build
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo 'USE_ANALYTICS_SOURCE="PROD"' >> .env
-          bun run build
+        run: scripts/workflows/build-extension.sh production
         env:
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
@@ -92,11 +87,7 @@ jobs:
           path: dist/*.zip
       - name: Dev build on Mainnet fork
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          printf "%s\n" "$ENV_BLOCK" > .env
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
-          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
+        run: scripts/workflows/build-extension.sh dev mainnet-fork
         env:
           ENV_BLOCK: ${{ steps.env-block.outputs.block }}
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://ethereum-mainnet.boar.network/placeholder-key' }}
@@ -110,10 +101,7 @@ jobs:
           USE_MAINNET_FORK: true
       - name: Production build on Mainnet fork
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
-          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
+        run: scripts/workflows/build-extension.sh production mainnet-fork
         env:
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
