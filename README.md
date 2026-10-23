@@ -133,8 +133,7 @@ Quick Start:
 
 ```
 $ cd dev-utils/local-chain
-$ bun install
-$ bun start
+$ CHAIN_API_URL=<mainnet RPC URL> bun start # requires anvil from Foundry
 ```
 
 ### Commit signing
