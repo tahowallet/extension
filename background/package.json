@@ -24,8 +24,6 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
-    "@ethereumjs/common": "^2.4.0",
-    "@ethereumjs/tx": "^3.3.0",
     "@ethersproject/abstract-provider": "5.7.0",
     "@ethersproject/abstract-signer": "5.7.0",
     "@ethersproject/networks": "5.7.1",
@@ -45,9 +43,6 @@
     "@testing-library/dom": "^9.3.1",
     "@types/w3c-web-usb": "^1.0.5",
     "@uniswap/token-lists": "1.0.0-beta.34",
-    "@walletconnect/client": "^1.8.0",
-    "@walletconnect/sign-client": "^2.7.7",
-    "@walletconnect/utils": "^2.7.7",
     "ajv": "^8.6.2",
     "ajv-formats": "^2.1.0",
     "argon2-browser": "^1.18.0",
@@ -73,13 +68,10 @@
     "@types/uuid": "^8.3.4",
     "@types/webextension-polyfill": "^0.12.0",
     "@types/ws": "^8.5.14",
-    "@walletconnect/legacy-types": "^2.0.0",
-    "@walletconnect/types": "^2.7.7",
     "crypto-browserify": "^3.12.0",
     "fake-indexeddb": "^4.0.0",
     "jest-webextension-mock": "^4.2.0",
     "redux": "^4.1.1",
-    "sqlite3": "5.1.1",
     "ts-node": "^10.4.0",
     "webext-redux": "^4.0.0"
   }
