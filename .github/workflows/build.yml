@@ -8,11 +8,18 @@ on:
     tags:
       - v*
 
+# Jobs get a read-only token unless they ask for more below.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      # Creating releases on tags.
       contents: write
+      # Reading the PR description for its testing env block.
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
         with:
@@ -141,6 +148,10 @@ jobs:
       - run: bun run lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # paths-filter lists a pull request's changed files through the API.
+      pull-requests: read
     outputs:
       path-filter: ${{ steps.filter.outputs.path-filter }}
     steps:
