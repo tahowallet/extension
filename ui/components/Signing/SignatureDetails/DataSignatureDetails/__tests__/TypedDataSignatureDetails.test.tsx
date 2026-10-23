@@ -1,4 +1,5 @@
 import React from "react"
+import { within } from "@testing-library/react"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import type {
   EnrichedSignTypedDataRequest,
@@ -9,6 +10,11 @@ import TypedDataSignatureDetails from "../TypedDataSignatureDetails"
 
 const SAFE = "0x1111111111111111111111111111111111111111"
 const ZERO = "0x0000000000000000000000000000000000000000"
+const RECIPIENT = "0x4444444444444444444444444444444444444444"
+
+const precedes = (first: Element, second: Element) =>
+  // eslint-disable-next-line no-bitwise
+  !!(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
 
 const safeTxRequest = (
   annotation: Omit<
@@ -52,6 +58,7 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
                 direction: "out",
                 assetSymbol: "ETH",
                 localizedDecimalAmount: "1.5",
+                counterparty: { address: RECIPIENT, name: "vitalik.eth" },
               },
             ],
           },
@@ -70,8 +77,34 @@ describe("TypedDataSignatureDetails for a Safe transaction", () => {
         "2 earlier Safe transactions are still queued. The simulation doesn't include them.",
       ),
     ).toBeInTheDocument()
-    // The raw SafeTx fields are still shown alongside.
-    expect(ui.getByText("SafeTx")).toBeInTheDocument()
+    // The simulation leads in the signature card; the Safe's name and its
+    // raw fields follow in a card of their own.
+    const cards =
+      ui.container.querySelectorAll<HTMLElement>(".primary_info_card")
+    expect(cards).toHaveLength(2)
+    const [simulationCard, fieldsCard] = cards
+    expect(simulationCard).toHaveTextContent("Your signature is required")
+    expect(simulationCard).toHaveTextContent("Simulated Safe balance changes")
+    expect(simulationCard).not.toHaveTextContent("SafeTx")
+    // The recipient of the outflow, by name.
+    expect(within(simulationCard).getByText("To")).toBeTruthy()
+    expect(within(simulationCard).getByText("vitalik.eth")).toBeTruthy()
+    expect(fieldsCard).not.toHaveTextContent("Your signature is required")
+    expect(fieldsCard).toHaveTextContent("Safe")
+    expect(fieldsCard).toHaveTextContent("SafeTx")
+    expect(precedes(simulationCard, fieldsCard)).toBe(true)
+  })
+
+  it("keeps a single card when there's nothing simulated to show", () => {
+    const ui = renderWithProviders(
+      <TypedDataSignatureDetails typedDataRequest={safeTxRequest({})} />,
+    )
+
+    const cards =
+      ui.container.querySelectorAll<HTMLElement>(".primary_info_card")
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveTextContent("Your signature is required")
+    expect(cards[0]).toHaveTextContent("SafeTx")
   })
 
   it("warns when the simulation reverts", () => {

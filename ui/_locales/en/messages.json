@@ -806,6 +806,8 @@
     "simulationReverted": "Simulation shows this transaction will fail",
     "simulatedBalanceChanges": "Simulated balance changes",
     "simulatedSafeBalanceChanges": "Simulated Safe balance changes",
+    "balanceChangeTo": "To",
+    "balanceChangeFrom": "From",
     "safe": {
       "simulationReverted": "Simulation shows this Safe transaction will fail",
       "simulatedWithSignatures": "Simulated as if all required owners had signed.",

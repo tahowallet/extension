@@ -171,6 +171,8 @@ export type AssetTransferForAddress = {
   assetSymbol: string
   assetLogoUrl?: string
   localizedDecimalAmount: string
+  /** The other side of the transfer: its recipient, or its sender if "in". */
+  counterparty: { address: HexString; name?: string }
 }
 
 /**
@@ -188,10 +190,18 @@ export function getAssetTransfersForAddress(
         (sameEVMAddress(subannotation.sender.address, address) ||
           sameEVMAddress(subannotation.recipient.address, address))
       ) {
+        const isOutgoing = sameEVMAddress(subannotation.sender.address, address)
+        const counterparty = isOutgoing
+          ? subannotation.recipient
+          : subannotation.sender
+        const name =
+          counterparty.annotation.nameRecord?.resolved.nameOnNetwork.name
         return {
-          direction: sameEVMAddress(subannotation.sender.address, address)
-            ? "out"
-            : "in",
+          direction: isOutgoing ? "out" : "in",
+          counterparty: {
+            address: counterparty.address,
+            ...(name !== undefined && { name }),
+          },
           assetSymbol: subannotation.assetAmount.asset.symbol,
           assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
           localizedDecimalAmount:

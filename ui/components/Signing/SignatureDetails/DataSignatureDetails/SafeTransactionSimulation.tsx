@@ -8,19 +8,24 @@ type SafeTransactionSimulationProps = {
   annotation: SafeTransactionSignTypedDataAnnotation
 }
 
+/** Whether there's anything about the simulation worth showing. */
+export function hasSafeSimulationDetails({
+  simulation,
+  queuedBefore,
+  nonceAlreadyUsed,
+}: SafeTransactionSignTypedDataAnnotation): boolean {
+  return simulation !== undefined || !!nonceAlreadyUsed || !!queuedBefore
+}
+
 export default function SafeTransactionSimulation({
   annotation: { simulation, queuedBefore, nonceAlreadyUsed },
-}: SafeTransactionSimulationProps): ReactElement | null {
+}: SafeTransactionSimulationProps): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "signTransaction.safe",
   })
   const { t: tShared } = useTranslation("translation", {
     keyPrefix: "signTransaction",
   })
-
-  if (simulation === undefined && !nonceAlreadyUsed && !queuedBefore) {
-    return null
-  }
 
   return (
     <div className="safe_simulation">

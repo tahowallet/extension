@@ -57,13 +57,32 @@ describe("getAssetTransfersForAddress", () => {
         direction: "out",
         assetSymbol: "USDC",
         localizedDecimalAmount: "100",
+        counterparty: { address: OTHER },
       }),
       expect.objectContaining({
         direction: "in",
         assetSymbol: "DAI",
         localizedDecimalAmount: "99",
+        counterparty: { address: OTHER },
       }),
     ])
+  })
+
+  it("names the counterparty when it has a resolved name", () => {
+    const named = transfer(USER, OTHER, "USDC", "5")
+    named.recipient.annotation.nameRecord = {
+      from: { addressOnNetwork: { address: OTHER, network: ETHEREUM } },
+      resolved: {
+        nameOnNetwork: { name: "pool.eth", network: ETHEREUM },
+        expiresAt: Number.MAX_SAFE_INTEGER,
+      },
+      system: "ENS",
+    }
+
+    expect(getAssetTransfersForAddress([named], USER)[0].counterparty).toEqual({
+      address: OTHER,
+      name: "pool.eth",
+    })
   })
 
   it("ignores transfers that don't involve the address", () => {

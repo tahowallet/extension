@@ -1,5 +1,7 @@
 import React, { ReactElement } from "react"
 import type { AssetTransferForAddress } from "@tallyho/tally-background/services/enrichment/utils"
+import { useTranslation } from "react-i18next"
+import SharedAddress from "../../Shared/SharedAddress"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 
 type BalanceChangesListProps = {
@@ -11,6 +13,10 @@ export default function BalanceChangesList({
   label,
   transfers,
 }: BalanceChangesListProps): ReactElement | null {
+  const { t } = useTranslation("translation", {
+    keyPrefix: "signTransaction",
+  })
+
   if (transfers.length === 0) return null
 
   return (
@@ -23,19 +29,30 @@ export default function BalanceChangesList({
             // than once in a single transaction.
             // eslint-disable-next-line react/no-array-index-key
             key={`${transfer.assetSymbol}-${index}`}
-            className="simulated_changes_row"
+            className="simulated_changes_entry"
           >
-            <div className="simulated_changes_asset">
-              <SharedAssetIcon
-                size="small"
-                logoURL={transfer.assetLogoUrl ?? ""}
-                symbol={transfer.assetSymbol}
-              />
-              {transfer.assetSymbol}
+            <div className="simulated_changes_row">
+              <div className="simulated_changes_asset">
+                <SharedAssetIcon
+                  size="small"
+                  logoURL={transfer.assetLogoUrl ?? ""}
+                  symbol={transfer.assetSymbol}
+                />
+                {transfer.assetSymbol}
+              </div>
+              <div className={`simulated_changes_amount ${transfer.direction}`}>
+                {transfer.direction === "in" ? "+" : "-"}
+                {transfer.localizedDecimalAmount}
+              </div>
             </div>
-            <div className={`simulated_changes_amount ${transfer.direction}`}>
-              {transfer.direction === "in" ? "+" : "-"}
-              {transfer.localizedDecimalAmount}
+            <div className="simulated_changes_counterparty">
+              {transfer.direction === "in"
+                ? t("balanceChangeFrom")
+                : t("balanceChangeTo")}
+              <SharedAddress
+                address={transfer.counterparty.address}
+                name={transfer.counterparty.name}
+              />
             </div>
           </div>
         ))}
@@ -52,6 +69,19 @@ export default function BalanceChangesList({
         }
         .simulated_changes_label {
           color: var(--green-40);
+        }
+        .simulated_changes_entry {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .simulated_changes_counterparty {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding-left: 32px;
+          color: var(--green-40);
+          font-size: 12px;
         }
         .simulated_changes_row {
           width: 100%;

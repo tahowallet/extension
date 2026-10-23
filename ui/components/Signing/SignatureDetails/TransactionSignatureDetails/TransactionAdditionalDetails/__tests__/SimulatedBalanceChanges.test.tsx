@@ -77,6 +77,10 @@ describe("SimulatedBalanceChanges", () => {
     expect(ui.getByText("Simulated balance changes")).toBeInTheDocument()
     expect(ui.getByText("-100")).toBeInTheDocument()
     expect(ui.getByText("+99.5")).toBeInTheDocument()
+    // Both rows name the pool: as recipient of the outflow, sender of the
+    // inflow.
+    expect(ui.getByText("To")).toBeInTheDocument()
+    expect(ui.getByText("From")).toBeInTheDocument()
   })
 
   it("lists the Safe's changes separately when the request executes a Safe transaction", () => {

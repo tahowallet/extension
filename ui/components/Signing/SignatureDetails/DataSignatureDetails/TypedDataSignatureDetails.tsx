@@ -6,7 +6,9 @@ import { capitalize } from "../../../../utils/textUtils"
 import SharedAddress from "../../../Shared/SharedAddress"
 import SharedIcon from "../../../Shared/SharedIcon"
 import DataSignatureDetails from "."
-import SafeTransactionSimulation from "./SafeTransactionSimulation"
+import SafeTransactionSimulation, {
+  hasSafeSimulationDetails,
+} from "./SafeTransactionSimulation"
 
 function TypedDataFieldValue({ value }: { value: unknown }): ReactElement {
   const { t } = useTranslation("translation")
@@ -144,18 +146,36 @@ export default function TypedDataSignatureDetails({
           />
         </DataSignatureDetails>
       )
-    case "safe-transaction":
-      return (
-        <DataSignatureDetails
-          requestingSource={typedData.domain.name ?? "Safe"}
-        >
-          <BasicTypedDataDetails
-            primaryType={typedData.primaryType}
-            fieldsToDisplay={typedData.message}
-          />
-          <SafeTransactionSimulation annotation={annotation} />
-        </DataSignatureDetails>
+    case "safe-transaction": {
+      const fields = (
+        <BasicTypedDataDetails
+          primaryType={typedData.primaryType}
+          fieldsToDisplay={typedData.message}
+        />
       )
+      const source = typedData.domain.name ?? "Safe"
+
+      if (!hasSafeSimulationDetails(annotation)) {
+        return (
+          <DataSignatureDetails requestingSource={source}>
+            {fields}
+          </DataSignatureDetails>
+        )
+      }
+
+      // Lead with what the transaction does; the raw fields follow in their
+      // own card under the Safe's name.
+      return (
+        <>
+          <DataSignatureDetails>
+            <SafeTransactionSimulation annotation={annotation} />
+          </DataSignatureDetails>
+          <DataSignatureDetails requestingSource={source} excludeTitle>
+            {fields}
+          </DataSignatureDetails>
+        </>
+      )
+    }
     default:
       return (
         <DataSignatureDetails requestingSource={typedData.domain.name}>
