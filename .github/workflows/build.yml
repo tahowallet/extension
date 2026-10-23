@@ -8,32 +8,43 @@ on:
     tags:
       - v*
 
+# A new push to a pull request supersedes its in-progress build. Pushes to
+# main and tags each get their own group, so none of them are cancelled or
+# replaced while queued.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Jobs get a read-only token unless they ask for more below.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
-      contents: write
+      contents: read
+      # Reading the PR description for its testing env block.
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - name: Detect env block
         id: env-block
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const detectEnvBlock = require("./.github/workflows/builds/detect-env-block.js")
-            return await detectEnvBlock({ github, context })
+        run: bun scripts/workflows/detect-env-block.ts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Dev build
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo -e ${{ steps.env-block.outputs.result }} > .env
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
+        run: scripts/workflows/build-extension.sh dev
         env:
+          ENV_BLOCK: ${{ steps.env-block.outputs.block }}
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://ethereum-mainnet.boar.network/placeholder-key' }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.DEV_BOAR_RPC_URL_OPTIMISM || 'https://optimism-mainnet.boar.network/placeholder-key' }}
           BOAR_RPC_URL_POLYGON: ${{ secrets.DEV_BOAR_RPC_URL_POLYGON || 'https://polygon-mainnet.boar.network/placeholder-key' }}
@@ -45,9 +56,7 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
       - name: Production build
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo 'USE_ANALYTICS_SOURCE="PROD"' >> .env
-          bun run build
+        run: scripts/workflows/build-extension.sh production
         env:
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
@@ -61,28 +70,17 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
           POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
           DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
-      - name: Create Release and Upload Artifacts
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564 # v2.0.4
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: dist/*.zip
-          draft: true
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
+      # Uploaded for tags too, for the release job to publish.
       - name: Upload build asset
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
       - name: Dev build on Mainnet fork
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo -e ${{ steps.env-block.outputs.result }} > .env
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
-          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
+        run: scripts/workflows/build-extension.sh dev mainnet-fork
         env:
+          ENV_BLOCK: ${{ steps.env-block.outputs.block }}
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.DEV_BOAR_RPC_URL_ETHEREUM || 'https://ethereum-mainnet.boar.network/placeholder-key' }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.DEV_BOAR_RPC_URL_OPTIMISM || 'https://optimism-mainnet.boar.network/placeholder-key' }}
           BOAR_RPC_URL_POLYGON: ${{ secrets.DEV_BOAR_RPC_URL_POLYGON || 'https://polygon-mainnet.boar.network/placeholder-key' }}
@@ -94,10 +92,7 @@ jobs:
           USE_MAINNET_FORK: true
       - name: Production build on Mainnet fork
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo 'USE_ANALYTICS_SOURCE="BETA"' >> .env
-          bun run build
-          find dist -name "*.zip" -exec sh -c 'mv "$1" "${1%.zip}-fork.zip"' _ {} \;
+        run: scripts/workflows/build-extension.sh production mainnet-fork
         env:
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
@@ -114,22 +109,49 @@ jobs:
           USE_MAINNET_FORK: true
       - name: Upload build asset
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
           path: dist/*.zip
+  # Creating a release needs a write token, so it runs in its own job, only
+  # for tags, rather than giving every build that permission.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
+          path: dist
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: dist/*.zip
+          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-pre') || contains(github.ref, 'v0.') }}
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - run: bun run test
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - run: bun install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
@@ -138,12 +160,19 @@ jobs:
       - run: bun run lint
   detect-if-flag-changed:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # paths-filter lists a pull request's changed files through the API.
+      pull-requests: read
     outputs:
       path-filter: ${{ steps.filter.outputs.path-filter }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
-      - uses: dorny/paths-filter@v2
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         if: github.event_name == 'pull_request'
         id: filter
         with:
@@ -159,14 +188,16 @@ jobs:
       # https://playwright.dev/docs/service-workers-experimental
       PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS: 1
     steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - name: Install Playwright Browsers
         uses: ./.github/actions/install-playwright
         # Backstop for the per-attempt caps inside the action.
         timeout-minutes: 12
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: extension-builds-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
@@ -192,7 +223,7 @@ jobs:
           TESTNET_TEST_WALLET_JSON_BODY: ${{ secrets.TEST_WALLET_JSON_BODY }}
           TESTNET_TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
         run: xvfb-run bun run e2e:testnet
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ failure() || cancelled() }}
         with:
           name: debug-output
@@ -212,27 +243,29 @@ jobs:
       # https://playwright.dev/docs/service-workers-experimental
       PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS: 1
     steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
       - name: Install Playwright Browsers
         uses: ./.github/actions/install-playwright
         # Backstop for the per-attempt caps inside the action.
         timeout-minutes: 12
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: extension-builds-fork-${{ github.event.number || github.event.head_commit.id }}
       - name: Extract extension
         run: unzip -o chrome-fork.zip -d dist/chrome
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
         with:
           cache: false
       # FORKING_BLOCK and MAINNET_FORK_CHAIN_ID, shared with start-anvil.sh.
       - name: Load fork settings
         run: grep -v '^#' ci/fork.env | grep . >> "$GITHUB_ENV"
       - name: Restore Anvil cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v6
         with:
           path: /home/runner/.foundry/cache
           key: anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-${{ github.sha }}
@@ -252,7 +285,7 @@ jobs:
           FORK_TEST_WALLET_JSON_PASSWORD: ${{ secrets.TEST_WALLET_JSON_PASSWORD }}
           USE_MAINNET_FORK: true
         run: xvfb-run bun run e2e:fork
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ failure() || cancelled() }}
         with:
           name: fork-debug-output
@@ -265,7 +298,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: sh ./ci/stop-anvil.sh
       - name: Save Anvil Cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v6
         # We want to save the cache even if the tests failed. Without the cache
         # the tests almost always fail, so without `if: always()` we would have
         # problem with creating the first cache.

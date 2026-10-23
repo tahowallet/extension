@@ -15,11 +15,15 @@ on:
 jobs:
   add-release-test-list:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: startsWith(github.head_ref, 'release-')
     permissions:
+      contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: mshick/add-pr-comment@v2
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
         with:
           message-path: ./.github/workflows/test-list/release-test-list.md
