@@ -14,7 +14,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install --frozen-lockfile
         working-directory: .github/workflows/pledge-signer-sync
       - name: Sync pledge addresses
