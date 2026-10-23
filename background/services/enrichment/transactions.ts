@@ -295,6 +295,7 @@ export default async function resolveTransactionAnnotation(
     simulationRevertReason:
       simulation?.status === "reverted" ? simulation.revertReason : undefined,
     simulatedSafeAddress: simulation?.safeAddress,
+    simulationStatus: simulation?.status,
   }
 
   // If the transaction has been mined, get the block and set the timestamp

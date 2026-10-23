@@ -117,6 +117,7 @@ describe("Enrichment Service Transactions", () => {
       )
 
       expect(annotation.warnings).toContain("simulation-reverted")
+      expect(annotation.simulationStatus).toBe("reverted")
       expect(annotation.simulationRevertReason).toBe("execution reverted: nope")
     })
 
@@ -181,6 +182,21 @@ describe("Enrichment Service Transactions", () => {
 
       expect(viaSafe.simulatedSafeAddress).toBe(safe)
       expect(direct.simulatedSafeAddress).toBeUndefined()
+      expect(direct.simulationStatus).toBe("success")
+
+      // A later enrichment that couldn't simulate mustn't keep the old status.
+      const unsimulated = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        {
+          ...request(),
+          annotation: direct,
+        } as Parameters<typeof resolveTransactionAnnotation>[4],
+        2,
+      )
+      expect(unsimulated.simulationStatus).toBeUndefined()
     })
   })
 })

@@ -47,6 +47,11 @@ export type BaseTransactionAnnotation = {
    */
   simulationRevertReason?: string
   /**
+   * The outcome of an off-chain simulation of this pending request, if one
+   * ran. Distinguishes "simulated, nothing moved" from "not simulated".
+   */
+  simulationStatus?: "success" | "reverted"
+  /**
    * When the simulated request executes a Safe transaction, the Safe whose
    * balance changes the simulation's subannotations include.
    */
