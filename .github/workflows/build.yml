@@ -232,7 +232,7 @@ jobs:
       - name: Load fork settings
         run: grep -v '^#' ci/fork.env | grep . >> "$GITHUB_ENV"
       - name: Restore Anvil cache
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v6
         with:
           path: /home/runner/.foundry/cache
           key: anvil-${{ env.FORKING_BLOCK }}-${{ github.ref_name }}-${{ github.sha }}
@@ -265,7 +265,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: sh ./ci/stop-anvil.sh
       - name: Save Anvil Cache
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v6
         # We want to save the cache even if the tests failed. Without the cache
         # the tests almost always fail, so without `if: always()` we would have
         # problem with creating the first cache.

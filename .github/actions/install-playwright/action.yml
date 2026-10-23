@@ -14,7 +14,7 @@ runs:
 
     - name: Restore Playwright browser cache
       id: cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v6
       with:
         path: ~/.cache/ms-playwright
         key: playwright-chromium-${{ runner.os }}-${{ steps.version.outputs.version }}
@@ -57,7 +57,7 @@ runs:
     # cache is populated even when the tests themselves fail.
     - name: Save Playwright browser cache
       if: steps.cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v6
       with:
         path: ~/.cache/ms-playwright
         key: ${{ steps.cache.outputs.cache-primary-key }}
