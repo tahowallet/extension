@@ -172,7 +172,11 @@ async function generateLedgerId(
  *     which device will respond to its requests
  */
 export default class LedgerService extends BaseService<Events> {
-  #currentLedgerId: string | null = null
+  /**
+   * The connected Ledger's id and type, which are always set and cleared
+   * together.
+   */
+  #currentLedger: { id: string; type: LedgerType } | null = null
 
   transport: Transport | undefined = undefined
 
@@ -240,10 +244,11 @@ export default class LedgerService extends BaseService<Events> {
 
         const normalizedID = normalizeEVMAddress(id)
 
-        this.#currentLedgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
+        this.#currentLedger = { id: ledgerId, type }
 
         this.emitter.emit("connected", {
-          id: this.#currentLedgerId,
+          id: ledgerId,
           type,
           metadata: {
             ethereumVersion: appData.version,
@@ -252,13 +257,11 @@ export default class LedgerService extends BaseService<Events> {
           },
         })
 
-        const knownAddresses = await this.db.getAllAccountsByLedgerId(
-          this.#currentLedgerId,
-        )
+        const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
 
         if (!knownAddresses.length) {
           this.emitter.emit("ledgerAdded", {
-            id: this.#currentLedgerId,
+            id: ledgerId,
             type,
             accountIDs: [idDerivationPath],
             metadata: {
@@ -332,7 +335,8 @@ export default class LedgerService extends BaseService<Events> {
       "usbDeviceCount",
       (await navigator.usb.getDevices()).length,
     )
-    if (!this.#currentLedgerId) {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
       return
     }
 
@@ -347,11 +351,11 @@ export default class LedgerService extends BaseService<Events> {
     await this.#closeTransport("disconnected")
 
     this.emitter.emit("disconnected", {
-      id: this.#currentLedgerId,
-      type: LedgerType.LEDGER_NANO_S,
+      id: currentLedger.id,
+      type: currentLedger.type,
     })
 
-    this.#currentLedgerId = null
+    this.#currentLedger = null
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -380,7 +384,7 @@ export default class LedgerService extends BaseService<Events> {
       await this.onConnection(usbDeviceArray[0].productId)
     }
 
-    return this.#currentLedgerId
+    return this.#currentLedger?.id ?? null
   }
 
   async deriveAddress({
@@ -393,7 +397,8 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Uninitialized transport!")
         }
 
-        if (!this.#currentLedgerId) {
+        const currentLedger = this.#currentLedger
+        if (currentLedger === null) {
           throw new Error("Uninitialized Ledger ID!")
         }
 
@@ -404,7 +409,7 @@ export default class LedgerService extends BaseService<Events> {
         )
 
         this.emitter.emit("address", {
-          ledgerID: this.#currentLedgerId,
+          ledgerID: currentLedger.id,
           derivationPath,
           address: accountAddress,
         })
@@ -413,7 +418,7 @@ export default class LedgerService extends BaseService<Events> {
       } catch (err) {
         logger.error(
           `Error encountered deriving address at path ${derivationPath}! ledgerID: ${
-            this.#currentLedgerId
+            this.#currentLedger?.id ?? null
           } error: ${err}`,
         )
         throw err
@@ -422,11 +427,12 @@ export default class LedgerService extends BaseService<Events> {
   }
 
   async saveAddress(path: HexString, address: string): Promise<void> {
-    if (!this.#currentLedgerId) {
+    const currentLedger = this.#currentLedger
+    if (currentLedger === null) {
       throw new Error("No Ledger id is set!")
     }
 
-    await this.db.addAccount({ ledgerId: this.#currentLedgerId, path, address })
+    await this.db.addAccount({ ledgerId: currentLedger.id, path, address })
   }
 
   async removeAddress(address: HexString): Promise<void> {
@@ -448,7 +454,7 @@ export default class LedgerService extends BaseService<Events> {
           throw new Error("Uninitialized transport!")
         }
 
-        if (!this.#currentLedgerId) {
+        if (this.#currentLedger === null) {
           throw new Error("Uninitialized Ledger ID!")
         }
 
@@ -531,7 +537,7 @@ export default class LedgerService extends BaseService<Events> {
       } catch (err) {
         logger.error(
           `Error encountered! ledgerID: ${
-            this.#currentLedgerId
+            this.#currentLedger?.id ?? null
           } transactionRequest: ${transactionRequest} error: ${err}`,
         )
 
@@ -550,7 +556,7 @@ export default class LedgerService extends BaseService<Events> {
         throw new Error("Uninitialized transport!")
       }
 
-      if (!this.#currentLedgerId) {
+      if (this.#currentLedger === null) {
         throw new Error("Uninitialized Ledger ID!")
       }
 
@@ -601,7 +607,7 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Signing method mismatch!")
     }
 
-    if (deviceID !== this.#currentLedgerId) {
+    if (deviceID !== this.#currentLedger?.id) {
       throw new Error("Cannot sign on wrong device attached!")
     }
   }
@@ -626,7 +632,7 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Uninitialized transport!")
     }
 
-    if (!this.#currentLedgerId) {
+    if (this.#currentLedger === null) {
       throw new Error("Uninitialized Ledger ID!")
     }
 
