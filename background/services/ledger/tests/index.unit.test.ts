@@ -5,6 +5,8 @@ import LedgerService, {
   READINESS_POLL_DURATION_MS,
   READINESS_POLL_FAST_INTERVAL_MS,
 } from ".."
+import { getOrCreateDB } from "../db"
+import { ETHEREUM } from "../../../constants"
 
 const PACKET_SIZE = 64
 const NANO_X_PRODUCT_ID = 0x4011
@@ -314,5 +316,69 @@ describe("LedgerService readiness polling", () => {
     ledger.state.app = "Ethereum"
     await clock.tickAsync(READINESS_POLL_FAST_INTERVAL_MS)
     expect(emittedNames()).toEqual(["disconnected", "connected"])
+  })
+
+  it("serializes polls with signing", async () => {
+    const db = await getOrCreateDB()
+    await db.addAccount({
+      ledgerId: "unused",
+      path: "44'/60'/0'/0/0",
+      address: LEDGER_ADDRESS,
+    })
+
+    await ledgerService.onConnection(NANO_X_PRODUCT_ID)
+    ledger.commands.length = 0
+
+    // Hold the next poll's response, and make the Ledger ready meanwhile.
+    const release = ledger.holdResponses()
+    await clock.tickAsync(READINESS_POLL_FAST_INTERVAL_MS)
+    expect(ledger.commands).toEqual([GET_APP_NAME])
+    ledger.state.locked = false
+    ledger.state.app = "Ethereum"
+
+    const signature = ledgerService.signMessage(
+      { address: LEDGER_ADDRESS, network: ETHEREUM },
+      "0x1234",
+    )
+    await clock.tickAsync(0)
+    // Signing waits for the poll.
+    expect(ledger.commands).toEqual([GET_APP_NAME])
+
+    release()
+
+    expect(await signature).toMatch(/^0x(11){32}(22){32}1b$/)
+    expect(ledger.commands).toEqual([
+      // The poll, which finds the Ethereum app and connects.
+      GET_APP_NAME,
+      GET_ADDRESS,
+      GET_APP_CONFIGURATION,
+      // The pre-signing check, then the signature.
+      GET_APP_NAME,
+      SIGN_PERSONAL_MESSAGE,
+    ])
+    expect(ledger.maxInFlight()).toBe(1)
+  })
+
+  it("refuses to sign once the Ethereum app has been closed", async () => {
+    const db = await getOrCreateDB()
+    await db.addAccount({
+      ledgerId: "unused",
+      path: "44'/60'/0'/0/0",
+      address: LEDGER_ADDRESS,
+    })
+    ledger.state.locked = false
+    ledger.state.app = "Ethereum"
+    await ledgerService.onConnection(NANO_X_PRODUCT_ID)
+    expect(emittedNames()).toContain("connected")
+
+    ledger.state.app = "BOLOS"
+    const error = await ledgerService
+      .signMessage({ address: LEDGER_ADDRESS, network: ETHEREUM }, "0x1234")
+      .catch((caught: unknown) => caught)
+
+    expect(error).toMatchObject({
+      message: expect.stringContaining("Ethereum app"),
+    })
+    expect(ledger.commands).not.toContain(SIGN_PERSONAL_MESSAGE)
   })
 })

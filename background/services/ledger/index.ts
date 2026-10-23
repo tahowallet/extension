@@ -158,6 +158,20 @@ async function isEthereumAppOpen(transport: Transport): Promise<boolean> {
 }
 
 /**
+ * Fails, the way signing does when no Ledger is connected, unless the Ledger
+ * still has the Ethereum app open. The user can quit the app, or the device
+ * can lock, without any USB event, so the service can believe a Ledger is
+ * connected when it can no longer sign. This costs one APDU per signature.
+ */
+async function requireEthereumApp(transport: Transport): Promise<void> {
+  if (!(await isEthereumAppOpen(transport))) {
+    throw new Error(
+      "The Ledger doesn't have the Ethereum app open; open it to sign.",
+    )
+  }
+}
+
+/**
  * How often, and for how long, the service polls a Ledger that's plugged in
  * but locked or not on the Ethereum app. Unlocking the device and opening or
  * quitting apps fire no USB events, so polling is the only way to notice
@@ -724,6 +738,8 @@ export default class LedgerService extends BaseService<Events> {
 
         this.checkCanSign(accountData, derivationPath, deviceID)
 
+        await requireEthereumApp(this.transport)
+
         const eth = new Eth(this.transport)
         const signature = await eth.signTransaction(
           derivationPath,
@@ -816,6 +832,8 @@ export default class LedgerService extends BaseService<Events> {
 
       this.checkCanSign(accountData, derivationPath, deviceID)
 
+      await requireEthereumApp(this.transport)
+
       const signature = await eth.signEIP712HashedMessage(
         derivationPath,
         hashedDomain,
@@ -873,37 +891,43 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Unsupported network for Ledger signing")
     }
 
-    if (!this.transport) {
-      throw new Error("Uninitialized transport!")
-    }
+    // Serialized like the other signing methods, so it never talks to the
+    // Ledger while a connection attempt or readiness poll is.
+    return this.runSerialized(async () => {
+      if (!this.transport) {
+        throw new Error("Uninitialized transport!")
+      }
 
-    if (this.#currentLedger === null) {
-      throw new Error("Uninitialized Ledger ID!")
-    }
+      if (this.#currentLedger === null) {
+        throw new Error("Uninitialized Ledger ID!")
+      }
 
-    const accountData = await this.db.getAccountByAddress(address)
+      const accountData = await this.db.getAccountByAddress(address)
 
-    if (!accountData) {
-      throw new Error(
-        `Address "${address}" doesn't have corresponding derivation path!`,
+      if (!accountData) {
+        throw new Error(
+          `Address "${address}" doesn't have corresponding derivation path!`,
+        )
+      }
+
+      await requireEthereumApp(this.transport)
+
+      const eth = new Eth(this.transport)
+
+      const signature = await eth.signPersonalMessage(
+        accountData.path,
+        // Ledger requires unprefixed hex, so make sure that's what we pass.
+        hexDataToSign.replace(/^0x/, ""),
       )
-    }
 
-    const eth = new Eth(this.transport)
+      const signatureHex = joinSignature({
+        r: `0x${signature.r}`,
+        s: `0x${signature.s}`,
+        v: signature.v,
+      })
+      this.emitter.emit("signedData", signatureHex)
 
-    const signature = await eth.signPersonalMessage(
-      accountData.path,
-      // Ledger requires unprefixed hex, so make sure that's what we pass.
-      hexDataToSign.replace(/^0x/, ""),
-    )
-
-    const signatureHex = joinSignature({
-      r: `0x${signature.r}`,
-      s: `0x${signature.s}`,
-      v: signature.v,
+      return signatureHex
     })
-    this.emitter.emit("signedData", signatureHex)
-
-    return signatureHex
   }
 }
