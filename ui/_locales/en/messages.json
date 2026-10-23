@@ -759,7 +759,7 @@
     "unknownNetwork": "Unknown Network",
     "detailPanelName": "Details",
     "rawDataPanelName": "Raw data",
-    "simulationPanelName": "Simulation",
+    "simulationHeading": "Simulation",
     "simulationUnavailable": "Simulation isn't available for this transaction.",
     "yourAccountBalanceChanges": "Your account",
     "safeBalanceChanges": "Safe",

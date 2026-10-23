@@ -86,14 +86,11 @@ describe("SimulationPanel", () => {
     ).toBeNull()
   })
 
-  it("warns when the simulation reverts", () => {
+  it("leaves a revert to the details' warning", () => {
     const ui = renderPanel({
       simulationStatus: "reverted",
       simulationRevertReason: "execution reverted: nope",
     })
-    expect(
-      ui.getByText("Simulation shows this transaction will fail"),
-    ).toBeInTheDocument()
-    expect(ui.queryByText("Your account")).toBeNull()
+    expect(ui.container).toBeEmptyDOMElement()
   })
 })

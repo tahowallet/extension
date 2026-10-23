@@ -17,13 +17,10 @@ export default function TransactionDataPanelSwitcher({
     {
       name: t("detailPanelName"),
       panelElement: () => (
-        <DetailsPanel transactionRequest={transactionRequest} />
-      ),
-    },
-    {
-      name: t("simulationPanelName"),
-      panelElement: () => (
-        <SimulationPanel transactionRequest={transactionRequest} />
+        <>
+          <DetailsPanel transactionRequest={transactionRequest} />
+          <SimulationPanel transactionRequest={transactionRequest} />
+        </>
       ),
     },
     {
