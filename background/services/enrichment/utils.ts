@@ -173,6 +173,8 @@ export type AssetTransferForAddress = {
   localizedDecimalAmount: string
   /** The other side of the transfer: its recipient, or its sender if "in". */
   counterparty: { address: HexString; name?: string }
+  /** See `AssetTransfer.untrackedAsset`. */
+  untrackedAsset?: boolean
 }
 
 /**
@@ -202,6 +204,7 @@ export function getAssetTransfersForAddress(
             address: counterparty.address,
             ...(name !== undefined && { name }),
           },
+          ...(subannotation.untrackedAsset && { untrackedAsset: true }),
           assetSymbol: subannotation.assetAmount.asset.symbol,
           assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
           localizedDecimalAmount:

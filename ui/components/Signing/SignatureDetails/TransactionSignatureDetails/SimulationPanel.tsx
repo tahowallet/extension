@@ -1,6 +1,5 @@
 import React, { ReactElement } from "react"
 import type { EnrichedEVMTransactionRequest } from "@tallyho/tally-background/services/enrichment"
-import { getAssetTransfersForAddress } from "@tallyho/tally-background/services/enrichment/utils"
 import { useTranslation } from "react-i18next"
 import SimulatedBalanceChanges from "./TransactionAdditionalDetails/SimulatedBalanceChanges"
 import TransactionSignatureDetailsWarning from "./TransactionSignatureDetailsWarning"
@@ -12,16 +11,6 @@ export default function SimulationPanel({
 }): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "signTransaction" })
   const { annotation } = transactionRequest
-
-  const hasBalanceChanges = [
-    transactionRequest.from,
-    annotation?.simulatedSafeAddress,
-  ].some(
-    (address) =>
-      address !== undefined &&
-      getAssetTransfersForAddress(annotation?.subannotations, address).length >
-        0,
-  )
 
   const revertReason = annotation?.simulationRevertReason
 
@@ -44,17 +33,12 @@ export default function SimulationPanel({
             variant="error"
           />
         ))}
-      {annotation?.simulationStatus === "success" &&
-        (hasBalanceChanges ? (
-          <SimulatedBalanceChanges
-            transactionRequest={transactionRequest}
-            annotation={annotation}
-          />
-        ) : (
-          <div className="simulation_empty">
-            {t("simulationNoBalanceChanges")}
-          </div>
-        ))}
+      {annotation?.simulationStatus === "success" && (
+        <SimulatedBalanceChanges
+          transactionRequest={transactionRequest}
+          annotation={annotation}
+        />
+      )}
       <style jsx>{`
         .simulation_panel {
           display: flex;

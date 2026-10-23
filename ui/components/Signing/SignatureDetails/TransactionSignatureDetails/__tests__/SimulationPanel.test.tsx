@@ -74,15 +74,13 @@ describe("SimulationPanel", () => {
       simulationStatus: "success",
       subannotations: [transfer(USER, POOL)],
     })
-    expect(ui.getByText("Simulated balance changes")).toBeInTheDocument()
+    expect(ui.getByText("Your account")).toBeInTheDocument()
     expect(ui.getByText("-100")).toBeInTheDocument()
   })
 
   it("distinguishes a simulation where nothing moved", () => {
     const ui = renderPanel({ simulationStatus: "success" })
-    expect(
-      ui.getByText("Simulation shows no balance changes for this account."),
-    ).toBeInTheDocument()
+    expect(ui.getByText("No balance changes")).toBeInTheDocument()
     expect(
       ui.queryByText("Simulation isn't available for this transaction."),
     ).toBeNull()
@@ -96,6 +94,6 @@ describe("SimulationPanel", () => {
     expect(
       ui.getByText("Simulation shows this transaction will fail"),
     ).toBeInTheDocument()
-    expect(ui.queryByText("Simulated balance changes")).toBeNull()
+    expect(ui.queryByText("Your account")).toBeNull()
   })
 })

@@ -103,7 +103,7 @@ describe("Safe transaction enrichment", () => {
         2,
         Date.now(),
         undefined,
-        [SAFE],
+        { additionalRelevantAddresses: [SAFE] },
       )
 
       expect(withoutSafe).toEqual([])
@@ -113,6 +113,79 @@ describe("Safe transaction enrichment", () => {
         assetAmount: { asset: ETHEREUM.baseAsset, amount: 10n ** 18n },
         sender: { address: utils.getAddress(SAFE) },
       })
+    })
+  })
+
+  describe("annotationsFromLogs with untracked tokens", () => {
+    const TOKEN = "0x5555555555555555555555555555555555555555"
+    const tokenTransferLog = {
+      contractAddress: TOKEN,
+      topics: [TRANSFER_TOPIC, topicFor(SAFE), topicFor(RECIPIENT)],
+      data: utils.hexZeroPad(utils.hexlify(42n), 32),
+    }
+
+    it("looks up untracked tokens only when asked, and flags them", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+      sandbox
+        .stub(chainService, "providerForNetworkOrThrow")
+        .returns({ getCode: async () => "0x" } as never)
+      const getTokenMetadata = sandbox
+        .stub(chainService.assetData, "getTokenMetadata")
+        .resolves({
+          contractAddress: TOKEN,
+          homeNetwork: ETHEREUM,
+          symbol: "MYST",
+          name: "Mystery",
+          decimals: 0,
+        })
+
+      const annotate = (resolveUntrackedAssets: boolean) =>
+        annotationsFromLogs(
+          chainService,
+          indexingService,
+          nameService,
+          [tokenTransferLog],
+          ETHEREUM,
+          2,
+          Date.now(),
+          undefined,
+          { additionalRelevantAddresses: [SAFE], resolveUntrackedAssets },
+        )
+
+      expect(await annotate(false)).toEqual([])
+      expect(getTokenMetadata.called).toBe(false)
+
+      const resolved = await annotate(true)
+      expect(resolved).toHaveLength(1)
+      expect(resolved[0]).toMatchObject({
+        type: "asset-transfer",
+        untrackedAsset: true,
+        assetAmount: { asset: { symbol: "MYST" }, amount: 42n },
+      })
+    })
+
+    it("skips a token whose metadata can't be read", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+      sandbox
+        .stub(chainService, "providerForNetworkOrThrow")
+        .returns({ getCode: async () => "0x" } as never)
+      sandbox
+        .stub(chainService.assetData, "getTokenMetadata")
+        .rejects(new Error("not a token"))
+
+      expect(
+        await annotationsFromLogs(
+          chainService,
+          indexingService,
+          nameService,
+          [tokenTransferLog],
+          ETHEREUM,
+          2,
+          Date.now(),
+          undefined,
+          { additionalRelevantAddresses: [SAFE], resolveUntrackedAssets: true },
+        ),
+      ).toEqual([])
     })
   })
 

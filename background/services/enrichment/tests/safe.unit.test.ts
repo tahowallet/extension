@@ -113,6 +113,9 @@ describe("Safe transactions", () => {
       expect(calldata.startsWith(SAFE_EXEC_TRANSACTION_SELECTOR)).toBe(true)
       expect(isSafeExecTransactionCalldata(calldata)).toBe(true)
       expect(
+        isSafeExecTransactionCalldata(`0x${calldata.slice(2).toUpperCase()}`),
+      ).toBe(true)
+      expect(
         isSafeExecTransactionCalldata(SAFE_EXEC_TRANSACTION_SELECTOR),
       ).toBe(false)
       expect(isSafeExecTransactionCalldata("0xa9059cbb")).toBe(false)

@@ -65,7 +65,10 @@ async function simulateForAnnotation(
     2 /* TODO desiredDecimals should be configurable */,
     Date.now(),
     undefined,
-    [safeTx.safeAddress],
+    {
+      additionalRelevantAddresses: [safeTx.safeAddress],
+      resolveUntrackedAssets: true,
+    },
   )
 
   return {

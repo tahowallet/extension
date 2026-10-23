@@ -159,7 +159,7 @@ export function isSafeExecTransactionCalldata(
 ): input is HexString {
   if (
     typeof input !== "string" ||
-    !input.startsWith(SAFE_EXEC_TRANSACTION_SELECTOR)
+    !input.toLowerCase().startsWith(SAFE_EXEC_TRANSACTION_SELECTOR)
   ) {
     return false
   }

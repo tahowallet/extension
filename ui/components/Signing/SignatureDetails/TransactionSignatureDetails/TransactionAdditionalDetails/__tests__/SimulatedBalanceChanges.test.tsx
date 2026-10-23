@@ -74,7 +74,7 @@ describe("SimulatedBalanceChanges", () => {
       />,
     )
 
-    expect(ui.getByText("Simulated balance changes")).toBeInTheDocument()
+    expect(ui.getByText("Your account")).toBeInTheDocument()
     expect(ui.getByText("-100")).toBeInTheDocument()
     expect(ui.getByText("+99.5")).toBeInTheDocument()
     // Both rows name the pool: as recipient of the outflow, sender of the
@@ -83,24 +83,61 @@ describe("SimulatedBalanceChanges", () => {
     expect(ui.getByText("From")).toBeInTheDocument()
   })
 
-  it("lists the Safe's changes separately when the request executes a Safe transaction", () => {
+  it("lists the executor and the Safe separately for a Safe transaction", () => {
     const SAFE = "0x1111111111111111111111111111111111111111"
     const ui = renderWithProviders(
       <SimulatedBalanceChanges
         transactionRequest={transactionRequest}
         annotation={{
-          ...annotationWith([transfer(SAFE, POOL, "USDC", "250")]),
+          ...annotationWith([
+            transfer(SAFE, POOL, "USDC", "250"),
+            // A refund or payout to the executing owner.
+            transfer(SAFE, USER, "DAI", "3"),
+          ]),
           simulatedSafeAddress: SAFE,
         }}
       />,
     )
 
-    expect(ui.queryByText("Simulated balance changes")).toBeNull()
-    expect(ui.getByText("Simulated Safe balance changes")).toBeInTheDocument()
-    expect(ui.getByText("-250")).toBeInTheDocument()
+    const [account, safe] =
+      ui.container.querySelectorAll<HTMLElement>(".simulated_changes")
+    expect(account).toHaveTextContent("Your account")
+    expect(account).toHaveTextContent("+3")
+    expect(safe).toHaveTextContent("Safe")
+    expect(safe).toHaveTextContent("-250")
+    expect(safe).toHaveTextContent("-3")
   })
 
-  it("renders nothing without transfers involving the user", () => {
+  it("says so per party when nothing moved", () => {
+    const SAFE = "0x1111111111111111111111111111111111111111"
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={{ ...annotationWith([]), simulatedSafeAddress: SAFE }}
+      />,
+    )
+
+    expect(ui.getByText("Your account")).toBeInTheDocument()
+    expect(ui.getByText("Safe")).toBeInTheDocument()
+    expect(ui.getAllByText("No balance changes")).toHaveLength(2)
+  })
+
+  it("marks tokens the wallet doesn't track", () => {
+    const untracked = {
+      ...transfer(USER, POOL, "USDC", "100"),
+      untrackedAsset: true,
+    }
+    const ui = renderWithProviders(
+      <SimulatedBalanceChanges
+        transactionRequest={transactionRequest}
+        annotation={annotationWith([untracked])}
+      />,
+    )
+
+    expect(ui.getByText("Untracked token")).toBeInTheDocument()
+  })
+
+  it("shows an empty account section without transfers involving the user", () => {
     const ui = renderWithProviders(
       <SimulatedBalanceChanges
         transactionRequest={transactionRequest}
@@ -108,6 +145,7 @@ describe("SimulatedBalanceChanges", () => {
       />,
     )
 
-    expect(ui.container).toBeEmptyDOMElement()
+    expect(ui.getByText("No balance changes")).toBeInTheDocument()
+    expect(ui.queryByText("Safe")).toBeNull()
   })
 })

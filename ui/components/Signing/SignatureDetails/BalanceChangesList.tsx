@@ -7,22 +7,28 @@ import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 type BalanceChangesListProps = {
   label: string
   transfers: AssetTransferForAddress[]
+  /** Shown under the label when nothing moved; without it, nothing renders. */
+  emptyMessage?: string
 }
 
 export default function BalanceChangesList({
   label,
   transfers,
+  emptyMessage,
 }: BalanceChangesListProps): ReactElement | null {
   const { t } = useTranslation("translation", {
     keyPrefix: "signTransaction",
   })
 
-  if (transfers.length === 0) return null
+  if (transfers.length === 0 && emptyMessage === undefined) return null
 
   return (
     <>
       <div className="simulated_changes">
         <div className="simulated_changes_label">{label}</div>
+        {transfers.length === 0 && (
+          <div className="simulated_changes_empty">{emptyMessage}</div>
+        )}
         {transfers.map((transfer, index) => (
           <div
             // Transfers carry no stable id, and the same asset can move more
@@ -39,6 +45,14 @@ export default function BalanceChangesList({
                   symbol={transfer.assetSymbol}
                 />
                 {transfer.assetSymbol}
+                {transfer.untrackedAsset && (
+                  <span
+                    className="simulated_changes_untracked"
+                    title={t("untrackedTokenExplanation")}
+                  >
+                    {t("untrackedToken")}
+                  </span>
+                )}
               </div>
               <div className={`simulated_changes_amount ${transfer.direction}`}>
                 {transfer.direction === "in" ? "+" : "-"}
@@ -69,6 +83,14 @@ export default function BalanceChangesList({
         }
         .simulated_changes_label {
           color: var(--green-40);
+        }
+        .simulated_changes_empty {
+          color: var(--green-40);
+          font-weight: 400;
+        }
+        .simulated_changes_untracked {
+          color: var(--attention);
+          font-size: 12px;
         }
         .simulated_changes_entry {
           display: flex;

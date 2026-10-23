@@ -82,6 +82,11 @@ export type AssetApproval = BaseTransactionAnnotation & {
 
 export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
+  /**
+   * The asset isn't one the wallet tracks; its metadata was read from its
+   * contract just for this annotation, so its symbol is unvetted.
+   */
+  untrackedAsset?: boolean
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipient: EnrichedAddressOnNetwork
   sender: EnrichedAddressOnNetwork
