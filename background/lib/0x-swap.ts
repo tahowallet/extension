@@ -33,22 +33,25 @@ export const SWAP_FEE = 0.01
  */
 export const NETWORKS_SUPPORTING_SWAPS = new Set([
   "1", // Ethereum
+  "2741", // Abstract
   "42161", // Arbitrum
+  "5042", // Arc
   "43114", // Avalanche
   "8453", // Base
   "80094", // Berachain
-  "81457", // Blast
   "56", // BSC
+  "999", // HyperEVM
   "57073", // Ink
   "59144", // Linea
   "5000", // Mantle
-  "34443", // Mode
   "143", // Monad
   "10", // Optimism
   "9745", // Plasma
   "137", // Polygon
+  "4663", // Robinhood
   "534352", // Scroll
   "146", // Sonic
+  "4217", // Tempo
   "130", // Unichain
   "480", // World
 ])
