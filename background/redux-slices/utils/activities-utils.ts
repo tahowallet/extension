@@ -3,13 +3,15 @@ import {
   convertToEth,
   isMaxUint256,
   normalizeEVMAddress,
-  sameEVMAddress,
   weiToGwei,
 } from "../../lib/utils"
-import { isDefined } from "../../lib/utils/type-guards"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
-import { getRecipient, getSender } from "../../services/enrichment/utils"
+import {
+  getAssetTransfersForAddress,
+  getRecipient,
+  getSender,
+} from "../../services/enrichment/utils"
 import type { HexString } from "../../types"
 
 enum TxStatus {
@@ -212,30 +214,10 @@ export const sortActivities = (a: Activity, b: Activity): number => {
 export function getActivityDetails(
   tx: EnrichedEVMTransaction,
 ): ActivityDetail[] {
-  const { annotation } = tx
-  const assetTransfers =
-    annotation?.subannotations === undefined
-      ? []
-      : annotation.subannotations
-          .map((subannotation) => {
-            if (
-              subannotation.type === "asset-transfer" &&
-              (sameEVMAddress(subannotation.sender.address, tx.from) ||
-                sameEVMAddress(subannotation.recipient.address, tx.from))
-            ) {
-              return {
-                direction: sameEVMAddress(subannotation.sender.address, tx.from)
-                  ? "out"
-                  : "in",
-                assetSymbol: subannotation.assetAmount.asset.symbol,
-                assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
-                localizedDecimalAmount:
-                  subannotation.assetAmount.localizedDecimalAmount,
-              }
-            }
-            return undefined
-          })
-          .filter(isDefined)
+  const assetTransfers = getAssetTransfersForAddress(
+    tx.annotation?.subannotations,
+    tx.from,
+  )
 
   return [
     { label: "Block Height", value: getBlockHeight(tx) },

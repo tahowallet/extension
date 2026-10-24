@@ -37,12 +37,24 @@ import {
 } from "../../lib/erc20"
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
+import type { SimulationResult } from "./simulation"
+import type { HexString } from "../../types"
+
+/**
+ * The pseudo-address `eth_simulateV1` (with `traceTransfers`) uses for native
+ * asset transfers, per ERC-7528. No real contract can emit from it, so it
+ * never appears in mined transaction logs.
+ */
+const NATIVE_TRANSFER_PSEUDO_ADDRESS =
+  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 async function buildSubannotations(
   chainService: ChainService,
   nameService: NameService,
   relevantTransferLogs: ERC20TransferLog[],
   assets: AnyAsset[],
+  /** Assets the wallet doesn't track, looked up just for this annotation. */
+  untrackedAssets: SmartContractFungibleAsset[],
   addressEnrichmentsByAddress: {
     [k: string]: EnrichedAddressOnNetwork
   },
@@ -60,14 +72,20 @@ async function buildSubannotations(
           senderAddress,
           recipientAddress,
         }) => {
-          // See if the address matches a fungible asset.
-          const matchingFungibleAsset = assets.find(
-            (asset): asset is SmartContractFungibleAsset =>
-              isSmartContractFungibleAsset(asset) &&
-              sameEVMAddress(asset.contractAddress, contractAddress),
+          // See if the address matches a fungible asset, or is a simulated
+          // native asset transfer.
+          const isTokenAt = (asset: AnyAsset) =>
+            isSmartContractFungibleAsset(asset) &&
+            sameEVMAddress(asset.contractAddress, contractAddress)
+          const untrackedAsset = untrackedAssets.find(isTokenAt)
+          const matchingAsset: AnyAsset | undefined = sameEVMAddress(
+            contractAddress,
+            NATIVE_TRANSFER_PSEUDO_ADDRESS,
           )
+            ? network.baseAsset
+            : (assets.find(isTokenAt) ?? untrackedAsset)
 
-          if (!matchingFungibleAsset) {
+          if (!matchingAsset) {
             return undefined
           }
 
@@ -89,9 +107,10 @@ async function buildSubannotations(
 
           return {
             type: "asset-transfer" as const,
+            ...(matchingAsset === untrackedAsset && { untrackedAsset: true }),
             assetAmount: enrichAssetAmountWithDecimalValues(
               {
-                asset: matchingFungibleAsset,
+                asset: matchingAsset,
                 amount,
               },
               desiredDecimals,
@@ -121,12 +140,28 @@ export async function annotationsFromLogs(
   desiredDecimals: number,
   resolvedTime: number,
   block: AnyEVMBlock | undefined,
+  {
+    additionalRelevantAddresses = [],
+    resolveUntrackedAssets = false,
+  }: {
+    /** Addresses whose transfers matter besides the tracked accounts. */
+    additionalRelevantAddresses?: HexString[]
+    /**
+     * Look up tokens the wallet doesn't track, rather than skipping their
+     * transfers. Meant for simulations, where every token that moves matters;
+     * transfers of such tokens are flagged as untracked.
+     */
+    resolveUntrackedAssets?: boolean
+  } = {},
 ): Promise<TransactionAnnotation[]> {
   const assets = indexingService.getCachedAssets(network)
 
-  const accountAddresses = (await chainService.getAccountsToTrack()).map(
-    (account) => account.address,
-  )
+  const accountAddresses = [
+    ...(await chainService.getAccountsToTrack()).map(
+      (account) => account.address,
+    ),
+    ...additionalRelevantAddresses,
+  ]
 
   const tokenTransferLogs = [
     ...parseLogsForERC20Transfers(logs),
@@ -137,6 +172,40 @@ export async function annotationsFromLogs(
     tokenTransferLogs,
     accountAddresses,
   )
+
+  const untrackedContracts = resolveUntrackedAssets
+    ? [
+        ...new Set(
+          relevantTransferLogs
+            .map(({ contractAddress }) => normalizeEVMAddress(contractAddress))
+            .filter(
+              (contractAddress) =>
+                !sameEVMAddress(
+                  contractAddress,
+                  NATIVE_TRANSFER_PSEUDO_ADDRESS,
+                ) &&
+                !assets.some(
+                  (asset) =>
+                    isSmartContractFungibleAsset(asset) &&
+                    sameEVMAddress(asset.contractAddress, contractAddress),
+                ),
+            ),
+        ),
+      ]
+    : []
+  const untrackedAssets = (
+    await Promise.allSettled(
+      untrackedContracts.map((contractAddress) =>
+        chainService.assetData.getTokenMetadata({
+          contractAddress,
+          homeNetwork: network,
+        }),
+      ),
+    )
+  )
+    .filter(isFulfilledPromise)
+    .map(({ value }) => value)
+    .filter(isDefined)
 
   const relevantAddresses =
     getDistinctRecipentAddressesFromERC20Logs(relevantTransferLogs).map(
@@ -169,6 +238,7 @@ export async function annotationsFromLogs(
     nameService,
     relevantTransferLogs,
     assets,
+    untrackedAssets,
     addressEnrichmentsByAddress,
     network,
     desiredDecimals,
@@ -182,6 +252,11 @@ export async function annotationsFromLogs(
 /**
  * Resolve an annotation for a partial transaction request, or a pending
  * or mined transaction.
+ *
+ * `simulation` carries the result of an off-chain simulation (e.g.
+ * `eth_simulateV1`) for pending requests that don't yet have real logs.
+ * Successful simulation logs are fed through the same log-to-subannotation
+ * pipeline used for mined transactions; a revert adds a warning.
  */
 export default async function resolveTransactionAnnotation(
   chainService: ChainService,
@@ -197,6 +272,7 @@ export default async function resolveTransactionAnnotation(
         blockHash?: string
       }),
   desiredDecimals: number,
+  simulation?: SimulationResult,
 ): Promise<TransactionAnnotation> {
   const assets = await indexingService.getCachedAssets(network)
 
@@ -252,6 +328,23 @@ export default async function resolveTransactionAnnotation(
     txAnnotation.warnings = txAnnotation.warnings.filter(
       (warning) => warning !== "insufficient-funds",
     )
+  }
+
+  // Annotations can be carried over between re-enrichments of the same
+  // request (e.g. after a fee change), so clear stale simulation state.
+  const otherWarnings = txAnnotation.warnings.filter(
+    (warning) => warning !== "simulation-reverted",
+  )
+  txAnnotation = {
+    ...txAnnotation,
+    warnings:
+      simulation?.status === "reverted"
+        ? [...otherWarnings, "simulation-reverted"]
+        : otherWarnings,
+    simulationRevertReason:
+      simulation?.status === "reverted" ? simulation.revertReason : undefined,
+    simulatedSafeAddress: simulation?.safeAddress,
+    simulationStatus: simulation?.status,
   }
 
   // If the transaction has been mined, get the block and set the timestamp
@@ -452,17 +545,42 @@ export default async function resolveTransactionAnnotation(
     }
   }
 
-  // Look up logs and resolve subannotations, if available.
-  if ("logs" in transaction && typeof transaction.logs !== "undefined") {
+  // Look up logs and resolve subannotations, if available. Prefer real
+  // confirmed-tx logs when present; otherwise fall back to any logs we got
+  // from off-chain simulation of a pending request.
+  const hasConfirmedLogs =
+    "logs" in transaction && typeof transaction.logs !== "undefined"
+  const simulatedLogs =
+    simulation?.status === "success" ? simulation.logs : undefined
+  const logsForAnnotations = hasConfirmedLogs ? transaction.logs : simulatedLogs
+
+  // As above, don't let a previous simulation's transfers outlive it on a
+  // signature request (which, unlike a broadcast transaction, has no hash).
+  if (!hasConfirmedLogs && !("hash" in transaction)) {
+    txAnnotation = { ...txAnnotation, subannotations: undefined }
+  }
+
+  if (logsForAnnotations !== undefined) {
     const subannotations = await annotationsFromLogs(
       chainService,
       indexingService,
       nameService,
-      transaction.logs,
+      logsForAnnotations,
       network,
       desiredDecimals,
       txAnnotation.timestamp,
       block,
+      hasConfirmedLogs
+        ? {}
+        : {
+            // A Safe isn't usually a tracked account, but its transfers are
+            // the point of simulating its transaction.
+            additionalRelevantAddresses:
+              simulation?.safeAddress === undefined
+                ? []
+                : [simulation.safeAddress],
+            resolveUntrackedAssets: true,
+          },
     )
 
     if (subannotations.length > 0) {
