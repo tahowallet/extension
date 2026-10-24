@@ -119,7 +119,11 @@
     "viewAddressPermission": "View address of connected account",
     "createTransactionPermission": "Create but not sign transactions for you",
     "rejectConnection": "Reject",
-    "acceptConnection": "Connect"
+    "acceptConnection": "Connect",
+    "allowNetwork": "Allow another network",
+    "allowNetworkQuestion": "Allow {{site}} to use {{network}}?",
+    "allowNetworkPermissionListTitle": "It's already connected to this account on other networks. On {{network}}, it would get permission to:",
+    "acceptNetwork": "Allow"
   },
   "genericPages": {
     "pageDoesNotExist": "This page does not exist. That's all we know.",

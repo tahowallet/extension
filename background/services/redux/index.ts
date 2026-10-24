@@ -1370,11 +1370,18 @@ export default class ReduxService extends BaseService<never> {
         chainId: permission.chainID,
       })
 
+      // A site asking to use one more network gets that network alone; the
+      // user hasn't agreed to anything else. A new connection covers every
+      // supported network.
+      const chainIDs = permission.forAdditionalNetwork
+        ? [permission.chainID]
+        : this.chainService.supportedNetworks.map(({ chainID }) => chainID)
+
       await Promise.all(
-        this.chainService.supportedNetworks.map(async (network) => {
+        chainIDs.map(async (chainID) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
-            chainID: network.chainID,
+            chainID,
           })
         }),
       )

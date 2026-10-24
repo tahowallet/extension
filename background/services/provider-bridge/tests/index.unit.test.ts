@@ -1,4 +1,5 @@
 import {
+  AllowedQueryParamPage,
   EIP1193_ERROR_CODES,
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
@@ -295,8 +296,38 @@ describe("ProviderBridgeService", () => {
     }
 
     let internalEthereumProvider: InternalEthereumProviderService
+    let showPopupSpy: ReturnType<typeof jest.spyOn>
+    let closePopup: (() => void) | undefined
+    let permissionRequests: PermissionRequest[]
+
+    const originChainID = async () =>
+      (
+        await internalEthereumProvider.getCurrentOrDefaultNetworkForOrigin(
+          origin,
+        )
+      ).chainID
+
+    const request = () =>
+      providerBridgeService.routeContentScriptRPCRequest(
+        enablingPermission,
+        method,
+        paramsFor(POLYGON.chainID),
+        origin,
+      )
 
     beforeEach(async () => {
+      closePopup = undefined
+      permissionRequests = []
+      showPopupSpy = jest
+        .spyOn(popupUtils, "default")
+        .mockImplementation((_page, _options, onClose) => {
+          closePopup = onClose
+          return Promise.resolve(WINDOW)
+        })
+      providerBridgeService.emitter.on("requestPermission", (permission) => {
+        permissionRequests.push(permission)
+      })
+
       internalEthereumProvider =
         // @ts-expect-error private access to reference the service
         providerBridgeService.internalEthereumProviderService
@@ -328,33 +359,111 @@ describe("ProviderBridgeService", () => {
       await providerBridgeService.revokePermissionsForOrigin(origin)
     })
 
-    it("should reject a chain the origin has no permission on", async () => {
+    it("should ask a connected site before switching to a chain it has no permission on", async () => {
       const switchSpy = jest.spyOn(
         internalEthereumProvider,
         "switchToSupportedNetwork",
       )
-      const showPopupSpy = jest.spyOn(popupUtils, "default")
 
-      const response = await providerBridgeService.routeContentScriptRPCRequest(
-        enablingPermission,
-        method,
-        paramsFor(POLYGON.chainID),
-        origin,
+      const response = request()
+
+      await waitFor(() =>
+        expect(showPopupSpy).toHaveBeenCalledWith(
+          AllowedQueryParamPage.dappPermission,
+          {},
+          expect.any(Function),
+        ),
+      )
+      expect(permissionRequests).toEqual([
+        expect.objectContaining({
+          origin,
+          accountAddress: ADDRESS,
+          chainID: POLYGON.chainID,
+          state: "request",
+          forAdditionalNetwork: true,
+        }),
+      ])
+      expect(switchSpy).not.toHaveBeenCalled()
+
+      // Approving the request, as the redux grantPermission listener does
+      // for a request for an additional network.
+      await providerBridgeService.grantPermission({
+        ...permissionRequests[0],
+        state: "allow",
+      })
+
+      expect(await response).toBeNull()
+      expect(await originChainID()).toEqual(POLYGON.chainID)
+      expect(
+        await providerBridgeService.checkPermission(origin, POLYGON.chainID),
+      ).toMatchObject({ state: "allow", chainID: POLYGON.chainID })
+      expect(
+        await providerBridgeService.checkPermission(origin, ETHEREUM.chainID),
+      ).toMatchObject({ state: "allow" })
+    })
+
+    it("should leave everything alone when the user rejects the prompt", async () => {
+      const switchSpy = jest.spyOn(
+        internalEthereumProvider,
+        "switchToSupportedNetwork",
       )
 
-      expect(response).toEqual(EIP1193_ERROR_CODES.unauthorized)
+      const response = request()
+
+      await waitFor(() => expect(closePopup).toBeDefined())
+      closePopup?.()
+
+      expect(await response).toEqual(EIP1193_ERROR_CODES.userRejectedRequest)
       expect(switchSpy).not.toHaveBeenCalled()
-      expect(showPopupSpy).not.toHaveBeenCalled()
-      expect(
-        (
-          await internalEthereumProvider.getCurrentOrDefaultNetworkForOrigin(
-            origin,
-          )
-        ).chainID,
-      ).toEqual(ETHEREUM.chainID)
+      expect(await originChainID()).toEqual(ETHEREUM.chainID)
       expect(
         await providerBridgeService.checkPermission(origin, POLYGON.chainID),
       ).toBeUndefined()
+      expect(
+        await providerBridgeService.checkPermission(origin, ETHEREUM.chainID),
+      ).toMatchObject({ state: "allow" })
+    })
+
+    it("should reject a second request while the prompt is open", async () => {
+      const firstResponse = request()
+      await waitFor(() => expect(closePopup).toBeDefined())
+
+      expect(await request()).toEqual(EIP1193_ERROR_CODES.userRejectedRequest)
+      expect(showPopupSpy).toHaveBeenCalledTimes(1)
+
+      closePopup?.()
+      expect(await firstResponse).toEqual(
+        EIP1193_ERROR_CODES.userRejectedRequest,
+      )
+    })
+
+    it("should reject a site that isn't connected without asking", async () => {
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+      const switchSpy = jest.spyOn(
+        internalEthereumProvider,
+        "switchToSupportedNetwork",
+      )
+
+      expect(await request()).toEqual(EIP1193_ERROR_CODES.unauthorized)
+      expect(showPopupSpy).not.toHaveBeenCalled()
+      expect(permissionRequests).toEqual([])
+      expect(switchSpy).not.toHaveBeenCalled()
+      expect(
+        await providerBridgeService.checkPermission(origin, POLYGON.chainID),
+      ).toBeUndefined()
+    })
+
+    it("should reject a site connected only for another account without asking", async () => {
+      await providerBridgeService.revokePermissionsForOrigin(origin)
+      const otherAddress = "0x1111111111111111111111111111111111111111"
+      await providerBridgeService.grantPermission({
+        ...enablingPermission,
+        key: `${origin}_${otherAddress}_${ETHEREUM.chainID}`,
+        accountAddress: otherAddress,
+      })
+
+      expect(await request()).toEqual(EIP1193_ERROR_CODES.unauthorized)
+      expect(showPopupSpy).not.toHaveBeenCalled()
     })
 
     it("should switch to a chain the origin has permission on", async () => {
@@ -381,6 +490,28 @@ describe("ProviderBridgeService", () => {
           ).chainID,
         ).toEqual(POLYGON.chainID),
       )
+    })
+  })
+
+  describe("grantPermission", () => {
+    it("should store a request for an additional network as a plain permission", async () => {
+      const { enablingPermission, origin } = BASE_DATA
+
+      await providerBridgeService.grantPermission({
+        ...enablingPermission,
+        forAdditionalNetwork: true,
+      })
+
+      expect(
+        // @ts-expect-error private access to inspect stored rows directly
+        await providerBridgeService.db.checkPermission(
+          origin,
+          ADDRESS,
+          enablingPermission.chainID,
+        ),
+      ).toEqual(enablingPermission)
+
+      await providerBridgeService.revokePermissionsForOrigin(origin)
     })
   })
 
