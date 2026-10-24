@@ -32,6 +32,15 @@ export const EIP1193_ERROR_CODES = {
     code: 4901,
     message: "The Provider is not connected to the requested chain.",
   },
+  unrecognizedChainId: {
+    // 4902 is not part of EIP-1193, but it's the de facto standard
+    // wallet_switchEthereumChain error for a chain the wallet doesn't know.
+    // Dapps (wagmi/viem among them) look for it to decide whether to follow
+    // up with wallet_addEthereumChain.
+    code: 4902,
+    message:
+      "Unrecognized chain ID. Try adding the chain using wallet_addEthereumChain first.",
+  },
 } as const
 
 export type EIP1193ErrorPayload =

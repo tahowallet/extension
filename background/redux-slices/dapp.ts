@@ -1,6 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import {
+  DeniedPermission,
+  PermissionRequest,
+} from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
@@ -40,7 +43,7 @@ export const initialState: DAppPermissionState = {
 export type Events = {
   requestPermission: PermissionRequest
   grantPermission: PermissionRequest
-  denyOrRevokePermission: PermissionRequest
+  denyOrRevokePermission: DeniedPermission
   switchNetworkForOrigin: { origin: string; network: EVMNetwork }
 }
 
@@ -60,7 +63,7 @@ export const grantPermission = createBackgroundAsyncThunk(
 // Async thunk to bubble the permissionDenyOrRevoke action from store to emitter.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionDenyOrRevoke",
-  async (permission: PermissionRequest) => {
+  async (permission: DeniedPermission) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
   },
