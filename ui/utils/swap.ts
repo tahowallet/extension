@@ -3,9 +3,18 @@ import {
   SwappableAsset,
 } from "@tallyho/tally-background/assets"
 import { EIP_1559_COMPLIANT_CHAIN_IDS } from "@tallyho/tally-background/constants"
-import { fixedPointNumberToString } from "@tallyho/tally-background/lib/fixed-point"
+import {
+  convertFixedPoint,
+  fixedPointNumberToString,
+} from "@tallyho/tally-background/lib/fixed-point"
 import logger from "@tallyho/tally-background/lib/logger"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import {
+  getEstimatedSellAmount,
+  getMaxSellAmount,
+  getMinBuyAmount,
+} from "@tallyho/tally-background/lib/0x-swap"
+import { LiquidSwapPrice } from "@tallyho/tally-background/lib/0x-swap-types"
 import { fetchSwapPrice } from "@tallyho/tally-background/redux-slices/0x-swap"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { NetworkFeeSettings } from "@tallyho/tally-background/redux-slices/transaction-construction"
@@ -26,9 +35,76 @@ import { useValueRef, useIsMounted, useSetState } from "../hooks/react-hooks"
 
 const UPDATE_SWAP_QUOTE_DEBOUNCE_TIME = 500
 
+const QUOTE_AMOUNT_DISPLAY_DECIMALS = 8
+
+export type QuoteAmounts =
+  | {
+      mode: "exact-in"
+      buyAmount: string
+      minBuyAmount: string
+    }
+  | {
+      mode: "exact-out"
+      buyAmount: string
+      estimatedSellAmount: string
+      maxSellAmount: string
+    }
+
+/**
+ * Shortens a token amount for display, rounding bounds toward the side that
+ * keeps them true.
+ */
+function formatQuoteAmount(
+  amount: string,
+  decimals: number,
+  rounding: "down" | "up" = "down",
+): string {
+  const fixedPoint = BigInt(amount)
+  const displayDecimals = Math.min(decimals, QUOTE_AMOUNT_DISPLAY_DECIMALS)
+  const truncated = convertFixedPoint(fixedPoint, decimals, displayDecimals)
+  const wasTruncated =
+    convertFixedPoint(truncated, displayDecimals, decimals) !== fixedPoint
+
+  return fixedPointNumberToString({
+    amount: rounding === "up" && wasTruncated ? truncated + 1n : truncated,
+    decimals: displayDecimals,
+  })
+}
+
+export function getQuoteAmounts(
+  quote: LiquidSwapPrice,
+  sellAsset: SwappableAsset,
+  buyAsset: SwappableAsset,
+): QuoteAmounts {
+  const buyAmount = formatQuoteAmount(quote.buyAmount, buyAsset.decimals)
+
+  if (quote.mode === "exact-out") {
+    return {
+      mode: quote.mode,
+      buyAmount,
+      estimatedSellAmount: formatQuoteAmount(
+        getEstimatedSellAmount(quote),
+        sellAsset.decimals,
+      ),
+      maxSellAmount: formatQuoteAmount(
+        getMaxSellAmount(quote),
+        sellAsset.decimals,
+        "up",
+      ),
+    }
+  }
+
+  return {
+    mode: quote.mode,
+    buyAmount,
+    minBuyAmount: formatQuoteAmount(getMinBuyAmount(quote), buyAsset.decimals),
+  }
+}
+
 export type QuoteUpdate = {
   type: QuoteType
   quote?: string
+  amounts?: QuoteAmounts
   priceDetails?: PriceDetails
   needsApproval: boolean
   approvalTarget?: string
@@ -111,10 +187,11 @@ export const fetchQuote = async ({
       priceDetails: updatedQuoteData.priceDetails,
       needsApproval: updatedQuoteData.needsApproval,
       approvalTarget: updatedQuoteData.quote.allowanceTarget ?? undefined,
+      amounts: getQuoteAmounts(updatedQuoteData.quote, sellAsset, buyAsset),
       quote:
         type === "getSellAmount"
           ? fixedPointNumberToString({
-              amount: BigInt(updatedQuoteData.quote.sellAmount),
+              amount: BigInt(getMaxSellAmount(updatedQuoteData.quote)),
               decimals: sellAsset.decimals,
             })
           : fixedPointNumberToString({

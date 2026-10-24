@@ -45,6 +45,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
+import SwapQuoteAmounts from "../components/Swap/SwapQuoteAmounts"
 import {
   useSwapQuote,
   getSellAssetAmounts,
@@ -328,8 +329,10 @@ export default function Swap(): ReactElement {
       buyAsset &&
       (sellAmount || buyAmount)
     ) {
-      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
-      const amount = sellAmount || buyAmount
+      // Requote the side the user entered; the other side holds the quote.
+      const type =
+        quote?.type ?? (sellAmount ? "getBuyAmount" : "getSellAmount")
+      const amount = type === "getBuyAmount" ? sellAmount : buyAmount
 
       requestQuoteUpdate({
         type,
@@ -378,6 +381,9 @@ export default function Swap(): ReactElement {
             estimatedPriceImpact: quote.priceDetails?.priceImpact,
           }),
         )
+      } else {
+        // The background has already told the user why there's no quote.
+        setIsLoading(false)
       }
     }
   }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
@@ -512,6 +518,18 @@ export default function Swap(): ReactElement {
                   message={t("swap.loadingQuote")}
                 />
               )}
+              {!loadingQuote &&
+                sellAsset &&
+                buyAsset &&
+                quoteAppliesToCurrentAssets &&
+                quoteAppliesToCurrentAmounts &&
+                quote?.amounts && (
+                  <SwapQuoteAmounts
+                    amounts={quote.amounts}
+                    sellSymbol={sellAsset.symbol}
+                    buySymbol={buyAsset.symbol}
+                  />
+                )}
             </div>
           </div>
           {isEnabled(FeatureFlags.SHOW_SWAP_REWARDS) ? (
