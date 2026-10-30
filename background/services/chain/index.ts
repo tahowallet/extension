@@ -84,6 +84,7 @@ import {
 import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 import { ISLAND_NETWORK } from "../island/contracts"
+import ProviderRegistry from "./provider-registry"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -216,8 +217,17 @@ export type PriorityQueuedTxToRetrieve = {
  *   case a service needs to interact with a network directly.
  */
 export default class ChainService extends BaseService<Events> {
-  providers: { evm: { [networkName: string]: SerialFallbackProvider } } = {
-    evm: {},
+  private providerRegistry: ProviderRegistry
+
+  /** Method-specific endpoint configuration, by chain ID. */
+  private methodSpecificRpcConfigs = new Map<string, RpcConfig>()
+
+  /**
+   * @deprecated Use {@link providerForNetwork}; providers are owned by the
+   * provider registry.
+   */
+  get providers(): { evm: { [chainID: string]: SerialFallbackProvider } } {
+    return { evm: this.providerRegistry.providersByChainID() }
   }
 
   subscribedAccounts: {
@@ -347,6 +357,34 @@ export default class ChainService extends BaseService<Events> {
     this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
+
+    this.providerRegistry = new ProviderRegistry({
+      createProvider: (chainID, rpcEndpoints, onReachabilityChange) =>
+        makeSerialFallbackProvider(
+          chainID,
+          rpcEndpoints,
+          this.methodSpecificRpcConfigs.get(chainID),
+          onReachabilityChange,
+        ),
+      verifyEndpoints: (chainID, rpcEndpoints, signal) =>
+        this.verifyNewEndpoints(chainID, rpcEndpoints, signal),
+      saveEndpoints: (chainID, rpcEndpoints) =>
+        this.db.setRpcEndpoints(chainID, rpcEndpoints),
+      removeChain: (chainID) => this.db.removeEVMNetwork(chainID),
+      onReachabilityChange: (chainID, status) =>
+        this.emitReachability(chainID, status),
+    })
+
+    this.providerRegistry.onProviderReplaced(({ chainID, previousProvider }) =>
+      this.resubscribeToChainEvents(chainID, previousProvider).catch(
+        (error) => {
+          logger.error(
+            `Error moving subscriptions to the new provider on chain ${chainID}`,
+            error,
+          )
+        },
+      ),
+    )
   }
 
   override async internalStartService(): Promise<void> {
@@ -415,39 +453,16 @@ export default class ChainService extends BaseService<Events> {
         this.supportedNetworks.map((network) => [network.chainID, 0]),
       ) || {}
 
-    this.providers = {
-      evm: Object.fromEntries(
-        this.supportedNetworks.map((network) => [
-          network.chainID,
-          this.makeProviderForChain(
-            network.chainID,
-            rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
-              ?.endpoints || [],
-            customRpcUrls.find((v) => v.chainID === network.chainID),
-          ),
-        ]),
-      ),
-    }
-  }
+    customRpcUrls.forEach((config) =>
+      this.methodSpecificRpcConfigs.set(config.chainID, config),
+    )
 
-  /**
-   * Builds a provider for a chain, wired to report the chain's reachability.
-   *
-   * Every provider this service holds is built here rather than by calling
-   * `makeSerialFallbackProvider` directly, so that a provider without that
-   * wiring — one whose outages nobody would hear about — cannot be created by
-   * forgetting an argument.
-   */
-  private makeProviderForChain(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-    customRpc?: RpcConfig,
-  ): SerialFallbackProvider {
-    return makeSerialFallbackProvider(
-      chainID,
-      rpcEndpoints,
-      customRpc,
-      (status) => this.emitReachability(chainID, status),
+    this.supportedNetworks.forEach(({ chainID }) =>
+      this.providerRegistry.start(
+        chainID,
+        rpcEndpointConfigs.find((config) => config.chainID === chainID)
+          ?.endpoints ?? [],
+      ),
     )
   }
 
@@ -456,9 +471,11 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return isEnabled(FeatureFlags.USE_MAINNET_FORK)
-      ? this.providers.evm[ETHEREUM.chainID]
-      : this.providers.evm[network.chainID]
+    return this.providerRegistry.providerFor(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? ETHEREUM.chainID
+        : network.chainID,
+    )
   }
 
   async addCustomProvider(
@@ -471,12 +488,20 @@ export default class ChainService extends BaseService<Events> {
       rpcUrl,
       customProviderCreator.supportedMethods,
     )
-    this.providers.evm[chainID]?.addCustomProvider(customProviderCreator)
+    this.methodSpecificRpcConfigs.set(chainID, {
+      chainID,
+      rpcUrls: [rpcUrl],
+      supportedMethods: customProviderCreator.supportedMethods ?? [],
+    })
+    this.providerRegistry
+      .providerFor(chainID)
+      ?.addCustomProvider(customProviderCreator)
   }
 
   async removeCustomProvider(chainID: string): Promise<void> {
     await this.db.removeCustomRpcUrl(chainID)
-    this.providers.evm[chainID]?.removeCustomProvider()
+    this.methodSpecificRpcConfigs.delete(chainID)
+    this.providerRegistry.providerFor(chainID)?.removeCustomProvider()
   }
 
   /**
@@ -2105,20 +2130,10 @@ export default class ChainService extends BaseService<Events> {
     })
     await this.updateSupportedNetworks()
 
-    // Adding a chain that is already known replaces its provider outright, so
-    // retire the outgoing one rather than leaving it polling and reconnecting
-    // to the endpoints it was built with for the life of the service worker.
-    this.providers.evm[chainInfo.chainId]?.destroy()
-
-    this.providers.evm[chainInfo.chainId] = this.makeProviderForChain(
+    await this.providerRegistry.replaceProvider(
       chainInfo.chainId,
       chainInfo.rpcUrls.map((url) => ({ url })),
     )
-
-    // As in `rebuildProviderForChain`: the replacement has failed nothing yet,
-    // and re-adding a chain with a fresh endpoint list should not inherit the
-    // verdict on the list it replaced.
-    this.emitReachability(chainInfo.chainId, "reachable")
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 
@@ -2149,17 +2164,29 @@ export default class ChainService extends BaseService<Events> {
       throw new Error(`No network found for chain ID ${chainID}`)
     }
 
+    await this.providerRegistry.updateEndpoints(chainID, rpcEndpoints)
+  }
+
+  /**
+   * Checks the endpoints that aren't already stored for the chain; one with a
+   * transient outage shouldn't block an unrelated settings change.
+   */
+  private async verifyNewEndpoints(
+    chainID: string,
+    rpcEndpoints: RpcEndpoint[],
+    signal: AbortSignal,
+  ): Promise<void> {
     const storedUrls = new Set(
       (await this.db.getRpcEndpointsByChainId(chainID).catch(() => [])).map(
         ({ url }) => url,
       ),
     )
-    const newEndpoints = rpcEndpoints.filter(({ url }) => !storedUrls.has(url))
 
-    await this.validateRpcEndpoints(chainID, newEndpoints)
-
-    await this.db.setRpcEndpoints(chainID, rpcEndpoints)
-    await this.rebuildProviderForChain(chainID, rpcEndpoints)
+    await this.validateRpcEndpoints(
+      chainID,
+      rpcEndpoints.filter(({ url }) => !storedUrls.has(url)),
+      signal,
+    )
   }
 
   async getRpcEndpointsForChain(chainID: string): Promise<RpcEndpoint[]> {
@@ -2252,39 +2279,9 @@ export default class ChainService extends BaseService<Events> {
     return { rpcEndpoints, managedRpcEndpoints }
   }
 
-  private async rebuildProviderForChain(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-  ): Promise<void> {
-    const customRpcConfigs = await this.db.getAllCustomRpcUrls()
-    const previousProvider = this.providers.evm[chainID]
-
-    this.providers.evm[chainID] = this.makeProviderForChain(
-      chainID,
-      rpcEndpoints,
-      customRpcConfigs.find((config) => config.chainID === chainID),
-    )
-
-    // Nothing points at the replaced provider anymore, but its reconnect and
-    // cache-cleanup timers would keep running, and its WebSockets keep
-    // reopening, against endpoints the user just removed.
-    previousProvider?.destroy()
-
-    // Subscriptions are tracked alongside the provider they were made on, so
-    // they have to be moved over; otherwise gas polling and pending
-    // transaction watching would keep addressing the retired provider.
-    await this.resubscribeToChainEvents(chainID, previousProvider)
-
-    // The replacement starts out reachable and has never failed anything, so
-    // say so rather than leaving a warning up against endpoints that have not
-    // been tried yet. If the new list is no better than the old one, the walk
-    // will exhaust again soon enough and we will be back.
-    this.emitReachability(chainID, "reachable")
-  }
-
   /**
    * Announces a chain's reachability. Deduplication is the provider's job —
-   * its tracker only reports transitions — but a provider rebuild reports
+   * its tracker only reports transitions — but a provider replacement reports
    * unconditionally, since the tracker it is replacing took its state with it.
    */
   private emitReachability(
@@ -2386,6 +2383,7 @@ export default class ChainService extends BaseService<Events> {
   private async validateRpcEndpoints(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
+    signal?: AbortSignal,
   ): Promise<void> {
     await Promise.all(
       rpcEndpoints.map(async ({ url }) => {
@@ -2404,6 +2402,7 @@ export default class ChainService extends BaseService<Events> {
           () => abortController.abort(),
           RPC_PROBE_TIMEOUT,
         )
+        signal?.addEventListener("abort", () => abortController.abort())
 
         let reportedChainID: string
         try {
@@ -2455,13 +2454,8 @@ export default class ChainService extends BaseService<Events> {
       (network) => network.chainID !== chainID,
     )
 
-    // Dropping the network from the database is not enough: the provider is a
-    // live object with its own reconnect and cache-cleanup timers and, for
-    // WebSocket endpoints, open sockets. Retire it and drop the entry, so
-    // nothing can keep talking to a chain the user has removed.
-    const removedProvider = this.providers.evm[chainID]
-    removedProvider?.destroy()
-    delete this.providers.evm[chainID]
+    const removedProvider = this.providerRegistry.providerFor(chainID)
+    await this.providerRegistry.removeProvider(chainID)
 
     // The subscription registries are what the periodic block and block-price
     // polls read the provider from, so entries pointing at the retired one
@@ -2473,7 +2467,6 @@ export default class ChainService extends BaseService<Events> {
       ({ provider }) => provider !== removedProvider,
     )
 
-    await this.db.removeEVMNetwork(chainID)
     await this.updateSupportedNetworks()
   }
 

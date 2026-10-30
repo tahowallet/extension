@@ -450,9 +450,9 @@ describe("Chain Service", () => {
       await chainService.stopService()
     })
 
-    // Problem 3: re-adding a chain replaces its provider, but the network is
-    // already tracked, so nothing moves its subscriptions over.
-    it("keeps gas polling on the retired provider after a known chain is re-added", async () => {
+    // Problem 3: re-adding a chain replaces its provider while the network is
+    // already tracked.
+    it("polls gas on the new provider after a known chain is re-added", async () => {
       await chainService.addCustomChain(CUSTOM_CHAIN)
       chainService.markNetworkActivity(CUSTOM_CHAIN.chainId)
       const firstProvider = chainService.providerForNetwork({
@@ -470,7 +470,12 @@ describe("Chain Service", () => {
       expect(firstProvider?.isDestroyed).toBe(true)
       expect(getBlockPricesMock).toHaveBeenCalledTimes(1)
       const [, polledProvider] = getBlockPricesMock.mock.calls[0] as unknown[]
-      expect(polledProvider).toBe(firstProvider)
+      expect(polledProvider).not.toBe(firstProvider)
+      expect(polledProvider).toBe(
+        chainService.providerForNetwork({
+          chainID: CUSTOM_CHAIN.chainId,
+        } as EVMNetwork),
+      )
     })
 
     // Problem 4: each newly watched network schedules its own burst of gas

@@ -1064,7 +1064,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * providers — dropping their listeners and closing any WebSockets. Without
    * this, a replaced provider keeps polling and reconnecting to endpoints that
    * are no longer configured for the lifetime of the service worker; see
-   * `ChainService.rebuildProviderForChain`.
+   * `ProviderRegistry`.
    *
    * The latch is what makes retirement permanent: tearing the underlying
    * providers down leaves the creators callable, so a request still in flight
