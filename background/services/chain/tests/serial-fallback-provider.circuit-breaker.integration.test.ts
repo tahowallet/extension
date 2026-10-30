@@ -2,7 +2,7 @@ import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import SerialFallbackProvider from "../serial-fallback-provider"
-import { CircuitBreaker } from "../circuit-breaker"
+import type Endpoint from "../rpc/endpoint"
 import {
   resetForTests as resetPerfMetricsForTests,
   snapshotAndReset,
@@ -19,9 +19,9 @@ const sandbox = sinon.createSandbox()
 function tripBreakerOpen(
   provider: SerialFallbackProvider,
   providerIndex: number,
-): CircuitBreaker {
+): Endpoint {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/dot-notation
-  const breaker: CircuitBreaker = (provider as any)["breakerFor"](providerIndex)
+  const breaker: Endpoint = (provider as any)["breakerFor"](providerIndex)
   for (let i = 0; i < 10; i += 1) {
     breaker.recordFailure()
   }
