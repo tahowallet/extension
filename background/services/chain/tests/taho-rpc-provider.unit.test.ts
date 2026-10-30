@@ -1,0 +1,78 @@
+import { describe, expect, it } from "bun:test"
+import TahoRPCProvider from "../taho-rpc-provider"
+
+type Payload = { id: number; method: string }
+
+/** Answers batches up to `limit` long; rejects longer ones as too large. */
+class LimitedProvider extends TahoRPCProvider {
+  batchSizes: number[] = []
+
+  constructor(
+    private readonly limit: number,
+    private readonly rejection: "body" | "throw" = "body",
+  ) {
+    super("http://limited.example", 1, { maxBatchLength: 8 })
+  }
+
+  protected override async postBatch(body: string) {
+    const parsed = JSON.parse(body) as Payload | Payload[]
+    const payloads = Array.isArray(parsed) ? parsed : [parsed]
+    this.batchSizes.push(payloads.length)
+
+    if (payloads.length > this.limit) {
+      if (this.rejection === "throw") {
+        throw new Error("batch size limit exceeded")
+      }
+      return {
+        id: payloads[0].id,
+        jsonrpc: "2.0" as const,
+        error: { code: -32600, message: "batch too large" },
+      }
+    }
+
+    const responses = payloads.map(({ id, method }) => ({
+      id,
+      jsonrpc: "2.0" as const,
+      result: method,
+    }))
+    return Array.isArray(parsed) ? responses : responses[0]
+  }
+}
+
+describe("TahoRPCProvider", () => {
+  it.each(["body", "throw"] as const)(
+    "halves a batch the endpoint finds too large and resends it (%s)",
+    async (rejection) => {
+      const provider = new LimitedProvider(2, rejection)
+
+      const results = await Promise.all(
+        ["a", "b", "c", "d", "e", "f"].map((method) =>
+          provider.send(method, []),
+        ),
+      )
+
+      expect(results).toEqual(["a", "b", "c", "d", "e", "f"])
+      expect(provider.getOptions().maxBatchLength).toBe(1)
+      expect(provider.batchSizes[0]).toBe(6)
+      expect(provider.batchSizes.slice(1).every((size) => size <= 3)).toBe(true)
+    },
+  )
+
+  it("rejects a single request the endpoint calls too large", async () => {
+    const provider = new LimitedProvider(0)
+
+    await expect(provider.send("a", [])).rejects.toThrow("batch too large")
+    expect(provider.batchSizes).toEqual([1])
+  })
+
+  it("sends a batch the endpoint accepts once", async () => {
+    const provider = new LimitedProvider(10)
+
+    await Promise.all(
+      ["a", "b", "c"].map((method) => provider.send(method, [])),
+    )
+
+    expect(provider.batchSizes).toEqual([3])
+    expect(provider.getOptions().maxBatchLength).toBe(8)
+  })
+})

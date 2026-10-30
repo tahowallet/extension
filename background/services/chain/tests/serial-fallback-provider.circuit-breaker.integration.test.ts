@@ -21,7 +21,9 @@ function tripBreakerOpen(
   providerIndex: number,
 ): Endpoint {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/dot-notation
-  const breaker: Endpoint = (provider as any)["breakerFor"](providerIndex)
+  const breaker: Endpoint = (provider as any)["standardEndpointAt"](
+    providerIndex,
+  )
   for (let i = 0; i < 10; i += 1) {
     breaker.recordFailure()
   }

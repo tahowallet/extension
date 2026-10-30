@@ -198,7 +198,7 @@ describe("SerialFallbackProvider characterization", () => {
       10_000,
     )
 
-    it("does not retry a bad response on the endpoint it failed over to", async () => {
+    it("retries a bad response on the endpoint it failed over to as well", async () => {
       first.send.withArgs("eth_call").rejects(new Error("bad response"))
       second.send.withArgs("eth_call").rejects(new Error("bad response"))
 
@@ -207,7 +207,19 @@ describe("SerialFallbackProvider characterization", () => {
       )
 
       expect(callsFor(first.send, "eth_call")).toEqual(4)
-      expect(callsFor(second.send, "eth_call")).toEqual(1)
+      expect(callsFor(second.send, "eth_call")).toEqual(4)
+    }, 10_000)
+
+    it("gives up on a bad response from a lone endpoint after four attempts", async () => {
+      const lone = new SerialFallbackProvider(ETHEREUM.chainID, [
+        { type: "generic", creator: () => first.provider },
+      ])
+      first.send.withArgs("eth_call").rejects(new Error("bad response"))
+
+      await expect(lone.send("eth_call", [])).rejects.toThrow("bad response")
+
+      expect(callsFor(first.send, "eth_call")).toEqual(4)
+      lone.destroy()
     }, 10_000)
   })
 

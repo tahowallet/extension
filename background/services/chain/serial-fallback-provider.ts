@@ -49,17 +49,18 @@ import {
   NetworkReachabilityTracker,
 } from "./network-reachability"
 import {
-  indicatesOutage,
-  httpStatusOf,
+  anyErrorFailsOverPolicy,
   jitteredBackoffMs,
   standardFailurePolicy,
 } from "./rpc/failure-policy"
 import {
   capabilityPoolName,
+  PoolName,
   RouteRule,
   routeRulesFor,
   ruleForMethod,
 } from "./rpc/method-router"
+import FailoverExecutor, { RpcRequest } from "./rpc/failover-executor"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
@@ -96,10 +97,6 @@ const NON_COALESCEABLE_METHODS = new Set([
   "personal_sign",
 ])
 
-// Wait 10 seconds between primary provider reconnect attempts.
-const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
-// Wait 2 seconds after a primary provider is created before resubscribing.
-const WAIT_BEFORE_SUBSCRIBING = 2 * SECOND
 // How often to check and clean stale cache entries
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 // How long to wait for a provider to respond before falling back to the next provider.
@@ -115,9 +112,6 @@ function waitAnd<T, E extends Promise<T>>(
   fn: () => E,
 ): Promise<T> {
   return new Promise((resolve) => {
-    // TODO setTimeout rather than browser.alarms here could mean this would
-    // hang when transitioning to a transient background page? Can we do this
-    // with browser.alarms?
     setTimeout(() => {
       resolve(fn())
     }, waitMs)
@@ -178,46 +172,36 @@ function categorizeError(
 
 /**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
- * through a series of providers in case previous ones fail.
+ * through a series of endpoints in case earlier ones fail.
  *
- * In case of server errors, this provider attempts a number of exponential
- * backoffs and retries before falling back to the next provider in the list.
- * WebSocketProviders in the list are checked for WebSocket connections, and
- * attempt reconnects if the underlying WebSocket disconnects.
- *
- * Additionally, subscriptions are tracked and, if the current provider is a
- * WebSocket provider, they are restored on reconnect.
+ * Each method is routed to a pool of endpoints, which a request walks from
+ * the pool's preferred endpoint, retrying and failing over as the failure
+ * policy says. Subscriptions are tracked and follow the standard pool's
+ * preferred endpoint.
  */
 export default class SerialFallbackProvider extends JsonRpcProvider {
   // The walk's endpoints, in order. The managed endpoint, if any, leads.
   #standardEndpoints: Endpoint[]
 
-  #managedEndpoint: Endpoint | undefined
-
-  // Method-specific endpoints in priority order; later ones are fallbacks.
-  #methodSpecificPool: EndpointPool | undefined
+  #pools = new Map<PoolName, EndpointPool>()
 
   private customProviderSupportedMethods: string[] = []
 
-  // Standard endpoints that declare a non-standard namespace, by namespace.
-  #capabilityPools: { [namespace: string]: EndpointPool } = {}
+  readonly #executor: FailoverExecutor
 
-  /** The transport of the walk's current endpoint. */
-  private get currentProvider(): JsonRpcProvider {
-    return this.#standardEndpoints[this.currentProviderIndex].transport
-  }
+  readonly #lifecycle = new AbortController()
 
-  // Handles for the periodic reconnect and cache-cleanup timers, so `destroy`
-  // can stop them when this provider is replaced.
+  // The transport the tracked subscriptions are attached to.
+  #subscribedTransport: JsonRpcProvider
+
+  // Handles for the cache-cleanup timer, so `destroy` can stop it when this
+  // provider is replaced.
   private intervalHandles: ReturnType<typeof setInterval>[] = []
 
   /**
-   * Set once {@link destroy} has run and never cleared. Tearing the underlying
-   * providers down is not enough on its own: the creators stay callable, so any
-   * path that would build a provider — a reconnect, a failover, an in-flight
-   * request retrying — would happily open a brand new connection to an endpoint
-   * the user has just removed, and keep it open for the life of the service
-   * worker. Every such path checks this latch first.
+   * Set once {@link destroy} has run and never cleared. Every path that would
+   * build a transport checks it, so a retired provider never reopens a
+   * connection to an endpoint the user has removed.
    */
   #destroyed = false
 
@@ -253,9 +237,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   #inFlightRequests = new Map<string, Promise<unknown>>()
 
   /**
-   * Turns this provider's walk outcomes into a single reachable /
-   * unreachable verdict for the chain, so callers that today log and
-   * swallow an exhausted walk have something to report to the user.
+   * Turns request outcomes into a single reachable / unreachable verdict for
+   * the chain, so callers that log and swallow an exhausted walk have
+   * something to report to the user.
    */
   #reachability: NetworkReachabilityTracker
 
@@ -278,20 +262,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }),
   )
 
-  /**
-   * This object holds all messages that are either being sent to a provider
-   * and waiting for a response, or are in the process of being backed off due
-   * to bad network conditions or hitting rate limits.
-   */
-  public messagesToSend: {
-    [id: symbol]: {
-      method: string
-      params: unknown[]
-      backoffCount: number
-      providerIndex: number
-    }
-  } = {}
-
   supportsBoar = false
 
   /**
@@ -301,10 +271,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * eth_chainId RPC calls.
    */
   private cachedChainId: string
-
-  // The index of the provider creator that created the current provider. Used
-  // for reconnects when relevant.
-  private currentProviderIndex = 0
 
   private routeRules: RouteRule[] = []
 
@@ -353,6 +319,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
     })
 
+    this.#executor = new FailoverExecutor([
+      {
+        onEndpointSuccess: () => this.#reachability.recordSuccess(),
+        onAllEndpointsFailed: () => this.#reachability.recordExhaustedWalk(),
+      },
+    ])
+
     this.#standardEndpoints = walkCreators.map(
       ({ type, capabilities, creator }, index) =>
         new Endpoint(
@@ -375,15 +348,21 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         ),
     )
     // Builds the first endpoint's transport from the one above.
-    this.#standardEndpoints[0].transport
+    this.#standardEndpoints[0].build()
+    this.#subscribedTransport = this.#standardEndpoints[0].transport
 
-    this.#managedEndpoint = this.#standardEndpoints.find(
+    const standardPool = new EndpointPool("standard", this.#standardEndpoints)
+    this.#pools.set("standard", standardPool)
+    standardPool.onPreferredEndpointChanged((endpoint) =>
+      this.moveSubscriptionsTo(endpoint),
+    )
+
+    const managedEndpoint = this.#standardEndpoints.find(
       ({ kind }) => kind === "managed",
     )
-    this.supportsBoar = this.#managedEndpoint !== undefined
-
-    if (customProviderCreators.length > 0) {
-      this.addCustomProviders(customProviderCreators)
+    if (managedEndpoint !== undefined) {
+      this.supportsBoar = true
+      this.#pools.set("managed", new EndpointPool("managed", [managedEndpoint]))
     }
 
     const capabilityEndpoints: { [namespace: string]: Endpoint[] } = {}
@@ -396,16 +375,15 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         })
       })
     Object.entries(capabilityEndpoints).forEach(([namespace, endpoints]) => {
-      this.#capabilityPools[namespace] = new EndpointPool(
-        capabilityPoolName(namespace),
-        endpoints,
-      )
+      const name = capabilityPoolName(namespace)
+      this.#pools.set(name, new EndpointPool(name, endpoints))
     })
 
+    if (customProviderCreators.length > 0) {
+      this.addCustomProviders(customProviderCreators)
+    }
+
     this.intervalHandles.push(
-      setInterval(() => {
-        this.attemptToReconnectToPrimaryProvider()
-      }, PRIMARY_PROVIDER_RECONNECT_INTERVAL),
       setInterval(() => {
         this.cleanupStaleCacheEntries()
       }, CACHE_CLEANUP_INTERVAL),
@@ -415,317 +393,71 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.updateRouteRules()
   }
 
+  private get standardPool(): EndpointPool {
+    return this.#pools.get("standard") as EndpointPool
+  }
+
+  /** The index of the walk's preferred endpoint. */
+  private get currentProviderIndex(): number {
+    return this.standardPool.preferredIndex
+  }
+
+  /** The walk's endpoint at a given index. */
+  private standardEndpointAt(index: number): Endpoint {
+    return this.#standardEndpoints[index]
+  }
+
   private updateRouteRules(): void {
     this.routeRules = routeRulesFor({
       chainID: this.chainID,
-      methodSpecificMethods:
-        this.#methodSpecificPool !== undefined
-          ? this.customProviderSupportedMethods
-          : undefined,
-      capabilityNamespaces: Object.keys(this.#capabilityPools),
-      hasManagedEndpoint: this.#managedEndpoint !== undefined,
+      methodSpecificMethods: this.#pools.has("methodSpecific")
+        ? this.customProviderSupportedMethods
+        : undefined,
+      capabilityNamespaces: [...this.#pools.keys()]
+        .filter((name) => name.startsWith("capability:"))
+        .map((name) => name.slice("capability:".length)),
+      hasManagedEndpoint: this.#pools.has("managed"),
     })
   }
 
   /**
-   * This method takes care of sending off a message via an underlying provider
-   * as well as backing off and failing over to other providers should a given
-   * provider be disconnected.
-   *
-   * @param messageId The unique identifier of a given message
-   * @returns The result of sending the message to a given provider
+   * Sends a request through the pool its method routes to, then through the
+   * route's fallback pool if every endpoint in the first one failed.
    */
-  private async routeRpcCall(messageId: symbol): Promise<unknown> {
-    if (this.#destroyed) {
-      // Retired mid-flight, or entered from a backoff retry scheduled before
-      // the retirement. Either way, reject rather than route: every route
-      // ends in a provider construction against a removed endpoint.
-      delete this.messagesToSend[messageId]
-      throw this.destroyedError()
-    }
+  private async sendRouted(
+    request: RpcRequest,
+  ): Promise<{ result: unknown; endpoint: Endpoint }> {
+    const { pool, fallbackPool } = ruleForMethod(
+      this.routeRules,
+      request.method,
+    )
 
-    const { method, params } = this.messagesToSend[messageId]
-
-    /*
-     * Checking the cache needs to happen inside or routeRpcCall,
-     * This gives us multiple chances to get a cache hit throughout
-     * a given message's retry cycle rather than just when the message
-     * is first initiated
-     */
-    const cachedResult = this.checkForCachedResult(method, params)
-
-    if (typeof cachedResult !== "undefined") {
-      // Cache hit! - return early
-      delete this.messagesToSend[messageId]
-      return cachedResult.result
-    }
-    const existingProviderIndex = this.currentProviderIndex
     try {
-      const currentEndpoint = this.#standardEndpoints[this.currentProviderIndex]
-      if (currentEndpoint.status === "Connecting") {
-        await currentEndpoint.whenReady()
-      }
-
-      const route = ruleForMethod(this.routeRules, method)
-
-      const methodSpecificPool = this.#methodSpecificPool
-      if (route.pool === "methodSpecific" && methodSpecificPool !== undefined) {
-        // On failure, the error flows through the usual handling below.
-        const result = await this.sendThroughPool(
-          methodSpecificPool,
-          method,
-          params,
-        )
-        this.#reachability.recordSuccess()
-        delete this.messagesToSend[messageId]
-        return result
-      }
-
-      const capabilityPool = Object.values(this.#capabilityPools).find(
-        ({ name }) => route.pool === name,
-      )
-
-      if (capabilityPool !== undefined) {
-        try {
-          const result = await this.sendThroughPool(
-            capabilityPool,
-            method,
-            params,
-          )
-          this.#reachability.recordSuccess()
-          delete this.messagesToSend[messageId]
-          return result
-        } catch (error) {
-          if (!(this.#managedEndpoint && route.fallbackPool === "managed")) {
-            throw error
-          }
-          // Otherwise, fall through to the Boar branch below as a last
-          // resort for this namespace.
-        }
-      }
-
-      const managedEndpoint = this.#managedEndpoint
-      if (
-        managedEndpoint !== undefined &&
-        (route.pool === "managed" || route.fallbackPool === "managed")
-      ) {
-        if (!managedEndpoint.isAvailable) {
-          throw new Error("NETWORK_ERROR: managed endpoint is cooling down")
-        }
-        let result: unknown
-        try {
-          result = await managedEndpoint.send(method, params)
-        } catch (error) {
-          managedEndpoint.recordFailure()
-          throw error
-        }
-        managedEndpoint.recordSuccess()
-        this.#reachability.recordSuccess()
-        delete this.messagesToSend[messageId]
-        return result
-      }
-
-      const breaker = currentEndpoint
-      if (!breaker.isAvailable) {
-        // The current provider is known-bad. Skip straight to the existing
-        // fallback path so we do not issue a request guaranteed to fail and
-        // do not pile onto whatever outage it is sitting out.
-        if (this.currentProviderIndex + 1 < this.#standardEndpoints.length) {
-          return await this.attemptToSendMessageOnNewProvider(messageId)
-        }
-        // No more providers to try this cycle; reset and fail as we would
-        // on an exhausted chain.
-        this.currentProviderIndex = 0
-        this.reconnectProvider()
-        this.#reachability.recordExhaustedWalk()
-        delete this.messagesToSend[messageId]
-        throw new Error("NETWORK_ERROR: circuit open and no fallback available")
-      }
-
-      let result: unknown
-      try {
-        result = await currentEndpoint.send(method, params)
-      } catch (error) {
-        // Any thrown error here represents the breaker's view of a failure;
-        // feeding it into the breaker keeps state machines aligned with the
-        // behavior observed by the existing error-classification path below.
-        breaker.recordFailure()
-        throw error
-      }
-      breaker.recordSuccess()
-      // Recorded here, and at each of the other three send paths above, rather
-      // than once around `routeRpcCall` in `dispatchRequest`. A cache hit
-      // returns from this method without any provider having answered — as
-      // does `eth_chainId` — and counting those as proof the chain is
-      // reachable would let a total outage go unreported for as long as the
-      // cache stayed warm.
-      this.#reachability.recordSuccess()
-      // If https://github.com/tc39/proposal-decorators ever gets out of Stage 3
-      // cleaning up the messageToSend object seems like a great job for a decorator
-      delete this.messagesToSend[messageId]
-      return result
+      return await this.sendThroughPool(request, pool)
     } catch (error) {
-      // Awful, but what can ya do.
-
-      if (this.#destroyed) {
-        // Retired while this request was in flight. Every recovery path below
-        // — backoff and retry, failover, reconnect — would construct a
-        // provider for an endpoint that is no longer configured, so fail the
-        // request instead. Callers see a normal failure and will reissue
-        // against whatever provider now serves the chain.
-        delete this.messagesToSend[messageId]
+      if (fallbackPool === undefined || !this.#pools.has(fallbackPool)) {
         throw error
       }
-
-      const stringifiedError = String(error)
-
-      const errorType = getErrorType(stringifiedError, method)
-
-      if (
-        errorType === "batch-limit-exceeded" &&
-        this.currentProvider instanceof TahoRPCProvider
-      ) {
-        const requestBatch = this.currentProvider.getBatchFromError(error)
-
-        // Note that every other request in the batch will set the length to
-        // the same value
-        if (
-          requestBatch.length <=
-          this.currentProvider.getOptions().maxBatchLength
-        ) {
-          const newMaxBatchLen = Math.max(
-            Math.floor(requestBatch.length / 2),
-            1,
-          )
-
-          this.currentProvider.setOptions({
-            maxBatchLength: newMaxBatchLen,
-          })
-
-          logger.debug(
-            "Setting a max batch size of",
-            newMaxBatchLen,
-            "for rpc",
-            this.currentProvider.connection.url,
-          )
-        }
-        // Retry with a new limit on batch length
-        return waitAnd(500, () => this.routeRpcCall(messageId))
-      }
-
-      const { backoffCount, providerIndex: initialProviderIndex } =
-        this.messagesToSend[messageId]
-      const nextStep = standardFailurePolicy.nextStepAfter(
-        error,
-        method,
-        backoffCount + 1,
-      )
-      const hasNextProvider =
-        this.currentProviderIndex + 1 < this.#standardEndpoints.length
-      const status = httpStatusOf(error)
-      const isClientError =
-        status !== undefined && status >= 400 && status < 500
-
-      if (
-        nextStep.kind === "tryNextEndpoint" &&
-        indicatesOutage(error, method)
-      ) {
-        // If a new provider is already in the process of being tried, go ahead
-        // and fire off into the new provider.
-        if (this.currentProviderIndex !== existingProviderIndex) {
-          logger.debug(
-            "Retrying on newly connected provider on chain",
-            this.chainID,
-            ": ",
-            method,
-            params,
-          )
-          return await this.routeRpcCall(messageId)
-        }
-
-        if (hasNextProvider) {
-          return await this.attemptToSendMessageOnNewProvider(messageId)
-        }
-
-        // Otherwise, set us up for the next call, but fail the
-        // current one since we've gone through every available provider. Note
-        // that this may happen over time, but we still fail the request that
-        // hits the end of the list.
-        this.currentProviderIndex = 0
-
-        // Reconnect, but don't wait for the connection to go through.
-        this.reconnectProvider()
-        this.#reachability.recordExhaustedWalk()
-        delete this.messagesToSend[messageId]
-        throw error
-      }
-
-      if (nextStep.kind === "tryNextEndpoint" && isClientError) {
-        // An auth-shaped 4xx, which says something about the endpoint's key.
-        if (hasNextProvider) {
-          logger.debug(
-            "Failing over after auth-shaped 4xx status",
-            status,
-            "on chain",
-            this.chainID,
-            "for",
-            method,
-          )
-          return await this.attemptToSendMessageOnNewProvider(messageId)
-        }
-        delete this.messagesToSend[messageId]
-        throw error
-      }
-
-      if (nextStep.kind === "tryNextEndpoint") {
-        // Out of retries for an invalid response. A message that already
-        // failed over isn't retried on its new provider.
-        if (this.currentProviderIndex !== initialProviderIndex) {
-          throw error
-        }
-        if (
-          this.currentProviderIndex === existingProviderIndex &&
-          hasNextProvider
-        ) {
-          return await this.attemptToSendMessageOnNewProvider(messageId)
-        }
-      }
-
-      if (nextStep.kind !== "giveUp") {
-        const backoff = this.backoffFor(messageId)
-        logger.debug(
-          "Backing off for",
-          backoff,
-          "on chain",
-          this.chainID,
-          "and retrying: ",
-          method,
-          params,
-        )
-
-        return await waitAnd(backoff, async () => {
-          logger.debug("Retrying", "on chain", this.chainID, method, params)
-          return this.routeRpcCall(messageId)
-        })
-      }
-
-      logger.debug(
-        "Skipping fallback for unidentified error",
-        error,
-        "for provider",
-        this.currentProvider,
-        "on chain",
-        this.chainID,
-      )
-
-      delete this.messagesToSend[messageId]
-      throw error
+      return this.sendThroughPool(request, fallbackPool)
     }
   }
 
-  /** The walk's endpoint at a given index. */
-  private breakerFor(providerIndex: number): Endpoint {
-    return this.#standardEndpoints[providerIndex]
+  private sendThroughPool(
+    request: RpcRequest,
+    name: PoolName,
+  ): Promise<{ result: unknown; endpoint: Endpoint }> {
+    const pool = this.#pools.get(name) ?? this.standardPool
+    const policy =
+      name === "standard" || name === "managed"
+        ? standardFailurePolicy
+        : anyErrorFailsOverPolicy
+
+    return this.#executor.sendWithFailover(
+      request,
+      pool,
+      policy,
+      this.#lifecycle.signal,
+    )
   }
 
   /**
@@ -755,47 +487,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   get supportsAlchemy(): boolean {
     return (
-      this.#capabilityPools[ALCHEMY_CAPABILITY_NAMESPACE] !== undefined ||
+      this.#pools.has(capabilityPoolName(ALCHEMY_CAPABILITY_NAMESPACE)) ||
       (this.supportsBoar &&
         !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(this.chainID))
     )
-  }
-
-  /**
-   * Sends a request through a pool's endpoints in order, moving on after any
-   * error. Throws the last endpoint's error once all have failed.
-   */
-  private async sendThroughPool(
-    pool: EndpointPool,
-    method: string,
-    params: unknown[],
-  ): Promise<unknown> {
-    const endpoints = pool.endpointsInTryOrder()
-    if (endpoints.length === 0) {
-      throw new Error("NETWORK_ERROR: circuit open and no fallback available")
-    }
-
-    let lastError: unknown
-    for (const endpoint of endpoints) {
-      try {
-        // oxlint-disable-next-line no-await-in-loop
-        const result = await endpoint.send(method, params)
-        pool.recordSuccess(endpoint)
-        return result
-      } catch (error) {
-        pool.recordFailure(endpoint)
-        lastError = error
-        logger.debug(
-          "Falling back from",
-          pool.name,
-          "endpoint on chain",
-          this.chainID,
-          "for",
-          method,
-        )
-      }
-    }
-    throw lastError
   }
 
   addCustomProvider(customProviderCreator: ProviderCreator): void {
@@ -832,8 +527,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         }),
     )
     // Built up front, as it always has been.
-    endpoints[0].transport
-    this.#methodSpecificPool = new EndpointPool("methodSpecific", endpoints)
+    endpoints[0].build()
+    this.#pools.set(
+      "methodSpecific",
+      new EndpointPool("methodSpecific", endpoints),
+    )
     this.updateRouteRules()
   }
 
@@ -844,39 +542,31 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   private disposeMethodSpecificPool(): void {
-    this.#methodSpecificPool?.dispose()
-    this.#methodSpecificPool?.endpoints.forEach((endpoint) =>
-      endpoint.dispose(),
-    )
-    this.#methodSpecificPool = undefined
+    const pool = this.#pools.get("methodSpecific")
+    pool?.dispose()
+    pool?.endpoints.forEach((endpoint) => endpoint.dispose())
+    this.#pools.delete("methodSpecific")
   }
 
   /**
    * Retires this provider for good.
    *
-   * Latches the instance as destroyed, clears the periodic reconnect and
-   * cache-cleanup timers, then tears down every underlying provider this
-   * instance holds — current, cached fallbacks, Boar, custom, and capability
-   * providers — dropping their listeners and closing any WebSockets. Without
-   * this, a replaced provider keeps polling and reconnecting to endpoints that
-   * are no longer configured for the lifetime of the service worker; see
+   * Latches the instance as destroyed, cancels requests in flight, clears the
+   * cache-cleanup timer, and disposes every endpoint, dropping their
+   * listeners and closing any WebSockets. Without this, a replaced provider
+   * keeps polling and reconnecting to endpoints that are no longer
+   * configured for the lifetime of the service worker; see
    * `ProviderRegistry`.
-   *
-   * The latch is what makes retirement permanent: tearing the underlying
-   * providers down leaves the creators callable, so a request still in flight
-   * on this instance would otherwise walk reconnect → cache miss → creator and
-   * open a fresh connection to the removed endpoint. Once latched, every path
-   * that would construct a provider is a no-op or an immediate rejection, and
-   * the instance is never usable again.
    */
   destroy(): void {
     this.#destroyed = true
+    this.#lifecycle.abort(this.destroyedError())
 
     this.intervalHandles.forEach((handle) => clearInterval(handle))
     this.intervalHandles = []
 
-    Object.values(this.#capabilityPools).forEach((pool) => pool.dispose())
     this.disposeMethodSpecificPool()
+    this.#pools.forEach((pool) => pool.dispose())
     this.#standardEndpoints.forEach((endpoint) => endpoint.dispose())
 
     // Stop tracking subscriptions so nothing gets restored onto a retired
@@ -954,43 +644,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Called when a message is ready to be sent to the next provider in line.
-   *
-   * @param messageId The unique identifier of a given message
-   * @returns The result of sending the message via the next provider
-   */
-  private async attemptToSendMessageOnNewProvider(
-    messageId: symbol,
-  ): Promise<unknown> {
-    this.assertNotDestroyed()
-
-    this.disconnectCurrentProvider()
-    this.currentProviderIndex += 1
-    // Try again with the next provider.
-    await this.reconnectProvider()
-
-    const isBoarFallback =
-      this.#managedEndpoint !== undefined &&
-      this.#standardEndpoints[this.currentProviderIndex] ===
-        this.#managedEndpoint
-
-    return this.routeRpcCall(messageId).finally(() => {
-      // If every other provider failed and we're on the Boar provider,
-      // reconnect to the first provider once we've handled this request
-      // as we should limit relying on Boar as a fallback.
-      //
-      // Note that with the Boar creator leading the list, as
-      // `makeSerialFallbackProvider` arranges it, this cannot trigger: failing
-      // over walks away from Boar rather than toward it, and it is
-      // `attemptToReconnectToPrimaryProvider` that walks traffic back to it.
-      if (isBoarFallback && this.currentProviderIndex !== 0) {
-        this.currentProviderIndex = 0
-        this.reconnectProvider()
-      }
-    })
-  }
-
-  /**
    * Override the core `send` method to handle disconnects and other errors
    * that should trigger retries. Ethers already does internal retrying, but
    * this retry methodology eventually falls back on another provider, handles
@@ -1046,28 +699,32 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     method: string,
     params: unknown[],
   ): Promise<unknown> {
-    // Generate a unique symbol to track the message and store message information
-    const id = Symbol(method)
-    this.messagesToSend[id] = {
-      method,
-      params,
-      backoffCount: 0,
-      providerIndex: this.currentProviderIndex,
-    }
-
     const startingProviderIndex = this.currentProviderIndex
     recordRequestSent(this.chainID, startingProviderIndex)
     const startTime = Date.now()
 
-    try {
-      // Start routing message down our waterfall of rpc providers
-      const result = await this.routeRpcCall(id)
-
-      // Record against the provider that actually served the request, which
-      // may differ from the starting index if we failed over.
+    const cached = this.checkForCachedResult(method, params)
+    if (cached !== undefined) {
       recordRequestSucceeded(
         this.chainID,
-        this.currentProviderIndex,
+        startingProviderIndex,
+        Date.now() - startTime,
+      )
+      return cached.result
+    }
+
+    try {
+      const { result, endpoint } = await this.sendRouted({
+        method,
+        params,
+        startedAt: startTime,
+      })
+
+      // Record against the endpoint that actually served the request.
+      const servingIndex = this.#standardEndpoints.indexOf(endpoint)
+      recordRequestSucceeded(
+        this.chainID,
+        servingIndex >= 0 ? servingIndex : startingProviderIndex,
         Date.now() - startTime,
       )
 
@@ -1078,7 +735,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     } catch (error) {
       recordRequestFailed(
         this.chainID,
-        this.currentProviderIndex,
+        startingProviderIndex,
         categorizeError(error, method),
       )
       throw error
@@ -1096,15 +753,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     processFunc: (result: unknown) => void,
   ): Promise<void> {
     const subscription = { tag, param, processFunc }
+    const transport = this.#subscribedTransport
 
-    if (isWebSocketTransport(this.currentProvider)) {
+    if (isWebSocketTransport(transport)) {
       // oxlint-disable-next-line no-underscore-dangle
-      await this.currentProvider._subscribe(tag, param, processFunc)
+      await transport._subscribe(tag, param, processFunc)
       this.subscriptions.push(subscription)
     } else {
       logger.warn(
         "Current provider ",
-        this.currentProvider,
+        transport,
         " for ",
         this.network,
         "is not a WebSocket provider; subscription " +
@@ -1178,7 +836,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       once: false,
     })
 
-    this.currentProvider.on(eventName, listener)
+    if (!this.#destroyed) {
+      this.#subscribedTransport.on(eventName, listener)
+    }
 
     return this
   }
@@ -1197,7 +857,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       once: true,
     })
 
-    this.currentProvider.once(eventName, listener)
+    if (!this.#destroyed) {
+      this.#subscribedTransport.once(eventName, listener)
+    }
 
     return this
   }
@@ -1233,39 +895,41 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       },
     )
 
-    this.currentProvider.off(eventName, listenerToRemove)
+    if (!this.#destroyed) {
+      this.#subscribedTransport.off(eventName, listenerToRemove)
+    }
 
     return this
   }
 
   /**
-   * Handles any cleanup needed for the current provider.
-   *
-   * Useful especially for when a non-WebSocket provider is tracking events,
-   * which are done via polling. In these cases, if the provider became
-   * available again, even if it was no longer the current provider, it would
-   * start calling its event handlers again; disconnecting in this way
-   * unsubscribes all those event handlers so they can be attached to the new
-   * current provider.
+   * Moves tracked subscriptions off the transport they are on and onto the
+   * given endpoint's. A WebSocket is closed so its subscriptions stop; its
+   * endpoint opens a fresh one.
    */
-  private disconnectCurrentProvider() {
-    logger.debug(
-      "Disconnecting current provider; websocket: ",
-      isWebSocketTransport(this.currentProvider),
-      "on chain",
-      this.chainID,
-      ".",
-    )
-    if (isWebSocketTransport(this.currentProvider)) {
-      this.currentProvider.destroy()
+  private async moveSubscriptionsTo(endpoint: Endpoint): Promise<void> {
+    if (this.#destroyed) {
+      return
+    }
+
+    const previous = this.#subscribedTransport
+    if (isWebSocketTransport(previous)) {
+      previous.destroy()
     } else {
-      // For non-WebSocket providers, kill all subscriptions so the listeners
-      // won't fire; the next provider will pick them up. We could lose events
-      // in between, but if we're considering the current provider dead, let's
-      // assume we would lose them anyway.
-      this.eventSubscriptions.forEach(({ eventName }) =>
-        this.removeAllListeners(eventName),
+      this.eventSubscriptions.forEach(({ eventName, listener }) =>
+        previous.off(eventName, listener),
       )
+    }
+
+    const index = this.#standardEndpoints.indexOf(endpoint)
+    recordReconnectAttempt(this.chainID, index)
+
+    this.#subscribedTransport = endpoint.transport
+    const resubscribed = await this.resubscribe(endpoint)
+    if (resubscribed) {
+      recordReconnectSucceeded(this.chainID, index)
+    } else {
+      recordReconnectFailed(this.chainID, index)
     }
   }
 
@@ -1298,67 +962,26 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Reconnects the currently-selected provider. If the current provider index
-   * has been somehow set out of range, resets it to 0.
+   * Resubscribes existing WebSocket subscriptions (if the endpoint is a
+   * WebSocket) and regular Ethers subscriptions (for all endpoints).
+   * @returns Whether the endpoint was ready to take the subscriptions
    */
-  private async reconnectProvider() {
-    if (this.#destroyed) {
-      // Reconnecting a retired provider would open a connection to an
-      // endpoint that is no longer configured.
-      return
-    }
-
-    this.disconnectCurrentProvider()
-    if (this.currentProviderIndex >= this.#standardEndpoints.length) {
-      this.currentProviderIndex = 0
-    }
-
-    recordReconnectAttempt(this.chainID, this.currentProviderIndex)
-
-    logger.debug(
-      "Reconnecting provider at index",
-      this.currentProviderIndex,
-      "on chain",
-      this.chainID,
-      "...",
-    )
-
-    const resubscribed = await this.resubscribe(this.currentProvider)
-    if (resubscribed) {
-      recordReconnectSucceeded(this.chainID, this.currentProviderIndex)
-    } else {
-      recordReconnectFailed(this.chainID, this.currentProviderIndex)
-    }
-
-    // TODO After a longer backoff, attempt to reset the current provider to 0.
-  }
-
-  /**
-   * Resubscribes existing WebSocket subscriptions (if the current provider is
-   * a `WebSocketProvider`) and regular Ethers subscriptions (for all
-   * providers).
-   * @param provider The provider to use to resubscribe
-   * @returns A boolean indicating if websocket subscription was successful or not
-   */
-  private async resubscribe(provider: JsonRpcProvider): Promise<boolean> {
+  private async resubscribe(endpoint: Endpoint): Promise<boolean> {
     logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
 
-    if (
-      isWebSocketTransport(provider) &&
-      provider.websocket.readyState !== WebSocket.OPEN
-    ) {
+    try {
+      await endpoint.whenReady()
+    } catch {
       return false
     }
 
+    const provider = endpoint.transport
     if (!provider.network) {
       return false
     }
 
     if (isWebSocketTransport(provider)) {
       // Chain promises to serially resubscribe.
-      //
-      // TODO If anything fails along the way, it should yield the same kind of
-      // TODO backoff as a regular `send`.
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
@@ -1374,9 +997,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     this.eventSubscriptions.forEach(({ eventName, listener, once }) => {
-      // Providers are reused across reconnects, so a provider coming back into
-      // service may still carry these listeners from an earlier stint; Ethers
-      // would happily attach a second copy and fire each event twice.
+      // Transports are reused, so one coming back into service may still
+      // carry these listeners from an earlier stint; Ethers would happily
+      // attach a second copy and fire each event twice.
       provider.off(eventName, listener)
 
       if (once) {
@@ -1388,64 +1011,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     logger.debug("Subscriptions resubscribed", "on chain", this.chainID, "...")
     return true
-  }
-
-  private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
-    if (this.#destroyed) {
-      return null
-    }
-    if (this.currentProviderIndex === 0) {
-      // If we are already connected to the primary provider - don't resubscribe
-      return null
-    }
-    if (!this.breakerFor(0).isAvailable) {
-      // Primary is still in cooldown; skip this cycle so the reconnect loop
-      // does not itself become a source of request pressure on a down endpoint.
-      return null
-    }
-    recordReconnectAttempt(this.chainID, 0)
-    const primaryProvider = this.#standardEndpoints[0].transport
-    // We need to wait before attempting to resubscribe of the primaryProvider's
-    // websocket connection will almost always still be in a CONNECTING state when
-    // resubscribing.
-    return waitAnd(WAIT_BEFORE_SUBSCRIBING, async (): Promise<unknown> => {
-      const subscriptionsSuccessful = await this.resubscribe(primaryProvider)
-      if (!subscriptionsSuccessful) {
-        recordReconnectFailed(this.chainID, 0)
-        return
-      }
-      // Cleanup the subscriptions on the backup provider.
-      await this.disconnectCurrentProvider()
-      // only set if subscriptions are successful
-
-      this.currentProviderIndex = 0
-      recordReconnectSucceeded(this.chainID, 0)
-    })
-  }
-
-  /**
-   * @param messageId The unique identifier of a given message
-   * @returns number of milliseconds to backoff
-   */
-  private backoffFor(messageId: symbol): number {
-    this.messagesToSend[messageId].backoffCount += 1
-    this.conditionallyIncrementCurrentProviderIndex(messageId)
-    return jitteredBackoffMs()
-  }
-
-  /**
-   * Increments the currentProviderIndex and resets a given messages backOffCount
-   * if it is being sent on a new provider.
-   *
-   * @param messageId The unique identifier of a given message
-   */
-  private conditionallyIncrementCurrentProviderIndex(messageId: symbol) {
-    const { providerIndex } = this.messagesToSend[messageId]
-
-    if (providerIndex !== this.currentProviderIndex) {
-      this.messagesToSend[messageId].backoffCount = 0
-      this.messagesToSend[messageId].providerIndex = this.currentProviderIndex
-    }
   }
 
   /**
@@ -1465,7 +1030,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           { fromAddress: address, toAddress: address },
         ],
         async (result: unknown) => {
-          // TODO use proper provider string
           // handle incoming transactions for an account
           try {
             const transaction = transactionFromBoarWebsocketTransaction(

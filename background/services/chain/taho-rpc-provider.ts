@@ -2,6 +2,7 @@ import { JsonRpcProvider, Networkish } from "@ethersproject/providers"
 import { deepCopy } from "@ethersproject/properties"
 import { ConnectionInfo, fetchJson } from "@ethersproject/web"
 import logger from "../../lib/logger"
+import { getErrorType } from "./errors"
 
 type RPCPayload = {
   method: string
@@ -55,6 +56,27 @@ const MAX_BATCH_BYTE_SIZE = 1_048_576 // 1mb
  */
 const BATCH_STALL_TIME = 10 // 10ms
 
+/** How long to wait before resending a batch the endpoint found too large. */
+const BATCH_SHRINK_RETRY_DELAY = 500
+
+const isBatchLimitMessage = (message: unknown) =>
+  getErrorType(String(message), "") === "batch-limit-exceeded"
+
+/** Whether a response or error says the batch was too large. */
+function rejectsBatchSize(responseOrError: unknown): boolean {
+  if (responseOrError instanceof Error) {
+    return isBatchLimitMessage(responseOrError.message)
+  }
+  const responses = Array.isArray(responseOrError)
+    ? responseOrError
+    : [responseOrError]
+  return responses.some((response) =>
+    isBatchLimitMessage(
+      (response as RPCResponseError | undefined)?.error?.message,
+    ),
+  )
+}
+
 const defaultOptions = {
   maxBatchLength: 10, // Seems to work fine for public rpcs
 }
@@ -92,8 +114,6 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
   #sendTimer: ReturnType<typeof setTimeout> | null = null
 
-  #errorToBatch = new WeakMap<WeakKey, RPCPendingRequest[]>()
-
   constructor(
     url?: ConnectionInfo | string,
     network?: Networkish,
@@ -114,11 +134,6 @@ export default class TahoRPCProvider extends JsonRpcProvider {
       this.#sendTimer = null
 
       const batch: RPCPendingRequest[] = []
-
-      const trackBatchError = (err: Error) => {
-        this.#errorToBatch.set(err, batch)
-        return err
-      }
 
       while (this.pending.length > 0) {
         batch.push(this.pending.shift() as RPCPendingRequest)
@@ -153,13 +168,17 @@ export default class TahoRPCProvider extends JsonRpcProvider {
         provider: this,
       })
 
-      fetchJson(
-        this.connection,
+      this.postBatch(
         // Some RPCs will reject batch payloads even if they send a single
         // request (e.g. flashbots)
         JSON.stringify(request.length === 1 ? request[0] : request),
       )
         .then((response) => {
+          if (batch.length > 1 && rejectsBatchSize(response)) {
+            this.resendInSmallerBatches(batch)
+            return
+          }
+
           const wrappedResponse: RPCResponse[] = Array.isArray(response)
             ? response
             : [response]
@@ -174,14 +193,13 @@ export default class TahoRPCProvider extends JsonRpcProvider {
           // For cases where a batch is sent and a single error object is returned
           // e.g. batch size exceeded
           if (batch.length > 1 && !Array.isArray(response)) {
+            const { error } = response as Partial<RPCResponseError>
             batch.forEach(({ reject }) => {
               reject(
-                trackBatchError(
-                  makeSerializableError(
-                    response?.error?.message ?? "INVALID_RESPONSE",
-                    response?.error?.code,
-                    { response, batch },
-                  ),
+                makeSerializableError(
+                  error?.message ?? "INVALID_RESPONSE",
+                  error?.code,
+                  { response, batch },
                 ),
               )
             })
@@ -192,24 +210,20 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
             if (!match) {
               reject(
-                trackBatchError(
-                  makeSerializableError("bad response", -32000, {
-                    response,
-                    batch,
-                  }),
-                ),
+                makeSerializableError("bad response", -32000, {
+                  response,
+                  batch,
+                }),
               )
               return
             }
 
             if ("error" in match) {
               reject(
-                trackBatchError(
-                  makeSerializableError(match.error.message, match.error.code, {
-                    response: match,
-                    batch,
-                  }),
-                ),
+                makeSerializableError(match.error.message, match.error.code, {
+                  response: match,
+                  batch,
+                }),
               )
             } else {
               resolve(match.result)
@@ -217,6 +231,11 @@ export default class TahoRPCProvider extends JsonRpcProvider {
           })
         })
         .catch((error) => {
+          if (batch.length > 1 && rejectsBatchSize(error)) {
+            this.resendInSmallerBatches(batch)
+            return
+          }
+
           this.emit("debug", {
             action: "response",
             error,
@@ -225,9 +244,32 @@ export default class TahoRPCProvider extends JsonRpcProvider {
           })
 
           // Any other error during fetch should propagate
-          batch.forEach(({ reject }) => reject(trackBatchError(error)))
+          batch.forEach(({ reject }) => reject(error))
         })
     }, BATCH_STALL_TIME)
+  }
+
+  protected postBatch(body: string): Promise<RPCResponse | RPCResponse[]> {
+    return fetchJson(this.connection, body)
+  }
+
+  /**
+   * Halves the batch size, unless a smaller batch already set it lower, and
+   * queues the batch's requests to go out again.
+   */
+  private resendInSmallerBatches(batch: RPCPendingRequest[]): void {
+    if (batch.length <= this.#options.maxBatchLength) {
+      this.#options.maxBatchLength = Math.max(Math.floor(batch.length / 2), 1)
+      logger.debug(
+        "Setting a max batch size of",
+        this.#options.maxBatchLength,
+        "for rpc",
+        this.connection.url,
+      )
+    }
+
+    this.pending.unshift(...batch)
+    setTimeout(() => this.sendNextBatch(), BATCH_SHRINK_RETRY_DELAY)
   }
 
   override send(method: string, params: unknown[]): Promise<unknown> {
@@ -275,24 +317,5 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
   getOptions(): Readonly<Required<RPCOptions>> {
     return { ...this.#options }
-  }
-
-  /**
-   * Useful for adjusting batch limits
-   * @param err The error returned as the response
-   * @returns The associated batch sent
-   */
-  getBatchFromError(err: unknown): RPCPendingRequest[] {
-    if (
-      typeof err !== "object" ||
-      err === null ||
-      !this.#errorToBatch.has(err)
-    ) {
-      throw logger.buildError(
-        `Could not retrieve batch using error: ${err} as reference`,
-      )
-    }
-
-    return this.#errorToBatch.get(err)!
   }
 }
