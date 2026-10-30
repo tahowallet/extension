@@ -1,5 +1,6 @@
 import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
+import * as sinon from "sinon"
 import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
 import {
   createAccountBalance,
@@ -121,6 +122,26 @@ describe("Chain Database", () => {
       await db.addOrUpdateTransaction(updateOpt, "boar")
       expect(updateEth.gasPrice).toEqual(40400000000n)
       expect(updateOpt.gasPrice).toEqual(40400000000n)
+    })
+    it("should keep a transaction's firstSeen across updates", async () => {
+      const now = sinon.stub(Date, "now").returns(1_000)
+      try {
+        await db.addOrUpdateTransaction(addTransactionEth, "boar")
+        now.returns(5_000)
+        await db.addOrUpdateTransaction(
+          { ...addTransactionEth, blockHeight: 7 },
+          "local",
+        )
+      } finally {
+        now.restore()
+      }
+
+      expect(
+        await db.getTransaction(
+          addTransactionEth.network,
+          addTransactionEth.hash,
+        ),
+      ).toMatchObject({ firstSeen: 1_000, blockHeight: 7, dataSource: "local" })
     })
   })
   describe("getAccountsToTrack", () => {
