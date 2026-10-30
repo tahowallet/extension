@@ -1032,7 +1032,7 @@ export default class IndexingService extends BaseService<Events> {
     // Cache assets across all supported networks even if a network
     // may be inactive.
     const assetCacheResults = await Promise.allSettled(
-      this.chainService.supportedNetworks.map(async (network) => {
+      this.chainService.getSupportedNetworks().map(async (network) => {
         await this.cacheAssetsForNetwork(network)
 
         this.emitter.emit("assetsLoaded", {
@@ -1044,7 +1044,7 @@ export default class IndexingService extends BaseService<Events> {
     logger.errorLogRejectedPromises(
       "Error caching network asset results",
       assetCacheResults,
-      this.chainService.supportedNetworks,
+      this.chainService.getSupportedNetworks(),
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if

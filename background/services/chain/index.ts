@@ -130,14 +130,6 @@ export default class ChainService extends BaseService<Events> {
 
   private networkSettings: NetworkSettings
 
-  /**
-   * @deprecated Use {@link providerForNetwork}; providers are owned by the
-   * provider registry.
-   */
-  get providers(): { evm: { [chainID: string]: SerialFallbackProvider } } {
-    return { evm: this.providerRegistry.providersByChainID() }
-  }
-
   private networkWatcher: NetworkWatcher
 
   /** The watched networks, as they are now. */
@@ -148,28 +140,14 @@ export default class ChainService extends BaseService<Events> {
     })
   }
 
-  /** @deprecated Subscriptions are kept by chain, not by provider. */
-  get subscribedNetworks(): {
-    network: EVMNetwork
-    provider: SerialFallbackProvider | undefined
-  }[] {
-    return this.watchedNetworks.map((network) => ({
-      network,
-      provider: this.providerForNetwork(network),
-    }))
+  /** Networks whose blocks and gas prices are being watched. */
+  getWatchedNetworks(): EVMNetwork[] {
+    return this.watchedNetworks
   }
 
-  /** @deprecated Subscriptions are kept by chain, not by provider. */
-  get subscribedAccounts(): {
-    account: string
-    provider: SerialFallbackProvider | undefined
-  }[] {
-    return this.networkWatcher
-      .watchedAccounts()
-      .map(({ address, chainID }) => ({
-        account: address,
-        provider: this.providerRegistry.providerFor(chainID),
-      }))
+  /** Accounts whose pending transactions are being watched. */
+  getWatchedAccounts(): { address: string; chainID: string }[] {
+    return [...this.networkWatcher.watchedAccounts()]
   }
 
   /** @deprecated Kept for tests; see {@link NetworkWatcher}. */
@@ -209,13 +187,9 @@ export default class ChainService extends BaseService<Events> {
   > = async (preferenceService, internalSignerService) =>
     new this(createDB(), await preferenceService, await internalSignerService)
 
-  get supportedNetworks(): EVMNetwork[] {
+  /** Every network Taho knows about. */
+  getSupportedNetworks(): EVMNetwork[] {
     return this.networkSettings.supportedNetworks()
-  }
-
-  /** @deprecated For tests that set the list directly. */
-  set supportedNetworks(networks: EVMNetwork[]) {
-    this.networkSettings.replaceSupportedNetworks(networks)
   }
 
   /** Chains being tracked, in the order tracking started. */
@@ -449,11 +423,11 @@ export default class ChainService extends BaseService<Events> {
 
     await this.updateSupportedNetworks()
 
-    this.supportedNetworks.forEach(({ chainID }) => {
+    this.getSupportedNetworks().forEach(({ chainID }) => {
       this.lastUserActivityOnNetwork[chainID] = 0
     })
 
-    this.supportedNetworks.forEach(({ chainID }) =>
+    this.getSupportedNetworks().forEach(({ chainID }) =>
       this.providerRegistry.start(
         chainID,
         rpcEndpointConfigs.find((config) => config.chainID === chainID)

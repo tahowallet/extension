@@ -50,11 +50,6 @@ export default class NetworkSettings {
     return this.#supportedNetworks
   }
 
-  /** @deprecated For tests that set the list directly. */
-  replaceSupportedNetworks(networks: EVMNetwork[]): void {
-    this.#supportedNetworks = networks
-  }
-
   networkFor(chainID: string): EVMNetwork | undefined {
     return this.#supportedNetworks.find((network) =>
       sameChainID(network.chainID, chainID),

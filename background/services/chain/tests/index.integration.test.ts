@@ -3,6 +3,7 @@ import ChainService from ".."
 import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   AnyEVMTransaction,
+  EVMNetwork,
   TransactionRequest,
   TransactionRequestWithNonce,
 } from "../../../networks"
@@ -45,9 +46,9 @@ describe("ChainService", () => {
     it("should not add duplicate networks on startup", async () => {
       // Startup is simulated in the `beforeEach`
       expect(
-        chainService.subscribedNetworks.filter(
-          ({ network }) => network.chainID === ETHEREUM.chainID,
-        ),
+        chainService
+          .getWatchedNetworks()
+          .filter(({ chainID }) => chainID === ETHEREUM.chainID),
       ).toHaveLength(1)
     })
 
@@ -197,9 +198,8 @@ describe("ChainService", () => {
 
   describe("updateSupportedNetworks", () => {
     it("Should properly update supported networks", async () => {
-      chainService.supportedNetworks = []
       await chainService.updateSupportedNetworks()
-      expect(chainService.supportedNetworks.length).toBe(10)
+      expect(chainService.getSupportedNetworks().length).toBe(10)
     })
   })
 
@@ -207,17 +207,19 @@ describe("ChainService", () => {
     // prettier-ignore
     const FANTOM_CHAIN_PARAMS = { chainId: "250", blockExplorerUrl: "https://ftmscan.com", chainName: "Fantom Opera", nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18, }, rpcUrls: [ "https://fantom-mainnet.gateway.pokt.network/v1/lb/62759259ea1b320039c9e7ac", "https://rpc.ftm.tools", "https://rpc.ankr.com/fantom", "https://rpc.fantom.network", "https://rpc2.fantom.network", "https://rpc3.fantom.network", "https://rpcapi.fantom.network", "https://fantom-mainnet.public.blastapi.io", "https://1rpc.io/ftm", ], blockExplorerUrls: ["https://ftmscan.com"], }
     it("should update supported networks after adding a chain", async () => {
-      expect(chainService.supportedNetworks.length).toBe(10)
+      expect(chainService.getSupportedNetworks().length).toBe(10)
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
-      expect(chainService.supportedNetworks.length).toBe(11)
+      expect(chainService.getSupportedNetworks().length).toBe(11)
     })
 
     it("should create a provider for the new chain", async () => {
-      expect(chainService.providers.evm["250"]).toBeUndefined()
+      expect(
+        chainService.providerForNetwork({ chainID: "250" } as EVMNetwork),
+      ).toBeUndefined()
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
-      expect(chainService.providers.evm["250"]).toBeInstanceOf(
-        SerialFallbackProvider,
-      )
+      expect(
+        chainService.providerForNetwork({ chainID: "250" } as EVMNetwork),
+      ).toBeInstanceOf(SerialFallbackProvider)
     })
 
     it("should start tracking the new chain", async () => {
@@ -504,9 +506,9 @@ describe("ChainService", () => {
     it("retires the removed chain's provider and drops the entry", async () => {
       await chainService.addCustomChain(CUSTOM_CHAIN)
 
-      const provider = chainService.providers.evm[
-        CUSTOM_CHAIN.chainId
-      ] as SerialFallbackProvider
+      const provider = chainService.providerForNetwork({
+        chainID: CUSTOM_CHAIN.chainId,
+      } as EVMNetwork) as SerialFallbackProvider
       expect(provider).toBeDefined()
 
       const destroySpy = sandbox.spy(provider, "destroy")
@@ -517,37 +519,41 @@ describe("ChainService", () => {
       expect(destroySpy.called).toBe(true)
       expect(provider.isDestroyed).toBe(true)
 
-      expect(chainService.providers.evm[CUSTOM_CHAIN.chainId]).toBeUndefined()
+      expect(
+        chainService.providerForNetwork({
+          chainID: CUSTOM_CHAIN.chainId,
+        } as EVMNetwork),
+      ).toBeUndefined()
 
       // Nothing is left pointing at the retired provider, so the periodic
       // polls cannot keep addressing a removed chain.
       expect(
-        chainService.subscribedNetworks.filter(
-          ({ network }) => network.chainID === CUSTOM_CHAIN.chainId,
-        ),
+        chainService
+          .getWatchedNetworks()
+          .filter(({ chainID }) => chainID === CUSTOM_CHAIN.chainId),
       ).toHaveLength(0)
       expect(
-        chainService.subscribedAccounts.filter(
-          ({ provider: accountProvider }) => accountProvider === provider,
-        ),
+        chainService
+          .getWatchedAccounts()
+          .filter(({ chainID }) => chainID === CUSTOM_CHAIN.chainId),
       ).toHaveLength(0)
     })
 
     it("replaces and retires the existing provider when a known chain is re-added", async () => {
       await chainService.addCustomChain(CUSTOM_CHAIN)
 
-      const firstProvider = chainService.providers.evm[
-        CUSTOM_CHAIN.chainId
-      ] as SerialFallbackProvider
+      const firstProvider = chainService.providerForNetwork({
+        chainID: CUSTOM_CHAIN.chainId,
+      } as EVMNetwork) as SerialFallbackProvider
 
       await chainService.addCustomChain({
         ...CUSTOM_CHAIN,
         rpcUrls: ["https://foo-replacement.example.com"],
       })
 
-      const secondProvider = chainService.providers.evm[
-        CUSTOM_CHAIN.chainId
-      ] as SerialFallbackProvider
+      const secondProvider = chainService.providerForNetwork({
+        chainID: CUSTOM_CHAIN.chainId,
+      } as EVMNetwork) as SerialFallbackProvider
 
       expect(secondProvider).not.toBe(firstProvider)
       expect(firstProvider.isDestroyed).toBe(true)
@@ -631,19 +637,14 @@ describe("ChainService", () => {
       // left running against the endpoints that were just replaced.
       expect(destroySpy.called).toBe(true)
 
-      // The network subscription is moved over in place, not duplicated.
-      const ethereumSubscriptions = chainService.subscribedNetworks.filter(
-        ({ network }) => network.chainID === ETHEREUM.chainID,
-      )
-      expect(ethereumSubscriptions).toHaveLength(1)
-      expect(ethereumSubscriptions[0].provider).toBe(newProvider)
-
-      // No account subscription is left pointing at the retired provider.
+      // Watching is kept by chain, so the network is still watched once and
+      // its polls go to whatever provider serves it now.
       expect(
-        chainService.subscribedAccounts.filter(
-          ({ provider }) => provider === previousProvider,
-        ),
-      ).toHaveLength(0)
+        chainService
+          .getWatchedNetworks()
+          .filter(({ chainID }) => chainID === ETHEREUM.chainID),
+      ).toHaveLength(1)
+      expect(newProvider).not.toBe(previousProvider)
     })
 
     it("rejects and does not persist when an endpoint reports the wrong chain ID", async () => {
@@ -821,9 +822,10 @@ describe("ChainService", () => {
       )
 
       expect(
-        chainService.supportedNetworks.find(
-          ({ chainID }) => chainID === ETHEREUM.chainID,
-        )?.blockExplorerURL,
+        chainService
+          .getSupportedNetworks()
+          .find(({ chainID }) => chainID === ETHEREUM.chainID)
+          ?.blockExplorerURL,
       ).toEqual("https://custom-explorer.example.com")
     })
 

@@ -1402,7 +1402,7 @@ export default class ReduxService extends BaseService<never> {
       })
 
       await Promise.all(
-        this.chainService.supportedNetworks.map(async (network) => {
+        this.chainService.getSupportedNetworks().map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,
@@ -1415,7 +1415,7 @@ export default class ReduxService extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
+          this.chainService.getSupportedNetworks().map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,
               chainID: network.chainID,
@@ -1464,13 +1464,13 @@ export default class ReduxService extends BaseService<never> {
           await this.chainService.started()
 
           const { address, network } = dbAddressNetwork
-          let supportedNetwork = this.chainService.supportedNetworks.find(
-            (net) => sameNetwork(network, net),
-          )
+          let supportedNetwork = this.chainService
+            .getSupportedNetworks()
+            .find((net) => sameNetwork(network, net))
 
           if (!supportedNetwork) {
             // oxlint-disable-next-line prefer-destructuring
-            supportedNetwork = this.chainService.supportedNetworks[0]
+            supportedNetwork = this.chainService.getSupportedNetworks()[0]
           }
 
           this.store.dispatch(

@@ -158,7 +158,7 @@ describe("Chain Service", () => {
 
   describe("markNetworkActivity", () => {
     beforeEach(async () => {
-      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+      sandbox.stub(chainService, "getSupportedNetworks").returns([ETHEREUM])
 
       await chainService.startService()
     })
@@ -200,7 +200,7 @@ describe("Chain Service", () => {
 
   describe("markAccountActivity", () => {
     beforeEach(async () => {
-      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+      sandbox.stub(chainService, "getSupportedNetworks").returns([ETHEREUM])
       await chainService.startService()
     })
 
