@@ -216,7 +216,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     },
     eth_signTransaction: this.signTransactionHandler("eth_signTransaction"),
     eth_sendTransaction: this.signTransactionHandler("eth_sendTransaction"),
-    wallet_switchEthereumChain: async (params, origin) => {
+    wallet_switchEthereumChain: async (params, origin, enablingPermission) => {
       const [switchParameter]: unknown[] = params
 
       const targetNetwork =
@@ -232,7 +232,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       // Unknown chains are left to the internal provider, which reports
       // them as unrecognized so the dapp can offer to add them.
       if (targetNetwork !== undefined) {
-        await this.assertPermittedOnNetwork(origin, targetNetwork)
+        await this.ensurePermittedOnNetwork(
+          enablingPermission,
+          origin,
+          targetNetwork,
+        )
       }
 
       return this.internalEthereumProviderService.routeSafeRPCRequest(
@@ -259,7 +263,11 @@ export default class ProviderBridgeService extends BaseService<Events> {
       if (supportedNetwork) {
         // If the network is already added - just switch to it, as long as
         // the dapp is allowed on it.
-        await this.assertPermittedOnNetwork(origin, supportedNetwork)
+        await this.ensurePermittedOnNetwork(
+          enablingPermission,
+          origin,
+          supportedNetwork,
+        )
 
         return this.internalEthereumProviderService.routeSafeRPCRequest(
           "wallet_addEthereumChain",
@@ -770,18 +778,56 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   /**
-   * Rejects with 4100 (unauthorized), without switching or granting anything,
-   * when `origin` has no allowed permission for the selected account on
-   * `network`. 4902 is left for chains Taho doesn't know.
+   * Ensures `origin` has an allowed permission for the selected account on
+   * `network`, asking the user to grant `network` alone when the origin is
+   * connected on another chain.
+   *
+   * Rejects with 4001 (user rejected) if the user declines or another
+   * permission prompt is open for the origin, and with 4100 (unauthorized),
+   * without prompting, if the origin isn't connected on any chain. 4902 is
+   * left for chains Taho doesn't know.
    */
-  private async assertPermittedOnNetwork(
+  private async ensurePermittedOnNetwork(
+    enablingPermission: Permission,
     origin: string,
     network: EVMNetwork,
   ): Promise<void> {
     const permission = await this.checkPermission(origin, network.chainID)
 
-    if (permission?.state !== "allow") {
+    if (permission?.state === "allow") {
+      return
+    }
+
+    const { address: accountAddress } =
+      await this.preferenceService.getSelectedAccount()
+
+    if (
+      !(await this.db.hasAllowedPermissionOnAnyChain(origin, accountAddress))
+    ) {
       throw new EIP1193Error(EIP1193_ERROR_CODES.unauthorized)
+    }
+
+    if (this.#pendingPermissionsRequests[origin] !== undefined) {
+      throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
+    }
+
+    await this.requestPermission({
+      key: `${origin}_${accountAddress}_${network.chainID}`,
+      origin,
+      chainID: network.chainID,
+      faviconUrl: enablingPermission.faviconUrl,
+      title: enablingPermission.title,
+      state: "request",
+      accountAddress,
+    })
+
+    const grantedPermission = await this.checkPermission(
+      origin,
+      network.chainID,
+    )
+
+    if (grantedPermission?.state !== "allow") {
+      throw new EIP1193Error(EIP1193_ERROR_CODES.userRejectedRequest)
     }
   }
 

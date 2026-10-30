@@ -145,6 +145,26 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions.where({ origin }).delete()
   }
 
+  /**
+   * Whether `origin` holds an allowed permission for `accountAddress` on
+   * any chain.
+   */
+  async hasAllowedPermissionOnAnyChain(
+    origin: string,
+    accountAddress: string,
+  ): Promise<boolean> {
+    const allowedCount = await this.dAppPermissions
+      .where({ origin })
+      .filter(
+        (permission) =>
+          permission.accountAddress === accountAddress &&
+          permission.state === "allow",
+      )
+      .count()
+
+    return allowedCount > 0
+  }
+
   async checkPermission(
     origin: string,
     accountAddress: string,
