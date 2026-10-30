@@ -99,8 +99,13 @@ describe("Chain Service", () => {
           broadcastOnSign: true,
         }
 
+      // Population moved to the transaction submitter.
       const stub = sandbox.stub(
-        chainService as unknown as ChainServiceExternalized,
+        (
+          chainService as unknown as {
+            transactionSubmitter: ChainServiceExternalized
+          }
+        ).transactionSubmitter,
         "populatePartialEIP1559TransactionRequest",
       )
 
@@ -131,8 +136,13 @@ describe("Chain Service", () => {
           broadcastOnSign: true,
         }
 
+      // Population moved to the transaction submitter.
       const stub = sandbox.stub(
-        chainService as unknown as ChainServiceExternalized,
+        (
+          chainService as unknown as {
+            transactionSubmitter: ChainServiceExternalized
+          }
+        ).transactionSubmitter,
         "populatePartialLegacyEVMTransactionRequest",
       )
 
