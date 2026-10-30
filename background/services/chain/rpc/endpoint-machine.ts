@@ -57,8 +57,8 @@ type EndpointContext = {
 
 export type EndpointEvent =
   | { type: "FIRST_USE" }
-  | { type: "SOCKET_OPENED" }
-  | { type: "SOCKET_CLOSED" }
+  | { type: "SOCKET_OPENED"; transport?: JsonRpcProvider }
+  | { type: "SOCKET_CLOSED"; transport?: JsonRpcProvider }
   | { type: "REQUEST_SUCCEEDED" }
   | { type: "REQUEST_FAILED" }
   | { type: "DISPOSE" }
@@ -123,8 +123,8 @@ const watchSocket = fromCallback<
   }
 
   const socket = transport.websocket as unknown as ObservableSocket
-  const opened = () => sendBack({ type: "SOCKET_OPENED" })
-  const closed = () => sendBack({ type: "SOCKET_CLOSED" })
+  const opened = () => sendBack({ type: "SOCKET_OPENED", transport })
+  const closed = () => sendBack({ type: "SOCKET_CLOSED", transport })
 
   if (socket.readyState === SOCKET_OPEN) {
     opened()
@@ -175,6 +175,11 @@ export const endpointMachine = setup({
     socketOpenTimeout: ({ context }) => context.options.socketOpenTimeoutMs,
   },
   guards: {
+    /** Ignores news from a socket that has since been replaced. */
+    isCurrentSocket: ({ context, event }) =>
+      !("transport" in event) ||
+      event.transport === undefined ||
+      event.transport === context.transport,
     usesWebSocket: ({ context }) => isWebSocketTransport(context.transport),
     reachesThreshold: ({ context }) => {
       const windowStart = context.now() - context.options.failureWindowMs
@@ -264,7 +269,6 @@ export const endpointMachine = setup({
       ],
     },
     Connecting: {
-      entry: "replaceClosedSocket",
       invoke: {
         src: "watchSocket",
         input: ({ context }) => ({ transport: context.transport }),
@@ -273,8 +277,12 @@ export const endpointMachine = setup({
         socketOpenTimeout: { target: "CoolingDown", actions: "startCooldown" },
       },
       on: {
-        SOCKET_OPENED: "Ready",
-        SOCKET_CLOSED: { target: "CoolingDown", actions: "startCooldown" },
+        SOCKET_OPENED: { guard: "isCurrentSocket", target: "Ready" },
+        SOCKET_CLOSED: {
+          guard: "isCurrentSocket",
+          target: "CoolingDown",
+          actions: "startCooldown",
+        },
       },
     },
     Ready: {
@@ -292,16 +300,20 @@ export const endpointMachine = setup({
           },
           { actions: "recordFailure" },
         ],
-        SOCKET_CLOSED: "Connecting",
+        // Socket transports are replaced before the new state watches them.
+        SOCKET_CLOSED: {
+          guard: "isCurrentSocket",
+          target: "Connecting",
+          actions: "replaceClosedSocket",
+        },
       },
     },
     CoolingDown: {
       after: {
-        cooldown: "Probing",
+        cooldown: { target: "Probing", actions: "replaceClosedSocket" },
       },
     },
     Probing: {
-      entry: "replaceClosedSocket",
       invoke: {
         src: "probe",
         input: ({ context }) => ({ context }),

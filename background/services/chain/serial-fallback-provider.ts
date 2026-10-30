@@ -37,7 +37,7 @@ import {
 } from "../../lib/perf-metrics"
 import Endpoint from "./rpc/endpoint"
 import EndpointPool from "./rpc/endpoint-pool"
-import { isWebSocketTransport } from "./rpc/endpoint-machine"
+import SubscriptionManager from "./rpc/subscription-manager"
 import {
   NetworkReachabilityListener,
   NetworkReachabilityState,
@@ -45,7 +45,6 @@ import {
 } from "./network-reachability"
 import {
   anyErrorFailsOverPolicy,
-  jitteredBackoffMs,
   standardFailurePolicy,
 } from "./rpc/failure-policy"
 import {
@@ -81,22 +80,6 @@ const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 const PROVIDER_REQUEST_TIMEOUT = 5 * SECOND
 
 /**
- * Wait the given number of ms, then run the provided function. Returns a
- * promise that will resolve after the delay has elapsed and the passed
- * function has executed, with the result of the passed function.
- */
-function waitAnd<T, E extends Promise<T>>(
-  waitMs: number,
-  fn: () => E,
-): Promise<T> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(fn())
-    }, waitMs)
-  })
-}
-
-/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of endpoints in case earlier ones fail.
  *
@@ -117,8 +100,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   readonly #lifecycle = new AbortController()
 
-  // The transport the tracked subscriptions are attached to.
-  #subscribedTransport: JsonRpcProvider
+  #subscriptions: SubscriptionManager
 
   // Handles for the cache-cleanup timer, so `destroy` can stop it when this
   // provider is replaced.
@@ -169,22 +151,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private cachedChainId: string
 
   private routeRules: RouteRule[] = []
-
-  // Information on WebSocket-style subscriptions. Tracked here so as to
-  // restore them in case of WebSocket disconnects.
-  private subscriptions: {
-    tag: string
-    param: unknown[]
-    processFunc: (_: unknown) => void
-  }[] = []
-
-  // Information on event subscriptions, which can be restored on non-WebSocket
-  // subscriptions and WebSocket subscriptions both.
-  private eventSubscriptions: {
-    eventName: EventType
-    listener: Listener | (Listener & { wrappedListener: Listener })
-    once: boolean
-  }[] = []
 
   constructor(
     // Internal network type useful for helper calls, but not exposed to avoid
@@ -261,13 +227,30 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
     // Builds the first endpoint's transport from the one above.
     this.#standardEndpoints[0].build()
-    this.#subscribedTransport = this.#standardEndpoints[0].transport
+    this.#subscriptions = new SubscriptionManager(
+      this.#standardEndpoints[0],
+      (endpoint, moved) => {
+        const index = this.#standardEndpoints.indexOf(endpoint)
+        recordReconnectAttempt(this.chainID, index)
+        if (moved) {
+          recordReconnectSucceeded(this.chainID, index)
+        } else {
+          recordReconnectFailed(this.chainID, index)
+        }
+      },
+    )
 
     const standardPool = new EndpointPool("standard", this.#standardEndpoints)
     this.#pools.set("standard", standardPool)
-    standardPool.onPreferredEndpointChanged((endpoint) =>
-      this.moveSubscriptionsTo(endpoint),
-    )
+    standardPool.onPreferredEndpointChanged((endpoint) => {
+      if (!this.#destroyed) {
+        this.#subscriptions
+          .moveTo(endpoint)
+          .catch((error) =>
+            logger.error("Error moving subscriptions on chain", chainID, error),
+          )
+      }
+    })
 
     const managedEndpoint = this.#standardEndpoints.find(
       ({ kind }) => kind === "managed",
@@ -473,10 +456,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.#pools.forEach((pool) => pool.dispose())
     this.#standardEndpoints.forEach((endpoint) => endpoint.dispose())
 
-    // Stop tracking subscriptions so nothing gets restored onto a retired
-    // provider, and drop the listeners registered on this instance itself.
-    this.subscriptions = []
-    this.eventSubscriptions = []
+    this.#subscriptions.clear()
     this.removeAllListeners()
   }
 
@@ -514,31 +494,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Exposes direct WebSocket subscription by JSON-RPC method. Takes immediate
-   * effect if the current underlying provider is a WebSocketProvider. If it is
-   * not, queues the subscription up for when a WebSocketProvider can connect.
+   * Subscribes by JSON-RPC method on a WebSocket endpoint. On a polling
+   * endpoint, the subscription waits for a WebSocket one.
    */
   async subscribe(
     tag: string,
     param: Array<unknown>,
     processFunc: (result: unknown) => void,
   ): Promise<void> {
-    const subscription = { tag, param, processFunc }
-    const transport = this.#subscribedTransport
-
-    if (isWebSocketTransport(transport)) {
-      // oxlint-disable-next-line no-underscore-dangle
-      await transport._subscribe(tag, param, processFunc)
-      this.subscriptions.push(subscription)
-    } else {
-      logger.warn(
-        "Current provider ",
-        transport,
-        " for ",
-        this.network,
-        "is not a WebSocket provider; subscription " +
-          "will not work until a WebSocket provider connects.",
-      )
+    if (!this.#destroyed) {
+      await this.#subscriptions.subscribe(tag, param, processFunc)
     }
   }
 
@@ -595,193 +560,26 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
   }
 
-  /**
-   * Behaves the same as the `JsonRpcProvider` `on` method, but also tracks the
-   * event subscription so that an underlying provider failure will not prevent
-   * it from firing.
-   */
+  /** Like `JsonRpcProvider.on`, but the listener survives failovers. */
   override on(eventName: EventType, listener: Listener): this {
-    this.eventSubscriptions.push({
-      eventName,
-      listener,
-      once: false,
-    })
-
     if (!this.#destroyed) {
-      this.#subscribedTransport.on(eventName, listener)
+      this.#subscriptions.on(eventName, listener)
     }
-
     return this
   }
 
-  /**
-   * Behaves the same as the `JsonRpcProvider` `once` method, but also tracks
-   * the event subscription so that an underlying provider failure will not
-   * prevent it from firing.
-   */
+  /** Like `JsonRpcProvider.once`, but the listener survives failovers. */
   override once(eventName: EventType, listener: Listener): this {
-    const adjustedListener = this.listenerWithCleanup(eventName, listener)
-
-    this.eventSubscriptions.push({
-      eventName,
-      listener: adjustedListener,
-      once: true,
-    })
-
     if (!this.#destroyed) {
-      this.#subscribedTransport.once(eventName, listener)
+      this.#subscriptions.once(eventName, listener)
     }
-
     return this
   }
 
-  /**
-   * Removes one or all listeners for a given event.
-   *
-   * Ensures these will not be restored during a reconnect.
-   */
-  override off(eventName: EventType, listenerToRemove?: Listener): this {
-    this.eventSubscriptions = this.eventSubscriptions.filter(
-      ({ eventName: savedEventName, listener: savedListener }) => {
-        if (savedEventName === eventName) {
-          // No explicit listener to remove = remove all listeners.
-          if (
-            typeof listenerToRemove === "undefined" ||
-            listenerToRemove === null
-          ) {
-            return true
-          }
-
-          // If the listener is wrapped, use that to check against the
-          // specified listener to remove.
-          if ("wrappedListener" in savedListener) {
-            return savedListener.wrappedListener === listenerToRemove
-          }
-
-          // Otherwise, directly compare.
-          return savedListener === listenerToRemove
-        }
-
-        return false
-      },
-    )
-
-    if (!this.#destroyed) {
-      this.#subscribedTransport.off(eventName, listenerToRemove)
-    }
-
+  /** Removes one or all listeners for an event. */
+  override off(eventName: EventType, listener?: Listener): this {
+    this.#subscriptions.off(eventName, listener)
     return this
-  }
-
-  /**
-   * Moves tracked subscriptions off the transport they are on and onto the
-   * given endpoint's. A WebSocket is closed so its subscriptions stop; its
-   * endpoint opens a fresh one.
-   */
-  private async moveSubscriptionsTo(endpoint: Endpoint): Promise<void> {
-    if (this.#destroyed) {
-      return
-    }
-
-    const previous = this.#subscribedTransport
-    if (isWebSocketTransport(previous)) {
-      previous.destroy()
-    } else {
-      this.eventSubscriptions.forEach(({ eventName, listener }) =>
-        previous.off(eventName, listener),
-      )
-    }
-
-    const index = this.#standardEndpoints.indexOf(endpoint)
-    recordReconnectAttempt(this.chainID, index)
-
-    this.#subscribedTransport = endpoint.transport
-    const resubscribed = await this.resubscribe(endpoint)
-    if (resubscribed) {
-      recordReconnectSucceeded(this.chainID, index)
-    } else {
-      recordReconnectFailed(this.chainID, index)
-    }
-  }
-
-  /**
-   * Wraps an Ethers listener function meant to only be invoked once with
-   * cleanup to ensure it won't be resubscribed in case of a provider switch.
-   */
-  private listenerWithCleanup(
-    eventName: EventType,
-    listenerToWrap: Listener,
-  ): Listener & { wrappedListener: Listener } {
-    const wrappedListener = (
-      ...params: Parameters<Listener>
-    ): ReturnType<Listener> => {
-      try {
-        listenerToWrap(...params)
-      } finally {
-        this.eventSubscriptions = this.eventSubscriptions.filter(
-          ({ eventName: storedEventName, listener, once }) =>
-            eventName !== storedEventName ||
-            listener !== wrappedListener ||
-            once !== true,
-        )
-      }
-    }
-
-    wrappedListener.wrappedListener = listenerToWrap
-
-    return wrappedListener
-  }
-
-  /**
-   * Resubscribes existing WebSocket subscriptions (if the endpoint is a
-   * WebSocket) and regular Ethers subscriptions (for all endpoints).
-   * @returns Whether the endpoint was ready to take the subscriptions
-   */
-  private async resubscribe(endpoint: Endpoint): Promise<boolean> {
-    logger.debug("Resubscribing subscriptions", "on chain", this.chainID, "...")
-
-    try {
-      await endpoint.whenReady()
-    } catch {
-      return false
-    }
-
-    const provider = endpoint.transport
-    if (!provider.network) {
-      return false
-    }
-
-    if (isWebSocketTransport(provider)) {
-      // Chain promises to serially resubscribe.
-      await this.subscriptions.reduce(
-        (previousPromise, { tag, param, processFunc }) =>
-          previousPromise.then(() =>
-            waitAnd(jitteredBackoffMs(), () =>
-              // Direct subscriptions are internal, but we want to be able to
-              // restore them.
-              // oxlint-disable-next-line no-underscore-dangle
-              provider._subscribe(tag, param, processFunc),
-            ),
-          ),
-        Promise.resolve(),
-      )
-    }
-
-    this.eventSubscriptions.forEach(({ eventName, listener, once }) => {
-      // Transports are reused, so one coming back into service may still
-      // carry these listeners from an earlier stint; Ethers would happily
-      // attach a second copy and fire each event twice.
-      provider.off(eventName, listener)
-
-      if (once) {
-        provider.once(eventName, listener)
-      } else {
-        provider.on(eventName, listener)
-      }
-    })
-
-    logger.debug("Subscriptions resubscribed", "on chain", this.chainID, "...")
-    return true
   }
 
   /**
