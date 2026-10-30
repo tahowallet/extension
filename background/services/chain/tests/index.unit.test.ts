@@ -426,6 +426,97 @@ describe("Chain Service", () => {
     })
   })
 
+  describe("characterization", () => {
+    const CUSTOM_CHAIN = {
+      chainName: "Foo",
+      chainId: "12345",
+      nativeCurrency: { name: "FooCoin", symbol: "FOO", decimals: 18 },
+      rpcUrls: ["https://foo.example.com"],
+      blockExplorerUrl: "https://fooscanner.example.com",
+    }
+
+    beforeEach(async () => {
+      sandbox
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "getNetworksToTrack",
+        )
+        .resolves([ETHEREUM])
+      getBlockPricesMock.mockImplementation(async () => createBlockPrices())
+      await chainService.startService()
+    })
+
+    afterEach(async () => {
+      await chainService.stopService()
+    })
+
+    // Problem 3: re-adding a chain replaces its provider, but the network is
+    // already tracked, so nothing moves its subscriptions over.
+    it("keeps gas polling on the retired provider after a known chain is re-added", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+      chainService.markNetworkActivity(CUSTOM_CHAIN.chainId)
+      const firstProvider = chainService.providerForNetwork({
+        chainID: CUSTOM_CHAIN.chainId,
+      } as EVMNetwork)
+
+      await chainService.addCustomChain({
+        ...CUSTOM_CHAIN,
+        rpcUrls: ["https://foo-replacement.example.com"],
+      })
+      getBlockPricesMock.mockClear()
+
+      await chainService.pollBlockPricesForNetwork(CUSTOM_CHAIN.chainId)
+
+      expect(firstProvider?.isDestroyed).toBe(true)
+      expect(getBlockPricesMock).toHaveBeenCalledTimes(1)
+      const [, polledProvider] = getBlockPricesMock.mock.calls[0] as unknown[]
+      expect(polledProvider).toBe(firstProvider)
+    })
+
+    // Problem 4: each newly watched network schedules its own burst of gas
+    // polls across every watched network.
+    it("polls gas more than four times a minute per network with three networks watched", async () => {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ["setTimeout", "clearTimeout"],
+      })
+      try {
+        ;[ETHEREUM, POLYGON, OPTIMISM].forEach(({ chainID }) =>
+          chainService.markNetworkActivity(chainID),
+        )
+        getBlockPricesMock.mockClear()
+
+        await chainService.startTrackingNetworkOrThrow(POLYGON.chainID)
+        await chainService.startTrackingNetworkOrThrow(OPTIMISM.chainID)
+        await clock.tickAsync(MINUTE)
+
+        expect(getBlockPricesMock.mock.calls.length).toBe(23)
+      } finally {
+        clock.restore()
+      }
+    })
+
+    // Problem 5: the watched network object isn't refreshed by an edit.
+    it("emits block prices with the network as it was before an edit", async () => {
+      chainService.markNetworkActivity(ETHEREUM.chainID)
+      const emitted: EVMNetwork[] = []
+      chainService.emitter.on("blockPrices", ({ network }) => {
+        emitted.push(network)
+      })
+
+      await chainService.updateNetworkSettings(
+        ETHEREUM.chainID,
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+        "https://edited-explorer.example.com",
+      )
+      await chainService.pollBlockPricesForNetwork(ETHEREUM.chainID)
+
+      expect(emitted.at(-1)?.blockExplorerURL).not.toEqual(
+        "https://edited-explorer.example.com",
+      )
+    })
+  })
+
   describe("asset transfer block ranges", () => {
     // The block height the service is told the chain is at, with the skip
     // applied to derive the end of a recent lookup.
