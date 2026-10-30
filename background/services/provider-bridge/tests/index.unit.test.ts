@@ -1,6 +1,6 @@
 import {
   EIP1193_ERROR_CODES,
-  PermissionRequest,
+  Permission,
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
@@ -34,7 +34,7 @@ const BASE_DATA = {
     state: "allow",
     accountAddress: ADDRESS,
     chainID: CHAIN_ID,
-  } as PermissionRequest,
+  } as Permission,
   origin: "https://app.test",
 }
 
@@ -287,7 +287,7 @@ describe("ProviderBridgeService", () => {
     },
   ])("$method to a tracked chain", ({ method, paramsFor }) => {
     const origin = "https://switch.test"
-    const enablingPermission: PermissionRequest = {
+    const enablingPermission: Permission = {
       ...BASE_DATA.enablingPermission,
       key: `${origin}_${ADDRESS}_${ETHEREUM.chainID}`,
       origin,
@@ -393,7 +393,7 @@ describe("ProviderBridgeService", () => {
     const permissionFor = (
       accountAddress: string,
       chainID: string,
-    ): PermissionRequest => ({
+    ): Permission => ({
       ...BASE_DATA.enablingPermission,
       key: `${origin}_${accountAddress}_${chainID}`,
       origin,

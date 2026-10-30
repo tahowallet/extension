@@ -1,4 +1,5 @@
-export type PermissionRequest = {
+/** A dapp's permission to use an account on one network. */
+export type Permission = {
   key: string
   origin: string
   faviconUrl: string
@@ -8,7 +9,7 @@ export type PermissionRequest = {
   accountAddress: string
 }
 
-export type DeniedPermission = PermissionRequest & { state: "deny" }
+export type DeniedPermission = Permission & { state: "deny" }
 
 export type WindowResponseEvent = {
   origin: string

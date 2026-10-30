@@ -1,6 +1,6 @@
 import React, { ReactElement, useCallback, useEffect } from "react"
 import {
-  selectCurrentPendingPermission,
+  selectCurrentUnansweredPermissionRequest,
   selectCurrentAccountTotal,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -17,7 +17,9 @@ export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const currentAccountTotal = useBackgroundSelector(selectCurrentAccountTotal)
-  const permission = useBackgroundSelector(selectCurrentPendingPermission)
+  const permission = useBackgroundSelector(
+    selectCurrentUnansweredPermissionRequest,
+  )
 
   useEffect(() => {
     window.onbeforeunload = () => {

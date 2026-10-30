@@ -1,5 +1,5 @@
 import { Runtime } from "webextension-polyfill"
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { Permission } from "@tallyho/provider-bridge-shared"
 import { utils } from "ethers"
 
 import {
@@ -1337,7 +1337,7 @@ export default class ReduxService extends BaseService<never> {
 
     this.providerBridgeService.emitter.on(
       "requestPermission",
-      (permissionRequest: PermissionRequest) => {
+      (permissionRequest: Permission) => {
         this.store.dispatch(requestPermission(permissionRequest))
       },
     )

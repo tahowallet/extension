@@ -1,9 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import {
-  DeniedPermission,
-  PermissionRequest,
-} from "@tallyho/provider-bridge-shared"
+import { DeniedPermission, Permission } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
@@ -20,13 +17,13 @@ import {
 import { EVMNetwork } from "../networks"
 
 export type DAppPermissionState = {
-  permissionRequests: { [origin: string]: PermissionRequest }
+  permissionRequests: { [origin: string]: Permission }
   allowed: {
     evm: {
       // @TODO Re-key by origin-chainID-address
       [chainID: string]: {
         [address: string]: {
-          [origin: string]: PermissionRequest
+          [origin: string]: Permission
         }
       }
     }
@@ -41,8 +38,8 @@ export const initialState: DAppPermissionState = {
 }
 
 export type Events = {
-  requestPermission: PermissionRequest
-  grantPermission: PermissionRequest
+  requestPermission: Permission
+  grantPermission: Permission
   denyOrRevokePermission: DeniedPermission
   switchNetworkForOrigin: { origin: string; network: EVMNetwork }
 }
@@ -52,7 +49,7 @@ export const emitter = new Emittery<Events>()
 // Async thunk to bubble the permissionGrant action from store to emitter.
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
-  async (permission: PermissionRequest) => {
+  async (permission: Permission) => {
     emitter.emit("grantPermission", {
       ...permission,
     })
@@ -90,7 +87,7 @@ const dappSlice = createSlice({
           evm: {
             [chainID: string]: {
               [address: string]: {
-                [origin: string]: PermissionRequest
+                [origin: string]: Permission
               }
             }
           }
@@ -101,7 +98,7 @@ const dappSlice = createSlice({
     },
     requestPermission: (
       state,
-      { payload: request }: { payload: PermissionRequest },
+      { payload: request }: { payload: Permission },
     ) => {
       if (state.permissionRequests[request.origin]?.state !== "allow") {
         return {
@@ -170,10 +167,7 @@ const dappSlice = createSlice({
     builder
       .addCase(
         grantPermission.fulfilled,
-        (
-          immerState,
-          { payload: permission }: { payload: PermissionRequest },
-        ) => {
+        (immerState, { payload: permission }: { payload: Permission }) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
@@ -203,10 +197,7 @@ const dappSlice = createSlice({
       )
       .addCase(
         denyOrRevokePermission.fulfilled,
-        (
-          immerState,
-          { payload: permission }: { payload: PermissionRequest },
-        ) => {
+        (immerState, { payload: permission }: { payload: Permission }) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 

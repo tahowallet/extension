@@ -1,4 +1,4 @@
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { Permission } from "@tallyho/provider-bridge-shared"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { RootState } from "@tallyho/tally-background/redux-slices"
 import React, { ReactElement, useCallback, useState } from "react"
@@ -10,8 +10,8 @@ import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
 type Props = {
   isConnectedToDApp: boolean
-  currentPermission: PermissionRequest | undefined
-  allowedPages: PermissionRequest[]
+  currentPermission: Permission | undefined
+  allowedPages: Permission[]
 }
 
 export default function ActiveDAppConnection({

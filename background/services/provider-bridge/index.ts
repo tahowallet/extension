@@ -1,7 +1,7 @@
 import browser, { Runtime } from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
-  PermissionRequest,
+  Permission,
   DeniedPermission,
   AllowedQueryParamPage,
   PortRequestEvent,
@@ -41,7 +41,7 @@ import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
-  requestPermission: PermissionRequest
+  requestPermission: Permission
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
   /**
@@ -58,13 +58,13 @@ type Events = ServiceLifecycleEvents & {
 
 type ProviderBridgeRPCHandler = (
   origin: string,
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
 ) => Promise<unknown>
 
 type PermittedRPCHandler = (
   params: RPCRequest["params"],
   origin: string,
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
 ) => Promise<unknown>
 
 const accountsPermissionFor: ProviderBridgeRPCHandler = async (
@@ -503,7 +503,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
           EIP1193_ERROR_CODES.userRejectedRequest,
         ).toJSON()
       } else {
-        const permissionRequest: PermissionRequest = {
+        const permissionRequest: Permission = {
           key: `${origin}_${accountAddress}_${dAppChainID}`,
           origin,
           chainID: dAppChainID,
@@ -677,9 +677,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async requestPermission(
-    permissionRequest: PermissionRequest,
-  ): Promise<unknown> {
+  async requestPermission(permissionRequest: Permission): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
 
     const permissionPromise = new Promise((resolve) => {
@@ -702,7 +700,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
     return result
   }
 
-  async grantPermission(permission: PermissionRequest): Promise<void> {
+  async grantPermission(permission: Permission): Promise<void> {
     // FIXME proper error handling if this happens - should not tho
     if (permission.state !== "allow" || !permission.accountAddress) return
 
@@ -761,7 +759,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   async checkPermission(
     origin: string,
     chainID: string,
-  ): Promise<PermissionRequest | undefined> {
+  ): Promise<Permission | undefined> {
     const { address: selectedAddress } =
       await this.preferenceService.getSelectedAccount()
     const currentAddress = selectedAddress
@@ -894,7 +892,7 @@ export default class ProviderBridgeService extends BaseService<Events> {
   }
 
   async routeContentScriptRPCRequest(
-    enablingPermission: PermissionRequest,
+    enablingPermission: Permission,
     method: string,
     rawParams: RPCRequest["params"],
     origin: string,
