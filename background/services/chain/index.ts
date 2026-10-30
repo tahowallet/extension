@@ -2,7 +2,6 @@ import { TransactionResponse } from "@ethersproject/providers"
 import { ethers, utils } from "ethers"
 import { Logger, UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
-import getBlockPrices from "../../lib/gas"
 import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
@@ -13,7 +12,6 @@ import {
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  toHexChainID,
   NetworkBaseAsset,
   RpcEndpoint,
   sameChainID,
@@ -40,7 +38,6 @@ import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
-  blockFromProviderBlock,
   ethersTransactionFromSignedTransaction,
   ethersTransactionFromTransactionRequest,
   unsignedTransactionFromEVMTransaction,
@@ -79,17 +76,11 @@ import ProviderRegistry from "./provider-registry"
 import NonceAllocator from "./nonce-allocator"
 import NetworkSettings, { NetworkMetadata } from "./network-settings"
 import AssetTransferScanner from "./asset-transfer-scanner"
+import NetworkWatcher from "./network-watcher"
 import TransactionTracker, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "./transaction-tracker"
-
-// Add a little bit of wiggle room
-const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
-
-const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
-
-const GAS_POLLING_PERIOD = 1 // 1 minute
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -168,19 +159,15 @@ export default class ChainService extends BaseService<Events> {
     return { evm: this.providerRegistry.providersByChainID() }
   }
 
-  /** Chains whose blocks and gas prices are being watched. */
-  private watchedChainIDs = new Set<string>()
+  private networkWatcher: NetworkWatcher
 
   /** The watched networks, as they are now. */
   private get watchedNetworks(): EVMNetwork[] {
-    return [...this.watchedChainIDs].flatMap((chainID) => {
+    return this.networkWatcher.watchedChainIDs().flatMap((chainID) => {
       const network = this.networkSettings.networkFor(chainID)
       return network === undefined ? [] : [network]
     })
   }
-
-  /** Accounts whose pending transactions are being watched, by chain. */
-  private watchedAccounts: { address: string; chainID: string }[] = []
 
   /** @deprecated Subscriptions are kept by chain, not by provider. */
   get subscribedNetworks(): {
@@ -198,19 +185,23 @@ export default class ChainService extends BaseService<Events> {
     account: string
     provider: SerialFallbackProvider | undefined
   }[] {
-    return this.watchedAccounts.map(({ address, chainID }) => ({
-      account: address,
-      provider: this.providerRegistry.providerFor(chainID),
-    }))
+    return this.networkWatcher
+      .watchedAccounts()
+      .map(({ address, chainID }) => ({
+        account: address,
+        provider: this.providerRegistry.providerFor(chainID),
+      }))
   }
 
-  private lastUserActivityOnNetwork: {
-    [chainID: string]: UNIXTime
-  } = {}
+  /** @deprecated Kept for tests; see {@link NetworkWatcher}. */
+  private get lastUserActivityOnNetwork(): { [chainID: string]: UNIXTime } {
+    return this.networkWatcher.lastActivityOnNetwork
+  }
 
-  private lastUserActivityOnAddress: {
-    [address: HexString]: UNIXTime
-  } = {}
+  /** @deprecated Kept for tests; see {@link NetworkWatcher}. */
+  private get lastUserActivityOnAddress(): { [address: string]: UNIXTime } {
+    return this.networkWatcher.lastActivityOnAddress
+  }
 
   private nonceAllocator = new NonceAllocator((network) =>
     this.providerForNetworkOrThrow(network),
@@ -312,15 +303,25 @@ export default class ChainService extends BaseService<Events> {
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: GAS_POLLING_PERIOD,
+          periodInMinutes: 1,
         },
-        handler: () => {
-          this.pollBlockPrices()
-        },
+        // Only wakes the service worker; the network watches poll gas on
+        // their own timers.
+        handler: () => {},
       },
     })
 
     this.assetData = new AssetDataHelper(this)
+
+    this.networkWatcher = new NetworkWatcher({
+      db,
+      networkFor: (chainID) => this.networkSettings.networkFor(chainID),
+      providerFor: (network) => this.providerForNetworkOrThrow(network),
+      emitBlock: (block) => this.emitter.emit("block", block),
+      emitBlockPrices: (update) => this.emitter.emit("blockPrices", update),
+      onPendingTransaction: (transaction) =>
+        this.handlePendingTransaction(transaction),
+    })
 
     this.transactionTracker = new TransactionTracker({
       db: this.db,
@@ -459,10 +460,9 @@ export default class ChainService extends BaseService<Events> {
 
     await this.updateSupportedNetworks()
 
-    this.lastUserActivityOnNetwork =
-      Object.fromEntries(
-        this.supportedNetworks.map((network) => [network.chainID, 0]),
-      ) || {}
+    this.supportedNetworks.forEach(({ chainID }) => {
+      this.lastUserActivityOnNetwork[chainID] = 0
+    })
 
     this.supportedNetworks.forEach(({ chainID }) =>
       this.providerRegistry.start(
@@ -540,17 +540,8 @@ export default class ChainService extends BaseService<Events> {
     return this.trackedNetworks
   }
 
-  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetwork(network)
-    if (provider) {
-      await Promise.allSettled([
-        this.fetchLatestBlockForNetwork(network),
-        this.subscribeToNewHeads(network),
-      ])
-    } else {
-      logger.error(`Couldn't find provider for network ${network.name}`)
-    }
-
+  private subscribeToNetworkEvents(network: EVMNetwork): void {
+    this.networkWatcher.watchNetwork(network.chainID)
     this.emitter.emit("networkSubscribed", network)
   }
 
@@ -577,7 +568,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.trackedChainIDs.push(networkToTrack.chainID)
 
-    if (!this.watchedChainIDs.has(networkToTrack.chainID)) {
+    if (!this.networkWatcher.isWatching(networkToTrack.chainID)) {
       this.subscribeToNetworkEvents(networkToTrack)
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address),
@@ -904,8 +895,8 @@ export default class ChainService extends BaseService<Events> {
     if (onlyActiveAccounts) {
       return accounts.filter(
         ({ address, network }) =>
-          this.isCurrentlyActiveAddress(address) &&
-          this.isCurrentlyActiveChainID(network.chainID),
+          this.networkWatcher.isAddressActive(address) &&
+          this.networkWatcher.isNetworkActive(network.chainID),
       )
     }
     return accounts
@@ -1264,11 +1255,11 @@ export default class ChainService extends BaseService<Events> {
       await this.addAccountToTrack({ address, network })
     }
 
-    const addressWasInactive = this.addressIsInactive(address)
-    const networkWasInactive = this.networkIsInactive(network.chainID)
+    const addressWasIdle = this.isAddressIdle(address)
+    const networkWasIdle = this.isNetworkIdle(network.chainID)
     this.markNetworkActivity(network.chainID)
-    this.lastUserActivityOnAddress[address] = Date.now()
-    if (addressWasInactive || networkWasInactive) {
+    this.networkWatcher.markAddressActivity(address)
+    if (addressWasIdle || networkWasIdle) {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
@@ -1276,93 +1267,43 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async markNetworkActivity(chainID: string): Promise<void> {
-    const networkWasInactive = this.networkIsInactive(chainID)
-    this.lastUserActivityOnNetwork[chainID] = Date.now()
-    if (networkWasInactive) {
-      // Reactivating a potentially deactivated network
-      this.pollBlockPricesForNetwork(chainID)
-    }
+    this.networkWatcher.markNetworkActivity(chainID)
   }
 
+  isAddressIdle(address: string): boolean {
+    return this.networkWatcher.isAddressIdle(address)
+  }
+
+  isNetworkIdle(chainID: string): boolean {
+    return this.networkWatcher.isNetworkIdle(chainID)
+  }
+
+  /** @deprecated Use {@link isAddressIdle}. */
   addressIsInactive(address: string): boolean {
-    return (
-      Date.now() - NETWORK_POLLING_TIMEOUT >
-      this.lastUserActivityOnAddress[address]
-    )
+    return this.isAddressIdle(address)
   }
 
+  /** @deprecated Use {@link isNetworkIdle}. */
   networkIsInactive(chainID: string): boolean {
-    return (
-      Date.now() - NETWORK_POLLING_TIMEOUT >
-      this.lastUserActivityOnNetwork[chainID]
-    )
+    return this.isNetworkIdle(chainID)
   }
 
-  /*
-   * Periodically fetch block prices and emit an event whenever new data is received
-   * Write block prices to IndexedDB so we have them for later
+  /**
+   * Polls gas prices once on every watched network in use.
+   *
+   * @deprecated Each network's watch polls on its own timer.
    */
   async pollBlockPrices(): Promise<void> {
-    // Schedule next N polls at even interval
-    for (let i = 1; i < GAS_POLLS_PER_PERIOD; i += 1) {
-      setTimeout(
-        async () => {
-          await Promise.allSettled(
-            this.watchedNetworks.map(async (network) =>
-              this.pollBlockPricesForNetwork(network.chainID),
-            ),
-          )
-        },
-        (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) *
-          (GAS_POLLING_PERIOD * MINUTE) *
-          i,
-      )
-    }
-
-    // Immediately run the first poll
     await Promise.allSettled(
-      this.watchedNetworks.map(async (network) =>
-        this.pollBlockPricesForNetwork(network.chainID),
-      ),
+      this.networkWatcher
+        .watchedChainIDs()
+        .map((chainID) => this.pollBlockPricesForNetwork(chainID)),
     )
   }
 
+  /** Polls a watched network's gas prices, if it's in use. */
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
-    if (!this.isCurrentlyActiveChainID(chainID)) {
-      return
-    }
-
-    const network = this.watchedNetworks.find(
-      (watched) => toHexChainID(watched.chainID) === toHexChainID(chainID),
-    )
-
-    if (!network) {
-      logger.warn(
-        `Can't fetch block prices for unsubscribed chainID ${chainID}`,
-      )
-      return
-    }
-
-    const blockPrices = await getBlockPrices(
-      network,
-      this.providerForNetworkOrThrow(network),
-    )
-    this.emitter.emit("blockPrices", { blockPrices, network })
-  }
-
-  /*
-   * Fetch, persist, and emit the latest block on a given network.
-   */
-  private async pollLatestBlock(network: EVMNetwork): Promise<void> {
-    const ethersBlock =
-      await this.providerForNetworkOrThrow(network).getBlock("latest")
-    // add new head to database
-    const block = blockFromProviderBlock(network, ethersBlock)
-    await this.db.addBlock(block)
-    // emit the new block, don't wait to settle
-    this.emitter.emit("block", block)
-    // TODO if it matches a known blockheight and the difficulty is higher,
-    // emit a reorg event
+    await this.networkWatcher.pollGasPrices(chainID)
   }
 
   async send(
@@ -1401,20 +1342,6 @@ export default class ChainService extends BaseService<Events> {
     addressNetwork: AddressOnNetwork,
   ): Promise<void> {
     await this.assetTransferScanner.scanRecentTransfersFor(addressNetwork)
-  }
-
-  private isCurrentlyActiveChainID(chainID: string): boolean {
-    return (
-      Date.now() <
-      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
-    )
-  }
-
-  private isCurrentlyActiveAddress(address: HexString): boolean {
-    return (
-      Date.now() <
-      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
-    )
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
@@ -1456,100 +1383,14 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  /**
-   * Get the latest block for a network and save it to the db.
-   *
-   * @param network The EVM network to watch.
-   */
-  private async fetchLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetwork(network)
-    if (provider) {
-      try {
-        const blockNumber = provider.getBlockNumber()
-        const result = await provider.getBlock(blockNumber)
-        const block = blockFromEthersBlock(network, result)
-        await this.db.addBlock(block)
-      } catch (e) {
-        logger.error("Error getting block number", e)
-      }
-    }
+  private async subscribeToAccountTransactions(
+    addressNetwork: AddressOnNetwork,
+  ): Promise<void> {
+    await this.networkWatcher.watchAccount(addressNetwork)
   }
 
-  /**
-   * Watch a network for new blocks, saving each to the database and emitting an
-   * event. Re-orgs are currently ignored.
-   *
-   * @param network The EVM network to watch.
-   */
-  private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
-    this.watchedChainIDs.add(network.chainID)
-
-    this.pollLatestBlock(network)
-    this.pollBlockPrices()
-  }
-
-  /**
-   * Watch logs for an account's transactions on a particular network.
-   *
-   * @param addressOnNetwork The network and address to watch.
-   */
-  private async subscribeToAccountTransactions({
-    address,
-    network,
-  }: AddressOnNetwork): Promise<void> {
-    await this.watchPendingTransactions({ address, network })
-
-    this.watchedAccounts.push({ address, chainID: network.chainID })
-  }
-
-  private async watchPendingTransactions({
-    address,
-    network,
-  }: AddressOnNetwork): Promise<void> {
-    await this.providerForNetworkOrThrow(network).onPendingTransaction(
-      { address, network },
-      this.handlePendingTransaction.bind(this),
-    )
-  }
-
-  /**
-   * Pending transaction subscriptions live on the provider, so they're made
-   * again on a new one. Block and gas polls look the provider up each time
-   * and only need a fresh read.
-   */
   private handleProviderReplaced(chainID: string): void {
-    const network = this.watchedNetworks.find((watched) =>
-      sameChainID(watched.chainID, chainID),
-    )
-    if (network === undefined) {
-      return
-    }
-
-    this.pollLatestBlock(network).catch((error) =>
-      logger.error(
-        `Error reading the latest block from the new provider on chain ${chainID}`,
-        error,
-      ),
-    )
-    this.pollBlockPricesForNetwork(chainID).catch((error) =>
-      logger.error(
-        `Error reading block prices from the new provider on chain ${chainID}`,
-        error,
-      ),
-    )
-
-    new Set(
-      this.watchedAccounts
-        .filter((account) => sameChainID(account.chainID, chainID))
-        .map(({ address }) => address),
-    ).forEach((address) =>
-      this.watchPendingTransactions({ address, network }).catch((error) =>
-        logger.error(
-          `Error watching pending transactions on the new provider on chain ${chainID}`,
-          error,
-        ),
-      ),
-    )
+    this.networkWatcher.providerReplaced(chainID)
   }
 
   private async handlePendingTransaction(
@@ -1621,6 +1462,7 @@ export default class ChainService extends BaseService<Events> {
     chainID: string,
     status: NetworkReachabilityState,
   ): void {
+    this.networkWatcher.reachabilityChanged(chainID, status)
     this.emitter.emit("networkReachability", { chainID, status })
   }
 
@@ -1628,10 +1470,7 @@ export default class ChainService extends BaseService<Events> {
     this.trackedChainIDs = this.trackedChainIDs.filter(
       (tracked) => !sameChainID(tracked, chainID),
     )
-    this.watchedChainIDs.delete(chainID)
-    this.watchedAccounts = this.watchedAccounts.filter(
-      (account) => !sameChainID(account.chainID, chainID),
-    )
+    this.networkWatcher.stopWatchingNetwork(chainID)
 
     await this.networkSettings.removeCustomChain(chainID)
   }

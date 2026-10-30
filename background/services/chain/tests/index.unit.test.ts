@@ -391,9 +391,8 @@ describe("Chain Service", () => {
       )
     })
 
-    // Problem 4: each newly watched network schedules its own burst of gas
-    // polls across every watched network.
-    it("polls gas more than four times a minute per network with three networks watched", async () => {
+    // Problem 4: each watched network polls gas on its own single timer.
+    it("polls gas four times a minute per network with three networks watched", async () => {
       const clock = sinon.useFakeTimers({
         now: Date.now(),
         toFake: ["setTimeout", "clearTimeout"],
@@ -402,13 +401,13 @@ describe("Chain Service", () => {
         ;[ETHEREUM, POLYGON, OPTIMISM].forEach(({ chainID }) =>
           chainService.markNetworkActivity(chainID),
         )
-        getBlockPricesMock.mockClear()
-
         await chainService.startTrackingNetworkOrThrow(POLYGON.chainID)
         await chainService.startTrackingNetworkOrThrow(OPTIMISM.chainID)
+        getBlockPricesMock.mockClear()
+
         await clock.tickAsync(MINUTE)
 
-        expect(getBlockPricesMock.mock.calls.length).toBe(23)
+        expect(getBlockPricesMock.mock.calls.length).toBe(12)
       } finally {
         clock.restore()
       }
