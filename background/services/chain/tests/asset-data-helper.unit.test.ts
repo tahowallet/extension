@@ -29,7 +29,7 @@ describe("AssetDataHelper", () => {
 
   describe("getAssetTransfers", () => {
     it("uses the Alchemy-compatible helper when the provider supports it", async () => {
-      const helper = makeHelperWithProvider({ supportsAlchemy: true })
+      const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
       const addressOnNetwork = createAddressOnNetwork()
 
       await helper.getAssetTransfers(addressOnNetwork, 0, 100)
@@ -40,7 +40,7 @@ describe("AssetDataHelper", () => {
     })
 
     it("only looks up incoming transfers when incomingOnly is set", async () => {
-      const helper = makeHelperWithProvider({ supportsAlchemy: true })
+      const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
       const addressOnNetwork = createAddressOnNetwork()
 
       await helper.getAssetTransfers(addressOnNetwork, 0, 100, true)
@@ -57,7 +57,7 @@ describe("AssetDataHelper", () => {
 
     it("falls back to Transfer log scanning without Alchemy support", async () => {
       const provider = {
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 100),
       }
       const helper = makeHelperWithProvider(
@@ -79,7 +79,7 @@ describe("AssetDataHelper", () => {
 
     it("resolves the end block for log scanning when none is given", async () => {
       const provider = {
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 123),
       }
       const helper = makeHelperWithProvider(
@@ -108,7 +108,7 @@ describe("AssetDataHelper", () => {
       )
 
       const provider = {
-        supportsAlchemy: true,
+        supportsAlchemyMethods: true,
         getBlockNumber: jest.fn(async () => 100),
       }
       const helper = makeHelperWithProvider(
@@ -137,7 +137,7 @@ describe("AssetDataHelper", () => {
       mockedLogAssetTransfers.mockRejectedValueOnce(logsError)
 
       const helper = makeHelperWithProvider({
-        supportsAlchemy: true,
+        supportsAlchemyMethods: true,
         getBlockNumber: jest.fn(async () => 100),
       } as unknown as Partial<SerialFallbackProvider>)
 
@@ -151,7 +151,7 @@ describe("AssetDataHelper", () => {
       mockedLogAssetTransfers.mockRejectedValueOnce(error)
 
       const helper = makeHelperWithProvider({
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 100),
       } as unknown as Partial<SerialFallbackProvider>)
 

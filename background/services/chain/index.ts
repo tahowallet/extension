@@ -70,9 +70,13 @@ import type {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider, {
-  ProviderCreator,
-  makeSerialFallbackProvider,
+  createProviderForChain,
+  EndpointConfig,
 } from "./serial-fallback-provider"
+import {
+  endpointConfigsForChain,
+  providerEnvironmentFor,
+} from "./rpc/endpoint-configs"
 import { NetworkReachabilityState } from "./network-reachability"
 import { RpcEndpointValidationError } from "./errors"
 import { BOAR_RPC_URLS } from "../../lib/boar"
@@ -376,10 +380,15 @@ export default class ChainService extends BaseService<Events> {
 
     this.providerRegistry = new ProviderRegistry({
       createProvider: (chainID, rpcEndpoints, onReachabilityChange) =>
-        makeSerialFallbackProvider(
+        createProviderForChain(
           chainID,
-          rpcEndpoints,
-          this.methodSpecificRpcConfigs.get(chainID),
+          endpointConfigsForChain(
+            providerEnvironmentFor(
+              chainID,
+              rpcEndpoints,
+              this.methodSpecificRpcConfigs.get(chainID),
+            ),
+          ),
           onReachabilityChange,
         ),
       verifyEndpoints: (chainID, rpcEndpoints, signal) =>
@@ -490,27 +499,27 @@ export default class ChainService extends BaseService<Events> {
   async addCustomProvider(
     chainID: string,
     rpcUrl: string,
-    customProviderCreator: ProviderCreator,
+    customProviderCreator: EndpointConfig,
   ): Promise<void> {
     await this.db.addCustomRpcUrl(
       chainID,
       rpcUrl,
-      customProviderCreator.supportedMethods,
+      customProviderCreator.methods,
     )
     this.methodSpecificRpcConfigs.set(chainID, {
       chainID,
       rpcUrls: [rpcUrl],
-      supportedMethods: customProviderCreator.supportedMethods ?? [],
+      supportedMethods: customProviderCreator.methods ?? [],
     })
     this.providerRegistry
       .providerFor(chainID)
-      ?.addCustomProvider(customProviderCreator)
+      ?.setMethodSpecificEndpoints([customProviderCreator])
   }
 
   async removeCustomProvider(chainID: string): Promise<void> {
     await this.db.removeCustomRpcUrl(chainID)
     this.methodSpecificRpcConfigs.delete(chainID)
-    this.providerRegistry.providerFor(chainID)?.removeCustomProvider()
+    this.providerRegistry.providerFor(chainID)?.clearMethodSpecificEndpoints()
   }
 
   /**
@@ -1656,7 +1665,7 @@ export default class ChainService extends BaseService<Events> {
    * dramatically more sensitive to how many blocks a lookup covers.
    */
   private supportsAlchemy(network: EVMNetwork): boolean {
-    return this.providerForNetwork(network)?.supportsAlchemy ?? false
+    return this.providerForNetwork(network)?.supportsAlchemyMethods ?? false
   }
 
   /**
@@ -2021,9 +2030,7 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
-    await this.providerForNetworkOrThrow(
-      network,
-    ).subscribeFullPendingTransactions(
+    await this.providerForNetworkOrThrow(network).onPendingTransaction(
       { address, network },
       this.handlePendingTransaction.bind(this),
     )

@@ -44,17 +44,17 @@ describe("SerialFallbackProvider characterization", () => {
 
     const providerFor = (chainID: string, methods?: string[]) =>
       new SerialFallbackProvider(chainID, [
-        { type: "boar", creator: () => managed.provider },
-        { type: "generic", creator: () => standard.provider },
+        { kind: "managed", createTransport: () => managed.provider },
+        { kind: "standard", createTransport: () => standard.provider },
         {
-          type: "generic",
+          kind: "standard",
           capabilities: ["alchemy_", "qn_"],
-          creator: () => alchemyCapable.provider,
+          createTransport: () => alchemyCapable.provider,
         },
         {
-          type: "custom",
-          supportedMethods: methods ?? ["eth_sendRawTransaction"],
-          creator: () => methodSpecific.provider,
+          kind: "method-specific",
+          methods: methods ?? ["eth_sendRawTransaction"],
+          createTransport: () => methodSpecific.provider,
         },
       ])
 
@@ -94,7 +94,7 @@ describe("SerialFallbackProvider characterization", () => {
 
     it("walks alchemy_ methods when nothing declares the namespace and there is no managed endpoint", async () => {
       const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => standard.provider },
+        { kind: "standard", createTransport: () => standard.provider },
       ])
 
       await expect(
@@ -115,14 +115,14 @@ describe("SerialFallbackProvider characterization", () => {
     // Boar doesn't serve Alchemy's APIs on Mezo, so they walk.
     it("walks alchemy_ methods on Mezo rather than pinning them to the managed endpoint", async () => {
       const provider = new SerialFallbackProvider(MEZO.chainID, [
-        { type: "boar", creator: () => managed.provider },
-        { type: "generic", creator: () => standard.provider },
+        { kind: "managed", createTransport: () => managed.provider },
+        { kind: "standard", createTransport: () => standard.provider },
       ])
       managed.send
         .withArgs("alchemy_getTokenBalances")
         .rejects(new Error("NETWORK_ERROR"))
 
-      expect(provider.supportsAlchemy).toBe(false)
+      expect(provider.supportsAlchemyMethods).toBe(false)
       await expect(
         provider.send("alchemy_getTokenBalances", []),
       ).resolves.toEqual("standard")
@@ -140,8 +140,8 @@ describe("SerialFallbackProvider characterization", () => {
       first = stubbed("first")
       second = stubbed("second")
       provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => first.provider },
-        { type: "generic", creator: () => second.provider },
+        { kind: "standard", createTransport: () => first.provider },
+        { kind: "standard", createTransport: () => second.provider },
       ])
     })
 
@@ -212,7 +212,7 @@ describe("SerialFallbackProvider characterization", () => {
 
     it("gives up on a bad response from a lone endpoint after four attempts", async () => {
       const lone = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => first.provider },
+        { kind: "standard", createTransport: () => first.provider },
       ])
       first.send.withArgs("eth_call").rejects(new Error("bad response"))
 
@@ -223,15 +223,47 @@ describe("SerialFallbackProvider characterization", () => {
     }, 10_000)
   })
 
+  describe("destroying", () => {
+    it("tears down every endpoint in every pool, once", () => {
+      const managed = stubbed("managed")
+      const standard = stubbed("standard")
+      const methodSpecific = stubbed("method-specific")
+      const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+        { kind: "managed", createTransport: () => managed.provider },
+        {
+          kind: "standard",
+          capabilities: ["alchemy_"],
+          createTransport: () => standard.provider,
+        },
+        {
+          kind: "method-specific",
+          createTransport: () => methodSpecific.provider,
+        },
+      ])
+      // Builds the capability endpoint.
+      provider.send("alchemy_getTokenBalances", []).catch(() => undefined)
+      const teardowns = [managed, standard, methodSpecific].map(
+        ({ provider: transport }) =>
+          sandbox.spy(transport, "removeAllListeners"),
+      )
+
+      provider.destroy()
+      provider.destroy()
+
+      expect(teardowns.map((spy) => spy.callCount)).toEqual([1, 1, 1])
+      expect(provider.isDestroyed).toBe(true)
+    })
+  })
+
   describe("two requests failing over at once", () => {
     it("moves both to the next endpoint and advances the walk once", async () => {
       const first = stubbed("first")
       const second = stubbed("second")
       const third = stubbed("third")
       const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => first.provider },
-        { type: "generic", creator: () => second.provider },
-        { type: "generic", creator: () => third.provider },
+        { kind: "standard", createTransport: () => first.provider },
+        { kind: "standard", createTransport: () => second.provider },
+        { kind: "standard", createTransport: () => third.provider },
       ])
       first.send.withArgs("eth_call").rejects(new Error("NETWORK_ERROR"))
 
@@ -288,8 +320,8 @@ describe("SerialFallbackProvider characterization", () => {
       provider = new SerialFallbackProvider(
         ETHEREUM.chainID,
         [
-          { type: "generic", creator: () => first.provider },
-          { type: "generic", creator: () => second.provider },
+          { kind: "standard", createTransport: () => first.provider },
+          { kind: "standard", createTransport: () => second.provider },
         ],
         (next) => reported.push(next),
       )

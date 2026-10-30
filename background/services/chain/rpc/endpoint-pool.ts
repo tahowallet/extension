@@ -25,7 +25,13 @@ export default class EndpointPool {
     {
       recoveryIntervalMs = PRIMARY_RECOVERY_INTERVAL_MS,
       clock,
-    }: { recoveryIntervalMs?: number; clock?: SimulatedClock } = {},
+      signal,
+    }: {
+      recoveryIntervalMs?: number
+      clock?: SimulatedClock
+      /** Disposes the pool when aborted. */
+      signal?: AbortSignal
+    } = {},
   ) {
     this.#actor = createActor(endpointPoolMachine, {
       input: { size: endpoints.length, recoveryIntervalMs },
@@ -51,6 +57,8 @@ export default class EndpointPool {
         this.#actor.send({ type: "ENDPOINT_UNAVAILABLE", index })
       }
     })
+
+    signal?.addEventListener("abort", () => this.dispose(), { once: true })
   }
 
   get preferredIndex(): number {
@@ -93,6 +101,9 @@ export default class EndpointPool {
 
   /** Stops following the endpoints, which are disposed by their owner. */
   dispose(): void {
+    if (this.#actor.getSnapshot().status === "stopped") {
+      return
+    }
     this.#unsubscribers.forEach((unsubscribe) => unsubscribe())
     this.#listeners.clear()
     this.#actor.stop()

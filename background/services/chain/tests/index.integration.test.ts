@@ -599,7 +599,7 @@ describe("ChainService", () => {
       await chainService.addAccountToTrack(account)
       const subscribe = sandbox.spy(
         Object.getPrototypeOf(chainService.providerForNetwork(ETHEREUM)),
-        "subscribeFullPendingTransactions",
+        "onPendingTransaction",
       )
 
       await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [

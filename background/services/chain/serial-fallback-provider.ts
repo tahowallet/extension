@@ -1,33 +1,16 @@
-import {
-  EventType,
-  JsonRpcProvider,
-  Listener,
-  WebSocketProvider,
-} from "@ethersproject/providers"
+import { EventType, JsonRpcProvider, Listener } from "@ethersproject/providers"
 import { utils } from "ethers"
 import {
   SECOND,
-  FLASHBOTS_RPC_URL,
   FORK,
-  ARBITRUM_SEPOLIA,
   BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
 } from "../../constants"
 import logger from "../../lib/logger"
-import {
-  ALCHEMY_CAPABILITY_NAMESPACE,
-  AnyEVMTransaction,
-  RpcEndpoint,
-} from "../../networks"
+import { ALCHEMY_CAPABILITY_NAMESPACE, AnyEVMTransaction } from "../../networks"
 import { AddressOnNetwork } from "../../accounts"
 import { transactionFromEthersTransaction } from "./utils"
-import {
-  BOAR_RPC_URLS,
-  transactionFromBoarWebsocketTransaction,
-} from "../../lib/boar"
+import { transactionFromBoarWebsocketTransaction } from "../../lib/boar"
 import { FeatureFlags, isEnabled } from "../../features"
-import { RpcConfig } from "./db"
-import TahoBoarProvider from "./taho-boar-provider"
-import TahoRPCProvider from "./taho-rpc-provider"
 import {
   recordCircuitBreakerTransition,
   recordReconnectAttempt,
@@ -35,7 +18,7 @@ import {
   recordReconnectSucceeded,
   recordSingleFlightCoalesce,
 } from "../../lib/perf-metrics"
-import Endpoint from "./rpc/endpoint"
+import Endpoint, { EndpointConfig } from "./rpc/endpoint"
 import EndpointPool from "./rpc/endpoint-pool"
 import SubscriptionManager from "./rpc/subscription-manager"
 import {
@@ -61,23 +44,10 @@ import {
   reachabilityObserver,
 } from "./rpc/request-outcome-observers"
 
-export type ProviderCreator = {
-  type: "boar" | "custom" | "generic"
-  supportedMethods?: string[]
-  /**
-   * For generic providers, method-name prefixes for non-standard JSON-RPC
-   * namespaces the underlying endpoint serves beyond the standard set (e.g.
-   * "alchemy_"). Methods in these namespaces are routed to declaring
-   * endpoints rather than walked across the full generic list.
-   */
-  capabilities?: string[]
-  creator: () => JsonRpcProvider
-}
+export type { EndpointConfig } from "./rpc/endpoint"
 
 // How often to check and clean stale cache entries
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
-// How long to wait for a provider to respond before falling back to the next provider.
-const PROVIDER_REQUEST_TIMEOUT = 5 * SECOND
 
 /**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
@@ -102,24 +72,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   #subscriptions: SubscriptionManager
 
-  // Handles for the cache-cleanup timer, so `destroy` can stop it when this
-  // provider is replaced.
-  private intervalHandles: ReturnType<typeof setInterval>[] = []
-
-  /**
-   * Set once {@link destroy} has run and never cleared. Every path that would
-   * build a transport checks it, so a retired provider never reopens a
-   * connection to an endpoint the user has removed.
-   */
-  #destroyed = false
-
   /**
    * True once this provider has been retired by {@link destroy}. A destroyed
    * provider constructs nothing and serves nothing; callers holding one must
    * fetch the current provider for the chain instead.
    */
   get isDestroyed(): boolean {
-    return this.#destroyed
+    return this.#lifecycle.signal.aborted
   }
 
   /**
@@ -156,27 +115,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     // Internal network type useful for helper calls, but not exposed to avoid
     // clashing with Ethers's own `network` stuff.
     private chainID: string,
-    providerCreators: Array<ProviderCreator>,
+    endpointConfigs: EndpointConfig[],
     onReachabilityChange?: NetworkReachabilityListener,
   ) {
-    const customProviderCreators = providerCreators.filter(
-      (creator) => creator.type === "custom",
+    const methodSpecificConfigs = endpointConfigs.filter(
+      ({ kind }) => kind === "method-specific",
     )
-
-    const walkCreators = providerCreators.filter(
-      (creator) => creator.type !== "custom",
+    const walkConfigs = endpointConfigs.filter(
+      ({ kind }) => kind !== "method-specific",
     )
 
     // The first transport is built up front, since Ethers needs its
     // connection; the first endpoint takes it over.
-    let firstTransport: JsonRpcProvider | undefined = walkCreators[0].creator()
+    let firstTransport: JsonRpcProvider | undefined =
+      walkConfigs[0].createTransport()
 
     super(firstTransport.connection, firstTransport.network)
 
     // A retired provider has no business reporting on a chain it no longer
     // serves; its replacement speaks for the chain from here on.
     this.#reachability = new NetworkReachabilityTracker({}, (next) => {
-      if (!this.#destroyed) {
+      if (!this.isDestroyed) {
         onReachabilityChange?.(next)
       }
     })
@@ -204,22 +163,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex),
     })
 
-    this.#standardEndpoints = walkCreators.map(
-      ({ type, capabilities, creator }, index) =>
+    const { signal } = this.#lifecycle
+    this.#standardEndpoints = walkConfigs.map(
+      (config, index) =>
         new Endpoint(
+          index === 0
+            ? {
+                ...config,
+                createTransport: () => {
+                  const transport = firstTransport ?? config.createTransport()
+                  firstTransport = undefined
+                  return transport
+                },
+              }
+            : config,
           {
-            kind: type === "boar" ? "managed" : "standard",
-            capabilities,
-            createTransport:
-              index === 0
-                ? () => {
-                    const transport = firstTransport ?? creator()
-                    firstTransport = undefined
-                    return transport
-                  }
-                : creator,
-          },
-          {
+            signal,
             onBreakerTransition: (next) =>
               recordCircuitBreakerTransition(this.chainID, index, next),
           },
@@ -227,9 +186,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
     // Builds the first endpoint's transport from the one above.
     this.#standardEndpoints[0].build()
-    this.#subscriptions = new SubscriptionManager(
-      this.#standardEndpoints[0],
-      (endpoint, moved) => {
+    this.#subscriptions = new SubscriptionManager(this.#standardEndpoints[0], {
+      signal,
+      onMoved: (endpoint, moved) => {
         const index = this.#standardEndpoints.indexOf(endpoint)
         recordReconnectAttempt(this.chainID, index)
         if (moved) {
@@ -238,12 +197,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           recordReconnectFailed(this.chainID, index)
         }
       },
-    )
+    })
 
-    const standardPool = new EndpointPool("standard", this.#standardEndpoints)
+    const standardPool = new EndpointPool("standard", this.#standardEndpoints, {
+      signal,
+    })
     this.#pools.set("standard", standardPool)
     standardPool.onPreferredEndpointChanged((endpoint) => {
-      if (!this.#destroyed) {
+      if (!this.isDestroyed) {
         this.#subscriptions
           .moveTo(endpoint)
           .catch((error) =>
@@ -257,7 +218,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
     if (managedEndpoint !== undefined) {
       this.supportsBoar = true
-      this.#pools.set("managed", new EndpointPool("managed", [managedEndpoint]))
+      this.#pools.set(
+        "managed",
+        new EndpointPool("managed", [managedEndpoint], { signal }),
+      )
     }
 
     const capabilityEndpoints: { [namespace: string]: Endpoint[] } = {}
@@ -271,18 +235,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       })
     Object.entries(capabilityEndpoints).forEach(([namespace, endpoints]) => {
       const name = capabilityPoolName(namespace)
-      this.#pools.set(name, new EndpointPool(name, endpoints))
+      this.#pools.set(name, new EndpointPool(name, endpoints, { signal }))
     })
 
-    if (customProviderCreators.length > 0) {
-      this.addCustomProviders(customProviderCreators)
+    if (methodSpecificConfigs.length > 0) {
+      this.setMethodSpecificEndpoints(methodSpecificConfigs)
     }
 
-    this.intervalHandles.push(
-      setInterval(() => {
-        this.cleanupStaleCacheEntries()
-      }, CACHE_CLEANUP_INTERVAL),
+    const cleanup = setInterval(
+      () => this.cleanupStaleCacheEntries(),
+      CACHE_CLEANUP_INTERVAL,
     )
+    signal.addEventListener("abort", () => clearInterval(cleanup), {
+      once: true,
+    })
 
     this.updateRouteRules()
   }
@@ -362,7 +328,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * connection to an endpoint that is no longer configured.
    */
   private assertNotDestroyed(): void {
-    if (this.#destroyed) {
+    if (this.isDestroyed) {
       throw this.destroyedError()
     }
   }
@@ -372,7 +338,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * either via an endpoint that declares the "alchemy_" capability or via
    * Boar while it remains available.
    */
-  get supportsAlchemy(): boolean {
+  get supportsAlchemyMethods(): boolean {
     return (
       this.#pools.has(capabilityPoolName(ALCHEMY_CAPABILITY_NAMESPACE)) ||
       (this.supportsBoar &&
@@ -380,52 +346,61 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
   }
 
-  addCustomProvider(customProviderCreator: ProviderCreator): void {
-    this.addCustomProviders([customProviderCreator])
+  /** @deprecated Use {@link supportsAlchemyMethods}. */
+  get supportsAlchemy(): boolean {
+    return this.supportsAlchemyMethods
   }
 
   /**
-   * Sets the custom providers for this network, replacing any existing ones.
-   * The creators are used in priority order: the first one is used until it
-   * fails, at which point later ones act as fallbacks.
+   * Replaces the endpoints that serve only certain methods. They are used in
+   * order; later ones are fallbacks.
    */
-  addCustomProviders(customProviderCreators: ProviderCreator[]): void {
-    if (this.#destroyed) {
-      // A retired provider takes no new endpoints; whoever is configuring the
-      // chain should be holding its replacement.
+  setMethodSpecificEndpoints(configs: EndpointConfig[]): void {
+    if (this.isDestroyed) {
       return
     }
 
-    if (customProviderCreators.length === 0) {
-      this.removeCustomProvider()
+    if (configs.length === 0) {
+      this.clearMethodSpecificEndpoints()
       return
     }
 
-    this.customProviderSupportedMethods =
-      customProviderCreators[0].supportedMethods ?? []
+    this.customProviderSupportedMethods = configs[0].methods ?? []
     // The old endpoints are stale and, for WebSockets, still connected.
     this.disposeMethodSpecificPool()
-    const endpoints = customProviderCreators.map(
-      ({ creator, supportedMethods }) =>
-        new Endpoint({
-          kind: "method-specific",
-          methods: supportedMethods,
-          createTransport: creator,
-        }),
+    const { signal } = this.#lifecycle
+    const endpoints = configs.map(
+      (config) =>
+        new Endpoint({ ...config, kind: "method-specific" }, { signal }),
     )
     // Built up front, as it always has been.
     endpoints[0].build()
     this.#pools.set(
       "methodSpecific",
-      new EndpointPool("methodSpecific", endpoints),
+      new EndpointPool("methodSpecific", endpoints, { signal }),
     )
     this.updateRouteRules()
   }
 
-  removeCustomProvider(): void {
+  clearMethodSpecificEndpoints(): void {
     this.customProviderSupportedMethods = []
     this.disposeMethodSpecificPool()
     this.updateRouteRules()
+  }
+
+  /** @deprecated Use {@link setMethodSpecificEndpoints}. */
+  addCustomProvider(config: EndpointConfig): void {
+    this.setMethodSpecificEndpoints([config])
+  }
+
+  /** @deprecated Use {@link setMethodSpecificEndpoints}. */
+  addCustomProviders(configs: EndpointConfig[]): void {
+    this.setMethodSpecificEndpoints(configs)
+  }
+
+  /** @deprecated Use {@link clearMethodSpecificEndpoints}. */
+  removeCustomProvider(): void {
+    this.clearMethodSpecificEndpoints()
   }
 
   private disposeMethodSpecificPool(): void {
@@ -446,17 +421,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * `ProviderRegistry`.
    */
   destroy(): void {
-    this.#destroyed = true
+    if (this.isDestroyed) {
+      return
+    }
     this.#lifecycle.abort(this.destroyedError())
-
-    this.intervalHandles.forEach((handle) => clearInterval(handle))
-    this.intervalHandles = []
-
-    this.disposeMethodSpecificPool()
-    this.#pools.forEach((pool) => pool.dispose())
-    this.#standardEndpoints.forEach((endpoint) => endpoint.dispose())
-
-    this.#subscriptions.clear()
     this.removeAllListeners()
   }
 
@@ -493,6 +461,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     })
   }
 
+  /** @deprecated Use {@link onPendingTransaction}. */
+  subscribeFullPendingTransactions(
+    addressOnNetwork: AddressOnNetwork,
+    handler: (pendingTransaction: AnyEVMTransaction) => void,
+  ): Promise<void> {
+    return this.onPendingTransaction(addressOnNetwork, handler)
+  }
+
   /**
    * Subscribes by JSON-RPC method on a WebSocket endpoint. On a polling
    * endpoint, the subscription waits for a WebSocket one.
@@ -502,7 +478,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     param: Array<unknown>,
     processFunc: (result: unknown) => void,
   ): Promise<void> {
-    if (!this.#destroyed) {
+    if (!this.isDestroyed) {
       await this.#subscriptions.subscribe(tag, param, processFunc)
     }
   }
@@ -513,7 +489,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    * otherwise subscribes to pending transaction hashes and manually resolves
    * them with a transaction lookup.
    */
-  async subscribeFullPendingTransactions(
+  async onPendingTransaction(
     { address, network }: AddressOnNetwork,
     handler: (pendingTransaction: AnyEVMTransaction) => void,
   ): Promise<void> {
@@ -562,7 +538,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   /** Like `JsonRpcProvider.on`, but the listener survives failovers. */
   override on(eventName: EventType, listener: Listener): this {
-    if (!this.#destroyed) {
+    if (!this.isDestroyed) {
       this.#subscriptions.on(eventName, listener)
     }
     return this
@@ -570,7 +546,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
   /** Like `JsonRpcProvider.once`, but the listener survives failovers. */
   override once(eventName: EventType, listener: Listener): this {
-    if (!this.#destroyed) {
+    if (!this.isDestroyed) {
       this.#subscriptions.once(eventName, listener)
     }
     return this
@@ -630,109 +606,14 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 }
 
-function getProviderCreator(rpcUrl: string): JsonRpcProvider {
-  const url = new URL(rpcUrl)
-  if (/^wss?/.test(url.protocol)) {
-    return new WebSocketProvider(rpcUrl)
-  }
-  return new TahoRPCProvider({
-    url: rpcUrl,
-    throttleLimit: 1,
-    timeout: PROVIDER_REQUEST_TIMEOUT,
-    fetchOptions: {
-      credentials: "omit",
-    },
-  })
-}
-
-export function makeFlashbotsProviderCreator(): ProviderCreator {
-  return {
-    type: "custom",
-    supportedMethods: ["eth_sendRawTransaction"],
-    creator: () =>
-      new TahoRPCProvider(FLASHBOTS_RPC_URL, undefined, { maxBatchLength: 1 }),
-  }
-}
-
-export function makeSerialFallbackProvider(
+export function createProviderForChain(
   chainID: string,
-  rpcEndpoints: RpcEndpoint[],
-  customRpc?: RpcConfig,
+  endpointConfigs: EndpointConfig[],
   onReachabilityChange?: NetworkReachabilityListener,
 ): SerialFallbackProvider {
-  if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
-    return new SerialFallbackProvider(
-      FORK.chainID,
-      [
-        {
-          type: "generic" as const,
-          creator: () => new TahoRPCProvider(process.env.MAINNET_FORK_URL),
-        },
-      ],
-      onReachabilityChange,
-    )
-  }
-
-  if (
-    chainID === ARBITRUM_SEPOLIA.chainID &&
-    process.env.ARBITRUM_FORK_RPC !== undefined &&
-    process.env.ARBITRUM_FORK_RPC.trim() !== "" &&
-    process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true"
-  ) {
-    // oxlint-disable-next-line no-console
-    console.log(
-      "%c🦴 Using Tenderly fork as Arbitrum Sepolia provider",
-      "background: #071111; color: #fff; font-weight: 900;",
-    )
-    return new SerialFallbackProvider(
-      ARBITRUM_SEPOLIA.chainID,
-      [
-        {
-          type: "generic" as const,
-          creator: () => new TahoRPCProvider(process.env.ARBITRUM_FORK_RPC),
-        },
-      ],
-      onReachabilityChange,
-    )
-  }
-
-  const boarRpcUrl = BOAR_RPC_URLS[chainID]
-  const boarProviderCreators: ProviderCreator[] = boarRpcUrl
-    ? [
-        {
-          type: "boar" as const,
-          creator: () => new TahoBoarProvider(boarRpcUrl),
-        },
-      ]
-    : []
-
-  // One provider creator per custom RPC URL; URLs past the first act as
-  // fallbacks for the ones before them.
-  const customProviderCreators: ProviderCreator[] = (
-    customRpc?.rpcUrls ?? []
-  ).map((rpcUrl) => ({
-    type: "custom" as const,
-    supportedMethods: customRpc?.supportedMethods ?? [],
-    creator: () => getProviderCreator(rpcUrl),
-  }))
-
-  const genericProviders: ProviderCreator[] = rpcEndpoints.map(
-    ({ url, capabilities }) => ({
-      type: "generic" as const,
-      capabilities,
-      creator: () => getProviderCreator(url),
-    }),
-  )
-
-  // The Taho-managed (Boar) endpoint leads the serial walk, so it serves every
-  // method first when it is available for the chain, with the user-visible,
-  // stored endpoints acting as fallbacks behind it. This matches what the
-  // network settings UI promises about managed endpoints being the first
-  // choice. Custom providers are not part of the walk; they are consulted
-  // ahead of it for the methods they declare support for.
   return new SerialFallbackProvider(
-    chainID,
-    [...boarProviderCreators, ...genericProviders, ...customProviderCreators],
+    isEnabled(FeatureFlags.USE_MAINNET_FORK) ? FORK.chainID : chainID,
+    endpointConfigs,
     onReachabilityChange,
   )
 }

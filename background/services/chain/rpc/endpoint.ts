@@ -55,8 +55,11 @@ export default class Endpoint {
       onBreakerTransition,
       options,
       clock,
+      signal,
     }: {
       onBreakerTransition?: (next: BreakerTransition) => void
+      /** Disposes the endpoint when aborted. */
+      signal?: AbortSignal
       options?: Partial<EndpointHealthOptions>
       /** Simulated time, for tests. */
       clock?: SimulatedClock
@@ -89,6 +92,11 @@ export default class Endpoint {
       this.#statusListeners.forEach((listener) => listener(next))
     })
     this.#actor.start()
+
+    if (signal?.aborted) {
+      this.dispose()
+    }
+    signal?.addEventListener("abort", () => this.dispose(), { once: true })
   }
 
   get kind(): EndpointKind {

@@ -46,9 +46,13 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackCustom)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: primaryCreator },
-      { type: "custom", supportedMethods: [], creator: fallbackCreator },
+      { kind: "standard", createTransport: () => genericProvider },
+      { kind: "method-specific", methods: [], createTransport: primaryCreator },
+      {
+        kind: "method-specific",
+        methods: [],
+        createTransport: fallbackCreator,
+      },
     ])
 
     await expect(
@@ -86,16 +90,16 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackAlchemy)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: primaryCreator,
+        createTransport: primaryCreator,
       },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: fallbackCreator,
+        createTransport: fallbackCreator,
       },
     ])
 
@@ -129,14 +133,14 @@ describe("SerialFallbackProvider provider reuse", () => {
     const secondCreator = sandbox.stub().returns(secondCustom)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: firstCreator },
+      { kind: "standard", createTransport: () => genericProvider },
+      { kind: "method-specific", methods: [], createTransport: firstCreator },
     ])
 
     const teardown = sandbox.spy(firstCustom, "removeAllListeners")
 
-    provider.addCustomProviders([
-      { type: "custom", supportedMethods: [], creator: secondCreator },
+    provider.setMethodSpecificEndpoints([
+      { kind: "method-specific", methods: [], createTransport: secondCreator },
     ])
 
     // The provider cached for the old list is torn down rather than left
@@ -156,8 +160,12 @@ describe("SerialFallbackProvider provider reuse", () => {
     )
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: () => customProvider },
+      { kind: "standard", createTransport: () => genericProvider },
+      {
+        kind: "method-specific",
+        methods: [],
+        createTransport: () => customProvider,
+      },
     ])
 
     const genericTeardown = sandbox.spy(genericProvider, "removeAllListeners")
@@ -175,7 +183,7 @@ describe("SerialFallbackProvider provider reuse", () => {
 
   it("constructs nothing new once destroyed, even when an in-flight request fails", async () => {
     // A request already in flight when the provider is retired must not walk
-    // the reconnect path into a creator: that would open a fresh connection to
+    // the reconnect path into a createTransport: that would open a fresh connection to
     // an endpoint the user has just removed, and keep it open for good.
     let releaseFirstCall: (error: Error) => void = () => {}
     const primarySend = sandbox.stub().callsFake(
@@ -193,8 +201,8 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackProvider)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: primaryCreator },
-      { type: "generic", creator: fallbackCreator },
+      { kind: "standard", createTransport: primaryCreator },
+      { kind: "standard", createTransport: fallbackCreator },
     ])
 
     // The constructor builds the first provider eagerly; nothing else has
@@ -216,7 +224,7 @@ describe("SerialFallbackProvider provider reuse", () => {
 
   it("rejects new requests once destroyed rather than reconnecting", async () => {
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
     ])
 
     provider.destroy()
@@ -237,13 +245,13 @@ describe("SerialFallbackProvider provider reuse", () => {
     const customCreator = sandbox.stub().returns(customProvider)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
     ])
 
     provider.destroy()
 
-    provider.addCustomProviders([
-      { type: "custom", supportedMethods: [], creator: customCreator },
+    provider.setMethodSpecificEndpoints([
+      { kind: "method-specific", methods: [], createTransport: customCreator },
     ])
 
     expect(customCreator.called).toBe(false)

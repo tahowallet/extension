@@ -533,11 +533,9 @@ describe("Chain Service", () => {
     let blockHeightStub: sinon.SinonStub
 
     const stubAlchemySupport = (supportsAlchemy: boolean) =>
-      sandbox
-        .stub(chainService, "providerForNetwork")
-        .returns({ supportsAlchemy } as unknown as ReturnType<
-          ChainService["providerForNetwork"]
-        >)
+      sandbox.stub(chainService, "providerForNetwork").returns({
+        supportsAlchemyMethods: supportsAlchemy,
+      } as unknown as ReturnType<ChainService["providerForNetwork"]>)
 
     beforeEach(() => {
       chainServiceExternalized =

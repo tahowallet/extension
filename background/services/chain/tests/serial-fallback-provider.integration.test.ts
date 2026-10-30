@@ -24,17 +24,17 @@ describe("Serial Fallback Provider", () => {
     boarSendStub = sandbox
       .stub(mockBoarProvider, "send")
       .callsFake(async () => "success")
-    // The creator order mirrors what `makeSerialFallbackProvider` builds in
+    // The creator order mirrors what `endpointConfigsForChain` builds in
     // production: the Taho-managed (Boar) endpoint leads the serial walk and
     // the stored endpoints sit behind it as fallbacks.
     fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
       {
-        type: "boar",
-        creator: () => mockBoarProvider,
+        kind: "managed",
+        createTransport: () => mockBoarProvider,
       },
       {
-        type: "generic",
-        creator: () => mockGenericProvider,
+        kind: "standard",
+        createTransport: () => mockGenericProvider,
       },
     ])
   })

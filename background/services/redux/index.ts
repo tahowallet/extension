@@ -204,7 +204,7 @@ import {
 } from "../../redux-slices/utils/asset-utils"
 import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
-import { makeFlashbotsProviderCreator } from "../chain/serial-fallback-provider"
+import { flashbotsEndpointConfig } from "../chain/rpc/endpoint-configs"
 import { AnalyticsPreferences, DismissableItem } from "../preferences"
 import {
   newPricePoints,
@@ -1954,7 +1954,7 @@ export default class ReduxService extends BaseService<never> {
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
-      const flashbotsProvider = makeFlashbotsProviderCreator()
+      const flashbotsProvider = flashbotsEndpointConfig()
       await this.chainService.addCustomProvider(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,

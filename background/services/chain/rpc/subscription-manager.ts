@@ -43,12 +43,23 @@ export default class SubscriptionManager {
 
   constructor(
     endpoint: Endpoint,
-    private readonly onMoved?: (endpoint: Endpoint, moved: boolean) => void,
+    {
+      onMoved,
+      signal,
+    }: {
+      onMoved?: (endpoint: Endpoint, moved: boolean) => void
+      /** Clears everything when aborted. */
+      signal?: AbortSignal
+    } = {},
   ) {
+    this.onMoved = onMoved
     this.#endpoint = endpoint
     this.#transport = endpoint.transport
     this.#watch(endpoint)
+    signal?.addEventListener("abort", () => this.clear(), { once: true })
   }
+
+  private readonly onMoved?: (endpoint: Endpoint, moved: boolean) => void
 
   get endpoint(): Endpoint {
     return this.#endpoint

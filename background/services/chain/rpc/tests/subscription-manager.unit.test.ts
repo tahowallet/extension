@@ -197,9 +197,9 @@ describe("SubscriptionManager", () => {
     const first = endpointOf()
     const second = endpointOf()
     const moves: boolean[] = []
-    const manager = new SubscriptionManager(first.endpoint, (_, moved) =>
-      moves.push(moved),
-    )
+    const manager = new SubscriptionManager(first.endpoint, {
+      onMoved: (_, moved) => moves.push(moved),
+    })
     second.endpoint.dispose()
 
     await expect(manager.moveTo(second.endpoint)).resolves.toBe(false)

@@ -43,8 +43,8 @@ describe("SerialFallbackProvider single-flight coalescing", () => {
       .stub(mockAlchemyProvider, "send")
       .callsFake(async () => "success")
     fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => mockGenericProvider },
-      { type: "boar", creator: () => mockAlchemyProvider },
+      { kind: "standard", createTransport: () => mockGenericProvider },
+      { kind: "managed", createTransport: () => mockAlchemyProvider },
     ])
   })
 
