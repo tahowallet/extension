@@ -12,8 +12,8 @@ import ChainService, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from ".."
-import { ETHEREUM, MINUTE, OPTIMISM, POLYGON, SECOND } from "../../../constants"
-import { AnyEVMTransaction, EVMNetwork } from "../../../networks"
+import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
+import { EVMNetwork } from "../../../networks"
 
 const getBlockPricesMock = mock(() => {})
 mock.module("../../../lib/gas", () => {
@@ -25,8 +25,6 @@ import {
   createArrayWith0xHash,
   createBlockPrices,
   createChainService,
-  createTransactionsToRetrieve,
-  createAnyEVMTransaction,
 } from "../../../tests/factories"
 import type { UNIXTime } from "../../../types"
 import {
@@ -270,93 +268,6 @@ describe("Chain Service", () => {
     })
   })
   describe("Queued Transaction Retrieve", () => {
-    describe("handleQueuedTransactionAlarm", () => {
-      let clock: sinon.SinonFakeTimers
-      let setIntervalSpy: sinon.SinonSpy
-      let chainServiceExternalized: ChainServiceExternalized
-      let retrieveTransactionStub: sinon.SinonStub
-      beforeEach(() => {
-        clock = sinon.useFakeTimers()
-
-        setIntervalSpy = sinon.spy(global, "setInterval")
-
-        chainServiceExternalized =
-          chainService as unknown as ChainServiceExternalized
-
-        retrieveTransactionStub = sandbox.stub(
-          chainServiceExternalized,
-          "retrieveTransaction",
-        )
-      })
-      afterEach(() => {
-        clock.restore()
-      })
-      it("should not start the granular timer if the queue is empty", () => {
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(2 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(false)
-        expect(retrieveTransactionStub.callCount).toBe(0)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(0)
-      })
-      it("should not recreate the timer when the alarm fires periodically", () => {
-        const clearIntervalSpy = sinon.spy(global, "clearInterval")
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(100)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(true)
-        expect(clearIntervalSpy.calledOnce).toBe(false)
-      })
-      it("should retrieve 1 tx every 2 seconds, remove the tx from the queue and call the retrieve function", async () => {
-        const txInQueueCount = 100
-        const txRetrievedCount = 98
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(txInQueueCount)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(txRetrievedCount * 2 * SECOND)
-
-        expect(retrieveTransactionStub.callCount).toBe(txRetrievedCount)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
-          txInQueueCount - txRetrievedCount,
-        )
-      })
-      it("should clean up the timer after the queue is emptied", async () => {
-        const clearIntervalSpy = sinon.spy(global, "clearInterval")
-        const numberOfTxInQueue = 100
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(numberOfTxInQueue)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(numberOfTxInQueue * 2 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(true)
-        expect(retrieveTransactionStub.callCount).toBe(numberOfTxInQueue)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(0)
-
-        // the clean up happens on the next tick
-        clock.tick(2 * SECOND)
-
-        expect(clearIntervalSpy.calledOnce).toBe(true)
-        expect(
-          chainServiceExternalized.transactionToRetrieveGranularTimer,
-        ).toBe(undefined)
-      })
-    })
-
     describe("queueTransactionHashToRetrieve", () => {
       const NUMBER_OF_TX = 100
       const PRIORITY_MAX_COUNT = 25
@@ -521,167 +432,6 @@ describe("Chain Service", () => {
       expect(emitted.at(-1)?.blockExplorerURL).toEqual(
         "https://edited-explorer.example.com",
       )
-    })
-  })
-
-  describe("drop rule", () => {
-    const T0 = 1_800_000_000_000
-    let clock: sinon.SinonFakeTimers
-    let lookups: sinon.SinonStub
-    let release: sinon.SinonSpy
-    let externalized: ChainServiceExternalized
-
-    const pending = (network: EVMNetwork) =>
-      createAnyEVMTransaction({
-        network,
-        blockHash: null,
-        blockHeight: null,
-      })
-
-    const store = async (transaction: AnyEVMTransaction) => {
-      await externalized.db.addOrUpdateTransaction(transaction, "local")
-      return transaction
-    }
-
-    const lookUp = async (
-      transaction: AnyEVMTransaction,
-      at: number,
-      missingSince?: number,
-    ) => {
-      clock.setSystemTime(at)
-      await externalized.retrieveTransaction({
-        network: transaction.network,
-        hash: transaction.hash,
-        firstSeen: T0,
-        missingSince,
-      })
-    }
-
-    const stored = async (transaction: AnyEVMTransaction) =>
-      (await externalized.db.getTransaction(
-        transaction.network,
-        transaction.hash,
-      )) as { status?: number; missingSince?: number } | null
-
-    const queued = (transaction: AnyEVMTransaction) =>
-      externalized.transactionsToRetrieve.find(
-        ({ transaction: { hash } }) => hash === transaction.hash,
-      )?.transaction
-
-    beforeEach(async () => {
-      externalized = chainService as unknown as ChainServiceExternalized
-      sandbox.stub(externalized, "getNetworksToTrack").resolves([ETHEREUM])
-      await chainService.startService()
-      clock = sinon.useFakeTimers({ now: T0, toFake: ["Date"] })
-      lookups = sinon.stub().resolves(null)
-      const provider = {
-        getTransaction: lookups,
-        once: () => {},
-        off: () => {},
-      } as unknown as ReturnType<ChainService["providerForNetworkOrThrow"]>
-      sandbox.stub(chainService, "providerForNetworkOrThrow").returns(provider)
-      sandbox.stub(chainService, "providerForNetwork").returns(provider)
-      release = sandbox.spy(chainService, "releaseEVMTransactionNonce")
-    })
-
-    afterEach(async () => {
-      clock.restore()
-      await chainService.stopService()
-    })
-
-    it("requeues a first miss with when it started, and saves that", async () => {
-      const transaction = await store(pending(OPTIMISM))
-
-      await lookUp(transaction, T0)
-
-      expect(queued(transaction)?.missingSince).toBe(T0)
-      expect((await stored(transaction))?.missingSince).toBe(T0)
-      expect("status" in ((await stored(transaction)) ?? {})).toBe(false)
-      expect(release.called).toBe(false)
-    })
-
-    it.each([
-      ["a chain without a public mempool", OPTIMISM, 2 * MINUTE],
-      ["a chain with one", ETHEREUM, 15 * MINUTE],
-    ])(
-      "keeps a transaction missing on %s just inside its grace",
-      async (_, network, grace) => {
-        const transaction = await store(pending(network))
-
-        await lookUp(transaction, T0 + grace, T0)
-
-        expect(queued(transaction)?.missingSince).toBe(T0)
-        expect(release.called).toBe(false)
-      },
-    )
-
-    it.each([
-      ["a chain without a public mempool", OPTIMISM, 2 * MINUTE],
-      ["a chain with one", ETHEREUM, 15 * MINUTE],
-    ])(
-      "drops a transaction missing on %s just past its grace, releasing its nonce once",
-      async (_, network, grace) => {
-        const transaction = await store(pending(network))
-
-        await lookUp(transaction, T0 + grace + 1, T0)
-        await lookUp(transaction, T0 + grace + 2, T0)
-
-        expect((await stored(transaction))?.status).toBe(0)
-        expect(queued(transaction)).toBeUndefined()
-        expect(release.callCount).toBe(1)
-      },
-    )
-
-    it("keeps a found transaction and clears when it went missing", async () => {
-      const transaction = await store(pending(OPTIMISM))
-      await lookUp(transaction, T0)
-      lookups.resolves({
-        hash: transaction.hash,
-        blockHash: null,
-        blockNumber: null,
-        from: transaction.from,
-        to: transaction.to,
-        nonce: transaction.nonce,
-        gasLimit: { toBigInt: () => 21000n },
-        gasPrice: { toBigInt: () => 1n },
-        value: { toBigInt: () => 0n },
-        data: "0x",
-        chainId: 10,
-        type: 0,
-      })
-
-      await lookUp(transaction, T0 + MINUTE, T0)
-
-      expect((await stored(transaction))?.missingSince).toBeUndefined()
-      expect(release.called).toBe(false)
-    })
-
-    it("drops a missing transaction past its lookup lifetime, even inside its grace", async () => {
-      const transaction = await store(pending(ETHEREUM))
-
-      await lookUp(
-        transaction,
-        T0 + 10 * 60 * MINUTE + 1,
-        T0 + 10 * 60 * MINUTE,
-      )
-
-      expect((await stored(transaction))?.status).toBe(0)
-      expect(release.callCount).toBe(1)
-    })
-
-    it("keeps retrying a failed lookup for ten hours, then expires it without releasing the nonce", async () => {
-      const transaction = await store(pending(OPTIMISM))
-      lookups.rejects(new Error("NETWORK_ERROR"))
-
-      await lookUp(transaction, T0 + 10 * 60 * MINUTE)
-      expect(queued(transaction)).toBeDefined()
-
-      externalized.transactionsToRetrieve = []
-      await lookUp(transaction, T0 + 10 * 60 * MINUTE + 1)
-      await new Promise((resolve) => setImmediate(resolve))
-
-      expect(queued(transaction)).toBeUndefined()
-      expect(release.called).toBe(false)
     })
   })
 

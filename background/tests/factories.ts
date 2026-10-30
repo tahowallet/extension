@@ -91,6 +91,12 @@ mock.module("../services/chain/serial-fallback-provider", () => {
     async getCode() {
       return "false"
     }
+    subscriptionDataSource = "generic-rpc"
+
+    dataSourceFor() {
+      return "generic-rpc"
+    }
+
     async onPendingTransaction() {
       return Promise.resolve()
     }

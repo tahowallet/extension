@@ -18,7 +18,7 @@ import {
   recordReconnectSucceeded,
   recordSingleFlightCoalesce,
 } from "../../lib/perf-metrics"
-import Endpoint, { EndpointConfig } from "./rpc/endpoint"
+import Endpoint, { EndpointConfig, EndpointKind } from "./rpc/endpoint"
 import EndpointPool from "./rpc/endpoint-pool"
 import SubscriptionManager from "./rpc/subscription-manager"
 import {
@@ -38,7 +38,7 @@ import {
   ruleForMethod,
 } from "./rpc/method-router"
 import FailoverExecutor, { RouteStep } from "./rpc/failover-executor"
-import RequestCache from "./rpc/request-cache"
+import RequestCache, { requestKey } from "./rpc/request-cache"
 import {
   performanceMetricsObserver,
   reachabilityObserver,
@@ -46,6 +46,8 @@ import {
 
 export type { EndpointConfig } from "./rpc/endpoint"
 
+// How many answers to remember the source of.
+const ANSWER_SOURCE_LIMIT = 256
 // How often to check and clean stale cache entries
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 
@@ -98,6 +100,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   #reachability: NetworkReachabilityTracker
 
   readonly #requestCache: RequestCache
+
+  // Which kind of endpoint answered recent requests, by request key.
+  readonly #answeredBy = new Map<string, EndpointKind>()
 
   supportsBoar = false
 
@@ -452,13 +457,45 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     }
 
     return this.#requestCache.getOrFetch(method, params, async () => {
-      const { result } = await this.#executor.send(
+      const { result, endpoint } = await this.#executor.send(
         { method, params, startedAt: Date.now() },
         this.routeFor(method),
         this.#lifecycle.signal,
       )
+      this.#rememberAnswer(requestKey(method, params), endpoint.kind)
       return result
     })
+  }
+
+  /**
+   * Where the latest answer to a request like this one came from: Boar, or
+   * another RPC endpoint. Undefined if it wasn't answered recently.
+   */
+  dataSourceFor(
+    method: string,
+    params: unknown[],
+  ): "boar" | "generic-rpc" | undefined {
+    const kind = this.#answeredBy.get(requestKey(method, params))
+    if (kind === undefined) {
+      return undefined
+    }
+    return kind === "managed" ? "boar" : "generic-rpc"
+  }
+
+  /** Where subscription events come from: Boar, or another RPC endpoint. */
+  get subscriptionDataSource(): "boar" | "generic-rpc" {
+    return this.#subscriptions.endpoint.kind === "managed"
+      ? "boar"
+      : "generic-rpc"
+  }
+
+  #rememberAnswer(key: string, kind: EndpointKind): void {
+    this.#answeredBy.delete(key)
+    this.#answeredBy.set(key, kind)
+    if (this.#answeredBy.size > ANSWER_SOURCE_LIMIT) {
+      const [oldest] = this.#answeredBy.keys()
+      this.#answeredBy.delete(oldest)
+    }
   }
 
   /** @deprecated Use {@link onPendingTransaction}. */

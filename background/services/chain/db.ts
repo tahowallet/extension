@@ -27,7 +27,7 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 
 export type Transaction = AnyEVMTransaction & {
-  dataSource: "boar" | "local"
+  dataSource: "boar" | "generic-rpc" | "local"
   firstSeen: UNIXTime
   /** When lookups started finding nothing, while they still do. */
   missingSince?: UNIXTime
