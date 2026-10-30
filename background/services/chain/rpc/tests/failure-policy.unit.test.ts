@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import {
   anyErrorFailsOverPolicy,
   httpStatusOf,
+  indicatesEndpointFault,
   indicatesOutage,
   NextStep,
   standardFailurePolicy,
@@ -160,6 +161,24 @@ describe("indicatesOutage", () => {
     [new Error("execution reverted"), false],
   ])("says %p is an outage: %p", (error, expected) => {
     expect(indicatesOutage(error, "eth_call")).toBe(expected)
+  })
+})
+
+describe("indicatesEndpointFault", () => {
+  it.each<[string, unknown, boolean]>([
+    ["an outage", new Error("NETWORK_ERROR"), true],
+    ["a rate limit", new Error("Too Many Requests"), true],
+    ["an invalid response", new Error("bad response"), true],
+    ["a 5xx invalid response", withStatus("bad response", 502), true],
+    ["a 401", withStatus("bad response", 401), true],
+    ["a 403", withStatus("bad response", 403), true],
+    ["a 400", withStatus("bad response", 400), false],
+    ["a 404", withStatus("bad response", 404), false],
+    ["a revert", new Error("execution reverted"), false],
+    ["a nonce error", new Error("nonce too low"), false],
+    ["insufficient funds", new Error("insufficient funds for gas"), false],
+  ])("says %s is the endpoint's fault: %p", (_, error, expected) => {
+    expect(indicatesEndpointFault(error, "eth_call")).toBe(expected)
   })
 })
 

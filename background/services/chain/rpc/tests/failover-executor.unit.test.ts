@@ -138,6 +138,34 @@ describe("FailoverExecutor", () => {
     })
   })
 
+  it.each([
+    ["a revert", new Error("execution reverted")],
+    [
+      "a client error",
+      Object.assign(new Error("bad response"), { status: 400 }),
+    ],
+  ])("leaves the endpoint available after %s", async (_, error) => {
+    const { send, sends, endpoints, events } = setup(2, 1)
+    sends[0].rejects(error)
+
+    await expect(send(anyErrorFailsOverPolicy)).resolves.toMatchObject({
+      result: "endpoint 1",
+    })
+    expect(events).toContain("failure 0")
+    expect(endpoints[0].isAvailable).toBe(true)
+  })
+
+  it.each([
+    ["an outage", new Error("NETWORK_ERROR")],
+    ["a key error", Object.assign(new Error("bad response"), { status: 403 })],
+  ])("cools the endpoint down after %s", async (_, error) => {
+    const { send, sends, endpoints } = setup(2, 1)
+    sends[0].rejects(error)
+
+    await expect(send()).resolves.toMatchObject({ result: "endpoint 1" })
+    expect(endpoints[0].isAvailable).toBe(false)
+  })
+
   it("skips an endpoint that started cooling down mid-walk", async () => {
     const { send, sends, endpoints } = setup(3, 1)
     sends[0].callsFake(async () => {

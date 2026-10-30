@@ -63,6 +63,26 @@ export function indicatesOutage(error: unknown, method: string): boolean {
 }
 
 /**
+ * True for errors that are the endpoint's fault, which count toward its
+ * cooldown. Reverts, client errors and other errors about the request don't.
+ */
+export function indicatesEndpointFault(
+  error: unknown,
+  method: string,
+): boolean {
+  if (indicatesOutage(error, method)) {
+    return true
+  }
+  if (getErrorType(String(error), method) !== "invalid-response-error") {
+    return false
+  }
+
+  const status = httpStatusOf(error)
+  const isClientError = status !== undefined && status >= 400 && status < 500
+  return !isClientError || status === 401 || status === 403
+}
+
+/**
  * The rules for the standard walk and the managed endpoint. A 401 or 403
  * says something about the endpoint's key rather than the request, so it
  * moves on; any other 4xx is the request's fault everywhere, so it gives up.

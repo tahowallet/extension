@@ -1,6 +1,10 @@
 import type Endpoint from "./endpoint"
 import type EndpointPool from "./endpoint-pool"
-import { FailurePolicy, indicatesOutage } from "./failure-policy"
+import {
+  FailurePolicy,
+  indicatesEndpointFault,
+  indicatesOutage,
+} from "./failure-policy"
 
 /** One logical request, which may be attempted on several endpoints. */
 export type RpcRequest = {
@@ -127,7 +131,9 @@ export default class FailoverExecutor {
           if (signal.aborted) {
             throw error
           }
-          pool.recordFailure(endpoint)
+          if (indicatesEndpointFault(error, request.method)) {
+            pool.recordFailure(endpoint)
+          }
           this.#notify((observer) =>
             observer.onEndpointFailure?.(request, endpoint, error),
           )
