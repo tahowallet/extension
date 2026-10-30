@@ -354,21 +354,14 @@ describe("SerialFallbackProvider characterization", () => {
       expect(reported).toEqual([])
     })
 
-    it("counts a cache hit as a served request, and eth_chainId as nothing", async () => {
+    it("counts nothing for a cache hit or eth_chainId", async () => {
       await provider.send("eth_getCode", ["0xabc", "latest"])
       resetPerfMetricsForTests()
 
       await provider.send("eth_getCode", ["0xabc", "latest"])
       await provider.send("eth_chainId", [])
 
-      expect(requestCounters()).toEqual([
-        {
-          providerIndex: 0,
-          requestsSent: 1,
-          requestsSucceeded: 1,
-          networkErrors: 0,
-        },
-      ])
+      expect(requestCounters()).toBeUndefined()
     })
   })
 })

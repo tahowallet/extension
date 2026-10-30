@@ -11,6 +11,8 @@ export type RpcRequest = {
 
 /** Watches requests go through the executor, for metrics and reachability. */
 export type RequestOutcomeObserver = {
+  /** A request is about to walk its first pool. */
+  onRequestStarted?(request: RpcRequest, pool: EndpointPool): void
   onAttempt?(request: RpcRequest, endpoint: Endpoint): void
   onEndpointSuccess?(request: RpcRequest, endpoint: Endpoint): void
   onEndpointFailure?(
@@ -20,7 +22,12 @@ export type RequestOutcomeObserver = {
   ): void
   /** Every endpoint in a pool failed, the last one with `error`. */
   onAllEndpointsFailed?(request: RpcRequest, error: unknown): void
+  /** The request failed for good. */
+  onRequestFailed?(request: RpcRequest, error: unknown): void
 }
+
+/** A pool to walk and the policy to walk it with. */
+export type RouteStep = { pool: EndpointPool; policy: FailurePolicy }
 
 export class NoEndpointAvailableError extends Error {
   constructor() {
@@ -57,6 +64,36 @@ export default class FailoverExecutor {
       signal: AbortSignal,
     ) => Promise<void> = abortable,
   ) {}
+
+  /**
+   * Walks each pool in turn until one answers, so a route's fallback pool
+   * only sees requests its first pool couldn't serve.
+   */
+  async send(
+    request: RpcRequest,
+    route: readonly RouteStep[],
+    signal: AbortSignal,
+  ): Promise<{ result: unknown; endpoint: Endpoint }> {
+    this.#notify((observer) =>
+      observer.onRequestStarted?.(request, route[0].pool),
+    )
+
+    let lastError: unknown = new NoEndpointAvailableError()
+    for (const { pool, policy } of route) {
+      try {
+        // oxlint-disable-next-line no-await-in-loop
+        return await this.sendWithFailover(request, pool, policy, signal)
+      } catch (error) {
+        lastError = error
+        if (signal.aborted) {
+          break
+        }
+      }
+    }
+
+    this.#notify((observer) => observer.onRequestFailed?.(request, lastError))
+    throw lastError
+  }
 
   async sendWithFailover(
     request: RpcRequest,

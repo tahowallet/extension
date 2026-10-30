@@ -27,18 +27,13 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 import { RpcConfig } from "./db"
 import TahoBoarProvider from "./taho-boar-provider"
-import { getErrorType } from "./errors"
 import TahoRPCProvider from "./taho-rpc-provider"
 import {
   recordCircuitBreakerTransition,
   recordReconnectAttempt,
   recordReconnectFailed,
   recordReconnectSucceeded,
-  recordRequestFailed,
-  recordRequestSent,
-  recordRequestSucceeded,
   recordSingleFlightCoalesce,
-  RequestFailureCategory,
 } from "../../lib/perf-metrics"
 import Endpoint from "./rpc/endpoint"
 import EndpointPool from "./rpc/endpoint-pool"
@@ -60,7 +55,12 @@ import {
   routeRulesFor,
   ruleForMethod,
 } from "./rpc/method-router"
-import FailoverExecutor, { RpcRequest } from "./rpc/failover-executor"
+import FailoverExecutor, { RouteStep } from "./rpc/failover-executor"
+import RequestCache from "./rpc/request-cache"
+import {
+  performanceMetricsObserver,
+  reachabilityObserver,
+} from "./rpc/request-outcome-observers"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
@@ -74,28 +74,6 @@ export type ProviderCreator = {
   capabilities?: string[]
   creator: () => JsonRpcProvider
 }
-
-/**
- * Methods that must never be coalesced into a shared in-flight request.
- *
- * Subscription lifecycle methods produce per-call state (subscription ids)
- * that cannot be shared between callers. Signing and broadcasting methods
- * either have side effects or must produce an independent response per call
- * to support user-visible confirmation flows.
- */
-const NON_COALESCEABLE_METHODS = new Set([
-  "eth_subscribe",
-  "eth_unsubscribe",
-  "eth_sendTransaction",
-  "eth_sendRawTransaction",
-  "eth_sign",
-  "eth_signTransaction",
-  "eth_signTypedData",
-  "eth_signTypedData_v1",
-  "eth_signTypedData_v3",
-  "eth_signTypedData_v4",
-  "personal_sign",
-])
 
 // How often to check and clean stale cache entries
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
@@ -116,58 +94,6 @@ function waitAnd<T, E extends Promise<T>>(
       resolve(fn())
     }, waitMs)
   })
-}
-
-/**
- * Generates a unique cache key given a method and parameters. This key is
- * not safe to deserialize and is designed explicitly for Ethereum JSON-RPC
- * requests.
- */
-function getRPCCacheKey(method: string, params: unknown) {
-  // Transform and sort values so two calls with the same JSON payload
-  // return the same key
-  return `${method}::${JSON.stringify(params, (_k, val) => {
-    if (val === null) {
-      return null
-    }
-
-    if (typeof val === "bigint") {
-      return `${val}n`
-    }
-
-    if (typeof val === "string") {
-      return val.toLowerCase()
-    }
-
-    if (typeof val === "object" && !Array.isArray(val)) {
-      const keys = Object.keys(val)
-      keys.sort()
-      // oxlint-disable-next-line @typescript-eslint/no-explicit-any
-      return keys.reduce<any>((acc, key) => {
-        acc[key] = val[key]
-        return acc
-      }, {})
-    }
-
-    return val
-  })}`
-}
-
-type CacheEntry = {
-  result: unknown
-  updatedAt: number
-}
-
-/**
- * Normalize an arbitrary error thrown during RPC routing into one of the
- * categories tracked by the perf metrics collector. Unrecognized errors map
- * to `"unknown-error"`; this stays in sync with {@link getErrorType}.
- */
-function categorizeError(
-  error: unknown,
-  method: string,
-): RequestFailureCategory {
-  return getErrorType(String(error), method)
 }
 
 /**
@@ -223,19 +149,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     return this.#reachability.getState()
   }
 
-  #sendCache = new Map<string, CacheEntry>()
-
-  /**
-   * Promises for RPC requests that are currently in flight, keyed by a
-   * canonical method+params signature. New callers issuing the same request
-   * while one is still outstanding receive the in-flight promise rather than
-   * initiating a second provider call.
-   *
-   * Only methods that are safe to share (not signing, not broadcasting, not
-   * subscription lifecycle) are stored here; see {@link NON_COALESCEABLE_METHODS}.
-   */
-  #inFlightRequests = new Map<string, Promise<unknown>>()
-
   /**
    * Turns request outcomes into a single reachable / unreachable verdict for
    * the chain, so callers that log and swallow an exhausted walk have
@@ -243,24 +156,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   #reachability: NetworkReachabilityTracker
 
-  #cacheSettings = new Map<string, number>(
-    Object.entries({
-      // TEMPORARY cache for latest account balances to reduce number of rpc calls
-      // This is intended as a temporary fix to the burst of account enrichment that
-      // happens when the extension is first loaded up as a result of activity emission
-      // inside of chainService.connectChainService
-      eth_getBalance: 1 * SECOND,
-
-      // TEMPORARY cache for if an address has code to reduce number of rpc calls
-      // This is intended as a temporary fix to the burst of account enrichment that
-      // happens when the extension is first loaded up as a result of activity emission
-      // inside of chainService.connectChainService
-      // This cache will get reset every time the service worker reactivates and the property of having code update is quite rare.
-
-      eth_getCode: 600 * SECOND,
-      eth_chainId: 3600 * SECOND,
-    }),
-  )
+  readonly #requestCache: RequestCache
 
   supportsBoar = false
 
@@ -320,11 +216,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     })
 
     this.#executor = new FailoverExecutor([
-      {
-        onEndpointSuccess: () => this.#reachability.recordSuccess(),
-        onAllEndpointsFailed: () => this.#reachability.recordExhaustedWalk(),
-      },
+      reachabilityObserver(this.#reachability),
+      performanceMetricsObserver(chainID, (endpoint) =>
+        this.metricsIndexOf(endpoint),
+      ),
     ])
+
+    this.cachedChainId = utils.hexlify(Number(chainID))
+    this.#requestCache = new RequestCache({
+      // A provider never changes chains, so this needs no request.
+      knownAnswers: { eth_chainId: this.cachedChainId },
+      recentAnswerTtlMs: {
+        // Temporary, to soften the burst of account enrichment when the
+        // extension first loads.
+        eth_getBalance: 1 * SECOND,
+        // Having code rarely changes, and this resets when the service worker
+        // restarts.
+        eth_getCode: 600 * SECOND,
+      },
+      onCoalesce: () =>
+        recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex),
+    })
 
     this.#standardEndpoints = walkCreators.map(
       ({ type, capabilities, creator }, index) =>
@@ -389,7 +301,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }, CACHE_CLEANUP_INTERVAL),
     )
 
-    this.cachedChainId = utils.hexlify(Number(chainID))
     this.updateRouteRules()
   }
 
@@ -400,6 +311,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   /** The index of the walk's preferred endpoint. */
   private get currentProviderIndex(): number {
     return this.standardPool.preferredIndex
+  }
+
+  /**
+   * Where an endpoint's requests are counted: its place in the walk, or
+   * after the walk for method-specific endpoints.
+   */
+  private metricsIndexOf(endpoint: Endpoint): number {
+    const standardIndex = this.#standardEndpoints.indexOf(endpoint)
+    if (standardIndex >= 0) {
+      return standardIndex
+    }
+    const methodSpecific = this.#pools.get("methodSpecific")?.endpoints ?? []
+    return this.#standardEndpoints.length + methodSpecific.indexOf(endpoint)
   }
 
   /** The walk's endpoint at a given index. */
@@ -420,44 +344,24 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     })
   }
 
-  /**
-   * Sends a request through the pool its method routes to, then through the
-   * route's fallback pool if every endpoint in the first one failed.
-   */
-  private async sendRouted(
-    request: RpcRequest,
-  ): Promise<{ result: unknown; endpoint: Endpoint }> {
-    const { pool, fallbackPool } = ruleForMethod(
-      this.routeRules,
-      request.method,
-    )
-
-    try {
-      return await this.sendThroughPool(request, pool)
-    } catch (error) {
-      if (fallbackPool === undefined || !this.#pools.has(fallbackPool)) {
-        throw error
+  /** The pool a method routes to, then its fallback pool, if any. */
+  private routeFor(method: string): RouteStep[] {
+    const { pool, fallbackPool } = ruleForMethod(this.routeRules, method)
+    return [pool, fallbackPool].flatMap((name) => {
+      const routed = name === undefined ? undefined : this.#pools.get(name)
+      if (routed === undefined) {
+        return []
       }
-      return this.sendThroughPool(request, fallbackPool)
-    }
-  }
-
-  private sendThroughPool(
-    request: RpcRequest,
-    name: PoolName,
-  ): Promise<{ result: unknown; endpoint: Endpoint }> {
-    const pool = this.#pools.get(name) ?? this.standardPool
-    const policy =
-      name === "standard" || name === "managed"
-        ? standardFailurePolicy
-        : anyErrorFailsOverPolicy
-
-    return this.#executor.sendWithFailover(
-      request,
-      pool,
-      policy,
-      this.#lifecycle.signal,
-    )
+      return [
+        {
+          pool: routed,
+          policy:
+            name === "standard" || name === "managed"
+              ? standardFailurePolicy
+              : anyErrorFailsOverPolicy,
+        },
+      ]
+    })
   }
 
   /**
@@ -577,169 +481,36 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * A method that caches calls to eth_getCode and eth_getBalance
-   *
-   * @param result result of a successful call to an rpc provider
-   * @param method rpc method sent to the rpc provider
-   * @param params corresponding rpc params sent to the rpc provider
-   */
-  private conditionallyCacheResult(
-    result: unknown,
-    { method, params }: { method: string; params: unknown },
-  ): void {
-    if (this.#cacheSettings.has(method)) {
-      this.#sendCache.set(getRPCCacheKey(method, params), {
-        updatedAt: Date.now(),
-        result,
-      })
-    }
-  }
-
-  /**
-   * A method that checks the local cache for any previous calls to eth_getCode
-   * or any recent calls to eth_getBalance for a given address
-   *
-   * @param method the current RPC method
-   * @param params the parameters for the current rpc method
-   * @returns A cached result for the given method, or `undefined` indicating a cache miss
-   */
-  private checkForCachedResult(
-    method: string,
-    params: unknown,
-  ): CacheEntry | undefined {
-    const ttl = this.#cacheSettings.get(method)
-
-    if (typeof ttl !== "undefined") {
-      const entry = this.#sendCache.get(getRPCCacheKey(method, params))
-
-      if (entry && ttl + entry.updatedAt > Date.now()) {
-        return entry
-      }
-    }
-
-    return undefined
-  }
-
-  /**
-   * Cache cleanup to mitigate unbounded growth of our hasCode and balance caches.
+   * Drops expired cached answers so the cache doesn't grow without bound.
    */
   cleanupStaleCacheEntries(): void {
-    let counter = 0
-
-    this.#sendCache.forEach((value, key) => {
-      const method = key.split("::")[0]
-      const ttl = this.#cacheSettings.get(method)
-
-      if (ttl && value.updatedAt + ttl < Date.now()) {
-        this.#sendCache.delete(key)
-        counter += 1
-      }
-    })
-
-    if (counter > 0) {
+    const dropped = this.#requestCache.dropStaleAnswers()
+    if (dropped > 0) {
       logger.info(
-        `Cleaning up ${counter} cache entries on RPC for chain id: ${this.network.chainId}`,
+        `Cleaning up ${dropped} cache entries on RPC for chain id: ${this.chainID}`,
       )
     }
   }
 
   /**
-   * Override the core `send` method to handle disconnects and other errors
-   * that should trigger retries. Ethers already does internal retrying, but
-   * this retry methodology eventually falls back on another provider, handles
-   * WebSocket disconnects, and restores subscriptions where
-   * possible/necessary.
+   * Answers from the request cache where it can, and otherwise sends the
+   * request through the pools its method routes to.
    */
   override async send(method: string, params: unknown[]): Promise<unknown> {
-    // Since we can reliably return the chainId with absolutely no communication with
-    // the provider - we can return it without needing to worry about routing rpc calls
-    if (method === "eth_chainId") {
-      return this.cachedChainId
+    // A retired provider answers nothing it would have to ask an endpoint
+    // for; that endpoint may no longer be configured for this chain.
+    if (!this.#requestCache.hasKnownAnswer(method)) {
+      this.assertNotDestroyed()
     }
 
-    // A retired provider answers nothing; anything else would mean connecting
-    // to an endpoint that is no longer configured for this chain.
-    this.assertNotDestroyed()
-
-    // Coalesce concurrent identical requests into a single in-flight call.
-    // This is safe for idempotent reads and explicitly skipped for subscription
-    // lifecycle and side-effecting (signing / broadcast) methods so those always
-    // produce an independent provider call per invocation.
-    if (!NON_COALESCEABLE_METHODS.has(method)) {
-      const key = getRPCCacheKey(method, params)
-      const existing = this.#inFlightRequests.get(key)
-      if (existing !== undefined) {
-        recordSingleFlightCoalesce(this.chainID, this.currentProviderIndex)
-        return existing
-      }
-
-      const flight = this.dispatchRequest(method, params)
-      this.#inFlightRequests.set(key, flight)
-      // Clear the slot on both success and failure so the next caller makes
-      // a fresh request. Use `then(cleanup, cleanup)` rather than `finally`
-      // so a rejection does not escape as an unhandled promise on the
-      // cleanup chain; callers still observe the rejection on `flight`.
-      const cleanup = () => {
-        this.#inFlightRequests.delete(key)
-      }
-      flight.then(cleanup, cleanup)
-      return flight
-    }
-
-    return this.dispatchRequest(method, params)
-  }
-
-  /**
-   * Executes a single logical RPC request end-to-end, including metrics and
-   * result caching. Callers must never invoke this directly for coalesceable
-   * methods; {@link send} is responsible for single-flight deduplication
-   * before handing off here.
-   */
-  private async dispatchRequest(
-    method: string,
-    params: unknown[],
-  ): Promise<unknown> {
-    const startingProviderIndex = this.currentProviderIndex
-    recordRequestSent(this.chainID, startingProviderIndex)
-    const startTime = Date.now()
-
-    const cached = this.checkForCachedResult(method, params)
-    if (cached !== undefined) {
-      recordRequestSucceeded(
-        this.chainID,
-        startingProviderIndex,
-        Date.now() - startTime,
+    return this.#requestCache.getOrFetch(method, params, async () => {
+      const { result } = await this.#executor.send(
+        { method, params, startedAt: Date.now() },
+        this.routeFor(method),
+        this.#lifecycle.signal,
       )
-      return cached.result
-    }
-
-    try {
-      const { result, endpoint } = await this.sendRouted({
-        method,
-        params,
-        startedAt: startTime,
-      })
-
-      // Record against the endpoint that actually served the request.
-      const servingIndex = this.#standardEndpoints.indexOf(endpoint)
-      recordRequestSucceeded(
-        this.chainID,
-        servingIndex >= 0 ? servingIndex : startingProviderIndex,
-        Date.now() - startTime,
-      )
-
-      // Cache results for method/param combinations that are frequently called subsequently
-      this.conditionallyCacheResult(result, { method, params })
-
       return result
-    } catch (error) {
-      recordRequestFailed(
-        this.chainID,
-        startingProviderIndex,
-        categorizeError(error, method),
-      )
-      throw error
-    }
+    })
   }
 
   /**
