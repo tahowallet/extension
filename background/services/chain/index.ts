@@ -230,15 +230,33 @@ export default class ChainService extends BaseService<Events> {
     return { evm: this.providerRegistry.providersByChainID() }
   }
 
-  subscribedAccounts: {
-    account: string
-    provider: SerialFallbackProvider
-  }[]
+  /** Networks whose blocks and gas prices are being watched. */
+  private watchedNetworks: EVMNetwork[] = []
 
-  subscribedNetworks: {
+  /** Accounts whose pending transactions are being watched, by chain. */
+  private watchedAccounts: { address: string; chainID: string }[] = []
+
+  /** @deprecated Subscriptions are kept by chain, not by provider. */
+  get subscribedNetworks(): {
     network: EVMNetwork
-    provider: SerialFallbackProvider
-  }[]
+    provider: SerialFallbackProvider | undefined
+  }[] {
+    return this.watchedNetworks.map((network) => ({
+      network,
+      provider: this.providerForNetwork(network),
+    }))
+  }
+
+  /** @deprecated Subscriptions are kept by chain, not by provider. */
+  get subscribedAccounts(): {
+    account: string
+    provider: SerialFallbackProvider | undefined
+  }[] {
+    return this.watchedAccounts.map(({ address, chainID }) => ({
+      account: address,
+      provider: this.providerRegistry.providerFor(chainID),
+    }))
+  }
 
   private lastUserActivityOnNetwork: {
     [chainID: string]: UNIXTime
@@ -352,8 +370,6 @@ export default class ChainService extends BaseService<Events> {
     })
 
     this.trackedNetworks = []
-    this.subscribedAccounts = []
-    this.subscribedNetworks = []
     this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
@@ -375,15 +391,8 @@ export default class ChainService extends BaseService<Events> {
         this.emitReachability(chainID, status),
     })
 
-    this.providerRegistry.onProviderReplaced(({ chainID, previousProvider }) =>
-      this.resubscribeToChainEvents(chainID, previousProvider).catch(
-        (error) => {
-          logger.error(
-            `Error moving subscriptions to the new provider on chain ${chainID}`,
-            error,
-          )
-        },
-      ),
+    this.providerRegistry.onProviderReplaced(({ chainID }) =>
+      this.handleProviderReplaced(chainID),
     )
   }
 
@@ -567,9 +576,8 @@ export default class ChainService extends BaseService<Events> {
 
     this.trackedNetworks.push(networkToTrack)
 
-    const existingSubscription = this.subscribedNetworks.find(
-      (networkSubscription) =>
-        networkSubscription.network.chainID === networkToTrack.chainID,
+    const existingSubscription = this.watchedNetworks.find((network) =>
+      sameChainID(network.chainID, networkToTrack.chainID),
     )
 
     if (!existingSubscription) {
@@ -1453,7 +1461,7 @@ export default class ChainService extends BaseService<Events> {
       setTimeout(
         async () => {
           await Promise.allSettled(
-            this.subscribedNetworks.map(async ({ network }) =>
+            this.watchedNetworks.map(async (network) =>
               this.pollBlockPricesForNetwork(network.chainID),
             ),
           )
@@ -1466,7 +1474,7 @@ export default class ChainService extends BaseService<Events> {
 
     // Immediately run the first poll
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network }) =>
+      this.watchedNetworks.map(async (network) =>
         this.pollBlockPricesForNetwork(network.chainID),
       ),
     )
@@ -1477,11 +1485,11 @@ export default class ChainService extends BaseService<Events> {
       return
     }
 
-    const subscription = this.subscribedNetworks.find(
-      ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID),
+    const network = this.watchedNetworks.find(
+      (watched) => toHexChainID(watched.chainID) === toHexChainID(chainID),
     )
 
-    if (!subscription) {
+    if (!network) {
       logger.warn(
         `Can't fetch block prices for unsubscribed chainID ${chainID}`,
       )
@@ -1489,23 +1497,18 @@ export default class ChainService extends BaseService<Events> {
     }
 
     const blockPrices = await getBlockPrices(
-      subscription.network,
-      subscription.provider,
+      network,
+      this.providerForNetworkOrThrow(network),
     )
-    this.emitter.emit("blockPrices", {
-      blockPrices,
-      network: subscription.network,
-    })
+    this.emitter.emit("blockPrices", { blockPrices, network })
   }
 
   /*
    * Fetch, persist, and emit the latest block on a given network.
    */
-  private async pollLatestBlock(
-    network: EVMNetwork,
-    provider: SerialFallbackProvider,
-  ): Promise<void> {
-    const ethersBlock = await provider.getBlock("latest")
+  private async pollLatestBlock(network: EVMNetwork): Promise<void> {
+    const ethersBlock =
+      await this.providerForNetworkOrThrow(network).getBlock("latest")
     // add new head to database
     const block = blockFromProviderBlock(network, ethersBlock)
     await this.db.addBlock(block)
@@ -1994,13 +1997,9 @@ export default class ChainService extends BaseService<Events> {
    * @param network The EVM network to watch.
    */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    this.subscribedNetworks.push({
-      network,
-      provider,
-    })
+    this.watchedNetworks.push(network)
 
-    this.pollLatestBlock(network, provider)
+    this.pollLatestBlock(network)
     this.pollBlockPrices()
   }
 
@@ -2013,16 +2012,61 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    await provider.subscribeFullPendingTransactions(
+    await this.watchPendingTransactions({ address, network })
+
+    this.watchedAccounts.push({ address, chainID: network.chainID })
+  }
+
+  private async watchPendingTransactions({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    await this.providerForNetworkOrThrow(
+      network,
+    ).subscribeFullPendingTransactions(
       { address, network },
       this.handlePendingTransaction.bind(this),
     )
+  }
 
-    this.subscribedAccounts.push({
-      account: address,
-      provider,
-    })
+  /**
+   * Pending transaction subscriptions live on the provider, so they're made
+   * again on a new one. Block and gas polls look the provider up each time
+   * and only need a fresh read.
+   */
+  private handleProviderReplaced(chainID: string): void {
+    const network = this.watchedNetworks.find((watched) =>
+      sameChainID(watched.chainID, chainID),
+    )
+    if (network === undefined) {
+      return
+    }
+
+    this.pollLatestBlock(network).catch((error) =>
+      logger.error(
+        `Error reading the latest block from the new provider on chain ${chainID}`,
+        error,
+      ),
+    )
+    this.pollBlockPricesForNetwork(chainID).catch((error) =>
+      logger.error(
+        `Error reading block prices from the new provider on chain ${chainID}`,
+        error,
+      ),
+    )
+
+    new Set(
+      this.watchedAccounts
+        .filter((account) => sameChainID(account.chainID, chainID))
+        .map(({ address }) => address),
+    ).forEach((address) =>
+      this.watchPendingTransactions({ address, network }).catch((error) =>
+        logger.error(
+          `Error watching pending transactions on the new provider on chain ${chainID}`,
+          error,
+        ),
+      ),
+    )
   }
 
   /**
@@ -2292,88 +2336,6 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Re-establishes the network and account subscriptions that were made
-   * against a chain's previous provider on its replacement, updating the
-   * subscription registries in place instead of appending duplicate entries.
-   *
-   * Chains that had no subscriptions to begin with are left alone; a provider
-   * rebuild is not a reason to start tracking a network or an account.
-   */
-  private async resubscribeToChainEvents(
-    chainID: string,
-    previousProvider: SerialFallbackProvider | undefined,
-  ): Promise<void> {
-    const provider = this.providers.evm[chainID]
-    const networkSubscription = this.subscribedNetworks.find(
-      ({ network: subscribedNetwork }) =>
-        sameChainID(subscribedNetwork.chainID, chainID),
-    )
-    const network =
-      networkSubscription?.network ??
-      this.trackedNetworks.find((trackedNetwork) =>
-        sameChainID(trackedNetwork.chainID, chainID),
-      ) ??
-      this.supportedNetworks.find((supportedNetwork) =>
-        sameChainID(supportedNetwork.chainID, chainID),
-      )
-
-    if (provider === undefined || network === undefined) {
-      return
-    }
-
-    if (networkSubscription !== undefined) {
-      // Point the existing entry at the replacement instead of pushing a
-      // second one for the same network; block price polling reads the
-      // provider from here on every pass.
-      this.subscribedNetworks = this.subscribedNetworks.map((subscription) =>
-        subscription === networkSubscription
-          ? { network: subscription.network, provider }
-          : subscription,
-      )
-
-      // Read a fresh block and fresh block prices off the replacement, the
-      // way `subscribeToNewHeads` does for a newly subscribed network; both
-      // are fire-and-forget there as well, and the periodic poll picks the new
-      // provider up from `subscribedNetworks` on its next pass.
-      this.pollLatestBlock(network, provider).catch((error) =>
-        logger.error(
-          `Error reading the latest block from the rebuilt provider on chain ${chainID}`,
-          error,
-        ),
-      )
-      this.pollBlockPricesForNetwork(chainID).catch((error) =>
-        logger.error(
-          `Error reading block prices from the rebuilt provider on chain ${chainID}`,
-          error,
-        ),
-      )
-    }
-
-    // Account subscriptions have to be made again on the new provider, so drop
-    // the entries for the retired one and let `subscribeToAccountTransactions`
-    // record fresh ones.
-    const subscribedAddresses =
-      previousProvider === undefined
-        ? []
-        : this.subscribedAccounts
-            .filter(
-              ({ provider: accountProvider }) =>
-                accountProvider === previousProvider,
-            )
-            .map(({ account }) => account)
-
-    this.subscribedAccounts = this.subscribedAccounts.filter(
-      ({ provider: accountProvider }) => accountProvider !== previousProvider,
-    )
-
-    await Promise.allSettled(
-      subscribedAddresses.map((address) =>
-        this.subscribeToAccountTransactions({ address, network }),
-      ),
-    )
-  }
-
-  /**
    * Verifies that each http(s) RPC endpoint in the given list is reachable
    * and reports the expected chain ID via eth_chainId. WebSocket endpoints
    * are not probed. Throws an {@link RpcEndpointValidationError} naming the
@@ -2454,17 +2416,13 @@ export default class ChainService extends BaseService<Events> {
       (network) => network.chainID !== chainID,
     )
 
-    const removedProvider = this.providerRegistry.providerFor(chainID)
     await this.providerRegistry.removeProvider(chainID)
 
-    // The subscription registries are what the periodic block and block-price
-    // polls read the provider from, so entries pointing at the retired one
-    // have to go with it.
-    this.subscribedNetworks = this.subscribedNetworks.filter(
-      ({ network }) => !sameChainID(network.chainID, chainID),
+    this.watchedNetworks = this.watchedNetworks.filter(
+      (network) => !sameChainID(network.chainID, chainID),
     )
-    this.subscribedAccounts = this.subscribedAccounts.filter(
-      ({ provider }) => provider !== removedProvider,
+    this.watchedAccounts = this.watchedAccounts.filter(
+      (account) => !sameChainID(account.chainID, chainID),
     )
 
     await this.updateSupportedNetworks()

@@ -593,6 +593,28 @@ describe("ChainService", () => {
       )
     })
 
+    it("watches pending transactions on the new provider for watched accounts", async () => {
+      mockProbeResult("0x1")
+      const account = createAddressOnNetwork({ network: ETHEREUM })
+      await chainService.addAccountToTrack(account)
+      const subscribe = sandbox.spy(
+        Object.getPrototypeOf(chainService.providerForNetwork(ETHEREUM)),
+        "subscribeFullPendingTransactions",
+      )
+
+      await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
+        { url: "https://new-rpc.example.com" },
+      ])
+
+      const newProvider = chainService.providerForNetwork(ETHEREUM)
+      expect(
+        subscribe
+          .getCalls()
+          .filter((call) => call.thisValue === newProvider)
+          .map((call) => call.args[0].address),
+      ).toEqual([account.address])
+    })
+
     it("retires the replaced provider and moves subscriptions onto the new one", async () => {
       mockProbeResult("0x1")
 
