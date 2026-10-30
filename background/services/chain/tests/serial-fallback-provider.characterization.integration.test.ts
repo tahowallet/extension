@@ -112,9 +112,8 @@ describe("SerialFallbackProvider characterization", () => {
       expect(callsFor(managed.send, "qn_getTokenMetadata")).toEqual(0)
     })
 
-    // Documents a bug: the routing check compares a hex chain ID against a
-    // set of decimal ones, so Mezo's alchemy_ exclusion never matches.
-    it("pins alchemy_ methods to the managed endpoint on Mezo", async () => {
+    // Boar doesn't serve Alchemy's APIs on Mezo, so they walk.
+    it("walks alchemy_ methods on Mezo rather than pinning them to the managed endpoint", async () => {
       const provider = new SerialFallbackProvider(MEZO.chainID, [
         { type: "boar", creator: () => managed.provider },
         { type: "generic", creator: () => standard.provider },
@@ -126,9 +125,9 @@ describe("SerialFallbackProvider characterization", () => {
       expect(provider.supportsAlchemy).toBe(false)
       await expect(
         provider.send("alchemy_getTokenBalances", []),
-      ).rejects.toThrow("NETWORK_ERROR")
-      expect(callsFor(managed.send, "alchemy_getTokenBalances")).toEqual(2)
-      expect(callsFor(standard.send, "alchemy_getTokenBalances")).toEqual(0)
+      ).resolves.toEqual("standard")
+      expect(callsFor(managed.send, "alchemy_getTokenBalances")).toEqual(1)
+      expect(callsFor(standard.send, "alchemy_getTokenBalances")).toEqual(1)
     })
   })
 

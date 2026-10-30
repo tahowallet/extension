@@ -8,8 +8,6 @@ import { utils } from "ethers"
 import {
   SECOND,
   FLASHBOTS_RPC_URL,
-  ARBITRUM_ONE,
-  OPTIMISM,
   FORK,
   ARBITRUM_SEPOLIA,
   BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
@@ -48,6 +46,18 @@ import {
   NetworkReachabilityState,
   NetworkReachabilityTracker,
 } from "./network-reachability"
+import {
+  indicatesOutage,
+  httpStatusOf,
+  jitteredBackoffMs,
+  standardFailurePolicy,
+} from "./rpc/failure-policy"
+import {
+  capabilityPoolName,
+  RouteRule,
+  routeRulesFor,
+  ruleForMethod,
+} from "./rpc/method-router"
 
 export type ProviderCreator = {
   type: "boar" | "custom" | "generic"
@@ -85,31 +95,6 @@ function teardownProvider(provider: JsonRpcProvider | undefined): void {
 }
 
 /**
- * Method list, to describe which rpc method calls on which networks should
- * prefer the Boar provider over the generic ones.
- *
- * The method names can be full or the starting parts of the method name.
- * This allows us to use "namespaces" for providers eg `alchemy_...` or `qn_...`
- *
- * The structure is network specific with an extra `everyChain` option.
- * The methods in this array will be directed towards Boar on every network.
- */
-export const BOAR_RPC_METHOD_PROVIDER_ROUTING = {
-  everyChain: [
-    "alchemy_", // alchemy specific api calls start with this
-    "eth_sendRawTransaction", // broadcast should always go to boar
-    "eth_subscribe", // generic http providers do not support this, but dapps need this
-    "eth_estimateGas", // just want to be safe, when setting up a transaction
-    "eth_getLogs", // to avoid eth_getLogs block range limitations
-  ],
-  [OPTIMISM.chainID]: [
-    "eth_call", // this is causing issues on optimism with ankr and is used heavily by uniswap
-  ],
-  [ARBITRUM_ONE.chainID]: [
-    "eth_call", // this is causing issues on arbitrum with ankr and is used heavily by uniswap
-  ],
-} as const
-/**
  * Methods that must never be coalesced into a shared in-flight request.
  *
  * Subscription lifecycle methods produce per-call state (subscription ids)
@@ -131,10 +116,6 @@ const NON_COALESCEABLE_METHODS = new Set([
   "personal_sign",
 ])
 
-// Back off by this amount as a base, exponentiated by attempts and jittered.
-const BASE_BACKOFF_MS = 400
-// Retry 3 times before falling back to the next provider.
-const MAX_RETRIES_PER_PROVIDER = 3
 // Wait 10 seconds between primary provider reconnect attempts.
 const PRIMARY_PROVIDER_RECONNECT_INTERVAL = 10 * SECOND
 // Wait 2 seconds after a primary provider is created before resubscribing.
@@ -206,13 +187,6 @@ type CacheEntry = {
 }
 
 /**
- * Return a jittered amount of ms to backoff bounded between 400 and 800 ms
- */
-function backedOffMs(): number {
-  return BASE_BACKOFF_MS + 400 * Math.random()
-}
-
-/**
  * Normalize an arbitrary error thrown during RPC routing into one of the
  * categories tracked by the perf metrics collector. Unrecognized errors map
  * to `"unknown-error"`; this stays in sync with {@link getErrorType}.
@@ -222,35 +196,6 @@ function categorizeError(
   method: string,
 ): RequestFailureCategory {
   return getErrorType(String(error), method)
-}
-
-/**
- * Extracts the HTTP status code from an error object, if present.
- * Ethers errors may store the status code in different properties depending
- * on the error type.
- */
-function getHttpStatusCode(error: unknown): number | undefined {
-  if (error && typeof error === "object") {
-    // Check common properties where status code might be stored
-    if ("status" in error && typeof error.status === "number") {
-      return error.status
-    }
-    if ("statusCode" in error && typeof error.statusCode === "number") {
-      return error.statusCode
-    }
-    // ethers might store it in response
-    if (
-      "response" in error &&
-      error.response &&
-      typeof error.response === "object"
-    ) {
-      const response = error.response as Record<string, unknown>
-      if (typeof response.status === "number") {
-        return response.status
-      }
-    }
-  }
-  return undefined
 }
 
 /**
@@ -317,50 +262,6 @@ function cachedProviderAtIndex(
   cache.set(index, created)
 
   return created
-}
-
-/**
- * Return the decision whether a given RPC call should be routed to the Boar provider
- * or the generic provider.
- *
- * Checking whether Boar is supported is a non concern for this function!
- *
- * @param chainID string chainID to handle chain specific routings
- * @param method the current RPC method
- * @returns true | false whether the method on a given network should be routed to Boar or can be sent over the generic provider
- */
-function boarOrDefaultProvider(chainID: string, method: string): boolean {
-  if (
-    method.startsWith("alchemy_") &&
-    BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
-  ) {
-    return false
-  }
-  return (
-    BOAR_RPC_METHOD_PROVIDER_ROUTING.everyChain.some((m: string) =>
-      method.startsWith(m),
-    ) ||
-    (BOAR_RPC_METHOD_PROVIDER_ROUTING[Number(chainID)] ?? []).some(
-      (m: string) => method.startsWith(m),
-    )
-  )
-}
-
-function customOrDefaultProvider(
-  method: string,
-  supportedMethods: string[] = [],
-): boolean {
-  // Boar's methods have to go through Boar
-  if (method.startsWith("alchemy_")) {
-    return false
-  }
-
-  // If there are no supported methods we can assume we want to route everything through this provider
-  if (!supportedMethods.length) {
-    return true
-  }
-
-  return supportedMethods.some((m: string) => method.startsWith(m))
 }
 
 /**
@@ -537,6 +438,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   // for reconnects when relevant.
   private currentProviderIndex = 0
 
+  private routeRules: RouteRule[] = []
+
   // Information on WebSocket-style subscriptions. Tracked here so as to
   // restore them in case of WebSocket disconnects.
   private subscriptions: {
@@ -624,6 +527,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     this.cachedChainId = utils.hexlify(Number(chainID))
     this.providerCreators = [firstProviderCreator, ...remainingProviderCreators]
+    this.updateRouteRules()
+  }
+
+  private updateRouteRules(): void {
+    this.routeRules = routeRulesFor({
+      chainID: this.chainID,
+      methodSpecificMethods:
+        this.customProviderCreators.length > 0
+          ? this.customProviderSupportedMethods
+          : undefined,
+      capabilityNamespaces: Object.keys(this.capabilityProviderCreators),
+      hasManagedEndpoint: this.boarProvider !== undefined,
+    })
   }
 
   /**
@@ -672,10 +588,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         )
       }
 
-      if (
-        this.customProvider &&
-        customOrDefaultProvider(method, this.customProviderSupportedMethods)
-      ) {
+      const route = ruleForMethod(this.routeRules, method)
+
+      if (route.pool === "methodSpecific" && this.customProvider) {
         try {
           const result = await this.customProvider.send(method, params)
           this.#reachability.recordSuccess()
@@ -711,7 +626,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       const capabilityNamespace = Object.keys(
         this.capabilityProviderCreators,
-      ).find((namespace) => method.startsWith(namespace))
+      ).find((namespace) => route.pool === capabilityPoolName(namespace))
 
       if (capabilityNamespace !== undefined) {
         try {
@@ -724,12 +639,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           delete this.messagesToSend[messageId]
           return result
         } catch (error) {
-          if (
-            !(
-              this.boarProvider &&
-              boarOrDefaultProvider(this.cachedChainId, method)
-            )
-          ) {
+          if (!(this.boarProvider && route.fallbackPool === "managed")) {
             throw error
           }
           // Otherwise, fall through to the Boar branch below as a last
@@ -738,9 +648,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       }
 
       if (
-        // Force some methods to be handled by Boar if we're on a Boar supported chain
         this.boarProvider &&
-        boarOrDefaultProvider(this.cachedChainId, method)
+        (route.pool === "managed" || route.fallbackPool === "managed")
       ) {
         const result = await this.boarProvider.send(method, params)
         this.#reachability.recordSuccess()
@@ -836,10 +745,22 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         return waitAnd(500, () => this.routeRpcCall(messageId))
       }
 
+      const { backoffCount, providerIndex: initialProviderIndex } =
+        this.messagesToSend[messageId]
+      const nextStep = standardFailurePolicy.nextStepAfter(
+        error,
+        method,
+        backoffCount + 1,
+      )
+      const hasNextProvider =
+        this.currentProviderIndex + 1 < this.providerCreators.length
+      const status = httpStatusOf(error)
+      const isClientError =
+        status !== undefined && status >= 400 && status < 500
+
       if (
-        errorType === "network-error" ||
-        errorType === "rate-limit-error" ||
-        errorType === "response-error"
+        nextStep.kind === "tryNextEndpoint" &&
+        indicatesOutage(error, method)
       ) {
         // If a new provider is already in the process of being tried, go ahead
         // and fire off into the new provider.
@@ -854,8 +775,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           return await this.routeRpcCall(messageId)
         }
 
-        // If there is another provider to try - try to send the message on that provider
-        if (this.currentProviderIndex + 1 < this.providerCreators.length) {
+        if (hasNextProvider) {
           return await this.attemptToSendMessageOnNewProvider(messageId)
         }
 
@@ -870,71 +790,40 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         this.#reachability.recordExhaustedWalk()
         delete this.messagesToSend[messageId]
         throw error
-      } else if (errorType === "invalid-response-error") {
-        // Don't retry 4xx client errors on the same provider - they indicate
-        // the provider is rejecting the request itself (bad or revoked key,
-        // unsupported call) and retrying it there won't help.
-        //
-        // Whether *another* provider is worth trying depends on which 4xx it
-        // is. An auth-shaped one (401, 403) says something about the endpoint,
-        // not the request — a missing, revoked, or wrong API key — and with the
-        // Taho-managed endpoint heading the walk, a revoked key must not take
-        // down ordinary reads the stored endpoints can answer. Every other 4xx
-        // (400, 404, 422, …) says the request itself is bad, and fanning a
-        // guaranteed rejection out across every configured endpoint only
-        // multiplies the failure and the load, so those reject on the spot.
-        const statusCode = getHttpStatusCode(error)
-        if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
-          const isAuthFailure = statusCode === 401 || statusCode === 403
+      }
 
-          if (
-            isAuthFailure &&
-            this.currentProviderIndex + 1 < this.providerCreators.length
-          ) {
-            logger.debug(
-              "Failing over after auth-shaped 4xx status",
-              statusCode,
-              "on chain",
-              this.chainID,
-              "for",
-              method,
-            )
-            return await this.attemptToSendMessageOnNewProvider(messageId)
-          }
-
+      if (nextStep.kind === "tryNextEndpoint" && isClientError) {
+        // An auth-shaped 4xx, which says something about the endpoint's key.
+        if (hasNextProvider) {
           logger.debug(
-            "Not retrying invalid-response-error with 4xx status",
-            statusCode,
+            "Failing over after auth-shaped 4xx status",
+            status,
             "on chain",
             this.chainID,
             "for",
             method,
           )
-          delete this.messagesToSend[messageId]
+          return await this.attemptToSendMessageOnNewProvider(messageId)
+        }
+        delete this.messagesToSend[messageId]
+        throw error
+      }
+
+      if (nextStep.kind === "tryNextEndpoint") {
+        // Out of retries for an invalid response. A message that already
+        // failed over isn't retried on its new provider.
+        if (this.currentProviderIndex !== initialProviderIndex) {
           throw error
         }
-
-        // Check if we're already retrying this on a different provider
         if (
-          this.hasExceededRetryLimit(messageId) &&
-          this.currentProviderIndex !==
-            // Initial provider index this message was first send on
-            this.messagesToSend[messageId].providerIndex
-        ) {
-          throw error
-        }
-
-        if (
-          // If the current provider is the one we tried with initially.
           this.currentProviderIndex === existingProviderIndex &&
-          // If there is another provider to try and we have exceeded the
-          // number of retries try to send the message on that provider
-          this.currentProviderIndex + 1 < this.providerCreators.length &&
-          this.hasExceededRetryLimit(messageId)
+          hasNextProvider
         ) {
           return await this.attemptToSendMessageOnNewProvider(messageId)
         }
+      }
 
+      if (nextStep.kind !== "giveUp") {
         const backoff = this.backoffFor(messageId)
         logger.debug(
           "Backing off for",
@@ -1145,6 +1034,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
     this.currentCustomProviderIndex = 0
     this.customProvider = this.customProviderAtIndex(0)
+    this.updateRouteRules()
   }
 
   removeCustomProvider(): void {
@@ -1153,6 +1043,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.currentCustomProviderIndex = 0
     this.clearCachedCustomProviders()
     this.customProvider = undefined
+    this.updateRouteRules()
   }
 
   /**
@@ -1283,8 +1174,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   }
 
   /**
-   * Called when a message has failed MAX_RETRIES_PER_PROVIDER times on a given
-   * provider, and is ready to be sent to the next provider in line
+   * Called when a message is ready to be sent to the next provider in line.
    *
    * @param messageId The unique identifier of a given message
    * @returns The result of sending the message via the next provider
@@ -1696,7 +1586,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       await this.subscriptions.reduce(
         (previousPromise, { tag, param, processFunc }) =>
           previousPromise.then(() =>
-            waitAnd(backedOffMs(), () =>
+            waitAnd(jitteredBackoffMs(), () =>
               // Direct subscriptions are internal, but we want to be able to
               // restore them.
               // oxlint-disable-next-line no-underscore-dangle
@@ -1822,7 +1712,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private backoffFor(messageId: symbol): number {
     this.messagesToSend[messageId].backoffCount += 1
     this.conditionallyIncrementCurrentProviderIndex(messageId)
-    return backedOffMs()
+    return jitteredBackoffMs()
   }
 
   /**
@@ -1838,18 +1728,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.messagesToSend[messageId].backoffCount = 0
       this.messagesToSend[messageId].providerIndex = this.currentProviderIndex
     }
-  }
-
-  /**
-   * @param messageId The unique identifier of a given message
-   * @returns true if a message should be sent on the next provider, false otherwise
-   */
-  private hasExceededRetryLimit(messageId: symbol): boolean {
-    const { backoffCount } = this.messagesToSend[messageId]
-    if (backoffCount && backoffCount >= MAX_RETRIES_PER_PROVIDER) {
-      return true
-    }
-    return false
   }
 
   /**
