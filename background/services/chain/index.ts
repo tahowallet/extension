@@ -12,7 +12,6 @@ import {
   ALCHEMY_CAPABILITY_NAMESPACE,
   AnyEVMBlock,
   AnyEVMTransaction,
-  EIP1559TransactionRequest,
   EVMNetwork,
   BlockPrices,
   TransactionRequest,
@@ -35,7 +34,6 @@ import {
   OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   MINUTE,
-  CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
@@ -89,6 +87,7 @@ import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 import { ISLAND_NETWORK } from "../island/contracts"
 import ProviderRegistry from "./provider-registry"
+import NonceAllocator from "./nonce-allocator"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -270,15 +269,14 @@ export default class ChainService extends BaseService<Events> {
     [address: HexString]: UNIXTime
   } = {}
 
-  /**
-   * For each chain id, track an address's last seen nonce. The tracked nonce
-   * should generally not be allocated to a new transaction, nor should any
-   * nonces that precede it, unless the intent is deliberately to replace an
-   * unconfirmed transaction sharing the same nonce.
-   */
-  private evmChainLastSeenNoncesByNormalizedAddress: {
-    [chainID: string]: { [normalizedAddress: string]: number }
-  } = {}
+  private nonceAllocator = new NonceAllocator((network) =>
+    this.providerForNetworkOrThrow(network),
+  )
+
+  /** @deprecated Kept for tests; see {@link NonceAllocator}. */
+  private get evmChainLastSeenNoncesByNormalizedAddress(): NonceAllocator["highestKnownNonce"] {
+    return this.nonceAllocator.highestKnownNonce
+  }
 
   /**
    * Modified FIFO queues with priority of transaction hashes per network that should be retrieved and
@@ -891,70 +889,7 @@ export default class ChainService extends BaseService<Events> {
   async populateEVMTransactionNonce(
     transactionRequest: TransactionRequest,
   ): Promise<TransactionRequestWithNonce> {
-    if (typeof transactionRequest.nonce !== "undefined") {
-      // TS undefined checks don't narrow the containing object's type, so we
-      // have to cast `as` here.
-      return transactionRequest as EIP1559TransactionRequest & { nonce: number }
-    }
-
-    const { network, chainID } = transactionRequest
-    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
-    const provider = this.providerForNetworkOrThrow(network)
-
-    // https://docs.ethers.io/v5/single-page/#/v5/api/providers/provider/-%23-Provider-getTransactionCount
-    const chainTransactionCount = await provider.getTransactionCount(
-      transactionRequest.from,
-      "latest",
-    )
-    let knownNextNonce
-
-    // existingNonce handling only needed when there is a chance for it to
-    // be different from the onchain nonce. This can happen when a chain has
-    // mempool. Note: This does not necessarily mean that the chain is EIP-1559
-    // compliant.
-    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
-      // @TODO: Update this implementation to handle pending txs and also be more
-      //        resilient against missing nonce in the mempool.
-      const chainNonce = chainTransactionCount - 1
-
-      const existingNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
-          normalizedAddress
-        ] ?? chainNonce
-
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
-      // Use the network count, if needed. Note that the assumption here is that
-      // all nonces for this address are increasing linearly and continuously; if
-      // the address has a pending transaction floating around with a nonce that
-      // is not an increase by one over previous transactions, this approach will
-      // allocate more nonces that won't mine.
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-        normalizedAddress
-      ] = Math.max(existingNonce, chainNonce)
-
-      // Allocate a new nonce by incrementing the last seen one.
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-        normalizedAddress
-      ] += 1
-      knownNextNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ]
-
-      logger.debug(
-        "Got chain nonce",
-        chainNonce,
-        "existing nonce",
-        existingNonce,
-        "using",
-        knownNextNonce,
-      )
-    }
-
-    return {
-      ...transactionRequest,
-      nonce: knownNextNonce ?? chainTransactionCount,
-    }
+    return this.nonceAllocator.allocateNonce(transactionRequest)
   }
 
   /**
@@ -969,47 +904,7 @@ export default class ChainService extends BaseService<Events> {
       | SignedTransaction
       | AnyEVMTransaction,
   ): void {
-    const chainID =
-      "chainID" in transactionRequest
-        ? transactionRequest.chainID
-        : transactionRequest.network.chainID
-    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
-      const { nonce } = transactionRequest
-      const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
-
-      if (
-        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
-          normalizedAddress
-        ]
-      ) {
-        return
-      }
-
-      const lastSeenNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ]
-
-      // TODO Currently this assumes that the only place this nonce could have
-      // TODO been used is this service; however, another wallet or service
-      // TODO could have broadcast a transaction with this same nonce, in which
-      // TODO case the nonce release shouldn't take effect! This should be a
-      // TODO relatively rare edge case, but we should handle it at some point.
-      if (nonce === lastSeenNonce) {
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ] -= 1
-      } else if (nonce < lastSeenNonce) {
-        // If the nonce we're releasing is below the latest allocated nonce,
-        // release all intervening nonces. This risks transaction replacement
-        // issues, but ensures that we don't start allocating nonces that will
-        // never mine (because they will all be higher than the
-        // now-released-and-therefore-never-broadcast nonce).
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ] = nonce - 1
-      }
-    }
+    this.nonceAllocator.releaseNonce(transactionRequest)
   }
 
   async getAccountsToTrack(
@@ -2086,26 +1981,7 @@ export default class ChainService extends BaseService<Events> {
   ): Promise<void> {
     try {
       const { network } = transaction
-      const normalizedFromAddress = normalizeEVMAddress(transaction.from)
-
-      // If this is an EVM chain, we're tracking the from address's
-      // nonce, and the pending transaction has a higher nonce, update our
-      // view of it. This helps reduce the number of times when a
-      // transaction submitted outside of this wallet causes this wallet to
-      // produce bad transactions with reused nonces.
-      if (
-        typeof network.chainID !== "undefined" &&
-        typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-          network.chainID
-        ]?.[normalizedFromAddress] !== "undefined" &&
-        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-          normalizedFromAddress
-        ] <= transaction.nonce
-      ) {
-        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-          normalizedFromAddress
-        ] = transaction.nonce
-      }
+      this.nonceAllocator.observeNonce(transaction)
       await this.saveTransaction(transaction, "boar")
 
       // Wait for confirmation/receipt information.
