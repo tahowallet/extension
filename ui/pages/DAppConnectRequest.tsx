@@ -3,6 +3,8 @@ import {
   selectCurrentUnansweredPermissionRequest,
   selectCurrentAccountTotal,
 } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { sameChainID } from "@tallyho/tally-background/networks"
 import {
   denyOrRevokePermission,
   grantPermission,
@@ -20,10 +22,25 @@ export default function DAppConnectRequest(): ReactElement {
   const permission = useBackgroundSelector(
     selectCurrentUnansweredPermissionRequest,
   )
+  const networks = useBackgroundSelector(selectEVMNetworks)
+
+  const requestedChainID = permission?.chainID
+  const additionalNetwork =
+    requestedChainID === undefined
+      ? undefined
+      : networks.find((network) =>
+          sameChainID(network.chainID, requestedChainID),
+        )
 
   useEffect(() => {
     window.onbeforeunload = () => {
-      if (typeof permission !== "undefined") {
+      // Rejecting a request for an additional network must leave the site's
+      // existing permissions alone. Closing the window is enough for the
+      // background to treat that request as rejected.
+      if (
+        typeof permission !== "undefined" &&
+        permission.chainID === undefined
+      ) {
         dispatch(
           denyOrRevokePermission({
             ...permission,
@@ -56,7 +73,10 @@ export default function DAppConnectRequest(): ReactElement {
     window.close()
   }, [])
 
-  if (typeof permission === "undefined") {
+  if (
+    typeof permission === "undefined" ||
+    (requestedChainID !== undefined && additionalNetwork === undefined)
+  ) {
     // something went wrong with permissions request
     return <ErrorFallback />
   }
@@ -71,6 +91,7 @@ export default function DAppConnectRequest(): ReactElement {
       <DAppConnectPage
         permission={permission}
         currentAccountTotal={currentAccountTotal}
+        additionalNetwork={additionalNetwork}
         denyPermission={deny}
         grantPermission={grant}
       />
