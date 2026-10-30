@@ -2,22 +2,16 @@ import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import SerialFallbackProvider from "../serial-fallback-provider"
+import { PRIMARY_RECOVERY_INTERVAL_MS } from "../rpc/endpoint-pool"
 
 const sandbox = sinon.createSandbox()
 
 /**
- * Runs one of the periodic reconnect passes the constructor's interval timer
- * drives, without waiting out the interval.
+ * Fakes the timers a pool uses to drop back to its primary endpoint, so a
+ * test can run that recovery without waiting it out.
  */
-const runReconnectPass = async (
-  provider: SerialFallbackProvider,
-  pass:
-    | "attemptToReconnectToPrimaryCustomProvider"
-    | "attemptToReconnectToPrimaryCapabilityProviders",
-): Promise<void> =>
-  // Accessing a private method
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (provider as any)[pass]()
+const fakeRecoveryTimers = () =>
+  sandbox.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
 
 const stubProvider = (url: string, send: Sinon.SinonStub): JsonRpcProvider => {
   const provider = new JsonRpcProvider(url)
@@ -39,6 +33,7 @@ describe("SerialFallbackProvider provider reuse", () => {
   })
 
   it("creates each custom endpoint's provider once across repeated failovers", async () => {
+    const clock = fakeRecoveryTimers()
     const primaryCustom = stubProvider(
       "http://custom-primary.example",
       sandbox.stub().rejects(new Error("bad response")),
@@ -65,10 +60,7 @@ describe("SerialFallbackProvider provider reuse", () => {
 
     // Drop back to the primary custom endpoint the way the periodic reconnect
     // does, then fail over to the fallback again.
-    await runReconnectPass(
-      provider,
-      "attemptToReconnectToPrimaryCustomProvider",
-    )
+    await clock.tickAsync(PRIMARY_RECOVERY_INTERVAL_MS)
 
     await expect(
       provider.send("eth_getBlockByNumber", ["0x2", false]),
@@ -81,6 +73,7 @@ describe("SerialFallbackProvider provider reuse", () => {
   })
 
   it("creates each capability endpoint's provider once across repeated failovers", async () => {
+    const clock = fakeRecoveryTimers()
     const primaryAlchemy = stubProvider(
       "http://alchemy-primary.example",
       sandbox.stub().rejects(new Error("bad response")),
@@ -113,10 +106,7 @@ describe("SerialFallbackProvider provider reuse", () => {
     expect(primaryCreator.callCount).toEqual(1)
     expect(fallbackCreator.callCount).toEqual(1)
 
-    await runReconnectPass(
-      provider,
-      "attemptToReconnectToPrimaryCapabilityProviders",
-    )
+    await clock.tickAsync(PRIMARY_RECOVERY_INTERVAL_MS)
 
     await expect(
       provider.send("alchemy_getAssetTransfers", [{ fromBlock: "0x2" }]),

@@ -114,7 +114,7 @@ export default class Endpoint {
 
   /** The transport, built on first use. */
   get transport(): JsonRpcProvider {
-    this.#build()
+    this.build()
     const { transport } = this.#actor.getSnapshot().context
     if (transport === undefined) {
       throw new EndpointDisposedError()
@@ -132,7 +132,7 @@ export default class Endpoint {
    * Rejects if it starts cooling down or is disposed first.
    */
   whenReady(): Promise<void> {
-    this.#build()
+    this.build()
 
     return new Promise((resolve, reject) => {
       const check = (status: EndpointStatus) => {
@@ -161,7 +161,8 @@ export default class Endpoint {
     return transport.send(method, params)
   }
 
-  #build(): void {
+  /** Builds the transport if it isn't yet. */
+  build(): void {
     if (this.isDisposed) {
       throw new EndpointDisposedError()
     }

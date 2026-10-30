@@ -41,6 +41,7 @@ import {
   RequestFailureCategory,
 } from "../../lib/perf-metrics"
 import Endpoint from "./rpc/endpoint"
+import EndpointPool from "./rpc/endpoint-pool"
 import { isWebSocketTransport } from "./rpc/endpoint-machine"
 import {
   NetworkReachabilityListener,
@@ -194,27 +195,16 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   #managedEndpoint: Endpoint | undefined
 
   // Method-specific endpoints in priority order; later ones are fallbacks.
-  #methodSpecificEndpoints: Endpoint[] = []
+  #methodSpecificPool: EndpointPool | undefined
 
   private customProviderSupportedMethods: string[] = []
 
-  // The index of the method-specific endpoint in use.
-  private currentCustomProviderIndex = 0
-
   // Standard endpoints that declare a non-standard namespace, by namespace.
-  #capabilityEndpoints: { [namespace: string]: Endpoint[] } = {}
-
-  // The index of the capability endpoint in use, by namespace.
-  #capabilityIndexes: { [namespace: string]: number } = {}
+  #capabilityPools: { [namespace: string]: EndpointPool } = {}
 
   /** The transport of the walk's current endpoint. */
   private get currentProvider(): JsonRpcProvider {
     return this.#standardEndpoints[this.currentProviderIndex].transport
-  }
-
-  private get customProvider(): JsonRpcProvider | undefined {
-    return this.#methodSpecificEndpoints[this.currentCustomProviderIndex]
-      ?.transport
   }
 
   // Handles for the periodic reconnect and cache-cleanup timers, so `destroy`
@@ -396,20 +386,25 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       this.addCustomProviders(customProviderCreators)
     }
 
+    const capabilityEndpoints: { [namespace: string]: Endpoint[] } = {}
     this.#standardEndpoints
       .filter(({ kind }) => kind === "standard")
       .forEach((endpoint) => {
         endpoint.capabilities.forEach((namespace) => {
-          this.#capabilityEndpoints[namespace] ??= []
-          this.#capabilityEndpoints[namespace].push(endpoint)
+          capabilityEndpoints[namespace] ??= []
+          capabilityEndpoints[namespace].push(endpoint)
         })
       })
+    Object.entries(capabilityEndpoints).forEach(([namespace, endpoints]) => {
+      this.#capabilityPools[namespace] = new EndpointPool(
+        capabilityPoolName(namespace),
+        endpoints,
+      )
+    })
 
     this.intervalHandles.push(
       setInterval(() => {
         this.attemptToReconnectToPrimaryProvider()
-        this.attemptToReconnectToPrimaryCustomProvider()
-        this.attemptToReconnectToPrimaryCapabilityProviders()
       }, PRIMARY_PROVIDER_RECONNECT_INTERVAL),
       setInterval(() => {
         this.cleanupStaleCacheEntries()
@@ -424,10 +419,10 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.routeRules = routeRulesFor({
       chainID: this.chainID,
       methodSpecificMethods:
-        this.#methodSpecificEndpoints.length > 0
+        this.#methodSpecificPool !== undefined
           ? this.customProviderSupportedMethods
           : undefined,
-      capabilityNamespaces: Object.keys(this.#capabilityEndpoints),
+      capabilityNamespaces: Object.keys(this.#capabilityPools),
       hasManagedEndpoint: this.#managedEndpoint !== undefined,
     })
   }
@@ -473,52 +468,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
       const route = ruleForMethod(this.routeRules, method)
 
-      const customEndpoint =
-        this.#methodSpecificEndpoints[this.currentCustomProviderIndex]
-      if (route.pool === "methodSpecific" && customEndpoint !== undefined) {
-        try {
-          if (!customEndpoint.isAvailable) {
-            throw new Error("NETWORK_ERROR: endpoint is cooling down")
-          }
-          const result = await customEndpoint.send(method, params)
-          customEndpoint.recordSuccess()
-          this.#reachability.recordSuccess()
-          delete this.messagesToSend[messageId]
-          return result
-        } catch (error) {
-          customEndpoint.recordFailure()
-          // Fall over to the next custom provider when one is available;
-          // otherwise, let the error flow through the usual handling below.
-          if (
-            this.currentCustomProviderIndex + 1 <
-            this.#methodSpecificEndpoints.length
-          ) {
-            this.currentCustomProviderIndex += 1
-
-            logger.debug(
-              "Falling back to custom provider",
-              this.currentCustomProviderIndex,
-              "on chain",
-              this.chainID,
-              "for",
-              method,
-            )
-
-            return await this.routeRpcCall(messageId)
-          }
-
-          throw error
-        }
+      const methodSpecificPool = this.#methodSpecificPool
+      if (route.pool === "methodSpecific" && methodSpecificPool !== undefined) {
+        // On failure, the error flows through the usual handling below.
+        const result = await this.sendThroughPool(
+          methodSpecificPool,
+          method,
+          params,
+        )
+        this.#reachability.recordSuccess()
+        delete this.messagesToSend[messageId]
+        return result
       }
 
-      const capabilityNamespace = Object.keys(this.#capabilityEndpoints).find(
-        (namespace) => route.pool === capabilityPoolName(namespace),
+      const capabilityPool = Object.values(this.#capabilityPools).find(
+        ({ name }) => route.pool === name,
       )
 
-      if (capabilityNamespace !== undefined) {
+      if (capabilityPool !== undefined) {
         try {
-          const result = await this.sendViaCapabilityProviders(
-            capabilityNamespace,
+          const result = await this.sendThroughPool(
+            capabilityPool,
             method,
             params,
           )
@@ -785,58 +755,47 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   get supportsAlchemy(): boolean {
     return (
-      (this.#capabilityEndpoints[ALCHEMY_CAPABILITY_NAMESPACE] ?? []).length >
-        0 ||
+      this.#capabilityPools[ALCHEMY_CAPABILITY_NAMESPACE] !== undefined ||
       (this.supportsBoar &&
         !BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(this.chainID))
     )
   }
 
   /**
-   * Sends a method belonging to a non-standard namespace via the providers
-   * whose endpoints declare that capability, in priority order, falling over
-   * to the next one when the current one fails. Throws the final provider's
-   * error once all are exhausted.
+   * Sends a request through a pool's endpoints in order, moving on after any
+   * error. Throws the last endpoint's error once all have failed.
    */
-  private async sendViaCapabilityProviders(
-    namespace: string,
+  private async sendThroughPool(
+    pool: EndpointPool,
     method: string,
     params: unknown[],
   ): Promise<unknown> {
-    const endpoints = this.#capabilityEndpoints[namespace]
-    let index = this.#capabilityIndexes[namespace] ?? 0
+    const endpoints = pool.endpointsInTryOrder()
+    if (endpoints.length === 0) {
+      throw new Error("NETWORK_ERROR: circuit open and no fallback available")
+    }
 
-    for (;;) {
-      const endpoint = endpoints[index]
+    let lastError: unknown
+    for (const endpoint of endpoints) {
       try {
-        if (!endpoint.isAvailable) {
-          throw new Error("NETWORK_ERROR: endpoint is cooling down")
-        }
         // oxlint-disable-next-line no-await-in-loop
         const result = await endpoint.send(method, params)
-        endpoint.recordSuccess()
+        pool.recordSuccess(endpoint)
         return result
       } catch (error) {
-        endpoint.recordFailure()
-        if (index + 1 >= endpoints.length) {
-          throw error
-        }
-
-        index += 1
-        this.#capabilityIndexes[namespace] = index
-
+        pool.recordFailure(endpoint)
+        lastError = error
         logger.debug(
-          "Falling back to",
-          namespace,
-          "capability provider",
-          index,
-          "on chain",
+          "Falling back from",
+          pool.name,
+          "endpoint on chain",
           this.chainID,
           "for",
           method,
         )
       }
     }
+    throw lastError
   }
 
   addCustomProvider(customProviderCreator: ProviderCreator): void {
@@ -863,8 +822,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.customProviderSupportedMethods =
       customProviderCreators[0].supportedMethods ?? []
     // The old endpoints are stale and, for WebSockets, still connected.
-    this.#methodSpecificEndpoints.forEach((endpoint) => endpoint.dispose())
-    this.#methodSpecificEndpoints = customProviderCreators.map(
+    this.disposeMethodSpecificPool()
+    const endpoints = customProviderCreators.map(
       ({ creator, supportedMethods }) =>
         new Endpoint({
           kind: "method-specific",
@@ -872,18 +831,24 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
           createTransport: creator,
         }),
     )
-    this.currentCustomProviderIndex = 0
     // Built up front, as it always has been.
-    this.#methodSpecificEndpoints[0].transport
+    endpoints[0].transport
+    this.#methodSpecificPool = new EndpointPool("methodSpecific", endpoints)
     this.updateRouteRules()
   }
 
   removeCustomProvider(): void {
     this.customProviderSupportedMethods = []
-    this.#methodSpecificEndpoints.forEach((endpoint) => endpoint.dispose())
-    this.#methodSpecificEndpoints = []
-    this.currentCustomProviderIndex = 0
+    this.disposeMethodSpecificPool()
     this.updateRouteRules()
+  }
+
+  private disposeMethodSpecificPool(): void {
+    this.#methodSpecificPool?.dispose()
+    this.#methodSpecificPool?.endpoints.forEach((endpoint) =>
+      endpoint.dispose(),
+    )
+    this.#methodSpecificPool = undefined
   }
 
   /**
@@ -910,8 +875,9 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.intervalHandles.forEach((handle) => clearInterval(handle))
     this.intervalHandles = []
 
+    Object.values(this.#capabilityPools).forEach((pool) => pool.dispose())
+    this.disposeMethodSpecificPool()
     this.#standardEndpoints.forEach((endpoint) => endpoint.dispose())
-    this.#methodSpecificEndpoints.forEach((endpoint) => endpoint.dispose())
 
     // Stop tracking subscriptions so nothing gets restored onto a retired
     // provider, and drop the listeners registered on this instance itself.
@@ -1422,28 +1388,6 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     logger.debug("Subscriptions resubscribed", "on chain", this.chainID, "...")
     return true
-  }
-
-  private async attemptToReconnectToPrimaryCapabilityProviders(): Promise<void> {
-    if (this.#destroyed) {
-      return
-    }
-
-    // Periodically drop back to each namespace's primary endpoint after a
-    // failover; if it is still down, the next failed call will walk back down
-    // the fallback list.
-    this.#capabilityIndexes = {}
-  }
-
-  private async attemptToReconnectToPrimaryCustomProvider(): Promise<void> {
-    if (this.#destroyed) {
-      return
-    }
-
-    // Periodically drop back to the primary method-specific endpoint after a
-    // failover; if it is still down, the next failed call will walk back down
-    // the fallback list.
-    this.currentCustomProviderIndex = 0
   }
 
   private async attemptToReconnectToPrimaryProvider(): Promise<unknown> {
