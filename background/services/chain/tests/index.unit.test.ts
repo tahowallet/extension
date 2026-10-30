@@ -501,8 +501,8 @@ describe("Chain Service", () => {
       }
     })
 
-    // Problem 5: the watched network object isn't refreshed by an edit.
-    it("emits block prices with the network as it was before an edit", async () => {
+    // Problem 5: an edit changes the network watchers report on.
+    it("emits block prices with the network as it is after an edit", async () => {
       chainService.markNetworkActivity(ETHEREUM.chainID)
       const emitted: EVMNetwork[] = []
       chainService.emitter.on("blockPrices", ({ network }) => {
@@ -516,7 +516,7 @@ describe("Chain Service", () => {
       )
       await chainService.pollBlockPricesForNetwork(ETHEREUM.chainID)
 
-      expect(emitted.at(-1)?.blockExplorerURL).not.toEqual(
+      expect(emitted.at(-1)?.blockExplorerURL).toEqual(
         "https://edited-explorer.example.com",
       )
     })

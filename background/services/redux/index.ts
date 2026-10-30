@@ -1955,13 +1955,13 @@ export default class ReduxService extends BaseService<never> {
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
       const flashbotsProvider = flashbotsEndpointConfig()
-      await this.chainService.addCustomProvider(
+      await this.chainService.setMethodSpecificEndpoints(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,
         flashbotsProvider,
       )
     } else {
-      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
+      await this.chainService.clearMethodSpecificEndpoints(ETHEREUM.chainID)
     }
   }
 

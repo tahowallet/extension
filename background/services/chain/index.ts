@@ -9,7 +9,6 @@ import getBlockPrices from "../../lib/gas"
 import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
-  ALCHEMY_CAPABILITY_NAMESPACE,
   AnyEVMBlock,
   AnyEVMTransaction,
   EVMNetwork,
@@ -37,13 +36,11 @@ import {
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
-  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
-  DEFAULT_NETWORKS_BY_CHAIN_ID,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase, RpcConfig, Transaction } from "./db"
+import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
 import {
   blockFromEthersBlock,
@@ -76,8 +73,6 @@ import {
   providerEnvironmentFor,
 } from "./rpc/endpoint-configs"
 import { NetworkReachabilityState } from "./network-reachability"
-import { RpcEndpointValidationError } from "./errors"
-import { BOAR_RPC_URLS } from "../../lib/boar"
 import AssetDataHelper from "./asset-data-helper"
 import {
   OPTIMISM_GAS_ORACLE_ABI,
@@ -88,6 +83,7 @@ import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/util
 import { ISLAND_NETWORK } from "../island/contracts"
 import ProviderRegistry from "./provider-registry"
 import NonceAllocator from "./nonce-allocator"
+import NetworkSettings, { NetworkMetadata } from "./network-settings"
 
 // The number of blocks to query at a time for historic asset transfers.
 // Unfortunately there's no "right" answer here that works well across different
@@ -137,10 +133,6 @@ const GAS_POLLING_PERIOD = 1 // 1 minute
 // Transactions with priority for individual accounts will keep the order of loading
 // from adding accounts.
 const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
-
-// How long to wait for an RPC endpoint to answer an eth_chainId probe before
-// treating it as unreachable when validating user-provided endpoint lists.
-const RPC_PROBE_TIMEOUT = 5 * SECOND
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -222,8 +214,7 @@ export type PriorityQueuedTxToRetrieve = {
 export default class ChainService extends BaseService<Events> {
   private providerRegistry: ProviderRegistry
 
-  /** Method-specific endpoint configuration, by chain ID. */
-  private methodSpecificRpcConfigs = new Map<string, RpcConfig>()
+  private networkSettings: NetworkSettings
 
   /**
    * @deprecated Use {@link providerForNetwork}; providers are owned by the
@@ -233,8 +224,16 @@ export default class ChainService extends BaseService<Events> {
     return { evm: this.providerRegistry.providersByChainID() }
   }
 
-  /** Networks whose blocks and gas prices are being watched. */
-  private watchedNetworks: EVMNetwork[] = []
+  /** Chains whose blocks and gas prices are being watched. */
+  private watchedChainIDs = new Set<string>()
+
+  /** The watched networks, as they are now. */
+  private get watchedNetworks(): EVMNetwork[] {
+    return [...this.watchedChainIDs].flatMap((chainID) => {
+      const network = this.networkSettings.networkFor(chainID)
+      return network === undefined ? [] : [network]
+    })
+  }
 
   /** Accounts whose pending transactions are being watched, by chain. */
   private watchedAccounts: { address: string; chainID: string }[] = []
@@ -306,9 +305,24 @@ export default class ChainService extends BaseService<Events> {
   > = async (preferenceService, internalSignerService) =>
     new this(createDB(), await preferenceService, await internalSignerService)
 
-  supportedNetworks: EVMNetwork[] = []
+  get supportedNetworks(): EVMNetwork[] {
+    return this.networkSettings.supportedNetworks()
+  }
 
-  private trackedNetworks: EVMNetwork[]
+  /** @deprecated For tests that set the list directly. */
+  set supportedNetworks(networks: EVMNetwork[]) {
+    this.networkSettings.replaceSupportedNetworks(networks)
+  }
+
+  /** Chains being tracked, in the order tracking started. */
+  private trackedChainIDs: string[] = []
+
+  private get trackedNetworks(): EVMNetwork[] {
+    return this.trackedChainIDs.flatMap((chainID) => {
+      const network = this.networkSettings.networkFor(chainID)
+      return network === undefined ? [] : [network]
+    })
+  }
 
   assetData: AssetDataHelper
 
@@ -371,10 +385,15 @@ export default class ChainService extends BaseService<Events> {
       },
     })
 
-    this.trackedNetworks = []
     this.transactionsToRetrieve = []
 
     this.assetData = new AssetDataHelper(this)
+
+    this.networkSettings = new NetworkSettings(
+      db,
+      () => this.providerRegistry,
+      (networks) => this.emitter.emit("supportedNetworks", networks),
+    )
 
     this.providerRegistry = new ProviderRegistry({
       createProvider: (chainID, rpcEndpoints, onReachabilityChange) =>
@@ -384,13 +403,13 @@ export default class ChainService extends BaseService<Events> {
             providerEnvironmentFor(
               chainID,
               rpcEndpoints,
-              this.methodSpecificRpcConfigs.get(chainID),
+              this.networkSettings.methodSpecificRpcConfigFor(chainID),
             ),
           ),
           onReachabilityChange,
         ),
       verifyEndpoints: (chainID, rpcEndpoints, signal) =>
-        this.verifyNewEndpoints(chainID, rpcEndpoints, signal),
+        this.networkSettings.verifyNewEndpoints(chainID, rpcEndpoints, signal),
       saveEndpoints: (chainID, rpcEndpoints) =>
         this.db.setRpcEndpoints(chainID, rpcEndpoints),
       removeChain: (chainID) => this.db.removeEVMNetwork(chainID),
@@ -460,7 +479,7 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     const rpcEndpointConfigs = await this.db.getAllRpcEndpoints()
-    const customRpcUrls = await this.db.getAllCustomRpcUrls()
+    await this.networkSettings.loadMethodSpecificEndpoints()
 
     await this.updateSupportedNetworks()
 
@@ -468,10 +487,6 @@ export default class ChainService extends BaseService<Events> {
       Object.fromEntries(
         this.supportedNetworks.map((network) => [network.chainID, 0]),
       ) || {}
-
-    customRpcUrls.forEach((config) =>
-      this.methodSpecificRpcConfigs.set(config.chainID, config),
-    )
 
     this.supportedNetworks.forEach(({ chainID }) =>
       this.providerRegistry.start(
@@ -494,30 +509,35 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
+  /** Sets the endpoints that serve only certain methods on a chain. */
+  async setMethodSpecificEndpoints(
+    chainID: string,
+    rpcUrl: string,
+    config: EndpointConfig,
+  ): Promise<void> {
+    await this.networkSettings.setMethodSpecificEndpoints(
+      chainID,
+      rpcUrl,
+      config,
+    )
+  }
+
+  async clearMethodSpecificEndpoints(chainID: string): Promise<void> {
+    await this.networkSettings.clearMethodSpecificEndpoints(chainID)
+  }
+
+  /** @deprecated Use {@link setMethodSpecificEndpoints}. */
   async addCustomProvider(
     chainID: string,
     rpcUrl: string,
-    customProviderCreator: EndpointConfig,
+    config: EndpointConfig,
   ): Promise<void> {
-    await this.db.addCustomRpcUrl(
-      chainID,
-      rpcUrl,
-      customProviderCreator.methods,
-    )
-    this.methodSpecificRpcConfigs.set(chainID, {
-      chainID,
-      rpcUrls: [rpcUrl],
-      supportedMethods: customProviderCreator.methods ?? [],
-    })
-    this.providerRegistry
-      .providerFor(chainID)
-      ?.setMethodSpecificEndpoints([customProviderCreator])
+    await this.setMethodSpecificEndpoints(chainID, rpcUrl, config)
   }
 
+  /** @deprecated Use {@link clearMethodSpecificEndpoints}. */
   async removeCustomProvider(chainID: string): Promise<void> {
-    await this.db.removeCustomRpcUrl(chainID)
-    this.methodSpecificRpcConfigs.delete(chainID)
-    this.providerRegistry.providerFor(chainID)?.clearMethodSpecificEndpoints()
+    await this.clearMethodSpecificEndpoints(chainID)
   }
 
   /**
@@ -525,7 +545,7 @@ export default class ChainService extends BaseService<Events> {
    * Defaults to ethereum in the case that neither exist.
    */
   async getTrackedNetworks(): Promise<EVMNetwork[]> {
-    if (this.trackedNetworks.length > 0) {
+    if (this.trackedChainIDs.length > 0) {
       return this.trackedNetworks
     }
 
@@ -573,21 +593,15 @@ export default class ChainService extends BaseService<Events> {
       return trackedNetwork
     }
 
-    const networkToTrack = this.supportedNetworks.find((ntwrk) =>
-      sameChainID(ntwrk.chainID, chainID),
-    )
+    const networkToTrack = this.networkSettings.networkFor(chainID)
 
     if (!networkToTrack) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.trackedNetworks.push(networkToTrack)
+    this.trackedChainIDs.push(networkToTrack.chainID)
 
-    const existingSubscription = this.watchedNetworks.find((network) =>
-      sameChainID(network.chainID, networkToTrack.chainID),
-    )
-
-    if (!existingSubscription) {
+    if (!this.watchedChainIDs.has(networkToTrack.chainID)) {
       this.subscribeToNetworkEvents(networkToTrack)
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address),
@@ -1901,7 +1915,7 @@ export default class ChainService extends BaseService<Events> {
    * @param network The EVM network to watch.
    */
   private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
-    this.watchedNetworks.push(network)
+    this.watchedChainIDs.add(network.chainID)
 
     this.pollLatestBlock(network)
     this.pollBlockPrices()
@@ -2045,22 +2059,7 @@ export default class ChainService extends BaseService<Events> {
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter,
   ): Promise<EVMNetwork> {
-    const network = await this.db.addEVMNetwork({
-      chainName: chainInfo.chainName,
-      chainID: chainInfo.chainId,
-      decimals: chainInfo.nativeCurrency.decimals,
-      symbol: chainInfo.nativeCurrency.symbol,
-      assetName: chainInfo.nativeCurrency.name,
-      rpcUrls: chainInfo.rpcUrls,
-      blockExplorerURL: chainInfo.blockExplorerUrl,
-      iconUrl: chainInfo.iconUrl,
-    })
-    await this.updateSupportedNetworks()
-
-    await this.providerRegistry.replaceProvider(
-      chainInfo.chainId,
-      chainInfo.rpcUrls.map((url) => ({ url })),
-    )
+    const network = await this.networkSettings.addCustomChain(chainInfo)
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 
@@ -2070,140 +2069,40 @@ export default class ChainService extends BaseService<Events> {
 
   /**
    * Replaces the stored RPC endpoint list for any known network — built-in
-   * or custom — and rebuilds the network's provider to use it. The list is
-   * used in priority order; endpoints past the first act as fallbacks.
-   *
-   * Only endpoints that are not already part of the chain's stored list are
-   * probed for reachability and chain ID agreement: a pre-existing endpoint
-   * having a transient outage is exactly what runtime failover exists to
-   * tolerate, and must not block an unrelated settings change.
+   * or custom — and swaps in a provider that uses it. Only endpoints that
+   * aren't already stored are checked.
    */
   async setRpcEndpointsForChain(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
   ): Promise<void> {
-    if (rpcEndpoints.length === 0) {
-      throw new Error("At least one RPC endpoint is required")
-    }
-
-    const network = await this.db.getEVMNetworkByChainID(chainID)
-    if (network === undefined) {
-      throw new Error(`No network found for chain ID ${chainID}`)
-    }
-
-    await this.providerRegistry.updateEndpoints(chainID, rpcEndpoints)
-  }
-
-  /**
-   * Checks the endpoints that aren't already stored for the chain; one with a
-   * transient outage shouldn't block an unrelated settings change.
-   */
-  private async verifyNewEndpoints(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-    signal: AbortSignal,
-  ): Promise<void> {
-    const storedUrls = new Set(
-      (await this.db.getRpcEndpointsByChainId(chainID).catch(() => [])).map(
-        ({ url }) => url,
-      ),
-    )
-
-    await this.validateRpcEndpoints(
-      chainID,
-      rpcEndpoints.filter(({ url }) => !storedUrls.has(url)),
-      signal,
-    )
+    await this.networkSettings.setRpcEndpoints(chainID, rpcEndpoints)
   }
 
   async getRpcEndpointsForChain(chainID: string): Promise<RpcEndpoint[]> {
-    return this.db.getRpcEndpointsByChainId(chainID)
+    return this.networkSettings.rpcEndpointsFor(chainID)
   }
 
-  /**
-   * Updates the user-editable settings for any known network — the RPC
-   * endpoint list, the block explorer URL, and, for custom networks only,
-   * the identifying metadata (name, currency details, icon). The chain ID
-   * and family are immutable for every network; metadata is immutable for
-   * built-in networks. Like RPC endpoints, a stored block explorer URL
-   * takes precedence over the hardcoded defaults from then on.
-   */
+  /** See {@link NetworkSettings.updateSettings}. */
   async updateNetworkSettings(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
     blockExplorerUrl: string,
-    metadata?: {
-      chainName: string
-      assetName: string
-      symbol: string
-      decimals: number
-      iconUrl?: string
-    },
+    metadata?: NetworkMetadata,
   ): Promise<EVMNetwork> {
-    if (metadata !== undefined && DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainID)) {
-      throw new Error(
-        `Cannot edit metadata of built-in network with chain ID ${chainID}`,
-      )
-    }
-
-    // Endpoints are probed, persisted, and applied to the provider here, and
-    // only here; the metadata update below deliberately leaves them alone
-    // rather than writing the same list a second time.
-    await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
-
-    if (metadata !== undefined) {
-      await this.db.updateEVMNetwork({
-        chainID,
-        chainName: metadata.chainName,
-        assetName: metadata.assetName,
-        symbol: metadata.symbol,
-        decimals: metadata.decimals,
-        iconUrl: metadata.iconUrl,
-        blockExplorerURL: blockExplorerUrl,
-      })
-    } else {
-      await this.db.setBlockExplorerUrl(chainID, blockExplorerUrl)
-    }
-
-    const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
-    if (updatedNetwork === undefined) {
-      throw new Error(`No network found for chain ID ${chainID}`)
-    }
-
-    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
-      trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
-    )
-
-    await this.updateSupportedNetworks()
-
-    return updatedNetwork
+    return this.networkSettings.updateSettings(chainID, {
+      rpcEndpoints,
+      blockExplorerUrl,
+      metadata,
+    })
   }
 
-  /**
-   * The user-editable RPC endpoints for a chain, alongside any Taho-managed
-   * endpoints (currently Boar, while it remains in service) that also serve
-   * the chain but are not part of the stored, editable list.
-   */
+  /** See {@link NetworkSettings.rpcConfigFor}. */
   async getRpcConfigForChain(chainID: string): Promise<{
     rpcEndpoints: RpcEndpoint[]
     managedRpcEndpoints: RpcEndpoint[]
   }> {
-    const rpcEndpoints = await this.db.getRpcEndpointsByChainId(chainID)
-
-    const boarRpcUrl = BOAR_RPC_URLS[chainID]
-    const managedRpcEndpoints =
-      boarRpcUrl === undefined
-        ? []
-        : [
-            {
-              url: boarRpcUrl,
-              capabilities: BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
-                ? []
-                : [ALCHEMY_CAPABILITY_NAMESPACE],
-            },
-          ]
-
-    return { rpcEndpoints, managedRpcEndpoints }
+    return this.networkSettings.rpcConfigFor(chainID)
   }
 
   /**
@@ -2218,104 +2117,20 @@ export default class ChainService extends BaseService<Events> {
     this.emitter.emit("networkReachability", { chainID, status })
   }
 
-  /**
-   * Verifies that each http(s) RPC endpoint in the given list is reachable
-   * and reports the expected chain ID via eth_chainId. WebSocket endpoints
-   * are not probed. Throws an {@link RpcEndpointValidationError} naming the
-   * offending URL on mismatch or unreachability.
-   */
-  // eslint-disable-next-line class-methods-use-this
-  private async validateRpcEndpoints(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-    signal?: AbortSignal,
-  ): Promise<void> {
-    await Promise.all(
-      rpcEndpoints.map(async ({ url }) => {
-        if (!/^https?:/.test(url)) {
-          return
-        }
-
-        const abortController = new AbortController()
-        // The timeout has to stay armed until the body has been read, not just
-        // until the response headers arrive: `fetch` resolves as soon as the
-        // headers land, and an endpoint that then trickles or stalls its body
-        // would hang `response.json()` — and with it the settings save — for
-        // as long as the socket stays open. Aborting the request aborts the
-        // body read too, which surfaces below as an unreachable endpoint.
-        const timeout = setTimeout(
-          () => abortController.abort(),
-          RPC_PROBE_TIMEOUT,
-        )
-        signal?.addEventListener("abort", () => abortController.abort())
-
-        let reportedChainID: string
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "omit",
-            body: JSON.stringify({
-              jsonrpc: "2.0",
-              id: 1,
-              method: "eth_chainId",
-              params: [],
-            }),
-            signal: abortController.signal,
-          })
-
-          const { result } = await response.json()
-          // JSON-RPC error responses carry no result; treat them — and any
-          // other non-hex result — the same as an unreachable endpoint
-          // rather than reporting a nonsense chain ID.
-          if (
-            typeof result !== "string" ||
-            Number.isNaN(parseInt(result, 16))
-          ) {
-            throw new Error(`invalid eth_chainId result: ${result}`)
-          }
-          reportedChainID = String(parseInt(result, 16))
-        } catch (error) {
-          logger.debug("RPC endpoint probe failed for", url, error)
-          throw new RpcEndpointValidationError({ kind: "unreachable", url })
-        } finally {
-          clearTimeout(timeout)
-        }
-
-        if (!sameChainID(reportedChainID, chainID)) {
-          throw new RpcEndpointValidationError({
-            kind: "chain-mismatch",
-            url,
-            reportedChainID,
-            expectedChainID: chainID,
-          })
-        }
-      }),
-    )
-  }
-
   async removeCustomChain(chainID: string): Promise<void> {
-    this.trackedNetworks = this.trackedNetworks.filter(
-      (network) => network.chainID !== chainID,
+    this.trackedChainIDs = this.trackedChainIDs.filter(
+      (tracked) => !sameChainID(tracked, chainID),
     )
-
-    await this.providerRegistry.removeProvider(chainID)
-
-    this.watchedNetworks = this.watchedNetworks.filter(
-      (network) => !sameChainID(network.chainID, chainID),
-    )
+    this.watchedChainIDs.delete(chainID)
     this.watchedAccounts = this.watchedAccounts.filter(
       (account) => !sameChainID(account.chainID, chainID),
     )
 
-    await this.updateSupportedNetworks()
+    await this.networkSettings.removeCustomChain(chainID)
   }
 
   async updateSupportedNetworks(): Promise<void> {
-    const supportedNetworks = await this.db.getAllEVMNetworks()
-
-    this.supportedNetworks = supportedNetworks
-    this.emitter.emit("supportedNetworks", supportedNetworks)
+    await this.networkSettings.refreshSupportedNetworks()
   }
 
   async queryAccountTokenDetails(
