@@ -1,6 +1,7 @@
 import {
   EIP1193_ERROR_CODES,
   Permission,
+  PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
 import sinon from "sinon"
 import browser from "webextension-polyfill"
@@ -547,6 +548,37 @@ describe("ProviderBridgeService", () => {
         expect(
           await send("eth_sendTransaction", PARAMS.eth_sendTransaction),
         ).toMatchObject({ code: EIP1193_ERROR_CODES.unauthorized.code })
+      })
+
+      it("should request a new connection without a chainID", async () => {
+        let closePopup: (() => void) | undefined
+        jest
+          .spyOn(popupUtils, "default")
+          .mockImplementation((_page, _options, onClose) => {
+            closePopup = onClose
+            return Promise.resolve(WINDOW)
+          })
+        const requests: PermissionRequest[] = []
+        providerBridgeService.emitter.on("requestPermission", (request) => {
+          requests.push(request)
+        })
+
+        const response = send("eth_requestAccounts", ["Test", "favicon.png"])
+        await waitFor(() => expect(closePopup).toBeDefined())
+
+        expect(requests).toEqual([
+          expect.objectContaining({
+            origin,
+            accountAddress: ADDRESS,
+            state: "request",
+          }),
+        ])
+        expect(requests[0]).not.toHaveProperty("chainID")
+
+        closePopup?.()
+        expect(await response).toMatchObject({
+          code: EIP1193_ERROR_CODES.userRejectedRequest.code,
+        })
       })
     })
 

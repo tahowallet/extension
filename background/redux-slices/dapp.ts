@@ -1,6 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
-import { DeniedPermission, Permission } from "@tallyho/provider-bridge-shared"
+import {
+  DeniedPermission,
+  Permission,
+  PermissionRequest,
+} from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
@@ -17,7 +21,7 @@ import {
 import { EVMNetwork } from "../networks"
 
 export type DAppPermissionState = {
-  permissionRequests: { [origin: string]: Permission }
+  permissionRequests: { [origin: string]: PermissionRequest }
   allowed: {
     evm: {
       // @TODO Re-key by origin-chainID-address
@@ -38,9 +42,9 @@ export const initialState: DAppPermissionState = {
 }
 
 export type Events = {
-  requestPermission: Permission
-  grantPermission: Permission
-  denyOrRevokePermission: DeniedPermission
+  requestPermission: PermissionRequest
+  grantPermission: PermissionRequest
+  denyOrRevokePermission: Omit<DeniedPermission, "chainID">
   switchNetworkForOrigin: { origin: string; network: EVMNetwork }
 }
 
@@ -49,7 +53,7 @@ export const emitter = new Emittery<Events>()
 // Async thunk to bubble the permissionGrant action from store to emitter.
 export const grantPermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionGrant",
-  async (permission: Permission) => {
+  async (permission: PermissionRequest) => {
     emitter.emit("grantPermission", {
       ...permission,
     })
@@ -58,9 +62,10 @@ export const grantPermission = createBackgroundAsyncThunk(
 )
 
 // Async thunk to bubble the permissionDenyOrRevoke action from store to emitter.
+// The permission is denied or revoked on every network.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionDenyOrRevoke",
-  async (permission: DeniedPermission) => {
+  async (permission: Omit<DeniedPermission, "chainID">) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
   },
@@ -98,7 +103,7 @@ const dappSlice = createSlice({
     },
     requestPermission: (
       state,
-      { payload: request }: { payload: Permission },
+      { payload: request }: { payload: PermissionRequest },
     ) => {
       if (state.permissionRequests[request.origin]?.state !== "allow") {
         return {
@@ -167,24 +172,31 @@ const dappSlice = createSlice({
     builder
       .addCase(
         grantPermission.fulfilled,
-        (immerState, { payload: permission }: { payload: Permission }) => {
+        (
+          immerState,
+          { payload: permission }: { payload: PermissionRequest },
+        ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
-          // Support all networks regardless of which one initiated grant request
-          const permissions = [
-            ETHEREUM,
-            ROOTSTOCK,
-            POLYGON,
-            OPTIMISM,
-            AVALANCHE,
-            BINANCE_SMART_CHAIN,
-            SEPOLIA,
-            ARBITRUM_SEPOLIA,
-            ARBITRUM_NOVA,
-          ].map((network) => ({
+          const chainIDs =
+            permission.chainID === undefined
+              ? [
+                  ETHEREUM,
+                  ROOTSTOCK,
+                  POLYGON,
+                  OPTIMISM,
+                  AVALANCHE,
+                  BINANCE_SMART_CHAIN,
+                  SEPOLIA,
+                  ARBITRUM_SEPOLIA,
+                  ARBITRUM_NOVA,
+                ].map((network) => network.chainID)
+              : [permission.chainID]
+
+          const permissions = chainIDs.map((chainID) => ({
             ...permission,
-            chainID: network.chainID,
+            chainID,
           }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
@@ -197,7 +209,12 @@ const dappSlice = createSlice({
       )
       .addCase(
         denyOrRevokePermission.fulfilled,
-        (immerState, { payload: permission }: { payload: Permission }) => {
+        (
+          immerState,
+          {
+            payload: permission,
+          }: { payload: Omit<DeniedPermission, "chainID"> },
+        ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 

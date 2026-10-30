@@ -1,6 +1,6 @@
 import React, { ReactElement, useEffect, useState } from "react"
 import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
-import { Permission } from "@tallyho/provider-bridge-shared"
+import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
 import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
 import SharedButton from "../../components/Shared/SharedButton"
@@ -10,7 +10,7 @@ import { useBackgroundSelector } from "../../hooks"
 import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
 
 type DAppConnectPageProps = {
-  permission: Permission
+  permission: PermissionRequest
   currentAccountTotal: AccountTotal
   denyPermission: () => Promise<void>
   grantPermission: () => Promise<void>

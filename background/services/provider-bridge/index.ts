@@ -2,6 +2,7 @@ import browser, { Runtime } from "webextension-polyfill"
 import {
   EXTERNAL_PORT_NAME,
   Permission,
+  PermissionRequest,
   DeniedPermission,
   AllowedQueryParamPage,
   PortRequestEvent,
@@ -41,7 +42,7 @@ import { DAPP_BASE_URL as MEZO_DAPP_BASE_URL } from "../campaign/matsnet-nft"
 import { sameEVMAddress } from "../../lib/utils"
 
 type Events = ServiceLifecycleEvents & {
-  requestPermission: Permission
+  requestPermission: PermissionRequest
   initializeAllowedPages: PermissionMap
   setClaimReferrer: string
   /**
@@ -503,10 +504,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
           EIP1193_ERROR_CODES.userRejectedRequest,
         ).toJSON()
       } else {
-        const permissionRequest: Permission = {
-          key: `${origin}_${accountAddress}_${dAppChainID}`,
+        const permissionRequest: PermissionRequest = {
+          key: `${origin}_${accountAddress}`,
           origin,
-          chainID: dAppChainID,
           faviconUrl: faviconUrl || tab?.favIconUrl || "", // if favicon was not found on the website then try with browser's `tab`
           title,
           state: "request",
@@ -677,7 +677,9 @@ export default class ProviderBridgeService extends BaseService<Events> {
     })
   }
 
-  async requestPermission(permissionRequest: Permission): Promise<unknown> {
+  async requestPermission(
+    permissionRequest: PermissionRequest,
+  ): Promise<unknown> {
     this.emitter.emit("requestPermission", permissionRequest)
 
     const permissionPromise = new Promise((resolve) => {

@@ -9,6 +9,15 @@ export type Permission = {
   accountAddress: string
 }
 
+/**
+ * A permission the user is asked to grant. Without a chainID, it's for a new
+ * connection, which covers every network.
+ */
+export type PermissionRequest = Omit<Permission, "chainID"> & {
+  /** Set when the request is for this network alone. */
+  chainID?: string
+}
+
 export type DeniedPermission = Permission & { state: "deny" }
 
 export type WindowResponseEvent = {
