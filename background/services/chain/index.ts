@@ -78,40 +78,11 @@ import { ISLAND_NETWORK } from "../island/contracts"
 import ProviderRegistry from "./provider-registry"
 import NonceAllocator from "./nonce-allocator"
 import NetworkSettings, { NetworkMetadata } from "./network-settings"
+import AssetTransferScanner from "./asset-transfer-scanner"
 import TransactionTracker, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "./transaction-tracker"
-
-// The number of blocks to query at a time for historic asset transfers.
-// Unfortunately there's no "right" answer here that works well across different
-// people's account histories. If the number is too large relative to a
-// frequently used account, the first call will time out and waste provider
-// resources... resulting in an exponential backoff. If it's too small,
-// transaction history will appear "slow" to show up for newly imported
-// accounts.
-const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
-
-// The number of blocks to query at a time on networks with no Alchemy-capable
-// endpoint, where asset transfers are discovered by scanning ERC-20 `Transfer`
-// logs (see `lib/erc20-transfer-logs.ts`) instead of by a single enhanced-API
-// call.
-//
-// The two paths price block ranges completely differently. Alchemy's transfer
-// API answers any range in one request, so the range width above costs the
-// same as a narrow one. `eth_getLogs`, on the other hand, is capped per
-// request by every endpoint that serves it---10,000 blocks is a common
-// limit---so a range wider than the cap is rejected, halved, and retried until
-// the pieces fit, turning one logical lookup into dozens or thousands of
-// requests. Keeping each scan comfortably under the usual caps keeps it at one
-// request per direction, and the recurring recent/historic alarms below are
-// what extend coverage over time.
-const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
-
-// The number of blocks before the current block height to start looking for
-// asset transfers. This is important to allow nodes like Erigon and
-// OpenEthereum with tracing to catch up to where we are.
-const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
 
 // Add a little bit of wiggle room
 const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
@@ -119,12 +90,6 @@ const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
 const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
 
 const GAS_POLLING_PERIOD = 1 // 1 minute
-
-// Maximum number of transactions with priority.
-// Transactions that will be retrieved before others for one account.
-// Transactions with priority for individual accounts will keep the order of loading
-// from adding accounts.
-const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -258,6 +223,8 @@ export default class ChainService extends BaseService<Events> {
 
   private transactionTracker: TransactionTracker
 
+  private assetTransferScanner: AssetTransferScanner
+
   /** @deprecated Kept for tests; see {@link TransactionTracker}. */
   private get transactionsToRetrieve(): PriorityQueuedTxToRetrieve[] {
     return this.transactionTracker.transactionsToRetrieve
@@ -311,7 +278,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 60,
         },
         handler: () => {
-          this.handleHistoricAssetTransferAlarm()
+          this.assetTransferScanner.scanHistoricTransfers()
         },
         runAtStart: false,
       },
@@ -320,7 +287,10 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1.5,
         },
         handler: () => {
-          this.handleRecentIncomingAssetTransferAlarm(true)
+          this.scanRecentTransfers({
+            incomingOnly: true,
+            activeAccountsOnly: true,
+          })
         },
       },
       forceRecentAssetTransfers: {
@@ -328,7 +298,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm()
+          this.scanRecentTransfers()
         },
       },
       recentAssetTransfers: {
@@ -336,7 +306,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 15,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm(true)
+          this.scanRecentTransfers({ activeAccountsOnly: true })
         },
       },
       blockPrices: {
@@ -369,6 +339,22 @@ export default class ChainService extends BaseService<Events> {
           .map(({ address }) => normalizeEVMAddress(address))
         this.emitter.emit("transaction", { transaction, forAccounts })
       },
+    })
+
+    this.assetTransferScanner = new AssetTransferScanner({
+      db,
+      assetData: this.assetData,
+      getBlockHeight: (network) => this.getBlockHeight(network),
+      accountsToTrack: ({ activeAccountsOnly }) =>
+        this.getAccountsToTrack(activeAccountsOnly),
+      isSupported: (network) =>
+        this.networkSettings.networkFor(network.chainID) !== undefined,
+      supportsAlchemyMethods: (network) =>
+        this.providerForNetwork(network)?.supportsAlchemyMethods ?? false,
+      enqueueTransactionLookup: (network, hash, firstSeen, priority) =>
+        this.enqueueTransactionLookup(network, hash, firstSeen, priority),
+      emitAssetTransfers: (addressNetwork, assetTransfers) =>
+        this.emitter.emit("assetTransfers", { addressNetwork, assetTransfers }),
     })
 
     this.networkSettings = new NetworkSettings(
@@ -1034,16 +1020,18 @@ export default class ChainService extends BaseService<Events> {
       )
     })
     if (source !== SignerImportSource.internal) {
-      this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
-        logger.error(
-          "chainService/addAccountToTrack: Error loading historic asset transfers for",
-          {
-            address: addressNetwork.address,
-            chainID: addressNetwork.network.chainID,
-          },
-          e,
-        )
-      })
+      this.assetTransferScanner
+        .scanHistoricTransfersFor(addressNetwork)
+        .catch((e) => {
+          logger.error(
+            "chainService/addAccountToTrack: Error loading historic asset transfers for",
+            {
+              address: addressNetwork.address,
+              chainID: addressNetwork.network.chainID,
+            },
+            e,
+          )
+        })
     }
   }
 
@@ -1402,158 +1390,17 @@ export default class ChainService extends BaseService<Events> {
    * PRIVATE METHODS *
    * **************** */
 
-  /**
-   * Load recent asset transfers from an account on a particular network.
-   *
-   * @param addressNetwork the address and network whose asset transfers we need
-   * @param incomingOnly if true, only fetch asset transfers received by this
-   *        address
-   */
+  /** Scans recent blocks for transfers; see {@link AssetTransferScanner}. */
+  private async scanRecentTransfers(
+    options: { incomingOnly?: boolean; activeAccountsOnly?: boolean } = {},
+  ): Promise<void> {
+    await this.assetTransferScanner.scanRecentTransfers(options)
+  }
+
   private async loadRecentAssetTransfers(
     addressNetwork: AddressOnNetwork,
-    incomingOnly = false,
   ): Promise<void> {
-    const blockHeight =
-      (await this.getBlockHeight(addressNetwork.network)) -
-      BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    // A wide window is one enhanced-API call, but many `eth_getLogs` calls; see
-    // BLOCKS_PER_TRANSFER_LOG_SCAN.
-    const blocksToLookBack = this.supportsAlchemy(addressNetwork.network)
-      ? BLOCKS_FOR_TRANSACTION_HISTORY
-      : BLOCKS_PER_TRANSFER_LOG_SCAN
-    const fromBlock = Math.max(0, blockHeight - blocksToLookBack)
-
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight),
-        incomingOnly,
-      )
-    } catch (err) {
-      logger.error(
-        "Failed loaded recent assets, retrying with shorter block range",
-        addressNetwork,
-        err,
-      )
-    }
-
-    return Promise.resolve()
-  }
-
-  /**
-   * Continue to load historic asset transfers, finding the oldest lookup and
-   * searching for asset transfers before that block.
-   *
-   * @param addressNetwork The account whose asset transfers are being loaded.
-   */
-  private async loadHistoricAssetTransfers(
-    addressNetwork: AddressOnNetwork,
-  ): Promise<void> {
-    const oldest =
-      (await this.db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
-      BigInt(await this.getBlockHeight(addressNetwork.network))
-
-    if (oldest !== 0n) {
-      // On networks that answer transfer lookups in a single enhanced-API call,
-      // ask for everything that is left in one go. On networks scanned via
-      // `eth_getLogs`, walk backwards one bounded chunk per invocation instead;
-      // each chunk is recorded by `loadAssetTransfers` below, so the oldest
-      // lookup moves back a chunk at a time and this alarm keeps extending
-      // coverage on later runs rather than asking for all of history at once.
-      const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
-      const startBlock =
-        this.supportsAlchemy(addressNetwork.network) || oldest <= chunkSize
-          ? 0n
-          : oldest - chunkSize
-
-      await this.loadAssetTransfers(addressNetwork, startBlock, oldest)
-    }
-  }
-
-  /**
-   * True if the network's provider can serve Alchemy's enhanced APIs, which
-   * includes the transfer lookups used to discover asset transfers. When false,
-   * transfers are discovered by scanning ERC-20 `Transfer` logs, which is
-   * dramatically more sensitive to how many blocks a lookup covers.
-   */
-  private supportsAlchemy(network: EVMNetwork): boolean {
-    return this.providerForNetwork(network)?.supportsAlchemyMethods ?? false
-  }
-
-  /**
-   * Load asset transfers from an account on a particular network within a
-   * particular block range. Emit events for any transfers found, and look up
-   * any related transactions and blocks.
-   *
-   * @param addressOnNetwork the address and network whose asset transfers we need
-   */
-  private async loadAssetTransfers(
-    addressOnNetwork: AddressOnNetwork,
-    startBlock: bigint,
-    endBlock: bigint,
-    incomingOnly = false,
-  ): Promise<void> {
-    if (
-      this.supportedNetworks.every(
-        (network) => network.chainID !== addressOnNetwork.network.chainID,
-      )
-    ) {
-      logger.error(
-        `Asset transfer check not supported on network ${JSON.stringify(
-          addressOnNetwork.network,
-        )}`,
-      )
-    }
-
-    const assetTransfers = await this.assetData.getAssetTransfers(
-      addressOnNetwork,
-      Number(startBlock),
-      Number(endBlock),
-      incomingOnly,
-    )
-
-    await this.db.recordAccountAssetTransferLookup(
-      addressOnNetwork,
-      startBlock,
-      endBlock,
-    )
-
-    this.emitter.emit("assetTransfers", {
-      addressNetwork: addressOnNetwork,
-      assetTransfers,
-    })
-
-    const firstSeen = Date.now()
-
-    const savedTransactionHashes = new Set(
-      await this.db.getAllSavedTransactionHashes(),
-    )
-    /// send all new tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a, idx) => {
-      if (!savedTransactionHashes.has(a.txHash)) {
-        this.enqueueTransactionLookup(
-          addressOnNetwork.network,
-          a.txHash,
-          firstSeen,
-          idx <= TRANSACTIONS_WITH_PRIORITY_MAX_COUNT ? 0 : 1,
-        )
-      }
-    })
-  }
-
-  /**
-   * Check for any incoming asset transfers involving tracked accounts.
-   */
-  private async handleRecentIncomingAssetTransferAlarm(
-    onlyActiveAccounts = false,
-  ): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
-    await Promise.allSettled(
-      accountsToTrack.map(async (addressNetwork) =>
-        this.loadRecentAssetTransfers(addressNetwork, true),
-      ),
-    )
+    await this.assetTransferScanner.scanRecentTransfersFor(addressNetwork)
   }
 
   private isCurrentlyActiveChainID(chainID: string): boolean {
@@ -1567,29 +1414,6 @@ export default class ChainService extends BaseService<Events> {
     return (
       Date.now() <
       this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
-    )
-  }
-
-  /**
-   * Check for any incoming or outgoing asset transfers involving tracked accounts.
-   */
-  private async handleRecentAssetTransferAlarm(
-    onlyActiveAccounts = false,
-  ): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
-
-    await Promise.allSettled(
-      accountsToTrack.map((addressNetwork) =>
-        this.loadRecentAssetTransfers(addressNetwork),
-      ),
-    )
-  }
-
-  private async handleHistoricAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack()
-
-    await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an)),
     )
   }
 
