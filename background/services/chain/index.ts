@@ -33,6 +33,7 @@ import {
   OPTIMISM,
   NETWORK_BY_CHAIN_ID,
   MINUTE,
+  CHAINS_WITH_MEMPOOL,
   EIP_1559_COMPLIANT_CHAIN_IDS,
   SECOND,
   ARBITRUM_ONE,
@@ -124,6 +125,12 @@ const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
 // mempool) reasons.
 const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
 
+// How long a transaction can go unseen before it counts as dropped. A
+// sequencer includes or rejects a transaction within a block or two; a public
+// mempool needs time to propagate and lagging endpoints time to catch up.
+export const MISSING_TRANSACTION_GRACE_MS = 2 * MINUTE
+export const MEMPOOL_MISSING_TRANSACTION_GRACE_MS = 15 * MINUTE
+
 const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
 
 const GAS_POLLING_PERIOD = 1 // 1 minute
@@ -181,6 +188,8 @@ export type QueuedTxToRetrieve = {
   network: EVMNetwork
   hash: HexString
   firstSeen: UNIXTime
+  /** When a lookup first found nothing, if the latest one did. */
+  missingSince?: UNIXTime
 }
 /**
  * The queue object contains transaction and priority.
@@ -462,12 +471,20 @@ export default class ChainService extends BaseService<Events> {
             this.db
               .getNetworkPendingTransactions(network)
               .then((pendingTransactions) => {
-                pendingTransactions.forEach(({ hash, firstSeen }) => {
-                  logger.debug(
-                    `Queuing pending transaction ${hash} for status lookup.`,
-                  )
-                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
-                })
+                pendingTransactions.forEach(
+                  ({ hash, firstSeen, missingSince }) => {
+                    logger.debug(
+                      `Queuing pending transaction ${hash} for status lookup.`,
+                    )
+                    this.queueTransactionHashToRetrieve(
+                      network,
+                      hash,
+                      firstSeen,
+                      0,
+                      missingSince,
+                    )
+                  },
+                )
               })
               .catch((e) => {
                 logger.error(e)
@@ -1138,15 +1155,17 @@ export default class ChainService extends BaseService<Events> {
    *        seen; used to treat transactions as dropped after a certain amount
    *        of time.
    * @param priority The priority of the transaction in the queue to be retrieved
+   * @param missingSince When a lookup first found nothing, if it did.
    */
   queueTransactionHashToRetrieve(
     network: EVMNetwork,
     txHash: HexString,
     firstSeen: UNIXTime,
     priority = 0,
+    missingSince?: UNIXTime,
   ): void {
     const newElement: PriorityQueuedTxToRetrieve = {
-      transaction: { hash: txHash, network, firstSeen },
+      transaction: { hash: txHash, network, firstSeen, missingSince },
       priority,
     }
     const seen = this.isTransactionHashQueued(network, txHash)
@@ -1445,53 +1464,75 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Retrieves a confirmed or unconfirmed transaction's details from chain.
-   * If found, then returns the transaction result received from chain.
-   * If the tx hash is not found on chain, then remove it from the lookup queue
-   * and mark it as dropped in the db. This will filter and fix those situations
-   * when our records differ from what the chain/mempool sees. This can happen in
-   * case of unstable networking conditions.
+   * Looks a transaction up on chain; `null` if no endpoint knows it.
    *
-   * @param network
-   * @param hash
+   * @deprecated It no longer cancels anything; a transaction is dropped only
+   * once it has been missing for the grace period.
    */
   async getOrCancelTransaction(
     network: EVMNetwork,
     hash: string,
   ): Promise<TransactionResponse | null | undefined> {
-    const provider = this.providerForNetworkOrThrow(network)
-    const result = await provider.getTransaction(hash)
+    return this.providerForNetworkOrThrow(network).getTransaction(hash)
+  }
 
-    if (!result) {
-      logger.warn(
-        `Tx hash ${hash} is found in our local registry but not on chain.`,
+  /**
+   * Marks a transaction dropped and releases its nonce, once it has been
+   * missing past its grace period or its lookup lifetime.
+   */
+  private async markTransactionDropped(
+    network: EVMNetwork,
+    hash: string,
+  ): Promise<void> {
+    logger.warn(
+      `Tx hash ${hash} is found in our local registry but not on chain.`,
+    )
+
+    this.removeTransactionHashFromQueue(network, hash)
+    this.providerForNetwork(network)?.off(hash)
+
+    const savedTx = await this.db.getTransaction(network, hash)
+    if (savedTx && !("status" in savedTx)) {
+      await this.saveTransaction(
+        {
+          ...savedTx,
+          status: 0, // dropped status
+          error: "Transaction was in our local db but was not found on chain.",
+          blockHash: null,
+          blockHeight: null,
+        },
+        "boar",
       )
 
-      this.removeTransactionHashFromQueue(network, hash)
-      // Let's clean up the subscriptions
-      this.providerForNetwork(network)?.off(hash)
+      this.releaseEVMTransactionNonce(savedTx)
+    }
+  }
 
-      const savedTx = await this.db.getTransaction(network, hash)
-      if (savedTx && !("status" in savedTx)) {
-        // Let's see if we have the tx in the db, and if yes let's mark it as dropped.
-        this.saveTransaction(
-          {
-            ...savedTx,
-            status: 0, // dropped status
-            error:
-              "Transaction was in our local db but was not found on chain.",
-            blockHash: null,
-            blockHeight: null,
-          },
-          "boar",
-        )
+  /**
+   * Requeues a lookup that found nothing, or marks the transaction dropped
+   * once it has been missing for longer than its chain's grace period.
+   */
+  private async handleMissingTransaction(
+    { network, hash, firstSeen, missingSince }: QueuedTxToRetrieve,
+    now: UNIXTime,
+  ): Promise<void> {
+    const since = missingSince ?? now
+    const graceMs = CHAINS_WITH_MEMPOOL.has(network.chainID)
+      ? MEMPOOL_MISSING_TRANSACTION_GRACE_MS
+      : MISSING_TRANSACTION_GRACE_MS
 
-        // Let's also release the nonce from our bookkeeping.
-        await this.releaseEVMTransactionNonce(savedTx)
-      }
+    if (
+      now - since > graceMs ||
+      now > firstSeen + TRANSACTION_CHECK_LIFETIME_MS
+    ) {
+      await this.markTransactionDropped(network, hash)
+      return
     }
 
-    return result
+    if (missingSince === undefined) {
+      await this.db.setTransactionMissingSince(network, hash, since)
+    }
+    this.queueTransactionHashToRetrieve(network, hash, firstSeen, 0, since)
   }
 
   /* *****************
@@ -1727,16 +1768,18 @@ export default class ChainService extends BaseService<Events> {
    * @param network the EVM network we're interested in
    * @param transaction the confirmed transaction we're interested in
    */
-  private async retrieveTransaction({
-    network,
-    hash,
-    firstSeen,
-  }: QueuedTxToRetrieve): Promise<void> {
+  private async retrieveTransaction(queued: QueuedTxToRetrieve): Promise<void> {
+    const { network, hash, firstSeen, missingSince } = queued
     try {
       const result = await this.getOrCancelTransaction(network, hash)
 
       if (!result) {
+        await this.handleMissingTransaction(queued, Date.now())
         return
+      }
+
+      if (missingSince !== undefined) {
+        await this.db.setTransactionMissingSince(network, hash, undefined)
       }
 
       const transaction = transactionFromEthersTransaction(result, network)
@@ -1763,7 +1806,13 @@ export default class ChainService extends BaseService<Events> {
     } catch (error) {
       logger.error(`Error retrieving transaction ${hash}`, error)
       if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
+        this.queueTransactionHashToRetrieve(
+          network,
+          hash,
+          firstSeen,
+          0,
+          missingSince,
+        )
       } else {
         logger.warn(
           `Transaction ${hash} is too old to keep looking for it; treating ` +

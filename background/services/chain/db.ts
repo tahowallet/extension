@@ -29,6 +29,8 @@ import { FeatureFlags, isEnabled } from "../../features"
 export type Transaction = AnyEVMTransaction & {
   dataSource: "boar" | "local"
   firstSeen: UNIXTime
+  /** When lookups started finding nothing, while they still do. */
+  missingSince?: UNIXTime
 }
 
 type AccountAssetTransferLookup = {
@@ -747,7 +749,7 @@ export class ChainDatabase extends Dexie {
    */
   async getNetworkPendingTransactions(
     network: Network,
-  ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
+  ): Promise<Transaction[]> {
     const transactions = await this.getTransactionsForNetworkQuery(network)
     return transactions
       .filter(
@@ -756,6 +758,25 @@ export class ChainDatabase extends Dexie {
           (transaction.blockHash === null || transaction.blockHeight === null),
       )
       .toArray()
+  }
+
+  /** Records when lookups started missing a stored transaction, or clears it. */
+  async setTransactionMissingSince(
+    network: Network,
+    hash: string,
+    missingSince: UNIXTime | undefined,
+  ): Promise<void> {
+    await this.chainTransactions
+      .where("[hash+network.name]")
+      .equals([hash, network.name])
+      .modify((transaction) => {
+        if (missingSince === undefined) {
+          delete transaction.missingSince
+        } else {
+          // oxlint-disable-next-line no-param-reassign
+          transaction.missingSince = missingSince
+        }
+      })
   }
 
   async getBlock(
