@@ -169,6 +169,77 @@ describe("Safe transaction enrichment", () => {
       })
     })
 
+    describe("with a token the user hid", () => {
+      const setUpWithHiddenToken = async ({
+        stillCached,
+      }: {
+        stillCached: boolean
+      }) => {
+        const services = await setUp()
+        sandbox
+          .stub(services.chainService, "providerForNetworkOrThrow")
+          .returns({ getCode: async () => "0x" } as never)
+        const getTokenMetadata = sandbox
+          .stub(services.chainService.assetData, "getTokenMetadata")
+          .resolves({
+            contractAddress: TOKEN,
+            homeNetwork: ETHEREUM,
+            symbol: "MYST",
+            name: "Mystery",
+            decimals: 0,
+          })
+
+        const token = {
+          contractAddress: TOKEN,
+          homeNetwork: ETHEREUM,
+          symbol: "MYST",
+          name: "Mystery",
+          decimals: 0,
+        }
+        await services.indexingService.addOrUpdateCustomAsset(token)
+        await services.indexingService.hideAsset(token)
+        if (stillCached) {
+          // As when the token is also on a token list: hiding it doesn't drop
+          // it from the asset cache.
+          sandbox
+            .stub(services.indexingService, "getCachedAssets")
+            .returns([ETHEREUM.baseAsset, token])
+        }
+
+        const annotate = (resolveUntrackedAssets: boolean) =>
+          annotationsFromLogs(
+            services.chainService,
+            services.indexingService,
+            services.nameService,
+            [tokenTransferLog],
+            ETHEREUM,
+            2,
+            Date.now(),
+            undefined,
+            { additionalRelevantAddresses: [SAFE], resolveUntrackedAssets },
+          )
+        return { annotate, getTokenMetadata }
+      }
+
+      it("doesn't bring it back through the untracked-token lookup", async () => {
+        const { annotate, getTokenMetadata } = await setUpWithHiddenToken({
+          stillCached: false,
+        })
+
+        expect(await annotate(true)).toEqual([])
+        expect(getTokenMetadata.called).toBe(false)
+      })
+
+      it("leaves it out even while it's in the asset cache", async () => {
+        const { annotate } = await setUpWithHiddenToken({ stillCached: true })
+
+        expect(await annotate(true)).toEqual([])
+        // Mined-transaction annotation, which doesn't resolve untracked
+        // tokens, is unchanged.
+        expect(await annotate(false)).toHaveLength(1)
+      })
+    })
+
     it("skips a token whose metadata can't be read", async () => {
       const { chainService, indexingService, nameService } = await setUp()
       sandbox

@@ -1,4 +1,5 @@
 import React from "react"
+import userEvent from "@testing-library/user-event"
 import { ETHEREUM } from "@tallyho/tally-background/constants"
 import {
   createSmartContractAsset,
@@ -169,7 +170,7 @@ describe("SimulatedBalanceChanges", () => {
     expect(ui.getByText("pool.eth")).toBeInTheDocument()
   })
 
-  it("marks tokens the wallet doesn't track", () => {
+  it("marks tokens the wallet doesn't track", async () => {
     const untracked = {
       ...transfer(USER, POOL, "USDC", "100"),
       untrackedAsset: true,
@@ -181,7 +182,13 @@ describe("SimulatedBalanceChanges", () => {
       />,
     )
 
-    expect(ui.getByText("Untracked token")).toBeInTheDocument()
+    // An icon sized to the row's 14px text, not a text label.
+    const icon = ui.getByRole("img", { name: "Untracked token" })
+    expect(ui.queryByText("Untracked token")).toBeNull()
+    expect(icon.className).toMatch(/\bicon\b/)
+
+    await userEvent.hover(icon)
+    expect(ui.getByText(/You don't track this token/)).toBeInTheDocument()
   })
 
   it("shows an empty account section without transfers involving the user", () => {

@@ -3,6 +3,8 @@ import type { AssetTransferForAddress } from "@tallyho/tally-background/services
 import { useTranslation } from "react-i18next"
 import SharedAddress from "../../Shared/SharedAddress"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
+import SharedIcon from "../../Shared/SharedIcon"
+import SharedTooltip from "../../Shared/SharedTooltip"
 
 type BalanceChangesListProps = {
   label: string
@@ -55,12 +57,23 @@ export default function BalanceChangesList({
               </span>
               {transfer.assetSymbol}
               {transfer.untrackedAsset && (
-                <span
-                  className="simulated_changes_untracked"
-                  title={t("untrackedTokenExplanation")}
+                <SharedTooltip
+                  width={200}
+                  verticalPosition="top"
+                  horizontalPosition="right"
+                  style={{ margin: "-5px 0" }}
+                  IconComponent={() => (
+                    <SharedIcon
+                      icon="icons/s/notif-attention.svg"
+                      // Sized to the 14px row text it sits in.
+                      width={14}
+                      color="var(--attention)"
+                      ariaLabel={t("untrackedToken")}
+                    />
+                  )}
                 >
-                  {t("untrackedToken")}
-                </span>
+                  {t("untrackedTokenExplanation")}
+                </SharedTooltip>
               )}
             </div>
             <div className="simulated_changes_counterparty">
@@ -107,10 +120,6 @@ export default function BalanceChangesList({
           gap: 5px;
           color: var(--green-20);
           min-width: 0;
-        }
-        .simulated_changes_untracked {
-          color: var(--attention);
-          font-size: 12px;
         }
         .simulated_changes_amount.in {
           color: var(--success);
