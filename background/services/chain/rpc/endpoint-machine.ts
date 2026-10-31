@@ -11,6 +11,8 @@ export type EndpointHealthOptions = {
   cooldownBackoffMultiplier: number
   /** How long a WebSocket gets to open. */
   socketOpenTimeoutMs: number
+  /** How long a probe, including opening its socket, gets to answer. */
+  probeTimeoutMs: number
 }
 
 export const DEFAULT_ENDPOINT_HEALTH_OPTIONS: EndpointHealthOptions = {
@@ -20,6 +22,7 @@ export const DEFAULT_ENDPOINT_HEALTH_OPTIONS: EndpointHealthOptions = {
   maxCooldownMs: 2 * 60_000,
   cooldownBackoffMultiplier: 2,
   socketOpenTimeoutMs: 10_000,
+  probeTimeoutMs: 20_000,
 }
 
 const SOCKET_OPEN = 1
@@ -75,10 +78,13 @@ type ObservableSocket = {
   removeEventListener?: (type: string, listener: () => void) => void
 }
 
-/** Resolves once a WebSocket transport is open; plain transports already are. */
+/**
+ * Resolves once a WebSocket transport is open; plain transports already are.
+ * The caller times it out.
+ */
 function socketOpened(
   transport: JsonRpcProvider,
-  timeoutMs: number,
+  signal: AbortSignal,
 ): Promise<void> {
   if (isOpenSocket(transport)) {
     return Promise.resolve()
@@ -91,10 +97,10 @@ function socketOpened(
 
   return new Promise((resolve, reject) => {
     const settle = (error?: Error) => {
-      clearTimeout(timeout)
       socket.removeEventListener?.("open", opened)
       socket.removeEventListener?.("close", closed)
       socket.removeEventListener?.("error", closed)
+      signal.removeEventListener("abort", cancelled)
       if (error === undefined) {
         resolve()
       } else {
@@ -103,13 +109,11 @@ function socketOpened(
     }
     const opened = () => settle()
     const closed = () => settle(new Error("Socket closed while opening"))
-    const timeout = setTimeout(
-      () => settle(new Error("Socket took too long to open")),
-      timeoutMs,
-    )
+    const cancelled = () => settle(new Error("Probe cancelled"))
     socket.addEventListener?.("open", opened)
     socket.addEventListener?.("close", closed)
     socket.addEventListener?.("error", closed)
+    signal.addEventListener("abort", cancelled, { once: true })
   })
 }
 
@@ -162,7 +166,7 @@ export const endpointMachine = setup({
         if (transport === undefined) {
           throw new Error("No transport to probe")
         }
-        await socketOpened(transport, context.options.socketOpenTimeoutMs)
+        await socketOpened(transport, signal)
         await transport.send("eth_blockNumber", [])
         if (signal.aborted) {
           throw new Error("Probe cancelled")
@@ -173,6 +177,7 @@ export const endpointMachine = setup({
   delays: {
     cooldown: ({ context }) => context.cooldownMs,
     socketOpenTimeout: ({ context }) => context.options.socketOpenTimeoutMs,
+    probeTimeout: ({ context }) => context.options.probeTimeoutMs,
   },
   guards: {
     /** Ignores news from a socket that has since been replaced. */
@@ -314,14 +319,29 @@ export const endpointMachine = setup({
       },
     },
     Probing: {
-      invoke: {
-        src: "probe",
-        input: ({ context }) => ({ context }),
-        onDone: { target: "Ready", actions: "resetCooldown" },
-        onError: { target: "CoolingDown", actions: "extendCooldown" },
+      invoke: [
+        {
+          src: "probe",
+          input: ({ context }) => ({ context }),
+          onDone: { target: "Ready", actions: "resetCooldown" },
+          onError: { target: "CoolingDown", actions: "extendCooldown" },
+        },
+        {
+          // Ethers never settles a request on a socket that closes under it.
+          src: "watchSocket",
+          input: ({ context }) => ({ transport: context.transport }),
+        },
+      ],
+      after: {
+        probeTimeout: { target: "CoolingDown", actions: "extendCooldown" },
       },
       on: {
         REQUEST_SUCCEEDED: { target: "Ready", actions: "resetCooldown" },
+        SOCKET_CLOSED: {
+          guard: "isCurrentSocket",
+          target: "CoolingDown",
+          actions: "extendCooldown",
+        },
       },
     },
     Disposed: {

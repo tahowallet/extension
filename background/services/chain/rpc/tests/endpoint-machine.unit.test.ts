@@ -64,6 +64,7 @@ const OPTIONS = {
   maxCooldownMs: 120_000,
   cooldownBackoffMultiplier: 2,
   socketOpenTimeoutMs: 10_000,
+  probeTimeoutMs: 20_000,
 }
 
 function harness(makeTransport: () => FakeTransport = pollingTransport) {
@@ -472,6 +473,55 @@ describe("endpointMachine", () => {
       expect(endpoint.state()).toBe("Disposed")
       expect(endpoint.transports).toHaveLength(1)
       expect(endpoint.transports[0].removeAllListeners.called).toBe(true)
+    })
+
+    it("cools down for longer when the probe doesn't answer in time", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.clock.increment(19_999)
+      expect(endpoint.state()).toBe("Probing")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(30_000)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("cools down for longer when the socket closes under the probe", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+      expect(endpoint.state()).toBe("Probing")
+
+      endpoint.transports[0].websocket?.close()
+
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(29_999)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("gives a replacement socket until the probe timeout to open", async () => {
+      let built = 0
+      const endpoint = harness(() => {
+        built += 1
+        return socketTransport(built === 1 ? OPEN : CONNECTING)
+      })
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.fail(5)
+      endpoint.transports[0].websocket!.readyState = CLOSED
+      endpoint.clock.increment(15_000)
+      await flush()
+
+      expect(endpoint.transports).toHaveLength(2)
+      endpoint.clock.increment(19_999)
+      expect(endpoint.state()).toBe("Probing")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("CoolingDown")
     })
 
     it("replaces a closed socket and waits for it to open before probing", async () => {
