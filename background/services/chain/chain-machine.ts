@@ -158,6 +158,7 @@ export const chainMachine = setup({
       event.type === "REACHABILITY_CHANGED" && event.status === "reachable",
     skipsVerification: ({ event }) =>
       event.type === "UPDATE_ENDPOINTS" && !event.verifyAndSave,
+    hasQueuedRemoval: ({ context }) => context.removalReplies.length > 0,
     queuedUpdateSkipsVerification: ({ context }) =>
       context.queuedUpdate !== undefined && !context.queuedUpdate.verifyAndSave,
   },
@@ -402,7 +403,15 @@ export const chainMachine = setup({
           context,
           endpoints: context.update?.endpoints ?? [],
         }),
-        onDone: "SwappingProvider",
+        onDone: [
+          // A provider built only to be destroyed would be announced first.
+          {
+            guard: "hasQueuedRemoval",
+            target: "RemovingChain",
+            actions: "failUpdate",
+          },
+          { target: "SwappingProvider" },
+        ],
         onError: { target: "Live", actions: "failUpdate" },
       },
       on: {

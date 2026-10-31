@@ -541,7 +541,7 @@ describe("chainMachine", () => {
       expect(chain.verifications[1].endpoints).toEqual(SECOND)
     })
 
-    it("removes the chain after the swap when asked to while saving", async () => {
+    it("removes the chain without swapping when asked to while saving", async () => {
       const chain = await savingHarness()
 
       chain.update("second", SECOND)
@@ -552,9 +552,11 @@ describe("chainMachine", () => {
       await flush()
 
       expect(chain.state()).toBe("RemovingChain")
-      expect(chain.providers.every(({ isDestroyed }) => isDestroyed)).toBe(true)
+      expect(chain.providers).toHaveLength(1)
+      expect(chain.providers[0].isDestroyed).toBe(true)
+      expect(chain.emitted).toEqual([])
       expect(chain.outcomes).toEqual([
-        "first: resolved",
+        "first: rejected Chain 1 was removed",
         "second: rejected Chain 1 was removed",
       ])
     })
