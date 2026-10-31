@@ -129,6 +129,11 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     const walkConfigs = endpointConfigs.filter(
       ({ kind }) => kind !== "method-specific",
     )
+    if (walkConfigs.length === 0) {
+      throw new Error(
+        `No RPC endpoints to build a provider for chain ${chainID}`,
+      )
+    }
 
     // The first transport is built up front, since Ethers needs its
     // connection; the first endpoint takes it over.

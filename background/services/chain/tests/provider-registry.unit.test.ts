@@ -80,6 +80,22 @@ describe("ProviderRegistry", () => {
     )
   })
 
+  it("throws, and keeps no chain, when a provider can't be built", () => {
+    const registry = new ProviderRegistry({
+      createProvider: () => {
+        throw new Error("No RPC endpoints to build a provider for chain 1")
+      },
+      verifyEndpoints: async () => {},
+      saveEndpoints: async () => {},
+      removeChain: async () => {},
+      onReachabilityChange: () => {},
+    })
+
+    expect(() => registry.start("1", [])).toThrow("No RPC endpoints")
+    expect(registry.providerFor("1")).toBeUndefined()
+    expect(registry.providersByChainID()).toEqual({})
+  })
+
   it("throws when a provider is required for an unknown chain", () => {
     const { registry } = harness()
 

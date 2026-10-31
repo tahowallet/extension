@@ -262,6 +262,15 @@ describe("SerialFallbackProvider provider reuse", () => {
     await expect(inFlight).rejects.toThrow("has been destroyed")
   })
 
+  it("says so when it has no endpoints to walk", () => {
+    expect(
+      () =>
+        new SerialFallbackProvider(ETHEREUM.chainID, [
+          { kind: "method-specific", createTransport: () => genericProvider },
+        ]),
+    ).toThrow("No RPC endpoints to build a provider for chain 1")
+  })
+
   it("rejects new requests once destroyed rather than reconnecting", async () => {
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
       { kind: "standard", createTransport: () => genericProvider },

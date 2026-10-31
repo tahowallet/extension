@@ -31,7 +31,10 @@ export default class ProviderRegistry {
     },
   ) {}
 
-  /** Builds a provider for a chain that doesn't have one yet. */
+  /**
+   * Builds a provider for a chain that doesn't have one yet. Throws if the
+   * provider can't be built.
+   */
   start(chainID: string, endpoints: RpcEndpoint[]): void {
     if (this.#chains.has(chainID)) {
       return
@@ -59,8 +62,17 @@ export default class ProviderRegistry {
       }
     })
 
+    // Errors are read from the snapshot below rather than thrown later.
+    actor.subscribe({ error: () => {} })
     this.#chains.set(chainID, actor)
     actor.start()
+
+    const { status, error } = actor.getSnapshot()
+    if (status === "error") {
+      this.#chains.delete(chainID)
+      logger.error("Error building a provider for chain", chainID, error)
+      throw error
+    }
   }
 
   providerFor(chainID: string): SerialFallbackProvider | undefined {
