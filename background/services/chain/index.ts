@@ -511,8 +511,8 @@ export default class ChainService extends BaseService<Events> {
     return this.trackedNetworks
   }
 
-  private subscribeToNetworkEvents(network: EVMNetwork): void {
-    this.networkWatcher.watchNetwork(network.chainID)
+  private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
+    await this.networkWatcher.watchNetwork(network.chainID)
     this.emitter.emit("networkSubscribed", network)
   }
 
@@ -540,7 +540,10 @@ export default class ChainService extends BaseService<Events> {
     this.trackedChainIDs.push(networkToTrack.chainID)
 
     if (!this.networkWatcher.isWatching(networkToTrack.chainID)) {
-      this.subscribeToNetworkEvents(networkToTrack)
+      // Not awaited: the first block poll needn't hold up tracking.
+      this.subscribeToNetworkEvents(networkToTrack).catch((error) =>
+        logger.error("Error subscribing to", networkToTrack.chainID, error),
+      )
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address),
       )

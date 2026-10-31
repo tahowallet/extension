@@ -53,6 +53,27 @@ describe("NetworkWatcher", () => {
     expect(blocks).toHaveLength(1)
   })
 
+  it("resolves once the first block poll is done", async () => {
+    const { watcher, provider, blocks } = harness()
+    let answer: (block: unknown) => void = () => {}
+    provider.getBlock.returns(
+      new Promise((resolve) => {
+        answer = resolve
+      }),
+    )
+    let resolved = false
+
+    const watching = watcher.watchNetwork(ETHEREUM.chainID).then(() => {
+      resolved = true
+    })
+    await flush()
+    expect(resolved).toBe(false)
+
+    answer(makeEthersBlock())
+    await watching
+    expect(blocks).toHaveLength(1)
+  })
+
   it("logs a failed block poll rather than leaving it unhandled", async () => {
     const { watcher, provider, blocks } = harness()
     provider.getBlock.rejects(new Error("NETWORK_ERROR"))

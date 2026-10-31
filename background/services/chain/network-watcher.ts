@@ -58,20 +58,24 @@ export default class NetworkWatcher {
     this.#now = dependencies.now ?? Date.now
   }
 
-  /** Starts polling a network's latest block and, while in use, gas. */
-  watchNetwork(anyChainID: string): void {
+  /**
+   * Starts polling a network's latest block and, while in use, gas. Resolves
+   * once the first block poll is done, whether or not it succeeded.
+   */
+  watchNetwork(anyChainID: string): Promise<void> {
     const chainID = toDecimalChainID(anyChainID)
     if (this.#watches.has(chainID)) {
-      return
+      return Promise.resolve()
     }
 
+    let latestPoll = Promise.resolve()
     const watch = createActor(
       networkWatchMachine.provide({
         actions: {
           pollLatestBlock: () => {
             const network = this.dependencies.networkFor(chainID)
             if (network !== undefined) {
-              this.pollLatestBlock(network).catch((error) =>
+              latestPoll = this.pollLatestBlock(network).catch((error) =>
                 logger.error(
                   "Error polling the latest block on",
                   chainID,
@@ -98,6 +102,7 @@ export default class NetworkWatcher {
     this.#watches.set(chainID, watch)
     watch.start()
     watch.send({ type: "START_WATCHING" })
+    return latestPoll
   }
 
   isWatching(chainID: string): boolean {
