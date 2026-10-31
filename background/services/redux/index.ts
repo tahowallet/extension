@@ -204,7 +204,7 @@ import {
 } from "../../redux-slices/utils/asset-utils"
 import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
-import { makeFlashbotsProviderCreator } from "../chain/serial-fallback-provider"
+import { flashbotsEndpointConfig } from "../chain/rpc/endpoint-configs"
 import { AnalyticsPreferences, DismissableItem } from "../preferences"
 import {
   newPricePoints,
@@ -1402,7 +1402,7 @@ export default class ReduxService extends BaseService<never> {
       })
 
       await Promise.all(
-        this.chainService.supportedNetworks.map(async (network) => {
+        this.chainService.getSupportedNetworks().map(async (network) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
             chainID: network.chainID,
@@ -1415,7 +1415,7 @@ export default class ReduxService extends BaseService<never> {
       "denyOrRevokePermission",
       async (permission) => {
         await Promise.all(
-          this.chainService.supportedNetworks.map(async (network) => {
+          this.chainService.getSupportedNetworks().map(async (network) => {
             await this.providerBridgeService.denyOrRevokePermission({
               ...permission,
               chainID: network.chainID,
@@ -1464,13 +1464,13 @@ export default class ReduxService extends BaseService<never> {
           await this.chainService.started()
 
           const { address, network } = dbAddressNetwork
-          let supportedNetwork = this.chainService.supportedNetworks.find(
-            (net) => sameNetwork(network, net),
-          )
+          let supportedNetwork = this.chainService
+            .getSupportedNetworks()
+            .find((net) => sameNetwork(network, net))
 
           if (!supportedNetwork) {
             // oxlint-disable-next-line prefer-destructuring
-            supportedNetwork = this.chainService.supportedNetworks[0]
+            supportedNetwork = this.chainService.getSupportedNetworks()[0]
           }
 
           this.store.dispatch(
@@ -1954,14 +1954,14 @@ export default class ReduxService extends BaseService<never> {
 
   async toggleFlashbotsProvider(shouldUseFlashbots: boolean): Promise<void> {
     if (shouldUseFlashbots) {
-      const flashbotsProvider = makeFlashbotsProviderCreator()
-      await this.chainService.addCustomProvider(
+      const flashbotsProvider = flashbotsEndpointConfig()
+      await this.chainService.setMethodSpecificEndpoints(
         ETHEREUM.chainID,
         FLASHBOTS_RPC_URL,
         flashbotsProvider,
       )
     } else {
-      await this.chainService.removeCustomProvider(ETHEREUM.chainID)
+      await this.chainService.clearMethodSpecificEndpoints(ETHEREUM.chainID)
     }
   }
 

@@ -83,7 +83,7 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsAlchemyMethods) {
         return {
           balances: await getBoarTokenBalances(provider, addressOnNetwork),
           dataSource: "boar",
@@ -162,7 +162,7 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    if (provider.supportsAlchemy) {
+    if (provider.supportsAlchemyMethods) {
       return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
@@ -187,7 +187,7 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsAlchemyMethods) {
         const promises = [
           getBoarAssetTransfers(
             provider,

@@ -3,6 +3,7 @@ import type { RootState } from "."
 import { ETHEREUM } from "../constants"
 import { EIP1559Block, AnyEVMBlock, EVMNetwork, RpcEndpoint } from "../networks"
 import {
+  EndpointUpdateSupersededError,
   RpcEndpointValidationError,
   RpcEndpointValidationFailure,
 } from "../services/chain/errors"
@@ -147,12 +148,14 @@ export const removeCustomChain = createBackgroundAsyncThunk(
 
 /**
  * Why a settings save was rejected, in a form the UI can put into its own
- * words. Endpoint probe failures carry their discriminant through from the
- * background so they can be localized; anything else arrives as prose we can
- * only pass along, which is at least better than nothing to report.
+ * words. Endpoint probe failures and superseded saves carry a discriminant
+ * from the background so they can be localized; anything else arrives as
+ * prose we can only pass along, which is at least better than nothing to
+ * report.
  */
 export type ChainConfigUpdateError =
   | RpcEndpointValidationFailure
+  | { kind: "superseded" }
   | { kind: "unknown"; message: string }
 
 export type ChainConfigUpdateResult =
@@ -162,6 +165,9 @@ export type ChainConfigUpdateResult =
 const toUpdateError = (error: unknown): ChainConfigUpdateError => {
   if (error instanceof RpcEndpointValidationError) {
     return error.failure
+  }
+  if (error instanceof EndpointUpdateSupersededError) {
+    return { kind: "superseded" }
   }
 
   return {

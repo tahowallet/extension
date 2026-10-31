@@ -60,9 +60,9 @@ describe("Internal Ethereum Provider Service", () => {
     await IEPService.routeSafeRPCRequest(method, EIP3085Params, origin)
 
     expect(
-      startedChainService.supportedNetworks.find(
-        (network: EVMNetwork) => network.name === "Fantom Opera",
-      ),
+      startedChainService
+        .getSupportedNetworks()
+        .find((network: EVMNetwork) => network.name === "Fantom Opera"),
     ).toBeTruthy()
   })
 

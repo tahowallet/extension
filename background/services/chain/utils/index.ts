@@ -52,9 +52,9 @@ export function blockFromEthersBlock(
 }
 
 /**
- * Parse a block as returned by a provider query.
+ * Parses a block in the raw hex form a JSON-RPC endpoint returns.
  */
-export function blockFromProviderBlock(
+export function blockFromRawRpcBlock(
   network: EVMNetwork,
   incomingGethResult: unknown,
 ): AnyEVMBlock {

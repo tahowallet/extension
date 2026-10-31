@@ -12,7 +12,7 @@ import ChainService, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from ".."
-import { ETHEREUM, MINUTE, OPTIMISM, POLYGON, SECOND } from "../../../constants"
+import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
 
 const getBlockPricesMock = mock(() => {})
@@ -25,7 +25,6 @@ import {
   createArrayWith0xHash,
   createBlockPrices,
   createChainService,
-  createTransactionsToRetrieve,
 } from "../../../tests/factories"
 import type { UNIXTime } from "../../../types"
 import {
@@ -33,6 +32,7 @@ import {
   EnrichedLegacyTransactionSignatureRequest,
 } from "../../enrichment"
 import type { AddressOnNetwork } from "../../../accounts"
+import type { ChainDatabase } from "../db"
 
 type ChainServiceExternalized = Omit<ChainService, ""> & {
   populatePartialEIP1559TransactionRequest: () => void
@@ -57,7 +57,7 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
     endBlock: bigint,
     incomingOnly?: boolean,
   ) => Promise<void>
-  db: {
+  db: ChainDatabase & {
     getOldestAccountAssetTransferLookup: (
       addressNetwork: AddressOnNetwork,
     ) => Promise<bigint | null>
@@ -99,8 +99,13 @@ describe("Chain Service", () => {
           broadcastOnSign: true,
         }
 
+      // Population moved to the transaction submitter.
       const stub = sandbox.stub(
-        chainService as unknown as ChainServiceExternalized,
+        (
+          chainService as unknown as {
+            transactionSubmitter: ChainServiceExternalized
+          }
+        ).transactionSubmitter,
         "populatePartialEIP1559TransactionRequest",
       )
 
@@ -131,8 +136,13 @@ describe("Chain Service", () => {
           broadcastOnSign: true,
         }
 
+      // Population moved to the transaction submitter.
       const stub = sandbox.stub(
-        chainService as unknown as ChainServiceExternalized,
+        (
+          chainService as unknown as {
+            transactionSubmitter: ChainServiceExternalized
+          }
+        ).transactionSubmitter,
         "populatePartialLegacyEVMTransactionRequest",
       )
 
@@ -148,7 +158,7 @@ describe("Chain Service", () => {
 
   describe("markNetworkActivity", () => {
     beforeEach(async () => {
-      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+      sandbox.stub(chainService, "getSupportedNetworks").returns([ETHEREUM])
 
       await chainService.startService()
     })
@@ -190,7 +200,7 @@ describe("Chain Service", () => {
 
   describe("markAccountActivity", () => {
     beforeEach(async () => {
-      sandbox.stub(chainService, "supportedNetworks").value([ETHEREUM])
+      sandbox.stub(chainService, "getSupportedNetworks").returns([ETHEREUM])
       await chainService.startService()
     })
 
@@ -268,93 +278,6 @@ describe("Chain Service", () => {
     })
   })
   describe("Queued Transaction Retrieve", () => {
-    describe("handleQueuedTransactionAlarm", () => {
-      let clock: sinon.SinonFakeTimers
-      let setIntervalSpy: sinon.SinonSpy
-      let chainServiceExternalized: ChainServiceExternalized
-      let retrieveTransactionStub: sinon.SinonStub
-      beforeEach(() => {
-        clock = sinon.useFakeTimers()
-
-        setIntervalSpy = sinon.spy(global, "setInterval")
-
-        chainServiceExternalized =
-          chainService as unknown as ChainServiceExternalized
-
-        retrieveTransactionStub = sandbox.stub(
-          chainServiceExternalized,
-          "retrieveTransaction",
-        )
-      })
-      afterEach(() => {
-        clock.restore()
-      })
-      it("should not start the granular timer if the queue is empty", () => {
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(2 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(false)
-        expect(retrieveTransactionStub.callCount).toBe(0)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(0)
-      })
-      it("should not recreate the timer when the alarm fires periodically", () => {
-        const clearIntervalSpy = sinon.spy(global, "clearInterval")
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(100)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-        clock.tick(60 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(true)
-        expect(clearIntervalSpy.calledOnce).toBe(false)
-      })
-      it("should retrieve 1 tx every 2 seconds, remove the tx from the queue and call the retrieve function", async () => {
-        const txInQueueCount = 100
-        const txRetrievedCount = 98
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(txInQueueCount)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(txRetrievedCount * 2 * SECOND)
-
-        expect(retrieveTransactionStub.callCount).toBe(txRetrievedCount)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(
-          txInQueueCount - txRetrievedCount,
-        )
-      })
-      it("should clean up the timer after the queue is emptied", async () => {
-        const clearIntervalSpy = sinon.spy(global, "clearInterval")
-        const numberOfTxInQueue = 100
-
-        chainServiceExternalized.transactionsToRetrieve =
-          createTransactionsToRetrieve(numberOfTxInQueue)
-
-        chainServiceExternalized.handleQueuedTransactionAlarm()
-
-        clock.tick(numberOfTxInQueue * 2 * SECOND)
-
-        expect(setIntervalSpy.calledOnce).toBe(true)
-        expect(retrieveTransactionStub.callCount).toBe(numberOfTxInQueue)
-        expect(chainServiceExternalized.transactionsToRetrieve.length).toBe(0)
-
-        // the clean up happens on the next tick
-        clock.tick(2 * SECOND)
-
-        expect(clearIntervalSpy.calledOnce).toBe(true)
-        expect(
-          chainServiceExternalized.transactionToRetrieveGranularTimer,
-        ).toBe(undefined)
-      })
-    })
-
     describe("queueTransactionHashToRetrieve", () => {
       const NUMBER_OF_TX = 100
       const PRIORITY_MAX_COUNT = 25
@@ -426,137 +349,98 @@ describe("Chain Service", () => {
     })
   })
 
-  describe("asset transfer block ranges", () => {
-    // The block height the service is told the chain is at, with the skip
-    // applied to derive the end of a recent lookup.
-    const BLOCK_HEIGHT = 1_000_000
-    const RECENT_END_BLOCK = BigInt(BLOCK_HEIGHT - 20)
+  describe("characterization", () => {
+    const CUSTOM_CHAIN = {
+      chainName: "Foo",
+      chainId: "12345",
+      nativeCurrency: { name: "FooCoin", symbol: "FOO", decimals: 18 },
+      rpcUrls: ["https://foo.example.com"],
+      blockExplorerUrl: "https://fooscanner.example.com",
+    }
 
-    let chainServiceExternalized: ChainServiceExternalized
-    let loadAssetTransfersStub: sinon.SinonStub
-    let blockHeightStub: sinon.SinonStub
-
-    const stubAlchemySupport = (supportsAlchemy: boolean) =>
+    beforeEach(async () => {
       sandbox
-        .stub(chainService, "providerForNetwork")
-        .returns({ supportsAlchemy } as unknown as ReturnType<
-          ChainService["providerForNetwork"]
-        >)
-
-    beforeEach(() => {
-      chainServiceExternalized =
-        chainService as unknown as ChainServiceExternalized
-
-      blockHeightStub = sandbox
-        .stub(chainService, "getBlockHeight")
-        .resolves(BLOCK_HEIGHT)
-
-      loadAssetTransfersStub = sandbox
-        .stub(chainServiceExternalized, "loadAssetTransfers")
-        .resolves()
+        .stub(
+          chainService as unknown as ChainServiceExternalized,
+          "getNetworksToTrack",
+        )
+        .resolves([ETHEREUM])
+      getBlockPricesMock.mockImplementation(async () => createBlockPrices())
+      await chainService.startService()
     })
 
-    describe("loadRecentAssetTransfers", () => {
-      it("looks back the full transaction history window when the network has an Alchemy-capable endpoint", async () => {
-        stubAlchemySupport(true)
-
-        await chainServiceExternalized.loadRecentAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
-          false,
-        )
-
-        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
-
-        expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(128000n)
-      })
-
-      it("looks back a much shorter window when transfers have to be scanned from logs", async () => {
-        stubAlchemySupport(false)
-
-        await chainServiceExternalized.loadRecentAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
-          false,
-        )
-
-        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
-
-        expect(endBlock).toEqual(RECENT_END_BLOCK)
-        expect(BigInt(endBlock) - BigInt(startBlock)).toEqual(5000n)
-      })
-
-      it("never looks back past the genesis block", async () => {
-        stubAlchemySupport(true)
-        blockHeightStub.resolves(1000)
-
-        await chainServiceExternalized.loadRecentAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
-          false,
-        )
-
-        const [, startBlock] = loadAssetTransfersStub.firstCall.args
-
-        expect(startBlock).toEqual(0n)
-      })
+    afterEach(async () => {
+      await chainService.stopService()
     })
 
-    describe("loadHistoricAssetTransfers", () => {
-      it("asks for all remaining history at once when the network has an Alchemy-capable endpoint", async () => {
-        stubAlchemySupport(true)
-        sandbox
-          .stub(
-            chainServiceExternalized.db,
-            "getOldestAccountAssetTransferLookup",
-          )
-          .resolves(800_000n)
+    // Problem 3: re-adding a chain replaces its provider while the network is
+    // already tracked.
+    it("polls gas on the new provider after a known chain is re-added", async () => {
+      await chainService.addCustomChain(CUSTOM_CHAIN)
+      chainService.markNetworkActivity(CUSTOM_CHAIN.chainId)
+      const firstProvider = chainService.providerForNetwork({
+        chainID: CUSTOM_CHAIN.chainId,
+      } as EVMNetwork)
 
-        await chainServiceExternalized.loadHistoricAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
+      await chainService.addCustomChain({
+        ...CUSTOM_CHAIN,
+        rpcUrls: ["https://foo-replacement.example.com"],
+      })
+      getBlockPricesMock.mockClear()
+
+      await chainService.pollBlockPricesForNetwork(CUSTOM_CHAIN.chainId)
+
+      expect(firstProvider?.isDestroyed).toBe(true)
+      expect(getBlockPricesMock).toHaveBeenCalledTimes(1)
+      const [, polledProvider] = getBlockPricesMock.mock.calls[0] as unknown[]
+      expect(polledProvider).not.toBe(firstProvider)
+      expect(polledProvider).toBe(
+        chainService.providerForNetwork({
+          chainID: CUSTOM_CHAIN.chainId,
+        } as EVMNetwork),
+      )
+    })
+
+    // Problem 4: each watched network polls gas on its own single timer.
+    it("polls gas four times a minute per network with three networks watched", async () => {
+      const clock = sinon.useFakeTimers({
+        now: Date.now(),
+        toFake: ["setTimeout", "clearTimeout"],
+      })
+      try {
+        ;[ETHEREUM, POLYGON, OPTIMISM].forEach(({ chainID }) =>
+          chainService.markNetworkActivity(chainID),
         )
+        await chainService.startTrackingNetworkOrThrow(POLYGON.chainID)
+        await chainService.startTrackingNetworkOrThrow(OPTIMISM.chainID)
+        getBlockPricesMock.mockClear()
 
-        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
+        await clock.tickAsync(MINUTE)
 
-        expect(startBlock).toEqual(0n)
-        expect(endBlock).toEqual(800_000n)
+        expect(getBlockPricesMock.mock.calls.length).toBe(12)
+      } finally {
+        clock.restore()
+      }
+    })
+
+    // Problem 5: an edit changes the network watchers report on.
+    it("emits block prices with the network as it is after an edit", async () => {
+      chainService.markNetworkActivity(ETHEREUM.chainID)
+      const emitted: EVMNetwork[] = []
+      chainService.emitter.on("blockPrices", ({ network }) => {
+        emitted.push(network)
       })
 
-      it("walks history back one bounded chunk at a time when transfers have to be scanned from logs", async () => {
-        stubAlchemySupport(false)
-        sandbox
-          .stub(
-            chainServiceExternalized.db,
-            "getOldestAccountAssetTransferLookup",
-          )
-          .resolves(800_000n)
+      await chainService.updateNetworkSettings(
+        ETHEREUM.chainID,
+        await chainService.getRpcEndpointsForChain(ETHEREUM.chainID),
+        "https://edited-explorer.example.com",
+      )
+      await chainService.pollBlockPricesForNetwork(ETHEREUM.chainID)
 
-        await chainServiceExternalized.loadHistoricAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
-        )
-
-        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
-
-        expect(startBlock).toEqual(795_000n)
-        expect(endBlock).toEqual(800_000n)
-      })
-
-      it("stops at the genesis block on the final log-scanned chunk", async () => {
-        stubAlchemySupport(false)
-        sandbox
-          .stub(
-            chainServiceExternalized.db,
-            "getOldestAccountAssetTransferLookup",
-          )
-          .resolves(3000n)
-
-        await chainServiceExternalized.loadHistoricAssetTransfers(
-          createAddressOnNetwork({ network: ETHEREUM }),
-        )
-
-        const [, startBlock, endBlock] = loadAssetTransfersStub.firstCall.args
-
-        expect(startBlock).toEqual(0n)
-        expect(endBlock).toEqual(3000n)
-      })
+      expect(emitted.at(-1)?.blockExplorerURL).toEqual(
+        "https://edited-explorer.example.com",
+      )
     })
   })
 })

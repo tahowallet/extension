@@ -91,14 +91,20 @@ mock.module("../services/chain/serial-fallback-provider", () => {
     async getCode() {
       return "false"
     }
-    async subscribeFullPendingTransactions() {
+    subscriptionDataSource = "generic-rpc"
+
+    dataSourceFor() {
+      return "generic-rpc"
+    }
+
+    async onPendingTransaction() {
       return Promise.resolve()
     }
   }
 
   return {
     default: MockSerialFallbackProvider,
-    makeSerialFallbackProvider: () => new MockSerialFallbackProvider(),
+    createProviderForChain: () => new MockSerialFallbackProvider(),
   }
 })
 

@@ -27,8 +27,10 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 
 export type Transaction = AnyEVMTransaction & {
-  dataSource: "boar" | "local"
+  dataSource: "boar" | "generic-rpc" | "local"
   firstSeen: UNIXTime
+  /** When lookups started finding nothing, while they still do. */
+  missingSince?: UNIXTime
 }
 
 type AccountAssetTransferLookup = {
@@ -184,9 +186,10 @@ export class ChainDatabase extends Dexie {
     this.chainTransactions.hook(
       "updating",
       (modifications, _, chainTransaction) => {
-        // Only these properties can be updated on a stored transaction.
-        // NOTE: Currently we do NOT throw if another property modification is
-        // attempted; instead, we just ignore it.
+        // Dexie writes every modification, and for put the whole new row;
+        // what this returns is only applied on top. Filtering here doesn't
+        // stop other properties from changing. What it does do is keep the
+        // earliest firstSeen.
         const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
 
         const filteredModifications = Object.fromEntries(
@@ -747,7 +750,7 @@ export class ChainDatabase extends Dexie {
    */
   async getNetworkPendingTransactions(
     network: Network,
-  ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
+  ): Promise<Transaction[]> {
     const transactions = await this.getTransactionsForNetworkQuery(network)
     return transactions
       .filter(
@@ -756,6 +759,45 @@ export class ChainDatabase extends Dexie {
           (transaction.blockHash === null || transaction.blockHeight === null),
       )
       .toArray()
+  }
+
+  /**
+   * Transactions on the network that have a block but no receipt yet, first
+   * seen at `since` or later.
+   */
+  async getNetworkTransactionsAwaitingReceipts(
+    network: Network,
+    since: UNIXTime,
+  ): Promise<Transaction[]> {
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
+      .filter(
+        (transaction) =>
+          !("status" in transaction) &&
+          typeof transaction.blockHash === "string" &&
+          transaction.blockHash !== "" &&
+          transaction.firstSeen >= since,
+      )
+      .toArray()
+  }
+
+  /** Records when lookups started missing a stored transaction, or clears it. */
+  async setTransactionMissingSince(
+    network: Network,
+    hash: string,
+    missingSince: UNIXTime | undefined,
+  ): Promise<void> {
+    await this.chainTransactions
+      .where("[hash+network.name]")
+      .equals([hash, network.name])
+      .modify((transaction) => {
+        if (missingSince === undefined) {
+          delete transaction.missingSince
+        } else {
+          // oxlint-disable-next-line no-param-reassign
+          transaction.missingSince = missingSince
+        }
+      })
   }
 
   async getBlock(
@@ -776,13 +818,17 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"],
   ): Promise<void> {
-    await this.transaction("rw", this.chainTransactions, () =>
-      this.chainTransactions.put({
+    await this.transaction("rw", this.chainTransactions, async () => {
+      const existing = await this.chainTransactions.get([
+        tx.hash,
+        tx.network.name,
+      ])
+      await this.chainTransactions.put({
         ...tx,
-        firstSeen: Date.now(),
+        firstSeen: existing?.firstSeen ?? Date.now(),
         dataSource,
-      }),
-    )
+      })
+    })
   }
 
   async getLatestAccountBalance(

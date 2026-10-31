@@ -215,7 +215,7 @@ describe("IndexingService", () => {
          * for every supported network after tokenlist load
          */
         expect(cacheSpy).toHaveBeenCalledTimes(
-          chainService.supportedNetworks.length + trackedNetworks.length,
+          chainService.getSupportedNetworks().length + trackedNetworks.length,
         )
 
         expect(

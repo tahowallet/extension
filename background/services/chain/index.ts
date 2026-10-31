@@ -1,24 +1,16 @@
-import {
-  TransactionReceipt,
-  TransactionResponse,
-} from "@ethersproject/providers"
-import { ethers, utils } from "ethers"
-import { Logger, UnsignedTransaction } from "ethers/lib/utils"
+import { TransactionResponse } from "@ethersproject/providers"
+import { UnsignedTransaction } from "ethers/lib/utils"
 import logger from "../../lib/logger"
-import getBlockPrices from "../../lib/gas"
 import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
 import {
-  ALCHEMY_CAPABILITY_NAMESPACE,
   AnyEVMBlock,
   AnyEVMTransaction,
-  EIP1559TransactionRequest,
   EVMNetwork,
   BlockPrices,
   TransactionRequest,
   TransactionRequestWithNonce,
   SignedTransaction,
-  toHexChainID,
   NetworkBaseAsset,
   RpcEndpoint,
   sameChainID,
@@ -29,114 +21,46 @@ import {
   AssetTransfer,
   SmartContractFungibleAsset,
 } from "../../assets"
-import {
-  HOUR,
-  ETHEREUM,
-  OPTIMISM,
-  NETWORK_BY_CHAIN_ID,
-  MINUTE,
-  CHAINS_WITH_MEMPOOL,
-  EIP_1559_COMPLIANT_CHAIN_IDS,
-  SECOND,
-  ARBITRUM_ONE,
-  BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS,
-  DEFAULT_NETWORKS_BY_CHAIN_ID,
-} from "../../constants"
+import { HOUR, ETHEREUM, NETWORK_BY_CHAIN_ID, MINUTE } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import { createDB, ChainDatabase, RpcConfig, Transaction } from "./db"
+import { createDB, ChainDatabase, Transaction } from "./db"
 import BaseService from "../base"
-import {
-  blockFromEthersBlock,
-  blockFromProviderBlock,
-  enrichTransactionWithReceipt,
-  ethersTransactionFromSignedTransaction,
-  transactionFromEthersTransaction,
-  ethersTransactionFromTransactionRequest,
-  unsignedTransactionFromEVMTransaction,
-} from "./utils"
+import { blockFromEthersBlock } from "./utils"
 import {
   isProbablyEVMAddress,
   normalizeEVMAddress,
   sameEVMAddress,
 } from "../../lib/utils"
 import type {
-  EnrichedEIP1559TransactionRequest,
-  EnrichedEIP1559TransactionSignatureRequest,
   EnrichedEVMTransactionRequest,
   EnrichedEVMTransactionSignatureRequest,
-  EnrichedLegacyTransactionRequest,
-  EnrichedLegacyTransactionSignatureRequest,
 } from "../enrichment"
 import SerialFallbackProvider, {
-  ProviderCreator,
-  makeSerialFallbackProvider,
+  createProviderForChain,
+  EndpointConfig,
 } from "./serial-fallback-provider"
-import { NetworkReachabilityState } from "./network-reachability"
-import { RpcEndpointValidationError } from "./errors"
-import { BOAR_RPC_URLS } from "../../lib/boar"
-import AssetDataHelper from "./asset-data-helper"
 import {
-  OPTIMISM_GAS_ORACLE_ABI,
-  OPTIMISM_GAS_ORACLE_ADDRESS,
-} from "./utils/optimismGasPriceOracle"
+  endpointConfigsForChain,
+  providerEnvironmentFor,
+} from "./rpc/endpoint-configs"
+import { NetworkReachabilityState } from "./network-reachability"
+import AssetDataHelper from "./asset-data-helper"
 import InternalSignerService, { SignerImportSource } from "../internal-signer"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 import { ISLAND_NETWORK } from "../island/contracts"
-
-// The number of blocks to query at a time for historic asset transfers.
-// Unfortunately there's no "right" answer here that works well across different
-// people's account histories. If the number is too large relative to a
-// frequently used account, the first call will time out and waste provider
-// resources... resulting in an exponential backoff. If it's too small,
-// transaction history will appear "slow" to show up for newly imported
-// accounts.
-const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
-
-// The number of blocks to query at a time on networks with no Alchemy-capable
-// endpoint, where asset transfers are discovered by scanning ERC-20 `Transfer`
-// logs (see `lib/erc20-transfer-logs.ts`) instead of by a single enhanced-API
-// call.
-//
-// The two paths price block ranges completely differently. Alchemy's transfer
-// API answers any range in one request, so the range width above costs the
-// same as a narrow one. `eth_getLogs`, on the other hand, is capped per
-// request by every endpoint that serves it---10,000 blocks is a common
-// limit---so a range wider than the cap is rejected, halved, and retried until
-// the pieces fit, turning one logical lookup into dozens or thousands of
-// requests. Keeping each scan comfortably under the usual caps keeps it at one
-// request per direction, and the recurring recent/historic alarms below are
-// what extend coverage over time.
-const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
-
-// The number of blocks before the current block height to start looking for
-// asset transfers. This is important to allow nodes like Erigon and
-// OpenEthereum with tracing to catch up to where we are.
-const BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY = 20
-
-// Add a little bit of wiggle room
-const NETWORK_POLLING_TIMEOUT = MINUTE * 2.05
-
-// The number of milliseconds after a request to look up a transaction was
-// first seen to continue looking in case the transaction fails to be found
-// for either internal (request failure) or external (transaction dropped from
-// mempool) reasons.
-const TRANSACTION_CHECK_LIFETIME_MS = 10 * HOUR
-
-const GAS_POLLS_PER_PERIOD = 4 // 4 times per minute
-
-const GAS_POLLING_PERIOD = 1 // 1 minute
-
-// Maximum number of transactions with priority.
-// Transactions that will be retrieved before others for one account.
-// Transactions with priority for individual accounts will keep the order of loading
-// from adding accounts.
-const TRANSACTIONS_WITH_PRIORITY_MAX_COUNT = 25
-
-// How long to wait for an RPC endpoint to answer an eth_chainId probe before
-// treating it as unreachable when validating user-provided endpoint lists.
-const RPC_PROBE_TIMEOUT = 5 * SECOND
+import ProviderRegistry from "./provider-registry"
+import NonceAllocator from "./nonce-allocator"
+import NetworkSettings, { NetworkMetadata } from "./network-settings"
+import AssetTransferScanner from "./asset-transfer-scanner"
+import NetworkWatcher from "./network-watcher"
+import TransactionSubmitter from "./transaction-submitter"
+import { TRANSACTION_CHECK_LIFETIME_MS } from "./pending-transaction-machine"
+import TransactionTracker, {
+  PriorityQueuedTxToRetrieve,
+  QueuedTxToRetrieve,
+} from "./transaction-tracker"
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -181,20 +105,7 @@ interface Events extends ServiceLifecycleEvents {
   }
 }
 
-export type QueuedTxToRetrieve = {
-  network: EVMNetwork
-  hash: HexString
-  firstSeen: UNIXTime
-}
-/**
- * The queue object contains transaction and priority.
- * The priority value is a number. The value of the highest priority has not been set.
- * The lowest possible priority is 0.
- */
-export type PriorityQueuedTxToRetrieve = {
-  transaction: QueuedTxToRetrieve
-  priority: number
-}
+export type { PriorityQueuedTxToRetrieve, QueuedTxToRetrieve }
 
 /**
  * ChainService is responsible for basic network monitoring and interaction.
@@ -216,58 +127,59 @@ export type PriorityQueuedTxToRetrieve = {
  *   case a service needs to interact with a network directly.
  */
 export default class ChainService extends BaseService<Events> {
-  providers: { evm: { [networkName: string]: SerialFallbackProvider } } = {
-    evm: {},
+  private providerRegistry: ProviderRegistry
+
+  private networkSettings: NetworkSettings
+
+  private networkWatcher: NetworkWatcher
+
+  /** The watched networks, as they are now. */
+  private get watchedNetworks(): EVMNetwork[] {
+    return this.networkWatcher.watchedChainIDs().flatMap((chainID) => {
+      const network = this.networkSettings.networkFor(chainID)
+      return network === undefined ? [] : [network]
+    })
   }
 
-  subscribedAccounts: {
-    account: string
-    provider: SerialFallbackProvider
-  }[]
+  /** Networks whose blocks and gas prices are being watched. */
+  getWatchedNetworks(): EVMNetwork[] {
+    return this.watchedNetworks
+  }
 
-  subscribedNetworks: {
-    network: EVMNetwork
-    provider: SerialFallbackProvider
-  }[]
+  /** Accounts whose pending transactions are being watched. */
+  getWatchedAccounts(): { address: string; chainID: string }[] {
+    return [...this.networkWatcher.watchedAccounts()]
+  }
 
-  private lastUserActivityOnNetwork: {
-    [chainID: string]: UNIXTime
-  } = {}
+  /** @deprecated Kept for tests; see {@link NetworkWatcher}. */
+  private get lastUserActivityOnNetwork(): { [chainID: string]: UNIXTime } {
+    return this.networkWatcher.lastActivityOnNetwork
+  }
 
-  private lastUserActivityOnAddress: {
-    [address: HexString]: UNIXTime
-  } = {}
+  /** @deprecated Kept for tests; see {@link NetworkWatcher}. */
+  private get lastUserActivityOnAddress(): { [address: string]: UNIXTime } {
+    return this.networkWatcher.lastActivityOnAddress
+  }
 
-  /**
-   * For each chain id, track an address's last seen nonce. The tracked nonce
-   * should generally not be allocated to a new transaction, nor should any
-   * nonces that precede it, unless the intent is deliberately to replace an
-   * unconfirmed transaction sharing the same nonce.
-   */
-  private evmChainLastSeenNoncesByNormalizedAddress: {
-    [chainID: string]: { [normalizedAddress: string]: number }
-  } = {}
+  private nonceAllocator = new NonceAllocator((network) =>
+    this.providerForNetworkOrThrow(network),
+  )
 
-  /**
-   * Modified FIFO queues with priority of transaction hashes per network that should be retrieved and
-   * cached, alongside information about when that hash request was first seen
-   * for expiration purposes. In the absence of priorities, it acts as a regular FIFO queue.
-   */
-  private transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
+  /** @deprecated Kept for tests; see {@link NonceAllocator}. */
+  private get evmChainLastSeenNoncesByNormalizedAddress(): NonceAllocator["highestKnownNonce"] {
+    return this.nonceAllocator.highestKnownNonce
+  }
 
-  /**
-   * Internal timer for the transactionsToRetrieve FIFO queue.
-   * Starting multiple transaction requests at the same time is resource intensive
-   * on the user's machine and also can result in rate limitations with the provider.
-   *
-   * Because of this we need to smooth out the retrieval scheduling.
-   *
-   * Limitations
-   *   - handlers can fire only in 1+ minute intervals
-   *   - in manifest v3 / service worker context the background thread can be shut down any time.
-   *     Because of this we need to keep the granular queue tied to the persisted list of txs
-   */
-  private transactionToRetrieveGranularTimer: NodeJS.Timer | undefined
+  private transactionTracker: TransactionTracker
+
+  private assetTransferScanner: AssetTransferScanner
+
+  private transactionSubmitter: TransactionSubmitter
+
+  /** @deprecated Kept for tests; see {@link TransactionTracker}. */
+  private get transactionsToRetrieve(): PriorityQueuedTxToRetrieve[] {
+    return this.transactionTracker.transactionsToRetrieve
+  }
 
   static create: ServiceCreatorFunction<
     Events,
@@ -276,9 +188,20 @@ export default class ChainService extends BaseService<Events> {
   > = async (preferenceService, internalSignerService) =>
     new this(createDB(), await preferenceService, await internalSignerService)
 
-  supportedNetworks: EVMNetwork[] = []
+  /** Every network Taho knows about. */
+  getSupportedNetworks(): EVMNetwork[] {
+    return this.networkSettings.supportedNetworks()
+  }
 
-  private trackedNetworks: EVMNetwork[]
+  /** Chains being tracked, in the order tracking started. */
+  private trackedChainIDs: string[] = []
+
+  private get trackedNetworks(): EVMNetwork[] {
+    return this.trackedChainIDs.flatMap((chainID) => {
+      const network = this.networkSettings.networkFor(chainID)
+      return network === undefined ? [] : [network]
+    })
+  }
 
   assetData: AssetDataHelper
 
@@ -302,7 +225,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 60,
         },
         handler: () => {
-          this.handleHistoricAssetTransferAlarm()
+          this.assetTransferScanner.scanHistoricTransfers()
         },
         runAtStart: false,
       },
@@ -311,7 +234,10 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 1.5,
         },
         handler: () => {
-          this.handleRecentIncomingAssetTransferAlarm(true)
+          this.scanRecentTransfers({
+            incomingOnly: true,
+            activeAccountsOnly: true,
+          })
         },
       },
       forceRecentAssetTransfers: {
@@ -319,7 +245,7 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: (12 * HOUR) / MINUTE,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm()
+          this.scanRecentTransfers()
         },
       },
       recentAssetTransfers: {
@@ -327,26 +253,106 @@ export default class ChainService extends BaseService<Events> {
           periodInMinutes: 15,
         },
         handler: () => {
-          this.handleRecentAssetTransferAlarm(true)
+          this.scanRecentTransfers({ activeAccountsOnly: true })
         },
       },
       blockPrices: {
         runAtStart: false,
         schedule: {
-          periodInMinutes: GAS_POLLING_PERIOD,
+          periodInMinutes: 1,
         },
-        handler: () => {
-          this.pollBlockPrices()
-        },
+        // Only wakes the service worker; the network watches poll gas on
+        // their own timers.
+        handler: () => {},
       },
     })
 
-    this.trackedNetworks = []
-    this.subscribedAccounts = []
-    this.subscribedNetworks = []
-    this.transactionsToRetrieve = []
-
     this.assetData = new AssetDataHelper(this)
+
+    this.networkWatcher = new NetworkWatcher({
+      db,
+      networkFor: (chainID) => this.networkSettings.networkFor(chainID),
+      providerFor: (network) => this.providerForNetworkOrThrow(network),
+      emitBlock: (block) => this.emitter.emit("block", block),
+      emitBlockPrices: (update) => this.emitter.emit("blockPrices", update),
+      onPendingTransaction: (transaction) =>
+        this.handlePendingTransaction(transaction),
+    })
+
+    this.transactionTracker = new TransactionTracker({
+      db: this.db,
+      providerFor: (network) => this.providerForNetworkOrThrow(network),
+      existingProviderFor: (network) => this.providerForNetwork(network),
+      nonceAllocator: this.nonceAllocator,
+      getBlockData: (network, blockHash) =>
+        this.getBlockData(network, blockHash),
+      emitTransaction: async (transaction) => {
+        const forAccounts = (await this.getAccountsToTrack())
+          .filter(
+            ({ address }) =>
+              sameEVMAddress(transaction.from, address) ||
+              sameEVMAddress(transaction.to, address),
+          )
+          .map(({ address }) => normalizeEVMAddress(address))
+        this.emitter.emit("transaction", { transaction, forAccounts })
+      },
+    })
+
+    this.transactionSubmitter = new TransactionSubmitter({
+      providerFor: (network) => this.providerForNetworkOrThrow(network),
+      nonceAllocator: this.nonceAllocator,
+      transactionTracker: this.transactionTracker,
+      onSent: (hash) => this.emitter.emit("transactionSend", hash),
+      onSendFailed: () => this.emitter.emit("transactionSendFailure"),
+    })
+
+    this.assetTransferScanner = new AssetTransferScanner({
+      db,
+      assetData: this.assetData,
+      getBlockHeight: (network) => this.getBlockHeight(network),
+      accountsToTrack: ({ activeAccountsOnly }) =>
+        this.getAccountsToTrack(activeAccountsOnly),
+      isSupported: (network) =>
+        this.networkSettings.networkFor(network.chainID) !== undefined,
+      supportsAlchemyMethods: (network) =>
+        this.providerForNetwork(network)?.supportsAlchemyMethods ?? false,
+      enqueueTransactionLookup: (network, hash, firstSeen, priority) =>
+        this.enqueueTransactionLookup(network, hash, firstSeen, priority),
+      emitAssetTransfers: (addressNetwork, assetTransfers) =>
+        this.emitter.emit("assetTransfers", { addressNetwork, assetTransfers }),
+    })
+
+    this.networkSettings = new NetworkSettings(
+      db,
+      () => this.providerRegistry,
+      (networks) => this.emitter.emit("supportedNetworks", networks),
+    )
+
+    this.providerRegistry = new ProviderRegistry({
+      createProvider: (chainID, rpcEndpoints, onReachabilityChange) =>
+        createProviderForChain(
+          chainID,
+          endpointConfigsForChain(
+            providerEnvironmentFor(
+              chainID,
+              rpcEndpoints,
+              this.networkSettings.methodSpecificRpcConfigFor(chainID),
+            ),
+          ),
+          onReachabilityChange,
+        ),
+      verifyEndpoints: (chainID, rpcEndpoints, signal) =>
+        this.networkSettings.verifyNewEndpoints(chainID, rpcEndpoints, signal),
+      saveEndpoints: (chainID, rpcEndpoints) =>
+        this.db.setRpcEndpoints(chainID, rpcEndpoints),
+      removeChain: (chainID) => this.db.removeEVMNetwork(chainID),
+      onReachabilityChange: (chainID, status) =>
+        this.emitReachability(chainID, status),
+    })
+
+    this.providerRegistry.onProviderReplaced(({ chainID }) =>
+      this.handleProviderReplaced(chainID),
+    )
   }
 
   override async internalStartService(): Promise<void> {
@@ -386,15 +392,30 @@ export default class ChainService extends BaseService<Events> {
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
           trackedNetworks.map((network) =>
-            this.db
-              .getNetworkPendingTransactions(network)
+            Promise.all([
+              this.db.getNetworkPendingTransactions(network),
+              // Mined, but a receipt never came in before the restart.
+              this.db.getNetworkTransactionsAwaitingReceipts(
+                network,
+                Date.now() - TRANSACTION_CHECK_LIFETIME_MS,
+              ),
+            ])
+              .then((rows) => rows.flat())
               .then((pendingTransactions) => {
-                pendingTransactions.forEach(({ hash, firstSeen }) => {
-                  logger.debug(
-                    `Queuing pending transaction ${hash} for status lookup.`,
-                  )
-                  this.queueTransactionHashToRetrieve(network, hash, firstSeen)
-                })
+                pendingTransactions.forEach(
+                  ({ hash, firstSeen, missingSince }) => {
+                    logger.debug(
+                      `Queuing pending transaction ${hash} for status lookup.`,
+                    )
+                    this.transactionTracker.enqueueLookup(
+                      network,
+                      hash,
+                      firstSeen,
+                      0,
+                      missingSince,
+                    )
+                  },
+                )
               })
               .catch((e) => {
                 logger.error(e)
@@ -406,48 +427,20 @@ export default class ChainService extends BaseService<Events> {
 
   async initializeNetworks(): Promise<void> {
     const rpcEndpointConfigs = await this.db.getAllRpcEndpoints()
-    const customRpcUrls = await this.db.getAllCustomRpcUrls()
+    await this.networkSettings.loadMethodSpecificEndpoints()
 
     await this.updateSupportedNetworks()
 
-    this.lastUserActivityOnNetwork =
-      Object.fromEntries(
-        this.supportedNetworks.map((network) => [network.chainID, 0]),
-      ) || {}
+    this.getSupportedNetworks().forEach(({ chainID }) => {
+      this.lastUserActivityOnNetwork[chainID] = 0
+    })
 
-    this.providers = {
-      evm: Object.fromEntries(
-        this.supportedNetworks.map((network) => [
-          network.chainID,
-          this.makeProviderForChain(
-            network.chainID,
-            rpcEndpointConfigs.find((v) => v.chainID === network.chainID)
-              ?.endpoints || [],
-            customRpcUrls.find((v) => v.chainID === network.chainID),
-          ),
-        ]),
+    this.getSupportedNetworks().forEach(({ chainID }) =>
+      this.providerRegistry.start(
+        chainID,
+        rpcEndpointConfigs.find((config) => config.chainID === chainID)
+          ?.endpoints ?? [],
       ),
-    }
-  }
-
-  /**
-   * Builds a provider for a chain, wired to report the chain's reachability.
-   *
-   * Every provider this service holds is built here rather than by calling
-   * `makeSerialFallbackProvider` directly, so that a provider without that
-   * wiring — one whose outages nobody would hear about — cannot be created by
-   * forgetting an argument.
-   */
-  private makeProviderForChain(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-    customRpc?: RpcConfig,
-  ): SerialFallbackProvider {
-    return makeSerialFallbackProvider(
-      chainID,
-      rpcEndpoints,
-      customRpc,
-      (status) => this.emitReachability(chainID, status),
     )
   }
 
@@ -456,27 +449,42 @@ export default class ChainService extends BaseService<Events> {
    * provider exists.
    */
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined {
-    return isEnabled(FeatureFlags.USE_MAINNET_FORK)
-      ? this.providers.evm[ETHEREUM.chainID]
-      : this.providers.evm[network.chainID]
+    return this.providerRegistry.providerFor(
+      isEnabled(FeatureFlags.USE_MAINNET_FORK)
+        ? ETHEREUM.chainID
+        : network.chainID,
+    )
   }
 
+  /** Sets the endpoints that serve only certain methods on a chain. */
+  async setMethodSpecificEndpoints(
+    chainID: string,
+    rpcUrl: string,
+    config: EndpointConfig,
+  ): Promise<void> {
+    await this.networkSettings.setMethodSpecificEndpoints(
+      chainID,
+      rpcUrl,
+      config,
+    )
+  }
+
+  async clearMethodSpecificEndpoints(chainID: string): Promise<void> {
+    await this.networkSettings.clearMethodSpecificEndpoints(chainID)
+  }
+
+  /** @deprecated Use {@link setMethodSpecificEndpoints}. */
   async addCustomProvider(
     chainID: string,
     rpcUrl: string,
-    customProviderCreator: ProviderCreator,
+    config: EndpointConfig,
   ): Promise<void> {
-    await this.db.addCustomRpcUrl(
-      chainID,
-      rpcUrl,
-      customProviderCreator.supportedMethods,
-    )
-    this.providers.evm[chainID]?.addCustomProvider(customProviderCreator)
+    await this.setMethodSpecificEndpoints(chainID, rpcUrl, config)
   }
 
+  /** @deprecated Use {@link clearMethodSpecificEndpoints}. */
   async removeCustomProvider(chainID: string): Promise<void> {
-    await this.db.removeCustomRpcUrl(chainID)
-    this.providers.evm[chainID]?.removeCustomProvider()
+    await this.clearMethodSpecificEndpoints(chainID)
   }
 
   /**
@@ -484,7 +492,7 @@ export default class ChainService extends BaseService<Events> {
    * Defaults to ethereum in the case that neither exist.
    */
   async getTrackedNetworks(): Promise<EVMNetwork[]> {
-    if (this.trackedNetworks.length > 0) {
+    if (this.trackedChainIDs.length > 0) {
       return this.trackedNetworks
     }
 
@@ -504,16 +512,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   private async subscribeToNetworkEvents(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetwork(network)
-    if (provider) {
-      await Promise.allSettled([
-        this.fetchLatestBlockForNetwork(network),
-        this.subscribeToNewHeads(network),
-      ])
-    } else {
-      logger.error(`Couldn't find provider for network ${network.name}`)
-    }
-
+    await this.networkWatcher.watchNetwork(network.chainID)
     this.emitter.emit("networkSubscribed", network)
   }
 
@@ -532,23 +531,19 @@ export default class ChainService extends BaseService<Events> {
       return trackedNetwork
     }
 
-    const networkToTrack = this.supportedNetworks.find((ntwrk) =>
-      sameChainID(ntwrk.chainID, chainID),
-    )
+    const networkToTrack = this.networkSettings.networkFor(chainID)
 
     if (!networkToTrack) {
       throw new Error(`Network with chainID ${chainID} is not supported`)
     }
 
-    this.trackedNetworks.push(networkToTrack)
+    this.trackedChainIDs.push(networkToTrack.chainID)
 
-    const existingSubscription = this.subscribedNetworks.find(
-      (networkSubscription) =>
-        networkSubscription.network.chainID === networkToTrack.chainID,
-    )
-
-    if (!existingSubscription) {
-      this.subscribeToNetworkEvents(networkToTrack)
+    if (!this.networkWatcher.isWatching(networkToTrack.chainID)) {
+      // Not awaited: the first block poll needn't hold up tracking.
+      this.subscribeToNetworkEvents(networkToTrack).catch((error) =>
+        logger.error("Error subscribing to", networkToTrack.chainID, error),
+      )
       const addressesToTrack = new Set(
         (await this.getAccountsToTrack()).map((account) => account.address),
       )
@@ -585,223 +580,10 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Populates the provided partial legacy transaction request with all fields
-   * except the nonce. This leaves the transaction ready for user review, and
-   * the nonce ready to be filled in immediately prior to signing to minimize the
-   * likelihood for nonce reuse.
-   *
-   * Note that if the partial request already has a defined nonce, it is not
-   * cleared.
+   * Fills in everything but the nonce, which is left to just before signing
+   * so it is least likely to be reused. Also estimates gas, reporting why if
+   * the transaction looks likely to fail.
    */
-  private async populatePartialLegacyEVMTransactionRequest(
-    network: EVMNetwork,
-    partialRequest: EnrichedLegacyTransactionSignatureRequest,
-  ): Promise<{
-    transactionRequest: EnrichedLegacyTransactionRequest
-    gasEstimationError: string | undefined
-  }> {
-    const {
-      from,
-      to,
-      value,
-      gasLimit,
-      input,
-      gasPrice,
-      nonce,
-      annotation,
-      broadcastOnSign,
-    } = partialRequest
-
-    // we know that a transactionRequest will fail with gasPrice 0
-    // and sometimes 3rd party api's (like 0x) may return transaction requests
-    // with gasPrice === 0, so we override the set gasPrice in those cases
-    const safeGasEstimate = async (price?: bigint) => {
-      // This prevents the tx being rejected because of a small gas price
-      // difference
-      if (network.chainID === ARBITRUM_ONE.chainID) {
-        return this.estimateGasPrice(network)
-      }
-
-      return price || this.estimateGasPrice(network)
-    }
-
-    // Basic transaction construction based on the provided options, with extra data from the chain service
-    const transactionRequest: EnrichedLegacyTransactionRequest = {
-      from,
-      to,
-      value: value ?? 0n,
-      gasLimit: gasLimit ?? 0n,
-      input: input ?? null,
-      gasPrice: await safeGasEstimate(gasPrice),
-      type: 0 as const,
-      network,
-      chainID: network.chainID,
-      nonce,
-      annotation,
-      estimatedRollupGwei:
-        network.chainID === OPTIMISM.chainID
-          ? await this.estimateL1RollupGasPrice(network)
-          : 0n,
-      estimatedRollupFee: 0n,
-      broadcastOnSign,
-    }
-
-    if (network.chainID === OPTIMISM.chainID) {
-      transactionRequest.estimatedRollupFee =
-        await this.estimateL1RollupFeeForOptimism(
-          network,
-          unsignedTransactionFromEVMTransaction(transactionRequest),
-        )
-    }
-
-    // Always estimate gas to decide whether the transaction will likely fail.
-    let estimatedGasLimit: bigint | undefined
-    let gasEstimationError: string | undefined
-    try {
-      estimatedGasLimit = await this.estimateGasLimit(
-        network,
-        transactionRequest,
-      )
-    } catch (error) {
-      logger.error("Error estimating gas limit: ", error)
-      // Try to identify unpredictable gas errors to bubble that information
-      // out.
-      if (error instanceof Error) {
-        // Ethers does some heavily loose typing around errors to carry
-        // arbitrary info without subclassing Error, so an any cast is needed.
-        // oxlint-disable-next-line typescript/no-explicit-any
-        const anyError: any = error
-
-        if (
-          "code" in anyError &&
-          anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
-        ) {
-          // anyError.error can be an object with properties like code, body, etc.
-          // We need to convert it to a displayable string
-          const innerError = anyError.error
-          if (typeof innerError === "string") {
-            gasEstimationError = innerError
-          } else if (innerError && typeof innerError === "object") {
-            gasEstimationError =
-              innerError.message ??
-              innerError.reason ??
-              JSON.stringify(innerError, null, 2)
-          } else {
-            gasEstimationError = "Unknown transaction error."
-          }
-        }
-      }
-    }
-
-    // We use the estimate as the actual limit only if user did not specify the
-    // gas explicitly or if it was set below the minimum network-allowed value.
-    if (
-      typeof estimatedGasLimit !== "undefined" &&
-      (typeof gasLimit === "undefined" || gasLimit < 21000n)
-    ) {
-      transactionRequest.gasLimit = estimatedGasLimit
-    }
-
-    return { transactionRequest, gasEstimationError }
-  }
-
-  /**
-   * Populates the provided partial EIP1559 transaction request with all fields
-   * except the nonce. This leaves the transaction ready for user review, and
-   * the nonce ready to be filled in immediately prior to signing to minimize the
-   * likelihood for nonce reuse.
-   *
-   * Note that if the partial request already has a defined nonce, it is not
-   * cleared.
-   */
-  private async populatePartialEIP1559TransactionRequest(
-    network: EVMNetwork,
-    partialRequest: EnrichedEIP1559TransactionSignatureRequest,
-  ): Promise<{
-    transactionRequest: EnrichedEIP1559TransactionRequest
-    gasEstimationError: string | undefined
-  }> {
-    const {
-      from,
-      to,
-      value,
-      gasLimit,
-      input,
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      nonce,
-      annotation,
-      broadcastOnSign,
-    } = partialRequest
-
-    // Basic transaction construction based on the provided options, with extra data from the chain service
-    const transactionRequest: EnrichedEIP1559TransactionRequest = {
-      from,
-      to,
-      value: value ?? 0n,
-      gasLimit: gasLimit ?? 0n,
-      maxFeePerGas: maxFeePerGas ?? 0n,
-      maxPriorityFeePerGas: maxPriorityFeePerGas ?? 0n,
-      input: input ?? null,
-      type: 2 as const,
-      network,
-      chainID: network.chainID,
-      nonce,
-      annotation,
-      broadcastOnSign,
-    }
-
-    // Always estimate gas to decide whether the transaction will likely fail.
-    let estimatedGasLimit: bigint | undefined
-    let gasEstimationError: string | undefined
-    try {
-      estimatedGasLimit = await this.estimateGasLimit(
-        network,
-        transactionRequest,
-      )
-    } catch (error) {
-      // Try to identify unpredictable gas errors to bubble that information
-      // out.
-      if (error instanceof Error) {
-        // Ethers does some heavily loose typing around errors to carry
-        // arbitrary info without subclassing Error, so an any cast is needed.
-        // oxlint-disable-next-line typescript/no-explicit-any
-        const anyError: any = error
-
-        if (
-          "code" in anyError &&
-          anyError.code === Logger.errors.UNPREDICTABLE_GAS_LIMIT
-        ) {
-          // anyError.error can be an object with properties like code, body, etc.
-          // We need to convert it to a displayable string
-          const innerError = anyError.error
-          if (typeof innerError === "string") {
-            gasEstimationError = innerError
-          } else if (innerError && typeof innerError === "object") {
-            gasEstimationError =
-              innerError.message ??
-              innerError.reason ??
-              JSON.stringify(innerError, null, 2)
-          } else {
-            gasEstimationError = "Unknown transaction error."
-          }
-        }
-      }
-    }
-
-    // We use the estimate as the actual limit only if user did not specify the
-    // gas explicitly or if it was set below the minimum network-allowed value.
-    if (
-      typeof estimatedGasLimit !== "undefined" &&
-      (typeof partialRequest.gasLimit === "undefined" ||
-        partialRequest.gasLimit < 21000n)
-    ) {
-      transactionRequest.gasLimit = estimatedGasLimit
-    }
-
-    return { transactionRequest, gasEstimationError }
-  }
-
   async populatePartialTransactionRequest(
     network: EVMNetwork,
     partialRequest: EnrichedEVMTransactionSignatureRequest,
@@ -810,30 +592,11 @@ export default class ChainService extends BaseService<Events> {
     transactionRequest: EnrichedEVMTransactionRequest
     gasEstimationError: string | undefined
   }> {
-    if (EIP_1559_COMPLIANT_CHAIN_IDS.has(network.chainID)) {
-      const {
-        maxFeePerGas = defaults.maxFeePerGas,
-        maxPriorityFeePerGas = defaults.maxPriorityFeePerGas,
-      } = partialRequest as EnrichedEIP1559TransactionSignatureRequest
-
-      const populated = await this.populatePartialEIP1559TransactionRequest(
-        network,
-        {
-          ...(partialRequest as EnrichedEIP1559TransactionSignatureRequest),
-          maxFeePerGas,
-          maxPriorityFeePerGas,
-        },
-      )
-      return populated
-    }
-    // Legacy Transaction
-    const populated = await this.populatePartialLegacyEVMTransactionRequest(
+    return this.transactionSubmitter.populateRequest(
       network,
-      {
-        ...(partialRequest as EnrichedLegacyTransactionRequest),
-      },
+      partialRequest,
+      defaults,
     )
-    return populated
   }
 
   /**
@@ -849,70 +612,7 @@ export default class ChainService extends BaseService<Events> {
   async populateEVMTransactionNonce(
     transactionRequest: TransactionRequest,
   ): Promise<TransactionRequestWithNonce> {
-    if (typeof transactionRequest.nonce !== "undefined") {
-      // TS undefined checks don't narrow the containing object's type, so we
-      // have to cast `as` here.
-      return transactionRequest as EIP1559TransactionRequest & { nonce: number }
-    }
-
-    const { network, chainID } = transactionRequest
-    const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
-    const provider = this.providerForNetworkOrThrow(network)
-
-    // https://docs.ethers.io/v5/single-page/#/v5/api/providers/provider/-%23-Provider-getTransactionCount
-    const chainTransactionCount = await provider.getTransactionCount(
-      transactionRequest.from,
-      "latest",
-    )
-    let knownNextNonce
-
-    // existingNonce handling only needed when there is a chance for it to
-    // be different from the onchain nonce. This can happen when a chain has
-    // mempool. Note: This does not necessarily mean that the chain is EIP-1559
-    // compliant.
-    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
-      // @TODO: Update this implementation to handle pending txs and also be more
-      //        resilient against missing nonce in the mempool.
-      const chainNonce = chainTransactionCount - 1
-
-      const existingNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
-          normalizedAddress
-        ] ?? chainNonce
-
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID] ??= {}
-      // Use the network count, if needed. Note that the assumption here is that
-      // all nonces for this address are increasing linearly and continuously; if
-      // the address has a pending transaction floating around with a nonce that
-      // is not an increase by one over previous transactions, this approach will
-      // allocate more nonces that won't mine.
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-        normalizedAddress
-      ] = Math.max(existingNonce, chainNonce)
-
-      // Allocate a new nonce by incrementing the last seen one.
-      this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-        normalizedAddress
-      ] += 1
-      knownNextNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ]
-
-      logger.debug(
-        "Got chain nonce",
-        chainNonce,
-        "existing nonce",
-        existingNonce,
-        "using",
-        knownNextNonce,
-      )
-    }
-
-    return {
-      ...transactionRequest,
-      nonce: knownNextNonce ?? chainTransactionCount,
-    }
+    return this.nonceAllocator.allocateNonce(transactionRequest)
   }
 
   /**
@@ -927,47 +627,7 @@ export default class ChainService extends BaseService<Events> {
       | SignedTransaction
       | AnyEVMTransaction,
   ): void {
-    const chainID =
-      "chainID" in transactionRequest
-        ? transactionRequest.chainID
-        : transactionRequest.network.chainID
-    if (CHAINS_WITH_MEMPOOL.has(chainID)) {
-      const { nonce } = transactionRequest
-      const normalizedAddress = normalizeEVMAddress(transactionRequest.from)
-
-      if (
-        !this.evmChainLastSeenNoncesByNormalizedAddress[chainID]?.[
-          normalizedAddress
-        ]
-      ) {
-        return
-      }
-
-      const lastSeenNonce =
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ]
-
-      // TODO Currently this assumes that the only place this nonce could have
-      // TODO been used is this service; however, another wallet or service
-      // TODO could have broadcast a transaction with this same nonce, in which
-      // TODO case the nonce release shouldn't take effect! This should be a
-      // TODO relatively rare edge case, but we should handle it at some point.
-      if (nonce === lastSeenNonce) {
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ] -= 1
-      } else if (nonce < lastSeenNonce) {
-        // If the nonce we're releasing is below the latest allocated nonce,
-        // release all intervening nonces. This risks transaction replacement
-        // issues, but ensures that we don't start allocating nonces that will
-        // never mine (because they will all be higher than the
-        // now-released-and-therefore-never-broadcast nonce).
-        this.evmChainLastSeenNoncesByNormalizedAddress[chainID][
-          normalizedAddress
-        ] = nonce - 1
-      }
-    }
+    this.nonceAllocator.releaseNonce(transactionRequest)
   }
 
   async getAccountsToTrack(
@@ -977,8 +637,8 @@ export default class ChainService extends BaseService<Events> {
     if (onlyActiveAccounts) {
       return accounts.filter(
         ({ address, network }) =>
-          this.isCurrentlyActiveAddress(address) &&
-          this.isCurrentlyActiveChainID(network.chainID),
+          this.networkWatcher.isAddressActive(address) &&
+          this.networkWatcher.isNetworkActive(network.chainID),
       )
     }
     return accounts
@@ -1093,16 +753,18 @@ export default class ChainService extends BaseService<Events> {
       )
     })
     if (source !== SignerImportSource.internal) {
-      this.loadHistoricAssetTransfers(addressNetwork).catch((e) => {
-        logger.error(
-          "chainService/addAccountToTrack: Error loading historic asset transfers for",
-          {
-            address: addressNetwork.address,
-            chainID: addressNetwork.network.chainID,
-          },
-          e,
-        )
-      })
+      this.assetTransferScanner
+        .scanHistoricTransfersFor(addressNetwork)
+        .catch((e) => {
+          logger.error(
+            "chainService/addAccountToTrack: Error loading historic asset transfers for",
+            {
+              address: addressNetwork.address,
+              chainID: addressNetwork.network.chainID,
+            },
+            e,
+          )
+        })
     }
   }
 
@@ -1144,228 +806,90 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Return cached information on a transaction, if it's both confirmed and
-   * in the local DB.
-   *
-   * Otherwise, retrieve the transaction from the specified network, caching and
-   * returning the object.
-   *
-   * @param network the EVM network we're interested in
-   * @param txHash the hash of the unconfirmed transaction we're interested in
+   * A transaction from the local database if it's there, and otherwise from
+   * the chain, saved and followed until it confirms.
    */
   async getTransaction(
     network: EVMNetwork,
     txHash: HexString,
   ): Promise<AnyEVMTransaction> {
-    const cachedTx = await this.db.getTransaction(network, txHash)
-    if (cachedTx) {
-      return cachedTx
-    }
-    const gethResult =
-      await this.providerForNetworkOrThrow(network).getTransaction(txHash)
-    const newTransaction = transactionFromEthersTransaction(gethResult, network)
-
-    if (!newTransaction.blockHash && !newTransaction.blockHeight) {
-      this.subscribeToTransactionConfirmation(network, newTransaction)
-    }
-
-    // TODO proper provider string
-    this.saveTransaction(newTransaction, "boar")
-    return newTransaction
+    return this.transactionTracker.getTransaction(network, txHash)
   }
 
   /**
-   * Queues up a particular transaction hash for later retrieval.
-   *
-   * Using this method means the service can decide when to retrieve a
-   * particular transaction. Queued transactions are generally retrieved on a
-   * periodic basis.
-   *
-   * @param network The network on which the transaction has been broadcast.
-   * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   * @param firstSeen The timestamp at which the queued transaction was first
-   *        seen; used to treat transactions as dropped after a certain amount
-   *        of time.
-   * @param priority The priority of the transaction in the queue to be retrieved
+   * Queues a transaction lookup, which runs on a timer. Lookups that keep
+   * failing are given up on a while after `firstSeen`.
    */
+  enqueueTransactionLookup(
+    network: EVMNetwork,
+    txHash: HexString,
+    firstSeen: UNIXTime,
+    priority = 0,
+  ): void {
+    this.transactionTracker.enqueueLookup(network, txHash, firstSeen, priority)
+  }
+
+  isTransactionLookupQueued(network: EVMNetwork, txHash: HexString): boolean {
+    return this.transactionTracker.isLookupQueued(network, txHash)
+  }
+
+  dequeueTransactionLookup(network: EVMNetwork, txHash: HexString): void {
+    this.transactionTracker.dequeueLookup(network, txHash)
+  }
+
+  /** @deprecated Use {@link enqueueTransactionLookup}. */
   queueTransactionHashToRetrieve(
     network: EVMNetwork,
     txHash: HexString,
     firstSeen: UNIXTime,
     priority = 0,
   ): void {
-    const newElement: PriorityQueuedTxToRetrieve = {
-      transaction: { hash: txHash, network, firstSeen },
-      priority,
-    }
-    const seen = this.isTransactionHashQueued(network, txHash)
-    if (!seen) {
-      // @TODO Interleave initial transaction retrieval by network
-      const existingTransactionIndex = this.transactionsToRetrieve.findIndex(
-        ({ priority: txPriority }) => newElement.priority > txPriority,
-      )
-      if (existingTransactionIndex >= 0) {
-        this.transactionsToRetrieve.splice(
-          existingTransactionIndex,
-          0,
-          newElement,
-        )
-      } else {
-        this.transactionsToRetrieve.push(newElement)
-      }
-    }
+    this.enqueueTransactionLookup(network, txHash, firstSeen, priority)
   }
 
-  /**
-   * Checks if a transaction with a given hash on a network is in the queue or not.
-   *
-   * @param txHash The hash of a tx to check.
-   * @returns true if the tx hash is in the queue, false otherwise.
-   */
+  /** @deprecated Use {@link isTransactionLookupQueued}. */
   isTransactionHashQueued(txNetwork: EVMNetwork, txHash: HexString): boolean {
-    return this.transactionsToRetrieve.some(
-      ({ transaction }) =>
-        transaction.hash === txHash &&
-        txNetwork.chainID === transaction.network.chainID,
-    )
+    return this.isTransactionLookupQueued(txNetwork, txHash)
   }
 
-  /**
-   * Removes a particular hash from our queue.
-   *
-   * @param network The network on which the transaction has been broadcast.
-   * @param txHash The tx hash identifier of the transaction we want to retrieve.
-   */
+  /** @deprecated Use {@link dequeueTransactionLookup}. */
   removeTransactionHashFromQueue(network: EVMNetwork, txHash: HexString): void {
-    const seen = this.isTransactionHashQueued(network, txHash)
-
-    if (seen) {
-      // Let's clean up the tx queue if the hash is present.
-      // The pending tx hash should be on chain as soon as it's broadcasted.
-      this.transactionsToRetrieve = this.transactionsToRetrieve.filter(
-        ({ transaction }) => transaction.hash !== txHash,
-      )
-    }
+    this.dequeueTransactionLookup(network, txHash)
   }
 
-  /**
-   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
-   * the base estimate returned by the provider.
-   */
+  /** The gas a transaction needs, plus 10% to be safe. */
   async estimateGasLimit(
     network: EVMNetwork,
     transactionRequest: TransactionRequest,
   ): Promise<bigint> {
-    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
-      return 350000n
-    }
-    const estimate = await this.providerForNetworkOrThrow(network).estimateGas(
-      ethersTransactionFromTransactionRequest(transactionRequest),
+    return this.transactionSubmitter.estimateGasLimit(
+      network,
+      transactionRequest,
     )
-
-    // Add 10% more gas as a safety net
-    const uppedEstimate = estimate.add(estimate.div(10))
-    return BigInt(uppedEstimate.toString())
   }
 
   async estimateL1RollupGasPrice(network: EVMNetwork): Promise<bigint> {
-    if (network.chainID === OPTIMISM.chainID) {
-      // Using the L1 gas cost is not a completely accurate representation of
-      // what the rollup fee will be - but is close enough outside of periods of extreme
-      // volatility.  More reading here:
-      // https://help.optimism.io/hc/en-us/articles/4416677738907-What-happens-if-the-L1-gas-price-spikes-while-a-transaction-is-in-process
-      return this.estimateGasPrice(ETHEREUM)
-    }
-    throw new Error(`Cannot estimate rollup gas for ${network.name}`)
+    return this.transactionSubmitter.estimateL1RollupGasPrice(network)
   }
 
   async estimateL1RollupFeeForOptimism(
     network: EVMNetwork,
     transaction: UnsignedTransaction | EnrichedEVMTransactionRequest,
   ): Promise<bigint> {
-    // Optimism-specific implementation
-    // https://community.optimism.io/docs/developers/build/transaction-fees/#displaying-fees-to-users
-    const unsignedRLPEncodedTransaction = utils.serializeTransaction({
-      to: transaction.to,
-      nonce: transaction.nonce,
-      gasLimit: transaction.gasLimit,
-      gasPrice: "gasPrice" in transaction ? transaction.gasPrice : undefined,
-      data: "data" in transaction ? transaction.data : undefined,
-      value: "value" in transaction ? transaction.value : undefined,
-    })
-
-    const provider = await this.providerForNetworkOrThrow(network)
-
-    const GasOracle = new ethers.Contract(
-      OPTIMISM_GAS_ORACLE_ADDRESS,
-      OPTIMISM_GAS_ORACLE_ABI,
-      provider,
+    return this.transactionSubmitter.estimateL1RollupFeeForOptimism(
+      network,
+      transaction,
     )
-
-    const l1Fee = await GasOracle.getL1Fee(unsignedRLPEncodedTransaction)
-
-    return BigInt(l1Fee.toString())
   }
 
   /**
-   * Estimate the gas needed to make a transaction. Adds 10% as a safety net to
-   * the base estimate returned by the provider.
-   */
-  private async estimateGasPrice(network: EVMNetwork): Promise<bigint> {
-    const estimate = await this.providerForNetworkOrThrow(network).getGasPrice()
-
-    // Add 10% more gas as a safety net
-    return (estimate.toBigInt() * 11n) / 10n
-  }
-
-  /**
-   * Broadcast a signed EVM transaction.
-   *
-   * @param transaction A signed EVM transaction to broadcast. Since the tx is signed,
-   *        it needs to include all gas limit and price params.
+   * Broadcasts a signed transaction and follows it. A failed broadcast is
+   * saved as failed, and its nonce released.
    */
   async broadcastSignedTransaction(
     transaction: SignedTransaction,
   ): Promise<void> {
-    try {
-      const serialized = utils.serializeTransaction(
-        ethersTransactionFromSignedTransaction(transaction),
-        { r: transaction.r, s: transaction.s, v: transaction.v },
-      )
-
-      await Promise.all([
-        this.providerForNetworkOrThrow(transaction.network)
-          .sendTransaction(serialized)
-          .then((transactionResponse) => {
-            this.emitter.emit("transactionSend", transactionResponse.hash)
-          })
-          .catch((error) => {
-            logger.debug(
-              "Broadcast error caught, saving failed status and releasing nonce...",
-              transaction,
-              error,
-            )
-            // Failure to broadcast needs to be registered.
-            this.saveTransaction(
-              { ...transaction, status: 0, error: error.toString() },
-              "boar",
-            )
-            // the reject here will release the nonce in the following catch
-            return Promise.reject(error)
-          }),
-        this.subscribeToTransactionConfirmation(
-          transaction.network,
-          transaction,
-        ),
-        this.saveTransaction(transaction, "local"),
-      ])
-    } catch (error) {
-      this.releaseEVMTransactionNonce(transaction)
-      this.emitter.emit("transactionSendFailure")
-      logger.error("Error broadcasting transaction", transaction, error)
-
-      throw error
-    }
+    await this.transactionSubmitter.broadcastSigned(transaction)
   }
 
   async markAccountActivity({
@@ -1384,11 +908,11 @@ export default class ChainService extends BaseService<Events> {
       await this.addAccountToTrack({ address, network })
     }
 
-    const addressWasInactive = this.addressIsInactive(address)
-    const networkWasInactive = this.networkIsInactive(network.chainID)
+    const addressWasIdle = this.isAddressIdle(address)
+    const networkWasIdle = this.isNetworkIdle(network.chainID)
     this.markNetworkActivity(network.chainID)
-    this.lastUserActivityOnAddress[address] = Date.now()
-    if (addressWasInactive || networkWasInactive) {
+    this.networkWatcher.markAddressActivity(address)
+    if (addressWasIdle || networkWasIdle) {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
@@ -1396,98 +920,43 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async markNetworkActivity(chainID: string): Promise<void> {
-    const networkWasInactive = this.networkIsInactive(chainID)
-    this.lastUserActivityOnNetwork[chainID] = Date.now()
-    if (networkWasInactive) {
-      // Reactivating a potentially deactivated network
-      this.pollBlockPricesForNetwork(chainID)
-    }
+    this.networkWatcher.markNetworkActivity(chainID)
   }
 
+  isAddressIdle(address: string): boolean {
+    return this.networkWatcher.isAddressIdle(address)
+  }
+
+  isNetworkIdle(chainID: string): boolean {
+    return this.networkWatcher.isNetworkIdle(chainID)
+  }
+
+  /** @deprecated Use {@link isAddressIdle}. */
   addressIsInactive(address: string): boolean {
-    return (
-      Date.now() - NETWORK_POLLING_TIMEOUT >
-      this.lastUserActivityOnAddress[address]
-    )
+    return this.isAddressIdle(address)
   }
 
+  /** @deprecated Use {@link isNetworkIdle}. */
   networkIsInactive(chainID: string): boolean {
-    return (
-      Date.now() - NETWORK_POLLING_TIMEOUT >
-      this.lastUserActivityOnNetwork[chainID]
-    )
+    return this.isNetworkIdle(chainID)
   }
 
-  /*
-   * Periodically fetch block prices and emit an event whenever new data is received
-   * Write block prices to IndexedDB so we have them for later
+  /**
+   * Polls gas prices once on every watched network in use.
+   *
+   * @deprecated Each network's watch polls on its own timer.
    */
   async pollBlockPrices(): Promise<void> {
-    // Schedule next N polls at even interval
-    for (let i = 1; i < GAS_POLLS_PER_PERIOD; i += 1) {
-      setTimeout(
-        async () => {
-          await Promise.allSettled(
-            this.subscribedNetworks.map(async ({ network }) =>
-              this.pollBlockPricesForNetwork(network.chainID),
-            ),
-          )
-        },
-        (GAS_POLLING_PERIOD / GAS_POLLS_PER_PERIOD) *
-          (GAS_POLLING_PERIOD * MINUTE) *
-          i,
-      )
-    }
-
-    // Immediately run the first poll
     await Promise.allSettled(
-      this.subscribedNetworks.map(async ({ network }) =>
-        this.pollBlockPricesForNetwork(network.chainID),
-      ),
+      this.networkWatcher
+        .watchedChainIDs()
+        .map((chainID) => this.pollBlockPricesForNetwork(chainID)),
     )
   }
 
+  /** Polls a watched network's gas prices, if it's in use. */
   async pollBlockPricesForNetwork(chainID: string): Promise<void> {
-    if (!this.isCurrentlyActiveChainID(chainID)) {
-      return
-    }
-
-    const subscription = this.subscribedNetworks.find(
-      ({ network }) => toHexChainID(network.chainID) === toHexChainID(chainID),
-    )
-
-    if (!subscription) {
-      logger.warn(
-        `Can't fetch block prices for unsubscribed chainID ${chainID}`,
-      )
-      return
-    }
-
-    const blockPrices = await getBlockPrices(
-      subscription.network,
-      subscription.provider,
-    )
-    this.emitter.emit("blockPrices", {
-      blockPrices,
-      network: subscription.network,
-    })
-  }
-
-  /*
-   * Fetch, persist, and emit the latest block on a given network.
-   */
-  private async pollLatestBlock(
-    network: EVMNetwork,
-    provider: SerialFallbackProvider,
-  ): Promise<void> {
-    const ethersBlock = await provider.getBlock("latest")
-    // add new head to database
-    const block = blockFromProviderBlock(network, ethersBlock)
-    await this.db.addBlock(block)
-    // emit the new block, don't wait to settle
-    this.emitter.emit("block", block)
-    // TODO if it matches a known blockheight and the difficulty is higher,
-    // emit a reorg event
+    await this.networkWatcher.pollGasPrices(chainID)
   }
 
   async send(
@@ -1499,413 +968,37 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /**
-   * Retrieves a confirmed or unconfirmed transaction's details from chain.
-   * If found, then returns the transaction result received from chain.
-   * If the tx hash is not found on chain, then remove it from the lookup queue
-   * and mark it as dropped in the db. This will filter and fix those situations
-   * when our records differ from what the chain/mempool sees. This can happen in
-   * case of unstable networking conditions.
+   * Looks a transaction up on chain; `null` if no endpoint knows it.
    *
-   * @param network
-   * @param hash
+   * @deprecated It no longer cancels anything; a transaction is dropped only
+   * once it has been missing for the grace period.
    */
   async getOrCancelTransaction(
     network: EVMNetwork,
     hash: string,
   ): Promise<TransactionResponse | null | undefined> {
-    const provider = this.providerForNetworkOrThrow(network)
-    const result = await provider.getTransaction(hash)
-
-    if (!result) {
-      logger.warn(
-        `Tx hash ${hash} is found in our local registry but not on chain.`,
-      )
-
-      this.removeTransactionHashFromQueue(network, hash)
-      // Let's clean up the subscriptions
-      this.providerForNetwork(network)?.off(hash)
-
-      const savedTx = await this.db.getTransaction(network, hash)
-      if (savedTx && !("status" in savedTx)) {
-        // Let's see if we have the tx in the db, and if yes let's mark it as dropped.
-        this.saveTransaction(
-          {
-            ...savedTx,
-            status: 0, // dropped status
-            error:
-              "Transaction was in our local db but was not found on chain.",
-            blockHash: null,
-            blockHeight: null,
-          },
-          "boar",
-        )
-
-        // Let's also release the nonce from our bookkeeping.
-        await this.releaseEVMTransactionNonce(savedTx)
-      }
-    }
-
-    return result
+    return this.providerForNetworkOrThrow(network).getTransaction(hash)
   }
 
   /* *****************
    * PRIVATE METHODS *
    * **************** */
 
-  /**
-   * Load recent asset transfers from an account on a particular network.
-   *
-   * @param addressNetwork the address and network whose asset transfers we need
-   * @param incomingOnly if true, only fetch asset transfers received by this
-   *        address
-   */
+  /** Scans recent blocks for transfers; see {@link AssetTransferScanner}. */
+  private async scanRecentTransfers(
+    options: { incomingOnly?: boolean; activeAccountsOnly?: boolean } = {},
+  ): Promise<void> {
+    await this.assetTransferScanner.scanRecentTransfers(options)
+  }
+
   private async loadRecentAssetTransfers(
     addressNetwork: AddressOnNetwork,
-    incomingOnly = false,
   ): Promise<void> {
-    const blockHeight =
-      (await this.getBlockHeight(addressNetwork.network)) -
-      BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
-    // A wide window is one enhanced-API call, but many `eth_getLogs` calls; see
-    // BLOCKS_PER_TRANSFER_LOG_SCAN.
-    const blocksToLookBack = this.supportsAlchemy(addressNetwork.network)
-      ? BLOCKS_FOR_TRANSACTION_HISTORY
-      : BLOCKS_PER_TRANSFER_LOG_SCAN
-    const fromBlock = Math.max(0, blockHeight - blocksToLookBack)
-
-    try {
-      return await this.loadAssetTransfers(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight),
-        incomingOnly,
-      )
-    } catch (err) {
-      logger.error(
-        "Failed loaded recent assets, retrying with shorter block range",
-        addressNetwork,
-        err,
-      )
-    }
-
-    return Promise.resolve()
-  }
-
-  /**
-   * Continue to load historic asset transfers, finding the oldest lookup and
-   * searching for asset transfers before that block.
-   *
-   * @param addressNetwork The account whose asset transfers are being loaded.
-   */
-  private async loadHistoricAssetTransfers(
-    addressNetwork: AddressOnNetwork,
-  ): Promise<void> {
-    const oldest =
-      (await this.db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
-      BigInt(await this.getBlockHeight(addressNetwork.network))
-
-    if (oldest !== 0n) {
-      // On networks that answer transfer lookups in a single enhanced-API call,
-      // ask for everything that is left in one go. On networks scanned via
-      // `eth_getLogs`, walk backwards one bounded chunk per invocation instead;
-      // each chunk is recorded by `loadAssetTransfers` below, so the oldest
-      // lookup moves back a chunk at a time and this alarm keeps extending
-      // coverage on later runs rather than asking for all of history at once.
-      const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
-      const startBlock =
-        this.supportsAlchemy(addressNetwork.network) || oldest <= chunkSize
-          ? 0n
-          : oldest - chunkSize
-
-      await this.loadAssetTransfers(addressNetwork, startBlock, oldest)
-    }
-  }
-
-  /**
-   * True if the network's provider can serve Alchemy's enhanced APIs, which
-   * includes the transfer lookups used to discover asset transfers. When false,
-   * transfers are discovered by scanning ERC-20 `Transfer` logs, which is
-   * dramatically more sensitive to how many blocks a lookup covers.
-   */
-  private supportsAlchemy(network: EVMNetwork): boolean {
-    return this.providerForNetwork(network)?.supportsAlchemy ?? false
-  }
-
-  /**
-   * Load asset transfers from an account on a particular network within a
-   * particular block range. Emit events for any transfers found, and look up
-   * any related transactions and blocks.
-   *
-   * @param addressOnNetwork the address and network whose asset transfers we need
-   */
-  private async loadAssetTransfers(
-    addressOnNetwork: AddressOnNetwork,
-    startBlock: bigint,
-    endBlock: bigint,
-    incomingOnly = false,
-  ): Promise<void> {
-    if (
-      this.supportedNetworks.every(
-        (network) => network.chainID !== addressOnNetwork.network.chainID,
-      )
-    ) {
-      logger.error(
-        `Asset transfer check not supported on network ${JSON.stringify(
-          addressOnNetwork.network,
-        )}`,
-      )
-    }
-
-    const assetTransfers = await this.assetData.getAssetTransfers(
-      addressOnNetwork,
-      Number(startBlock),
-      Number(endBlock),
-      incomingOnly,
-    )
-
-    await this.db.recordAccountAssetTransferLookup(
-      addressOnNetwork,
-      startBlock,
-      endBlock,
-    )
-
-    this.emitter.emit("assetTransfers", {
-      addressNetwork: addressOnNetwork,
-      assetTransfers,
-    })
-
-    const firstSeen = Date.now()
-
-    const savedTransactionHashes = new Set(
-      await this.db.getAllSavedTransactionHashes(),
-    )
-    /// send all new tx hashes into a queue to retrieve + cache
-    assetTransfers.forEach((a, idx) => {
-      if (!savedTransactionHashes.has(a.txHash)) {
-        this.queueTransactionHashToRetrieve(
-          addressOnNetwork.network,
-          a.txHash,
-          firstSeen,
-          idx <= TRANSACTIONS_WITH_PRIORITY_MAX_COUNT ? 0 : 1,
-        )
-      }
-    })
-  }
-
-  /**
-   * Check for any incoming asset transfers involving tracked accounts.
-   */
-  private async handleRecentIncomingAssetTransferAlarm(
-    onlyActiveAccounts = false,
-  ): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
-    await Promise.allSettled(
-      accountsToTrack.map(async (addressNetwork) =>
-        this.loadRecentAssetTransfers(addressNetwork, true),
-      ),
-    )
-  }
-
-  private isCurrentlyActiveChainID(chainID: string): boolean {
-    return (
-      Date.now() <
-      this.lastUserActivityOnNetwork[chainID] + NETWORK_POLLING_TIMEOUT
-    )
-  }
-
-  private isCurrentlyActiveAddress(address: HexString): boolean {
-    return (
-      Date.now() <
-      this.lastUserActivityOnAddress[address] + NETWORK_POLLING_TIMEOUT
-    )
-  }
-
-  /**
-   * Check for any incoming or outgoing asset transfers involving tracked accounts.
-   */
-  private async handleRecentAssetTransferAlarm(
-    onlyActiveAccounts = false,
-  ): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack(onlyActiveAccounts)
-
-    await Promise.allSettled(
-      accountsToTrack.map((addressNetwork) =>
-        this.loadRecentAssetTransfers(addressNetwork),
-      ),
-    )
-  }
-
-  private async handleHistoricAssetTransferAlarm(): Promise<void> {
-    const accountsToTrack = await this.getAccountsToTrack()
-
-    await Promise.allSettled(
-      accountsToTrack.map((an) => this.loadHistoricAssetTransfers(an)),
-    )
+    await this.assetTransferScanner.scanRecentTransfersFor(addressNetwork)
   }
 
   private async handleQueuedTransactionAlarm(): Promise<void> {
-    if (
-      !this.transactionToRetrieveGranularTimer &&
-      this.transactionsToRetrieve.length
-    ) {
-      this.transactionToRetrieveGranularTimer = setInterval(() => {
-        if (
-          !this.transactionsToRetrieve.length &&
-          this.transactionToRetrieveGranularTimer
-        ) {
-          // Clean up if we have a timer, but we don't have anything in the queue
-          clearInterval(this.transactionToRetrieveGranularTimer)
-          this.transactionToRetrieveGranularTimer = undefined
-          return
-        }
-
-        // TODO: balance getting txs between networks
-        const { transaction } = this.transactionsToRetrieve[0]
-        this.removeTransactionHashFromQueue(
-          transaction.network,
-          transaction.hash,
-        )
-        this.retrieveTransaction(transaction)
-      }, 2 * SECOND)
-    }
-  }
-
-  /**
-   * Retrieve a confirmed or unconfirmed transaction's details, saving the
-   * results. If the transaction is confirmed, triggers retrieval and storage
-   * of transaction receipt information as well. If lookup fails, re-queues the
-   * transaction for a future retry until a constant lifetime is exceeded, at
-   * which point the transaction is marked as dropped unless it was
-   * independently marked as successful.
-   *
-   * @param network the EVM network we're interested in
-   * @param transaction the confirmed transaction we're interested in
-   */
-  private async retrieveTransaction({
-    network,
-    hash,
-    firstSeen,
-  }: QueuedTxToRetrieve): Promise<void> {
-    try {
-      const result = await this.getOrCancelTransaction(network, hash)
-
-      if (!result) {
-        return
-      }
-
-      const transaction = transactionFromEthersTransaction(result, network)
-
-      // TODO make this provider type specific
-      await this.saveTransaction(transaction, "boar")
-
-      if (
-        !("status" in transaction) && // if status field is present then it's not a pending tx anymore.
-        !transaction.blockHash &&
-        !transaction.blockHeight
-      ) {
-        // It's a pending tx, let's subscribe to events.
-        this.subscribeToTransactionConfirmation(
-          transaction.network,
-          transaction,
-        )
-      } else if (transaction.blockHash) {
-        // Get relevant block data.
-        await this.getBlockData(transaction.network, transaction.blockHash)
-        // Retrieve gas used, status, etc
-        this.retrieveTransactionReceipt(transaction.network, transaction)
-      }
-    } catch (error) {
-      logger.error(`Error retrieving transaction ${hash}`, error)
-      if (Date.now() <= firstSeen + TRANSACTION_CHECK_LIFETIME_MS) {
-        this.queueTransactionHashToRetrieve(network, hash, firstSeen)
-      } else {
-        logger.warn(
-          `Transaction ${hash} is too old to keep looking for it; treating ` +
-            "it as expired.",
-        )
-
-        this.db.getTransaction(network, hash).then((existingTransaction) => {
-          if (existingTransaction !== null) {
-            logger.debug(
-              "Found existing transaction for expired lookup; marking as " +
-                "failed if no other status exists.",
-            )
-            this.saveTransaction(
-              // Don't override an already-persisted successful status with
-              // an expiration-based failed status, but do set status to
-              // failure if no transaction was seen.
-              { status: 0, ...existingTransaction } as AnyEVMTransaction,
-              "local",
-            )
-          }
-        })
-      }
-    }
-  }
-
-  /**
-   * Save a transaction to the database and emit an event.
-   *
-   * @param transaction The transaction to save and emit. Uniqueness and
-   *        ordering will be handled by the database.
-   * @param dataSource Where the transaction was seen.
-   */
-  private async saveTransaction(
-    transaction: AnyEVMTransaction,
-    dataSource: "local" | "boar",
-  ): Promise<void> {
-    // Merge existing data into the updated transaction data. This handles
-    // cases where an existing transaction has been enriched by e.g. a receipt,
-    // and new data comes in.
-    const existing = await this.db.getTransaction(
-      transaction.network,
-      transaction.hash,
-    )
-    const finalTransaction = {
-      ...existing,
-      ...transaction,
-    }
-
-    let error: unknown = null
-    try {
-      await this.db.addOrUpdateTransaction(
-        {
-          // Don't lose fields the existing transaction has pulled, e.g. from a
-          // transaction receipt.
-          ...existing,
-          ...finalTransaction,
-        },
-        dataSource,
-      )
-    } catch (err) {
-      error = err
-      logger.error(`Error saving tx ${finalTransaction}`, error)
-    }
-    try {
-      const accounts = await this.getAccountsToTrack()
-
-      const forAccounts = accounts
-        .filter(
-          ({ address }) =>
-            sameEVMAddress(finalTransaction.from, address) ||
-            sameEVMAddress(finalTransaction.to, address),
-        )
-        .map(({ address }) => normalizeEVMAddress(address))
-
-      // emit in a separate try so outside services still get the tx
-      this.emitter.emit("transaction", {
-        transaction: finalTransaction,
-        forAccounts,
-      })
-    } catch (err) {
-      error = err
-      logger.error(`Error emitting tx ${finalTransaction}`, error)
-    }
-    if (error) {
-      // We don't control the errors in the whole stack, but we do want to
-      // rethrow them regardless.
-      throw error
-    }
+    this.transactionTracker.startLookups()
   }
 
   async emitSavedTransactions(account: AddressOnNetwork): Promise<void> {
@@ -1943,146 +1036,20 @@ export default class ChainService extends BaseService<Events> {
     )
   }
 
-  /**
-   * Get the latest block for a network and save it to the db.
-   *
-   * @param network The EVM network to watch.
-   */
-  private async fetchLatestBlockForNetwork(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetwork(network)
-    if (provider) {
-      try {
-        const blockNumber = provider.getBlockNumber()
-        const result = await provider.getBlock(blockNumber)
-        const block = blockFromEthersBlock(network, result)
-        await this.db.addBlock(block)
-      } catch (e) {
-        logger.error("Error getting block number", e)
-      }
-    }
+  private async subscribeToAccountTransactions(
+    addressNetwork: AddressOnNetwork,
+  ): Promise<void> {
+    await this.networkWatcher.watchAccount(addressNetwork)
   }
 
-  /**
-   * Watch a network for new blocks, saving each to the database and emitting an
-   * event. Re-orgs are currently ignored.
-   *
-   * @param network The EVM network to watch.
-   */
-  private async subscribeToNewHeads(network: EVMNetwork): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    this.subscribedNetworks.push({
-      network,
-      provider,
-    })
-
-    this.pollLatestBlock(network, provider)
-    this.pollBlockPrices()
+  private handleProviderReplaced(chainID: string): void {
+    this.networkWatcher.providerReplaced(chainID)
   }
 
-  /**
-   * Watch logs for an account's transactions on a particular network.
-   *
-   * @param addressOnNetwork The network and address to watch.
-   */
-  private async subscribeToAccountTransactions({
-    address,
-    network,
-  }: AddressOnNetwork): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    await provider.subscribeFullPendingTransactions(
-      { address, network },
-      this.handlePendingTransaction.bind(this),
-    )
-
-    this.subscribedAccounts.push({
-      account: address,
-      provider,
-    })
-  }
-
-  /**
-   * Persists pending transactions and subscribes to their confirmation
-   *
-   * @param transaction The pending transaction
-   */
   private async handlePendingTransaction(
     transaction: AnyEVMTransaction,
   ): Promise<void> {
-    try {
-      const { network } = transaction
-      const normalizedFromAddress = normalizeEVMAddress(transaction.from)
-
-      // If this is an EVM chain, we're tracking the from address's
-      // nonce, and the pending transaction has a higher nonce, update our
-      // view of it. This helps reduce the number of times when a
-      // transaction submitted outside of this wallet causes this wallet to
-      // produce bad transactions with reused nonces.
-      if (
-        typeof network.chainID !== "undefined" &&
-        typeof this.evmChainLastSeenNoncesByNormalizedAddress[
-          network.chainID
-        ]?.[normalizedFromAddress] !== "undefined" &&
-        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID]?.[
-          normalizedFromAddress
-        ] <= transaction.nonce
-      ) {
-        this.evmChainLastSeenNoncesByNormalizedAddress[network.chainID][
-          normalizedFromAddress
-        ] = transaction.nonce
-      }
-      await this.saveTransaction(transaction, "boar")
-
-      // Wait for confirmation/receipt information.
-      this.subscribeToTransactionConfirmation(network, transaction)
-    } catch (error) {
-      logger.error(`Error saving tx: ${transaction}`, error)
-    }
-  }
-
-  /**
-   * Track an pending transaction's confirmation status, saving any updates to
-   * the database and informing subscribers via the emitter.
-   *
-   * @param network the EVM network we're interested in
-   * @param transaction the unconfirmed transaction we're interested in
-   */
-  private async subscribeToTransactionConfirmation(
-    network: EVMNetwork,
-    transaction: AnyEVMTransaction,
-  ): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    provider.once(transaction.hash, (confirmedReceipt: TransactionReceipt) => {
-      this.saveTransaction(
-        enrichTransactionWithReceipt(transaction, confirmedReceipt),
-        "boar",
-      )
-
-      this.removeTransactionHashFromQueue(network, transaction.hash)
-    })
-
-    // Let's add the transaction to the queued lookup. If the transaction is dropped
-    // because of wrong nonce on chain the event will never arrive.
-    this.queueTransactionHashToRetrieve(network, transaction.hash, Date.now())
-  }
-
-  /**
-   * Retrieve a confirmed transaction's transaction receipt, saving the results.
-   *
-   * @param network the EVM network we're interested in
-   * @param transaction the confirmed transaction we're interested in
-   */
-  private async retrieveTransactionReceipt(
-    network: EVMNetwork,
-    transaction: AnyEVMTransaction,
-  ): Promise<void> {
-    const provider = this.providerForNetworkOrThrow(network)
-    const receipt = await provider.getTransactionReceipt(transaction.hash)
-    if (receipt) {
-      await this.saveTransaction(
-        enrichTransactionWithReceipt(transaction, receipt),
-        "boar",
-      )
-    }
+    await this.transactionTracker.handlePendingTransaction(transaction)
   }
 
   async getNetworkBaseAssets(): Promise<NetworkBaseAsset[]> {
@@ -2093,32 +1060,7 @@ export default class ChainService extends BaseService<Events> {
   async addCustomChain(
     chainInfo: ValidatedAddEthereumChainParameter,
   ): Promise<EVMNetwork> {
-    const network = await this.db.addEVMNetwork({
-      chainName: chainInfo.chainName,
-      chainID: chainInfo.chainId,
-      decimals: chainInfo.nativeCurrency.decimals,
-      symbol: chainInfo.nativeCurrency.symbol,
-      assetName: chainInfo.nativeCurrency.name,
-      rpcUrls: chainInfo.rpcUrls,
-      blockExplorerURL: chainInfo.blockExplorerUrl,
-      iconUrl: chainInfo.iconUrl,
-    })
-    await this.updateSupportedNetworks()
-
-    // Adding a chain that is already known replaces its provider outright, so
-    // retire the outgoing one rather than leaving it polling and reconnecting
-    // to the endpoints it was built with for the life of the service worker.
-    this.providers.evm[chainInfo.chainId]?.destroy()
-
-    this.providers.evm[chainInfo.chainId] = this.makeProviderForChain(
-      chainInfo.chainId,
-      chainInfo.rpcUrls.map((url) => ({ url })),
-    )
-
-    // As in `rebuildProviderForChain`: the replacement has failed nothing yet,
-    // and re-adding a chain with a fresh endpoint list should not inherit the
-    // verdict on the list it replaced.
-    this.emitReachability(chainInfo.chainId, "reachable")
+    const network = await this.networkSettings.addCustomChain(chainInfo)
 
     await this.startTrackingNetworkOrThrow(chainInfo.chainId)
 
@@ -2128,360 +1070,66 @@ export default class ChainService extends BaseService<Events> {
 
   /**
    * Replaces the stored RPC endpoint list for any known network — built-in
-   * or custom — and rebuilds the network's provider to use it. The list is
-   * used in priority order; endpoints past the first act as fallbacks.
-   *
-   * Only endpoints that are not already part of the chain's stored list are
-   * probed for reachability and chain ID agreement: a pre-existing endpoint
-   * having a transient outage is exactly what runtime failover exists to
-   * tolerate, and must not block an unrelated settings change.
+   * or custom — and swaps in a provider that uses it. Only endpoints that
+   * aren't already stored are checked.
    */
   async setRpcEndpointsForChain(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
   ): Promise<void> {
-    if (rpcEndpoints.length === 0) {
-      throw new Error("At least one RPC endpoint is required")
-    }
-
-    const network = await this.db.getEVMNetworkByChainID(chainID)
-    if (network === undefined) {
-      throw new Error(`No network found for chain ID ${chainID}`)
-    }
-
-    const storedUrls = new Set(
-      (await this.db.getRpcEndpointsByChainId(chainID).catch(() => [])).map(
-        ({ url }) => url,
-      ),
-    )
-    const newEndpoints = rpcEndpoints.filter(({ url }) => !storedUrls.has(url))
-
-    await this.validateRpcEndpoints(chainID, newEndpoints)
-
-    await this.db.setRpcEndpoints(chainID, rpcEndpoints)
-    await this.rebuildProviderForChain(chainID, rpcEndpoints)
+    await this.networkSettings.setRpcEndpoints(chainID, rpcEndpoints)
   }
 
   async getRpcEndpointsForChain(chainID: string): Promise<RpcEndpoint[]> {
-    return this.db.getRpcEndpointsByChainId(chainID)
+    return this.networkSettings.rpcEndpointsFor(chainID)
   }
 
-  /**
-   * Updates the user-editable settings for any known network — the RPC
-   * endpoint list, the block explorer URL, and, for custom networks only,
-   * the identifying metadata (name, currency details, icon). The chain ID
-   * and family are immutable for every network; metadata is immutable for
-   * built-in networks. Like RPC endpoints, a stored block explorer URL
-   * takes precedence over the hardcoded defaults from then on.
-   */
+  /** See {@link NetworkSettings.updateSettings}. */
   async updateNetworkSettings(
     chainID: string,
     rpcEndpoints: RpcEndpoint[],
     blockExplorerUrl: string,
-    metadata?: {
-      chainName: string
-      assetName: string
-      symbol: string
-      decimals: number
-      iconUrl?: string
-    },
+    metadata?: NetworkMetadata,
   ): Promise<EVMNetwork> {
-    if (metadata !== undefined && DEFAULT_NETWORKS_BY_CHAIN_ID.has(chainID)) {
-      throw new Error(
-        `Cannot edit metadata of built-in network with chain ID ${chainID}`,
-      )
-    }
-
-    // Endpoints are probed, persisted, and applied to the provider here, and
-    // only here; the metadata update below deliberately leaves them alone
-    // rather than writing the same list a second time.
-    await this.setRpcEndpointsForChain(chainID, rpcEndpoints)
-
-    if (metadata !== undefined) {
-      await this.db.updateEVMNetwork({
-        chainID,
-        chainName: metadata.chainName,
-        assetName: metadata.assetName,
-        symbol: metadata.symbol,
-        decimals: metadata.decimals,
-        iconUrl: metadata.iconUrl,
-        blockExplorerURL: blockExplorerUrl,
-      })
-    } else {
-      await this.db.setBlockExplorerUrl(chainID, blockExplorerUrl)
-    }
-
-    const updatedNetwork = await this.db.getEVMNetworkByChainID(chainID)
-    if (updatedNetwork === undefined) {
-      throw new Error(`No network found for chain ID ${chainID}`)
-    }
-
-    this.trackedNetworks = this.trackedNetworks.map((trackedNetwork) =>
-      trackedNetwork.chainID === chainID ? updatedNetwork : trackedNetwork,
-    )
-
-    await this.updateSupportedNetworks()
-
-    return updatedNetwork
+    return this.networkSettings.updateSettings(chainID, {
+      rpcEndpoints,
+      blockExplorerUrl,
+      metadata,
+    })
   }
 
-  /**
-   * The user-editable RPC endpoints for a chain, alongside any Taho-managed
-   * endpoints (currently Boar, while it remains in service) that also serve
-   * the chain but are not part of the stored, editable list.
-   */
+  /** See {@link NetworkSettings.rpcConfigFor}. */
   async getRpcConfigForChain(chainID: string): Promise<{
     rpcEndpoints: RpcEndpoint[]
     managedRpcEndpoints: RpcEndpoint[]
   }> {
-    const rpcEndpoints = await this.db.getRpcEndpointsByChainId(chainID)
-
-    const boarRpcUrl = BOAR_RPC_URLS[chainID]
-    const managedRpcEndpoints =
-      boarRpcUrl === undefined
-        ? []
-        : [
-            {
-              url: boarRpcUrl,
-              capabilities: BOAR_ALCHEMY_UNSUPPORTED_CHAIN_IDS.has(chainID)
-                ? []
-                : [ALCHEMY_CAPABILITY_NAMESPACE],
-            },
-          ]
-
-    return { rpcEndpoints, managedRpcEndpoints }
-  }
-
-  private async rebuildProviderForChain(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-  ): Promise<void> {
-    const customRpcConfigs = await this.db.getAllCustomRpcUrls()
-    const previousProvider = this.providers.evm[chainID]
-
-    this.providers.evm[chainID] = this.makeProviderForChain(
-      chainID,
-      rpcEndpoints,
-      customRpcConfigs.find((config) => config.chainID === chainID),
-    )
-
-    // Nothing points at the replaced provider anymore, but its reconnect and
-    // cache-cleanup timers would keep running, and its WebSockets keep
-    // reopening, against endpoints the user just removed.
-    previousProvider?.destroy()
-
-    // Subscriptions are tracked alongside the provider they were made on, so
-    // they have to be moved over; otherwise gas polling and pending
-    // transaction watching would keep addressing the retired provider.
-    await this.resubscribeToChainEvents(chainID, previousProvider)
-
-    // The replacement starts out reachable and has never failed anything, so
-    // say so rather than leaving a warning up against endpoints that have not
-    // been tried yet. If the new list is no better than the old one, the walk
-    // will exhaust again soon enough and we will be back.
-    this.emitReachability(chainID, "reachable")
+    return this.networkSettings.rpcConfigFor(chainID)
   }
 
   /**
    * Announces a chain's reachability. Deduplication is the provider's job —
-   * its tracker only reports transitions — but a provider rebuild reports
+   * its tracker only reports transitions — but a provider replacement reports
    * unconditionally, since the tracker it is replacing took its state with it.
    */
   private emitReachability(
     chainID: string,
     status: NetworkReachabilityState,
   ): void {
+    this.networkWatcher.reachabilityChanged(chainID, status)
     this.emitter.emit("networkReachability", { chainID, status })
   }
 
-  /**
-   * Re-establishes the network and account subscriptions that were made
-   * against a chain's previous provider on its replacement, updating the
-   * subscription registries in place instead of appending duplicate entries.
-   *
-   * Chains that had no subscriptions to begin with are left alone; a provider
-   * rebuild is not a reason to start tracking a network or an account.
-   */
-  private async resubscribeToChainEvents(
-    chainID: string,
-    previousProvider: SerialFallbackProvider | undefined,
-  ): Promise<void> {
-    const provider = this.providers.evm[chainID]
-    const networkSubscription = this.subscribedNetworks.find(
-      ({ network: subscribedNetwork }) =>
-        sameChainID(subscribedNetwork.chainID, chainID),
-    )
-    const network =
-      networkSubscription?.network ??
-      this.trackedNetworks.find((trackedNetwork) =>
-        sameChainID(trackedNetwork.chainID, chainID),
-      ) ??
-      this.supportedNetworks.find((supportedNetwork) =>
-        sameChainID(supportedNetwork.chainID, chainID),
-      )
-
-    if (provider === undefined || network === undefined) {
-      return
-    }
-
-    if (networkSubscription !== undefined) {
-      // Point the existing entry at the replacement instead of pushing a
-      // second one for the same network; block price polling reads the
-      // provider from here on every pass.
-      this.subscribedNetworks = this.subscribedNetworks.map((subscription) =>
-        subscription === networkSubscription
-          ? { network: subscription.network, provider }
-          : subscription,
-      )
-
-      // Read a fresh block and fresh block prices off the replacement, the
-      // way `subscribeToNewHeads` does for a newly subscribed network; both
-      // are fire-and-forget there as well, and the periodic poll picks the new
-      // provider up from `subscribedNetworks` on its next pass.
-      this.pollLatestBlock(network, provider).catch((error) =>
-        logger.error(
-          `Error reading the latest block from the rebuilt provider on chain ${chainID}`,
-          error,
-        ),
-      )
-      this.pollBlockPricesForNetwork(chainID).catch((error) =>
-        logger.error(
-          `Error reading block prices from the rebuilt provider on chain ${chainID}`,
-          error,
-        ),
-      )
-    }
-
-    // Account subscriptions have to be made again on the new provider, so drop
-    // the entries for the retired one and let `subscribeToAccountTransactions`
-    // record fresh ones.
-    const subscribedAddresses =
-      previousProvider === undefined
-        ? []
-        : this.subscribedAccounts
-            .filter(
-              ({ provider: accountProvider }) =>
-                accountProvider === previousProvider,
-            )
-            .map(({ account }) => account)
-
-    this.subscribedAccounts = this.subscribedAccounts.filter(
-      ({ provider: accountProvider }) => accountProvider !== previousProvider,
-    )
-
-    await Promise.allSettled(
-      subscribedAddresses.map((address) =>
-        this.subscribeToAccountTransactions({ address, network }),
-      ),
-    )
-  }
-
-  /**
-   * Verifies that each http(s) RPC endpoint in the given list is reachable
-   * and reports the expected chain ID via eth_chainId. WebSocket endpoints
-   * are not probed. Throws an {@link RpcEndpointValidationError} naming the
-   * offending URL on mismatch or unreachability.
-   */
-  // eslint-disable-next-line class-methods-use-this
-  private async validateRpcEndpoints(
-    chainID: string,
-    rpcEndpoints: RpcEndpoint[],
-  ): Promise<void> {
-    await Promise.all(
-      rpcEndpoints.map(async ({ url }) => {
-        if (!/^https?:/.test(url)) {
-          return
-        }
-
-        const abortController = new AbortController()
-        // The timeout has to stay armed until the body has been read, not just
-        // until the response headers arrive: `fetch` resolves as soon as the
-        // headers land, and an endpoint that then trickles or stalls its body
-        // would hang `response.json()` — and with it the settings save — for
-        // as long as the socket stays open. Aborting the request aborts the
-        // body read too, which surfaces below as an unreachable endpoint.
-        const timeout = setTimeout(
-          () => abortController.abort(),
-          RPC_PROBE_TIMEOUT,
-        )
-
-        let reportedChainID: string
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "omit",
-            body: JSON.stringify({
-              jsonrpc: "2.0",
-              id: 1,
-              method: "eth_chainId",
-              params: [],
-            }),
-            signal: abortController.signal,
-          })
-
-          const { result } = await response.json()
-          // JSON-RPC error responses carry no result; treat them — and any
-          // other non-hex result — the same as an unreachable endpoint
-          // rather than reporting a nonsense chain ID.
-          if (
-            typeof result !== "string" ||
-            Number.isNaN(parseInt(result, 16))
-          ) {
-            throw new Error(`invalid eth_chainId result: ${result}`)
-          }
-          reportedChainID = String(parseInt(result, 16))
-        } catch (error) {
-          logger.debug("RPC endpoint probe failed for", url, error)
-          throw new RpcEndpointValidationError({ kind: "unreachable", url })
-        } finally {
-          clearTimeout(timeout)
-        }
-
-        if (!sameChainID(reportedChainID, chainID)) {
-          throw new RpcEndpointValidationError({
-            kind: "chain-mismatch",
-            url,
-            reportedChainID,
-            expectedChainID: chainID,
-          })
-        }
-      }),
-    )
-  }
-
   async removeCustomChain(chainID: string): Promise<void> {
-    this.trackedNetworks = this.trackedNetworks.filter(
-      (network) => network.chainID !== chainID,
+    this.trackedChainIDs = this.trackedChainIDs.filter(
+      (tracked) => !sameChainID(tracked, chainID),
     )
+    this.networkWatcher.stopWatchingNetwork(chainID)
 
-    // Dropping the network from the database is not enough: the provider is a
-    // live object with its own reconnect and cache-cleanup timers and, for
-    // WebSocket endpoints, open sockets. Retire it and drop the entry, so
-    // nothing can keep talking to a chain the user has removed.
-    const removedProvider = this.providers.evm[chainID]
-    removedProvider?.destroy()
-    delete this.providers.evm[chainID]
-
-    // The subscription registries are what the periodic block and block-price
-    // polls read the provider from, so entries pointing at the retired one
-    // have to go with it.
-    this.subscribedNetworks = this.subscribedNetworks.filter(
-      ({ network }) => !sameChainID(network.chainID, chainID),
-    )
-    this.subscribedAccounts = this.subscribedAccounts.filter(
-      ({ provider }) => provider !== removedProvider,
-    )
-
-    await this.db.removeEVMNetwork(chainID)
-    await this.updateSupportedNetworks()
+    await this.networkSettings.removeCustomChain(chainID)
   }
 
   async updateSupportedNetworks(): Promise<void> {
-    const supportedNetworks = await this.db.getAllEVMNetworks()
-
-    this.supportedNetworks = supportedNetworks
-    this.emitter.emit("supportedNetworks", supportedNetworks)
+    await this.networkSettings.refreshSupportedNetworks()
   }
 
   async queryAccountTokenDetails(

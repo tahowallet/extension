@@ -2,7 +2,7 @@ import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import SerialFallbackProvider from "../serial-fallback-provider"
-import { CircuitBreaker } from "../circuit-breaker"
+import type Endpoint from "../rpc/endpoint"
 import {
   resetForTests as resetPerfMetricsForTests,
   snapshotAndReset,
@@ -19,9 +19,12 @@ const sandbox = sinon.createSandbox()
 function tripBreakerOpen(
   provider: SerialFallbackProvider,
   providerIndex: number,
-): CircuitBreaker {
+): Endpoint {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/dot-notation
-  const breaker: CircuitBreaker = (provider as any)["breakerFor"](providerIndex)
+  const breaker: Endpoint = (provider as any)["standardEndpointAt"](
+    providerIndex,
+  )
+  breaker.build()
   for (let i = 0; i < 10; i += 1) {
     breaker.recordFailure()
   }
@@ -44,8 +47,8 @@ describe("SerialFallbackProvider circuit breaker integration", () => {
       .stub(mockAlchemyProvider, "send")
       .callsFake(async () => "alchemy")
     fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => mockGenericProvider },
-      { type: "boar", creator: () => mockAlchemyProvider },
+      { kind: "standard", createTransport: () => mockGenericProvider },
+      { kind: "managed", createTransport: () => mockAlchemyProvider },
     ])
   })
 
@@ -81,6 +84,29 @@ describe("SerialFallbackProvider circuit breaker integration", () => {
       (p) => p.providerIndex === 0,
     )!
     expect(primary.circuitBreakerOpens).toBe(1)
+  })
+
+  it("still sends managed methods to Boar while it cools down", async () => {
+    tripBreakerOpen(fallbackProvider, 1)
+
+    await expect(
+      fallbackProvider.send("eth_sendRawTransaction", ["0x01"]),
+    ).resolves.toBe("alchemy")
+    expect(
+      genericSendStub.args.filter(
+        (args) => args[0] === "eth_sendRawTransaction",
+      ),
+    ).toHaveLength(0)
+  })
+
+  it("keeps the standard walk off a cooling Boar", async () => {
+    tripBreakerOpen(fallbackProvider, 0)
+    tripBreakerOpen(fallbackProvider, 1)
+
+    await expect(
+      fallbackProvider.send("eth_getBlockByNumber", ["0x1", false]),
+    ).rejects.toThrow("circuit open")
+    expect(alchemySendStub.called).toBe(false)
   })
 
   it("leaves routing unchanged when the breaker is closed", async () => {

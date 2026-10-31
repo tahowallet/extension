@@ -1,5 +1,6 @@
 import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
+import * as sinon from "sinon"
 import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
 import {
   createAccountBalance,
@@ -121,6 +122,26 @@ describe("Chain Database", () => {
       await db.addOrUpdateTransaction(updateOpt, "boar")
       expect(updateEth.gasPrice).toEqual(40400000000n)
       expect(updateOpt.gasPrice).toEqual(40400000000n)
+    })
+    it("should keep a transaction's firstSeen across updates", async () => {
+      const now = sinon.stub(Date, "now").returns(1_000)
+      try {
+        await db.addOrUpdateTransaction(addTransactionEth, "boar")
+        now.returns(5_000)
+        await db.addOrUpdateTransaction(
+          { ...addTransactionEth, blockHeight: 7 },
+          "local",
+        )
+      } finally {
+        now.restore()
+      }
+
+      expect(
+        await db.getTransaction(
+          addTransactionEth.network,
+          addTransactionEth.hash,
+        ),
+      ).toMatchObject({ firstSeen: 1_000, blockHeight: 7, dataSource: "local" })
     })
   })
   describe("getAccountsToTrack", () => {
@@ -285,6 +306,33 @@ describe("Chain Database", () => {
       expect(
         opPendingTransactions.find((tx) => tx.hash === pendingOptimismTx1.hash),
       ).toBeTruthy()
+    })
+  })
+  describe("getNetworkTransactionsAwaitingReceipts", () => {
+    it("returns recent mined transactions without a receipt", async () => {
+      const clock = sinon.useFakeTimers({ now: 1_000_000, toFake: ["Date"] })
+      const awaiting = createAnyEVMTransaction({ network: ETHEREUM })
+      const pending = createAnyEVMTransaction({
+        network: ETHEREUM,
+        blockHash: null,
+      })
+      const confirmed = {
+        ...createAnyEVMTransaction({ network: ETHEREUM }),
+        status: 1,
+      }
+      await db.addOrUpdateTransaction(awaiting, "boar")
+      await db.addOrUpdateTransaction(pending, "boar")
+      await db.addOrUpdateTransaction(confirmed, "boar")
+      clock.restore()
+
+      const found = await db.getNetworkTransactionsAwaitingReceipts(
+        ETHEREUM,
+        1_000_000,
+      )
+      expect(found.map(({ hash }) => hash)).toEqual([awaiting.hash])
+      expect(
+        await db.getNetworkTransactionsAwaitingReceipts(ETHEREUM, 1_000_001),
+      ).toEqual([])
     })
   })
   describe("getNewestAccountAssetTransferLookup", () => {
