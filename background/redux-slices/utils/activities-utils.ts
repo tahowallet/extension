@@ -8,10 +8,12 @@ import {
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
 import {
+  type AssetTransferForAddress,
   getAssetTransfersForAddress,
   getRecipient,
   getSender,
 } from "../../services/enrichment/utils"
+import { getExecutedSafeAddress } from "../../services/enrichment/safe"
 import type { HexString } from "../../types"
 
 enum TxStatus {
@@ -39,7 +41,6 @@ export type Activity = {
 }
 
 export type ActivityDetail = {
-  assetIconUrl?: string
   label: string
   value: string
 }
@@ -211,30 +212,52 @@ export const sortActivities = (a: Activity, b: Activity): number => {
   return b.blockHeight - a.blockHeight
 }
 
+export type ActivityBalanceChanges = {
+  address: HexString
+  transfers: AssetTransferForAddress[]
+}
+
+export type ActivityDetails = {
+  rows: ActivityDetail[]
+  /** Token movements for the account the activity is being viewed from. */
+  balanceChanges: ActivityBalanceChanges
+  /**
+   * Token movements for the Safe, when the transaction executes a Safe
+   * transaction. The Safe's own transfers are usually the point of it; the
+   * executor's balances may not change at all.
+   */
+  safeBalanceChanges?: ActivityBalanceChanges
+}
+
 export function getActivityDetails(
   tx: EnrichedEVMTransaction,
-): ActivityDetail[] {
-  const assetTransfers = getAssetTransfersForAddress(
-    tx.annotation?.subannotations,
-    tx.from,
-  )
+  accountAddress: HexString = tx.from,
+): ActivityDetails {
+  const { subannotations } = tx.annotation ?? {}
+  const safeAddress = getExecutedSafeAddress(tx)
 
-  return [
-    { label: "Block Height", value: getBlockHeight(tx) },
-    { label: "Amount", value: getAmount(tx) },
-    { label: "Max Fee/Gas", value: getGweiPrice(tx.maxFeePerGas) },
-    { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
-    { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
-    { label: "Nonce", value: tx.nonce.toString() },
-    { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
-  ].concat(
-    assetTransfers.map((transfer) => ({
-      assetIconUrl: transfer.assetLogoUrl ?? "",
-      label: transfer.assetSymbol,
-      value:
-        transfer.direction === "in"
-          ? transfer.localizedDecimalAmount
-          : `-${transfer.localizedDecimalAmount}`,
-    })),
-  )
+  return {
+    rows: [
+      { label: "Block Height", value: getBlockHeight(tx) },
+      { label: "Amount", value: getAmount(tx) },
+      { label: "Max Fee/Gas", value: getGweiPrice(tx.maxFeePerGas) },
+      { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
+      { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
+      { label: "Nonce", value: tx.nonce.toString() },
+      {
+        label: "Timestamp",
+        value: getTimestamp(tx.annotation?.blockTimestamp),
+      },
+    ],
+    balanceChanges: {
+      address: accountAddress,
+      transfers: getAssetTransfersForAddress(subannotations, accountAddress),
+    },
+    ...(safeAddress !== undefined && {
+      safeBalanceChanges: {
+        address: safeAddress,
+        transfers: getAssetTransfersForAddress(subannotations, safeAddress),
+      },
+    }),
+  }
 }

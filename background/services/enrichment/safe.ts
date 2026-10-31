@@ -172,6 +172,20 @@ export function isSafeExecTransactionCalldata(
 }
 
 /**
+ * The Safe a transaction executes a Safe transaction on, if it calls
+ * `execTransaction`; undefined otherwise.
+ */
+export function getExecutedSafeAddress(transaction: {
+  to?: string | null
+  input?: string | null
+}): HexString | undefined {
+  return typeof transaction.to === "string" &&
+    isSafeExecTransactionCalldata(transaction.input)
+    ? transaction.to
+    : undefined
+}
+
+/**
  * A "pre-validated" Safe signature: `r` is the owner's address, `s` is zero,
  * and `v` is 1. The Safe accepts it when the owner is `msg.sender`.
  */

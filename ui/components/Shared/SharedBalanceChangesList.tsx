@@ -1,23 +1,23 @@
 import React, { ReactElement } from "react"
 import type { AssetTransferForAddress } from "@tallyho/tally-background/services/enrichment/utils"
 import { useTranslation } from "react-i18next"
-import SharedAddress from "../../Shared/SharedAddress"
-import SharedAssetIcon from "../../Shared/SharedAssetIcon"
-import SharedIcon from "../../Shared/SharedIcon"
-import SharedTooltip from "../../Shared/SharedTooltip"
+import SharedAddress from "./SharedAddress"
+import SharedAssetIcon from "./SharedAssetIcon"
+import SharedIcon from "./SharedIcon"
+import SharedTooltip from "./SharedTooltip"
 
-type BalanceChangesListProps = {
+type SharedBalanceChangesListProps = {
   label: string
   transfers: AssetTransferForAddress[]
   /** Shown beside the label when nothing moved; without it, nothing renders. */
   emptyMessage?: string
 }
 
-export default function BalanceChangesList({
+export default function SharedBalanceChangesList({
   label,
   transfers,
   emptyMessage,
-}: BalanceChangesListProps): ReactElement | null {
+}: SharedBalanceChangesListProps): ReactElement | null {
   const { t } = useTranslation("translation", {
     keyPrefix: "signTransaction",
   })

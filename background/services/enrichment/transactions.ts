@@ -38,6 +38,7 @@ import {
 import { isDefined, isFulfilledPromise } from "../../lib/utils/type-guards"
 import { unsignedTransactionFromEVMTransaction } from "../chain/utils"
 import type { SimulationResult } from "./simulation"
+import { getExecutedSafeAddress } from "./safe"
 import type { HexString } from "../../types"
 
 /**
@@ -257,6 +258,28 @@ export async function annotationsFromLogs(
   )
 
   return subannotations
+}
+
+/**
+ * How to filter a transaction's logs into subannotations.
+ *
+ * A Safe isn't usually a tracked account, but when a transaction executes one,
+ * the Safe's transfers are what it does, so they're included. Untracked tokens
+ * are looked up for simulations, where every token that moves matters, and for
+ * Safe executions, whose tokens the wallet usually doesn't track. Other mined
+ * transactions keep to tracked tokens.
+ */
+function annotationLogOptions(
+  safeAddress: HexString | undefined,
+  hasConfirmedLogs: boolean,
+): Parameters<typeof annotationsFromLogs>[8] {
+  if (safeAddress !== undefined) {
+    return {
+      additionalRelevantAddresses: [safeAddress],
+      resolveUntrackedAssets: true,
+    }
+  }
+  return hasConfirmedLogs ? {} : { resolveUntrackedAssets: true }
 }
 
 /**
@@ -580,17 +603,12 @@ export default async function resolveTransactionAnnotation(
       desiredDecimals,
       txAnnotation.timestamp,
       block,
-      hasConfirmedLogs
-        ? {}
-        : {
-            // A Safe isn't usually a tracked account, but its transfers are
-            // the point of simulating its transaction.
-            additionalRelevantAddresses:
-              simulation?.safeAddress === undefined
-                ? []
-                : [simulation.safeAddress],
-            resolveUntrackedAssets: true,
-          },
+      annotationLogOptions(
+        hasConfirmedLogs
+          ? getExecutedSafeAddress(transaction)
+          : simulation?.safeAddress,
+        hasConfirmedLogs,
+      ),
     )
 
     if (subannotations.length > 0) {

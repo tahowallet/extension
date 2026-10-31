@@ -2,7 +2,7 @@ import React, { ReactElement } from "react"
 import { getAssetTransfersForAddress } from "@tallyho/tally-background/services/enrichment/utils"
 import { useTranslation } from "react-i18next"
 import { TransactionSignatureSummaryProps } from "../TransactionSignatureSummary/TransactionSignatureSummaryProps"
-import BalanceChangesList from "../../BalanceChangesList"
+import SharedBalanceChangesList from "../../../../Shared/SharedBalanceChangesList"
 
 /**
  * Simulated balance changes for each party that can be affected: the signing
@@ -22,7 +22,7 @@ export default function SimulatedBalanceChanges({
 
   return (
     <>
-      <BalanceChangesList
+      <SharedBalanceChangesList
         label={t("yourAccountBalanceChanges")}
         transfers={getAssetTransfersForAddress(
           annotation?.subannotations,
@@ -31,7 +31,7 @@ export default function SimulatedBalanceChanges({
         emptyMessage={t("noBalanceChanges")}
       />
       {safeAddress !== undefined && (
-        <BalanceChangesList
+        <SharedBalanceChangesList
           label={t("safeBalanceChanges")}
           transfers={getAssetTransfersForAddress(
             annotation?.subannotations,
