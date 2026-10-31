@@ -308,6 +308,33 @@ describe("Chain Database", () => {
       ).toBeTruthy()
     })
   })
+  describe("getNetworkTransactionsAwaitingReceipts", () => {
+    it("returns recent mined transactions without a receipt", async () => {
+      const clock = sinon.useFakeTimers({ now: 1_000_000, toFake: ["Date"] })
+      const awaiting = createAnyEVMTransaction({ network: ETHEREUM })
+      const pending = createAnyEVMTransaction({
+        network: ETHEREUM,
+        blockHash: null,
+      })
+      const confirmed = {
+        ...createAnyEVMTransaction({ network: ETHEREUM }),
+        status: 1,
+      }
+      await db.addOrUpdateTransaction(awaiting, "boar")
+      await db.addOrUpdateTransaction(pending, "boar")
+      await db.addOrUpdateTransaction(confirmed, "boar")
+      clock.restore()
+
+      const found = await db.getNetworkTransactionsAwaitingReceipts(
+        ETHEREUM,
+        1_000_000,
+      )
+      expect(found.map(({ hash }) => hash)).toEqual([awaiting.hash])
+      expect(
+        await db.getNetworkTransactionsAwaitingReceipts(ETHEREUM, 1_000_001),
+      ).toEqual([])
+    })
+  })
   describe("getNewestAccountAssetTransferLookup", () => {
     it("should correctly return the most recent asset transfer for a given addressNetwork", async () => {
       await db.recordAccountAssetTransferLookup(account1, 1n, 100n)

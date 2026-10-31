@@ -760,6 +760,26 @@ export class ChainDatabase extends Dexie {
       .toArray()
   }
 
+  /**
+   * Transactions on the network that have a block but no receipt yet, first
+   * seen at `since` or later.
+   */
+  async getNetworkTransactionsAwaitingReceipts(
+    network: Network,
+    since: UNIXTime,
+  ): Promise<Transaction[]> {
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
+      .filter(
+        (transaction) =>
+          !("status" in transaction) &&
+          typeof transaction.blockHash === "string" &&
+          transaction.blockHash !== "" &&
+          transaction.firstSeen >= since,
+      )
+      .toArray()
+  }
+
   /** Records when lookups started missing a stored transaction, or clears it. */
   async setTransactionMissingSince(
     network: Network,

@@ -56,6 +56,7 @@ import NetworkSettings, { NetworkMetadata } from "./network-settings"
 import AssetTransferScanner from "./asset-transfer-scanner"
 import NetworkWatcher from "./network-watcher"
 import TransactionSubmitter from "./transaction-submitter"
+import { TRANSACTION_CHECK_LIFETIME_MS } from "./pending-transaction-machine"
 import TransactionTracker, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
@@ -391,8 +392,15 @@ export default class ChainService extends BaseService<Events> {
           // retrieval---either to confirm they no longer exist, or to
           // read/monitor their status.
           trackedNetworks.map((network) =>
-            this.db
-              .getNetworkPendingTransactions(network)
+            Promise.all([
+              this.db.getNetworkPendingTransactions(network),
+              // Mined, but a receipt never came in before the restart.
+              this.db.getNetworkTransactionsAwaitingReceipts(
+                network,
+                Date.now() - TRANSACTION_CHECK_LIFETIME_MS,
+              ),
+            ])
+              .then((rows) => rows.flat())
               .then((pendingTransactions) => {
                 pendingTransactions.forEach(
                   ({ hash, firstSeen, missingSince }) => {

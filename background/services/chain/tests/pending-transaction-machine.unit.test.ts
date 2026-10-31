@@ -50,6 +50,7 @@ const ALL_EVENTS: PendingTransactionEvent[] = [
   { type: "RECEIPT_ARRIVED" },
   { type: "RECHECK_DUE" },
   { type: "RECEIPT_SAVED" },
+  { type: "RECEIPT_MISSING", now: T0 },
 ]
 
 describe("pendingTransactionMachine", () => {
@@ -80,6 +81,7 @@ describe("pendingTransactionMachine", () => {
       ["InMempool", "RECEIPT_ARRIVED", "InBlock", ["fetchBlockAndReceipt"]],
       ["InMempool", "RECHECK_DUE", "Queued", []],
       ["InBlock", "RECEIPT_SAVED", "Confirmed", ["unwatch", "dequeue"]],
+      ["InBlock", "RECEIPT_MISSING", "Queued", ["requeue"]],
     ])("%s --%s--> %s", (from, type, to, effects) => {
       const event = ALL_EVENTS.find((candidate) => candidate.type === type)!
       const result = run(at(from), [event])
@@ -99,7 +101,7 @@ describe("pendingTransactionMachine", () => {
         "LOOKUP_FAILED",
       ],
       InMempool: ["RECEIPT_ARRIVED", "RECHECK_DUE"],
-      InBlock: ["RECEIPT_SAVED"],
+      InBlock: ["RECEIPT_SAVED", "RECEIPT_MISSING"],
       Confirmed: [],
       Dropped: [],
       Expired: [],
@@ -260,6 +262,18 @@ describe("pendingTransactionMachine", () => {
       const expired = fail(T0 + TRANSACTION_CHECK_LIFETIME_MS + 1)
       expect(expired.state).toBe("Expired")
       expect(expired.effects).toEqual(["markExpired", "dequeue"])
+    })
+  })
+
+  describe("missing receipts", () => {
+    it("looks again for a receipt until the lifetime is up", () => {
+      const missing = (now: number) =>
+        run(at("InBlock"), [{ type: "RECEIPT_MISSING", now }])
+
+      expect(missing(T0 + TRANSACTION_CHECK_LIFETIME_MS).state).toBe("Queued")
+      const late = missing(T0 + TRANSACTION_CHECK_LIFETIME_MS + 1)
+      expect(late.state).toBe("InBlock")
+      expect(late.effects).toEqual([])
     })
   })
 

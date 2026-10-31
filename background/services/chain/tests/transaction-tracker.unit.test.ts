@@ -46,14 +46,15 @@ function harness() {
   const observed = sinon.spy(nonceAllocator, "observeNonce")
   const emitted: AnyEVMTransaction[] = []
   const blocks: string[] = []
+  const getBlockData = sinon.stub().callsFake(async (_, blockHash: string) => {
+    blocks.push(blockHash)
+  })
   const tracker = new TransactionTracker({
     db,
     providerFor: () => provider as unknown as SerialFallbackProvider,
     existingProviderFor: () => provider as unknown as SerialFallbackProvider,
     nonceAllocator,
-    getBlockData: async (_, blockHash) => {
-      blocks.push(blockHash)
-    },
+    getBlockData,
     emitTransaction: async (transaction) => {
       emitted.push(transaction)
     },
@@ -103,6 +104,7 @@ function harness() {
     observed,
     emitted,
     blocks,
+    getBlockData,
     store,
     stored,
     queued,
@@ -282,6 +284,41 @@ describe("TransactionTracker", () => {
       expect(provider.once.calledWith(transaction.hash)).toBe(true)
       expect(queued(transaction)?.missingSince).toBeUndefined()
     })
+
+    it("looks again for a mined transaction whose receipt isn't in yet", async () => {
+      const { store, lookUp, provider, stored, queued } = harness()
+      const transaction = await store(OPTIMISM)
+      provider.getTransaction.resolves(mined(transaction, "0xb10c"))
+
+      await lookUp(transaction, T0)
+
+      expect((await stored(transaction))?.status).toBeUndefined()
+      expect(queued(transaction)).toBeDefined()
+    })
+
+    it.each([
+      ["saving it", "save"],
+      ["fetching its block", "block"],
+      ["fetching its receipt", "receipt"],
+    ] as const)(
+      "retries a lookup that fails %s after finding the transaction",
+      async (_, failing) => {
+        const { store, lookUp, provider, queued, db, getBlockData } = harness()
+        const transaction = await store(OPTIMISM)
+        provider.getTransaction.resolves(mined(transaction, "0xb10c"))
+        if (failing === "save") {
+          sinon.stub(db, "addOrUpdateTransaction").rejects(new Error("db"))
+        } else if (failing === "receipt") {
+          provider.getTransactionReceipt.rejects(new Error("NETWORK_ERROR"))
+        } else {
+          getBlockData.rejects(new Error("NETWORK_ERROR"))
+        }
+
+        await lookUp(transaction, T0)
+
+        expect(queued(transaction)).toBeDefined()
+      },
+    )
 
     it("retries failed lookups for ten hours, then expires without releasing the nonce", async () => {
       const { store, lookUp, provider, stored, queued, tracker, released } =

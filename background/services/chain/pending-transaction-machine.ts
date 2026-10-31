@@ -36,6 +36,7 @@ export type PendingTransactionEvent =
   | { type: "RECEIPT_ARRIVED" }
   | { type: "RECHECK_DUE" }
   | { type: "RECEIPT_SAVED" }
+  | { type: "RECEIPT_MISSING"; now: UNIXTime }
 
 export type PendingTransactionState =
   | "Queued"
@@ -170,7 +171,15 @@ export const pendingTransactionMachine = setup({
     },
     InBlock: {
       entry: { type: "fetchBlockAndReceipt" },
-      on: { RECEIPT_SAVED: "Confirmed" },
+      on: {
+        RECEIPT_SAVED: "Confirmed",
+        // Endpoints can know a transaction's block before its receipt.
+        RECEIPT_MISSING: {
+          guard: "withinLifetime",
+          target: "Queued",
+          actions: { type: "requeue" },
+        },
+      },
     },
     Confirmed: {
       type: "final",

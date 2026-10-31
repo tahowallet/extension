@@ -187,15 +187,22 @@ export default class TransactionTracker {
       return
     }
 
-    lookup.found = transactionFromEthersTransaction(result, network)
-    lookup.source =
-      this.dependencies
-        .providerFor(network)
-        .dataSourceFor("eth_getTransactionByHash", [hash]) ?? "generic-rpc"
-    await this.apply(lookup, snapshot, {
-      type: lookup.found.blockHash ? "FOUND_IN_BLOCK" : "FOUND_IN_MEMPOOL",
-      now,
-    })
+    try {
+      lookup.found = transactionFromEthersTransaction(result, network)
+      lookup.source =
+        this.dependencies
+          .providerFor(network)
+          .dataSourceFor("eth_getTransactionByHash", [hash]) ?? "generic-rpc"
+      await this.apply(lookup, snapshot, {
+        type: lookup.found.blockHash ? "FOUND_IN_BLOCK" : "FOUND_IN_MEMPOOL",
+        now,
+      })
+    } catch (error) {
+      // Saving what was found, or fetching its block or receipt, failed; the
+      // lookup is retried like one that failed outright.
+      logger.error(`Error handling transaction ${hash}`, error)
+      await this.apply(lookup, snapshot, { type: "LOOKUP_FAILED", now })
+    }
   }
 
   /** Where a lookup stands, rebuilt from the queue and the stored row. */
@@ -334,9 +341,16 @@ export default class TransactionTracker {
 
     if (effects.includes("fetchBlockAndReceipt")) {
       const receiptSaved = await this.fetchBlockAndReceipt(lookup)
-      if (receiptSaved) {
-        return this.apply(lookup, next, { type: "RECEIPT_SAVED" })
-      }
+      return this.apply(
+        lookup,
+        next,
+        receiptSaved
+          ? { type: "RECEIPT_SAVED" }
+          : {
+              type: "RECEIPT_MISSING",
+              now: "now" in event ? event.now : Date.now(),
+            },
+      )
     }
 
     return next
