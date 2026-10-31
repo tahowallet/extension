@@ -186,9 +186,10 @@ export class ChainDatabase extends Dexie {
     this.chainTransactions.hook(
       "updating",
       (modifications, _, chainTransaction) => {
-        // Only these properties can be updated on a stored transaction.
-        // NOTE: Currently we do NOT throw if another property modification is
-        // attempted; instead, we just ignore it.
+        // Dexie writes every modification, and for put the whole new row;
+        // what this returns is only applied on top. Filtering here doesn't
+        // stop other properties from changing. What it does do is keep the
+        // earliest firstSeen.
         const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
 
         const filteredModifications = Object.fromEntries(
