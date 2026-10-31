@@ -12,6 +12,13 @@ type Props = {
   size: "small" | "medium" | "large" | number
   logoURL: string
   symbol: string
+  /**
+   * For an asset we can't vouch for. Its symbol and logo are whatever the
+   * asset says they are, so neither picks the icon: an untrusted token
+   * calling itself ETH must not get ETH's icon. It gets the symbol
+   * placeholder instead.
+   */
+  untrusted?: boolean
 }
 
 const hardcodedIcons = new Set([
@@ -75,14 +82,15 @@ function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
-  const { size, logoURL, symbol } = props
+  const { size, logoURL: assetLogoURL, symbol, untrusted = false } = props
+  const logoURL = untrusted ? "" : assetLogoURL
 
   const [imageURL, setImageURL] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [visible, setIsVisible] = useState(false)
   const [error, setHasError] = useState(false)
 
-  const hasHardcodedIcon = hardcodedIcons.has(symbol)
+  const hasHardcodedIcon = !untrusted && hardcodedIcons.has(symbol)
 
   const sizeClass = typeof size === "string" ? size : "custom_size"
 
