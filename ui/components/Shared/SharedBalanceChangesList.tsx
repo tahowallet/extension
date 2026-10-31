@@ -66,7 +66,8 @@ export default function SharedBalanceChangesList({
                 <SharedTooltip
                   width={200}
                   verticalPosition="top"
-                  horizontalPosition="right"
+                  // Centered: opening rightward runs past the popup's edge.
+                  horizontalPosition="center"
                   style={{ margin: "-5px 0", flexShrink: 0 }}
                   IconComponent={() => (
                     <SharedIcon
