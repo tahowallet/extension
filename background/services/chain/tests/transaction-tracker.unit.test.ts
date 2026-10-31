@@ -251,6 +251,21 @@ describe("TransactionTracker", () => {
       expect(released.called).toBe(false)
     })
 
+    it("restarts the grace when a subscription sees a missing transaction", async () => {
+      const { store, lookUp, tracker, queued, stored, released } = harness()
+      const transaction = await store(OPTIMISM)
+      await lookUp(transaction, T0)
+
+      await tracker.handlePendingTransaction(transaction)
+      expect((await stored(transaction))?.missingSince).toBeUndefined()
+      expect(queued(transaction)?.missingSince).toBeUndefined()
+
+      await tracker.lookUp(queued(transaction)!, T0 + 3 * MINUTE)
+      expect((await stored(transaction))?.status).toBeUndefined()
+      expect((await stored(transaction))?.missingSince).toBe(T0 + 3 * MINUTE)
+      expect(released.called).toBe(false)
+    })
+
     it("survives a restart mid-grace", async () => {
       const { store, lookUp, db, stored } = harness()
       const transaction = await store(OPTIMISM)

@@ -306,7 +306,22 @@ export default class TransactionTracker {
       transaction.hash,
     )
     // Keeps fields the stored transaction has pulled, e.g. from a receipt.
-    const merged = { ...existing, ...transaction }
+    const merged: AnyEVMTransaction & { missingSince?: UNIXTime } = {
+      ...existing,
+      ...transaction,
+    }
+    if (dataSource !== "local") {
+      // The chain has just shown it, so it isn't missing any more.
+      delete merged.missingSince
+      this.transactionsToRetrieve.forEach(({ transaction: queued }) => {
+        if (
+          queued.hash === transaction.hash &&
+          queued.network.chainID === transaction.network.chainID
+        ) {
+          queued.missingSince = undefined
+        }
+      })
+    }
 
     let error: unknown = null
     try {
