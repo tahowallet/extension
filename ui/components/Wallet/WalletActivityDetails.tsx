@@ -174,18 +174,6 @@ export default function WalletActivityDetails(
           name={activityItem.recipient.name}
         />
       </div>
-      <ul>
-        {details === undefined &&
-          Array.from({ length: 7 }).map(() => (
-            <SharedSkeletonLoader
-              height={24}
-              style={{ margin: "10px 0 15px" }}
-            />
-          ))}
-        {details?.rows.map(({ label, value }) => (
-          <DetailRowItem key={label} label={label} value={value} />
-        ))}
-      </ul>
       {details !== undefined && (
         <div className="balance_changes">
           {/*
@@ -210,6 +198,18 @@ export default function WalletActivityDetails(
           )}
         </div>
       )}
+      <ul>
+        {details === undefined &&
+          Array.from({ length: 7 }).map(() => (
+            <SharedSkeletonLoader
+              height={24}
+              style={{ margin: "10px 0 15px" }}
+            />
+          ))}
+        {details?.rows.map(({ label, value }) => (
+          <DetailRowItem key={label} label={label} value={value} />
+        ))}
+      </ul>
       <style jsx>
         {`
           .wrap {
