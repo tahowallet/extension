@@ -114,8 +114,9 @@ function harness() {
   const remove = (name: string) =>
     actor.send({ type: "REMOVE_CHAIN", reply: reply(name) })
 
+  /** A report from the chain's current provider. */
   const reach = (status: NetworkReachabilityState) =>
-    actor.send({ type: "REACHABILITY_CHANGED", status })
+    current()?.reportReachability(status)
 
   const emittedTypes = () =>
     emitted.map((event) =>
@@ -233,6 +234,35 @@ describe("chainMachine", () => {
       expect(chain.actor.getSnapshot().status).toBe("done")
       expect(chain.outcomes).toEqual(["removal: resolved"])
       expect(chain.emittedTypes()).toEqual(["removed"])
+    })
+  })
+
+  describe("reachability reports", () => {
+    it("ignores reports from a provider it has replaced", () => {
+      const chain = harness()
+      const original = chain.current()
+      chain.update("first", FIRST, false)
+      chain.emitted.length = 0
+
+      original?.reportReachability("unreachable")
+
+      expect(chain.state()).toEqual({ Live: "Reachable" })
+      expect(chain.emitted).toEqual([])
+    })
+
+    it("ignores a replaced provider's reports while saving", async () => {
+      const chain = harness()
+      const original = chain.current()
+      chain.update("first", FIRST, false)
+      chain.update("second", SECOND)
+      chain.verifications[0].done.resolve()
+      await flush()
+      chain.emitted.length = 0
+
+      original?.reportReachability("unreachable")
+
+      expect(chain.state()).toBe("SavingEndpoints")
+      expect(chain.emitted).toEqual([])
     })
   })
 
@@ -401,6 +431,17 @@ describe("chainMachine", () => {
       expect(chain.state()).toEqual({ Live: "Unreachable" })
       expect(chain.emittedTypes()).toEqual(["reachabilityChanged unreachable"])
     })
+
+    it("reports only changes in reachability while checking", () => {
+      const chain = harness()
+      chain.update("first", FIRST)
+
+      chain.reach("reachable")
+      chain.reach("unreachable")
+      chain.reach("unreachable")
+
+      expect(chain.emittedTypes()).toEqual(["reachabilityChanged unreachable"])
+    })
   })
 
   describe("in SavingEndpoints", () => {
@@ -553,13 +594,16 @@ describe("chainMachine", () => {
       expect(chain.outcomes).toEqual(["removal: rejected db closed"])
     })
 
-    it("records reachability reports without reporting them as a live chain", () => {
+    it("ignores reports from the provider it destroyed", () => {
       const chain = harness()
+      const original = chain.current()
       chain.remove("removal")
 
-      chain.reach("unreachable")
+      original?.reportReachability("unreachable")
 
       expect(chain.state()).toBe("RemovingChain")
+      expect(chain.actor.getSnapshot().context.reachability).toBe("reachable")
+      expect(chain.emitted).toEqual([])
     })
   })
 

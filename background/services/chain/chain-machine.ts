@@ -1,4 +1,13 @@
-import { assign, emit, enqueueActions, fromPromise, raise, setup } from "xstate"
+import {
+  and,
+  AnyActorRef,
+  assign,
+  emit,
+  enqueueActions,
+  fromPromise,
+  raise,
+  setup,
+} from "xstate"
 import type { RpcEndpoint } from "../../networks"
 import type SerialFallbackProvider from "./serial-fallback-provider"
 import type { NetworkReachabilityState } from "./network-reachability"
@@ -51,7 +60,12 @@ export type ChainEvent =
       reply: Reply
     }
   | { type: "REMOVE_CHAIN"; reply: Reply }
-  | { type: "REACHABILITY_CHANGED"; status: NetworkReachabilityState }
+  | {
+      type: "REACHABILITY_CHANGED"
+      status: NetworkReachabilityState
+      /** The provider reporting, so reports from a retired one are ignored. */
+      provider: SerialFallbackProvider
+    }
   | { type: "START_QUEUED_UPDATE" }
   | { type: "START_QUEUED_REMOVAL" }
 
@@ -73,6 +87,20 @@ export type ChainInput = {
   chainID: string
   endpoints: RpcEndpoint[]
   dependencies: ChainDependencies
+}
+
+/** Builds a provider whose reachability reports name it. */
+function createReportingProvider(
+  context: ChainContext,
+  self: AnyActorRef,
+  endpoints: RpcEndpoint[],
+): SerialFallbackProvider {
+  const provider = context.dependencies.createProvider(
+    context.chainID,
+    endpoints,
+    (status) => self.send({ type: "REACHABILITY_CHANGED", status, provider }),
+  )
+  return provider
 }
 
 const settle = (replies: Reply[], error?: unknown) =>
@@ -118,6 +146,12 @@ export const chainMachine = setup({
   },
   guards: {
     isUnreachable: ({ context }) => context.reachability === "unreachable",
+    isFromCurrentProvider: ({ context, event }) =>
+      event.type === "REACHABILITY_CHANGED" &&
+      event.provider === context.provider,
+    changesReachability: ({ context, event }) =>
+      event.type === "REACHABILITY_CHANGED" &&
+      event.status !== context.reachability,
     reportsUnreachable: ({ event }) =>
       event.type === "REACHABILITY_CHANGED" && event.status === "unreachable",
     reportsReachable: ({ event }) =>
@@ -130,11 +164,7 @@ export const chainMachine = setup({
   actions: {
     buildProvider: assign({
       provider: ({ context, self }) =>
-        context.dependencies.createProvider(
-          context.chainID,
-          context.endpoints,
-          (status) => self.send({ type: "REACHABILITY_CHANGED", status }),
-        ),
+        createReportingProvider(context, self, context.endpoints),
     }),
     recordReachability: enqueueActions(({ context, event, enqueue }) => {
       if (event.type !== "REACHABILITY_CHANGED") {
@@ -208,11 +238,7 @@ export const chainMachine = setup({
     swapProvider: enqueueActions(({ context, self, enqueue }) => {
       const endpoints = context.update?.endpoints ?? context.endpoints
       const previousProvider = context.provider
-      const provider = context.dependencies.createProvider(
-        context.chainID,
-        endpoints,
-        (status) => self.send({ type: "REACHABILITY_CHANGED", status }),
-      )
+      const provider = createReportingProvider(context, self, endpoints)
       previousProvider?.destroy()
 
       enqueue.assign({
@@ -271,7 +297,10 @@ export const chainMachine = setup({
   }),
   initial: "BuildingProvider",
   on: {
-    REACHABILITY_CHANGED: { actions: "recordReachability" },
+    REACHABILITY_CHANGED: {
+      guard: and(["isFromCurrentProvider", "changesReachability"]),
+      actions: "recordReachability",
+    },
   },
   states: {
     BuildingProvider: {
@@ -294,7 +323,7 @@ export const chainMachine = setup({
           on: {
             REACHABILITY_CHANGED: [
               {
-                guard: "reportsUnreachable",
+                guard: and(["isFromCurrentProvider", "reportsUnreachable"]),
                 target: "Unreachable",
                 actions: "recordReachability",
               },
@@ -307,7 +336,7 @@ export const chainMachine = setup({
           on: {
             REACHABILITY_CHANGED: [
               {
-                guard: "reportsReachable",
+                guard: and(["isFromCurrentProvider", "reportsReachable"]),
                 target: "Reachable",
                 actions: "recordReachability",
               },
