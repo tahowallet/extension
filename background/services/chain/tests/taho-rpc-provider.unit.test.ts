@@ -1,4 +1,5 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, beforeEach, describe, expect, it } from "bun:test"
+import * as sinon from "sinon"
 import TahoRPCProvider from "../taho-rpc-provider"
 
 type Payload = { id: number; method: string }
@@ -52,14 +53,32 @@ class LimitedProvider extends TahoRPCProvider {
 }
 
 describe("TahoRPCProvider", () => {
+  let clock: sinon.SinonFakeTimers
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
+  })
+
+  afterEach(() => {
+    clock.restore()
+  })
+
+  /** Runs the batching and retry timers until `promise` settles. */
+  const settle = async <T>(promise: Promise<T>): Promise<T> => {
+    await clock.runAllAsync()
+    return promise
+  }
+
   it.each(["body", "throw"] as const)(
     "halves a batch the endpoint finds too large and resends it (%s)",
     async (rejection) => {
       const provider = new LimitedProvider(2, rejection)
 
-      const results = await Promise.all(
-        ["a", "b", "c", "d", "e", "f"].map((method) =>
-          provider.send(method, []),
+      const results = await settle(
+        Promise.all(
+          ["a", "b", "c", "d", "e", "f"].map((method) =>
+            provider.send(method, []),
+          ),
         ),
       )
 
@@ -82,8 +101,10 @@ describe("TahoRPCProvider", () => {
       return post(body)
     }
 
-    const results = await Promise.all(
-      ["a", "b", "c", "d"].map((method) => provider.send(method, [])),
+    const results = await settle(
+      Promise.all(
+        ["a", "b", "c", "d"].map((method) => provider.send(method, [])),
+      ),
     )
 
     expect(results).toEqual(["a", "b", "c", "d"])
@@ -94,15 +115,17 @@ describe("TahoRPCProvider", () => {
   it("rejects a single request the endpoint calls too large", async () => {
     const provider = new LimitedProvider(0)
 
-    await expect(provider.send("a", [])).rejects.toThrow("batch too large")
+    const sent = provider.send("a", [])
+    sent.catch(() => {})
+    await expect(settle(sent)).rejects.toThrow("batch too large")
     expect(provider.batchSizes).toEqual([1])
   })
 
   it("sends a batch the endpoint accepts once", async () => {
     const provider = new LimitedProvider(10)
 
-    await Promise.all(
-      ["a", "b", "c"].map((method) => provider.send(method, [])),
+    await settle(
+      Promise.all(["a", "b", "c"].map((method) => provider.send(method, []))),
     )
 
     expect(provider.batchSizes).toEqual([3])
