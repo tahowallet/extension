@@ -156,7 +156,7 @@ import {
 import { PermissionMap } from "../provider-bridge/utils"
 import { TAHO_INTERNAL_ORIGIN } from "../internal-ethereum-provider/constants"
 import {
-  ActivityDetail,
+  ActivityDetails,
   addActivity,
   initializeActivities,
   initializeActivitiesForAccount,
@@ -1700,7 +1700,7 @@ export default class ReduxService extends BaseService<never> {
     return this.internalSignerService.importSigner(signerRaw)
   }
 
-  async getActivityDetails(txHash: string): Promise<ActivityDetail[]> {
+  async getActivityDetails(txHash: string): Promise<ActivityDetails> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
       addressNetwork.network,
@@ -1711,7 +1711,7 @@ export default class ReduxService extends BaseService<never> {
       2,
     )
 
-    return getActivityDetails(enrichedTransaction)
+    return getActivityDetails(enrichedTransaction, addressNetwork.address)
   }
 
   async connectAnalyticsService(): Promise<void> {
