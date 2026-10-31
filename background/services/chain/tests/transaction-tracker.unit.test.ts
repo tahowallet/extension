@@ -228,6 +228,29 @@ describe("TransactionTracker", () => {
       },
     )
 
+    it("leaves a transaction mined during the lookup alone", async () => {
+      const { store, lookUp, provider, db, stored, released } = harness()
+      const transaction = await store(OPTIMISM)
+      provider.getTransaction.callsFake(async () => {
+        // The receipt listener saves the receipt while the lookup is out.
+        await db.addOrUpdateTransaction(
+          {
+            ...transaction,
+            blockHash: "0xb10c",
+            status: 1,
+          } as AnyEVMTransaction,
+          "generic-rpc",
+        )
+        return null
+      })
+
+      await lookUp(transaction, T0 + 2 * MINUTE + 1, T0)
+
+      expect((await stored(transaction))?.status).toBe(1)
+      expect((await stored(transaction))?.blockHash).toBe("0xb10c")
+      expect(released.called).toBe(false)
+    })
+
     it("survives a restart mid-grace", async () => {
       const { store, lookUp, db, stored } = harness()
       const transaction = await store(OPTIMISM)

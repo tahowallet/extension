@@ -65,6 +65,8 @@ type Lookup = {
   stored: Transaction | null
   found?: AnyEVMTransaction
   source?: TransactionSource
+  /** The row as it was when marked dropped, if it was. */
+  dropped?: Transaction
 }
 
 /**
@@ -358,10 +360,11 @@ export default class TransactionTracker {
 
   private async perform(
     effect: PendingTransactionEffect,
-    { queued, stored, found, source }: Lookup,
+    lookup: Lookup,
     previous: PendingTransactionSnapshot,
     next: PendingTransactionSnapshot,
   ): Promise<void> {
+    const { queued, stored, found, source } = lookup
     const { network, hash, firstSeen } = queued
     const { db, nonceAllocator } = this.dependencies
 
@@ -404,14 +407,21 @@ export default class TransactionTracker {
           this.watchForReceipt(network, found)
         }
         break
-      case "markDropped":
-        if (stored !== null && !("status" in stored)) {
+      case "markDropped": {
+        // Read again: a receipt may have been saved during the lookup.
+        const current = (await db.getTransaction(
+          network,
+          hash,
+        )) as Transaction | null
+        if (current !== null && !("status" in current)) {
           logger.warn(
             `Tx hash ${hash} is found in our local registry but not on chain.`,
           )
+          // oxlint-disable-next-line no-param-reassign
+          lookup.dropped = current
           await this.save(
             {
-              ...stored,
+              ...current,
               status: 0,
               error:
                 "Transaction was in our local db but was not found on chain.",
@@ -422,9 +432,10 @@ export default class TransactionTracker {
           )
         }
         break
+      }
       case "releaseNonce":
-        if (stored !== null && !("status" in stored)) {
-          nonceAllocator.releaseNonce(stored)
+        if (lookup.dropped !== undefined) {
+          nonceAllocator.releaseNonce(lookup.dropped)
         }
         break
       case "unwatch":
