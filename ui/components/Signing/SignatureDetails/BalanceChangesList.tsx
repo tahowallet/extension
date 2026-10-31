@@ -46,12 +46,9 @@ export default function BalanceChangesList({
             <div className="simulated_changes_asset">
               <SharedAssetIcon
                 size={24}
-                // Like the assets list, don't show a logo for a token we
-                // don't track; it's whatever the token says it is.
-                logoURL={
-                  transfer.untrackedAsset ? "" : (transfer.assetLogoUrl ?? "")
-                }
+                logoURL={transfer.assetLogoUrl ?? ""}
                 symbol={transfer.assetSymbol}
+                untrusted={transfer.untrackedAsset}
               />
               <span
                 className={`simulated_changes_amount ${transfer.direction}`}
