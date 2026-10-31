@@ -2,7 +2,8 @@ name: Install Playwright Chromium
 description: >-
   Installs Playwright's Chromium and its system dependencies, caching the
   browser download by Playwright version and retrying installs that fail or
-  stall.
+  stall. Also installs a pinned Chrome for Testing build for the e2e tests to
+  run instead; see install-chrome-for-testing.sh.
 
 runs:
   using: composite
@@ -35,3 +36,27 @@ runs:
       with:
         path: ~/.cache/ms-playwright
         key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    # Chrome 156.0.8078.73 is the stable update with the fix for Chrome's
+    # October 2026 sandbox escape; Playwright 1.64.1 bundles 156.0.8078.4.
+    # The hash is of the linux64 zip, checked against Google's published MD5.
+    - name: Restore Chrome for Testing cache
+      id: chrome-cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/.cache/chrome-for-testing
+        key: chrome-for-testing-${{ runner.os }}-156.0.8078.73
+
+    - name: Install Chrome for Testing
+      shell: bash
+      env:
+        CHROME_FOR_TESTING_VERSION: 156.0.8078.73
+        CHROME_FOR_TESTING_SHA256: c51c24f0126534aaf6d21d1f85b8e243934b3951989dbb59a1f8aab8e32b20c1
+      run: "$GITHUB_ACTION_PATH/install-chrome-for-testing.sh"
+
+    - name: Save Chrome for Testing cache
+      if: steps.chrome-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ~/.cache/chrome-for-testing
+        key: ${{ steps.chrome-cache.outputs.cache-primary-key }}
