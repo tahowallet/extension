@@ -266,6 +266,29 @@ describe("TransactionTracker", () => {
       expect(released.called).toBe(false)
     })
 
+    it("runs one lookup at a time for a transaction", async () => {
+      const { store, lookUp, provider, released, emitted } = harness()
+      const transaction = await store(OPTIMISM)
+      let answer: (value: null) => void = () => {}
+      provider.getTransaction.returns(
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+      )
+
+      const first = lookUp(transaction, T0 + 2 * MINUTE + 1, T0)
+      const second = lookUp(transaction, T0 + 2 * MINUTE + 1, T0)
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      answer(null)
+      await Promise.all([first, second])
+
+      expect(provider.getTransaction.callCount).toBe(1)
+      expect(released.callCount).toBe(1)
+      expect(
+        emitted.filter(({ hash }) => hash === transaction.hash),
+      ).toHaveLength(1)
+    })
+
     it("survives a restart mid-grace", async () => {
       const { store, lookUp, db, stored } = harness()
       const transaction = await store(OPTIMISM)

@@ -83,6 +83,9 @@ export default class TransactionTracker {
 
   transactionToRetrieveGranularTimer: ReturnType<typeof setInterval> | undefined
 
+  /** Lookups under way, by chain ID and hash. */
+  readonly #lookingUp = new Set<string>()
+
   constructor(private readonly dependencies: TransactionTrackerDependencies) {}
 
   enqueueLookup(
@@ -160,6 +163,22 @@ export default class TransactionTracker {
     const { network, hash } = queued
     // Whatever happens next decides whether it is queued again.
     this.dequeueLookup(network, hash)
+
+    // One lookup at a time per transaction; the one under way decides.
+    const key = `${network.chainID}:${hash}`
+    if (this.#lookingUp.has(key)) {
+      return
+    }
+    this.#lookingUp.add(key)
+    try {
+      await this.#lookUp(queued, now)
+    } finally {
+      this.#lookingUp.delete(key)
+    }
+  }
+
+  async #lookUp(queued: QueuedTxToRetrieve, now: number): Promise<void> {
+    const { network, hash } = queued
     const stored = (await this.dependencies.db.getTransaction(
       network,
       hash,
