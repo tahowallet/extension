@@ -43,6 +43,7 @@ type FakeTransport = ReturnType<typeof fakeTransport>
 
 function endpointOf(webSocket = false) {
   const transports: FakeTransport[] = []
+  const clock = new SimulatedClock()
   const endpoint = new Endpoint(
     {
       kind: "standard",
@@ -52,9 +53,9 @@ function endpointOf(webSocket = false) {
         return transport
       },
     },
-    { clock: new SimulatedClock() },
+    { clock },
   )
-  return { endpoint, transports }
+  return { endpoint, transports, clock }
 }
 
 const count = (transport: FakeTransport, event = "block") =>
@@ -262,6 +263,24 @@ describe("SubscriptionManager", () => {
 
     await expect(manager.moveTo(second.endpoint)).resolves.toBe(false)
     expect(moves).toEqual([false])
+  })
+
+  it("finishes a failed move once the endpoint becomes ready", async () => {
+    const first = endpointOf()
+    const second = endpointOf()
+    const manager = new SubscriptionManager(first.endpoint)
+    const listener = sinon.spy()
+    manager.on("block", listener)
+    second.endpoint.transport
+    for (let i = 0; i < 5; i += 1) second.endpoint.recordFailure()
+
+    await expect(manager.moveTo(second.endpoint)).resolves.toBe(false)
+    second.clock.increment(15_000)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(second.endpoint.status).toBe("Ready")
+    second.transports[0].emitter.emit("block", 1)
+    expect(listener.args).toEqual([[1]])
   })
 
   it("detaches and forgets everything when cleared", async () => {

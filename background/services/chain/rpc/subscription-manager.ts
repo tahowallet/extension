@@ -41,6 +41,8 @@ export default class SubscriptionManager {
 
   #moves = Promise.resolve(true)
 
+  #movesInFlight = 0
+
   constructor(
     endpoint: Endpoint,
     {
@@ -131,12 +133,16 @@ export default class SubscriptionManager {
    * next.
    */
   moveTo(endpoint: Endpoint): Promise<boolean> {
+    this.#movesInFlight += 1
     const move = this.#moves
       .then(() => this.#moveTo(endpoint))
       .catch((error) => {
         logger.error("Error moving subscriptions", error)
         this.onMoved?.(endpoint, false)
         return false
+      })
+      .finally(() => {
+        this.#movesInFlight -= 1
       })
     this.#moves = move
     return move
@@ -222,13 +228,16 @@ export default class SubscriptionManager {
     }
   }
 
-  /** Follows the endpoint onto a new socket after a reconnect. */
+  /**
+   * Follows the endpoint onto a new socket after a reconnect, and finishes a
+   * move that failed once the endpoint becomes ready.
+   */
   #watch(endpoint: Endpoint): void {
     this.#stopWatching = endpoint.onStatusChange((status: EndpointStatus) => {
       if (
         status === "Ready" &&
+        this.#movesInFlight === 0 &&
         endpoint === this.#endpoint &&
-        this.#transport !== undefined &&
         endpoint.builtTransport !== this.#transport
       ) {
         this.moveTo(endpoint).catch(() => undefined)
