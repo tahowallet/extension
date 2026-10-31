@@ -210,11 +210,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.#pools.set("standard", standardPool)
     standardPool.onPreferredEndpointChanged((endpoint) => {
       if (!this.isDestroyed) {
-        this.#subscriptions
-          .moveTo(endpoint)
-          .catch((error) =>
-            logger.error("Error moving subscriptions on chain", chainID, error),
-          )
+        // Moves don't reject; a failed one is logged and reported.
+        void this.#subscriptions.moveTo(endpoint)
       }
     })
 

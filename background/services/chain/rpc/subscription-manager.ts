@@ -43,6 +43,8 @@ export default class SubscriptionManager {
 
   #movesInFlight = 0
 
+  #cleared = false
+
   constructor(
     endpoint: Endpoint,
     {
@@ -137,8 +139,10 @@ export default class SubscriptionManager {
     const move = this.#moves
       .then(() => this.#moveTo(endpoint))
       .catch((error) => {
-        logger.error("Error moving subscriptions", error)
-        this.onMoved?.(endpoint, false)
+        if (!this.#cleared) {
+          logger.error("Error moving subscriptions", error)
+          this.onMoved?.(endpoint, false)
+        }
         return false
       })
       .finally(() => {
@@ -148,8 +152,9 @@ export default class SubscriptionManager {
     return move
   }
 
-  /** Forgets everything and detaches it. */
+  /** Forgets everything and detaches it, for good. */
   clear(): void {
+    this.#cleared = true
     this.#stopWatching()
     this.#detach()
     this.#webSocketSubscriptions = []
@@ -164,6 +169,9 @@ export default class SubscriptionManager {
   }
 
   async #moveTo(endpoint: Endpoint): Promise<boolean> {
+    if (this.#cleared) {
+      return false
+    }
     if (endpoint !== this.#endpoint) {
       this.#stopWatching()
       this.#detach()
@@ -177,7 +185,12 @@ export default class SubscriptionManager {
     try {
       await endpoint.whenReady()
     } catch {
-      this.onMoved?.(endpoint, false)
+      if (!this.#cleared) {
+        this.onMoved?.(endpoint, false)
+      }
+      return false
+    }
+    if (this.#cleared) {
       return false
     }
     if (this.#endpoint !== endpoint || this.#transport !== undefined) {

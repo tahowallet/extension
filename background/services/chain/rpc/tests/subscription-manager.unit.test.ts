@@ -5,16 +5,17 @@ import { SimulatedClock } from "xstate"
 import * as sinon from "sinon"
 import Endpoint from "../endpoint"
 import SubscriptionManager from "../subscription-manager"
+import logger from "../../../../lib/logger"
 
 const OPEN = 1
 
 /** A transport whose listeners are plain emitter listeners. */
-function fakeTransport(webSocket = false) {
+function fakeTransport(webSocket = false, readyState = OPEN) {
   const emitter = new EventEmitter()
   const base = Object.create(
     (webSocket ? WebSocketProvider : JsonRpcProvider).prototype,
   )
-  const socket = Object.assign(new EventTarget(), { readyState: OPEN })
+  const socket = Object.assign(new EventTarget(), { readyState })
   return Object.assign(base, {
     emitter,
     _websocket: socket,
@@ -41,14 +42,14 @@ function fakeTransport(webSocket = false) {
 
 type FakeTransport = ReturnType<typeof fakeTransport>
 
-function endpointOf(webSocket = false) {
+function endpointOf(webSocket = false, readyState = OPEN) {
   const transports: FakeTransport[] = []
   const clock = new SimulatedClock()
   const endpoint = new Endpoint(
     {
       kind: "standard",
       createTransport: () => {
-        const transport = fakeTransport(webSocket)
+        const transport = fakeTransport(webSocket, readyState)
         transports.push(transport)
         return transport
       },
@@ -283,16 +284,40 @@ describe("SubscriptionManager", () => {
     expect(listener.args).toEqual([[1]])
   })
 
-  it("detaches and forgets everything when cleared", async () => {
+  it("stops a move quietly when cleared while it waits", async () => {
+    const first = endpointOf()
+    const connecting = endpointOf(true, 0)
+    const moves: boolean[] = []
+    const errors = sinon.stub(logger, "error")
+    const manager = new SubscriptionManager(first.endpoint, {
+      onMoved: (_, moved) => moves.push(moved),
+    })
+    manager.on("block", () => {})
+
+    const move = manager.moveTo(connecting.endpoint)
+    await Promise.resolve()
+    connecting.endpoint.dispose()
+    manager.clear()
+
+    try {
+      await expect(move).resolves.toBe(false)
+      expect(moves).toEqual([])
+      expect(errors.called).toBe(false)
+    } finally {
+      errors.restore()
+    }
+  })
+
+  it("detaches and forgets everything when cleared, and moves no more", async () => {
     const first = endpointOf()
     const second = endpointOf()
     const manager = new SubscriptionManager(first.endpoint)
     manager.on("block", () => {})
 
     manager.clear()
-    await manager.moveTo(second.endpoint)
+    await expect(manager.moveTo(second.endpoint)).resolves.toBe(false)
 
     expect(count(first.transports[0])).toBe(0)
-    expect(count(second.transports[0])).toBe(0)
+    expect(second.transports).toHaveLength(0)
   })
 })

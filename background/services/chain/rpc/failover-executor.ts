@@ -36,6 +36,16 @@ export type RouteStep = { pool: EndpointPool; policy: FailurePolicy }
 
 export { NoEndpointAvailableError }
 
+/** Settles with `promise`, or rejects with the abort reason first. */
+const untilAborted = <T>(promise: Promise<T>, signal: AbortSignal) =>
+  new Promise<T>((resolve, reject) => {
+    const abort = () => reject(signal.reason)
+    signal.addEventListener("abort", abort, { once: true })
+    Promise.resolve(promise)
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", abort))
+  })
+
 const abortable = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     if (signal.aborted) {
@@ -136,9 +146,10 @@ export default class FailoverExecutor {
         this.#notify((observer) => observer.onAttempt?.(request, endpoint))
         try {
           // oxlint-disable-next-line no-await-in-loop
-          const result = await endpoint.send(request.method, request.params, {
-            probe,
-          })
+          const result = await untilAborted(
+            endpoint.send(request.method, request.params, { probe }),
+            signal,
+          )
           pool.recordSuccess(endpoint)
           this.#notify((observer) =>
             observer.onEndpointSuccess?.(request, endpoint),
@@ -146,7 +157,7 @@ export default class FailoverExecutor {
           return { result, endpoint }
         } catch (error) {
           if (signal.aborted) {
-            throw error
+            throw signal.reason
           }
           if (indicatesEndpointFault(error, request.method)) {
             pool.recordFailure(endpoint)

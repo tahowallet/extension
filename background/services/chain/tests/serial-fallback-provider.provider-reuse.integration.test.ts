@@ -243,11 +243,23 @@ describe("SerialFallbackProvider provider reuse", () => {
     provider.destroy()
     releaseFirstCall(new Error("bad response"))
 
-    await expect(inFlight).rejects.toThrow("bad response")
+    await expect(inFlight).rejects.toThrow("has been destroyed")
 
     // No failover, no reconnect, no new connection to either endpoint.
     expect(fallbackCreator.callCount).toEqual(0)
     expect(primaryCreator.callCount).toEqual(1)
+  })
+
+  it("rejects a request in flight with the destroyed error", async () => {
+    genericSendStub.returns(new Promise(() => {}))
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { kind: "standard", createTransport: () => genericProvider },
+    ])
+
+    const inFlight = provider.send("eth_getBalance", ["0xDeadBeef", "latest"])
+    provider.destroy()
+
+    await expect(inFlight).rejects.toThrow("has been destroyed")
   })
 
   it("rejects new requests once destroyed rather than reconnecting", async () => {

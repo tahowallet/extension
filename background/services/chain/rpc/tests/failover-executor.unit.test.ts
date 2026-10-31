@@ -205,15 +205,15 @@ describe("FailoverExecutor", () => {
     expect(calls(sends[1])).toBe(0)
   })
 
-  it("stops when its signal is aborted, with the error it saw", async () => {
+  it("stops when its signal is aborted, with the abort reason", async () => {
     const { send, sends, controller } = setup(2)
-    const error = new Error("NETWORK_ERROR")
+    const reason = new Error("destroyed")
     sends[0].callsFake(async () => {
-      controller.abort(new Error("destroyed"))
-      throw error
+      controller.abort(reason)
+      throw new Error("NETWORK_ERROR")
     })
 
-    await expect(send()).rejects.toBe(error)
+    await expect(send()).rejects.toBe(reason)
     expect(calls(sends[1])).toBe(0)
   })
 
