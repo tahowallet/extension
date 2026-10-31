@@ -107,8 +107,16 @@ export default class SubscriptionManager {
 
     const transport = this.#transport
     if (isWebSocketTransport(transport)) {
-      // oxlint-disable-next-line no-underscore-dangle
-      await transport._subscribe(tag, params, processFunc)
+      try {
+        // oxlint-disable-next-line no-underscore-dangle
+        await transport._subscribe(tag, params, processFunc)
+      } catch (error) {
+        // Never taken, so it isn't carried to later endpoints either.
+        this.#webSocketSubscriptions = this.#webSocketSubscriptions.filter(
+          (existing) => existing !== subscription,
+        )
+        throw error
+      }
     } else {
       logger.warn(
         "Not a WebSocket endpoint; the subscription waits for one.",
@@ -119,11 +127,19 @@ export default class SubscriptionManager {
 
   /**
    * Moves everything to `endpoint`, once it's ready. Moves run one at a
-   * time, in the order asked for.
+   * time, in the order asked for, and one that fails doesn't hold up the
+   * next.
    */
   moveTo(endpoint: Endpoint): Promise<boolean> {
-    this.#moves = this.#moves.then(() => this.#moveTo(endpoint))
-    return this.#moves
+    const move = this.#moves
+      .then(() => this.#moveTo(endpoint))
+      .catch((error) => {
+        logger.error("Error moving subscriptions", error)
+        this.onMoved?.(endpoint, false)
+        return false
+      })
+    this.#moves = move
+    return move
   }
 
   /** Forgets everything and detaches it. */
@@ -166,22 +182,23 @@ export default class SubscriptionManager {
     const transport = endpoint.transport
     this.#transport = transport
 
-    if (isWebSocketTransport(transport)) {
-      await this.#webSocketSubscriptions.reduce(
-        (previous, { tag, params, processFunc }) =>
-          previous.then(() =>
-            // oxlint-disable-next-line no-underscore-dangle
-            transport._subscribe(tag, params, processFunc),
-          ),
-        Promise.resolve(),
-      )
-    }
-
     this.#eventListeners.forEach(({ eventName, attached, once }) => {
       // A reused transport may still carry these from an earlier stint.
       transport.off(eventName, attached)
       transport[once ? "once" : "on"](eventName, attached)
     })
+
+    if (isWebSocketTransport(transport)) {
+      // One subscription the endpoint refuses shouldn't cost the others.
+      for (const { tag, params, processFunc } of this.#webSocketSubscriptions) {
+        try {
+          // oxlint-disable-next-line no-await-in-loop, no-underscore-dangle
+          await transport._subscribe(tag, params, processFunc)
+        } catch (error) {
+          logger.error("Error moving a subscription", tag, error)
+        }
+      }
+    }
 
     this.onMoved?.(endpoint, true)
     return true

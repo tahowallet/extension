@@ -166,6 +166,64 @@ describe("SubscriptionManager", () => {
     ])
   })
 
+  it("moves listeners and other subscriptions past one the endpoint refuses", async () => {
+    const first = endpointOf(true)
+    const refusing = endpointOf(true)
+    const third = endpointOf(true)
+    const manager = new SubscriptionManager(first.endpoint)
+    const listener = sinon.spy()
+    const kept = () => {}
+    manager.on("block", listener)
+    await manager.subscribe("refused", [], () => {})
+    await manager.subscribe("kept", [], kept)
+    refusing.endpoint.transport
+    refusing.transports[0]._subscribe
+      .withArgs("refused")
+      .rejects(new Error("alchemy_pendingTransactions is unsupported"))
+
+    await expect(manager.moveTo(refusing.endpoint)).resolves.toBe(true)
+    refusing.transports[0].emitter.emit("block", 1)
+    expect(listener.args).toEqual([[1]])
+    expect(refusing.transports[0]._subscribe.calledWith("kept", [], kept)).toBe(
+      true,
+    )
+
+    await expect(manager.moveTo(third.endpoint)).resolves.toBe(true)
+    expect(count(third.transports[0])).toBe(1)
+    expect(third.transports[0]._subscribe.callCount).toBe(2)
+  })
+
+  it("keeps moving after a move that throws", async () => {
+    const first = endpointOf()
+    const broken = endpointOf()
+    const third = endpointOf()
+    const manager = new SubscriptionManager(first.endpoint)
+    manager.on("block", () => {})
+    broken.endpoint.transport
+    broken.transports[0].on = () => {
+      throw new Error("broken transport")
+    }
+
+    await expect(manager.moveTo(broken.endpoint)).resolves.toBe(false)
+    await expect(manager.moveTo(third.endpoint)).resolves.toBe(true)
+
+    expect(count(third.transports[0])).toBe(1)
+  })
+
+  it("forgets a subscription the endpoint refuses at first", async () => {
+    const first = endpointOf(true)
+    const second = endpointOf(true)
+    const manager = new SubscriptionManager(first.endpoint)
+    first.transports[0]._subscribe.rejects(new Error("unsupported"))
+
+    await expect(manager.subscribe("refused", [], () => {})).rejects.toThrow(
+      "unsupported",
+    )
+    await manager.moveTo(second.endpoint)
+
+    expect(second.transports[0]._subscribe.called).toBe(false)
+  })
+
   it("closes the socket it leaves, so its subscriptions stop", async () => {
     const socket = endpointOf(true)
     const polling = endpointOf()
