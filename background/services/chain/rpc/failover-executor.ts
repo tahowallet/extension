@@ -54,6 +54,21 @@ const abortable = (ms: number, signal: AbortSignal) =>
   })
 
 /**
+ * A pool's only endpoint, if it's cooling down. Failing every request
+ * outright until it recovers would leave the pool's methods with nowhere to
+ * go, so it's tried anyway.
+ */
+function onlyEndpointOf(pool: EndpointPool): Endpoint | undefined {
+  const [only, ...others] = pool.endpoints
+  return others.length === 0 &&
+    only !== undefined &&
+    !only.isAvailable &&
+    !only.isDisposed
+    ? only
+    : undefined
+}
+
+/**
  * Runs a request against a pool's endpoints in try order, following a
  * failure policy. All of a request's retry state lives in this loop.
  */
@@ -102,15 +117,18 @@ export default class FailoverExecutor {
     policy: FailurePolicy,
     signal: AbortSignal,
   ): Promise<{ result: unknown; endpoint: Endpoint }> {
-    const endpoints = pool.endpointsInTryOrder()
+    const lastResort = onlyEndpointOf(pool)
+    const endpoints =
+      lastResort === undefined ? pool.endpointsInTryOrder() : [lastResort]
     let lastError: unknown = new NoEndpointAvailableError()
 
     for (const endpoint of endpoints) {
+      const probe = endpoint === lastResort
       for (let attempt = 1; ; attempt += 1) {
         if (signal.aborted) {
           throw signal.reason
         }
-        if (!endpoint.isAvailable) {
+        if (!probe && !endpoint.isAvailable) {
           // It started cooling down while this request was walking.
           break
         }
@@ -118,7 +136,9 @@ export default class FailoverExecutor {
         this.#notify((observer) => observer.onAttempt?.(request, endpoint))
         try {
           // oxlint-disable-next-line no-await-in-loop
-          const result = await endpoint.send(request.method, request.params)
+          const result = await endpoint.send(request.method, request.params, {
+            probe,
+          })
           pool.recordSuccess(endpoint)
           this.#notify((observer) =>
             observer.onEndpointSuccess?.(request, endpoint),

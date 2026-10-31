@@ -24,6 +24,7 @@ function tripBreakerOpen(
   const breaker: Endpoint = (provider as any)["standardEndpointAt"](
     providerIndex,
   )
+  breaker.build()
   for (let i = 0; i < 10; i += 1) {
     breaker.recordFailure()
   }
@@ -83,6 +84,29 @@ describe("SerialFallbackProvider circuit breaker integration", () => {
       (p) => p.providerIndex === 0,
     )!
     expect(primary.circuitBreakerOpens).toBe(1)
+  })
+
+  it("still sends managed methods to Boar while it cools down", async () => {
+    tripBreakerOpen(fallbackProvider, 1)
+
+    await expect(
+      fallbackProvider.send("eth_sendRawTransaction", ["0x01"]),
+    ).resolves.toBe("alchemy")
+    expect(
+      genericSendStub.args.filter(
+        (args) => args[0] === "eth_sendRawTransaction",
+      ),
+    ).toHaveLength(0)
+  })
+
+  it("keeps the standard walk off a cooling Boar", async () => {
+    tripBreakerOpen(fallbackProvider, 0)
+    tripBreakerOpen(fallbackProvider, 1)
+
+    await expect(
+      fallbackProvider.send("eth_getBlockByNumber", ["0x1", false]),
+    ).rejects.toThrow("circuit open")
+    expect(alchemySendStub.called).toBe(false)
   })
 
   it("leaves routing unchanged when the breaker is closed", async () => {

@@ -129,6 +129,34 @@ describe("FailoverExecutor", () => {
     expect(events).toEqual(["all failed"])
   })
 
+  it("still tries a pool's only endpoint while it cools down", async () => {
+    const { send, endpoints, sends, events } = setup(1, 1)
+    endpoints[0].recordFailure()
+    expect(endpoints[0].status).toBe("CoolingDown")
+
+    await expect(send()).resolves.toMatchObject({ result: "endpoint 0" })
+    expect(events).toEqual(["attempt 0", "success 0"])
+    expect(calls(sends[0])).toBe(1)
+  })
+
+  it("reports an outage when a pool's only endpoint fails while cooling down", async () => {
+    const { send, endpoints, sends, events } = setup(1, 1)
+    endpoints[0].recordFailure()
+    sends[0].rejects(new Error("NETWORK_ERROR"))
+
+    await expect(send()).rejects.toThrow("NETWORK_ERROR")
+    expect(events).toEqual(["attempt 0", "failure 0", "all failed"])
+  })
+
+  it("skips cooling endpoints in a pool of several", async () => {
+    const { send, endpoints, sends, events } = setup(2, 1)
+    endpoints.forEach((endpoint) => endpoint.recordFailure())
+
+    await expect(send()).rejects.toBeInstanceOf(NoEndpointAvailableError)
+    expect(sends.map((stub) => calls(stub))).toEqual([0, 0])
+    expect(events).toEqual(["all failed"])
+  })
+
   it("moves on after any error under the any-error policy", async () => {
     const { send, sends } = setup(2)
     sends[0].rejects(new Error("execution reverted"))
