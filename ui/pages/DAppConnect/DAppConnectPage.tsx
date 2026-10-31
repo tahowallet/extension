@@ -3,8 +3,10 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
 import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
+import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import RequestingDAppBlock from "./RequestingDApp"
 import { useBackgroundSelector } from "../../hooks"
 import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
@@ -12,6 +14,11 @@ import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectio
 type DAppConnectPageProps = {
   permission: PermissionRequest
   currentAccountTotal: AccountTotal
+  /**
+   * Set when a site that's already connected for this account asks to use
+   * another network; the page then asks about that network specifically.
+   */
+  additionalNetwork?: EVMNetwork
   denyPermission: () => Promise<void>
   grantPermission: () => Promise<void>
 }
@@ -19,6 +26,7 @@ type DAppConnectPageProps = {
 export default function DAppConnectPage({
   permission,
   currentAccountTotal,
+  additionalNetwork,
   denyPermission,
   grantPermission,
 }: DAppConnectPageProps): ReactElement {
@@ -52,7 +60,11 @@ export default function DAppConnectPage({
     <>
       <DAppConnectionInfoBar />
       <section className="standard_width">
-        <h1 className="serif_header">{t("connectToDapp")}</h1>
+        <h1 className="serif_header">
+          {additionalNetwork === undefined
+            ? t("connectToDapp")
+            : t("allowNetwork")}
+        </h1>
         <div className="connection_destination">
           <RequestingDAppBlock
             title={title}
@@ -67,9 +79,27 @@ export default function DAppConnectPage({
             accountTotal={currentAccountTotal}
           />
         </div>
+        {additionalNetwork !== undefined && (
+          <>
+            <div className="connection_destination network_destination">
+              <SharedNetworkIcon network={additionalNetwork} size={24} />
+              <span className="network_name">{additionalNetwork.name}</span>
+            </div>
+            <p className="network_question">
+              {t("allowNetworkQuestion", {
+                site: title || origin,
+                network: additionalNetwork.name,
+              })}
+            </p>
+          </>
+        )}
         <ul className="permissions_list">
           <li className="permissions_list_title">
-            {t("dappPermissionListTitle")}
+            {additionalNetwork === undefined
+              ? t("dappPermissionListTitle")
+              : t("allowNetworkPermissionListTitle", {
+                  network: additionalNetwork.name,
+                })}
           </li>
           <li>
             <ul>
@@ -94,7 +124,9 @@ export default function DAppConnectPage({
           size="large"
           onClick={grantPermission}
         >
-          {t("acceptConnection")}
+          {additionalNetwork === undefined
+            ? t("acceptConnection")
+            : t("acceptNetwork")}
         </SharedButton>
       </div>
       <style jsx>{`
@@ -147,6 +179,23 @@ export default function DAppConnectPage({
           padding: 16px;
           box-sizing: border-box;
           margin-bottom: 8px;
+        }
+        .network_destination {
+          height: 56px;
+          justify-content: flex-start;
+          gap: 12px;
+        }
+        .network_name {
+          color: #fff;
+          font-size: 16px;
+          font-weight: 500;
+        }
+        .network_question {
+          color: #fff;
+          font-size: 16px;
+          line-height: 24px;
+          margin: 8px 0 0;
+          overflow-wrap: anywhere;
         }
         .icon_connection {
           background: url("./images/bolt@2x.png") center no-repeat;

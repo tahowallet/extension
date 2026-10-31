@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { Permission } from "@tallyho/provider-bridge-shared"
 import { RootState } from ".."
 import { DAppPermissionState } from "../dapp"
 import { selectCurrentAccount } from "./uiSelectors"
@@ -13,14 +13,14 @@ export const selectPermissionRequests = createSelector(
   (slice: DAppPermissionState) => Object.values(slice.permissionRequests),
 )
 
-export const selectPendingPermissionRequests = createSelector(
+export const selectUnansweredPermissionRequests = createSelector(
   selectPermissionRequests,
   (permissionRequests) =>
     permissionRequests.filter((p) => p.state === "request"),
 )
 
-export const selectCurrentPendingPermission = createSelector(
-  selectPendingPermissionRequests,
+export const selectCurrentUnansweredPermissionRequest = createSelector(
+  selectUnansweredPermissionRequests,
   (permissionRequests) =>
     permissionRequests.length > 0 ? permissionRequests[0] : undefined,
 )
@@ -28,10 +28,10 @@ export const selectCurrentPendingPermission = createSelector(
 export const selectAllowedPages = createSelector(
   (state: RootState) => getProviderBridgeState(state).allowed,
   selectCurrentAccount,
-  (allowed, currentAccount): PermissionRequest[] => {
+  (allowed, currentAccount): Permission[] => {
     // Return an array of all permissions corresponding to
     // the currently selected account
-    const permissions: PermissionRequest[] = []
+    const permissions: Permission[] = []
 
     Object.keys(allowed.evm).forEach((chainId) => {
       Object.keys(allowed.evm[chainId]).forEach((address) => {

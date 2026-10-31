@@ -1,4 +1,5 @@
-export type PermissionRequest = {
+/** A dapp's permission to use an account on one network. */
+export type Permission = {
   key: string
   origin: string
   faviconUrl: string
@@ -8,7 +9,16 @@ export type PermissionRequest = {
   accountAddress: string
 }
 
-export type DeniedPermission = PermissionRequest & { state: "deny" }
+/**
+ * A permission the user is asked to grant. Without a chainID, it's for a new
+ * connection, which covers every network.
+ */
+export type PermissionRequest = Omit<Permission, "chainID"> & {
+  /** Set when the request is for this network alone. */
+  chainID?: string
+}
+
+export type DeniedPermission = Permission & { state: "deny" }
 
 export type WindowResponseEvent = {
   origin: string

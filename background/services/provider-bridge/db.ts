@@ -1,10 +1,10 @@
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { Permission } from "@tallyho/provider-bridge-shared"
 import Dexie from "dexie"
 import { ETHEREUM, POLYGON } from "../../constants"
 import { keyPermissionsByChainIdAddressOrigin, PermissionMap } from "./utils"
 
 export class ProviderBridgeServiceDatabase extends Dexie {
-  private dAppPermissions!: Dexie.Table<PermissionRequest, string>
+  private dAppPermissions!: Dexie.Table<Permission, string>
 
   constructor() {
     super("tally/provider-bridge-service")
@@ -119,9 +119,7 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return keyPermissionsByChainIdAddressOrigin(permissions)
   }
 
-  async setPermission(
-    permission: PermissionRequest,
-  ): Promise<string | undefined> {
+  async setPermission(permission: Permission): Promise<string | undefined> {
     return this.dAppPermissions.put(permission)
   }
 
@@ -147,11 +145,31 @@ export class ProviderBridgeServiceDatabase extends Dexie {
     return this.dAppPermissions.where({ origin }).delete()
   }
 
+  /**
+   * Whether `origin` holds an allowed permission for `accountAddress` on
+   * any chain.
+   */
+  async hasAllowedPermissionOnAnyChain(
+    origin: string,
+    accountAddress: string,
+  ): Promise<boolean> {
+    const allowedCount = await this.dAppPermissions
+      .where({ origin })
+      .filter(
+        (permission) =>
+          permission.accountAddress === accountAddress &&
+          permission.state === "allow",
+      )
+      .count()
+
+    return allowedCount > 0
+  }
+
   async checkPermission(
     origin: string,
     accountAddress: string,
     chainID: string,
-  ): Promise<PermissionRequest | undefined> {
+  ): Promise<Permission | undefined> {
     return this.dAppPermissions.get({ origin, accountAddress, chainID })
   }
 }
