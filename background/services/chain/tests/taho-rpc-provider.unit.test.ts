@@ -9,7 +9,7 @@ class LimitedProvider extends TahoRPCProvider {
 
   constructor(
     private readonly limit: number,
-    private readonly rejection: "body" | "throw" = "body",
+    private readonly rejection: "body" | "throw" | "items" = "body",
   ) {
     super("http://limited.example", 1, { maxBatchLength: 8 })
   }
@@ -19,6 +19,18 @@ class LimitedProvider extends TahoRPCProvider {
     const payloads = Array.isArray(parsed) ? parsed : [parsed]
     this.batchSizes.push(payloads.length)
 
+    if (payloads.length > this.limit && this.rejection === "items") {
+      // Answers the first `limit` requests and refuses the rest.
+      return payloads.map(({ id, method }, index) =>
+        index < this.limit
+          ? { id, jsonrpc: "2.0" as const, result: method }
+          : {
+              id,
+              jsonrpc: "2.0" as const,
+              error: { code: -32600, message: "batch size limit exceeded" },
+            },
+      )
+    }
     if (payloads.length > this.limit) {
       if (this.rejection === "throw") {
         throw new Error("batch size limit exceeded")
@@ -57,6 +69,27 @@ describe("TahoRPCProvider", () => {
       expect(provider.batchSizes.slice(1).every((size) => size <= 3)).toBe(true)
     },
   )
+
+  it("resends only the requests refused for the batch's size", async () => {
+    const provider = new LimitedProvider(2, "items")
+    const sent: string[] = []
+    const post = provider["postBatch"].bind(provider)
+    provider["postBatch"] = (body: string) => {
+      const parsed = JSON.parse(body) as Payload | Payload[]
+      ;(Array.isArray(parsed) ? parsed : [parsed]).forEach(({ method }) =>
+        sent.push(method),
+      )
+      return post(body)
+    }
+
+    const results = await Promise.all(
+      ["a", "b", "c", "d"].map((method) => provider.send(method, [])),
+    )
+
+    expect(results).toEqual(["a", "b", "c", "d"])
+    // Only the refused c and d go out twice.
+    expect(sent.toSorted()).toEqual(["a", "b", "c", "c", "d", "d"])
+  })
 
   it("rejects a single request the endpoint calls too large", async () => {
     const provider = new LimitedProvider(0)

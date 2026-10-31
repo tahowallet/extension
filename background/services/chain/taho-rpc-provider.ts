@@ -62,18 +62,13 @@ const BATCH_SHRINK_RETRY_DELAY = 500
 const isBatchLimitMessage = (message: unknown) =>
   getErrorType(String(message), "") === "batch-limit-exceeded"
 
-/** Whether a response or error says the batch was too large. */
+/** Whether an error, or a single response to a whole batch, says the batch was too large. */
 function rejectsBatchSize(responseOrError: unknown): boolean {
   if (responseOrError instanceof Error) {
     return isBatchLimitMessage(responseOrError.message)
   }
-  const responses = Array.isArray(responseOrError)
-    ? responseOrError
-    : [responseOrError]
-  return responses.some((response) =>
-    isBatchLimitMessage(
-      (response as RPCResponseError | undefined)?.error?.message,
-    ),
+  return isBatchLimitMessage(
+    (responseOrError as RPCResponseError | undefined)?.error?.message,
   )
 }
 
@@ -174,8 +169,12 @@ export default class TahoRPCProvider extends JsonRpcProvider {
         JSON.stringify(request.length === 1 ? request[0] : request),
       )
         .then((response) => {
-          if (batch.length > 1 && rejectsBatchSize(response)) {
-            this.resendInSmallerBatches(batch)
+          if (
+            batch.length > 1 &&
+            !Array.isArray(response) &&
+            rejectsBatchSize(response)
+          ) {
+            this.resendInSmallerBatches(batch, batch.length)
             return
           }
 
@@ -205,7 +204,15 @@ export default class TahoRPCProvider extends JsonRpcProvider {
             })
           }
 
-          batch.forEach(({ payload: { id }, reject, resolve }) => {
+          // Only requests refused for the batch's size go out again; the
+          // rest were answered, and resending a broadcast repeats it.
+          const refused: RPCPendingRequest[] = []
+          batch.forEach((pending) => {
+            const {
+              payload: { id },
+              reject,
+              resolve,
+            } = pending
             const match = wrappedResponse.find((resp) => id === resp.id)
 
             if (!match) {
@@ -219,6 +226,13 @@ export default class TahoRPCProvider extends JsonRpcProvider {
             }
 
             if ("error" in match) {
+              if (
+                batch.length > 1 &&
+                isBatchLimitMessage(match.error.message)
+              ) {
+                refused.push(pending)
+                return
+              }
               reject(
                 makeSerializableError(match.error.message, match.error.code, {
                   response: match,
@@ -229,10 +243,13 @@ export default class TahoRPCProvider extends JsonRpcProvider {
               resolve(match.result)
             }
           })
+          if (refused.length > 0) {
+            this.resendInSmallerBatches(refused, batch.length)
+          }
         })
         .catch((error) => {
           if (batch.length > 1 && rejectsBatchSize(error)) {
-            this.resendInSmallerBatches(batch)
+            this.resendInSmallerBatches(batch, batch.length)
             return
           }
 
@@ -255,11 +272,14 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
   /**
    * Halves the batch size, unless a smaller batch already set it lower, and
-   * queues the batch's requests to go out again.
+   * queues requests from a batch of `batchSize` to go out again.
    */
-  private resendInSmallerBatches(batch: RPCPendingRequest[]): void {
-    if (batch.length <= this.#options.maxBatchLength) {
-      this.#options.maxBatchLength = Math.max(Math.floor(batch.length / 2), 1)
+  private resendInSmallerBatches(
+    requests: RPCPendingRequest[],
+    batchSize: number,
+  ): void {
+    if (batchSize <= this.#options.maxBatchLength) {
+      this.#options.maxBatchLength = Math.max(Math.floor(batchSize / 2), 1)
       logger.debug(
         "Setting a max batch size of",
         this.#options.maxBatchLength,
@@ -268,7 +288,7 @@ export default class TahoRPCProvider extends JsonRpcProvider {
       )
     }
 
-    this.pending.unshift(...batch)
+    this.pending.unshift(...requests)
     setTimeout(() => this.sendNextBatch(), BATCH_SHRINK_RETRY_DELAY)
   }
 
