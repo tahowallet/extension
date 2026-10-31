@@ -261,7 +261,7 @@ describe("pendingTransactionMachine", () => {
       expect(fail(T0 + TRANSACTION_CHECK_LIFETIME_MS).state).toBe("Queued")
       const expired = fail(T0 + TRANSACTION_CHECK_LIFETIME_MS + 1)
       expect(expired.state).toBe("Expired")
-      expect(expired.effects).toEqual(["markExpired", "dequeue"])
+      expect(expired.effects).toEqual(["markExpired", "unwatch", "dequeue"])
     })
   })
 

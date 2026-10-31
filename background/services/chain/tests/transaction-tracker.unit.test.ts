@@ -344,6 +344,22 @@ describe("TransactionTracker", () => {
       expect(observed.called).toBe(true)
       expect(provider.once.calledWith(transaction.hash)).toBe(true)
       expect(queued(transaction)?.missingSince).toBeUndefined()
+      expect(queued(transaction)?.firstSeen).toBe(T0)
+    })
+
+    it("listens for a transaction's receipt once", async () => {
+      const { tracker, provider } = harness()
+      const transaction = createAnyEVMTransaction({
+        network: ETHEREUM,
+        blockHash: null,
+        blockHeight: null,
+      })
+
+      await tracker.handlePendingTransaction(transaction)
+      await tracker.handlePendingTransaction(transaction)
+      tracker.watchForReceipt(ETHEREUM, transaction)
+
+      expect(provider.once.withArgs(transaction.hash).callCount).toBe(1)
     })
 
     it("looks again for a mined transaction whose receipt isn't in yet", async () => {
@@ -396,6 +412,7 @@ describe("TransactionTracker", () => {
       expect((await stored(transaction))?.status).toBe(0)
       expect(queued(transaction)).toBeUndefined()
       expect(released.called).toBe(false)
+      expect(provider.off.calledWith(transaction.hash)).toBe(true)
     })
   })
 

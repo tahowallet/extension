@@ -91,7 +91,6 @@ export const pendingTransactionMachine = setup({
     withinLifetime: ({ context, event }) =>
       "now" in event &&
       event.now <= context.firstSeen + TRANSACTION_CHECK_LIFETIME_MS,
-    wasMissing: ({ context }) => context.missingSince !== undefined,
   },
   actions: {
     saveFound: effect,
@@ -196,7 +195,11 @@ export const pendingTransactionMachine = setup({
     },
     Expired: {
       type: "final",
-      entry: [{ type: "markExpired" }, { type: "dequeue" }],
+      entry: [
+        { type: "markExpired" },
+        { type: "unwatch" },
+        { type: "dequeue" },
+      ],
     },
   },
 })

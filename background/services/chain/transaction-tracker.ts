@@ -83,6 +83,9 @@ export default class TransactionTracker {
 
   transactionToRetrieveGranularTimer: ReturnType<typeof setInterval> | undefined
 
+  /** Transactions with a receipt listener, by chain ID and hash, per provider. */
+  readonly #receiptWatches = new WeakMap<SerialFallbackProvider, Set<string>>()
+
   /** Lookups under way, by chain ID and hash. */
   readonly #lookingUp = new Set<string>()
 
@@ -248,9 +251,24 @@ export default class TransactionTracker {
    * Follows a pending transaction until its receipt arrives, and queues a
    * lookup in case it never does.
    */
-  watchForReceipt(network: EVMNetwork, transaction: AnyEVMTransaction): void {
+  watchForReceipt(
+    network: EVMNetwork,
+    transaction: AnyEVMTransaction,
+    firstSeen: UNIXTime = Date.now(),
+  ): void {
+    this.enqueueLookup(network, transaction.hash, firstSeen)
+
     const provider = this.dependencies.providerFor(network)
+    const key = `${network.chainID}:${transaction.hash}`
+    const watched = this.#receiptWatches.get(provider) ?? new Set<string>()
+    this.#receiptWatches.set(provider, watched)
+    if (watched.has(key)) {
+      return
+    }
+    watched.add(key)
+
     provider.once(transaction.hash, (receipt: TransactionReceipt) => {
+      watched.delete(key)
       this.save(
         enrichTransactionWithReceipt(transaction, receipt),
         provider.dataSourceFor("eth_getTransactionReceipt", [
@@ -261,8 +279,15 @@ export default class TransactionTracker {
       )
       this.dequeueLookup(network, transaction.hash)
     })
+  }
 
-    this.enqueueLookup(network, transaction.hash, Date.now())
+  /** Stops listening for a transaction's receipt. */
+  #unwatch(network: EVMNetwork, hash: HexString): void {
+    const provider = this.dependencies.existingProviderFor(network)
+    if (provider !== undefined) {
+      provider.off(hash)
+      this.#receiptWatches.get(provider)?.delete(`${network.chainID}:${hash}`)
+    }
   }
 
   /** Saves a pending transaction seen by a subscription and follows it. */
@@ -276,7 +301,11 @@ export default class TransactionTracker {
         transaction,
         this.dependencies.providerFor(network).subscriptionDataSource,
       )
-      this.watchForReceipt(network, transaction)
+      const saved = (await this.dependencies.db.getTransaction(
+        network,
+        transaction.hash,
+      )) as Transaction | null
+      this.watchForReceipt(network, transaction, saved?.firstSeen)
     } catch (error) {
       logger.error(`Error saving tx: ${transaction}`, error)
     }
@@ -438,7 +467,7 @@ export default class TransactionTracker {
         break
       case "watchForReceipt":
         if (found !== undefined) {
-          this.watchForReceipt(network, found)
+          this.watchForReceipt(network, found, firstSeen)
         }
         break
       case "markDropped": {
@@ -473,7 +502,7 @@ export default class TransactionTracker {
         }
         break
       case "unwatch":
-        this.dependencies.existingProviderFor(network)?.off(hash)
+        this.#unwatch(network, hash)
         break
       case "dequeue":
         this.dequeueLookup(network, hash)
