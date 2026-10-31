@@ -9,7 +9,13 @@ import { EVMNetwork } from "../networks"
 import { SwapQuoteRequest } from "../redux-slices/utils/0x-swap-utils"
 import { isNetworkBaseAsset } from "../redux-slices/utils/asset-utils"
 import type { HexString } from "../types"
-import { GetPriceParams, GetQuoteParams } from "./0x-swap-types"
+import {
+  GetPriceParams,
+  GetQuoteParams,
+  LiquidSwapPrice,
+  LiquidSwapQuote,
+  SwapRouteFill,
+} from "./0x-swap-types"
 import logger from "./logger"
 import { retryWithBackoff } from "./retry"
 import { isTransientFetchJsonError } from "../utils/fetching"
@@ -27,22 +33,25 @@ export const SWAP_FEE = 0.01
  */
 export const NETWORKS_SUPPORTING_SWAPS = new Set([
   "1", // Ethereum
+  "2741", // Abstract
   "42161", // Arbitrum
+  "5042", // Arc
   "43114", // Avalanche
   "8453", // Base
   "80094", // Berachain
-  "81457", // Blast
   "56", // BSC
+  "999", // HyperEVM
   "57073", // Ink
   "59144", // Linea
   "5000", // Mantle
-  "34443", // Mode
   "143", // Monad
   "10", // Optimism
   "9745", // Plasma
   "137", // Polygon
+  "4663", // Robinhood
   "534352", // Scroll
   "146", // Sonic
+  "4217", // Tempo
   "130", // Unichain
   "480", // World
 ])
@@ -53,6 +62,48 @@ export function networkSupportsSwaps(param: EVMNetwork | string): boolean {
   const chainId = typeof param === "string" ? param : param.chainID
 
   return NETWORKS_SUPPORTING_SWAPS.has(chainId)
+}
+
+/**
+ * The most sell token a price or quote can spend, which is also the allowance
+ * the swap needs.
+ */
+export function getMaxSellAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out" ? quote.maxSellAmount : quote.sellAmount
+}
+
+/**
+ * The sell token amount a price or quote expects to spend; exact-out swaps
+ * refund whatever they don't use.
+ */
+export function getEstimatedSellAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out"
+    ? quote.estimatedNetSellAmount
+    : quote.sellAmount
+}
+
+/**
+ * The least buy token a price or quote can deliver.
+ */
+export function getMinBuyAmount(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): string {
+  return quote.mode === "exact-out" ? quote.buyAmount : quote.minBuyAmount
+}
+
+/**
+ * The liquidity sources a price or quote fills the swap from.
+ */
+export function getRouteFills(
+  quote: LiquidSwapPrice | LiquidSwapQuote,
+): SwapRouteFill[] {
+  return quote.mode === "exact-out"
+    ? quote.routes.forward.fills
+    : quote.route.fills
 }
 
 const API_BASE_URL = "https://api.0x.org/"
@@ -96,6 +147,57 @@ const get0xAssetAddress = (asset: SwappableAsset) => {
   return asset.contractAddress
 }
 
+function isWrapOrUnwrap(
+  { sellAsset, buyAsset }: SwapQuoteRequest["assets"],
+  { wrappedBaseAssetAddress: wrappedBaseAsset }: EVMNetwork,
+): boolean {
+  const [baseAsset, otherAsset] = isNetworkBaseAsset(sellAsset)
+    ? [sellAsset, buyAsset]
+    : [buyAsset, sellAsset]
+
+  return (
+    wrappedBaseAsset !== undefined &&
+    isNetworkBaseAsset(baseAsset) &&
+    !isNetworkBaseAsset(otherAsset) &&
+    get0xAssetAddress(otherAsset)?.toLowerCase() === wrappedBaseAsset
+  )
+}
+
+/**
+ * Builds the amount parameter of a 0x price or quote request from whichever
+ * side of the swap the user entered. 0x rejects `buyAmount` for wrapping and
+ * unwrapping, which trade 1:1, so those always send `sellAmount`.
+ */
+export function getSwapAmountParams({
+  assets,
+  amount,
+  network,
+}: Pick<SwapQuoteRequest, "assets" | "amount" | "network">):
+  | { sellAmount: string }
+  | { buyAmount: string } {
+  if ("sellAmount" in amount) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.sellAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  if (isWrapOrUnwrap(assets, network)) {
+    return {
+      sellAmount: utils
+        .parseUnits(amount.buyAmount, assets.sellAsset.decimals)
+        .toString(),
+    }
+  }
+
+  return {
+    buyAmount: utils
+      .parseUnits(amount.buyAmount, assets.buyAsset.decimals)
+      .toString(),
+  }
+}
+
 export async function getPrice({
   assets,
   amount,
@@ -103,18 +205,10 @@ export async function getPrice({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -123,7 +217,7 @@ export async function getPrice({
     sellToken,
     buyToken,
     chainId: Number(network.chainID),
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
   }
 
   const url = new URL("swap/allowance-holder/price", API_BASE_URL)
@@ -145,7 +239,7 @@ export async function getPrice({
 
   if (!isValid0xSwapPriceResponse(apiData)) {
     logger.warn(
-      "0x Swap quote API call didn't validate, did the 0x API change?",
+      "0x Swap price API call didn't validate, did the 0x API change?",
       apiData,
       isValid0xSwapPriceResponse.errors,
     )
@@ -166,18 +260,10 @@ export async function getQuote({
 }: SwapQuoteRequest & { taker: HexString }) {
   assertValidAPIKey(API_KEY)
 
-  const tradeAmount = utils.parseUnits(
-    "buyAmount" in amount ? amount.buyAmount : amount.sellAmount,
-    "buyAmount" in amount
-      ? assets.buyAsset.decimals
-      : assets.sellAsset.decimals,
-  )
-
   // When available, use smart contract addresses.
   const sellToken = get0xAssetAddress(assets.sellAsset)
   const buyToken = get0xAssetAddress(assets.buyAsset)
 
-  // Depending on whether the set amount is buy or sell, request the trade.
   // The /price endpoint is for RFQ-T indicative quotes, while /quote is for
   // firm quotes, which the Taho UI calls "final" quotes that the user
   // intends to fill.
@@ -187,7 +273,7 @@ export async function getQuote({
     buyToken,
     chainId: Number(network.chainID),
     slippageBps: slippageTolerance * 100,
-    sellAmount: tradeAmount.toString(),
+    ...getSwapAmountParams({ assets, amount, network }),
     taker,
     gasPrice: gasPrice.toString(),
     ...getGatedParameters(network.chainID),

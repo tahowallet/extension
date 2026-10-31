@@ -863,6 +863,13 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "loadingQuote": "Fetching price",
+    "quoteAmounts": {
+      "receiveEstimate": "You receive ≈ {{amount}} {{symbol}}",
+      "minimumReceived": "Minimum received: {{amount}} {{symbol}}",
+      "receiveExact": "You receive exactly {{amount}} {{symbol}}",
+      "payEstimate": "You pay ≈ {{amount}} {{symbol}} (at most {{maxAmount}})",
+      "refundNote": "Any {{symbol}} the swap doesn't use is refunded."
+    },
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
@@ -872,7 +879,17 @@
     "error": {
       "noSellAsset": "Attempting to approve transfer without a sell asset.",
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
-      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
+      "nonContractAsset": "Attempting to approve transfer of a non-contract asset.",
+      "price": {
+        "invalidResponse": "Couldn't get a swap price",
+        "insufficientLiquidity": "Insufficient liquidity for this trade",
+        "requestFailed": "Error while fetching swap prices"
+      },
+      "quote": {
+        "invalidResponse": "Couldn't get a swap quote",
+        "insufficientLiquidity": "Insufficient liquidity for this trade",
+        "requestFailed": "Error while fetching a swap quote"
+      }
     },
     "reviewSwap": "Review swap"
   },

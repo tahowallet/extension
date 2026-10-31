@@ -22,6 +22,7 @@ export const ETHEREUM: EVMNetwork = {
   chainID: "1",
   family: "EVM",
   coingeckoPlatformID: "ethereum",
+  wrappedBaseAssetAddress: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
 }
 
 export const ROOTSTOCK: EVMNetwork = {
@@ -39,6 +40,7 @@ export const POLYGON: EVMNetwork = {
   chainID: "137",
   family: "EVM",
   coingeckoPlatformID: "polygon-pos",
+  wrappedBaseAssetAddress: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
 }
 
 export const ARBITRUM_ONE: EVMNetwork = {
@@ -47,6 +49,7 @@ export const ARBITRUM_ONE: EVMNetwork = {
   chainID: "42161",
   family: "EVM",
   coingeckoPlatformID: "arbitrum-one",
+  wrappedBaseAssetAddress: "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
 }
 
 export const AVALANCHE: EVMNetwork = {
@@ -55,6 +58,7 @@ export const AVALANCHE: EVMNetwork = {
   chainID: "43114",
   family: "EVM",
   coingeckoPlatformID: "avalanche",
+  wrappedBaseAssetAddress: "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
 }
 
 export const BINANCE_SMART_CHAIN: EVMNetwork = {
@@ -63,6 +67,7 @@ export const BINANCE_SMART_CHAIN: EVMNetwork = {
   chainID: "56",
   family: "EVM",
   coingeckoPlatformID: "binance-smart-chain",
+  wrappedBaseAssetAddress: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
 }
 
 export const ARBITRUM_NOVA: EVMNetwork = {
@@ -79,6 +84,7 @@ export const OPTIMISM: EVMNetwork = {
   chainID: "10",
   family: "EVM",
   coingeckoPlatformID: "optimistic-ethereum",
+  wrappedBaseAssetAddress: "0x4200000000000000000000000000000000000006",
 }
 
 export const SEPOLIA: EVMNetwork = {

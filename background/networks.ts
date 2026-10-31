@@ -71,6 +71,11 @@ export type EVMNetwork = Network & {
    * place of the bundled icons available for built-in networks.
    */
   iconUrl?: string
+  /**
+   * The lowercase address of the contract that wraps the base asset, such as
+   * WETH. Known for built-in networks.
+   */
+  wrappedBaseAssetAddress?: HexString
 }
 
 /**
