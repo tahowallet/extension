@@ -51,6 +51,34 @@ const ANSWER_SOURCE_LIMIT = 256
 // How often to check and clean stale cache entries
 const CACHE_CLEANUP_INTERVAL = 10 * SECOND
 
+// How long to wait before re-probing eth_simulateV1 after an inconclusive
+// probe error.
+const ETH_SIMULATE_V1_PROBE_RETRY_MS = 60 * SECOND
+
+/**
+ * Matches JSON-RPC "method not found" (-32601) and "method not supported"
+ * (-32004, EIP-1474) errors. Ethers wraps RPC errors as SERVER_ERROR, so the
+ * RPC code usually only survives in a nested `error` or the message body;
+ * check all three, plus the wording common providers use.
+ */
+const METHOD_UNSUPPORTED_REGEXP =
+  /-32601|-32004|method not found|does not exist\/is not available|method .*does not exist|not supported|unsupported method/i
+
+function isMethodUnsupportedError(err: unknown): boolean {
+  const { code, error, message } = (err ?? {}) as {
+    code?: unknown
+    error?: { code?: unknown }
+    message?: unknown
+  }
+  return (
+    code === -32601 ||
+    code === -32004 ||
+    error?.code === -32601 ||
+    error?.code === -32004 ||
+    METHOD_UNSUPPORTED_REGEXP.test(String(message ?? err))
+  )
+}
+
 /**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of endpoints in case earlier ones fail.
@@ -445,6 +473,65 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
         `Cleaning up ${dropped} cache entries on RPC for chain id: ${this.chainID}`,
       )
     }
+  }
+
+  // Memoized eth_simulateV1 capability. `undefined` means not yet probed.
+  #ethSimulateV1Supported: boolean | undefined = undefined
+
+  // In-flight probe promise, so concurrent callers share a single request.
+  #ethSimulateV1Probe: Promise<boolean> | undefined = undefined
+
+  // After an inconclusive probe, don't re-probe before this time. Requests
+  // are re-enriched on each fee change, so retrying immediately could cool
+  // down an otherwise healthy endpoint.
+  #ethSimulateV1RetryAfter = 0
+
+  /**
+   * Probes the underlying provider stack for `eth_simulateV1` support and
+   * memoizes the result. A method-not-found response (JSON-RPC -32601, or the
+   * various string variants providers return) is treated as a definitive "no"
+   * and cached; inconclusive errors are treated as "no" for a short cooldown,
+   * after which a later call probes again.
+   */
+  async supportsEthSimulateV1(): Promise<boolean> {
+    if (this.#ethSimulateV1Supported !== undefined) {
+      return this.#ethSimulateV1Supported
+    }
+    if (this.#ethSimulateV1Probe !== undefined) {
+      return this.#ethSimulateV1Probe
+    }
+    if (Date.now() < this.#ethSimulateV1RetryAfter) {
+      return false
+    }
+
+    this.#ethSimulateV1Probe = (async () => {
+      try {
+        await this.send("eth_simulateV1", [
+          { blockStateCalls: [{ calls: [] }] },
+          "latest",
+        ])
+        this.#ethSimulateV1Supported = true
+        return true
+      } catch (err) {
+        if (isMethodUnsupportedError(err)) {
+          this.#ethSimulateV1Supported = false
+          return false
+        }
+        // Inconclusive — don't cache, but hold off before probing again.
+        this.#ethSimulateV1RetryAfter =
+          Date.now() + ETH_SIMULATE_V1_PROBE_RETRY_MS
+        logger.debug(
+          "eth_simulateV1 probe errored without a clear unsupported signal on chain",
+          this.chainID,
+          err,
+        )
+        return false
+      } finally {
+        this.#ethSimulateV1Probe = undefined
+      }
+    })()
+
+    return this.#ethSimulateV1Probe
   }
 
   /**

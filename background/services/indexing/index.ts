@@ -630,6 +630,16 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("refreshAsset", updatedAsset)
   }
 
+  /**
+   * Contract addresses of the tokens the user has explicitly hidden on the
+   * given network.
+   */
+  async getHiddenAssetAddresses(network: EVMNetwork): Promise<HexString[]> {
+    return (await this.db.getRemovedCustomAssetsByNetworks([network])).map(
+      ({ contractAddress }) => contractAddress,
+    )
+  }
+
   async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
     const metadata = {
       ...asset.metadata,

@@ -35,6 +35,8 @@ export const MANAGED_ENDPOINT_METHODS = {
     "eth_estimateGas",
     // Avoids eth_getLogs block range limits.
     "eth_getLogs",
+    // Prefer Boar for simulation where available.
+    "eth_simulateV1",
   ],
   // Ankr has trouble with these, and Uniswap uses them heavily.
   [OPTIMISM.chainID]: ["eth_call"],

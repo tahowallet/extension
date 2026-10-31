@@ -133,6 +133,7 @@ export default function SingleAsset(): ReactElement {
               <SharedAssetIcon
                 logoURL={asset?.metadata?.logoURL}
                 symbol={asset?.symbol}
+                untrusted={isTrusted === false}
               />
               <span className="asset_name" data-testid="asset_symbol">
                 {trimWithEllipsis(symbol, MAX_SYMBOL_LENGTH)}

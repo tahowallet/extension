@@ -2,6 +2,7 @@ import dayjs from "dayjs"
 import type {
   EIP2612SignTypedDataAnnotation,
   EnrichedEVMTransaction,
+  TransactionAnnotation,
 } from "./types"
 import { ETHEREUM } from "../../constants"
 import { SmartContractFungibleAsset } from "../../assets"
@@ -11,6 +12,8 @@ import { EIP2612TypedData } from "../../utils/signing"
 import { ERC20TransferLog } from "../../lib/erc20"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type { AddressOnNetwork } from "../../accounts"
+import type { NameResolverSystem } from "../name"
+import { isDefined } from "../../lib/utils/type-guards"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData,
@@ -91,7 +94,9 @@ export const getERC20LogsForAddresses = (
   logs: ERC20TransferLog[],
   addresses: string[],
 ): ERC20TransferLog[] => {
-  const relevantAddresses = new Set(addresses)
+  // Normalize both sides: callers pass addresses in whatever case they came
+  // in (a checksummed Safe address from a dapp, for one).
+  const relevantAddresses = new Set(addresses.map(normalizeEVMAddress))
 
   return logs.filter(
     (log) =>
@@ -162,4 +167,63 @@ export function getRelevantTransactionAddresses(
         sameEVMAddress(senderAddress, address),
     )
     .map(({ address }) => normalizeEVMAddress(address))
+}
+
+export type AssetTransferForAddress = {
+  direction: "in" | "out"
+  assetSymbol: string
+  assetLogoUrl?: string
+  localizedDecimalAmount: string
+  /**
+   * The other side of the transfer: its recipient, or its sender if "in",
+   * with the name it resolved to and where that name came from, if any.
+   */
+  counterparty: {
+    address: HexString
+    name?: string
+    nameResolverSystem?: NameResolverSystem
+  }
+  /** See `AssetTransfer.untrackedAsset`. */
+  untrackedAsset?: boolean
+}
+
+/**
+ * Pick out the asset-transfer subannotations that move funds into or out of
+ * the given address, tagged with their direction relative to that address.
+ */
+export function getAssetTransfersForAddress(
+  subannotations: TransactionAnnotation[] | undefined,
+  address: HexString,
+): AssetTransferForAddress[] {
+  return (subannotations ?? [])
+    .map((subannotation): AssetTransferForAddress | undefined => {
+      if (
+        subannotation.type === "asset-transfer" &&
+        (sameEVMAddress(subannotation.sender.address, address) ||
+          sameEVMAddress(subannotation.recipient.address, address))
+      ) {
+        const isOutgoing = sameEVMAddress(subannotation.sender.address, address)
+        const counterparty = isOutgoing
+          ? subannotation.recipient
+          : subannotation.sender
+        const { nameRecord } = counterparty.annotation
+        return {
+          direction: isOutgoing ? "out" : "in",
+          counterparty: {
+            address: counterparty.address,
+            ...(nameRecord !== undefined && {
+              name: nameRecord.resolved.nameOnNetwork.name,
+              nameResolverSystem: nameRecord.system,
+            }),
+          },
+          ...(subannotation.untrackedAsset && { untrackedAsset: true }),
+          assetSymbol: subannotation.assetAmount.asset.symbol,
+          assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
+          localizedDecimalAmount:
+            subannotation.assetAmount.localizedDecimalAmount,
+        }
+      }
+      return undefined
+    })
+    .filter(isDefined)
 }

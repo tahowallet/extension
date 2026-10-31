@@ -775,6 +775,13 @@
     "unknownNetwork": "Unknown Network",
     "detailPanelName": "Details",
     "rawDataPanelName": "Raw data",
+    "simulationHeading": "Simulation",
+    "simulationUnavailable": "Simulation isn't available for this transaction.",
+    "yourAccountBalanceChanges": "Your account",
+    "safeBalanceChanges": "Safe",
+    "noBalanceChanges": "No balance changes",
+    "untrackedToken": "Untracked token",
+    "untrackedTokenExplanation": "You don't track this token. Its name comes from its own contract, so it may not be what it claims to be.",
     "rawDataCopyMsg": "Raw data copied to clipboard",
     "copyRawData": "Copy hex",
     "spendAmount": "Spend Amount",
@@ -820,6 +827,16 @@
       "exchangeRoute": "Exchange route"
     },
     "transactionLikelyFails": "This transaction is likely to fail",
+    "simulationReverted": "Simulation shows this transaction will fail",
+    "balanceChangeTo": "To",
+    "balanceChangeFrom": "From",
+    "safe": {
+      "simulationReverted": "Simulation shows this Safe transaction will fail",
+      "simulatedWithSignatures": "Simulated as if all required owners had signed.",
+      "queuedBefore_one": "1 earlier Safe transaction is still queued. The simulation doesn't include it.",
+      "queuedBefore_other": "{{count}} earlier Safe transactions are still queued. The simulation doesn't include them.",
+      "nonceAlreadyUsed": "This Safe transaction's nonce has already been used, so it can never execute."
+    },
     "gasErrorCopied": "Error details copied to clipboard",
     "copyError": "Copy error"
   },
@@ -847,6 +864,13 @@
     "swapRewardsTeaser": "Swap rewards coming soon",
     "continueSwap": "Continue Swap",
     "loadingQuote": "Fetching price",
+    "quoteAmounts": {
+      "receiveEstimate": "You receive ≈ {{amount}} {{symbol}}",
+      "minimumReceived": "Minimum received: {{amount}} {{symbol}}",
+      "receiveExact": "You receive exactly {{amount}} {{symbol}}",
+      "payEstimate": "You pay ≈ {{amount}} {{symbol}} (at most {{maxAmount}})",
+      "refundNote": "Any {{symbol}} the swap doesn't use is refunded."
+    },
     "rewards": {
       "header": "Swap rewards for community",
       "body": "This week, 240,000 DOGGO tokens will be equally shared as Swap Rewards.",
@@ -856,7 +880,17 @@
     "error": {
       "noSellAsset": "Attempting to approve transfer without a sell asset.",
       "noApprovalTarget": "Attempting to approve transfer without an approval target.",
-      "nonContractAsset": "Attempting to approve transfer of a non-contract asset."
+      "nonContractAsset": "Attempting to approve transfer of a non-contract asset.",
+      "price": {
+        "invalidResponse": "Couldn't get a swap price",
+        "insufficientLiquidity": "Insufficient liquidity for this trade",
+        "requestFailed": "Error while fetching swap prices"
+      },
+      "quote": {
+        "invalidResponse": "Couldn't get a swap quote",
+        "insufficientLiquidity": "Insufficient liquidity for this trade",
+        "requestFailed": "Error while fetching a swap quote"
+      }
     },
     "reviewSwap": "Review swap"
   },

@@ -123,6 +123,7 @@ describe("managed endpoint rules", () => {
       "eth_subscribe",
       "eth_estimateGas",
       "eth_getLogs",
+      "eth_simulateV1",
       "eth_call",
     ])
     expect(managedEndpointMethods(MEZO.chainID)).not.toContain("alchemy_")

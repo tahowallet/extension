@@ -108,6 +108,10 @@ If you need to create or update a validation function then:
 
 This setup is necessary so we don't need to include `unsafe-eval` in the CSP policy.
 
+The 0x Swap validators and types are generated from the subset of 0x's OpenAPI
+spec vendored in `background/lib/validate/0x/`. `bun run update:0x-schema`
+refreshes the spec, the types, and the validators together.
+
 #### Required Software
 
 If you can't use the macOS setup script, here is the software you'll need to

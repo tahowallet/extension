@@ -6,9 +6,12 @@ import {
   createIndexingService,
   createNameService,
   createAnyEVMBlock,
+  createTransactionRequest,
 } from "../../../tests/factories"
 import { createProviderForChain } from "../../chain/serial-fallback-provider"
-import { annotationsFromLogs } from "../transactions"
+import resolveTransactionAnnotation, {
+  annotationsFromLogs,
+} from "../transactions"
 
 // These logs reference transaction https://etherscan.io/tx/0x0ba306853f8be38d54327675f14694d582a14759b851f2126dd900bef0aff840
 // prettier-ignore
@@ -76,6 +79,124 @@ describe("Enrichment Service Transactions", () => {
       )
 
       expect(subannotations.length).toBe(2)
+    })
+  })
+
+  describe("resolveTransactionAnnotation with a simulation", () => {
+    const setUp = async () => {
+      const chainService = await createChainService()
+      const [indexingService, nameService] = await Promise.all([
+        createIndexingService({ chainService: Promise.resolve(chainService) }),
+        createNameService({ chainService: Promise.resolve(chainService) }),
+      ])
+      sandbox.stub(chainService, "getLatestBaseAccountBalance").resolves({
+        address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
+        network: ETHEREUM,
+        assetAmount: { asset: ETHEREUM.baseAsset, amount: 10n ** 18n },
+        dataSource: "local",
+        retrievedAt: Date.now(),
+      })
+      return { chainService, indexingService, nameService }
+    }
+
+    // The factory request has no `to`, so annotation stays on the
+    // contract-deployment path and needs no address lookups.
+    const request = () => createTransactionRequest()
+
+    it("flags a reverted simulation and keeps its reason", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+
+      const annotation = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        request(),
+        2,
+        { status: "reverted", revertReason: "execution reverted: nope" },
+      )
+
+      expect(annotation.warnings).toContain("simulation-reverted")
+      expect(annotation.simulationStatus).toBe("reverted")
+      expect(annotation.simulationRevertReason).toBe("execution reverted: nope")
+    })
+
+    it("clears stale simulation state when re-enriched", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+
+      const reverted = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        request(),
+        2,
+        { status: "reverted", revertReason: "execution reverted: nope" },
+      )
+
+      // Re-enrichment passes the previous annotation back in, as after a fee
+      // change; a stale subannotation stands in for an earlier simulation.
+      const resimulated = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        {
+          ...request(),
+          annotation: { ...reverted, subannotations: [reverted] },
+        } as Parameters<typeof resolveTransactionAnnotation>[4],
+        2,
+        { status: "success", logs: [] },
+      )
+
+      expect(resimulated.warnings).not.toContain("simulation-reverted")
+      expect(resimulated.simulationRevertReason).toBeUndefined()
+      expect(resimulated.subannotations).toBeUndefined()
+    })
+
+    it("records the Safe a simulation executed, and drops it once it doesn't", async () => {
+      const { chainService, indexingService, nameService } = await setUp()
+      const safe = "0x1111111111111111111111111111111111111111"
+
+      const viaSafe = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        request(),
+        2,
+        { status: "success", logs: [], safeAddress: safe },
+      )
+      const direct = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        {
+          ...request(),
+          annotation: viaSafe,
+        } as Parameters<typeof resolveTransactionAnnotation>[4],
+        2,
+        { status: "success", logs: [] },
+      )
+
+      expect(viaSafe.simulatedSafeAddress).toBe(safe)
+      expect(direct.simulatedSafeAddress).toBeUndefined()
+      expect(direct.simulationStatus).toBe("success")
+
+      // A later enrichment that couldn't simulate mustn't keep the old status.
+      const unsimulated = await resolveTransactionAnnotation(
+        chainService,
+        indexingService,
+        nameService,
+        ETHEREUM,
+        {
+          ...request(),
+          annotation: direct,
+        } as Parameters<typeof resolveTransactionAnnotation>[4],
+        2,
+      )
+      expect(unsimulated.simulationStatus).toBeUndefined()
     })
   })
 })

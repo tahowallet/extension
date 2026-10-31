@@ -84,12 +84,9 @@ export default function CommonAssetListItem(
       >
         <div className="asset_left">
           <SharedAssetIcon
-            logoURL={
-              isTrustedAsset(assetAmount.asset)
-                ? assetAmount?.asset?.metadata?.logoURL
-                : undefined
-            }
+            logoURL={assetAmount?.asset?.metadata?.logoURL}
             symbol={assetAmount?.asset?.symbol}
+            untrusted={isUntrusted}
           />
           <div className="asset_left_content">
             <div className="asset_amount">
