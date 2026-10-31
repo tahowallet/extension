@@ -9,7 +9,7 @@ import type {
   BlockPrices,
   EVMNetwork,
 } from "../../networks"
-import { sameChainID } from "../../networks"
+import { sameChainID, toDecimalChainID } from "../../networks"
 import type { UNIXTime } from "../../types"
 import type { ChainDatabase } from "./db"
 import type { NetworkReachabilityState } from "./network-reachability"
@@ -59,7 +59,8 @@ export default class NetworkWatcher {
   }
 
   /** Starts polling a network's latest block and, while in use, gas. */
-  watchNetwork(chainID: string): void {
+  watchNetwork(anyChainID: string): void {
+    const chainID = toDecimalChainID(anyChainID)
     if (this.#watches.has(chainID)) {
       return
     }
@@ -100,7 +101,7 @@ export default class NetworkWatcher {
   }
 
   isWatching(chainID: string): boolean {
-    return this.#watches.has(chainID)
+    return this.#watches.has(toDecimalChainID(chainID))
   }
 
   watchedChainIDs(): string[] {
@@ -109,10 +110,11 @@ export default class NetworkWatcher {
 
   /** Where a network's watch stands, for tests and debugging. */
   watchStateOf(chainID: string): string | undefined {
-    return this.#watches.get(chainID)?.getSnapshot().value
+    return this.#watches.get(toDecimalChainID(chainID))?.getSnapshot().value
   }
 
-  stopWatchingNetwork(chainID: string): void {
+  stopWatchingNetwork(anyChainID: string): void {
+    const chainID = toDecimalChainID(anyChainID)
     const watch = this.#watches.get(chainID)
     watch?.send({ type: "STOP_WATCHING" })
     watch?.stop()
@@ -132,7 +134,8 @@ export default class NetworkWatcher {
     return this.#accounts
   }
 
-  markNetworkActivity(chainID: string): void {
+  markNetworkActivity(anyChainID: string): void {
+    const chainID = toDecimalChainID(anyChainID)
     this.lastActivityOnNetwork[chainID] = this.#now()
     this.#watches.get(chainID)?.send({ type: "USER_ACTIVITY" })
   }
@@ -144,7 +147,8 @@ export default class NetworkWatcher {
   /** Whether activity on the network has lapsed; never-used ones haven't. */
   isNetworkIdle(chainID: string): boolean {
     return (
-      this.#now() - ACTIVITY_TIMEOUT_MS > this.lastActivityOnNetwork[chainID]
+      this.#now() - ACTIVITY_TIMEOUT_MS >
+      this.lastActivityOnNetwork[toDecimalChainID(chainID)]
     )
   }
 
@@ -157,7 +161,9 @@ export default class NetworkWatcher {
 
   isNetworkActive(chainID: string): boolean {
     return (
-      this.#now() < this.lastActivityOnNetwork[chainID] + ACTIVITY_TIMEOUT_MS
+      this.#now() <
+      this.lastActivityOnNetwork[toDecimalChainID(chainID)] +
+        ACTIVITY_TIMEOUT_MS
     )
   }
 
@@ -168,7 +174,9 @@ export default class NetworkWatcher {
   }
 
   reachabilityChanged(chainID: string, status: NetworkReachabilityState): void {
-    this.#watches.get(chainID)?.send({ type: "REACHABILITY_CHANGED", status })
+    this.#watches
+      .get(toDecimalChainID(chainID))
+      ?.send({ type: "REACHABILITY_CHANGED", status })
   }
 
   /**
@@ -178,7 +186,7 @@ export default class NetworkWatcher {
    */
   providerReplaced(chainID: string): void {
     const network = this.dependencies.networkFor(chainID)
-    const watch = this.#watches.get(chainID)
+    const watch = this.#watches.get(toDecimalChainID(chainID))
     if (network === undefined || watch === undefined) {
       return
     }
@@ -215,7 +223,7 @@ export default class NetworkWatcher {
       return
     }
 
-    const network = this.#watches.has(chainID)
+    const network = this.#watches.has(toDecimalChainID(chainID))
       ? this.dependencies.networkFor(chainID)
       : undefined
     if (network === undefined) {

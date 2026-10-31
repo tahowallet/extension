@@ -1,5 +1,5 @@
 import { Actor, createActor } from "xstate"
-import type { RpcEndpoint } from "../../networks"
+import { RpcEndpoint, toDecimalChainID } from "../../networks"
 import type SerialFallbackProvider from "./serial-fallback-provider"
 import type { NetworkReachabilityState } from "./network-reachability"
 import { ChainDependencies, chainMachine } from "./chain-machine"
@@ -35,7 +35,8 @@ export default class ProviderRegistry {
    * Builds a provider for a chain that doesn't have one yet. Throws if the
    * provider can't be built.
    */
-  start(chainID: string, endpoints: RpcEndpoint[]): void {
+  start(anyChainID: string, endpoints: RpcEndpoint[]): void {
+    const chainID = toDecimalChainID(anyChainID)
     if (this.#chains.has(chainID)) {
       return
     }
@@ -76,7 +77,8 @@ export default class ProviderRegistry {
   }
 
   providerFor(chainID: string): SerialFallbackProvider | undefined {
-    return this.#chains.get(chainID)?.getSnapshot().context.provider
+    return this.#chains.get(toDecimalChainID(chainID))?.getSnapshot().context
+      .provider
   }
 
   requireProviderFor(chainID: string): SerialFallbackProvider {
@@ -103,9 +105,10 @@ export default class ProviderRegistry {
    * live, and rejects without saving anything if a check fails.
    */
   async updateEndpoints(
-    chainID: string,
+    anyChainID: string,
     endpoints: RpcEndpoint[],
   ): Promise<void> {
+    const chainID = toDecimalChainID(anyChainID)
     if (!this.#chains.has(chainID)) {
       await this.dependencies.verifyEndpoints(
         chainID,
@@ -121,7 +124,8 @@ export default class ProviderRegistry {
   }
 
   /** Swaps in a provider for endpoints that are already saved. */
-  replaceProvider(chainID: string, endpoints: RpcEndpoint[]): Promise<void> {
+  replaceProvider(anyChainID: string, endpoints: RpcEndpoint[]): Promise<void> {
+    const chainID = toDecimalChainID(anyChainID)
     if (!this.#chains.has(chainID)) {
       this.start(chainID, endpoints)
       this.dependencies.onReachabilityChange(chainID, "reachable")
@@ -132,7 +136,8 @@ export default class ProviderRegistry {
   }
 
   /** Destroys a chain's provider and deletes the chain's stored rows. */
-  removeProvider(chainID: string): Promise<void> {
+  removeProvider(anyChainID: string): Promise<void> {
+    const chainID = toDecimalChainID(anyChainID)
     const actor = this.#chains.get(chainID)
     if (actor === undefined) {
       return this.dependencies.removeChain(chainID)

@@ -96,6 +96,20 @@ describe("ProviderRegistry", () => {
     expect(registry.providersByChainID()).toEqual({})
   })
 
+  it("treats hex and decimal chain IDs as the same chain", async () => {
+    const { registry, providers, live } = harness()
+
+    registry.start("0x1", STORED)
+    registry.start("1", FIRST)
+
+    expect(providers).toHaveLength(1)
+    expect(live("0x1")).toBe(live("1"))
+    expect(Object.keys(registry.providersByChainID())).toEqual(["1"])
+
+    await registry.removeProvider("0x1")
+    expect(registry.providerFor("1")).toBeUndefined()
+  })
+
   it("throws when a provider is required for an unknown chain", () => {
     const { registry } = harness()
 

@@ -73,6 +73,22 @@ describe("NetworkWatcher", () => {
     expect(provider.getBlock.callCount).toBe(1)
   })
 
+  it("treats hex and decimal chain IDs as the same network", () => {
+    const { watcher, provider } = harness()
+
+    watcher.watchNetwork("0x1")
+    watcher.watchNetwork(ETHEREUM.chainID)
+    expect(watcher.watchedChainIDs()).toEqual([ETHEREUM.chainID])
+    expect(provider.getBlock.callCount).toBe(1)
+
+    watcher.markNetworkActivity("0x1")
+    expect(watcher.watchStateOf(ETHEREUM.chainID)).toBe("Polling")
+    expect(watcher.isNetworkActive(ETHEREUM.chainID)).toBe(true)
+
+    watcher.stopWatchingNetwork(ETHEREUM.chainID)
+    expect(watcher.isWatching("0x1")).toBe(false)
+  })
+
   it("subscribes watched accounts again when the provider is replaced", async () => {
     const { watcher, provider } = harness()
     const account = createAddressOnNetwork({ network: ETHEREUM })
