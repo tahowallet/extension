@@ -14,14 +14,34 @@ const STORED = [{ url: "https://stored.example" }]
 const FIRST = [{ url: "https://first.example" }]
 const SECOND = [{ url: "https://second.example" }]
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+type Gate = (endpoints: RpcEndpoint[]) => Promise<void>
+
+/** A promise the test settles, and a way to tell it's being waited on. */
+function gate() {
+  let open: () => void = () => {}
+  let reached: () => void = () => {}
+  const opened = new Promise<void>((resolve) => {
+    open = resolve
+  })
+  const waitedOn = new Promise<void>((resolve) => {
+    reached = resolve
+  })
+  return {
+    wait: () => {
+      reached()
+      return opened
+    },
+    open,
+    waitedOn,
+  }
+}
 
 function harness({
-  verifyDelayMs = () => 0,
-  saveDelayMs = () => 0,
+  beforeVerifying = async () => {},
+  beforeSaving = async () => {},
 }: {
-  verifyDelayMs?: (endpoints: RpcEndpoint[]) => number
-  saveDelayMs?: (endpoints: RpcEndpoint[]) => number
+  beforeVerifying?: Gate
+  beforeSaving?: Gate
 } = {}) {
   const saved = new Map<string, RpcEndpoint[]>()
   const removed: string[] = []
@@ -41,7 +61,7 @@ function harness({
       return provider as unknown as SerialFallbackProvider
     },
     verifyEndpoints: async (_, endpoints, signal) => {
-      await wait(verifyDelayMs(endpoints))
+      await beforeVerifying(endpoints)
       if (signal.aborted) {
         throw new Error("aborted")
       }
@@ -50,7 +70,7 @@ function harness({
       }
     },
     saveEndpoints: async (chainID, endpoints) => {
-      await wait(saveDelayMs(endpoints))
+      await beforeSaving(endpoints)
       saved.set(chainID, endpoints)
     },
     removeChain: async (chainID) => {
@@ -157,29 +177,42 @@ describe("ProviderRegistry", () => {
 
   // Problem 10: two overlapping saves used to interleave freely.
   it("ends with the newer endpoints when two updates overlap during the check", async () => {
+    const slowCheck = gate()
     const { registry, saved, live } = harness({
-      verifyDelayMs: (endpoints) => (endpoints === FIRST ? 30 : 5),
+      beforeVerifying: async (endpoints) => {
+        if (endpoints === FIRST) {
+          await slowCheck.wait()
+        }
+      },
     })
     registry.start("1", STORED)
 
-    await Promise.all([
-      registry.updateEndpoints("1", FIRST),
-      registry.updateEndpoints("1", SECOND),
-    ])
+    const first = registry.updateEndpoints("1", FIRST)
+    await slowCheck.waitedOn
+    const second = registry.updateEndpoints("1", SECOND)
+    // The first check finishes after the second has taken over.
+    slowCheck.open()
+    await Promise.all([first, second])
 
     expect(saved.get("1")).toEqual(SECOND)
     expect(live("1")?.endpoints).toEqual(SECOND)
   })
 
   it("ends with the newer endpoints when an update arrives during a slow save", async () => {
+    const slowSave = gate()
     const { registry, saved, live } = harness({
-      saveDelayMs: (endpoints) => (endpoints === FIRST ? 30 : 0),
+      beforeSaving: async (endpoints) => {
+        if (endpoints === FIRST) {
+          await slowSave.wait()
+        }
+      },
     })
     registry.start("1", STORED)
 
     const first = registry.updateEndpoints("1", FIRST)
-    await wait(10)
+    await slowSave.waitedOn
     const second = registry.updateEndpoints("1", SECOND)
+    slowSave.open()
     await Promise.all([first, second])
 
     expect(saved.get("1")).toEqual(SECOND)
