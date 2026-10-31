@@ -52,13 +52,14 @@ export default function SignerLedgerFrame<
 
   const [isSlideUpOpen, setIsSlideUpOpen] = useState(false)
   const ledgerState = useSigningLedgerState(signingAddress.address, signer)
+  // The Ethereum app requires blind signing for calldata it can't decode,
+  // which without resolutions is all of it, and for hashed EIP-712 messages,
+  // but never for personal messages.
   const isArbitraryDataSigningRequired =
     ("input" in request &&
       request.input !== null &&
       request.input.length > 0) ||
-    ("signingData" in request &&
-      (typeof request.signingData !== "string" ||
-        request.signingData.length > 0))
+    "typedData" in request
 
   const { shouldBlockSigning, messageI18nKey } = useShouldBlockSigning()
 
