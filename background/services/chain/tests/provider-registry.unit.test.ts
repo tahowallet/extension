@@ -130,12 +130,9 @@ describe("ProviderRegistry", () => {
   it("verifies, saves, and swaps on an endpoint update", async () => {
     const { registry, saved, live, providers } = harness()
     registry.start("1", STORED)
-    const replaced: string[] = []
+    const replaced: [string, unknown][] = []
     registry.onProviderReplaced(({ chainID, previousProvider }) => {
-      replaced.push(chainID)
-      expect(previousProvider).toBe(
-        providers[0] as unknown as SerialFallbackProvider,
-      )
+      replaced.push([chainID, previousProvider])
     })
 
     await registry.updateEndpoints("1", FIRST)
@@ -143,7 +140,7 @@ describe("ProviderRegistry", () => {
     expect(saved.get("1")).toEqual(FIRST)
     expect(live("1")?.endpoints).toEqual(FIRST)
     expect(providers[0].isDestroyed).toBe(true)
-    expect(replaced).toEqual(["1"])
+    expect(replaced).toEqual([["1", providers[0]]])
   })
 
   it("rejects and keeps the old provider when an endpoint fails its check", async () => {

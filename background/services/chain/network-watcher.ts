@@ -1,4 +1,4 @@
-import { Actor, createActor } from "xstate"
+import { Actor, createActor, SimulatedClock } from "xstate"
 import { MINUTE, SECOND } from "../../constants"
 import getBlockPrices from "../../lib/gas"
 import logger from "../../lib/logger"
@@ -34,6 +34,8 @@ export type NetworkWatcherDependencies = {
   }) => void
   onPendingTransaction: (transaction: AnyEVMTransaction) => Promise<void>
   now?: () => number
+  /** Simulated time for the watches' timers, for tests. */
+  clock?: SimulatedClock
 }
 
 type NetworkWatch = Actor<typeof networkWatchMachine>
@@ -97,6 +99,9 @@ export default class NetworkWatcher {
           gasPollIntervalMs: GAS_POLL_INTERVAL_MS,
           isIdle: (watchedChainID) => !this.isNetworkActive(watchedChainID),
         },
+        ...(this.dependencies.clock === undefined
+          ? {}
+          : { clock: this.dependencies.clock }),
       },
     )
     this.#watches.set(chainID, watch)

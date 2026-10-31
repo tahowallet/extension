@@ -7,6 +7,7 @@ import {
   NextStep,
   standardFailurePolicy,
 } from "../failure-policy"
+import { getErrorType } from "../../errors"
 
 const withStatus = (message: string, status: number) =>
   Object.assign(new Error(message), { status })
@@ -86,14 +87,19 @@ describe("standardFailurePolicy", () => {
     ).toBe(expected)
   })
 
-  it("gives up on an out-of-gas eth_call but treats it as unknown elsewhere", () => {
+  it("classifies out of gas as an eth_call gas error only for eth_call, and gives up on it everywhere", () => {
     const error = new Error("out of gas")
+
+    expect(getErrorType(String(error), "eth_call")).toBe("eth-call-gas-error")
+    expect(getErrorType(String(error), "eth_estimateGas")).toBe("unknown-error")
     expect(standardFailurePolicy.nextStepAfter(error, "eth_call", 1).kind).toBe(
       "giveUp",
     )
     expect(
       standardFailurePolicy.nextStepAfter(error, "eth_estimateGas", 1).kind,
     ).toBe("giveUp")
+    expect(indicatesEndpointFault(error, "eth_call")).toBe(false)
+    expect(indicatesEndpointFault(error, "eth_estimateGas")).toBe(false)
   })
 
   it.each<[number, NextStep["kind"]]>([

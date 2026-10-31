@@ -1,16 +1,22 @@
 import { describe, expect, it } from "bun:test"
 import * as sinon from "sinon"
+import { SimulatedClock } from "xstate"
+import logger from "../../../lib/logger"
 import { ETHEREUM } from "../../../constants"
 import {
   createAddressOnNetwork,
   makeEthersBlock,
 } from "../../../tests/factories"
 import type { ChainDatabase } from "../db"
-import NetworkWatcher, { ACTIVITY_TIMEOUT_MS } from "../network-watcher"
+import NetworkWatcher, {
+  ACTIVITY_TIMEOUT_MS,
+  GAS_POLL_INTERVAL_MS,
+} from "../network-watcher"
 import type SerialFallbackProvider from "../serial-fallback-provider"
 
 function harness() {
-  let now = 1_000_000_000
+  const clock = new SimulatedClock()
+  clock.set(1_000_000_000)
   const provider = {
     getBlock: sinon.stub().resolves(makeEthersBlock()),
     onPendingTransaction: sinon.stub().resolves(),
@@ -25,16 +31,15 @@ function harness() {
     emitBlock: (block) => blocks.push(block),
     emitBlockPrices: () => {},
     onPendingTransaction: async () => {},
-    now: () => now,
+    now: () => clock.now(),
+    clock,
   })
   return {
     watcher,
     provider,
     db,
     blocks,
-    advance: (ms: number) => {
-      now += ms
-    },
+    advance: (ms: number) => clock.increment(ms),
   }
 }
 
@@ -76,12 +81,25 @@ describe("NetworkWatcher", () => {
 
   it("logs a failed block poll rather than leaving it unhandled", async () => {
     const { watcher, provider, blocks } = harness()
-    provider.getBlock.rejects(new Error("NETWORK_ERROR"))
+    const error = new Error("NETWORK_ERROR")
+    provider.getBlock.rejects(error)
+    const logged = sinon.stub(logger, "error")
 
-    watcher.watchNetwork(ETHEREUM.chainID)
-    await flush()
+    try {
+      await watcher.watchNetwork(ETHEREUM.chainID)
 
-    expect(blocks).toEqual([])
+      expect(provider.getBlock.calledWith("latest")).toBe(true)
+      expect(blocks).toEqual([])
+      expect(
+        logged.calledWith(
+          "Error polling the latest block on",
+          ETHEREUM.chainID,
+          error,
+        ),
+      ).toBe(true)
+    } finally {
+      logged.restore()
+    }
   })
 
   it("watches a network once", () => {
@@ -141,9 +159,15 @@ describe("NetworkWatcher", () => {
     watcher.markNetworkActivity(ETHEREUM.chainID)
 
     expect(watcher.watchStateOf(ETHEREUM.chainID)).toBe("Polling")
-    expect(watcher.isNetworkActive(ETHEREUM.chainID)).toBe(true)
-    advance(ACTIVITY_TIMEOUT_MS)
+    // The watch checks for idleness each time gas is due.
+    const polls = Math.ceil(ACTIVITY_TIMEOUT_MS / GAS_POLL_INTERVAL_MS)
+    for (let poll = 1; poll < polls; poll += 1) {
+      advance(GAS_POLL_INTERVAL_MS)
+      expect(watcher.watchStateOf(ETHEREUM.chainID)).toBe("Polling")
+    }
+    advance(GAS_POLL_INTERVAL_MS)
     expect(watcher.isNetworkActive(ETHEREUM.chainID)).toBe(false)
+    expect(watcher.watchStateOf(ETHEREUM.chainID)).toBe("Idle")
   })
 
   it("tells idle from never used", () => {

@@ -35,6 +35,7 @@ function fakeTransport(webSocket = false, readyState = OPEN) {
     _subscribe: sinon.stub().resolves(),
   }) as JsonRpcProvider & {
     emitter: EventEmitter
+    _websocket: EventTarget & { readyState: number }
     _subscribe: sinon.SinonStub
     destroy: sinon.SinonStub
   }
@@ -93,19 +94,29 @@ describe("SubscriptionManager", () => {
     expect(manager.endpoint).toBe(second.endpoint)
   })
 
-  it("runs overlapping moves in order", async () => {
-    const endpoints = [endpointOf(), endpointOf(), endpointOf()]
-    const manager = new SubscriptionManager(endpoints[0].endpoint)
+  it("runs overlapping moves one at a time, in order", async () => {
+    const first = endpointOf()
+    const connecting = endpointOf(true, 0)
+    const last = endpointOf()
+    const manager = new SubscriptionManager(first.endpoint)
     manager.on("block", () => {})
 
-    await Promise.all([
-      manager.moveTo(endpoints[1].endpoint),
-      manager.moveTo(endpoints[2].endpoint),
+    const moves = Promise.all([
+      manager.moveTo(connecting.endpoint),
+      manager.moveTo(last.endpoint),
     ])
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(endpoints.map(({ transports }) => count(transports[0]))).toEqual([
-      0, 0, 1,
-    ])
+    // The second move hasn't started while the first waits for its socket.
+    expect(last.transports).toHaveLength(0)
+
+    connecting.transports[0]._websocket.readyState = OPEN
+    connecting.transports[0]._websocket.dispatchEvent(new Event("open"))
+    await moves
+
+    expect(count(first.transports[0])).toBe(0)
+    expect(count(last.transports[0])).toBe(1)
+    expect(manager.endpoint).toBe(last.endpoint)
   })
 
   it("forgets a once listener after it fires, so it isn't moved", async () => {

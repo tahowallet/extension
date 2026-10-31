@@ -215,6 +215,9 @@ describe("AssetTransferScanner", () => {
     expect(emitted).toEqual([transfers])
     expect(enqueued).toHaveLength(27)
     expect(enqueued[0]).toEqual(["0x1", 0])
+    // The first 26 transfers, by position, are looked up first.
+    expect(enqueued.find(([hash]) => hash === "0x25")).toEqual(["0x25", 0])
+    expect(enqueued.find(([hash]) => hash === "0x26")).toEqual(["0x26", 1])
     expect(enqueued.at(-1)).toEqual(["0x27", 1])
   })
 })
