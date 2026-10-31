@@ -12,6 +12,7 @@ import {
   createAnyEVMTransaction,
   createChainService,
   createLegacyTransactionRequest,
+  makeEthersBlock,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
 import { BOAR_RPC_URLS } from "../../../lib/boar"
@@ -198,8 +199,31 @@ describe("ChainService", () => {
 
   describe("updateSupportedNetworks", () => {
     it("Should properly update supported networks", async () => {
-      await chainService.updateSupportedNetworks()
+      const { db } = chainService as unknown as ChainServiceExternalized
+      const announced: EVMNetwork[][] = []
+      chainService.emitter.on("supportedNetworks", (networks) => {
+        announced.push(networks)
+      })
+      await db.addEVMNetwork({
+        chainName: "Fantom Opera",
+        chainID: "250",
+        decimals: 18,
+        symbol: "FTM",
+        assetName: "Fantom",
+        rpcUrls: ["https://rpc.ftm.tools"],
+        blockExplorerURL: "https://ftmscan.com",
+      })
       expect(chainService.getSupportedNetworks().length).toBe(10)
+
+      await chainService.updateSupportedNetworks()
+
+      expect(chainService.getSupportedNetworks().length).toBe(11)
+      expect(
+        chainService
+          .getSupportedNetworks()
+          .find(({ chainID }) => chainID === "250")?.name,
+      ).toBe("Fantom Opera")
+      expect(announced.at(-1)).toEqual(chainService.getSupportedNetworks())
     })
   })
 
@@ -623,15 +647,43 @@ describe("ChainService", () => {
 
     it("retires the replaced provider and moves subscriptions onto the new one", async () => {
       mockProbeResult("0x1")
+      const account = createAddressOnNetwork({ network: ETHEREUM })
+      await chainService.addAccountToTrack(account)
 
       const previousProvider = chainService.providerForNetwork(ETHEREUM)!
       const destroySpy = sandbox.spy(previousProvider, "destroy")
+      const getBlock = sandbox
+        .stub(SerialFallbackProvider.prototype, "getBlock")
+        .resolves(makeEthersBlock())
+      const subscribe = sandbox.spy(
+        SerialFallbackProvider.prototype,
+        "onPendingTransaction",
+      )
 
       await chainService.setRpcEndpointsForChain(ETHEREUM.chainID, [
         { url: "https://new-rpc.example.com" },
       ])
+      await new Promise((resolve) => setTimeout(resolve, 0))
 
       const newProvider = chainService.providerForNetwork(ETHEREUM)!
+
+      // The network's block watch and the account's pending transaction
+      // subscription went to the new provider, and nothing to the old one.
+      expect(getBlock.getCalls().map((call) => call.thisValue)).toContain(
+        newProvider,
+      )
+      expect(
+        subscribe
+          .getCalls()
+          .filter((call) => call.thisValue === newProvider)
+          .map((call) => call.args[0].address),
+      ).toEqual([account.address])
+      expect(
+        [...getBlock.getCalls(), ...subscribe.getCalls()].filter(
+          (call) => call.thisValue === previousProvider,
+        ),
+      ).toEqual([])
+      expect(previousProvider.isDestroyed).toBe(true)
 
       // The old provider's timers and connections are shut down rather than
       // left running against the endpoints that were just replaced.
