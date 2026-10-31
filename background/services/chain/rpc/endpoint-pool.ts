@@ -19,6 +19,8 @@ export default class EndpointPool {
 
   readonly #listeners = new Set<PreferredEndpointListener>()
 
+  #stopFollowingSignal: () => void = () => {}
+
   constructor(
     readonly name: string,
     readonly endpoints: readonly Endpoint[],
@@ -58,7 +60,12 @@ export default class EndpointPool {
       }
     })
 
-    signal?.addEventListener("abort", () => this.dispose(), { once: true })
+    if (signal !== undefined) {
+      const abort = () => this.dispose()
+      signal.addEventListener("abort", abort, { once: true })
+      this.#stopFollowingSignal = () =>
+        signal.removeEventListener("abort", abort)
+    }
   }
 
   get preferredIndex(): number {
@@ -104,6 +111,7 @@ export default class EndpointPool {
     if (this.#actor.getSnapshot().status === "stopped") {
       return
     }
+    this.#stopFollowingSignal()
     this.#unsubscribers.forEach((unsubscribe) => unsubscribe())
     this.#listeners.clear()
     this.#actor.stop()

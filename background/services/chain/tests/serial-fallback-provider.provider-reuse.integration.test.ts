@@ -149,6 +149,34 @@ describe("SerialFallbackProvider provider reuse", () => {
     expect(secondCreator.callCount).toEqual(1)
   })
 
+  it("lets go of its lifecycle signal when method-specific endpoints are replaced", () => {
+    const adds = sandbox.spy(AbortSignal.prototype, "addEventListener")
+    const removes = sandbox.spy(AbortSignal.prototype, "removeEventListener")
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { kind: "standard", createTransport: () => genericProvider },
+    ])
+    const replace = () =>
+      provider.setMethodSpecificEndpoints([
+        {
+          kind: "method-specific",
+          methods: [],
+          createTransport: () =>
+            stubProvider("http://custom.example", sandbox.stub()),
+        },
+      ])
+    const abortListeners = () =>
+      adds.args.filter(([type]) => type === "abort").length -
+      removes.args.filter(([type]) => type === "abort").length
+
+    replace()
+    const afterOne = abortListeners()
+    replace()
+    replace()
+    replace()
+
+    expect(abortListeners()).toBe(afterOne)
+  })
+
   it("stops its periodic timers and drops listeners when destroyed", () => {
     const clock = sandbox.useFakeTimers({
       toFake: ["setInterval", "clearInterval"],

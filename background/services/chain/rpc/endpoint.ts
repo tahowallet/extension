@@ -55,6 +55,8 @@ export default class Endpoint {
 
   #status: EndpointStatus = "Unbuilt"
 
+  #stopFollowingSignal: () => void = () => {}
+
   constructor(
     readonly config: EndpointConfig,
     {
@@ -101,8 +103,12 @@ export default class Endpoint {
 
     if (signal?.aborted) {
       this.dispose()
+    } else if (signal !== undefined) {
+      const abort = () => this.dispose()
+      signal.addEventListener("abort", abort, { once: true })
+      this.#stopFollowingSignal = () =>
+        signal.removeEventListener("abort", abort)
     }
-    signal?.addEventListener("abort", () => this.dispose(), { once: true })
   }
 
   get kind(): EndpointKind {
@@ -210,6 +216,7 @@ export default class Endpoint {
 
   /** Tears the transport down for good; nothing is built afterwards. */
   dispose(): void {
+    this.#stopFollowingSignal()
     this.#actor.send({ type: "DISPOSE" })
   }
 }
