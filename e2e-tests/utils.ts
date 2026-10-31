@@ -32,6 +32,9 @@ export const test = base.extend<WalletTestFixtures>({
   context: async ({}, use) => {
     const pathToExtension = path.resolve(__dirname, "../dist/chrome")
     const context = await chromium.launchPersistentContext("", {
+      // CI points this at a Chrome for Testing build newer than Playwright's
+      // own; see .github/actions/install-playwright.
+      executablePath: process.env.E2E_CHROME_EXECUTABLE || undefined,
       // set to some path in order to store browser session data
       headless: false,
       args: [
