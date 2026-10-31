@@ -191,6 +191,19 @@ describe("endpointMachine", () => {
       expect(endpoint.state()).toBe("CoolingDown")
     })
 
+    it("probes with a new socket after one that never opened", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+      const [stuck] = endpoint.transports
+
+      endpoint.clock.increment(10_000)
+      endpoint.clock.increment(15_000)
+
+      expect(endpoint.state()).toBe("Probing")
+      expect(endpoint.transports).toHaveLength(2)
+      expect(stuck.destroy?.called).toBe(true)
+    })
+
     it("cancels the open timeout when the socket opens", () => {
       const endpoint = harness(() => socketTransport())
       endpoint.send({ type: "FIRST_USE" })

@@ -198,13 +198,13 @@ export const endpointMachine = setup({
     buildTransport: assign({
       transport: ({ context }) => context.createTransport(),
     }),
-    /** WebSocket transports can't reopen once closed, so they're replaced. */
-    replaceClosedSocket: assign({
+    /**
+     * WebSocket transports can't reopen once closed, and one that never
+     * opened isn't worth waiting on again, so either is replaced.
+     */
+    replaceUnopenedSocket: assign({
       transport: ({ context: { transport, createTransport } }) => {
-        if (
-          !isWebSocketTransport(transport) ||
-          transport.websocket.readyState <= SOCKET_OPEN
-        ) {
+        if (isOpenSocket(transport)) {
           return transport
         }
         teardownTransport(transport)
@@ -309,13 +309,13 @@ export const endpointMachine = setup({
         SOCKET_CLOSED: {
           guard: "isCurrentSocket",
           target: "Connecting",
-          actions: "replaceClosedSocket",
+          actions: "replaceUnopenedSocket",
         },
       },
     },
     CoolingDown: {
       after: {
-        cooldown: { target: "Probing", actions: "replaceClosedSocket" },
+        cooldown: { target: "Probing", actions: "replaceUnopenedSocket" },
       },
     },
     Probing: {
