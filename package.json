@@ -82,7 +82,7 @@
     "@babel/core": "^7.22.11",
     "@babel/preset-react": "^7.22.5",
     "@babel/preset-typescript": "^7.22.11",
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.64.1",
     "@redux-devtools/cli": "^2.0.0",
     "@types/archiver": "^5.1.0",
     "@types/babel__core": "7.20.5",
