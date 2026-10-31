@@ -135,3 +135,15 @@ export class RpcEndpointValidationError extends Error {
     )
   }
 }
+
+/**
+ * An endpoint list that was never saved, because endpoints that were
+ * already saved, such as a re-added chain's, replaced it first.
+ */
+export class EndpointUpdateSupersededError extends Error {
+  constructor(chainID: string) {
+    super(
+      `The RPC endpoints for chain ${chainID} were replaced before this change was saved`,
+    )
+  }
+}

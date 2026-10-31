@@ -11,6 +11,7 @@ import {
 import type { RpcEndpoint } from "../../networks"
 import type SerialFallbackProvider from "./serial-fallback-provider"
 import type { NetworkReachabilityState } from "./network-reachability"
+import { EndpointUpdateSupersededError } from "./errors"
 
 /** Settles a caller waiting on an endpoint update or a removal. */
 export type Reply = {
@@ -115,6 +116,32 @@ export class ChainRemovedError extends Error {
 }
 
 /**
+ * Folds a newer update into an older one. The newer endpoints win; the
+ * older update's callers share its outcome, unless the newer one skips the
+ * check and save, in which case their list was never saved.
+ */
+function supersede(
+  chainID: string,
+  older: EndpointUpdate | undefined,
+  newer: EndpointUpdate,
+): EndpointUpdate {
+  if (older === undefined) {
+    return newer
+  }
+  if (older.verifyAndSave && !newer.verifyAndSave) {
+    settle(older.replies, new EndpointUpdateSupersededError(chainID))
+    return newer
+  }
+  return {
+    ...newer,
+    // A check-free update can't absorb one that needs checking, so the
+    // stricter of the two wins.
+    verifyAndSave: newer.verifyAndSave || older.verifyAndSave,
+    replies: [...older.replies, ...newer.replies],
+  }
+}
+
+/**
  * One chain's provider and endpoint list. Endpoint updates are handled one at
  * a time: a newer update cancels a check still in flight, and waits for one
  * that is already saving.
@@ -188,29 +215,25 @@ export const chainMachine = setup({
             }
           : undefined,
     }),
-    /** The newer update takes over the replies of the one it cancels. */
+    /** The newer update replaces the one whose check it cancels. */
     supersedeUpdate: assign({
       update: ({ context, event }) =>
         event.type === "UPDATE_ENDPOINTS"
-          ? {
+          ? supersede(context.chainID, context.update, {
               endpoints: event.endpoints,
               verifyAndSave: event.verifyAndSave,
-              replies: [...(context.update?.replies ?? []), event.reply],
-            }
+              replies: [event.reply],
+            })
           : context.update,
     }),
     queueUpdate: assign({
       queuedUpdate: ({ context, event }) =>
         event.type === "UPDATE_ENDPOINTS"
-          ? {
+          ? supersede(context.chainID, context.queuedUpdate, {
               endpoints: event.endpoints,
-              // A queued check-free update can't absorb one that needs
-              // checking, so the stricter of the two wins.
-              verifyAndSave:
-                event.verifyAndSave ||
-                (context.queuedUpdate?.verifyAndSave ?? false),
-              replies: [...(context.queuedUpdate?.replies ?? []), event.reply],
-            }
+              verifyAndSave: event.verifyAndSave,
+              replies: [event.reply],
+            })
           : context.queuedUpdate,
     }),
     takeQueuedUpdate: assign({

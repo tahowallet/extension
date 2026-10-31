@@ -390,7 +390,7 @@ describe("chainMachine", () => {
       ])
     })
 
-    it("swaps straight away when a check-free update replaces the check", () => {
+    it("swaps straight away when a check-free update replaces the check, and says the checked one wasn't saved", () => {
       const chain = harness()
       chain.update("first", FIRST)
 
@@ -399,7 +399,11 @@ describe("chainMachine", () => {
       expect(chain.verifications[0].signal.aborted).toBe(true)
       expect(chain.state()).toEqual({ Live: "Reachable" })
       expect(chain.current()?.endpoints).toEqual(SECOND)
-      expect(chain.outcomes).toEqual(["first: resolved", "second: resolved"])
+      expect(chain.saves).toHaveLength(0)
+      expect(chain.outcomes).toEqual([
+        "first: rejected The RPC endpoints for chain 1 were replaced before this change was saved",
+        "second: resolved",
+      ])
     })
 
     it("cancels the check and rejects the update on REMOVE_CHAIN", async () => {
@@ -526,6 +530,23 @@ describe("chainMachine", () => {
       expect(chain.outcomes).toEqual([
         "first: resolved",
         "second: resolved",
+        "third: resolved",
+      ])
+    })
+
+    it("says a queued update wasn't saved when a check-free one replaces it", async () => {
+      const chain = await savingHarness()
+
+      chain.update("second", SECOND)
+      chain.update("third", STORED, false)
+      chain.saves[0].done.resolve()
+      await flush()
+
+      expect(chain.verifications).toHaveLength(1)
+      expect(chain.current()?.endpoints).toEqual(STORED)
+      expect(chain.outcomes).toEqual([
+        "second: rejected The RPC endpoints for chain 1 were replaced before this change was saved",
+        "first: resolved",
         "third: resolved",
       ])
     })
