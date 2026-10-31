@@ -1,7 +1,7 @@
 import React, { ReactElement } from "react"
 import type { SafeTransactionSignTypedDataAnnotation } from "@tallyho/tally-background/services/enrichment"
 import { useTranslation } from "react-i18next"
-import BalanceChangesList from "../BalanceChangesList"
+import SharedBalanceChangesList from "../../../Shared/SharedBalanceChangesList"
 import SimulationHeading from "../SimulationHeading"
 import TransactionSignatureDetailsWarning from "../TransactionSignatureDetails/TransactionSignatureDetailsWarning"
 
@@ -49,7 +49,7 @@ export default function SafeTransactionSimulation({
           />
         ))}
       {simulation?.status === "success" && (
-        <BalanceChangesList
+        <SharedBalanceChangesList
           label={tShared("safeBalanceChanges")}
           transfers={simulation.balanceChanges}
           emptyMessage={tShared("noBalanceChanges")}

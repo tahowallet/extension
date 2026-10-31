@@ -80,17 +80,37 @@ const execTransaction = encodeExecTransaction(
 
 describe("getActivityDetails", () => {
   it("lists a Safe's transfers when the transaction executes one", () => {
-    expect(getActivityDetails(transaction(execTransaction))).toContainEqual({
-      assetIconUrl: expect.any(String),
-      assetSymbol: "MYST",
-      label: "Safe · MYST",
-      value: "-250",
-    })
+    const { safeBalanceChanges } = getActivityDetails(
+      transaction(execTransaction),
+    )
+    expect(safeBalanceChanges?.address).toEqual(SAFE)
+    expect(safeBalanceChanges?.transfers).toEqual([
+      expect.objectContaining({
+        direction: "out",
+        assetSymbol: "MYST",
+        localizedDecimalAmount: "250",
+        counterparty: expect.objectContaining({ address: RECIPIENT }),
+      }),
+    ])
   })
 
-  it("doesn't list other addresses' transfers otherwise", () => {
+  it("doesn't list a Safe otherwise", () => {
     expect(
-      getActivityDetails(transaction("0xa9059cbb")).map(({ label }) => label),
-    ).not.toContain("Safe · MYST")
+      getActivityDetails(transaction("0xa9059cbb")).safeBalanceChanges,
+    ).toBeUndefined()
+  })
+
+  it("lists transfers for the account viewing the activity", () => {
+    const { balanceChanges } = getActivityDetails(
+      transaction(execTransaction),
+      RECIPIENT,
+    )
+    expect(balanceChanges.transfers).toEqual([
+      expect.objectContaining({
+        direction: "in",
+        assetSymbol: "MYST",
+        counterparty: expect.objectContaining({ address: SAFE }),
+      }),
+    ])
   })
 })
