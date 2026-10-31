@@ -3,7 +3,10 @@ import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers"
 import { createActor, SimulatedClock } from "xstate"
 import * as sinon from "sinon"
 import { endpointMachine, EndpointEvent } from "../endpoint-machine"
-import Endpoint, { BreakerTransition } from "../endpoint"
+import Endpoint, {
+  BreakerTransition,
+  NoEndpointAvailableError,
+} from "../endpoint"
 
 const CONNECTING = 0
 const OPEN = 1
@@ -668,6 +671,26 @@ describe("Endpoint", () => {
     endpoint.send("eth_call", [])
 
     expect(transports[0].send.calledWith("eth_call", [])).toBe(true)
+  })
+
+  it("refuses requests while cooling down or probing, except probes", async () => {
+    const { endpoint, clock, transports } = endpointWith(pollingTransport)
+    endpoint.transport
+    for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+
+    await expect(endpoint.send("eth_call", [])).rejects.toBeInstanceOf(
+      NoEndpointAvailableError,
+    )
+    transports[0].send.returns(new Promise(() => {}))
+    clock.increment(15_000)
+    expect(endpoint.status).toBe("Probing")
+    await expect(endpoint.send("eth_call", [])).rejects.toBeInstanceOf(
+      NoEndpointAvailableError,
+    )
+    expect(transports[0].send.calledWith("eth_call")).toBe(false)
+
+    endpoint.send("eth_call", [], { probe: true })
+    expect(transports[0].send.calledWith("eth_call")).toBe(true)
   })
 
   it("fails a wait that ends in a cooldown or a disposal", async () => {

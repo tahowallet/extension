@@ -1,3 +1,4 @@
+import { NoEndpointAvailableError } from "./endpoint"
 import type Endpoint from "./endpoint"
 import type EndpointPool from "./endpoint-pool"
 import {
@@ -33,11 +34,7 @@ export type RequestOutcomeObserver = {
 /** A pool to walk and the policy to walk it with. */
 export type RouteStep = { pool: EndpointPool; policy: FailurePolicy }
 
-export class NoEndpointAvailableError extends Error {
-  constructor() {
-    super("NETWORK_ERROR: circuit open and no fallback available")
-  }
-}
+export { NoEndpointAvailableError }
 
 const abortable = (ms: number, signal: AbortSignal) =>
   new Promise<void>((resolve, reject) => {

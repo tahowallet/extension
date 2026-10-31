@@ -35,6 +35,12 @@ const AVAILABLE: ReadonlySet<string> = new Set([
   "Ready",
 ])
 
+export class NoEndpointAvailableError extends Error {
+  constructor() {
+    super("NETWORK_ERROR: circuit open and no fallback available")
+  }
+}
+
 export class EndpointDisposedError extends Error {
   constructor() {
     super("Endpoint has been disposed")
@@ -160,11 +166,21 @@ export default class Endpoint {
     })
   }
 
-  /** Sends a request, waiting for a WebSocket that is still connecting. */
-  send(method: string, params: unknown[]): Promise<unknown> {
+  /**
+   * Sends a request, waiting for a WebSocket that is still connecting. A
+   * cooling-down endpoint refuses requests unless they're probes.
+   */
+  send(
+    method: string,
+    params: unknown[],
+    { probe = false }: { probe?: boolean } = {},
+  ): Promise<unknown> {
     const { transport } = this
     if (this.#status === "Connecting") {
       return this.whenReady().then(() => this.transport.send(method, params))
+    }
+    if (!probe && !this.isAvailable) {
+      return Promise.reject(new NoEndpointAvailableError())
     }
     return transport.send(method, params)
   }
