@@ -149,7 +149,9 @@ export async function annotationsFromLogs(
     /**
      * Look up tokens the wallet doesn't track, rather than skipping their
      * transfers. Meant for simulations, where every token that moves matters;
-     * transfers of such tokens are flagged as untracked.
+     * transfers of such tokens are flagged as untracked. Tokens the user has
+     * hidden are left out entirely, whether or not they're tracked, so the
+     * lookup can't bring them back.
      */
     resolveUntrackedAssets?: boolean
   } = {},
@@ -168,9 +170,17 @@ export async function annotationsFromLogs(
     ...parseLogsForWrappedDepositsAndWithdrawals(logs),
   ]
 
+  const hiddenAssetAddresses = resolveUntrackedAssets
+    ? await indexingService.getHiddenAssetAddresses(network)
+    : []
   const relevantTransferLogs = getERC20LogsForAddresses(
     tokenTransferLogs,
     accountAddresses,
+  ).filter(
+    ({ contractAddress }) =>
+      !hiddenAssetAddresses.some((hidden) =>
+        sameEVMAddress(hidden, contractAddress),
+      ),
   )
 
   const untrackedContracts = resolveUntrackedAssets
