@@ -182,6 +182,16 @@ describe("pendingTransactionMachine", () => {
       },
     )
 
+    it("keeps waiting on a first miss exactly at the lookup lifetime", () => {
+      const result = run(at("Queued"), [
+        { type: "LOOKUP_DUE" },
+        { type: "NOT_FOUND", now: T0 + TRANSACTION_CHECK_LIFETIME_MS },
+      ])
+
+      expect(result.state).toBe("Queued")
+      expect(result.effects).toEqual(["persistMissingSince", "requeue"])
+    })
+
     it("drops a miss past the lookup lifetime even inside the grace", () => {
       const result = run(at("Queued"), [
         { type: "LOOKUP_DUE" },

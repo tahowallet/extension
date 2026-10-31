@@ -551,6 +551,54 @@ describe("chainMachine", () => {
       ])
     })
 
+    it("swaps a queued check-free update in without checking it", async () => {
+      const chain = await savingHarness()
+
+      chain.update("second", SECOND, false)
+      chain.saves[0].done.resolve()
+      await flush()
+
+      expect(chain.state()).toEqual({ Live: "Reachable" })
+      expect(chain.verifications).toHaveLength(1)
+      expect(chain.saves).toHaveLength(1)
+      expect(chain.providers.map(({ endpoints }) => endpoints)).toEqual([
+        STORED,
+        FIRST,
+        SECOND,
+      ])
+      expect(chain.current()?.endpoints).toEqual(SECOND)
+      expect(chain.outcomes).toEqual(["first: resolved", "second: resolved"])
+    })
+
+    it("checks a queued check-free update that a checked one joins", async () => {
+      const chain = await savingHarness()
+      const third = [{ url: "https://third.example" }]
+
+      chain.update("second", SECOND, false)
+      chain.update("third", third)
+      chain.saves[0].done.resolve()
+      await flush()
+
+      expect(chain.state()).toBe("VerifyingEndpoints")
+      expect(chain.verifications[1].endpoints).toEqual(third)
+
+      chain.verifications[1].done.resolve()
+      await flush()
+      chain.saves[1].done.resolve()
+      await flush()
+
+      expect(chain.saves.map(({ endpoints }) => endpoints)).toEqual([
+        FIRST,
+        third,
+      ])
+      expect(chain.current()?.endpoints).toEqual(third)
+      expect(chain.outcomes).toEqual([
+        "first: resolved",
+        "second: resolved",
+        "third: resolved",
+      ])
+    })
+
     it("still runs a queued update after the save fails", async () => {
       const chain = await savingHarness()
 

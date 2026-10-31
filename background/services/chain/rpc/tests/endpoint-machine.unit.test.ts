@@ -491,6 +491,35 @@ describe("endpointMachine", () => {
       expect(endpoint.transports[0].removeAllListeners.called).toBe(true)
     })
 
+    it.each<EndpointEvent["type"]>(["SOCKET_OPENED", "FIRST_USE"])(
+      "ignores %s",
+      (type) => {
+        const endpoint = harness()
+        endpoint.coolDown()
+        endpoint.transports[0].send.returns(new Promise(() => {}))
+        endpoint.clock.increment(15_000)
+
+        endpoint.send({ type } as EndpointEvent)
+
+        expect(endpoint.state()).toBe("Probing")
+        expect(endpoint.transports).toHaveLength(1)
+      },
+    )
+
+    it("ignores a socket it has replaced closing", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.send({
+        type: "SOCKET_CLOSED",
+        transport: socketTransport(CLOSED),
+      })
+
+      expect(endpoint.state()).toBe("Probing")
+    })
+
     it("cools down for longer when the probe doesn't answer in time", () => {
       const endpoint = harness()
       endpoint.coolDown()

@@ -128,6 +128,15 @@ describe("networkWatchMachine", () => {
       expect(watch.polls).toEqual(["block", "gas"])
     })
 
+    it("ignores START_WATCHING", () => {
+      const watch = polling()
+
+      watch.send({ type: "START_WATCHING" })
+
+      expect(watch.value()).toBe("Polling")
+      expect(watch.polls).toEqual([])
+    })
+
     it("ignores activity and reachable reports", () => {
       const watch = polling()
 
@@ -173,6 +182,27 @@ describe("networkWatchMachine", () => {
 
       expect(watch.value()).toBe("Polling")
       expect(watch.polls).toEqual(["gas"])
+    })
+
+    it("polls on activity even while isIdle still says idle, and goes idle again at the next tick", () => {
+      const watch = idle()
+
+      watch.send({ type: "USER_ACTIVITY" })
+      expect(watch.value()).toBe("Polling")
+      expect(watch.polls).toEqual(["gas"])
+
+      watch.clock.increment(INTERVAL)
+      expect(watch.value()).toBe("Idle")
+      expect(watch.polls).toEqual(["gas"])
+    })
+
+    it("ignores START_WATCHING", () => {
+      const watch = idle()
+
+      watch.send({ type: "START_WATCHING" })
+
+      expect(watch.value()).toBe("Idle")
+      expect(watch.polls).toEqual([])
     })
 
     it("reads only a fresh block when the provider is replaced", () => {
