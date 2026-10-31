@@ -68,33 +68,39 @@ export default function SharedAddress({
 
   if (compact) {
     return (
-      <SharedTooltip
-        width={200}
-        height={26}
-        verticalPosition="top"
-        horizontalPosition="left"
-        style={{ margin: "-5px 0" }}
-        IconComponent={() => (
-          <button
-            id={id}
-            type="button"
-            className="compact"
-            onClick={copyAddress}
-          >
-            {name === undefined
-              ? truncateAddress(address)
-              : trimNameMiddle(name, COMPACT_NAME_LENGTH)}
-          </button>
-        )}
-      >
-        <div className="compact_tooltip">
-          {name !== undefined && <div>{name}</div>}
-          <div className="compact_tooltip_address">{address}</div>
-          {name !== undefined && nameResolverSystem !== undefined && (
-            <div>Resolved using {nameResolverSystem}</div>
+      <>
+        <SharedTooltip
+          width={200}
+          height={26}
+          verticalPosition="top"
+          horizontalPosition="left"
+          style={{ margin: "-5px 0" }}
+          IconComponent={() => (
+            <button
+              id={id}
+              type="button"
+              className="compact"
+              onClick={copyAddress}
+            >
+              {name === undefined
+                ? truncateAddress(address)
+                : trimNameMiddle(name, COMPACT_NAME_LENGTH)}
+            </button>
           )}
-          <div>Click to copy</div>
-        </div>
+        >
+          <div className="compact_tooltip">
+            {name !== undefined && <div>{name}</div>}
+            <div className="compact_tooltip_address">{address}</div>
+            {name !== undefined && nameResolverSystem !== undefined && (
+              <div>Resolved using {nameResolverSystem}</div>
+            )}
+            <div>Click to copy</div>
+          </div>
+        </SharedTooltip>
+        {/*
+         * Outside the tooltip: its content only mounts while it shows, and
+         * these styles are also for the address itself.
+         */}
         <style jsx>{`
           .compact {
             font-size: 14px;
@@ -115,7 +121,7 @@ export default function SharedAddress({
             word-break: break-all;
           }
         `}</style>
-      </SharedTooltip>
+      </>
     )
   }
 

@@ -56,13 +56,18 @@ export default function SharedBalanceChangesList({
                 {transfer.direction === "in" ? "+" : "-"}
                 {transfer.localizedDecimalAmount}
               </span>
-              {transfer.assetSymbol}
+              <span
+                className="simulated_changes_symbol"
+                title={transfer.assetSymbol}
+              >
+                {transfer.assetSymbol}
+              </span>
               {transfer.untrackedAsset && (
                 <SharedTooltip
                   width={200}
                   verticalPosition="top"
                   horizontalPosition="right"
-                  style={{ margin: "-5px 0" }}
+                  style={{ margin: "-5px 0", flexShrink: 0 }}
                   IconComponent={() => (
                     <SharedIcon
                       icon="icons/s/notif-attention.svg"
@@ -121,6 +126,18 @@ export default function SharedBalanceChangesList({
           gap: 5px;
           color: var(--green-20);
           min-width: 0;
+        }
+        .simulated_changes_amount {
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        /* Symbols are whatever a token says they are, so can be any length;
+           this is what gives way when the row runs out of room. */
+        .simulated_changes_symbol {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .simulated_changes_amount.in {
           color: var(--success);
