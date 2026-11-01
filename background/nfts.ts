@@ -8,7 +8,9 @@ import {
   ZK_SYNC,
   MEZO_TESTNET,
 } from "./constants"
+import type { AssetTransfer } from "./assets"
 import { EVMNetwork } from "./networks"
+import type { HexString } from "./types"
 // Networks that are not added to this struct will
 // not have an in-wallet NFT tab
 export const CHAIN_ID_TO_NFT_METADATA_PROVIDER: {
@@ -86,6 +88,25 @@ export type NFTCollection = {
       decimals: number
     }
   }
+}
+
+/** An ERC-721 token moving between two addresses, as its log recorded it. */
+export type ERC721Transfer = {
+  network: EVMNetwork
+  contractAddress: HexString
+  /** The token ID in decimal. */
+  tokenId: string
+  from: HexString
+  to: HexString
+  txHash: HexString
+  blockNumber: number
+  logIndex: number
+}
+
+/** What one scan of an account's blocks found. */
+export type ScannedTransfers = {
+  assetTransfers: AssetTransfer[]
+  nftTransfers: ERC721Transfer[]
 }
 
 export type TransferredNFT = {
