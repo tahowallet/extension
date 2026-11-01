@@ -339,6 +339,7 @@ async function buildForBrowser(browser: string) {
     entrypoints: [
       "./src/popup.ts",
       "./src/tab.ts",
+      "./src/theme.ts",
       "./src/background.ts",
       "./src/window-provider.ts",
       "./src/provider-bridge.ts",

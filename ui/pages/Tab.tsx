@@ -3,6 +3,7 @@ import { Provider } from "react-redux"
 import { HashRouter, Route, Switch } from "react-router-dom"
 import { Store } from "webext-redux"
 import Container from "../components/BrowserTab/BrowserTabContainer"
+import ThemeSync from "../components/Core/ThemeSync"
 import Snackbar from "../components/Snackbar/Snackbar"
 import TabbedOnboardingRoot from "./Onboarding/Tabbed/Root"
 
@@ -15,6 +16,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
   return (
     <>
       <Provider store={store}>
+        <ThemeSync />
         {/* HashRouter seems the only choice supporting safe page reloads. */}
         <Container>
           <HashRouter>

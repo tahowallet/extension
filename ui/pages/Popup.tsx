@@ -30,6 +30,7 @@ import setAnimationConditions, {
 } from "../utils/pageTransition"
 
 import CorePage from "../components/Core/CorePage"
+import ThemeSync from "../components/Core/ThemeSync"
 import ErrorFallback from "./ErrorFallback"
 
 import pageList from "../routes/routes"
@@ -228,6 +229,7 @@ export function Main(): ReactElement {
 export default function Popup({ store }: { store: Store }): ReactElement {
   return (
     <Provider store={store}>
+      <ThemeSync />
       <Main />
     </Provider>
   )
