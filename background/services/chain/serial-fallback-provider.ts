@@ -147,9 +147,8 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   private routeRules: RouteRule[] = []
 
   constructor(
-    // Internal network type useful for helper calls, but not exposed to avoid
-    // clashing with Ethers's own `network` stuff.
-    private chainID: string,
+    // Named apart from Ethers's own `network` stuff.
+    readonly chainID: string,
     endpointConfigs: EndpointConfig[],
     onReachabilityChange?: NetworkReachabilityListener,
   ) {

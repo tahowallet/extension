@@ -212,8 +212,9 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Alchemy-compatible helper; " +
-          "falling back to Transfer log scanning.",
+        "Problem resolving asset transfers via Alchemy-compatible helper on " +
+          `chain ${addressOnNetwork.network.chainID}; falling back to ` +
+          "Transfer log scanning.",
         error,
       )
 
@@ -241,8 +242,8 @@ export default class AssetDataHelper {
       )
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Transfer logs; network may " +
-          "not support it.",
+        "Problem resolving asset transfers via Transfer logs on chain " +
+          `${addressOnNetwork.network.chainID}; network may not support it.`,
         error,
       )
 

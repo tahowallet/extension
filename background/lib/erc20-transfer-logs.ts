@@ -69,7 +69,9 @@ async function getLogsWithAdaptiveRange(
     const midBlock = fromBlock + Math.floor((toBlock - fromBlock) / 2)
 
     logger.debug(
-      "Failed to fetch ERC-20 transfer logs for block range",
+      "Failed to fetch ERC-20 transfer logs on chain",
+      provider.chainID,
+      "for block range",
       fromBlock,
       "-",
       toBlock,

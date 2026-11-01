@@ -153,7 +153,10 @@ export default class TransactionTracker {
       const { transaction } = this.transactionsToRetrieve[0]
       this.dequeueLookup(transaction.network, transaction.hash)
       this.lookUp(transaction).catch((error) =>
-        logger.error(`Error looking up transaction ${transaction.hash}`, error),
+        logger.error(
+          `Error looking up transaction ${transaction.hash} on chain ${transaction.network.chainID}`,
+          error,
+        ),
       )
     }, LOOKUP_INTERVAL)
   }
@@ -201,7 +204,10 @@ export default class TransactionTracker {
     try {
       result = await this.dependencies.providerFor(network).getTransaction(hash)
     } catch (error) {
-      logger.error(`Error retrieving transaction ${hash}`, error)
+      logger.error(
+        `Error retrieving transaction ${hash} on chain ${network.chainID}`,
+        error,
+      )
       await this.apply(lookup, snapshot, { type: "LOOKUP_FAILED", now })
       return
     }
@@ -224,7 +230,10 @@ export default class TransactionTracker {
     } catch (error) {
       // Saving what was found, or fetching its block or receipt, failed; the
       // lookup is retried like one that failed outright.
-      logger.error(`Error handling transaction ${hash}`, error)
+      logger.error(
+        `Error handling transaction ${hash} on chain ${network.chainID}`,
+        error,
+      )
       await this.apply(lookup, snapshot, { type: "LOOKUP_FAILED", now })
     }
   }
@@ -275,7 +284,10 @@ export default class TransactionTracker {
           transaction.hash,
         ]) ?? "generic-rpc",
       ).catch((error) =>
-        logger.error(`Error saving receipt for ${transaction.hash}`, error),
+        logger.error(
+          `Error saving receipt for ${transaction.hash} on chain ${network.chainID}`,
+          error,
+        ),
       )
       this.dequeueLookup(network, transaction.hash)
     })
@@ -307,7 +319,10 @@ export default class TransactionTracker {
       )) as Transaction | null
       this.watchForReceipt(network, transaction, saved?.firstSeen)
     } catch (error) {
-      logger.error(`Error saving tx: ${transaction}`, error)
+      logger.error(
+        `Error saving tx ${transaction.hash} on chain ${transaction.network.chainID}`,
+        error,
+      )
     }
   }
 
@@ -337,7 +352,12 @@ export default class TransactionTracker {
       transaction,
       provider.dataSourceFor("eth_getTransactionByHash", [hash]) ??
         "generic-rpc",
-    ).catch((error) => logger.error(`Error saving tx ${hash}`, error))
+    ).catch((error) =>
+      logger.error(
+        `Error saving tx ${hash} on chain ${network.chainID}`,
+        error,
+      ),
+    )
     return transaction
   }
 
@@ -376,13 +396,19 @@ export default class TransactionTracker {
       await this.dependencies.db.addOrUpdateTransaction(merged, dataSource)
     } catch (err) {
       error = err
-      logger.error(`Error saving tx ${merged}`, error)
+      logger.error(
+        `Error saving tx ${merged.hash} on chain ${merged.network.chainID}`,
+        error,
+      )
     }
     try {
       await this.dependencies.emitTransaction(merged)
     } catch (err) {
       error = err
-      logger.error(`Error emitting tx ${merged}`, error)
+      logger.error(
+        `Error emitting tx ${merged.hash} on chain ${merged.network.chainID}`,
+        error,
+      )
     }
     if (error) {
       throw error
@@ -478,7 +504,7 @@ export default class TransactionTracker {
         )) as Transaction | null
         if (current !== null && !("status" in current)) {
           logger.warn(
-            `Tx hash ${hash} is found in our local registry but not on chain.`,
+            `Tx hash ${hash} is found in our local registry but not on chain ${network.chainID}.`,
           )
           // oxlint-disable-next-line no-param-reassign
           lookup.dropped = current
@@ -510,7 +536,7 @@ export default class TransactionTracker {
       case "markExpired":
         if (stored !== null) {
           logger.warn(
-            `Transaction ${hash} is too old to keep looking for it; treating it as expired.`,
+            `Transaction ${hash} on chain ${network.chainID} is too old to keep looking for it; treating it as expired.`,
           )
           // Keeps a status that is already there.
           await this.save(

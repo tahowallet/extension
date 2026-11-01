@@ -384,7 +384,10 @@ export default class ChainService extends BaseService<Events> {
         .flatMap((an) => [
           // subscribe to all account transactions
           this.subscribeToAccountTransactions(an).catch((e) => {
-            logger.error(e)
+            logger.error(
+              `Error subscribing to transactions for ${an.address} on chain ${an.network.chainID}`,
+              e,
+            )
           }),
         ])
         .concat(
@@ -418,7 +421,10 @@ export default class ChainService extends BaseService<Events> {
                 )
               })
               .catch((e) => {
-                logger.error(e)
+                logger.error(
+                  `Error queuing stored transactions for lookup on chain ${network.chainID}`,
+                  e,
+                )
               }),
           ),
         ),

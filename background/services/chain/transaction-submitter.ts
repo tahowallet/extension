@@ -130,7 +130,10 @@ export default class TransactionSubmitter {
         transactionRequest,
       )
     } catch (error) {
-      logger.error("Error estimating gas limit: ", error)
+      logger.error(
+        `Error estimating gas limit on chain ${network.chainID}:`,
+        error,
+      )
       // Try to identify unpredictable gas errors to bubble that information
       // out.
       if (error instanceof Error) {
@@ -395,7 +398,7 @@ export default class TransactionSubmitter {
           })
           .catch((error) => {
             logger.debug(
-              "Broadcast error caught, saving failed status and releasing nonce...",
+              `Broadcast error caught on chain ${transaction.network.chainID}, saving failed status and releasing nonce...`,
               transaction,
               error,
             )
@@ -406,7 +409,10 @@ export default class TransactionSubmitter {
                 "local",
               )
               .catch((saveError) =>
-                logger.error("Error saving a failed broadcast", saveError),
+                logger.error(
+                  `Error saving a failed broadcast on chain ${transaction.network.chainID}`,
+                  saveError,
+                ),
               )
             // the reject here will release the nonce in the following catch
             return Promise.reject(error)
@@ -420,7 +426,11 @@ export default class TransactionSubmitter {
     } catch (error) {
       this.dependencies.nonceAllocator.releaseNonce(transaction)
       this.dependencies.onSendFailed()
-      logger.error("Error broadcasting transaction", transaction, error)
+      logger.error(
+        `Error broadcasting transaction on chain ${transaction.network.chainID}`,
+        transaction,
+        error,
+      )
 
       throw error
     }
