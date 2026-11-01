@@ -19,6 +19,7 @@ import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedTooltip from "../Shared/SharedTooltip"
 import ExploreMarketLink, { getRelevantMarketsList } from "./ExploreMarketLink"
 import NFTImage from "./NFTImage"
+import { displayAmount } from "../../utils/amounts"
 
 const MAX_DESCRIPTION_LENGTH = 180
 const LINK_REGEX = /\[([\w\s\d]+)\]\((https?:\/\/[\w\d./?=#]+)\)/gm
@@ -87,7 +88,12 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     [collectionID, owner, network, dispatch],
   )
 
-  const localizedTotalCount = (totalNftCount ?? supply)?.toLocaleString()
+  const totalCount = totalNftCount ?? supply
+  const displayedTotalCount =
+    totalCount === undefined
+      ? undefined
+      : displayAmount(totalCount, totalCount.toLocaleString())
+  const localizedTotalCount = displayedTotalCount?.text
   const localizedRarityRank = rarityRank?.toLocaleString()
 
   return (
@@ -201,7 +207,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
             <div className="preview_section_header">
               {t("preview.itemsCount")}
             </div>
-            <p>{localizedTotalCount ?? "-"}</p>
+            <p title={displayedTotalCount?.title}>
+              {localizedTotalCount ?? "-"}
+            </p>
           </div>
           <div className="preview_section_column align_right">
             <div className="preview_section_header">{t("preview.creator")}</div>
