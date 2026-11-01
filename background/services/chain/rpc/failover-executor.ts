@@ -2,6 +2,7 @@ import logger from "../../../lib/logger"
 import { NoEndpointAvailableError } from "./endpoint"
 import type Endpoint from "./endpoint"
 import type EndpointPool from "./endpoint-pool"
+import { attachRpcContext } from "./error-context"
 import {
   FailurePolicy,
   indicatesEndpointFault,
@@ -92,6 +93,9 @@ function onlyEndpointOf(pool: EndpointPool): Endpoint | undefined {
  * failure policy. All of a request's retry state lives in this loop.
  */
 export default class FailoverExecutor {
+  // The endpoint each request last tried, for the context on its error.
+  readonly #lastTried = new WeakMap<RpcRequest, Endpoint>()
+
   constructor(
     private readonly observers: readonly RequestOutcomeObserver[] = [],
     private readonly wait: (
@@ -132,6 +136,15 @@ export default class FailoverExecutor {
       }
     }
 
+    // An abort's reason, such as the provider's destroyed error, is thrown
+    // as it is.
+    if (!signal.aborted) {
+      attachRpcContext(lastError, {
+        chainID: request.chainID,
+        method: request.method,
+        endpoint: this.#lastTried.get(request)?.label,
+      })
+    }
     this.#notify((observer) => observer.onRequestFailed?.(request, lastError))
     throw lastError
   }
@@ -165,6 +178,7 @@ export default class FailoverExecutor {
           break
         }
 
+        this.#lastTried.set(request, endpoint)
         this.#notify((observer) => observer.onAttempt?.(request, endpoint))
         try {
           // oxlint-disable-next-line no-await-in-loop

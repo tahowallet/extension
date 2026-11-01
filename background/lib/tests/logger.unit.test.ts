@@ -2,6 +2,7 @@ import browser from "webextension-polyfill"
 import {
   FLUSH_DEBOUNCE_MS,
   FLUSH_THRESHOLD_CHARACTERS,
+  formatLoggedValue,
   Logger,
   MAX_LOG_CHARACTERS,
 } from "../logger"
@@ -162,5 +163,31 @@ describe("Logger", () => {
     // line, so a second, independent Logger reading storage sees it too.
     const stored = await getStoredLevel("warn")
     expect(stored).toContain("a warning message")
+  })
+})
+
+describe("formatLoggedValue", () => {
+  it("leads with an error's name and message, then its properties", () => {
+    const error = Object.assign(new Error("NETWORK_ERROR"), {
+      rpcContext: { chainID: "1", method: "eth_call" },
+    })
+
+    expect(formatLoggedValue(error)).toBe(
+      'Error: NETWORK_ERROR {"rpcContext":{"chainID":"1","method":"eth_call"}}',
+    )
+    expect(formatLoggedValue(new Error("plain"))).toBe("Error: plain")
+  })
+
+  it("stores errors that already carry their message or reason as JSON", () => {
+    const ethersLike = Object.assign(new Error("missing response (...)"), {
+      reason: "missing response",
+      code: "SERVER_ERROR",
+    })
+
+    expect(formatLoggedValue(ethersLike)).toBe(
+      '{"reason":"missing response","code":"SERVER_ERROR"}',
+    )
+    expect(formatLoggedValue({ a: 1 })).toBe('{"a":1}')
+    expect(formatLoggedValue("text")).toBe("text")
   })
 })

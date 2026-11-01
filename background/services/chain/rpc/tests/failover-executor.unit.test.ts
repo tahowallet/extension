@@ -11,8 +11,12 @@ import FailoverExecutor, {
 } from "../failover-executor"
 import {
   anyErrorFailsOverPolicy,
+  indicatesEndpointFault,
+  indicatesOutage,
   standardFailurePolicy,
 } from "../failure-policy"
+import { rpcContextOf } from "../error-context"
+import { getErrorType } from "../../errors"
 
 type Stub = sinon.SinonStub
 
@@ -31,7 +35,11 @@ function setup(size: number, threshold = 5) {
             removeAllListeners: sinon.stub(),
           }) as JsonRpcProvider,
       },
-      { clock, options: { failureThreshold: threshold } },
+      {
+        label: `chain 1 standard[${index}] rpc${index}.example`,
+        clock,
+        options: { failureThreshold: threshold },
+      },
     )
   })
   endpoints.forEach((endpoint) => endpoint.build())
@@ -60,7 +68,24 @@ function setup(size: number, threshold = 5) {
   const send = (policy = standardFailurePolicy, method = "eth_call") =>
     executor.sendWithFailover(request(method), pool, policy, controller.signal)
 
-  return { endpoints, pool, sends, events, waits, controller, send, clock }
+  const sendRoute = (method = "eth_call") =>
+    executor.send(
+      request(method),
+      [{ pool, policy: standardFailurePolicy }],
+      controller.signal,
+    )
+
+  return {
+    endpoints,
+    pool,
+    sends,
+    events,
+    waits,
+    controller,
+    send,
+    sendRoute,
+    clock,
+  }
 }
 
 const calls = (stub: Stub, method = "eth_call") =>
@@ -279,6 +304,109 @@ describe("FailoverExecutor", () => {
 
       await expect(inFlight).resolves.toMatchObject({ result: "endpoint 1" })
       expect(pool.preferredIndex).toBe(1)
+    })
+  })
+
+  describe("errors it rethrows", () => {
+    it("carry the chain, the method and the last endpoint tried", async () => {
+      const { sendRoute, sends, endpoints } = setup(2)
+      const error = Object.assign(new Error("missing response"), {
+        code: "SERVER_ERROR",
+      })
+      sends.forEach((stub) => stub.rejects(error))
+
+      await expect(sendRoute("eth_getLogs")).rejects.toBe(error)
+      expect(error.message).toBe("missing response")
+      expect(error.code).toBe("SERVER_ERROR")
+      expect(rpcContextOf(error)).toEqual({
+        chainID: "1",
+        method: "eth_getLogs",
+        endpoint: endpoints[1].label,
+      })
+      expect(JSON.stringify(error)).toContain(
+        "chain 1 standard[1] rpc1.example",
+      )
+    })
+
+    it("carry the chain and method when no endpoint could be tried", async () => {
+      const { sendRoute, endpoints } = setup(2, 1)
+      endpoints.forEach((endpoint) => endpoint.recordFailure())
+
+      const error = await sendRoute().catch((thrown: unknown) => thrown)
+
+      expect(error).toBeInstanceOf(NoEndpointAvailableError)
+      expect(rpcContextOf(error)).toEqual({
+        chainID: "1",
+        method: "eth_call",
+        endpoint: undefined,
+      })
+    })
+
+    it.each([
+      ["an outage", () => new Error("NETWORK_ERROR")],
+      ["a rate limit", () => new Error("Too Many Requests")],
+      ["a revert", () => new Error("execution reverted")],
+      ["an eth_call gas error", () => new Error("out of gas")],
+      [
+        "a key error",
+        () => Object.assign(new Error("bad response"), { status: 403 }),
+      ],
+      [
+        "a client error",
+        () => Object.assign(new Error("bad response"), { status: 400 }),
+      ],
+      [
+        "a JSON-RPC error",
+        () =>
+          Object.assign(new Error("method not found"), {
+            code: -32601,
+          }),
+      ],
+    ])("classify the same with their context on, for %s", async (_, make) => {
+      const { sendRoute, sends } = setup(1)
+      const error = make()
+      const before = {
+        type: getErrorType(String(error), "eth_call"),
+        outage: indicatesOutage(error, "eth_call"),
+        fault: indicatesEndpointFault(error, "eth_call"),
+        step: standardFailurePolicy.nextStepAfter(error, "eth_call", 4).kind,
+      }
+      sends[0].rejects(error)
+
+      await expect(sendRoute()).rejects.toBe(error)
+
+      expect(rpcContextOf(error)).toBeDefined()
+      expect({
+        type: getErrorType(String(error), "eth_call"),
+        outage: indicatesOutage(error, "eth_call"),
+        fault: indicatesEndpointFault(error, "eth_call"),
+        step: standardFailurePolicy.nextStepAfter(error, "eth_call", 4).kind,
+      }).toEqual(before)
+    })
+
+    it("leave an abort reason, such as the destroyed error, as it is", async () => {
+      const { sendRoute, sends, controller } = setup(2)
+      const reason = new Error("destroyed")
+      sends[0].callsFake(async () => {
+        controller.abort(reason)
+        throw new Error("NETWORK_ERROR")
+      })
+
+      await expect(sendRoute()).rejects.toBe(reason)
+      expect(rpcContextOf(reason)).toBeUndefined()
+    })
+
+    it("keep the first context on an error two requests share", async () => {
+      const { sendRoute, sends } = setup(1)
+      const shared = new Error("NETWORK_ERROR")
+      sends[0].rejects(shared)
+
+      await Promise.allSettled([
+        sendRoute("eth_call"),
+        sendRoute("eth_getLogs"),
+      ])
+
+      expect(rpcContextOf(shared)?.method).toBe("eth_call")
     })
   })
 })
