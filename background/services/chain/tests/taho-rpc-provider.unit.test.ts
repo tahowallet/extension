@@ -11,6 +11,7 @@ class LimitedProvider extends TahoRPCProvider {
   constructor(
     private readonly limit: number,
     private readonly rejection: "body" | "throw" | "items" = "body",
+    private readonly message?: string,
   ) {
     super("http://limited.example", 1, { maxBatchLength: 8 })
   }
@@ -28,7 +29,10 @@ class LimitedProvider extends TahoRPCProvider {
           : {
               id,
               jsonrpc: "2.0" as const,
-              error: { code: -32600, message: "batch size limit exceeded" },
+              error: {
+                code: -32600,
+                message: this.message ?? "batch size limit exceeded",
+              },
             },
       )
     }
@@ -39,7 +43,7 @@ class LimitedProvider extends TahoRPCProvider {
       return {
         id: payloads[0].id,
         jsonrpc: "2.0" as const,
-        error: { code: -32600, message: "batch too large" },
+        error: { code: -32600, message: this.message ?? "batch too large" },
       }
     }
 
@@ -111,6 +115,30 @@ describe("TahoRPCProvider", () => {
     // Only the refused c and d go out twice.
     expect(sent.toSorted()).toEqual(["a", "b", "c", "c", "d", "d"])
   })
+
+  it.each([
+    [
+      "items",
+      "Batch of more than 3 requests are not allowed on free plan, to use this feature register paid account at drpc.org",
+    ],
+    ["body", "Max messages exceeded (Limit: 5)."],
+  ] as const)(
+    "shrinks batches for free-plan limits worded as %s errors",
+    async (rejection, message) => {
+      const provider = new LimitedProvider(3, rejection, message)
+
+      const results = await settle(
+        Promise.all(
+          ["a", "b", "c", "d", "e", "f"].map((method) =>
+            provider.send(method, []),
+          ),
+        ),
+      )
+
+      expect(results).toEqual(["a", "b", "c", "d", "e", "f"])
+      expect(provider.getOptions().maxBatchLength).toBeLessThanOrEqual(3)
+    },
+  )
 
   it("rejects a single request the endpoint calls too large", async () => {
     const provider = new LimitedProvider(0)
