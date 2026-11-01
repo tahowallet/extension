@@ -44,7 +44,7 @@ const ALCHEMY_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/demo"
  * A second shipped-default Ethereum endpoint, used where a test needs a valid
  * URL that does not duplicate the first row's.
  */
-const SECONDARY_ETHEREUM_RPC_URL = "https://1rpc.io/eth"
+const SECONDARY_ETHEREUM_RPC_URL = "https://ethereum-rpc.publicnode.com"
 
 /** The Alchemy explainer, which only appears inside a tooltip on hover. */
 const ALCHEMY_HINT_TEXT = "Check Alchemy APIs when an endpoint supports"
