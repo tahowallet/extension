@@ -449,21 +449,17 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
   )
 }
 
-SelectedAssetButton.defaultProps = {
-  toggleIsAssetMenuOpen: null,
-}
-
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
   currentNetwork: EVMNetwork
-  assetsAndAmounts: AnyAssetWithOptionalAmount<AssetType>[]
-  label: string
+  assetsAndAmounts?: AnyAssetWithOptionalAmount<AssetType>[]
+  label?: string
   selectedAsset: AssetType | undefined
-  amount: string
+  amount?: string
   amountMainCurrency?: string
   priceImpact?: number
-  isAssetOptionsLocked: boolean
-  disableDropdown: boolean
-  showMaxButton: boolean
+  isAssetOptionsLocked?: boolean
+  disableDropdown?: boolean
+  showMaxButton?: boolean
   isDisabled?: boolean
   isPriceDetailsLoading?: boolean
   showPriceDetails?: boolean
@@ -477,6 +473,8 @@ interface SharedAssetInputProps<AssetType extends AnyAsset> {
   onSelectNFT?: (nft: NFTCached) => void
   selectedNFT?: NFTCached
 }
+
+const NO_ASSETS: never[] = []
 
 function isSameAsset(asset1: Asset, asset2: Asset) {
   return asset1.symbol === asset2.symbol // FIXME Once asset similarity logic is extracted, reuse.
@@ -504,16 +502,16 @@ export default function SharedAssetInput<T extends AnyAsset>(
   const { t } = useTranslation()
   const {
     currentNetwork,
-    assetsAndAmounts,
-    label,
+    assetsAndAmounts = NO_ASSETS,
+    label = "",
     selectedAsset,
-    amount,
+    amount = "0.0",
     amountMainCurrency,
     priceImpact,
-    isAssetOptionsLocked,
-    disableDropdown,
-    showMaxButton,
-    isDisabled,
+    isAssetOptionsLocked = false,
+    disableDropdown = false,
+    showMaxButton = true,
+    isDisabled = false,
     showPriceDetails,
     isPriceDetailsLoading,
     mainCurrencySign,
@@ -854,14 +852,4 @@ export default function SharedAssetInput<T extends AnyAsset>(
       </style>
     </>
   )
-}
-
-SharedAssetInput.defaultProps = {
-  isAssetOptionsLocked: false,
-  disableDropdown: false,
-  isDisabled: false,
-  showMaxButton: true,
-  assetsAndAmounts: [],
-  label: "",
-  amount: "0.0",
 }

@@ -72,5 +72,3 @@ export default function SharedToggleButton({
     </button>
   )
 }
-
-SharedToggleButton.defaultProps = {}

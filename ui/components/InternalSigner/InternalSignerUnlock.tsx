@@ -13,11 +13,11 @@ import SharedButton from "../Shared/SharedButton"
 import PasswordInput from "../Shared/PasswordInput"
 
 type InternalSignerUnlockProps = {
-  displayCancelButton: boolean
+  displayCancelButton?: boolean
 }
 
 export default function InternalSignerUnlock({
-  displayCancelButton,
+  displayCancelButton = true,
 }: InternalSignerUnlockProps): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "keyring.unlock" })
   const { t: tShared } = useTranslation("translation", { keyPrefix: "shared" })
@@ -157,8 +157,4 @@ export default function InternalSignerUnlock({
       </style>
     </section>
   )
-}
-
-InternalSignerUnlock.defaultProps = {
-  displayCancelButton: true,
 }

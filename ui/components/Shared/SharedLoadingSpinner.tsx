@@ -3,7 +3,7 @@ import classNames from "classnames"
 import { assertUnreachable } from "@tallyho/tally-background/lib/utils/type-guards"
 
 type SharedLoadingSpinnerProps = {
-  size: "small" | "medium"
+  size?: "small" | "medium"
   variant?: "hunter-green" | "dark-green" | "transparent"
 }
 
@@ -35,7 +35,7 @@ function getVariantStyles(
 export default function SharedLoadingSpinner(
   props: SharedLoadingSpinnerProps,
 ): ReactElement {
-  const { size, variant = "dark-green" } = props
+  const { size = "medium", variant = "dark-green" } = props
 
   const [color, accent] = useMemo(() => getVariantStyles(variant), [variant])
   return (
@@ -65,8 +65,4 @@ export default function SharedLoadingSpinner(
       </style>
     </div>
   )
-}
-
-SharedLoadingSpinner.defaultProps = {
-  size: "medium",
 }

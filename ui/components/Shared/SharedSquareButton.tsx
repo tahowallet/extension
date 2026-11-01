@@ -13,10 +13,10 @@ type ColorDetails = {
 
 type Props = {
   icon: string
-  iconColor: ColorDetails
-  textColor: ColorDetails
+  iconColor?: ColorDetails
+  textColor?: ColorDetails
   disabled?: boolean
-  size: number
+  size?: number
   ariaLabel?: string
   children: React.ReactNode
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
@@ -25,9 +25,9 @@ type Props = {
 export default function SharedSquareButton(props: Props): ReactElement {
   const {
     icon,
-    iconColor,
-    textColor,
-    size,
+    iconColor = DEFAULT_COLORS,
+    textColor = DEFAULT_COLORS,
+    size = SIZE,
     ariaLabel,
     children,
     disabled,
@@ -93,10 +93,4 @@ export default function SharedSquareButton(props: Props): ReactElement {
       </style>
     </button>
   )
-}
-
-SharedSquareButton.defaultProps = {
-  iconColor: DEFAULT_COLORS,
-  textColor: DEFAULT_COLORS,
-  size: SIZE,
 }

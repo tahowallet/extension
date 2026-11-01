@@ -4,7 +4,7 @@ import classNames from "classnames"
 type TabBarIconButtonProps = {
   title: string
   icon: string
-  isActive: boolean
+  isActive?: boolean
   showNotifications?: boolean
   onClick?: React.MouseEventHandler<HTMLButtonElement>
 }
@@ -12,7 +12,13 @@ type TabBarIconButtonProps = {
 export default function TabBarIconButton(
   props: TabBarIconButtonProps,
 ): ReactElement {
-  const { icon, title, isActive, showNotifications = false, onClick } = props
+  const {
+    icon,
+    title,
+    isActive = false,
+    showNotifications = false,
+    onClick,
+  } = props
 
   return (
     <button type="button" role="link" onClick={onClick}>
@@ -104,8 +110,4 @@ export default function TabBarIconButton(
       </style>
     </button>
   )
-}
-
-TabBarIconButton.defaultProps = {
-  isActive: false,
 }

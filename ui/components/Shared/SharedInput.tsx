@@ -8,9 +8,9 @@ interface Props<T> {
   label?: string
   name?: string
   maxLength?: number
-  focusedLabelBackgroundColor: string
+  focusedLabelBackgroundColor?: string
   placeholder?: string
-  type: "password" | "text" | "number"
+  type?: "password" | "text" | "number"
   value?: string | undefined
   onChange?: (value: T | undefined) => void
   onFocus?: () => void
@@ -33,8 +33,8 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
     label,
     placeholder,
     maxLength,
-    focusedLabelBackgroundColor,
-    type,
+    focusedLabelBackgroundColor = "var(--hunter-green)",
+    type = "text",
     name,
     onChange,
     onFocus,
@@ -211,14 +211,12 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
   )
 }
 
-SharedTypedInput.defaultProps = {
-  type: "text",
-  focusedLabelBackgroundColor: "var(--hunter-green)",
-}
+const parseAsString = (value: string) => ({ parsed: value })
 
 export default function SharedInput(
-  props: Omit<Props<string>, "onChange"> & {
+  props: Omit<Props<string>, "onChange" | "parseAndValidate"> & {
     onChange?: (_: string) => void
+    parseAndValidate?: Props<string>["parseAndValidate"]
   },
 ): ReactElement {
   const onChangeWrapper = (newValue: string | undefined) => {
@@ -227,11 +225,7 @@ export default function SharedInput(
 
   return SharedTypedInput({
     ...props,
+    parseAndValidate: props.parseAndValidate ?? parseAsString,
     onChange: onChangeWrapper,
   })
-}
-
-SharedInput.defaultProps = {
-  ...SharedTypedInput.defaultProps,
-  parseAndValidate: (v: string) => ({ parsed: v }),
 }

@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next"
 
 interface OnboardingStepProps {
   label: string
-  isActive: boolean
+  isActive?: boolean
 }
 
 function OnboardingStep(props: OnboardingStepProps): ReactElement {
-  const { label, isActive } = props
+  const { label, isActive = false } = props
 
   return (
     <li className={classNames({ active: isActive })}>
@@ -46,10 +46,6 @@ function OnboardingStep(props: OnboardingStepProps): ReactElement {
       </style>
     </li>
   )
-}
-
-OnboardingStep.defaultProps = {
-  isActive: false,
 }
 
 interface OnboardingStepsIndicatorProps {
