@@ -124,6 +124,14 @@
   --icon-tile-hover-icon: var(--trophy-gold);
   --icon-tile-hover-shadow: none;
 
+  /* Toggles: the track, and the knob off and on. */
+  --toggle-track: var(--green-80);
+  --toggle-knob: var(--green-40);
+  --toggle-knob-on: var(--trophy-gold);
+  /* The connect-with toggle, which dark draws in green. */
+  --connect-toggle-knob: var(--white);
+  --connect-toggle-knob-on: var(--success);
+
   --surface-deep: #002522;
   --divider-black: #000000;
 
