@@ -91,11 +91,9 @@ export default function SignerLedgerFrame<
           </footer>
           <style jsx>{`
             .cannot_reject_warning {
-              position: fixed;
               display: flex;
               align-items: center;
               justify-content: center;
-              bottom: 0;
               padding: 16px;
               color: var(--error);
               font-weight: 600;
@@ -159,11 +157,8 @@ export default function SignerLedgerFrame<
           <style jsx>
             {`
               .signature-details {
-                /*
-                 * Adjust for fixed-position footer, plus some extra to visually
-                 * deal with the drop shadow.
-                 */
-                margin-bottom: 84px;
+                /* Leave room for the footer's drop shadow. */
+                margin-bottom: 4px;
               }
             `}
           </style>

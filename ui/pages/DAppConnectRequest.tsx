@@ -80,10 +80,11 @@ export default function DAppConnectRequest(): ReactElement {
         />
         <style jsx>{`
           .page {
-            background-color: var(--green-95);
-            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
             width: 100%;
-            z-index: 1000;
+            background-color: var(--green-95);
           }
         `}</style>
         <style jsx global>{`

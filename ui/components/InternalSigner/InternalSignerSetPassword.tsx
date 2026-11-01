@@ -157,8 +157,6 @@ export default function InternalSignerSetPassword(): ReactElement {
           }
           .restore {
             display: none; // TODO Implement account restoration.
-            position: fixed;
-            bottom: 26px;
           }
         `}
       </style>

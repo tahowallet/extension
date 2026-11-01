@@ -101,14 +101,8 @@ export default function DAppConnectPage({
         section {
           display: flex;
           flex-direction: column;
-          height: 100vh;
+          flex-grow: 1;
           margin: 0 auto;
-        }
-        .page {
-          background-color: var(--green-95);
-          height: 100vh;
-          width: 100vw;
-          z-index: 1000;
         }
         h1 {
           color: var(--trophy-gold);
@@ -162,8 +156,9 @@ export default function DAppConnectPage({
           z-index: 3;
         }
         .footer_actions {
-          position: fixed;
+          position: sticky;
           bottom: 0px;
+          flex-shrink: 0;
           display: flex;
           width: 100%;
           padding: 0px 16px;
