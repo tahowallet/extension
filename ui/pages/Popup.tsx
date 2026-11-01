@@ -1,4 +1,10 @@
-import React, { ReactElement, useState, useEffect } from "react"
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary, FallbackProps } from "react-error-boundary"
 
@@ -25,9 +31,7 @@ import {
   useBackgroundSelector,
 } from "../hooks"
 
-import setAnimationConditions, {
-  animationStyles,
-} from "../utils/pageTransition"
+import getTransitionDirection from "../utils/pageTransition"
 
 import CorePage from "../components/Core/CorePage"
 import ErrorFallback from "./ErrorFallback"
@@ -44,6 +48,34 @@ function PageErrorFallback(props: FallbackProps): ReactElement {
     <CorePage>
       <ErrorFallback {...props} />
     </CorePage>
+  )
+}
+
+type PageTransitionProps = {
+  children: ReactNode
+  // Set by TransitionGroup.
+  in?: boolean
+  enter?: boolean
+  exit?: boolean
+  onExited?: () => void
+}
+
+/** A page entering or leaving the popup. */
+function PageTransition({
+  children,
+  ...transitionProps
+}: PageTransitionProps): ReactElement {
+  const nodeRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <CSSTransition
+      {...transitionProps}
+      nodeRef={nodeRef}
+      timeout={300}
+      classNames="page-transition"
+    >
+      <div ref={nodeRef}>{children}</div>
+    </CSSTransition>
   )
 }
 
@@ -103,7 +135,6 @@ export function Main(): ReactElement {
   })
 
   const isDappPopup = useIsDappPopup()
-  const [isDirectionRight, setIsDirectionRight] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries,
@@ -169,13 +200,11 @@ export function Main(): ReactElement {
               saveHistoryEntries(history.entries)
             }
 
-            setAnimationConditions(routeProps, setIsDirectionRight)
+            const direction = getTransitionDirection(history)
 
             return (
-              <TransitionGroup>
-                <CSSTransition
-                  timeout={300}
-                  classNames="page-transition"
+              <TransitionGroup className={`pages page_slide_${direction}`}>
+                <PageTransition
                   key={
                     routeProps.location.pathname.includes("onboarding") ||
                     routeProps.location.pathname.includes("internal-signer")
@@ -183,18 +212,16 @@ export function Main(): ReactElement {
                       : transformedLocation.key
                   }
                 >
-                  <div>
-                    <Switch location={transformedLocation}>
-                      {pageList.map(({ path, Component }) => (
-                        <Route path={path} key={path}>
-                          <ErrorBoundary FallbackComponent={PageErrorFallback}>
-                            <Component location={transformedLocation} />
-                          </ErrorBoundary>
-                        </Route>
-                      ))}
-                    </Switch>
-                  </div>
-                </CSSTransition>
+                  <Switch location={transformedLocation}>
+                    {pageList.map(({ path, Component }) => (
+                      <Route path={path} key={path}>
+                        <ErrorBoundary FallbackComponent={PageErrorFallback}>
+                          <Component location={transformedLocation} />
+                        </ErrorBoundary>
+                      </Route>
+                    ))}
+                  </Switch>
+                </PageTransition>
               </TransitionGroup>
             )
           }}
@@ -207,7 +234,38 @@ export function Main(): ReactElement {
             background: transparent;
           }
 
-          ${animationStyles(isDirectionRight)}
+          .pages {
+            display: grid;
+            height: 100%;
+          }
+          .pages > * {
+            grid-area: 1 / 1;
+            min-height: 0;
+          }
+          .page_slide_right {
+            --page-slide-from: -7px;
+          }
+          .page_slide_left {
+            --page-slide-from: 7px;
+          }
+          .page-transition-enter > section > main {
+            opacity: 0.3;
+            transform: translateX(var(--page-slide-from));
+          }
+          .page-transition-enter-active > section > main {
+            opacity: 1;
+            transform: translateX(0px);
+            transition:
+              transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
+              opacity 250ms;
+          }
+          .page-transition-exit {
+            opacity: 1;
+          }
+          .page-transition-exit-active {
+            opacity: 0;
+            pointer-events: none;
+          }
 
           .hide {
             opacity: 0;
