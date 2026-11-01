@@ -51,6 +51,8 @@ export type AssetTransferScannerDependencies = {
   isSupported: (network: EVMNetwork) => boolean
   /** Whether a network can serve Alchemy's transfer lookups. */
   supportsAlchemyMethods: (network: EVMNetwork) => boolean
+  /** Whether a network has an endpoint for the method that isn't cooling. */
+  canServeNow: (network: EVMNetwork, method: string) => boolean
   enqueueTransactionLookup: (
     network: EVMNetwork,
     hash: HexString,
@@ -130,11 +132,34 @@ export default class AssetTransferScanner {
     )
   }
 
+  /**
+   * Whether the network has an endpoint that can look up transfers now.
+   * When every endpoint is cooling down, a scan would only pile up failures.
+   */
+  private canScanNow({ network }: AddressOnNetwork, kind: string): boolean {
+    const { supportsAlchemyMethods, canServeNow } = this.dependencies
+    const canScan =
+      (supportsAlchemyMethods(network) &&
+        canServeNow(network, "alchemy_getAssetTransfers")) ||
+      canServeNow(network, "eth_getLogs")
+
+    if (!canScan) {
+      logger.debug(
+        `chain ${network.chainID}: no endpoint can serve transfer lookups right now; skipping this ${kind} scan.`,
+      )
+    }
+    return canScan
+  }
+
   /** Scans one account's recent blocks; failures are logged. */
   async scanRecentTransfersFor(
     addressNetwork: AddressOnNetwork,
     { incomingOnly = false }: { incomingOnly?: boolean } = {},
   ): Promise<void> {
+    if (!this.canScanNow(addressNetwork, "recent")) {
+      return
+    }
+
     const blockHeight =
       (await this.dependencies.getBlockHeight(addressNetwork.network)) -
       BLOCKS_TO_SKIP_FOR_TRANSACTION_HISTORY
@@ -167,6 +192,10 @@ export default class AssetTransferScanner {
     addressNetwork: AddressOnNetwork,
   ): Promise<void> {
     const { db, getBlockHeight, supportsAlchemyMethods } = this.dependencies
+    if (!this.canScanNow(addressNetwork, "historic")) {
+      return
+    }
+
     let range: { startBlock: bigint; endBlock: bigint } | undefined
     try {
       const oldest =
