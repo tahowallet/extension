@@ -209,11 +209,14 @@ export class NFTsDatabase extends Dexie {
   async addERC721Transfers(
     entries: ERC721LedgerEntry[],
   ): Promise<ERC721LedgerEntry[]> {
+    const unique = [
+      ...new Map(entries.map((entry) => [entry.id, entry])).values(),
+    ]
     return this.transaction("rw", this.erc721Transfers, async () => {
       const existing = await this.erc721Transfers.bulkGet(
-        entries.map(({ id }) => id),
+        unique.map(({ id }) => id),
       )
-      const added = entries.filter((_, index) => existing[index] === undefined)
+      const added = unique.filter((_, index) => existing[index] === undefined)
       await this.erc721Transfers.bulkPut(added)
       return added
     })
