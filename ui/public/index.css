@@ -183,6 +183,36 @@
     #033c37 50%,
     #0b524c 100%
   );
+  /*
+   * The NFTs header: a teal light from the top with pink glows at the
+   * corners, faded into the page by 140px.
+   */
+  --nft-header-gradient:
+    linear-gradient(180deg, rgba(11, 41, 38, 0) 0%, var(--hunter-green) 140px),
+    radial-gradient(
+      366px 366px at 507px 349px,
+      #fc49c0 0%,
+      rgba(255, 127, 240, 0) 100%
+    ),
+    radial-gradient(
+      366px 366px at -99px -238px,
+      #ff00b8 0%,
+      rgba(255, 0, 153, 0) 100%
+    ),
+    radial-gradient(93.95% 101.67% at 45.05% 0%, #1a968c 4.17%, #002522 120%);
+  --nft-header-text: var(--green-40);
+  /* The Abilities page: orange from the top left, teal from the bottom right. */
+  --abilities-gradient:
+    radial-gradient(
+      103.39% 72.17% at -5.73% -7.67%,
+      rgb(247, 103, 52, 0.5) 0%,
+      rgba(19, 48, 46, 0) 100%
+    ),
+    radial-gradient(
+      78.69% 248.21% at 114.77% 133.93%,
+      rgba(9, 86, 72, 0.85) 0%,
+      rgba(0, 37, 34, 0) 100%
+    );
 
   /* The plate behind an asset's logo, and how far the logo sits inside it. */
   --asset-icon-plate: var(--castle-black);
@@ -311,6 +341,36 @@
     #fefefc 50%,
     #f3efe4 100%
   );
+  /* Pale tints of the same lights, with only a trace of the pink. */
+  --nft-header-gradient:
+    linear-gradient(
+      180deg,
+      rgba(250, 248, 241, 0) 0%,
+      var(--hunter-green) 140px
+    ),
+    radial-gradient(
+      366px 366px at -99px -238px,
+      rgba(255, 0, 184, 0.06) 0%,
+      rgba(255, 0, 184, 0) 100%
+    ),
+    radial-gradient(
+      93.95% 101.67% at 45.05% 0%,
+      rgba(0, 166, 140, 0.1) 4.17%,
+      rgba(208, 142, 57, 0.06) 120%
+    );
+  /* Darker than --green-40, which falls short of 4.5:1 on the tint. */
+  --nft-header-text: var(--grey-green-20);
+  --abilities-gradient:
+    radial-gradient(
+      103.39% 72.17% at -5.73% -7.67%,
+      rgba(208, 142, 57, 0.14) 0%,
+      rgba(208, 142, 57, 0) 100%
+    ),
+    radial-gradient(
+      78.69% 248.21% at 114.77% 133.93%,
+      rgba(0, 166, 140, 0.12) 0%,
+      rgba(0, 166, 140, 0) 100%
+    );
 
   /* Gold tiles turn ink on hover, as in Figma. */
   --action-tile: var(--trophy-gold);
