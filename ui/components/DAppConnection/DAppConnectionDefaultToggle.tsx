@@ -56,7 +56,11 @@ export default function DAppConnectionDefaultToggle({
             width={24}
             icon="other-wallet-connect-icon.svg"
             ariaLabel={t("setOtherAsDefault")}
-            color={defaultIsSelected ? "var(--green-20)" : "var(--white)"}
+            color={
+              defaultIsSelected
+                ? "var(--connect-wallet-icon)"
+                : "var(--connect-other-wallet-icon-on)"
+            }
             onClick={() => setDefaultWallet(false)}
           />
           <SharedToggleButton
@@ -69,8 +73,8 @@ export default function DAppConnectionDefaultToggle({
             ariaLabel={t("setTahoAsDefault")}
             color={
               defaultIsSelected
-                ? "var(--connect-toggle-knob-on)"
-                : "var(--green-20)"
+                ? "var(--connect-taho-icon-on)"
+                : "var(--connect-wallet-icon)"
             }
             onClick={() => setDefaultWallet(true)}
           />

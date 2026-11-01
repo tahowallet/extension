@@ -382,7 +382,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           background-color: var(--text-strong);
         }
         h1 {
-          color: var(--${isConnected ? "success" : "green-20"});
+          color: var(--${isConnected ? "connected" : "green-20"});
           font-size: 16px;
           font-weight: 400;
           line-height: 24px;

@@ -45,6 +45,10 @@ export default function SharedToggleButton({
             padding: 4px;
             cursor: pointer;
             display: flex;
+            transition: background-color 0.2s ease-in-out;
+          }
+          .container.is_active {
+            background-color: var(--toggle-track-on);
           }
           .bulb {
             width: 16px;
