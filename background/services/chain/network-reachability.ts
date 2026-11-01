@@ -9,30 +9,20 @@
  * last balances it saw — and a zero where it never had one — as though they
  * were current. This tracker is the missing signal.
  *
- * The verdict deliberately keys on the walk running out of endpoints rather
- * than on circuit breaker state. Breakers are per provider index and created
- * lazily, so an index that has never been used has no breaker and "every
- * breaker is open" is a condition that never actually arrives; on top of that,
- * three send paths — the custom-provider path, the Taho-managed (Boar) path,
- * and the capability-provider walk — bypass breakers entirely, so an outage
- * confined to one of them trips nothing. Walk exhaustion, by contrast, is
- * reached by exactly the paths that have nowhere left to go.
- *
- * Breaker state is not consulted at all, corroborating or otherwise. A breaker
- * only ever reaches `closed` by way of a half-open probe that answered, and
- * the walk records that same answer as a success on the very next line, so
- * there is nothing a breaker could tell us that we have not already been told
- * by the path that asked it.
+ * The verdict keys on the walk running out of endpoints rather than on
+ * endpoint health. Every endpoint cooling down at once is a fact about the
+ * moment; walk exhaustion is reached by exactly the requests that had nowhere
+ * left to go.
  *
  * A single exhausted walk is not enough to call a network unreachable — one
  * timed-out batch of requests would flicker the UI, which is precisely what
  * this is meant to avoid. Two exhausted walks are required, and no success may
  * have landed for {@link NetworkReachabilityOptions.successFloorMs}. Since
- * walk failures also feed the breakers, whose own threshold is five failures
- * in a thirty-second window, "sustained" here compounds with a delay that is
+ * walk failures also feed endpoint health, whose own threshold is five
+ * failures in a thirty-second window, "sustained" here compounds with a delay that is
  * already on the order of half a minute.
  *
- * As with the circuit breaker, state is held entirely in memory and a service
+ * As with endpoint health, state is held entirely in memory and a service
  * worker restart resets it. That is acceptable: whatever is still broken will
  * re-accumulate failures within a poll cycle or two, and whatever recovered in
  * the meantime should not be reported as down.

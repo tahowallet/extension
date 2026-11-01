@@ -1,4 +1,9 @@
-import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, {
+  Collection,
+  DexieOptions,
+  IndexableTypeArray,
+  Transaction as DexieTransaction,
+} from "dexie"
 
 import type { UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -27,8 +32,10 @@ import {
 import { FeatureFlags, isEnabled } from "../../features"
 
 export type Transaction = AnyEVMTransaction & {
-  dataSource: "boar" | "local"
+  dataSource: "boar" | "generic-rpc" | "local"
   firstSeen: UNIXTime
+  /** When lookups started finding nothing, while they still do. */
+  missingSince?: UNIXTime
 }
 
 type AccountAssetTransferLookup = {
@@ -61,7 +68,22 @@ export type ChainRpcConfig = {
  * seeded once and are the sole source of truth from then on, so a dead
  * endpoint sticks around until it is explicitly scrubbed by a migration.
  */
-export const DEAD_RPC_URLS = ["https://polygon-rpc.com"]
+export const DEAD_RPC_URLS = [
+  "https://polygon-rpc.com",
+  // No keyless use left on 1rpc.io.
+  "https://1rpc.io/eth",
+  "https://1rpc.io/op",
+  "https://1rpc.io/arb",
+  "https://1rpc.io/matic",
+  "https://1rpc.io/avax/c",
+  // Blast API has shut down.
+  "https://optimism-mainnet.public.blastapi.io",
+  // dRPC's free plan dropped Sepolia, and refuses eth_subscribe, closing the
+  // socket, which is all a WebSocket endpoint is for.
+  "https://sepolia.drpc.org",
+  "wss://sepolia.drpc.org",
+  "wss://mezo-testnet.drpc.org",
+]
 
 /**
  * Drops every endpoint whose URL exactly matches one of `deadUrls`, unless
@@ -184,9 +206,10 @@ export class ChainDatabase extends Dexie {
     this.chainTransactions.hook(
       "updating",
       (modifications, _, chainTransaction) => {
-        // Only these properties can be updated on a stored transaction.
-        // NOTE: Currently we do NOT throw if another property modification is
-        // attempted; instead, we just ignore it.
+        // Dexie writes every modification, and for put the whole new row;
+        // what this returns is only applied on top. Filtering here doesn't
+        // stop other properties from changing. What it does do is keep the
+        // earliest firstSeen.
         const allowedVariants = ["blockHeight", "blockHash", "firstSeen"]
 
         const filteredModifications = Object.fromEntries(
@@ -294,8 +317,9 @@ export class ChainDatabase extends Dexie {
       )
 
     // Scrubs permanently dead RPC endpoints from stored endpoint lists; see
-    // {@link DEAD_RPC_URLS} for why a migration is needed at all.
-    this.version(12).upgrade(async (tx) =>
+    // {@link DEAD_RPC_URLS} for why a migration is needed at all. Version 13
+    // runs it again for the URLs added since.
+    const scrubStoredEndpoints = async (tx: DexieTransaction) =>
       tx
         .table("rpcConfig")
         .toCollection()
@@ -306,8 +330,9 @@ export class ChainDatabase extends Dexie {
               endpoints: scrubDeadEndpoints(endpoints, DEAD_RPC_URLS),
             })
           }
-        }),
-    )
+        })
+    this.version(12).upgrade(scrubStoredEndpoints)
+    this.version(13).upgrade(scrubStoredEndpoints)
   }
 
   async initialize(): Promise<void> {
@@ -747,7 +772,7 @@ export class ChainDatabase extends Dexie {
    */
   async getNetworkPendingTransactions(
     network: Network,
-  ): Promise<(AnyEVMTransaction & { firstSeen: UNIXTime })[]> {
+  ): Promise<Transaction[]> {
     const transactions = await this.getTransactionsForNetworkQuery(network)
     return transactions
       .filter(
@@ -756,6 +781,45 @@ export class ChainDatabase extends Dexie {
           (transaction.blockHash === null || transaction.blockHeight === null),
       )
       .toArray()
+  }
+
+  /**
+   * Transactions on the network that have a block but no receipt yet, first
+   * seen at `since` or later.
+   */
+  async getNetworkTransactionsAwaitingReceipts(
+    network: Network,
+    since: UNIXTime,
+  ): Promise<Transaction[]> {
+    const transactions = await this.getTransactionsForNetworkQuery(network)
+    return transactions
+      .filter(
+        (transaction) =>
+          !("status" in transaction) &&
+          typeof transaction.blockHash === "string" &&
+          transaction.blockHash !== "" &&
+          transaction.firstSeen >= since,
+      )
+      .toArray()
+  }
+
+  /** Records when lookups started missing a stored transaction, or clears it. */
+  async setTransactionMissingSince(
+    network: Network,
+    hash: string,
+    missingSince: UNIXTime | undefined,
+  ): Promise<void> {
+    await this.chainTransactions
+      .where("[hash+network.name]")
+      .equals([hash, network.name])
+      .modify((transaction) => {
+        if (missingSince === undefined) {
+          delete transaction.missingSince
+        } else {
+          // oxlint-disable-next-line no-param-reassign
+          transaction.missingSince = missingSince
+        }
+      })
   }
 
   async getBlock(
@@ -776,13 +840,17 @@ export class ChainDatabase extends Dexie {
     tx: AnyEVMTransaction,
     dataSource: Transaction["dataSource"],
   ): Promise<void> {
-    await this.transaction("rw", this.chainTransactions, () =>
-      this.chainTransactions.put({
+    await this.transaction("rw", this.chainTransactions, async () => {
+      const existing = await this.chainTransactions.get([
+        tx.hash,
+        tx.network.name,
+      ])
+      await this.chainTransactions.put({
         ...tx,
-        firstSeen: Date.now(),
+        firstSeen: existing?.firstSeen ?? Date.now(),
         dataSource,
-      }),
-    )
+      })
+    })
   }
 
   async getLatestAccountBalance(

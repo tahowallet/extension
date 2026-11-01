@@ -30,7 +30,13 @@ export default class MockSerialFallbackProvider implements Partial<SerialFallbac
     return "false"
   }
 
-  async subscribeFullPendingTransactions(): Promise<void> {
+  subscriptionDataSource = "generic-rpc" as const
+
+  dataSourceFor(): "generic-rpc" {
+    return "generic-rpc"
+  }
+
+  async onPendingTransaction(): Promise<void> {
     return Promise.resolve()
   }
 
@@ -40,5 +46,5 @@ export default class MockSerialFallbackProvider implements Partial<SerialFallbac
   }
 }
 
-export const makeSerialFallbackProvider = (): Partial<SerialFallbackProvider> =>
+export const createProviderForChain = (): Partial<SerialFallbackProvider> =>
   new MockSerialFallbackProvider()

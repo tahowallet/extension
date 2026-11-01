@@ -59,7 +59,8 @@
     "siwe": "^1.1.0",
     "util": "^0.12.4",
     "uuid": "^9.0.0",
-    "webextension-polyfill": "^0.12.0"
+    "webextension-polyfill": "^0.12.0",
+    "xstate": "^5"
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^1.9.4",

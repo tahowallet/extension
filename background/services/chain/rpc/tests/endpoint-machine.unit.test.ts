@@ -1,0 +1,1062 @@
+import { afterEach, describe, expect, it } from "bun:test"
+import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers"
+import { createActor, SimulatedClock } from "xstate"
+import * as sinon from "sinon"
+import logger from "../../../../lib/logger"
+import { endpointMachine, EndpointEvent } from "../endpoint-machine"
+import Endpoint, {
+  BreakerTransition,
+  NoEndpointAvailableError,
+} from "../endpoint"
+import EndpointPool from "../endpoint-pool"
+
+const CONNECTING = 0
+const OPEN = 1
+const CLOSED = 3
+
+class FakeSocket extends EventTarget {
+  readyState = CONNECTING
+
+  open() {
+    this.readyState = OPEN
+    this.dispatchEvent(new Event("open"))
+  }
+
+  close() {
+    this.readyState = CLOSED
+    this.dispatchEvent(new Event("close"))
+  }
+
+  fail() {
+    this.readyState = CLOSED
+    this.dispatchEvent(new Event("error"))
+  }
+}
+
+type FakeTransport = JsonRpcProvider & {
+  send: sinon.SinonStub
+  removeAllListeners: sinon.SinonStub
+  destroy?: sinon.SinonStub
+  websocket?: FakeSocket
+  _websocket?: FakeSocket
+  _subIds?: Record<string, Promise<string>>
+}
+
+const pollingTransport = (): FakeTransport =>
+  Object.assign(Object.create(JsonRpcProvider.prototype), {
+    send: sinon.stub().resolves("0x1"),
+    removeAllListeners: sinon.stub(),
+  })
+
+const socketTransport = (
+  readyState = CONNECTING,
+  { subscribed = false }: { subscribed?: boolean } = {},
+): FakeTransport =>
+  Object.assign(Object.create(WebSocketProvider.prototype), {
+    send: sinon.stub().resolves("0x1"),
+    removeAllListeners: sinon.stub(),
+    destroy: sinon.stub(),
+    _websocket: Object.assign(new FakeSocket(), { readyState }),
+    _subIds: subscribed ? { block: Promise.resolve("0x9") } : {},
+  })
+
+/** A socket that carries a subscription once open. */
+const subscribedSocket = (readyState = CONNECTING) =>
+  socketTransport(readyState, { subscribed: true })
+
+const flush = async () => {
+  for (let i = 0; i < 5; i += 1) {
+    // oxlint-disable-next-line no-await-in-loop
+    await Promise.resolve()
+  }
+}
+
+const OPTIONS = {
+  failureThreshold: 5,
+  failureWindowMs: 30_000,
+  initialCooldownMs: 15_000,
+  maxCooldownMs: 120_000,
+  cooldownBackoffMultiplier: 2,
+  socketOpenTimeoutMs: 10_000,
+  probeTimeoutMs: 20_000,
+  keepAliveIntervalMs: 30_000,
+}
+
+function harness(makeTransport: () => FakeTransport = pollingTransport) {
+  const clock = new SimulatedClock()
+  const transports: FakeTransport[] = []
+  const actor = createActor(endpointMachine, {
+    input: {
+      createTransport: () => {
+        const transport = makeTransport()
+        transports.push(transport)
+        return transport
+      },
+      options: OPTIONS,
+      now: () => clock.now(),
+    },
+    clock,
+  })
+  actor.start()
+
+  const send = (event: EndpointEvent) => actor.send(event)
+  const state = () => actor.getSnapshot().value
+  const fail = (times: number) => {
+    for (let i = 0; i < times; i += 1) {
+      send({ type: "REQUEST_FAILED" })
+    }
+  }
+  const coolDown = () => {
+    send({ type: "FIRST_USE" })
+    fail(5)
+  }
+
+  return { actor, clock, transports, send, state, fail, coolDown }
+}
+
+describe("endpointMachine", () => {
+  describe("in Unbuilt", () => {
+    it("builds nothing until first use", () => {
+      const endpoint = harness()
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(endpoint.transports).toHaveLength(0)
+    })
+
+    it("builds a polling transport and becomes ready on first use", () => {
+      const endpoint = harness()
+
+      endpoint.send({ type: "FIRST_USE" })
+
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports).toHaveLength(1)
+    })
+
+    it("builds a WebSocket transport and waits for it to connect", () => {
+      const endpoint = harness(() => socketTransport())
+
+      endpoint.send({ type: "FIRST_USE" })
+
+      expect(endpoint.state()).toBe("Connecting")
+    })
+
+    it("goes straight to ready for a socket that is already open", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+
+      endpoint.send({ type: "FIRST_USE" })
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it.each<EndpointEvent["type"]>([
+      "REQUEST_FAILED",
+      "REQUEST_SUCCEEDED",
+      "SOCKET_OPENED",
+      "SOCKET_CLOSED",
+    ])("ignores %s", (type) => {
+      const endpoint = harness()
+
+      endpoint.send({ type } as EndpointEvent)
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(endpoint.transports).toHaveLength(0)
+    })
+
+    it("is disposed without ever building a transport", () => {
+      const endpoint = harness()
+
+      endpoint.send({ type: "DISPOSE" })
+
+      expect(endpoint.state()).toBe("Disposed")
+      expect(endpoint.actor.getSnapshot().status).toBe("done")
+      expect(endpoint.transports).toHaveLength(0)
+    })
+  })
+
+  describe("in Connecting", () => {
+    it("becomes ready once the socket opens", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.transports[0].websocket?.open()
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it.each(["close", "fail"] as const)(
+      "cools down when the socket %ss before opening",
+      (outcome) => {
+        const endpoint = harness(() => socketTransport())
+        endpoint.send({ type: "FIRST_USE" })
+
+        endpoint.transports[0].websocket?.[outcome]()
+
+        expect(endpoint.state()).toBe("CoolingDown")
+      },
+    )
+
+    it("cools down when the socket takes too long to open", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.clock.increment(9_999)
+      expect(endpoint.state()).toBe("Connecting")
+
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("probes with a new socket after one that never opened", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+      const [stuck] = endpoint.transports
+
+      endpoint.clock.increment(10_000)
+      endpoint.clock.increment(15_000)
+
+      expect(endpoint.state()).toBe("Probing")
+      expect(endpoint.transports).toHaveLength(2)
+      expect(stuck.destroy?.called).toBe(true)
+    })
+
+    it("cancels the open timeout when the socket opens", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.transports[0].websocket?.open()
+      endpoint.clock.increment(10_000)
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it.each<EndpointEvent["type"]>(["REQUEST_FAILED", "REQUEST_SUCCEEDED"])(
+      "ignores %s",
+      (type) => {
+        const endpoint = harness(() => socketTransport())
+        endpoint.send({ type: "FIRST_USE" })
+
+        endpoint.send({ type } as EndpointEvent)
+
+        expect(endpoint.state()).toBe("Connecting")
+      },
+    )
+
+    it("lets a socket that is still opening go when released", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+      const [opening] = endpoint.transports
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+      endpoint.clock.increment(10_000)
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(opening.destroy?.called).toBe(true)
+    })
+
+    it("closes the socket and stops listening to it when disposed", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+      const [transport] = endpoint.transports
+
+      endpoint.send({ type: "DISPOSE" })
+      transport.websocket?.open()
+      endpoint.clock.increment(10_000)
+
+      expect(endpoint.state()).toBe("Disposed")
+      expect(transport.destroy?.called).toBe(true)
+      expect(transport.removeAllListeners.called).toBe(true)
+    })
+  })
+
+  describe("in Ready", () => {
+    it("stays ready below the failure threshold", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.fail(4)
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("cools down on reaching the failure threshold", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.fail(5)
+
+      expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("forgets failures after a success", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.fail(4)
+      endpoint.send({ type: "REQUEST_SUCCEEDED" })
+      endpoint.fail(4)
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("counts a failure exactly one window old", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.fail(1)
+      endpoint.clock.increment(30_000)
+      endpoint.fail(4)
+
+      expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("drops a failure older than the window", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.fail(1)
+      endpoint.clock.increment(30_001)
+      endpoint.fail(4)
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("reconnects with a new socket when a subscribed socket closes", () => {
+      let built = 0
+      const endpoint = harness(() => {
+        built += 1
+        return subscribedSocket(built === 1 ? OPEN : CONNECTING)
+      })
+      endpoint.send({ type: "FIRST_USE" })
+      const [first] = endpoint.transports
+
+      first.websocket?.close()
+
+      expect(endpoint.state()).toBe("Connecting")
+      expect(endpoint.transports).toHaveLength(2)
+      expect(first.destroy?.called).toBe(true)
+
+      endpoint.transports[1].websocket?.open()
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("stops listening to a socket it has replaced", () => {
+      let built = 0
+      const endpoint = harness(() => {
+        built += 1
+        return subscribedSocket(built === 1 ? OPEN : CONNECTING)
+      })
+      endpoint.send({ type: "FIRST_USE" })
+      const [first] = endpoint.transports
+      first.websocket?.close()
+      endpoint.transports[1].websocket?.open()
+
+      first.websocket?.close()
+
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports).toHaveLength(2)
+    })
+
+    it("lets an idle socket go when it closes, and opens one when next used", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [idle] = endpoint.transports
+
+      idle.websocket?.close()
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(endpoint.transports).toHaveLength(1)
+      expect(idle.removeAllListeners.called).toBe(true)
+
+      endpoint.send({ type: "FIRST_USE" })
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports).toHaveLength(2)
+    })
+
+    it("lets its socket go when released", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [released] = endpoint.transports
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(released.destroy?.called).toBe(true)
+      expect(endpoint.transports).toHaveLength(1)
+    })
+
+    it("keeps a polling transport when released", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports[0].removeAllListeners.called).toBe(false)
+    })
+
+    it("ignores SOCKET_OPENED and FIRST_USE", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.send({ type: "SOCKET_OPENED" })
+      endpoint.send({ type: "FIRST_USE" })
+
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports).toHaveLength(1)
+    })
+  })
+
+  describe("keeping a socket alive", () => {
+    const keepAlives = (transport: FakeTransport) =>
+      transport.send.getCalls().filter(({ args }) => args[0] === "eth_chainId")
+        .length
+
+    it("sends a request every 30 seconds while the socket has subscriptions", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+
+      endpoint.clock.increment(29_999)
+      expect(keepAlives(socket)).toBe(0)
+      endpoint.clock.increment(1)
+      expect(keepAlives(socket)).toBe(1)
+      endpoint.clock.increment(30_000)
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(3)
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("sends nothing on a socket without subscriptions, until one arrives", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+
+      endpoint.clock.increment(30_000)
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(0)
+
+      socket._subIds = { block: Promise.resolve("0x9") }
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(1)
+    })
+
+    it("sends nothing on a polling transport", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.clock.increment(90_000)
+
+      expect(keepAlives(endpoint.transports[0])).toBe(0)
+    })
+
+    it("shrugs off a request that fails", async () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.transports[0].send.rejects(new Error("NETWORK_ERROR"))
+
+      endpoint.clock.increment(30_000)
+      await flush()
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("stops while cooling down", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+      endpoint.clock.increment(20_000)
+      endpoint.fail(5)
+
+      // Past when the next one was due, but before the probe.
+      endpoint.clock.increment(14_999)
+
+      expect(keepAlives(socket)).toBe(0)
+    })
+
+    it("stops once disposed", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+      endpoint.clock.increment(30_000)
+
+      endpoint.send({ type: "DISPOSE" })
+      for (let i = 0; i < 4; i += 1) endpoint.clock.increment(30_000)
+
+      expect(keepAlives(socket)).toBe(1)
+    })
+  })
+
+  describe("in CoolingDown", () => {
+    it("probes once the cooldown is over, and not a moment before", async () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+
+      endpoint.clock.increment(14_999)
+      expect(endpoint.state()).toBe("CoolingDown")
+
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("Probing")
+      await flush()
+      expect(
+        endpoint.transports[0].send.calledWith("eth_blockNumber", []),
+      ).toBe(true)
+    })
+
+    it("ignores stray failures without extending the cooldown", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+
+      endpoint.clock.increment(10_000)
+      endpoint.fail(10)
+      endpoint.clock.increment(5_000)
+
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it.each<EndpointEvent["type"]>([
+      "REQUEST_SUCCEEDED",
+      "SOCKET_OPENED",
+      "SOCKET_CLOSED",
+      "FIRST_USE",
+    ])("ignores %s", (type) => {
+      const endpoint = harness()
+      endpoint.coolDown()
+
+      endpoint.send({ type } as EndpointEvent)
+
+      expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("closes its socket when released, and probes on a new one", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      const [released] = endpoint.transports
+      released.destroy?.callsFake(() => {
+        released.websocket!.readyState = CLOSED
+      })
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+      expect(endpoint.state()).toBe("CoolingDown")
+      expect(released.destroy?.called).toBe(true)
+
+      endpoint.clock.increment(15_000)
+      expect(endpoint.state()).toBe("Probing")
+      expect(endpoint.transports).toHaveLength(2)
+    })
+
+    it("cancels the cooldown timer when disposed", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+
+      endpoint.send({ type: "DISPOSE" })
+      endpoint.clock.increment(15_000)
+
+      expect(endpoint.state()).toBe("Disposed")
+      expect(endpoint.transports[0].send.called).toBe(false)
+    })
+  })
+
+  describe("in Probing", () => {
+    it("becomes ready when the probe answers, with the cooldown reset", async () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.rejects(new Error("NETWORK_ERROR"))
+      endpoint.clock.increment(15_000)
+      await flush()
+      // Probe failed: the next cooldown is 30 seconds.
+      endpoint.transports[0].send.resolves("0x2")
+      endpoint.clock.increment(30_000)
+      await flush()
+
+      expect(endpoint.state()).toBe("Ready")
+
+      endpoint.fail(5)
+      endpoint.clock.increment(14_999)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("cools down for twice as long when the probe fails", async () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.rejects(new Error("NETWORK_ERROR"))
+      endpoint.clock.increment(15_000)
+      await flush()
+
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(29_999)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("caps the cooldown", async () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.rejects(new Error("NETWORK_ERROR"))
+
+      // 15s, then 30s, 60s, 120s, and 120s again.
+      for (const cooldown of [15_000, 30_000, 60_000, 120_000, 120_000]) {
+        expect(endpoint.state()).toBe("CoolingDown")
+        endpoint.clock.increment(cooldown - 1)
+        expect(endpoint.state()).toBe("CoolingDown")
+        endpoint.clock.increment(1)
+        expect(endpoint.state()).toBe("Probing")
+        // oxlint-disable-next-line no-await-in-loop
+        await flush()
+      }
+    })
+
+    it("becomes ready when a request in flight succeeds", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.send({ type: "REQUEST_SUCCEEDED" })
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("ignores failures while the probe is out", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.fail(10)
+
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("ignores a probe that answers after the endpoint was disposed", async () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      let answer: (value: string) => void = () => {}
+      endpoint.transports[0].send.returns(
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+      )
+      endpoint.clock.increment(15_000)
+
+      endpoint.send({ type: "DISPOSE" })
+      answer("0x3")
+      await flush()
+
+      expect(endpoint.state()).toBe("Disposed")
+      expect(endpoint.transports).toHaveLength(1)
+      expect(endpoint.transports[0].removeAllListeners.called).toBe(true)
+    })
+
+    it.each<EndpointEvent["type"]>(["SOCKET_OPENED", "FIRST_USE"])(
+      "ignores %s",
+      (type) => {
+        const endpoint = harness()
+        endpoint.coolDown()
+        endpoint.transports[0].send.returns(new Promise(() => {}))
+        endpoint.clock.increment(15_000)
+
+        endpoint.send({ type } as EndpointEvent)
+
+        expect(endpoint.state()).toBe("Probing")
+        expect(endpoint.transports).toHaveLength(1)
+      },
+    )
+
+    it("ignores a socket it has replaced closing", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.send({
+        type: "SOCKET_CLOSED",
+        transport: socketTransport(CLOSED),
+      })
+
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("cools down for longer when the probe doesn't answer in time", () => {
+      const endpoint = harness()
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+
+      endpoint.clock.increment(19_999)
+      expect(endpoint.state()).toBe("Probing")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(30_000)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("cools down for longer when the socket closes under the probe", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      endpoint.transports[0].send.returns(new Promise(() => {}))
+      endpoint.clock.increment(15_000)
+      expect(endpoint.state()).toBe("Probing")
+
+      endpoint.transports[0].websocket?.close()
+
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(29_999)
+      expect(endpoint.state()).toBe("CoolingDown")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("Probing")
+    })
+
+    it("gives a replacement socket until the probe timeout to open", async () => {
+      let built = 0
+      const endpoint = harness(() => {
+        built += 1
+        return socketTransport(built === 1 ? OPEN : CONNECTING)
+      })
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.fail(5)
+      endpoint.transports[0].websocket!.readyState = CLOSED
+      endpoint.clock.increment(15_000)
+      await flush()
+
+      expect(endpoint.transports).toHaveLength(2)
+      endpoint.clock.increment(19_999)
+      expect(endpoint.state()).toBe("Probing")
+      endpoint.clock.increment(1)
+      expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("replaces a closed socket and waits for it to open before probing", async () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.fail(5)
+      endpoint.transports[0].websocket!.readyState = CLOSED
+
+      endpoint.clock.increment(15_000)
+
+      expect(endpoint.state()).toBe("Probing")
+      expect(endpoint.transports).toHaveLength(2)
+      expect(endpoint.transports[1].send.called).toBe(false)
+
+      endpoint.transports[1].websocket?.open()
+      await flush()
+
+      expect(endpoint.transports[1].send.calledWith("eth_blockNumber")).toBe(
+        true,
+      )
+      expect(endpoint.state()).toBe("Ready")
+    })
+  })
+
+  describe("in Disposed", () => {
+    it("tears down the transport once and ignores everything after", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.send({ type: "DISPOSE" })
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.fail(5)
+      endpoint.clock.increment(60_000)
+
+      expect(endpoint.state()).toBe("Disposed")
+      expect(endpoint.transports).toHaveLength(1)
+      expect(endpoint.transports[0].removeAllListeners.callCount).toBe(1)
+    })
+  })
+})
+
+describe("Endpoint", () => {
+  const endpointWith = (makeTransport: () => FakeTransport) => {
+    const clock = new SimulatedClock()
+    const transitions: BreakerTransition[] = []
+    const transports: FakeTransport[] = []
+    const endpoint = new Endpoint(
+      {
+        kind: "standard",
+        createTransport: () => {
+          const transport = makeTransport()
+          transports.push(transport)
+          return transport
+        },
+      },
+      {
+        label: "chain 1 standard[0] rpc.example",
+        clock,
+        options: OPTIONS,
+        onBreakerTransition: (next) => transitions.push(next),
+      },
+    )
+    return { endpoint, clock, transitions, transports }
+  }
+
+  it("is available while unbuilt, connecting, or ready, and not otherwise", async () => {
+    const { endpoint, clock, transports } = endpointWith(() =>
+      socketTransport(),
+    )
+    expect([endpoint.status, endpoint.isAvailable]).toEqual(["Unbuilt", true])
+
+    endpoint.transport
+    expect([endpoint.status, endpoint.isAvailable]).toEqual([
+      "Connecting",
+      true,
+    ])
+
+    transports[0].websocket?.open()
+    expect([endpoint.status, endpoint.isAvailable]).toEqual(["Ready", true])
+
+    for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+    expect([endpoint.status, endpoint.isAvailable]).toEqual([
+      "CoolingDown",
+      false,
+    ])
+
+    transports[0].send.returns(new Promise(() => {}))
+    clock.increment(15_000)
+    expect([endpoint.status, endpoint.isAvailable]).toEqual(["Probing", false])
+
+    endpoint.dispose()
+    expect([endpoint.status, endpoint.isAvailable]).toEqual(["Disposed", false])
+    expect(endpoint.isDisposed).toBe(true)
+  })
+
+  it("reports cooldowns as breaker transitions", async () => {
+    const { endpoint, clock, transitions } = endpointWith(pollingTransport)
+    endpoint.transport
+
+    for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+    clock.increment(15_000)
+    await flush()
+
+    expect(transitions).toEqual(["open", "half-open", "closed"])
+  })
+
+  it("builds nothing after it is disposed", () => {
+    const { endpoint, transports } = endpointWith(pollingTransport)
+
+    endpoint.dispose()
+
+    expect(() => endpoint.transport).toThrow("Endpoint has been disposed")
+    expect(transports).toHaveLength(0)
+    expect(endpoint.builtTransport).toBeUndefined()
+  })
+
+  it("waits for a connecting socket before sending", async () => {
+    const { endpoint, transports } = endpointWith(() => socketTransport())
+
+    const sent = endpoint.send("eth_call", [])
+    expect(transports[0].send.called).toBe(false)
+
+    transports[0].websocket?.open()
+
+    await expect(sent).resolves.toBe("0x1")
+    expect(transports[0].send.calledWith("eth_call", [])).toBe(true)
+  })
+
+  it("sends straight away when ready", () => {
+    const { endpoint, transports } = endpointWith(pollingTransport)
+
+    endpoint.send("eth_call", [])
+
+    expect(transports[0].send.calledWith("eth_call", [])).toBe(true)
+  })
+
+  it("refuses requests while cooling down or probing, except probes", async () => {
+    const { endpoint, clock, transports } = endpointWith(pollingTransport)
+    endpoint.transport
+    for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+
+    await expect(endpoint.send("eth_call", [])).rejects.toBeInstanceOf(
+      NoEndpointAvailableError,
+    )
+    transports[0].send.returns(new Promise(() => {}))
+    clock.increment(15_000)
+    expect(endpoint.status).toBe("Probing")
+    await expect(endpoint.send("eth_call", [])).rejects.toBeInstanceOf(
+      NoEndpointAvailableError,
+    )
+    expect(transports[0].send.calledWith("eth_call")).toBe(false)
+
+    endpoint.send("eth_call", [], { probe: true })
+    expect(transports[0].send.calledWith("eth_call")).toBe(true)
+  })
+
+  it("fails a wait that ends in a cooldown or a disposal", async () => {
+    const closing = endpointWith(() => socketTransport())
+    const cooled = closing.endpoint.whenReady()
+    closing.transports[0].websocket?.close()
+    await expect(cooled).rejects.toThrow("NETWORK_ERROR")
+
+    const disposing = endpointWith(() => socketTransport())
+    const disposed = disposing.endpoint.whenReady()
+    disposing.endpoint.dispose()
+    await expect(disposed).rejects.toThrow("Endpoint has been disposed")
+  })
+
+  it("stops keeping its socket alive once its signal aborts", () => {
+    const clock = new SimulatedClock()
+    const lifecycle = new AbortController()
+    const socket = subscribedSocket(OPEN)
+    const endpoint = new Endpoint(
+      { kind: "standard", createTransport: () => socket },
+      { clock, options: OPTIONS, signal: lifecycle.signal },
+    )
+    endpoint.transport
+    clock.increment(30_000)
+
+    lifecycle.abort()
+    for (let i = 0; i < 4; i += 1) clock.increment(30_000)
+
+    expect(endpoint.isDisposed).toBe(true)
+    expect(socket.send.withArgs("eth_chainId").callCount).toBe(1)
+  })
+
+  it("exposes its configuration", () => {
+    const endpoint = new Endpoint({
+      kind: "managed",
+      capabilities: ["alchemy_"],
+      createTransport: pollingTransport,
+    })
+
+    expect(endpoint.kind).toBe("managed")
+    expect(endpoint.capabilities).toEqual(["alchemy_"])
+    expect(
+      new Endpoint({ kind: "standard", createTransport: pollingTransport })
+        .capabilities,
+    ).toEqual([])
+  })
+
+  describe("logging", () => {
+    const logged = () => {
+      const lines: string[] = []
+      const levels = ["debug", "info", "warn"] as const
+      levels.forEach((level) =>
+        sinon
+          .stub(logger, level)
+          .callsFake((line: unknown) => lines.push(`${level} ${line}`)),
+      )
+      return () => lines
+    }
+
+    afterEach(() => sinon.restore())
+
+    it("logs its socket, its cooldown and its recovery", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        subscribedSocket(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.open()
+      transports[0].websocket?.close()
+      transports[1].websocket?.open()
+      for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+      clock.increment(15_000)
+      await flush()
+
+      expect(lines()).toEqual([
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "info chain 1 standard[0] rpc.example lost its socket and is opening a new one.",
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds after 5 failures within 30 seconds.",
+        "debug chain 1 standard[0] rpc.example is probing after its cooldown.",
+        "info chain 1 standard[0] rpc.example recovered after 15 seconds.",
+      ])
+    })
+
+    it("logs letting an idle socket go", () => {
+      const lines = logged()
+      const { endpoint, transports } = endpointWith(() => socketTransport())
+
+      endpoint.transport
+      transports[0].websocket?.open()
+      transports[0].websocket?.close()
+
+      expect(lines()).toEqual([
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "debug chain 1 standard[0] rpc.example let its socket go until it is next used.",
+      ])
+    })
+
+    it("says why a cooldown started or grew", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        socketTransport(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.close()
+      clock.increment(15_000)
+      transports[1].websocket?.close()
+
+      expect(lines()).toEqual([
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds since its socket didn't open.",
+        "debug chain 1 standard[0] rpc.example is probing after its cooldown, on a new socket.",
+        "debug chain 1 standard[0] rpc.example is cooling down for 30 seconds since its probe failed.",
+      ])
+    })
+
+    it("warns once while its probes keep failing, and says how long it was down", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        socketTransport(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.close()
+      clock.increment(15_000)
+      transports[1].websocket?.close()
+      clock.increment(30_000)
+      transports[2].websocket?.close()
+      clock.increment(60_000)
+      transports[3].websocket?.open()
+      await flush()
+
+      const atLevel = (level: string) =>
+        lines().filter((line) => line.startsWith(`${level} `))
+      expect(atLevel("warn")).toEqual([
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds since its socket didn't open.",
+      ])
+      expect(atLevel("info")).toEqual([
+        "info chain 1 standard[0] rpc.example recovered after 105 seconds.",
+      ])
+      expect(atLevel("debug")).toHaveLength(5)
+    })
+
+    it("logs a pool's change of preference and its return to the primary", () => {
+      const lines = logged()
+      const endpoints = [0, 1].map(
+        (index) =>
+          new Endpoint(
+            { kind: "standard", createTransport: pollingTransport },
+            {
+              label: `chain 1 standard[${index}] rpc${index}.example`,
+              options: OPTIONS,
+            },
+          ),
+      )
+      const pool = new EndpointPool("standard", endpoints)
+
+      pool.recordSuccess(endpoints[1])
+      pool.recordSuccess(endpoints[0])
+      pool.recordSuccess(endpoints[1])
+
+      expect(lines()).toEqual([
+        "info The standard pool now prefers chain 1 standard[1] rpc1.example, and checks on its primary again in 10 s.",
+        "info The standard pool is back on its primary, chain 1 standard[0] rpc0.example.",
+        "info The standard pool now prefers chain 1 standard[1] rpc1.example, and checks on its primary again in 30 s.",
+      ])
+    })
+
+    it("labels itself by kind and host when not given a label", () => {
+      const endpoint = new Endpoint({
+        kind: "managed",
+        url: "https://rpc.example/v1/SECRET",
+        createTransport: pollingTransport,
+      })
+
+      expect(endpoint.label).toBe("managed rpc.example")
+    })
+  })
+})

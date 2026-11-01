@@ -62,8 +62,8 @@ describe("SerialFallbackProvider reachability integration", () => {
       provider = new SerialFallbackProvider(
         ETHEREUM.chainID,
         [
-          { type: "generic", creator: () => primary },
-          { type: "generic", creator: () => fallback },
+          { kind: "standard", createTransport: () => primary },
+          { kind: "standard", createTransport: () => fallback },
         ],
         (next) => reported.push(next),
       )
@@ -175,8 +175,8 @@ describe("SerialFallbackProvider reachability integration", () => {
       provider = new SerialFallbackProvider(
         ETHEREUM.chainID,
         [
-          { type: "boar", creator: () => managed },
-          { type: "generic", creator: () => stored },
+          { kind: "managed", createTransport: () => managed },
+          { kind: "standard", createTransport: () => stored },
         ],
         (next) => reported.push(next),
       )

@@ -1,3 +1,4 @@
+import { CHAIN_ID_TO_RPC_URLS } from "../../../constants/networks"
 import { DEAD_RPC_URLS, scrubDeadEndpoints } from "../db"
 
 describe("Chain Database helpers", () => {
@@ -37,6 +38,12 @@ describe("Chain Database helpers", () => {
 
     it("should target the dead Polygon RPC by default", () => {
       expect(DEAD_RPC_URLS).toContain("https://polygon-rpc.com")
+    })
+
+    it("should never scrub a shipped default", () => {
+      const defaults = Object.values(CHAIN_ID_TO_RPC_URLS).flat()
+
+      expect(DEAD_RPC_URLS.filter((url) => defaults.includes(url))).toEqual([])
     })
   })
 })

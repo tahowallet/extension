@@ -205,43 +205,68 @@ export const FLASHBOTS_RPC_URL = "https://rpc.flashbots.net"
 export const FLASHBOTS_DOCS_URL =
   "https://docs.flashbots.net/flashbots-protect/rpc/mev-share"
 
+/**
+ * Keyless public endpoints, healthiest first. dRPC's free plan takes batches
+ * of at most three requests and log ranges of at most 10,000 blocks, and
+ * refuses `eth_subscribe`; PublicNode wants an address on `eth_getLogs`.
+ */
 export const CHAIN_ID_TO_RPC_URLS: {
   [chainId: string]: string[]
 } = {
-  [ROOTSTOCK.chainID]: ["https://public-node.rsk.co"],
+  [ROOTSTOCK.chainID]: [
+    "https://public-node.rsk.co",
+    "https://mycrypto.rsk.co",
+  ],
   [MEZO_TESTNET.chainID]: [
     "https://rpc.test.mezo.org",
     "https://mezo-testnet.drpc.org",
-    "wss://mezo-testnet.drpc.org",
   ],
-  [POLYGON.chainID]: ["https://polygon.drpc.org", "https://1rpc.io/matic"],
+  [POLYGON.chainID]: [
+    "https://polygon.drpc.org",
+    "https://polygon-bor-rpc.publicnode.com",
+  ],
   [OPTIMISM.chainID]: [
+    "https://mainnet.optimism.io",
     "https://optimism.drpc.org",
-    "https://1rpc.io/op",
-    "https://optimism-mainnet.public.blastapi.io",
+    "https://optimism-rpc.publicnode.com",
   ],
-  [ETHEREUM.chainID]: ["https://eth.drpc.org", "https://1rpc.io/eth"],
-  [ARBITRUM_ONE.chainID]: ["https://arbitrum.drpc.org", "https://1rpc.io/arb"],
-  [ARBITRUM_NOVA.chainID]: ["https://nova.arbitrum.io/rpc	"],
+  [ETHEREUM.chainID]: [
+    "https://eth.drpc.org",
+    "https://ethereum-rpc.publicnode.com",
+  ],
+  [ARBITRUM_ONE.chainID]: [
+    "https://arb1.arbitrum.io/rpc",
+    "https://arbitrum.drpc.org",
+    "https://arbitrum-one-rpc.publicnode.com",
+  ],
+  [ARBITRUM_NOVA.chainID]: [
+    "https://nova.arbitrum.io/rpc",
+    "https://arbitrum-nova-rpc.publicnode.com",
+  ],
   [SEPOLIA.chainID]: [
-    "https://sepolia.drpc.org",
-    "wss://sepolia.drpc.org",
     "https://ethereum-sepolia-rpc.publicnode.com",
+    "https://ethereum-sepolia-public.nodies.app",
   ],
-  [ARBITRUM_SEPOLIA.chainID]: ["https://sepolia-rollup.arbitrum.io/rpc"],
+  [ARBITRUM_SEPOLIA.chainID]: [
+    "https://sepolia-rollup.arbitrum.io/rpc",
+    "https://arbitrum-sepolia-rpc.publicnode.com",
+  ],
   [AVALANCHE.chainID]: [
-    "https://api.avax.network/ext/bc/C/rpc",
-    "https://1rpc.io/avax/c",
     "https://avalanche.drpc.org",
+    "https://avalanche-c-chain-rpc.publicnode.com",
+    "https://api.avax.network/ext/bc/C/rpc",
   ],
+  // dRPC stays first despite its rate limits, since the BNB dataseeds and
+  // PublicNode refuse address-less eth_getLogs.
   [BINANCE_SMART_CHAIN.chainID]: [
     "https://bsc.drpc.org",
     "https://bsc-dataseed.binance.org",
+    "https://bsc-rpc.publicnode.com",
   ],
   [MEZO.chainID]: [
+    "https://mainnet.mezo.public.validationcloud.io",
     "https://mezo.drpc.org",
     "https://rpc-http.mezo.boar.network",
-    "https://mainnet.mezo.public.validationcloud.io",
   ],
 }
 

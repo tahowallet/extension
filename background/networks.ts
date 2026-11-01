@@ -416,6 +416,11 @@ export function toHexChainID(chainID: string | number): string {
   return `0x${BigInt(chainID).toString(16)}`
 }
 
+/** A chain ID in the decimal form Taho stores, whatever form it came in. */
+export function toDecimalChainID(chainID: string | number): string {
+  return BigInt(toHexChainID(chainID)).toString()
+}
+
 export const sameChainID = (chainID: string, other: string): boolean =>
   toHexChainID(chainID) === toHexChainID(other)
 

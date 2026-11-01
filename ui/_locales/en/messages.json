@@ -699,6 +699,7 @@
           "duplicateRpcUrl": "This endpoint is already listed",
           "unreachableEndpoint": "Couldn't reach {{url}}",
           "endpointChainMismatch": "{{url}} serves chain ID {{reportedChainID}}, not {{expectedChainID}}",
+          "endpointsReplaced": "These endpoints weren't saved: this network's endpoints changed while saving. Try again.",
           "saveFailed": "Couldn't save these settings: {{message}}"
         },
         "snackbar": {
