@@ -384,6 +384,20 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
   }
 
+  /**
+   * Whether a request for the method has an endpoint to go to now, one that
+   * isn't cooling down. Background work checks this to wait rather than
+   * probe a cooling endpoint.
+   */
+  canServeNow(method: string): boolean {
+    return (
+      !this.isDestroyed &&
+      this.routeFor(method).some(
+        ({ pool }) => pool.endpointsInTryOrder().length > 0,
+      )
+    )
+  }
+
   /** @deprecated Use {@link supportsAlchemyMethods}. */
   get supportsAlchemy(): boolean {
     return this.supportsAlchemyMethods

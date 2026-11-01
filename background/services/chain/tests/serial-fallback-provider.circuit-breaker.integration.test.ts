@@ -99,6 +99,15 @@ describe("SerialFallbackProvider circuit breaker integration", () => {
     ).toHaveLength(0)
   })
 
+  it("can't serve Boar's methods now while Boar cools down", () => {
+    expect(fallbackProvider.canServeNow("eth_getLogs")).toBe(true)
+
+    tripBreakerOpen(fallbackProvider, 1)
+
+    expect(fallbackProvider.canServeNow("eth_getLogs")).toBe(false)
+    expect(fallbackProvider.canServeNow("eth_getBlockByNumber")).toBe(true)
+  })
+
   it("keeps the standard walk off a cooling Boar", async () => {
     tripBreakerOpen(fallbackProvider, 0)
     tripBreakerOpen(fallbackProvider, 1)
