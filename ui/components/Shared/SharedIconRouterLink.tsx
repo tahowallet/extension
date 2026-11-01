@@ -75,11 +75,18 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           height: 12px;
         }
         .router_link_container:hover .icon_wrapper {
-          background-color: var(--hunter-green);
-          color: var(--trophy-gold);
+          background-color: var(--icon-tile-hover);
+          box-shadow: var(--icon-tile-hover-shadow);
+          color: var(--icon-tile-hover-icon);
         }
         .router_link_container:hover .asset_icon {
-          background-color: var(--trophy-gold);
+          background-color: var(--icon-tile-hover-icon);
+        }
+        /* Light also lights the icon when the tile, not the glyph, is hovered. */
+        [data-theme="light"]
+          .router_link_container:hover
+          .asset_icon.hoverable {
+          background-color: var(--icon-tile-hover-icon);
         }
       `}</style>
     </>

@@ -78,10 +78,16 @@ export default function SharedSquareButton(props: Props): ReactElement {
             width: ${size}px;
             height: ${size}px;
             background-color: ${iconColor.color};
-            transition: background-color 0.2s;
+            transition:
+              background-color 0.2s,
+              box-shadow 0.2s;
           }
           .hoverable:hover .icon_wrap {
             background-color: ${iconColor.hoverColor};
+            box-shadow: var(--action-tile-hover-shadow);
+          }
+          .hoverable:hover .icon {
+            background-color: var(--action-tile-hover-icon);
           }
           .icon {
             mask-image: url("./images/${icon}");

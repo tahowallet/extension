@@ -114,6 +114,15 @@
   /* Send and receive tiles on the wallet home. */
   --action-tile: var(--green-40);
   --action-tile-hover: var(--gold-80);
+  --action-tile-hover-shadow: none;
+  --action-tile-hover-icon: var(--on-accent);
+  /* The swap tile, which dark sets apart in gold. */
+  --action-tile-featured: var(--trophy-gold);
+  --action-tile-featured-hover: var(--gold-80);
+  /* Small icon links that sit on a tile while hovered. */
+  --icon-tile-hover: var(--hunter-green);
+  --icon-tile-hover-icon: var(--trophy-gold);
+  --icon-tile-hover-shadow: none;
 
   --surface-deep: #002522;
   --divider-black: #000000;
@@ -271,8 +280,16 @@
     #f3efe4 100%
   );
 
+  /* Gold tiles turn ink on hover, as in Figma. */
   --action-tile: var(--trophy-gold);
-  --action-tile-hover: var(--gold-80);
+  --action-tile-hover: #002522;
+  --action-tile-hover-shadow: var(--shadow);
+  --action-tile-hover-icon: #fefefc;
+  --action-tile-featured: var(--action-tile);
+  --action-tile-featured-hover: var(--action-tile-hover);
+  --icon-tile-hover: #002522;
+  --icon-tile-hover-icon: #fefefc;
+  --icon-tile-hover-shadow: var(--shadow);
 
   --surface-deep: #fefefc;
   --divider-black: #e3ded1;

@@ -47,8 +47,8 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
             ariaLabel={t("swap")}
             onClick={() => history.push("/swap")}
             iconColor={{
-              color: "var(--trophy-gold)",
-              hoverColor: "var(--gold-80)",
+              color: "var(--action-tile-featured)",
+              hoverColor: "var(--action-tile-featured-hover)",
             }}
           >
             {t("swap")}
