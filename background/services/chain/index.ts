@@ -55,6 +55,7 @@ import ProviderRegistry from "./provider-registry"
 import NonceAllocator from "./nonce-allocator"
 import NetworkSettings, { NetworkMetadata } from "./network-settings"
 import AssetTransferScanner from "./asset-transfer-scanner"
+import NFTLogScanner from "./nft-log-scanner"
 import NetworkWatcher, { NetworkWatcherDependencies } from "./network-watcher"
 import TransactionSubmitter from "./transaction-submitter"
 import { TRANSACTION_CHECK_LIFETIME_MS } from "./pending-transaction-machine"
@@ -186,6 +187,8 @@ export default class ChainService extends BaseService<Events> {
 
   private assetTransferScanner: AssetTransferScanner
 
+  private nftLogScanner: NFTLogScanner
+
   private transactionSubmitter: TransactionSubmitter
 
   /** @deprecated Kept for tests; see {@link TransactionTracker}. */
@@ -286,6 +289,15 @@ export default class ChainService extends BaseService<Events> {
           this.scanRecentTransfers({ activeAccountsOnly: true })
         },
       },
+      nftTransferLogs: {
+        schedule: {
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          void this.nftLogScanner.tick()
+        },
+        runAtStart: false,
+      },
       blockPrices: {
         runAtStart: false,
         schedule: {
@@ -351,6 +363,15 @@ export default class ChainService extends BaseService<Events> {
         this.enqueueTransactionLookup(network, hash, firstSeen, priority),
       emitAssetTransfers: (addressNetwork, assetTransfers) =>
         this.emitter.emit("assetTransfers", { addressNetwork, assetTransfers }),
+      emitNFTTransfers: (addressNetwork, nftTransfers) =>
+        this.emitter.emit("nftTransfers", { addressNetwork, nftTransfers }),
+    })
+
+    this.nftLogScanner = new NFTLogScanner({
+      db,
+      accountsToTrack: () => this.getAccountsToTrack(),
+      providerFor: (network) => this.providerForNetwork(network),
+      getBlockHeight: (network) => this.getBlockHeight(network),
       emitNFTTransfers: (addressNetwork, nftTransfers) =>
         this.emitter.emit("nftTransfers", { addressNetwork, nftTransfers }),
     })

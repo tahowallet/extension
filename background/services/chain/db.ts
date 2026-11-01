@@ -45,6 +45,24 @@ type AccountAssetTransferLookup = {
   endBlock: bigint
 }
 
+/** A block range, both ends inclusive. */
+export type BlockRange = {
+  fromBlock: number
+  toBlock: number
+}
+
+/** How far an account's ERC-721 log scan on a chain has got. */
+export type NFTLogScanCursor = {
+  /** The chain ID and normalized account, as `chainID:account`. */
+  id: string
+  chainID: string
+  account: string
+  /** The newest block the scan has reached or queued. */
+  newestBlock: number
+  /** Ranges still to scan, newest first. */
+  pending: BlockRange[]
+}
+
 export type RpcConfig = {
   chainID: string
   rpcUrls: string[]
@@ -159,6 +177,8 @@ export class ChainDatabase extends Dexie {
   private rpcConfig!: Dexie.Table<ChainRpcConfig, string>
 
   private customRpcConfig!: Dexie.Table<RpcConfig, string>
+
+  private nftLogScanCursors!: Dexie.Table<NFTLogScanCursor, string>
 
   constructor(options?: DexieOptions) {
     super("tally/chain", options)
@@ -333,6 +353,10 @@ export class ChainDatabase extends Dexie {
         })
     this.version(12).upgrade(scrubStoredEndpoints)
     this.version(13).upgrade(scrubStoredEndpoints)
+
+    this.version(14).stores({
+      nftLogScanCursors: "&id",
+    })
   }
 
   async initialize(): Promise<void> {
@@ -928,6 +952,14 @@ export class ChainDatabase extends Dexie {
       endBlock,
       retrievedAt: Date.now(),
     })
+  }
+
+  async getNFTLogScanCursor(id: string): Promise<NFTLogScanCursor | undefined> {
+    return this.nftLogScanCursors.get(id)
+  }
+
+  async putNFTLogScanCursors(cursors: NFTLogScanCursor[]): Promise<void> {
+    await this.nftLogScanCursors.bulkPut(cursors)
   }
 
   async addBlock(block: AnyEVMBlock): Promise<void> {
