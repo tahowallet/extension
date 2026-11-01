@@ -31,6 +31,14 @@ const hardcodedIcons = new Set([
   "BTC",
 ])
 
+/**
+ * Logos for light mode where the hardcoded icon carries a dark disc drawn for
+ * the dark theme's plate.
+ */
+const lightHardcodedIcons: Record<string, string> = {
+  ETH: "./images/networks/ethereum@2x.png",
+}
+
 // Passes IPFS and Arweave through HTTP gateway
 function getAsHttpURL(anyURL: string) {
   let httpURL = anyURL
@@ -91,6 +99,9 @@ export default function SharedAssetIcon(props: Props): ReactElement {
   const [error, setHasError] = useState(false)
 
   const hasHardcodedIcon = !untrusted && hardcodedIcons.has(symbol)
+  const lightIconURL = hasHardcodedIcon
+    ? lightHardcodedIcons[symbol]
+    : undefined
 
   const sizeClass = typeof size === "string" ? size : "custom_size"
 
@@ -159,7 +170,18 @@ export default function SharedAssetIcon(props: Props): ReactElement {
       role="img"
     >
       {hasHardcodedIcon || (!isLoading && !error) ? (
-        <div className="token_icon" />
+        <div
+          className={classNames("token_icon", {
+            has_light_icon: lightIconURL !== undefined,
+          })}
+          style={
+            lightIconURL === undefined
+              ? undefined
+              : ({
+                  "--light-icon": `url("${lightIconURL}")`,
+                } as React.CSSProperties)
+          }
+        />
       ) : (
         <div
           role="presentation"
@@ -205,6 +227,12 @@ export default function SharedAssetIcon(props: Props): ReactElement {
           .large {
             width: 48px;
             height: 48px;
+          }
+          :global([data-theme="light"]) .token_icon.has_light_icon {
+            background-image: var(--light-icon);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
           }
         `}
       </style>
