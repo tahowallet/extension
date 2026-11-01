@@ -28,7 +28,9 @@ export default function TopMenuProfileTooltip(props: {
           box-shadow: var(--tooltip-quiet-shadow);
           padding: 8px 10px 8px;
           border-radius: 8px;
-          color: var(--tooltip-quiet-text-strong);
+          color: var(--tooltip-action);
+          --address-hover: var(--tooltip-action-hover);
+          --address-icon-hover: var(--tooltip-action-icon-hover);
         }
       `}</style>
     </div>

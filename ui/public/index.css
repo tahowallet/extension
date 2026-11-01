@@ -110,6 +110,10 @@
   --tooltip-quiet-text: var(--green-20);
   --tooltip-quiet-text-strong: var(--green-5);
   --tooltip-quiet-shadow: none;
+  /* Something clickable in a tooltip, such as the copy-address button. */
+  --tooltip-action: var(--tooltip-quiet-text-strong);
+  --tooltip-action-hover: var(--gold-80);
+  --tooltip-action-icon-hover: var(--trophy-gold);
 
   /* Send and receive tiles on the wallet home. */
   --action-tile: var(--green-40);
@@ -260,6 +264,10 @@
   --tooltip-quiet-text: var(--tooltip-text);
   --tooltip-quiet-text-strong: var(--tooltip-text);
   --tooltip-quiet-shadow: var(--tooltip-shadow);
+  /* As on the dark icon tiles: muted at rest, off-white on hover. */
+  --tooltip-action: var(--tooltip-text-muted);
+  --tooltip-action-hover: var(--tooltip-text);
+  --tooltip-action-icon-hover: var(--tooltip-text);
 
   --grey-green-80: #dcdfd8;
   --grey-green-70: #b8c4c2;
