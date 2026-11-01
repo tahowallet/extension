@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme="dark"] {
   --hunter-green: #002825;
   --castle-black: #0a0806;
   --green-120: #001413;
@@ -42,6 +43,69 @@
   --shadow:
     0px 16px 16px rgba(0, 33, 30, 0.14), 0px 6px 8px rgba(0, 33, 30, 0.24),
     0px 2px 4px rgba(0, 33, 30, 0.34);
+
+  /*
+   * The palette above is named after its dark-theme values, but components
+   * use it by role: --hunter-green is the page, --green-95 a raised surface,
+   * --green-120 a sunken one, and --green-60 through --green-5 are text from
+   * muted to emphasised. A theme re-points the ramp and keeps those roles.
+   *
+   * The tokens below cover roles the ramp can't express.
+   */
+
+  /* Strongest text: headings and selected values. */
+  --text-strong: #ffffff;
+  /* Serif headers and balances. */
+  --text-bright: #fefefc;
+  /* Text and icons on gold, attention and other fixed-colour fills. */
+  --on-accent: #002825;
+  --on-accent-hover: #013834;
+  --on-accent-active: #001413;
+  --on-accent-deep: #002522;
+
+  /* Send and receive tiles on the wallet home. */
+  --action-tile: var(--green-40);
+  --action-tile-hover: var(--gold-80);
+
+  --surface-deep: #002522;
+  --divider-black: #000000;
+
+  /* Older greys that predate the green ramp. */
+  --grey-green-80: #33514e;
+  --grey-green-70: #3a6565;
+  --grey-green-60: #578f89;
+  --grey-green-50: #789594;
+  --grey-green-40: #99a8a7;
+  --grey-green-30: #81aba8;
+  --grey-green-20: #b4cac9;
+  --grey-green-10: #ccd3d3;
+
+  --success-alt: #22c480;
+  --error-alt: #d64045;
+  --price-impact: #e7296d;
+
+  /* Backdrop behind modals and slide-up menus. */
+  --overlay: rgba(0, 20, 19, 0.75);
+  --overlay-raised: rgba(1, 56, 52, 0.75);
+  --overlay-soft: rgba(4, 20, 20, 0.4);
+  --overlay-tab: #04141480;
+
+  --tab-background: #041414;
+  --balance-header-gradient: linear-gradient(
+    250.02deg,
+    #034f4b 0%,
+    #033734 66.93%
+  );
+  --pool-card-gradient: linear-gradient(180deg, #034f4b 0%, #033633 100%);
+  --clock-gradient: linear-gradient(
+    180deg,
+    #033c37 0%,
+    #0b524c 50%,
+    #033c37 50%,
+    #0b524c 100%
+  );
+
+  color-scheme: dark;
 }
 
 ::-webkit-scrollbar {
@@ -124,7 +188,7 @@ form {
 }
 
 .serif_header {
-  color: #fefefc;
+  color: var(--text-bright);
   font-family: "Quincy CF";
   font-size: 38px;
   font-weight: 400;
