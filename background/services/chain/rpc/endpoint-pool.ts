@@ -1,10 +1,31 @@
 import { Actor, createActor, SimulatedClock } from "xstate"
-import { SECOND } from "../../../constants"
+import { MINUTE, SECOND } from "../../../constants"
 import logger from "../../../lib/logger"
 import type Endpoint from "./endpoint"
-import { endpointPoolMachine } from "./endpoint-pool-machine"
+import {
+  endpointPoolMachine,
+  recoveryIntervalMs,
+} from "./endpoint-pool-machine"
 
-export const PRIMARY_RECOVERY_INTERVAL_MS = 10 * SECOND
+/**
+ * How long a pool off its primary waits before checking on it again, by how
+ * many times in a row it has left it, the last repeating.
+ */
+export const PRIMARY_RECOVERY_INTERVALS_MS = [
+  10 * SECOND,
+  30 * SECOND,
+  2 * MINUTE,
+  10 * MINUTE,
+] as const
+
+/** The first of {@link PRIMARY_RECOVERY_INTERVALS_MS}. */
+export const PRIMARY_RECOVERY_INTERVAL_MS = PRIMARY_RECOVERY_INTERVALS_MS[0]
+
+/** How long a pool stays on its primary before its failovers are forgotten. */
+export const PRIMARY_STABLE_PERIOD_MS = 5 * MINUTE
+
+const describeWait = (ms: number) =>
+  ms % MINUTE === 0 ? `${ms / MINUTE} min` : `${Math.round(ms / SECOND)} s`
 
 export type PreferredEndpointListener = (endpoint: Endpoint) => void
 
@@ -26,26 +47,29 @@ export default class EndpointPool {
     readonly name: string,
     readonly endpoints: readonly Endpoint[],
     {
-      recoveryIntervalMs = PRIMARY_RECOVERY_INTERVAL_MS,
+      recoveryIntervalsMs = PRIMARY_RECOVERY_INTERVALS_MS,
+      stablePeriodMs = PRIMARY_STABLE_PERIOD_MS,
       clock,
       signal,
     }: {
-      recoveryIntervalMs?: number
+      recoveryIntervalsMs?: readonly number[]
+      stablePeriodMs?: number
       clock?: SimulatedClock
       /** Disposes the pool when aborted. */
       signal?: AbortSignal
     } = {},
   ) {
     this.#actor = createActor(endpointPoolMachine, {
-      input: { size: endpoints.length, recoveryIntervalMs },
+      input: { size: endpoints.length, recoveryIntervalsMs, stablePeriodMs },
       ...(clock === undefined ? {} : { clock }),
     })
     this.#actor.on("preferredEndpointChanged", ({ index }) => {
       const endpoint = this.endpoints[index]
+      const wait = recoveryIntervalMs(this.#actor.getSnapshot().context)
       logger.info(
         index === 0
           ? `The ${name} pool is back on its primary, ${endpoint.label}.`
-          : `The ${name} pool now prefers ${endpoint.label}.`,
+          : `The ${name} pool now prefers ${endpoint.label}, and checks on its primary again in ${describeWait(wait)}.`,
       )
       this.#listeners.forEach((listener) => listener(endpoint))
     })

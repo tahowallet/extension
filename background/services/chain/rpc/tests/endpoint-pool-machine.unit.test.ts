@@ -7,12 +7,18 @@ import Endpoint from "../endpoint"
 import EndpointPool from "../endpoint-pool"
 
 const RECOVERY_MS = 10_000
+const RECOVERY_INTERVALS_MS = [RECOVERY_MS, 30_000, 120_000, 600_000]
+const STABLE_MS = 300_000
 
 function harness(size = 3) {
   const clock = new SimulatedClock()
   const preferred: number[] = []
   const actor = createActor(endpointPoolMachine, {
-    input: { size, recoveryIntervalMs: RECOVERY_MS },
+    input: {
+      size,
+      recoveryIntervalsMs: RECOVERY_INTERVALS_MS,
+      stablePeriodMs: STABLE_MS,
+    },
     clock,
   })
   actor.on("preferredEndpointChanged", ({ index }) => preferred.push(index))
@@ -279,6 +285,117 @@ describe("endpointPoolMachine", () => {
     })
   })
 
+  describe("with a primary it keeps leaving", () => {
+    // A request fails over off the primary, as Avalanche's did every minute.
+    const failOver = (pool: ReturnType<typeof harness>) =>
+      pool.send("REQUEST_SUCCEEDED", 1)
+
+    it("waits longer each time before going back, up to the longest wait", () => {
+      const pool = harness()
+
+      RECOVERY_INTERVALS_MS.concat([600_000]).forEach((wait) => {
+        failOver(pool)
+        pool.clock.increment(wait - 1)
+        expect(pool.state()).toBe("UsingFallback")
+        pool.clock.increment(1)
+        expect(pool.state()).toBe("UsingPrimary")
+        pool.clock.increment(60_000)
+      })
+
+      expect(pool.preferred).toEqual([1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
+    })
+
+    it("forgets its failovers once it has stayed on the primary for the stable period", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      failOver(pool)
+      pool.clock.increment(30_000)
+      expect(pool.state()).toBe("UsingPrimary")
+
+      pool.clock.increment(STABLE_MS)
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+
+      expect(pool.state()).toBe("UsingPrimary")
+    })
+
+    it("counts a failover that comes just before the stable period is up", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      pool.clock.increment(STABLE_MS - 1)
+
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+
+      expect(pool.state()).toBe("UsingFallback")
+    })
+
+    it("doesn't cut a longer wait short when the primary is ready again", () => {
+      const pool = harness()
+      pool.send("ENDPOINT_UNAVAILABLE", 0)
+      pool.send("ENDPOINT_READY", 0)
+      pool.send("ENDPOINT_UNAVAILABLE", 0)
+
+      pool.send("ENDPOINT_READY", 0)
+      expect(pool.state()).toBe("UsingFallback")
+
+      pool.clock.increment(30_000)
+      expect(pool.state()).toBe("UsingPrimary")
+      expect(pool.preferred).toEqual([1, 0, 1, 0])
+    })
+
+    it("still goes back at once when a request had to come round to the primary", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      failOver(pool)
+
+      pool.send("REQUEST_SUCCEEDED", 0)
+
+      expect(pool.state()).toBe("UsingPrimary")
+    })
+
+    it("still goes back at once when its fallback becomes unavailable", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      failOver(pool)
+
+      pool.send("ENDPOINT_UNAVAILABLE", 1)
+
+      expect(pool.state()).toBe("UsingPrimary")
+    })
+
+    it("goes to the primary when it is the first endpoint ready, however long the wait", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      ;[0, 1, 2].forEach((index) => pool.send("ENDPOINT_UNAVAILABLE", index))
+
+      pool.send("ENDPOINT_READY", 0)
+
+      expect(pool.state()).toBe("UsingPrimary")
+    })
+
+    it("keeps the longer wait while the primary stays unavailable", () => {
+      const pool = harness()
+      failOver(pool)
+      pool.clock.increment(RECOVERY_MS)
+      pool.send("ENDPOINT_UNAVAILABLE", 0)
+
+      pool.clock.increment(30_000)
+      expect(pool.state()).toBe("UsingFallback")
+      pool.send("ENDPOINT_READY", 0)
+      pool.clock.increment(29_999)
+      expect(pool.state()).toBe("UsingFallback")
+      pool.clock.increment(1)
+
+      expect(pool.state()).toBe("UsingPrimary")
+    })
+  })
+
   it("works with a single endpoint", () => {
     const pool = harness(1)
 
@@ -313,12 +430,30 @@ describe("EndpointPool", () => {
           { clock, options: OPTIONS },
         ),
     )
-    const pool = new EndpointPool("standard", endpoints, {
-      clock,
-      recoveryIntervalMs: RECOVERY_MS,
-    })
+    const pool = new EndpointPool("standard", endpoints, { clock })
     return { pool, endpoints, clock }
   }
+
+  it("moves subscriptions far less often when its primary flaps", () => {
+    const { pool, endpoints, clock } = poolOf(2)
+    const changes: Endpoint[] = []
+    pool.onPreferredEndpointChanged((endpoint) => changes.push(endpoint))
+
+    // For 30 minutes, a request fails over off the primary every minute it's
+    // preferred.
+    for (let second = 0; second < 30 * 60; second += 1) {
+      if (second % 60 === 0 && pool.preferredIndex === 0) {
+        pool.recordSuccess(endpoints[1])
+      }
+      clock.increment(1_000)
+    }
+
+    // Without backing off, that was a move there and back every minute: 60.
+    // Now it's back after 10 s, 30 s, 2 min, then 10 min each time, with
+    // failovers at 0, 1, 2, 4, 14 and 24 minutes.
+    expect(changes).toHaveLength(11)
+    expect(pool.preferredIndex).toBe(1)
+  })
 
   it("orders endpoints from the preferred one, wrapping around", () => {
     const { pool, endpoints } = poolOf(3)

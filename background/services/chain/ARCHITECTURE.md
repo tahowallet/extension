@@ -217,7 +217,9 @@ stateDiagram-v2
   UsingPrimary --> UsingFallback: ENDPOINT_UNAVAILABLE for endpoint 0, next available preferred
   UsingPrimary --> UsingFallback: REQUEST_SUCCEEDED on another endpoint, which is preferred
   UsingPrimary --> NoEndpointReady: ENDPOINT_UNAVAILABLE leaves none available
-  UsingFallback --> UsingPrimary: ENDPOINT_READY or REQUEST_SUCCEEDED for endpoint 0
+  UsingPrimary --> UsingPrimary: after stablePeriod / forgetFailovers
+  UsingFallback --> UsingPrimary: ENDPOINT_READY for endpoint 0, unless backing off
+  UsingFallback --> UsingPrimary: REQUEST_SUCCEEDED for endpoint 0
   UsingFallback --> UsingPrimary: after recoveryInterval, endpoint 0 available
   UsingFallback --> UsingFallback: after recoveryInterval, endpoint 0 still unavailable
   UsingFallback --> UsingFallback: REQUEST_SUCCEEDED on another endpoint, which is preferred
@@ -229,10 +231,17 @@ stateDiagram-v2
 ```
 
 A pool prefers wherever a request last succeeded, so a request that had to
-fail over to succeed moves the pool with it. Every 10 seconds
-(`PRIMARY_RECOVERY_INTERVAL_MS`) a pool on a fallback checks whether the
-primary can take requests again. Each change of preference is emitted as
-`preferredEndpointChanged`.
+fail over to succeed moves the pool with it. A pool on a fallback checks
+whether the primary can take requests again after a wait that grows with
+each failover that comes within five minutes (`PRIMARY_STABLE_PERIOD_MS`)
+of going back: 10 seconds, then 30, then 2 minutes, then 10 minutes from
+then on (`PRIMARY_RECOVERY_INTERVALS_MS`). Five minutes on the primary
+forgets the failovers. While the wait is longer than the first, the
+primary becoming ready doesn't end it, so a primary that fails a request
+every minute no longer pulls the pool, and its subscriptions, back and
+forth every minute. A request that comes round to the primary, or a
+fallback that becomes unavailable, still moves the pool back at once. Each
+change of preference is emitted as `preferredEndpointChanged`.
 
 ## A request
 

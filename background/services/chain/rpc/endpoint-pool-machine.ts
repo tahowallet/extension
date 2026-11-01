@@ -1,10 +1,13 @@
-import { and, assign, emit, enqueueActions, setup } from "xstate"
+import { and, assign, emit, enqueueActions, not, setup } from "xstate"
 
 type PoolContext = {
   /** Whether each endpoint, by index, can take requests. */
   available: boolean[]
   preferredIndex: number
-  recoveryIntervalMs: number
+  recoveryIntervalsMs: readonly number[]
+  stablePeriodMs: number
+  /** Times the pool left its primary without staying on it for a while. */
+  failoversFromPrimary: number
 }
 
 export type PoolEvent =
@@ -16,8 +19,15 @@ export type PoolEmitted = { type: "preferredEndpointChanged"; index: number }
 
 export type PoolInput = {
   size: number
-  /** How often to check whether the primary can take over again. */
-  recoveryIntervalMs: number
+  /**
+   * How long to wait before checking whether the primary can take over
+   * again, by how many times in a row the pool has left it: the first wait
+   * after the first failover, the second after the second, and so on, the
+   * last repeating.
+   */
+  recoveryIntervalsMs: readonly number[]
+  /** How long the pool stays on its primary before failovers are forgotten. */
+  stablePeriodMs: number
 }
 
 /** The first available endpoint after `index`, wrapping around. */
@@ -41,10 +51,28 @@ const withAvailability = (
   return available.map((value, index) => value && index !== event.index)
 }
 
+/** How long a pool off its primary waits before checking on it again. */
+export function recoveryIntervalMs({
+  recoveryIntervalsMs,
+  failoversFromPrimary,
+}: Pick<PoolContext, "recoveryIntervalsMs" | "failoversFromPrimary">): number {
+  const step = Math.min(
+    Math.max(failoversFromPrimary - 1, 0),
+    recoveryIntervalsMs.length - 1,
+  )
+  return recoveryIntervalsMs[step]
+}
+
 /**
  * Which of a pool's endpoints requests should start with. The pool moves off
  * the primary when it becomes unavailable, or when a request had to fail over
  * to succeed, and moves back once the primary can take requests again.
+ *
+ * A primary the pool keeps leaving gets longer and longer to prove itself:
+ * each failover that follows a return to it before the stable period is up
+ * lengthens the wait before the pool checks on it again, and while that
+ * wait is longer than the first, the primary becoming ready doesn't cut it
+ * short.
  */
 export const endpointPoolMachine = setup({
   types: {} as {
@@ -54,7 +82,8 @@ export const endpointPoolMachine = setup({
     emitted: PoolEmitted
   },
   delays: {
-    recoveryInterval: ({ context }) => context.recoveryIntervalMs,
+    recoveryInterval: ({ context }) => recoveryIntervalMs(context),
+    stablePeriod: ({ context }) => context.stablePeriodMs,
   },
   guards: {
     isPrimary: ({ event }) => "index" in event && event.index === 0,
@@ -65,12 +94,17 @@ export const endpointPoolMachine = setup({
     leavesNoneAvailable: ({ context, event }) =>
       withAvailability(context.available, event).every((value) => !value),
     primaryIsAvailable: ({ context }) => context.available[0] === true,
+    holdingOffPrimary: ({ context }) => context.failoversFromPrimary > 1,
   },
   actions: {
     trackAvailability: assign({
       available: ({ context, event }) =>
         withAvailability(context.available, event),
     }),
+    countFailover: assign({
+      failoversFromPrimary: ({ context }) => context.failoversFromPrimary + 1,
+    }),
+    forgetFailovers: assign({ failoversFromPrimary: 0 }),
     preferPrimary: enqueueActions(({ context, enqueue }) => {
       if (context.preferredIndex !== 0) {
         enqueue.assign({ preferredIndex: 0 })
@@ -96,12 +130,19 @@ export const endpointPoolMachine = setup({
   context: ({ input }) => ({
     available: Array.from({ length: input.size }, () => true),
     preferredIndex: 0,
-    recoveryIntervalMs: input.recoveryIntervalMs,
+    recoveryIntervalsMs: input.recoveryIntervalsMs,
+    stablePeriodMs: input.stablePeriodMs,
+    failoversFromPrimary: 0,
   }),
   initial: "UsingPrimary",
   states: {
     UsingPrimary: {
       entry: "preferPrimary",
+      // Every way out of the primary is a failover.
+      exit: "countFailover",
+      after: {
+        stablePeriod: { actions: "forgetFailovers" },
+      },
       on: {
         ENDPOINT_UNAVAILABLE: [
           {
@@ -138,7 +179,7 @@ export const endpointPoolMachine = setup({
       on: {
         ENDPOINT_READY: [
           {
-            guard: "isPrimary",
+            guard: and(["isPrimary", not("holdingOffPrimary")]),
             target: "UsingPrimary",
             actions: "trackAvailability",
           },
@@ -162,6 +203,7 @@ export const endpointPoolMachine = setup({
           { actions: "trackAvailability" },
         ],
         REQUEST_SUCCEEDED: [
+          // The fallback failed and the walk came round to the primary.
           {
             guard: "isPrimary",
             target: "UsingPrimary",
