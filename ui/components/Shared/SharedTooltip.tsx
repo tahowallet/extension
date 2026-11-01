@@ -26,9 +26,16 @@ interface Props {
 
 function getHorizontalPosition(
   horizontal: HorizontalPosition,
-  width: number,
+  width: number | undefined,
   horizontalShift: number,
 ) {
+  // Without a width, only centring is possible, using the tooltip's own size.
+  if (width === undefined) {
+    return horizontal === "center"
+      ? `left: 50%; transform: translateX(calc(-50% - ${horizontalShift}px));`
+      : ""
+  }
+
   switch (horizontal) {
     case "center":
       return `right: -${width / 2 + 4 - horizontalShift}px;`
@@ -136,15 +143,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             padding: 12px;
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height, verticalShift)}
-            ${
-              width !== undefined
-                ? getHorizontalPosition(
-                    horizontalPosition,
-                    width,
-                    horizontalShift,
-                  )
-                : ""
-            }
+            ${getHorizontalPosition(horizontalPosition, width, horizontalShift)}
           }
           .dark {
             background: var(--green-120);
