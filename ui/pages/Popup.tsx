@@ -237,6 +237,8 @@ export function Main(): ReactElement {
           .pages {
             display: grid;
             height: 100%;
+            /* A page sliding in from the right would otherwise widen the popup. */
+            overflow-x: clip;
           }
           .pages > * {
             grid-area: 1 / 1;
