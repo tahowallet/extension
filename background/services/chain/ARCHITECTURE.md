@@ -296,10 +296,11 @@ host, such as `chain 8453 standard[1] base-mainnet.g.alchemy.com`
 (`rpc/endpoint-label.ts`). Labels, and the errors described in the lines
 below, keep only a URL's host, since paths and queries can hold API keys.
 
-`loggingObserver` logs each failed attempt and what follows it at debug,
-and an exhausted pool at warn. A request that fails for good is logged at
-warn when its endpoints were at fault, and at debug when the error was the
-request's own, such as a revert. The executor logs a fallback to the
+`loggingObserver` logs each failed attempt and what follows it at debug. A
+request that fails for good gets one line: at warn when its endpoints were
+at fault, naming any pools it ran out of, and at debug when the error was
+the request's own, such as a revert, unless the failed attempt's line
+already said it gave up. The executor logs a fallback to the
 route's next pool, and skipping or probing a cooling endpoint. Endpoints log
 cooldowns at warn, and probes, recovery and their sockets; pools log changes
 of preference; `ProviderRegistry` logs reachability changes and provider

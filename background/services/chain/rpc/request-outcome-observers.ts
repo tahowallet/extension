@@ -119,13 +119,23 @@ function describeStep(step: NextStep): string {
   }
 }
 
+/** "the standard pool", or "the managed and standard pools". */
+function describePools(names: readonly string[]): string {
+  return names.length === 1
+    ? `the ${names[0]} pool`
+    : `the ${names.slice(0, -1).join(", ")} and ${names.at(-1)} pools`
+}
+
 /**
- * Logs each failover decision: retries and moves at debug, exhausted pools
- * at warn, and a request that fails for good at warn when its endpoints were
- * at fault. Successes aren't logged.
+ * Logs each failover decision at debug, and a request that fails for good
+ * once: at warn when its endpoints were at fault, naming any pools it ran
+ * out of, and at debug when the error was the request's own. Successes
+ * aren't logged.
  */
 export function loggingObserver(): RequestOutcomeObserver {
   const lastTried = new WeakMap<RpcRequest, Endpoint>()
+  const lastStep = new WeakMap<RpcRequest, NextStep>()
+  const exhaustedPools = new WeakMap<RpcRequest, string[]>()
   // The last endpoint tried, or just the chain if none was.
   const whereFailed = (request: RpcRequest) =>
     lastTried.get(request)?.label ?? `chain ${request.chainID}`
@@ -135,22 +145,41 @@ export function loggingObserver(): RequestOutcomeObserver {
       lastTried.set(request, endpoint)
     },
     onEndpointFailure(request, endpoint, error, step) {
+      lastStep.set(request, step)
       logger.debug(
         `${endpoint.label}: ${request.method} failed with ${describeRpcError(error)}; ${describeStep(step)}.`,
       )
     },
-    onAllEndpointsFailed(request, error, pool) {
-      logger.warn(
-        `${whereFailed(request)}: ${request.method} failed on every endpoint in the ${pool.name} pool, ending with ${describeRpcError(error)}.`,
-      )
+    onAllEndpointsFailed(request, _error, pool) {
+      exhaustedPools.set(request, [
+        ...(exhaustedPools.get(request) ?? []),
+        pool.name,
+      ])
     },
     onRequestFailed(request, error) {
+      const where = whereFailed(request)
+      const description = describeRpcError(error)
+      const pools = exhaustedPools.get(request)
+      if (pools !== undefined) {
+        logger.warn(
+          `${where}: giving up on ${request.method} after every endpoint in ${describePools(pools)} failed, ending with ${description}.`,
+        )
+        return
+      }
+
       const atFault =
         error instanceof NoEndpointAvailableError ||
         indicatesEndpointFault(error, request.method)
-      logger[atFault ? "warn" : "debug"](
-        `${whereFailed(request)}: giving up on ${request.method} with ${describeRpcError(error)}.`,
-      )
+      if (atFault) {
+        logger.warn(
+          `${where}: giving up on ${request.method} with ${description}.`,
+        )
+      } else if (lastStep.get(request)?.kind !== "giveUp") {
+        // A give-up step was already logged with the error.
+        logger.debug(
+          `${where}: giving up on ${request.method} with ${description}.`,
+        )
+      }
     },
   }
 }

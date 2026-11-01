@@ -101,19 +101,45 @@ describe("loggingObserver", () => {
     expect(lines(debug)[0]).toContain('url="base-mainnet.g.alchemy.com"')
   })
 
-  it("warns when a pool runs out of endpoints, naming the last one", () => {
+  it("warns once when a request gives up after a pool runs out of endpoints, naming the last one", () => {
     const observer = loggingObserver()
     const last = endpoint()
+    const error = new Error("NETWORK_ERROR")
 
     observer.onAttempt?.(request, last)
     observer.onAllEndpointsFailed?.(
       request,
-      new Error("NETWORK_ERROR"),
+      error,
       new EndpointPool("standard", [last]),
     )
+    expect(warn.called).toBe(false)
+    observer.onRequestFailed?.(request, error)
 
     expect(lines(warn)).toEqual([
-      `${LABEL}: eth_getLogs failed on every endpoint in the standard pool, ending with NETWORK_ERROR.`,
+      `${LABEL}: giving up on eth_getLogs after every endpoint in the standard pool failed, ending with NETWORK_ERROR.`,
+    ])
+  })
+
+  it("names every pool a request ran out of", () => {
+    const observer = loggingObserver()
+    const last = endpoint()
+    const error = new Error("NETWORK_ERROR")
+
+    observer.onAttempt?.(request, last)
+    observer.onAllEndpointsFailed?.(
+      request,
+      error,
+      new EndpointPool("capability:alchemy_", [last]),
+    )
+    observer.onAllEndpointsFailed?.(
+      request,
+      error,
+      new EndpointPool("managed", [last]),
+    )
+    observer.onRequestFailed?.(request, error)
+
+    expect(lines(warn)).toEqual([
+      `${LABEL}: giving up on eth_getLogs after every endpoint in the capability:alchemy_ and managed pools failed, ending with NETWORK_ERROR.`,
     ])
   })
 
@@ -139,6 +165,48 @@ describe("loggingObserver", () => {
     ])
     expect(lines(debug)).toEqual([
       `${LABEL}: giving up on eth_getLogs with execution reverted.`,
+    ])
+  })
+
+  it("doesn't repeat a give-up it already logged with the failed attempt", () => {
+    const observer = loggingObserver()
+    const error = new Error("execution reverted")
+    const last = endpoint()
+
+    observer.onAttempt?.(request, last)
+    observer.onEndpointFailure?.(request, last, error, { kind: "giveUp" })
+    observer.onRequestFailed?.(request, error)
+
+    expect(lines(debug)).toEqual([
+      `${LABEL}: eth_getLogs failed with execution reverted; not retrying, since the error is about the request.`,
+    ])
+  })
+
+  it("logs one warn for a request that exhausts its pool through the executor", async () => {
+    const endpoints = [
+      endpoint(
+        sinon.stub().rejects(new Error("NETWORK_ERROR")),
+        "chain 8453 standard[0] a.example",
+      ),
+      endpoint(
+        sinon.stub().rejects(new Error("NETWORK_ERROR")),
+        "chain 8453 standard[1] b.example",
+      ),
+    ]
+    endpoints.forEach((each) => each.build())
+    const pool = new EndpointPool("standard", endpoints)
+    const executor = new FailoverExecutor([loggingObserver()], async () => {})
+
+    await expect(
+      executor.send(
+        request,
+        [{ pool, policy: standardFailurePolicy }],
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("NETWORK_ERROR")
+
+    expect(lines(warn)).toEqual([
+      "chain 8453 standard[1] b.example: giving up on eth_getLogs after every endpoint in the standard pool failed, ending with NETWORK_ERROR.",
     ])
   })
 
