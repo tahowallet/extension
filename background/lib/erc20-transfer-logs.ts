@@ -5,6 +5,10 @@ import { AddressOnNetwork } from "../accounts"
 import { AssetTransfer, SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
+import {
+  advertisedBlockRangeLimit,
+  suggestedBlockRange,
+} from "../services/chain/rpc/log-query-errors"
 import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
 import logger from "./logger"
 import { normalizeEVMAddress } from "./utils"
@@ -17,37 +21,54 @@ import { normalizeEVMAddress } from "./utils"
 export const ERC20_TRANSFER_TOPIC = ERC20_INTERFACE.getEventTopic("Transfer")
 
 /**
- * The smallest block range this module will request from a provider. When an
- * `eth_getLogs` call fails, the requested range is halved and retried, but
- * never past the point where a half would be smaller than this many blocks;
- * at that point the underlying error is allowed to propagate, as the failure
- * is unlikely to be a range-size problem.
+ * The smallest block range this module halves down to when an endpoint
+ * refuses a range without saying how wide a range it allows. Below twice
+ * this many blocks the error propagates, as it's unlikely to be about the
+ * range.
  *
- * The value has to be low enough that halving can actually get under the
- * range caps real endpoints advertise. Callers scan in 5000-block passes (see
- * `BLOCKS_PER_TRANSFER_LOG_SCAN`), and halving 5000 walks 2500 → 1250 → 625 →
- * 313 → 157; splitting stops once a half would fall below this floor, so a
- * floor of 100 lets chunks reach ~156 blocks. That clears the 500- and
- * 1000-block caps that are common among public endpoints. A floor of 1000
- * stopped at ~1250-block chunks, which such an endpoint rejects every time —
- * and since the caller retries the identical range on the next alarm, those
- * endpoints could never make progress at all.
+ * Callers scan in 5000-block passes (see `BLOCKS_PER_TRANSFER_LOG_SCAN`), and
+ * halving 5000 walks 2500, 1250, 625, 313, 157, which clears the 500- and
+ * 1000-block caps common among public endpoints.
  */
 export const MINIMUM_LOG_BLOCK_RANGE = 100
+
+/** What a provider's endpoints have said about log queries this session. */
+type LogQueryLimits = {
+  /** The widest range they advertised. */
+  maxBlockRange?: number
+}
+
+const limitsByProvider = new WeakMap<object, LogQueryLimits>()
+
+function limitsFor(provider: SerialFallbackProvider): LogQueryLimits {
+  let limits = limitsByProvider.get(provider)
+  if (limits === undefined) {
+    limits = {}
+    limitsByProvider.set(provider, limits)
+  }
+  return limits
+}
+
+/**
+ * The widest block range a provider's endpoints advertised for log queries
+ * this session, if any did.
+ */
+export function learntMaxBlockRange(
+  provider: SerialFallbackProvider,
+): number | undefined {
+  return limitsByProvider.get(provider)?.maxBlockRange
+}
 
 /**
  * Fetch logs matching the passed topics between `fromBlock` and `toBlock`
  * (both inclusive), adapting to providers that reject wide ranges.
  *
- * The full range is attempted first. If the provider throws for any reason---
- * be it an explicit block range limit, a too-many-results error, or a
- * timeout---the range is split in half and each half is fetched sequentially,
- * recursively. Halves are fetched one at a time rather than in parallel to
- * avoid amplifying load on a provider that is already refusing requests.
- *
- * Splitting stops once halving would produce a chunk smaller than
- * {@link MINIMUM_LOG_BLOCK_RANGE} blocks, at which point the provider error
- * propagates to the caller.
+ * A range wider than the provider's endpoints have advertised is fetched in
+ * chunks of that size. When an endpoint refuses a range and says how wide a
+ * range it allows, or suggests one, the range is fetched in chunks of that
+ * size, and an advertised limit is kept for later scans. Otherwise the range
+ * is halved, down to {@link MINIMUM_LOG_BLOCK_RANGE}. Chunks are fetched one
+ * at a time so a provider already refusing requests isn't sent more.
  */
 async function getLogsWithAdaptiveRange(
   provider: SerialFallbackProvider,
@@ -55,10 +76,49 @@ async function getLogsWithAdaptiveRange(
   fromBlock: number,
   toBlock: number,
 ): Promise<Log[]> {
+  const limits = limitsFor(provider)
+  const blockCount = toBlock - fromBlock + 1
+
+  const inChunksOf = async (size: number): Promise<Log[]> => {
+    const logs: Log[] = []
+    for (let start = fromBlock; start <= toBlock; start += size) {
+      // oxlint-disable-next-line no-await-in-loop
+      const chunk = await getLogsWithAdaptiveRange(
+        provider,
+        topics,
+        start,
+        Math.min(start + size - 1, toBlock),
+      )
+      logs.push(...chunk)
+    }
+    return logs
+  }
+
+  if (limits.maxBlockRange !== undefined && blockCount > limits.maxBlockRange) {
+    return inChunksOf(limits.maxBlockRange)
+  }
+
   try {
     return await provider.getLogs({ topics, fromBlock, toBlock })
   } catch (error) {
-    const blockCount = toBlock - fromBlock + 1
+    const advertised = advertisedBlockRangeLimit(error)
+    if (advertised !== undefined && advertised < blockCount) {
+      if (
+        limits.maxBlockRange === undefined ||
+        advertised < limits.maxBlockRange
+      ) {
+        limits.maxBlockRange = advertised
+        logger.debug(
+          `chain ${provider.chainID}: eth_getLogs allows at most ${advertised} blocks; using that from now on.`,
+        )
+      }
+      return inChunksOf(advertised)
+    }
+
+    const suggested = suggestedBlockRange(error)
+    if (suggested !== undefined && suggested < blockCount) {
+      return inChunksOf(suggested)
+    }
 
     // Only split while both halves would stay at or above the minimum chunk
     // size; below that, treat the error as a real failure.
@@ -66,33 +126,10 @@ async function getLogsWithAdaptiveRange(
       throw error
     }
 
-    const midBlock = fromBlock + Math.floor((toBlock - fromBlock) / 2)
-
     logger.debug(
-      "Failed to fetch ERC-20 transfer logs on chain",
-      provider.chainID,
-      "for block range",
-      fromBlock,
-      "-",
-      toBlock,
-      "; splitting range in half and retrying.",
-      error,
+      `chain ${provider.chainID}: eth_getLogs failed for blocks ${fromBlock} to ${toBlock}; halving the range.`,
     )
-
-    const firstHalf = await getLogsWithAdaptiveRange(
-      provider,
-      topics,
-      fromBlock,
-      midBlock,
-    )
-    const secondHalf = await getLogsWithAdaptiveRange(
-      provider,
-      topics,
-      midBlock + 1,
-      toBlock,
-    )
-
-    return [...firstHalf, ...secondHalf]
+    return inChunksOf(Math.ceil(blockCount / 2))
   }
 }
 

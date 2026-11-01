@@ -1,4 +1,5 @@
 import { getErrorType } from "../errors"
+import { isBlockRangeLimitError } from "./log-query-errors"
 
 /** What a request should do after an attempt on an endpoint fails. */
 export type NextStep =
@@ -63,6 +64,14 @@ export function indicatesOutage(error: unknown, method: string): boolean {
 }
 
 /**
+ * Refusals of what a request asked for, such as a log range wider than the
+ * endpoint allows, whatever status they come with.
+ */
+function refusesTheRequest(error: unknown): boolean {
+  return isBlockRangeLimitError(error)
+}
+
+/**
  * True for errors that are the endpoint's fault, which count toward its
  * cooldown. Reverts, client errors and other errors about the request don't.
  */
@@ -70,6 +79,9 @@ export function indicatesEndpointFault(
   error: unknown,
   method: string,
 ): boolean {
+  if (refusesTheRequest(error)) {
+    return false
+  }
   if (indicatesOutage(error, method)) {
     return true
   }
@@ -89,6 +101,9 @@ export function indicatesEndpointFault(
  */
 export const standardFailurePolicy: FailurePolicy = {
   nextStepAfter(error, method, attempt) {
+    if (refusesTheRequest(error)) {
+      return { kind: "giveUp" }
+    }
     if (indicatesOutage(error, method)) {
       return { kind: "tryNextEndpoint" }
     }

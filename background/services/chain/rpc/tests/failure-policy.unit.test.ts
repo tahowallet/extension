@@ -78,6 +78,11 @@ describe("standardFailurePolicy", () => {
     ],
     // Anything else gives up.
     ["a revert", new Error("execution reverted"), "giveUp"],
+    [
+      "a 5xx refusing a log range",
+      withStatus("bad response: block range too large", 503),
+      "giveUp",
+    ],
     ["a batch limit", new Error("batch too large"), "giveUp"],
     ["a string", "something odd", "giveUp"],
     ["undefined", undefined, "giveUp"],
@@ -183,6 +188,11 @@ describe("indicatesEndpointFault", () => {
     ["a revert", new Error("execution reverted"), false],
     ["a nonce error", new Error("nonce too low"), false],
     ["insufficient funds", new Error("insufficient funds for gas"), false],
+    [
+      "a 5xx refusing a log range",
+      withStatus("bad response: exceed maximum block range: 5000", 502),
+      false,
+    ],
   ])("says %s is the endpoint's fault: %p", (_, error, expected) => {
     expect(indicatesEndpointFault(error, "eth_call")).toBe(expected)
   })

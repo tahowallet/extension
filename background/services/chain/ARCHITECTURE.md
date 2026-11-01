@@ -289,6 +289,14 @@ endpoint refuses a batch as too large it halves the batch size, and resends
 only the refused requests, so answered ones, broadcasts included, aren't sent
 twice.
 
+Transfer scans without Alchemy's API (`lib/erc20-transfer-logs.ts`) fit
+their `eth_getLogs` ranges to the endpoint. An error that names the widest
+range allowed (`rpc/log-query-errors.ts`) splits the range into chunks of
+that size, and the provider remembers it for the rest of the session, so
+later scans start there. A suggested range is used for that request only.
+Otherwise a refused range is halved, down to 100 blocks. Range refusals are
+about the request, so they aren't endpoint faults.
+
 ### Logging and errors
 
 Each endpoint has a label naming its chain, kind, place in the walk and

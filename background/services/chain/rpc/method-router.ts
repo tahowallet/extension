@@ -33,7 +33,8 @@ export const MANAGED_ENDPOINT_METHODS = {
     "eth_subscribe",
     // To be safe when setting up a transaction.
     "eth_estimateGas",
-    // Avoids eth_getLogs block range limits.
+    // Boar caps a query at 10000 blocks; transfer scans learn the cap from
+    // its errors and fit their ranges to it.
     "eth_getLogs",
     // Prefer Boar for simulation where available.
     "eth_simulateV1",
