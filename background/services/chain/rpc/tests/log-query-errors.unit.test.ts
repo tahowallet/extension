@@ -1,7 +1,9 @@
 import { describe, expect, it } from "bun:test"
 import {
   advertisedBlockRangeLimit,
+  earliestAvailableBlock,
   isBlockRangeLimitError,
+  isPrunedHistoryError,
   suggestedBlockRange,
 } from "../log-query-errors"
 
@@ -95,5 +97,48 @@ describe("isBlockRangeLimitError", () => {
     ["NETWORK_ERROR", false],
   ])("says %p refuses a range: %p", (message, expected) => {
     expect(isBlockRangeLimitError(new Error(message))).toBe(expected)
+  })
+})
+
+describe("isPrunedHistoryError", () => {
+  it.each<[string, unknown, boolean]>([
+    [
+      "Boar's code 4444",
+      Object.assign(new Error("something"), { code: 4444 }),
+      true,
+    ],
+    [
+      "a wrapped code 4444",
+      { message: "processing response error", error: { code: 4444 } },
+      true,
+    ],
+    [
+      "Boar's wording",
+      new Error(
+        "pruned history unavailable: requested 0, earliest available 105000000",
+      ),
+      true,
+    ],
+    ["geth's missing state", new Error("missing trie node abc123"), true],
+    ["an old header", new Error("header not found"), true],
+    ["pruned history", new Error("history has been pruned"), true],
+    ["a revert", new Error("execution reverted"), false],
+    ["a range refusal", new Error("block range too wide"), false],
+  ])("says %s is pruned history: %p", (_, error, expected) => {
+    expect(isPrunedHistoryError(error)).toBe(expected)
+  })
+})
+
+describe("earliestAvailableBlock", () => {
+  it.each<[string, number | undefined]>([
+    [
+      "pruned history unavailable: requested 0, earliest available 105000000",
+      105_000_000,
+    ],
+    ["earliest available block: 0x64", 100],
+    ["first available block is 2000", 2_000],
+    ["missing trie node abc123", undefined],
+  ])("reads %p as %p", (message, expected) => {
+    expect(earliestAvailableBlock(new Error(message))).toBe(expected)
   })
 })

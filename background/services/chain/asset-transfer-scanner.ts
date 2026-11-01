@@ -1,4 +1,5 @@
 import logger from "../../lib/logger"
+import { LogHistoryUnavailableError } from "./rpc/log-query-errors"
 import type { AddressOnNetwork } from "../../accounts"
 import type { AssetTransfer } from "../../assets"
 import type { EVMNetwork } from "../../networks"
@@ -62,13 +63,22 @@ export type AssetTransferScannerDependencies = {
   ) => void
 }
 
-/** Logs a scan that failed, once, where the scan is handled. */
+/**
+ * Logs a scan that failed, once, where the scan is handled. History the
+ * endpoints no longer keep is where a backwards scan stops, not a failure.
+ */
 function logScanFailure(
   kind: "recent" | "historic",
   { address, network }: AddressOnNetwork,
   range: { startBlock: bigint; endBlock: bigint } | undefined,
   error: unknown,
 ): void {
+  if (error instanceof LogHistoryUnavailableError) {
+    logger.debug(
+      `chain ${network.chainID}: no logs are kept before block ${error.earliestBlock}, so ${kind} asset transfers stop there.`,
+    )
+    return
+  }
   const blocks =
     range === undefined
       ? ""

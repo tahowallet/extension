@@ -5,6 +5,7 @@ import type { AssetTransfer } from "../../../assets"
 import logger from "../../../lib/logger"
 import { createAddressOnNetwork } from "../../../tests/factories"
 import AssetTransferScanner from "../asset-transfer-scanner"
+import { LogHistoryUnavailableError } from "../rpc/log-query-errors"
 import type AssetDataHelper from "../asset-data-helper"
 import type { ChainDatabase } from "../db"
 
@@ -206,6 +207,29 @@ describe("AssetTransferScanner", () => {
           "chain 1: couldn't load historic asset transfers in blocks 795000 to 800000; trying again later.",
           { address: account.address },
           error,
+        ],
+      ])
+    })
+
+    it("stops quietly at history the endpoints no longer keep", async () => {
+      const warn = sinon.stub(logger, "warn")
+      const debug = sinon.stub(logger, "debug")
+      const { scanner, assetData } = harness({
+        supportsAlchemy: false,
+        oldestLookup: 800_000n,
+      })
+      assetData.getAssetTransfers.rejects(
+        new LogHistoryUnavailableError("1", 900_000),
+      )
+
+      await scanner.scanHistoricTransfersFor(
+        createAddressOnNetwork({ network: ETHEREUM }),
+      )
+
+      expect(warn.called).toBe(false)
+      expect(debug.args).toEqual([
+        [
+          "chain 1: no logs are kept before block 900000, so historic asset transfers stop there.",
         ],
       ])
     })

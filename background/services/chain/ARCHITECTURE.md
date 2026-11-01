@@ -294,8 +294,14 @@ their `eth_getLogs` ranges to the endpoint. An error that names the widest
 range allowed (`rpc/log-query-errors.ts`) splits the range into chunks of
 that size, and the provider remembers it for the rest of the session, so
 later scans start there. A suggested range is used for that request only.
-Otherwise a refused range is halved, down to 100 blocks. Range refusals are
-about the request, so they aren't endpoint faults.
+Otherwise a refused range is halved, down to 100 blocks. Pruned history,
+such as Boar's code 4444 "earliest available N", sets a floor the same way:
+the range starts at the earliest block kept, later scans don't ask below
+it, and a range entirely below it is `LogHistoryUnavailableError`, where
+`AssetTransferScanner` stops the backwards scan. Without an earliest block,
+the range asked for is the floor. Range refusals and pruned history are
+about the request, so they aren't endpoint faults; pruned history moves on
+to the next endpoint, which may keep more.
 
 ### Logging and errors
 

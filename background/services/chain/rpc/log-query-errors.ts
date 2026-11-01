@@ -1,4 +1,7 @@
-/** Recognises the errors endpoints give for log queries they won't serve. */
+/**
+ * Recognises the errors endpoints give for queries they won't serve: a log
+ * range wider than they allow, and blocks older than they keep.
+ */
 
 // A block count such as 10000, 10,000 or 2K.
 const COUNT = String.raw`(\d[\d,_]*(?:\.\d+)?\s?[kK]?)`
@@ -102,4 +105,59 @@ export function isBlockRangeLimitError(error: unknown): boolean {
     advertisedBlockRangeLimit(error) !== undefined ||
     RANGE_COMPLAINT.test(errorText(error))
   )
+}
+
+/**
+ * Thrown for a range entirely before the earliest block a chain's endpoints
+ * keep, without asking them again.
+ */
+export class LogHistoryUnavailableError extends Error {
+  constructor(
+    readonly chainID: string,
+    readonly earliestBlock: number,
+  ) {
+    super(`chain ${chainID} keeps no logs before block ${earliestBlock}`)
+    this.name = "LogHistoryUnavailableError"
+  }
+}
+
+/** The JSON-RPC code Boar and others use for pruned history. */
+const PRUNED_HISTORY_CODE = 4444
+
+const PRUNED_HISTORY =
+  /pruned|earliest available|missing trie node|header not found|history (?:has been |is )?(?:pruned|unavailable)/i
+
+const EARLIEST_BLOCK =
+  /(?:earliest|first|oldest) available(?: block)?(?: is)?:? ?(0x[0-9a-f]+|\d+)/i
+
+function hasCode(error: unknown, code: number): boolean {
+  if (typeof error !== "object" || error === null) {
+    return false
+  }
+  const { code: own, error: inner } = error as {
+    code?: unknown
+    error?: unknown
+  }
+  return own === code || hasCode(inner, code)
+}
+
+/**
+ * Whether an error says the blocks asked for are older than the endpoint
+ * keeps, as in "pruned history unavailable", "missing trie node" or "header
+ * not found".
+ */
+export function isPrunedHistoryError(error: unknown): boolean {
+  return (
+    hasCode(error, PRUNED_HISTORY_CODE) || PRUNED_HISTORY.test(errorText(error))
+  )
+}
+
+/** The earliest block a pruned-history error says is available, if any. */
+export function earliestAvailableBlock(error: unknown): number | undefined {
+  const match = EARLIEST_BLOCK.exec(errorText(error))
+  if (match === null) {
+    return undefined
+  }
+  const block = Number(match[1])
+  return Number.isSafeInteger(block) && block >= 0 ? block : undefined
 }

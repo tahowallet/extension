@@ -7,6 +7,9 @@ import { EVMLog } from "../networks"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import {
   advertisedBlockRangeLimit,
+  earliestAvailableBlock,
+  isPrunedHistoryError,
+  LogHistoryUnavailableError,
   suggestedBlockRange,
 } from "../services/chain/rpc/log-query-errors"
 import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
@@ -36,6 +39,8 @@ export const MINIMUM_LOG_BLOCK_RANGE = 100
 type LogQueryLimits = {
   /** The widest range they advertised. */
   maxBlockRange?: number
+  /** The earliest block they still keep logs for. */
+  earliestBlock?: number
 }
 
 const limitsByProvider = new WeakMap<object, LogQueryLimits>()
@@ -60,6 +65,16 @@ export function learntMaxBlockRange(
 }
 
 /**
+ * The earliest block a provider's endpoints said they keep logs for this
+ * session, if any did.
+ */
+export function learntEarliestLogBlock(
+  provider: SerialFallbackProvider,
+): number | undefined {
+  return limitsByProvider.get(provider)?.earliestBlock
+}
+
+/**
  * Fetch logs matching the passed topics between `fromBlock` and `toBlock`
  * (both inclusive), adapting to providers that reject wide ranges.
  *
@@ -69,6 +84,11 @@ export function learntMaxBlockRange(
  * size, and an advertised limit is kept for later scans. Otherwise the range
  * is halved, down to {@link MINIMUM_LOG_BLOCK_RANGE}. Chunks are fetched one
  * at a time so a provider already refusing requests isn't sent more.
+ *
+ * Pruned history works the same way: the earliest block an endpoint keeps is
+ * remembered, the range starts there, and a range entirely before it throws
+ * {@link LogHistoryUnavailableError}. When the endpoint doesn't say which
+ * block is earliest, the range asked for is taken as too old.
  */
 async function getLogsWithAdaptiveRange(
   provider: SerialFallbackProvider,
@@ -77,19 +97,41 @@ async function getLogsWithAdaptiveRange(
   toBlock: number,
 ): Promise<Log[]> {
   const limits = limitsFor(provider)
+  const { earliestBlock } = limits
+  if (earliestBlock !== undefined && fromBlock < earliestBlock) {
+    if (toBlock < earliestBlock) {
+      throw new LogHistoryUnavailableError(provider.chainID, earliestBlock)
+    }
+    return getLogsWithAdaptiveRange(provider, topics, earliestBlock, toBlock)
+  }
+
   const blockCount = toBlock - fromBlock + 1
 
   const inChunksOf = async (size: number): Promise<Log[]> => {
     const logs: Log[] = []
+    let unavailable: LogHistoryUnavailableError | undefined
+    let served = false
     for (let start = fromBlock; start <= toBlock; start += size) {
-      // oxlint-disable-next-line no-await-in-loop
-      const chunk = await getLogsWithAdaptiveRange(
-        provider,
-        topics,
-        start,
-        Math.min(start + size - 1, toBlock),
-      )
-      logs.push(...chunk)
+      try {
+        // oxlint-disable-next-line no-await-in-loop
+        const chunk = await getLogsWithAdaptiveRange(
+          provider,
+          topics,
+          start,
+          Math.min(start + size - 1, toBlock),
+        )
+        logs.push(...chunk)
+        served = true
+      } catch (error) {
+        // Later chunks may be recent enough.
+        if (!(error instanceof LogHistoryUnavailableError)) {
+          throw error
+        }
+        unavailable = error
+      }
+    }
+    if (unavailable !== undefined && !served) {
+      throw unavailable
     }
     return logs
   }
@@ -101,6 +143,19 @@ async function getLogsWithAdaptiveRange(
   try {
     return await provider.getLogs({ topics, fromBlock, toBlock })
   } catch (error) {
+    if (isPrunedHistoryError(error)) {
+      const earliest = earliestAvailableBlock(error) ?? toBlock + 1
+      // An earliest block within what was asked for can't explain the error.
+      if (earliest <= fromBlock) {
+        throw error
+      }
+      limits.earliestBlock = Math.max(limits.earliestBlock ?? 0, earliest)
+      logger.debug(
+        `chain ${provider.chainID}: eth_getLogs keeps no logs before block ${limits.earliestBlock}; starting there from now on.`,
+      )
+      return getLogsWithAdaptiveRange(provider, topics, fromBlock, toBlock)
+    }
+
     const advertised = advertisedBlockRangeLimit(error)
     if (advertised !== undefined && advertised < blockCount) {
       if (

@@ -83,6 +83,22 @@ describe("standardFailurePolicy", () => {
       withStatus("bad response: block range too large", 503),
       "giveUp",
     ],
+    // Another endpoint may keep older blocks.
+    [
+      "pruned history",
+      Object.assign(
+        new Error(
+          "pruned history unavailable: requested 0, earliest available 105000000",
+        ),
+        { code: 4444 },
+      ),
+      "tryNextEndpoint",
+    ],
+    [
+      "a 5xx missing trie node",
+      withStatus("bad response: missing trie node", 502),
+      "tryNextEndpoint",
+    ],
     ["a batch limit", new Error("batch too large"), "giveUp"],
     ["a string", "something odd", "giveUp"],
     ["undefined", undefined, "giveUp"],
@@ -191,6 +207,16 @@ describe("indicatesEndpointFault", () => {
     [
       "a 5xx refusing a log range",
       withStatus("bad response: exceed maximum block range: 5000", 502),
+      false,
+    ],
+    [
+      "a 5xx for pruned history",
+      withStatus("bad response: header not found", 503),
+      false,
+    ],
+    [
+      "a pruned-history timeout",
+      new Error("TIMEOUT: history has been pruned"),
       false,
     ],
   ])("says %s is the endpoint's fault: %p", (_, error, expected) => {

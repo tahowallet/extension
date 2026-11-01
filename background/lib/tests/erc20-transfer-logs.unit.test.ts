@@ -4,9 +4,11 @@ import { BigNumber, utils } from "ethers"
 import { AddressOnNetwork } from "../../accounts"
 import { ETHEREUM } from "../../constants"
 import type SerialFallbackProvider from "../../services/chain/serial-fallback-provider"
+import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-errors"
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
+  learntEarliestLogBlock,
   learntMaxBlockRange,
   MINIMUM_LOG_BLOCK_RANGE,
 } from "../erc20-transfer-logs"
@@ -385,6 +387,115 @@ describe("getAssetTransfersViaLogs", () => {
         [2_000, 2_999],
       ])
       expect(learntMaxBlockRange(provider)).toBeUndefined()
+    })
+  })
+
+  describe("with an endpoint that has pruned old history", () => {
+    const PRUNED_ERROR = Object.assign(
+      new Error(
+        "pruned history unavailable: requested 0, earliest available 105000000",
+      ),
+      { code: 4444 },
+    )
+    const prunedProvider = (error: unknown = PRUNED_ERROR) => {
+      const stub = stubProvider()
+      const ranges: [number, number][] = []
+      stub.getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          ranges.push([fromBlock, toBlock])
+          return fromBlock < 105_000_000
+            ? Promise.reject(error)
+            : Promise.resolve([])
+        },
+      )
+      return { ...stub, ranges }
+    }
+
+    it("retries from the earliest block it keeps", async () => {
+      const { provider, ranges } = prunedProvider()
+
+      await expect(
+        getAssetTransfersViaLogs(
+          provider,
+          ADDRESS_ON_NETWORK,
+          0,
+          105_002_000,
+          true,
+        ),
+      ).resolves.toEqual([])
+
+      expect(ranges).toEqual([
+        [0, 105_002_000],
+        [105_000_000, 105_002_000],
+      ])
+      expect(learntEarliestLogBlock(provider)).toBe(105_000_000)
+    })
+
+    it("doesn't ask below that block again", async () => {
+      const { provider, ranges } = prunedProvider()
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        105_002_000,
+        true,
+      )
+      ranges.length = 0
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        104_999_000,
+        105_001_000,
+        true,
+      )
+
+      expect(ranges).toEqual([[105_000_000, 105_001_000]])
+    })
+
+    it("takes the range asked for as too old when no earliest block is given", async () => {
+      const { provider, ranges } = prunedProvider(
+        new Error("missing trie node 1a2b"),
+      )
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+
+      expect(ranges).toEqual([[0, 4_999]])
+      expect(learntEarliestLogBlock(provider)).toBe(5_000)
+    })
+
+    it("fetches the chunks after the earliest block when chunking a range", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          if (toBlock - fromBlock + 1 > 10_000) {
+            return Promise.reject(
+              new Error("try a block range of at most 10000 blocks"),
+            )
+          }
+          return fromBlock < 15_000
+            ? Promise.reject(new Error("header not found"))
+            : Promise.resolve([transferLog({ txHash: `0x${fromBlock}` })])
+        },
+      )
+
+      const transfers = await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        29_999,
+        true,
+      )
+
+      expect(transfers.map(({ txHash }) => txHash)).toEqual(["0x20000"])
     })
   })
 

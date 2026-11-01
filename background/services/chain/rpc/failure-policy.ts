@@ -1,5 +1,8 @@
 import { getErrorType } from "../errors"
-import { isBlockRangeLimitError } from "./log-query-errors"
+import {
+  isBlockRangeLimitError,
+  isPrunedHistoryError,
+} from "./log-query-errors"
 
 /** What a request should do after an attempt on an endpoint fails. */
 export type NextStep =
@@ -65,10 +68,11 @@ export function indicatesOutage(error: unknown, method: string): boolean {
 
 /**
  * Refusals of what a request asked for, such as a log range wider than the
- * endpoint allows, whatever status they come with.
+ * endpoint allows or blocks older than it keeps, whatever status they come
+ * with.
  */
 function refusesTheRequest(error: unknown): boolean {
-  return isBlockRangeLimitError(error)
+  return isBlockRangeLimitError(error) || isPrunedHistoryError(error)
 }
 
 /**
@@ -101,6 +105,10 @@ export function indicatesEndpointFault(
  */
 export const standardFailurePolicy: FailurePolicy = {
   nextStepAfter(error, method, attempt) {
+    // Another endpoint may keep older blocks.
+    if (isPrunedHistoryError(error)) {
+      return { kind: "tryNextEndpoint" }
+    }
     if (refusesTheRequest(error)) {
       return { kind: "giveUp" }
     }
