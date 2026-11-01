@@ -223,10 +223,7 @@ export default function SharedSelect(props: Props): ReactElement {
             border-radius: 5px;
             overflow-y: auto;
             color: var(--green-60);
-            box-shadow:
-              0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
+            box-shadow: var(--shadow-menu);
             max-height: 0;
             height: fit-content;
             opacity: 0;

@@ -61,7 +61,7 @@ export default function SharedToggleButton({
             background-color: ${offColor ?? "var(--green-40)"};
             transition: 0.2s ease-in-out;
 
-            box-shadow: 0px 1px 1px rgba(0, 20, 19, 0.3);
+            box-shadow: var(--shadow-knob);
           }
           .is_active .bulb {
             transform: translateX(16px);

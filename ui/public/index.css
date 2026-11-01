@@ -43,6 +43,41 @@
   --shadow:
     0px 16px 16px rgba(0, 33, 30, 0.14), 0px 6px 8px rgba(0, 33, 30, 0.24),
     0px 2px 4px rgba(0, 33, 30, 0.34);
+  /* Modals, snackbars and other surfaces above the page. */
+  --shadow-raised:
+    0px 24px 24px rgba(0, 20, 19, 0.14), 0px 14px 16px rgba(0, 20, 19, 0.24),
+    0px 10px 12px rgba(0, 20, 19, 0.34);
+  /* Small cards that sit just off the page. */
+  --shadow-subtle:
+    0px 8px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.12),
+    0px 2px 2px rgba(7, 17, 17, 0.22);
+
+  /*
+   * Shadows by role. Dark grew one per component; light draws each from the
+   * three elevations above.
+   */
+  --shadow-menu:
+    0px 16px 16px rgba(0, 20, 19, 0.14), 0px 6px 8px rgba(0, 20, 19, 0.24),
+    0px 2px 4px rgba(0, 20, 19, 0.34);
+  --shadow-card:
+    0px 16px 16px rgba(7, 17, 17, 0.3), 0px 6px 8px rgba(7, 17, 17, 0.24),
+    0px 2px 4px rgba(7, 17, 17, 0.34);
+  --shadow-floating:
+    0px 10px 12px 0px rgba(7, 17, 17, 0.34),
+    0px 14px 16px 0px rgba(7, 17, 17, 0.24),
+    0px 24px 24px 0px rgba(7, 17, 17, 0.14);
+  --shadow-lifted:
+    0px 24px 24px rgba(0, 20, 19, 0.04), 0px 14px 16px rgba(0, 20, 19, 0.14),
+    0px 10px 12px rgba(0, 20, 19, 0.54);
+  --shadow-lifted-flat: 0px 10px 12px 0px #0014138a;
+  --shadow-heavy:
+    0 3px 7px rgb(0 20 19 / 54%), 0 14px 16px rgb(0 20 19 / 54%),
+    0 32px 32px rgb(0 20 19 / 20%);
+  /* Bars pinned to the top or bottom of the popup. */
+  --shadow-edge: 0 0 5px rgba(0, 20, 19, 0.5);
+  /* A toggle's knob. */
+  --shadow-knob: 0px 1px 1px rgba(0, 20, 19, 0.3);
+  --text-shadow-balance: 0 2px 2px #072926;
 
   /*
    * The palette above is named after its dark-theme values, but components
@@ -156,9 +191,26 @@
   --trading-outgoing: #d6447a;
   --trading-incoming: #0c9a89;
 
+  /* Figma's elevation, then the same scaled up and down. */
   --shadow:
-    0px 16px 16px rgba(0, 33, 30, 0.06), 0px 6px 8px rgba(0, 33, 30, 0.08),
-    0px 2px 4px rgba(0, 33, 30, 0.1);
+    0px 16px 16px rgba(0, 37, 34, 0.04), 0px 6px 8px rgba(0, 37, 34, 0.14),
+    0px 2px 4px rgba(0, 37, 34, 0.24);
+  --shadow-raised:
+    0px 24px 24px rgba(0, 37, 34, 0.04), 0px 14px 16px rgba(0, 37, 34, 0.14),
+    0px 10px 12px rgba(0, 37, 34, 0.24);
+  --shadow-subtle:
+    0px 8px 8px rgba(0, 37, 34, 0.04), 0px 3px 4px rgba(0, 37, 34, 0.14),
+    0px 1px 2px rgba(0, 37, 34, 0.24);
+
+  --shadow-menu: var(--shadow);
+  --shadow-card: var(--shadow);
+  --shadow-floating: var(--shadow-raised);
+  --shadow-lifted: var(--shadow-raised);
+  --shadow-lifted-flat: var(--shadow-raised);
+  --shadow-heavy: var(--shadow-raised);
+  --shadow-edge: 0px 0px 8px rgba(0, 37, 34, 0.08);
+  --shadow-knob: 0px 1px 2px rgba(0, 37, 34, 0.24);
+  --text-shadow-balance: none;
 
   --text-strong: #002522;
   --text-bright: #002522;

@@ -30,10 +30,7 @@ export default function Clock(): ReactElement {
           position: relative;
           width: 52px;
           text-align: center;
-          box-shadow:
-            0px 24px 24px rgba(0, 20, 19, 0.04),
-            0px 14px 16px rgba(0, 20, 19, 0.14),
-            0px 10px 12px rgba(0, 20, 19, 0.54);
+          box-shadow: var(--shadow-lifted);
           border-radius: 4px;
           background: var(--clock-gradient);
         }

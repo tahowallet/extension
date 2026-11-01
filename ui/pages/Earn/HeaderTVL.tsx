@@ -32,7 +32,7 @@ export default function HeaderTVL({
         }
         .header_balance {
           display: flex;
-          text-shadow: 0 2px 2px #072926;
+          text-shadow: var(--text-shadow-balance);
           color: var(--text-strong);
           font-size: 28px;
           font-weight: 500;

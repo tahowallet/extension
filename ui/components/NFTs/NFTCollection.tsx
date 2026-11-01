@@ -192,10 +192,7 @@ export default function NFTCollection(props: {
           margin: 8px -16px;
           padding: 8px 16px 6px;
           background: var(--green-120);
-          box-shadow:
-            0 3px 7px rgb(0 20 19 / 54%),
-            0 14px 16px rgb(0 20 19 / 54%),
-            0 32px 32px rgb(0 20 19 / 20%);
+          box-shadow: var(--shadow-heavy);
           border-radius: 16px;
           display: flex;
           flex-wrap: wrap;
