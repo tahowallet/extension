@@ -8,6 +8,7 @@ export type FreshCollectionsMap = {
 }
 
 type Preferences = {
+  /** When SimpleHash transfers were last looked up; no longer used. */
   transfersLookupTimestamp: number | undefined
   freshCollections: FreshCollectionsMap
 }
@@ -287,12 +288,6 @@ export class NFTsDatabase extends Dexie {
       .delete()
 
     await nftsToRemove.delete()
-  }
-
-  async setTransfersLookupTimestamp(
-    transfersLookupTimestamp: number,
-  ): Promise<void> {
-    await this.preferences.toCollection().modify({ transfersLookupTimestamp })
   }
 
   async setFreshCollections(

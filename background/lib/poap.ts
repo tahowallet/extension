@@ -90,13 +90,13 @@ export async function getPoapNFTs(
 
     return {
       nfts: result.map((nft) => poapNFTModelToNFT(nft, address)),
-      nextPageURL: null,
+      nextPage: null,
     }
   } catch (err) {
     logger.error("Errr retrieving NFTs", err)
   }
 
-  return { nfts: [], nextPageURL: null }
+  return { nfts: [], nextPage: null }
 }
 
 export async function getPoapCollections(
