@@ -108,6 +108,101 @@
   color-scheme: dark;
 }
 
+/*
+ * Light inverts the green ramp by role: the page is warm off-white, raised
+ * surfaces are lighter still, and the text greens darken as they gain
+ * emphasis. Values from Figma's "UI - Light" where it has them.
+ */
+[data-theme="light"] {
+  --hunter-green: #faf8f1;
+  --green-120: #efeadd;
+  --green-95: #fefefc;
+  --green-80: #e3ded1;
+  --green-60: #8a9b99;
+  --green-40: #667c7a;
+  --green-20: #33514e;
+  --green-5: #002522;
+  --white: #002522;
+
+  --trophy-gold: #d08e39;
+  --gold-80: #bd7d2b;
+  --gold-60: #c98a3a;
+  --gold-40: #b57017;
+  --gold-20: #9a5f12;
+  --gold-5: #7a4a0d;
+
+  --error: #d9363c;
+  --error-80: #a8282e;
+  --error-20: #fbe3e3;
+
+  --success: #139a62;
+  --success-20: #dbf5e9;
+
+  --attention: #c4920f;
+  --attention-20: #fdf1cf;
+
+  --info: #1a9cc4;
+  --info-20: #dff5fc;
+
+  --link: #0a8fb8;
+
+  --trading-outgoing: #d6447a;
+  --trading-incoming: #0c9a89;
+
+  --shadow:
+    0px 16px 16px rgba(0, 33, 30, 0.06), 0px 6px 8px rgba(0, 33, 30, 0.08),
+    0px 2px 4px rgba(0, 33, 30, 0.1);
+
+  --text-strong: #002522;
+  --text-bright: #002522;
+
+  --grey-green-80: #dcdfd8;
+  --grey-green-70: #b8c4c2;
+  --grey-green-60: #b7c3c0;
+  --grey-green-50: #5f7674;
+  --grey-green-40: #667c7a;
+  --grey-green-30: #5f7c79;
+  --grey-green-20: #47615e;
+  --grey-green-10: #3d5653;
+
+  --success-alt: #139a62;
+  --error-alt: #c62f35;
+  --price-impact: #c81d5b;
+
+  --overlay: rgba(0, 40, 37, 0.45);
+  --overlay-raised: rgba(254, 254, 252, 0.8);
+  --overlay-soft: rgba(0, 40, 37, 0.12);
+  --overlay-tab: #00282533;
+
+  --tab-background: #f3f0e6;
+  --balance-header-gradient: linear-gradient(
+    250.02deg,
+    #fefefc 0%,
+    #f5f1e6 66.93%
+  );
+  --pool-card-gradient: linear-gradient(180deg, #fefefc 0%, #f3efe4 100%);
+  --clock-gradient: linear-gradient(
+    180deg,
+    #fefefc 0%,
+    #f3efe4 50%,
+    #fefefc 50%,
+    #f3efe4 100%
+  );
+
+  --action-tile: var(--trophy-gold);
+  --action-tile-hover: var(--gold-80);
+
+  --surface-deep: #fefefc;
+  --divider-black: #e3ded1;
+
+  color-scheme: light;
+}
+
+/* Subtrees pinned to a theme, such as artwork cards, take its text colour. */
+[data-theme] {
+  color: var(--white);
+}
+
 ::-webkit-scrollbar {
   width: 0px;
   background: transparent;

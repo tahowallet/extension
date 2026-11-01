@@ -114,6 +114,20 @@ function BrowserTabContainer({
           );
           opacity: 0.45;
         }
+
+        :global([data-theme="light"]) .gradient-1,
+        :global([data-theme="light"]) .gradient-3 {
+          opacity: 0.08;
+        }
+        :global([data-theme="light"]) .gradient-2 {
+          background: radial-gradient(
+            circle,
+            #fefefc 0%,
+            #f5f1e6 50%,
+            #ece6d6 100%
+          );
+          background-size: 200% 200%;
+        }
       `}</style>
     </>
   )
