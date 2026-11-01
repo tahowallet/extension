@@ -18,6 +18,11 @@ import {
   FilterCampaignsById,
 } from "../services/campaign/types"
 
+/** The UI's appearance; "system" follows the browser's colour scheme. */
+export type ThemePreference = "light" | "dark" | "system"
+
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = "dark"
+
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
@@ -29,6 +34,7 @@ export const defaultSettings = {
   hideBanners: false,
   useFlashbots: false,
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
+  theme: DEFAULT_THEME_PREFERENCE,
   campaigns: {},
 }
 
@@ -49,6 +55,7 @@ export type UIState = {
     hideBanners: boolean
     useFlashbots: boolean
     autoLockInterval: UNIXTime
+    theme: ThemePreference
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -109,6 +116,12 @@ const uiSlice = createSlice({
       { payload: shouldHideDust }: { payload: boolean },
     ): void => {
       immerState.settings.hideDust = shouldHideDust
+    },
+    setThemePreference: (
+      immerState,
+      { payload: theme }: { payload: ThemePreference },
+    ): void => {
+      immerState.settings.theme = theme
     },
     toggleTestNetworks: (
       immerState,
@@ -259,6 +272,7 @@ export const {
   setShowingActivityDetail,
   initializationLoadingTimeHitLimit,
   toggleHideDust,
+  setThemePreference,
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
@@ -453,6 +467,11 @@ export const selectSettings = createSelector(selectUI, (ui) => ui.settings)
 export const selectHideDust = createSelector(
   selectSettings,
   (settings) => settings?.hideDust,
+)
+
+export const selectThemePreference = createSelector(
+  selectSettings,
+  (settings): ThemePreference => settings?.theme ?? DEFAULT_THEME_PREFERENCE,
 )
 
 export const selectAutoLockTimer = createSelector(
