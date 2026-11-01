@@ -181,19 +181,12 @@ export default function CommonAssetListItem(
           </>
         )}
       </div>
+      {/*
+       * styled-jsx glues the interpolated styles onto the next selector as an
+       * ancestor, so that rule must not target the row itself.
+       */}
       <style jsx>{`
         ${styles}
-        .asset_list_item {
-          padding: 0 16px 0 0;
-        }
-        .asset_link {
-          display: flex;
-          align-items: center;
-          align-self: stretch;
-          flex-grow: 1;
-          padding-left: 16px;
-          border-radius: 16px 0 0 16px;
-        }
         .price {
           height: 17px;
           display: flex;
@@ -208,6 +201,42 @@ export default function CommonAssetListItem(
           flex-direction: column;
           justify-content: center;
           align-items: center;
+        }
+        .asset_list_item {
+          position: relative;
+          padding: 0 16px 0 0;
+        }
+        .asset_list_item :global(.asset_link) {
+          display: flex;
+          align-items: center;
+          align-self: stretch;
+          flex-grow: 1;
+          padding-left: 16px;
+          outline: none;
+        }
+        /* The link covers the row; its content and the quick links sit above. */
+        .asset_list_item :global(.asset_link::after) {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+        }
+        .asset_list_item :global(.asset_link:focus-visible::after) {
+          outline: auto;
+        }
+        .asset_left {
+          position: relative;
+          z-index: var(--z-raised);
+        }
+        .asset_right {
+          pointer-events: none;
+        }
+        .asset_right :global(a),
+        .asset_right :global(button),
+        .asset_right :global(.icon_wrapper) {
+          position: relative;
+          z-index: var(--z-raised);
+          pointer-events: auto;
         }
       `}</style>
     </div>
