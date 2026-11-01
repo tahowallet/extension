@@ -1,12 +1,14 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, describe, expect, it } from "bun:test"
 import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers"
 import { createActor, SimulatedClock } from "xstate"
 import * as sinon from "sinon"
+import logger from "../../../../lib/logger"
 import { endpointMachine, EndpointEvent } from "../endpoint-machine"
 import Endpoint, {
   BreakerTransition,
   NoEndpointAvailableError,
 } from "../endpoint"
+import EndpointPool from "../endpoint-pool"
 
 const CONNECTING = 0
 const OPEN = 1
@@ -623,6 +625,7 @@ describe("Endpoint", () => {
         },
       },
       {
+        label: "chain 1 standard[0] rpc.example",
         clock,
         options: OPTIONS,
         onBreakerTransition: (next) => transitions.push(next),
@@ -747,5 +750,95 @@ describe("Endpoint", () => {
       new Endpoint({ kind: "standard", createTransport: pollingTransport })
         .capabilities,
     ).toEqual([])
+  })
+
+  describe("logging", () => {
+    const logged = () => {
+      const lines: string[] = []
+      const levels = ["debug", "info", "warn"] as const
+      levels.forEach((level) =>
+        sinon
+          .stub(logger, level)
+          .callsFake((line: unknown) => lines.push(`${level} ${line}`)),
+      )
+      return () => lines
+    }
+
+    afterEach(() => sinon.restore())
+
+    it("logs its socket, its cooldown and its recovery", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        socketTransport(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.open()
+      transports[0].websocket?.close()
+      transports[1].websocket?.open()
+      for (let i = 0; i < 5; i += 1) endpoint.recordFailure()
+      clock.increment(15_000)
+      await flush()
+
+      expect(lines()).toEqual([
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "info chain 1 standard[0] rpc.example lost its socket and is opening a new one.",
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds after 5 failures within 30 seconds.",
+        "info chain 1 standard[0] rpc.example is probing after its cooldown.",
+        "info chain 1 standard[0] rpc.example recovered.",
+      ])
+    })
+
+    it("says why a cooldown started or grew", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        socketTransport(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.close()
+      clock.increment(15_000)
+      transports[1].websocket?.close()
+
+      expect(lines()).toEqual([
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds since its socket didn't open.",
+        "info chain 1 standard[0] rpc.example is probing after its cooldown, on a new socket.",
+        "warn chain 1 standard[0] rpc.example is cooling down for 30 seconds since its probe failed.",
+      ])
+    })
+
+    it("logs a pool's change of preference and its return to the primary", () => {
+      const lines = logged()
+      const endpoints = [0, 1].map(
+        (index) =>
+          new Endpoint(
+            { kind: "standard", createTransport: pollingTransport },
+            {
+              label: `chain 1 standard[${index}] rpc${index}.example`,
+              options: OPTIONS,
+            },
+          ),
+      )
+      const pool = new EndpointPool("standard", endpoints)
+
+      pool.recordSuccess(endpoints[1])
+      pool.recordSuccess(endpoints[0])
+
+      expect(lines()).toEqual([
+        "info The standard pool now prefers chain 1 standard[1] rpc1.example.",
+        "info The standard pool is back on its primary, chain 1 standard[0] rpc0.example.",
+      ])
+    })
+
+    it("labels itself by kind and host when not given a label", () => {
+      const endpoint = new Endpoint({
+        kind: "managed",
+        url: "https://rpc.example/v1/SECRET",
+        createTransport: pollingTransport,
+      })
+
+      expect(endpoint.label).toBe("managed rpc.example")
+    })
   })
 })

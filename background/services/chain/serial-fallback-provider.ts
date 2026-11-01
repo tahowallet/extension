@@ -41,6 +41,7 @@ import {
 import FailoverExecutor, { RouteStep } from "./rpc/failover-executor"
 import RequestCache, { requestKey } from "./rpc/request-cache"
 import {
+  loggingObserver,
   performanceMetricsObserver,
   reachabilityObserver,
 } from "./rpc/request-outcome-observers"
@@ -184,6 +185,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
       performanceMetricsObserver(chainID, (endpoint) =>
         this.metricsIndexOf(endpoint),
       ),
+      loggingObserver(),
     ])
 
     this.cachedChainId = utils.hexlify(Number(chainID))
@@ -560,7 +562,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
 
     return this.#requestCache.getOrFetch(method, params, async () => {
       const { result, endpoint } = await this.#executor.send(
-        { method, params, startedAt: Date.now() },
+        { chainID: this.chainID, method, params, startedAt: Date.now() },
         this.routeFor(method),
         this.#lifecycle.signal,
       )

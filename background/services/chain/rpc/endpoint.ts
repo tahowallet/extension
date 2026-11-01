@@ -1,5 +1,6 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
-import { Actor, createActor, SimulatedClock } from "xstate"
+import { Actor, createActor, SimulatedClock, SnapshotFrom } from "xstate"
+import logger from "../../../lib/logger"
 import {
   EndpointHealthOptions,
   endpointMachine,
@@ -48,6 +49,44 @@ export class EndpointDisposedError extends Error {
   }
 }
 
+const seconds = (ms: number) => `${Math.round(ms / 1000)} seconds`
+
+/** Logs a change in an endpoint's health or socket. */
+function logStatusChange(
+  label: string,
+  previous: SnapshotFrom<typeof endpointMachine>,
+  next: SnapshotFrom<typeof endpointMachine>,
+): void {
+  const from = previous.value as EndpointStatus
+  const to = next.value as EndpointStatus
+  const { cooldownMs, options, transport } = next.context
+  const replacedSocket =
+    previous.context.transport !== undefined &&
+    transport !== previous.context.transport
+
+  if (to === "CoolingDown") {
+    const reason =
+      from === "Ready"
+        ? `after ${options.failureThreshold} ${options.failureThreshold === 1 ? "failure" : "failures"} within ${seconds(options.failureWindowMs)}`
+        : from === "Connecting"
+          ? "since its socket didn't open"
+          : "since its probe failed"
+    logger.warn(
+      `${label} is cooling down for ${seconds(cooldownMs)} ${reason}.`,
+    )
+  } else if (to === "Probing") {
+    logger.info(
+      `${label} is probing after its cooldown${replacedSocket ? ", on a new socket" : ""}.`,
+    )
+  } else if (to === "Ready" && from === "Probing") {
+    logger.info(`${label} recovered.`)
+  } else if (to === "Ready" && from === "Connecting") {
+    logger.debug(`${label} opened its socket.`)
+  } else if (to === "Connecting" && from === "Ready") {
+    logger.info(`${label} lost its socket and is opening a new one.`)
+  }
+}
+
 /** A configured RPC endpoint, its transport, and its health. */
 export default class Endpoint {
   readonly #actor: Actor<typeof endpointMachine>
@@ -90,13 +129,17 @@ export default class Endpoint {
       ...(clock === undefined ? {} : { clock }),
     })
 
+    let previousSnapshot = this.#actor.getSnapshot()
     this.#actor.subscribe((snapshot) => {
       const previous = this.#status
       const next = snapshot.value as EndpointStatus
+      const lastSnapshot = previousSnapshot
+      previousSnapshot = snapshot
       if (next === previous) {
         return
       }
       this.#status = next
+      logStatusChange(this.label, lastSnapshot, snapshot)
 
       if (next === "CoolingDown") {
         onBreakerTransition?.("open")

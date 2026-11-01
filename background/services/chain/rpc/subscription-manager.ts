@@ -123,7 +123,7 @@ export default class SubscriptionManager {
       }
     } else {
       logger.warn(
-        "Not a WebSocket endpoint; the subscription waits for one.",
+        `${this.#endpoint.label} isn't a WebSocket endpoint; the subscription waits for one.`,
         tag,
       )
     }
@@ -140,7 +140,7 @@ export default class SubscriptionManager {
       .then(() => this.#moveTo(endpoint))
       .catch((error) => {
         if (!this.#cleared) {
-          logger.error("Error moving subscriptions", error)
+          logger.error(`Error moving subscriptions to ${endpoint.label}`, error)
           this.onMoved?.(endpoint, false)
         }
         return false
@@ -214,11 +214,20 @@ export default class SubscriptionManager {
           // oxlint-disable-next-line no-await-in-loop, no-underscore-dangle
           await transport._subscribe(tag, params, processFunc)
         } catch (error) {
-          logger.error("Error moving a subscription", tag, error)
+          logger.error(
+            `Error moving a subscription to ${endpoint.label}`,
+            tag,
+            error,
+          )
         }
       }
     }
 
+    logger.debug(
+      isWebSocketTransport(transport)
+        ? `Moved ${this.#eventListeners.length} listeners and ${this.#webSocketSubscriptions.length} subscriptions to ${endpoint.label}.`
+        : `Moved ${this.#eventListeners.length} listeners to ${endpoint.label}; subscriptions wait for a WebSocket endpoint.`,
+    )
     this.onMoved?.(endpoint, true)
     return true
   }

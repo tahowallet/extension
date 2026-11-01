@@ -1,3 +1,4 @@
+import logger from "../../../lib/logger"
 import { NoEndpointAvailableError } from "./endpoint"
 import type Endpoint from "./endpoint"
 import type EndpointPool from "./endpoint-pool"
@@ -5,10 +6,12 @@ import {
   FailurePolicy,
   indicatesEndpointFault,
   indicatesOutage,
+  NextStep,
 } from "./failure-policy"
 
 /** One logical request, which may be attempted on several endpoints. */
 export type RpcRequest = {
+  chainID: string
   method: string
   params: unknown[]
   startedAt: number
@@ -20,13 +23,19 @@ export type RequestOutcomeObserver = {
   onRequestStarted?(request: RpcRequest, pool: EndpointPool): void
   onAttempt?(request: RpcRequest, endpoint: Endpoint): void
   onEndpointSuccess?(request: RpcRequest, endpoint: Endpoint): void
+  /** An attempt failed, and the request takes `step` next. */
   onEndpointFailure?(
     request: RpcRequest,
     endpoint: Endpoint,
     error: unknown,
+    step: NextStep,
   ): void
   /** Every endpoint in a pool failed, the last one with `error`. */
-  onAllEndpointsFailed?(request: RpcRequest, error: unknown): void
+  onAllEndpointsFailed?(
+    request: RpcRequest,
+    error: unknown,
+    pool: EndpointPool,
+  ): void
   /** The request failed for good. */
   onRequestFailed?(request: RpcRequest, error: unknown): void
 }
@@ -105,7 +114,7 @@ export default class FailoverExecutor {
     )
 
     let lastError: unknown = new NoEndpointAvailableError()
-    for (const { pool, policy } of route) {
+    for (const [index, { pool, policy }] of route.entries()) {
       try {
         // oxlint-disable-next-line no-await-in-loop
         return await this.sendWithFailover(request, pool, policy, signal)
@@ -113,6 +122,12 @@ export default class FailoverExecutor {
         lastError = error
         if (signal.aborted) {
           break
+        }
+        const next = route[index + 1]
+        if (next !== undefined) {
+          logger.debug(
+            `chain ${request.chainID}: ${request.method} failed in the ${pool.name} pool; falling back to the ${next.pool.name} pool.`,
+          )
         }
       }
     }
@@ -131,6 +146,11 @@ export default class FailoverExecutor {
     const endpoints =
       lastResort === undefined ? pool.endpointsInTryOrder() : [lastResort]
     let lastError: unknown = new NoEndpointAvailableError()
+    if (lastResort !== undefined) {
+      logger.debug(
+        `${lastResort.label}: trying ${request.method} although it's cooling down, since it's the ${pool.name} pool's only endpoint.`,
+      )
+    }
 
     for (const endpoint of endpoints) {
       const probe = endpoint === lastResort
@@ -139,7 +159,9 @@ export default class FailoverExecutor {
           throw signal.reason
         }
         if (!probe && !endpoint.isAvailable) {
-          // It started cooling down while this request was walking.
+          logger.debug(
+            `${endpoint.label}: skipping it for ${request.method}, since it started cooling down.`,
+          )
           break
         }
 
@@ -162,12 +184,12 @@ export default class FailoverExecutor {
           if (indicatesEndpointFault(error, request.method)) {
             pool.recordFailure(endpoint)
           }
+          const step = policy.nextStepAfter(error, request.method, attempt)
           this.#notify((observer) =>
-            observer.onEndpointFailure?.(request, endpoint, error),
+            observer.onEndpointFailure?.(request, endpoint, error, step),
           )
           lastError = error
 
-          const step = policy.nextStepAfter(error, request.method, attempt)
           if (step.kind === "giveUp") {
             throw error
           }
@@ -185,7 +207,7 @@ export default class FailoverExecutor {
       indicatesOutage(lastError, request.method)
     ) {
       this.#notify((observer) =>
-        observer.onAllEndpointsFailed?.(request, lastError),
+        observer.onAllEndpointsFailed?.(request, lastError, pool),
       )
     }
     throw lastError

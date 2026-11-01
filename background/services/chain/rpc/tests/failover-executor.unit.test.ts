@@ -52,6 +52,7 @@ function setup(size: number, threshold = 5) {
   })
   const controller = new AbortController()
   const request = (method = "eth_call"): RpcRequest => ({
+    chainID: "1",
     method,
     params: [],
     startedAt: 0,

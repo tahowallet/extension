@@ -167,7 +167,12 @@ describe("request outcome observers", () => {
           removeAllListeners: sinon.stub(),
         }) as JsonRpcProvider,
     })
-  const request: RpcRequest = { method: "eth_call", params: [], startedAt: 0 }
+  const request: RpcRequest = {
+    chainID: "1",
+    method: "eth_call",
+    params: [],
+    startedAt: 0,
+  }
 
   it("tells the reachability tracker about successes and outages", () => {
     const tracker = new NetworkReachabilityTracker()
@@ -176,7 +181,11 @@ describe("request outcome observers", () => {
     const observer = reachabilityObserver(tracker)
 
     observer.onEndpointSuccess?.(request, endpoint())
-    observer.onAllEndpointsFailed?.(request, new Error("NETWORK_ERROR"))
+    observer.onAllEndpointsFailed?.(
+      request,
+      new Error("NETWORK_ERROR"),
+      new EndpointPool("standard", [endpoint()]),
+    )
 
     expect(success.callCount).toBe(1)
     expect(exhausted.callCount).toBe(1)

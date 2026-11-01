@@ -45,18 +45,20 @@ export default class ProviderRegistry {
       input: { chainID, endpoints, dependencies: this.dependencies },
     })
 
-    actor.on("providerReplaced", (replacement) =>
+    actor.on("providerReplaced", (replacement) => {
+      logger.info(`Chain ${chainID} has a new provider for its endpoints.`)
       this.#replacedListeners.forEach((listener) => {
         try {
           listener(replacement)
         } catch (error) {
           logger.error("Error handling a replaced provider", chainID, error)
         }
-      }),
-    )
-    actor.on("reachabilityChanged", ({ status }) =>
-      this.dependencies.onReachabilityChange(chainID, status),
-    )
+      })
+    })
+    actor.on("reachabilityChanged", ({ status }) => {
+      logger.info(`Chain ${chainID} is now ${status}.`)
+      this.dependencies.onReachabilityChange(chainID, status)
+    })
     actor.on("removed", () => {
       if (this.#chains.get(chainID) === actor) {
         this.#chains.delete(chainID)

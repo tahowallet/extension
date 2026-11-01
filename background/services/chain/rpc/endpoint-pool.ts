@@ -1,5 +1,6 @@
 import { Actor, createActor, SimulatedClock } from "xstate"
 import { SECOND } from "../../../constants"
+import logger from "../../../lib/logger"
 import type Endpoint from "./endpoint"
 import { endpointPoolMachine } from "./endpoint-pool-machine"
 
@@ -39,9 +40,15 @@ export default class EndpointPool {
       input: { size: endpoints.length, recoveryIntervalMs },
       ...(clock === undefined ? {} : { clock }),
     })
-    this.#actor.on("preferredEndpointChanged", ({ index }) =>
-      this.#listeners.forEach((listener) => listener(this.endpoints[index])),
-    )
+    this.#actor.on("preferredEndpointChanged", ({ index }) => {
+      const endpoint = this.endpoints[index]
+      logger.info(
+        index === 0
+          ? `The ${name} pool is back on its primary, ${endpoint.label}.`
+          : `The ${name} pool now prefers ${endpoint.label}.`,
+      )
+      this.#listeners.forEach((listener) => listener(endpoint))
+    })
     this.#actor.start()
 
     this.#unsubscribers = endpoints.map((endpoint, index) =>
