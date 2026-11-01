@@ -464,4 +464,67 @@ describe("IndexingService", () => {
       ).toEqual([])
     })
   })
+
+  describe("token prices", () => {
+    it("keeps the prices it could read when one chain fails", async () => {
+      const ethereumToken = createSmartContractAsset({
+        homeNetwork: ETHEREUM,
+        metadata: {
+          tokenLists: [{ name: "Example", url: "https://tokens.example" }],
+        },
+      })
+      const optimismToken = createSmartContractAsset({
+        homeNetwork: OPTIMISM,
+        metadata: {
+          tokenLists: [{ name: "Example", url: "https://tokens.example" }],
+        },
+      })
+      const indexingDb = await getIndexingDB()
+      await indexingDb.addAssetToTrack(ethereumToken)
+      await indexingDb.addAssetToTrack(optimismToken)
+      // Adding doesn't wait for the write; reading does.
+      await indexingDb.getAssetsToTrack()
+      jest
+        .spyOn(chainService, "providerForNetworkOrThrow")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockReturnValue({} as any)
+
+      jest
+        .spyOn(priceOracle, "getUSDPriceForTokens")
+        .mockImplementation(async (_assets, network) => {
+          if (network === OPTIMISM) {
+            throw new Error("provider unreachable")
+          }
+          return {
+            [ethereumToken.contractAddress]: {
+              unitPrice: { asset: USD, amount: 10n ** 10n },
+              time: Date.now(),
+            },
+          }
+        })
+      const error = jest.spyOn(logger, "error")
+      const warn = jest.spyOn(logger, "warn").mockImplementation(() => {})
+      const emitted = jest.fn()
+      indexingService.emitter.on("prices", emitted)
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["getTrackedAssetsPrices"]()
+
+      expect(emitted).toHaveBeenCalledWith([
+        expect.objectContaining({
+          pair: [
+            expect.objectContaining({ symbol: ethereumToken.symbol }),
+            USD,
+          ],
+        }),
+      ])
+      // Other services log too; only this pass's lines matter here.
+      expect(warn).toHaveBeenCalledWith("Couldn't read token prices", [
+        expect.stringMatching(/^10: /),
+      ])
+      expect(
+        error.mock.calls.filter(([line]) => /price/i.test(String(line))),
+      ).toEqual([])
+    })
+  })
 })

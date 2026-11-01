@@ -1,4 +1,4 @@
-import logger, { logRejectedAndReturnFulfilledResults } from "../../lib/logger"
+import logger from "../../lib/logger"
 import type { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -901,33 +901,45 @@ export default class IndexingService extends BaseService<Events> {
 
       const measuredAt = Date.now()
 
-      // @TODO consider allSettled here
-      const activeAssetPricesByNetwork = logRejectedAndReturnFulfilledResults(
-        "Failed to retrieve token prices for network",
-        await Promise.allSettled(
-          activeAssetsByNetwork.map(
-            async ({ activeAssetsByAddress, network }) => {
-              const coingeckoTokenPrices = await getTokenPrices(
-                Object.keys(activeAssetsByAddress),
-                USD,
-                network,
-              )
-              if (Object.keys(coingeckoTokenPrices).length) {
-                return coingeckoTokenPrices
-              }
+      const priceResults = await Promise.allSettled(
+        activeAssetsByNetwork.map(
+          async ({ activeAssetsByAddress, network }) => {
+            const coingeckoTokenPrices = await getTokenPrices(
+              Object.keys(activeAssetsByAddress),
+              USD,
+              network,
+            )
+            if (Object.keys(coingeckoTokenPrices).length) {
+              return coingeckoTokenPrices
+            }
 
-              const provider =
-                this.chainService.providerForNetworkOrThrow(network)
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
 
-              return getUSDPriceForTokens(
-                Object.values(activeAssetsByAddress),
-                network,
-                provider,
-              )
-            },
-          ),
+            return getUSDPriceForTokens(
+              Object.values(activeAssetsByAddress),
+              network,
+              provider,
+            )
+          },
         ),
-        activeAssetsByNetwork,
+      )
+
+      const failures = priceResults.flatMap((result, i) =>
+        result.status === "rejected"
+          ? [
+              `${activeAssetsByNetwork[i].network.chainID}: ${String(
+                result.reason,
+              )}`,
+            ]
+          : [],
+      )
+      if (failures.length > 0) {
+        logger.warn("Couldn't read token prices", failures)
+      }
+
+      const activeAssetPricesByNetwork = priceResults.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
       )
 
       const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
