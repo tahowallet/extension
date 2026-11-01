@@ -7,9 +7,6 @@ on:
   schedule:
     - cron: "0 8 * * *"
   workflow_dispatch: {}
-  push:
-    branches:
-      - night-shift
 
 # Runs queue rather than overlap, so two never submit at once.
 concurrency:
@@ -42,7 +39,6 @@ jobs:
           published=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/beta" \
             --jq .object.sha 2>/dev/null) || published=""
 
-          if [ "$GITHUB_EVENT_NAME" = push ]; then passing=$GITHUB_SHA; fi
           if ! [[ "$passing" =~ ^[0-9a-f]{40}$ ]]; then
             echo "No passing Build run on main."
           elif [ "$passing" = "$published" ]; then
