@@ -66,8 +66,8 @@ export default function SharedAccordion({
         <SharedIcon
           icon="icons/s/arrow-toggle.svg"
           width={16}
-          color="var(--green-5)"
-          hoverColor="var(--text-strong)"
+          color="var(--accordion-icon)"
+          hoverColor="var(--accordion-icon)"
           onClick={(e) => {
             e.stopPropagation()
             toggle()
@@ -106,6 +106,12 @@ export default function SharedAccordion({
           align-items: center;
           padding: var(--header-padding, "4px 8px");
           cursor: pointer;
+          --accordion-icon: var(--green-5);
+        }
+
+        /* The arrow lights with the header, not only under the cursor. */
+        .accordion_header:hover {
+          --accordion-icon: var(--text-strong);
         }
 
         .accordion_header_content {
