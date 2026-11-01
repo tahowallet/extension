@@ -59,8 +59,7 @@ export default function CommonAssetListItem(
 
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
 
-  const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
+  const handleVerifyAsset = () => {
     if (
       isSmartContractFungibleAsset(assetAmount.asset) &&
       onUnverifiedAssetWarningClick
@@ -70,17 +69,18 @@ export default function CommonAssetListItem(
   }
 
   return (
-    <Link
-      to={{
-        pathname: "/singleAsset",
-        state: assetAmount.asset,
-      }}
+    <div
+      className="asset_list_item"
+      data-testid="asset_list_item"
+      data-assetid={getFullAssetID(assetAmount.asset)}
+      data-trusted={isTrustedAsset(assetAmount.asset)}
     >
-      <div
-        className="asset_list_item"
-        data-testid="asset_list_item"
-        data-assetid={getFullAssetID(assetAmount.asset)}
-        data-trusted={isTrustedAsset(assetAmount.asset)}
+      <Link
+        className="asset_link"
+        to={{
+          pathname: "/singleAsset",
+          state: assetAmount.asset,
+        }}
       >
         <div className="asset_left">
           <SharedAssetIcon
@@ -119,70 +119,81 @@ export default function CommonAssetListItem(
             }
           </div>
         </div>
-        <div className="asset_right">
-          {isUntrusted ? (
-            <AssetVerifyToggler
-              text={t("unverifiedAssets.verifyAsset")}
-              icon="notif-attention"
-              color="var(--attention)"
-              hoverColor="var(--white)"
-              onClick={(event) => handleVerifyAsset(event)}
+      </Link>
+      <div className="asset_right">
+        {isUntrusted ? (
+          <AssetVerifyToggler
+            text={t("unverifiedAssets.verifyAsset")}
+            icon="notif-attention"
+            color="var(--attention)"
+            hoverColor="var(--white)"
+            onClick={handleVerifyAsset}
+          />
+        ) : (
+          <>
+            <SharedIconRouterLink
+              path="/send"
+              state={assetAmount.asset}
+              iconClass="asset_icon_send"
+              isTooltip
+              tooltipText="Send"
             />
-          ) : (
-            <>
+            {networkSupportsSwaps(selectedNetwork.chainID) ? (
               <SharedIconRouterLink
-                path="/send"
-                state={assetAmount.asset}
-                iconClass="asset_icon_send"
+                path="/swap"
+                state={{
+                  symbol: assetAmount.asset.symbol,
+                  contractAddress,
+                }}
+                iconClass="asset_icon_swap"
                 isTooltip
-                tooltipText="Send"
+                tooltipText="Swap"
               />
-              {networkSupportsSwaps(selectedNetwork.chainID) ? (
-                <SharedIconRouterLink
-                  path="/swap"
-                  state={{
-                    symbol: assetAmount.asset.symbol,
-                    contractAddress,
-                  }}
-                  iconClass="asset_icon_swap"
-                  isTooltip
-                  tooltipText="Swap"
-                />
-              ) : (
-                <SharedTooltip
-                  type="dark"
-                  width={180}
-                  height={48}
-                  horizontalPosition="left"
-                  verticalPosition="bottom"
-                  horizontalShift={42}
-                  verticalShift={16}
-                  IconComponent={() => (
-                    <div className="button_wrap">
-                      <SharedIconRouterLink
-                        path="/swap"
-                        disabled
-                        state={{
-                          symbol: assetAmount.asset.symbol,
-                          contractAddress,
-                        }}
-                        iconClass="asset_icon_swap"
-                      />
-                    </div>
-                  )}
-                >
-                  <div className="centered_tooltip">
-                    <div>{t("swapDisabledOne")}</div>
-                    <div>{t("swapDisabledTwo")}</div>
+            ) : (
+              <SharedTooltip
+                type="dark"
+                width={180}
+                height={48}
+                horizontalPosition="left"
+                verticalPosition="bottom"
+                horizontalShift={42}
+                verticalShift={16}
+                IconComponent={() => (
+                  <div className="button_wrap">
+                    <SharedIconRouterLink
+                      path="/swap"
+                      disabled
+                      state={{
+                        symbol: assetAmount.asset.symbol,
+                        contractAddress,
+                      }}
+                      iconClass="asset_icon_swap"
+                    />
                   </div>
-                </SharedTooltip>
-              )}
-            </>
-          )}
-        </div>
+                )}
+              >
+                <div className="centered_tooltip">
+                  <div>{t("swapDisabledOne")}</div>
+                  <div>{t("swapDisabledTwo")}</div>
+                </div>
+              </SharedTooltip>
+            )}
+          </>
+        )}
       </div>
       <style jsx>{`
         ${styles}
+        .asset_list_item {
+          padding: 0 16px 0 0;
+        }
+        .asset_link {
+          display: flex;
+          align-items: center;
+          align-self: stretch;
+          flex-grow: 1;
+          padding-left: 16px;
+          border-radius: 16px 0 0 16px;
+        }
         .price {
           height: 17px;
           display: flex;
@@ -199,6 +210,6 @@ export default function CommonAssetListItem(
           align-items: center;
         }
       `}</style>
-    </Link>
+    </div>
   )
 }
