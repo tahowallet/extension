@@ -15,6 +15,7 @@ import {
 } from "../../services/enrichment/utils"
 import { getExecutedSafeAddress } from "../../services/enrichment/safe"
 import type { HexString } from "../../types"
+import type { FixedPointNumber } from "../../lib/fixed-point"
 
 enum TxStatus {
   FAIL = 0,
@@ -32,6 +33,11 @@ export type Activity = {
   from: string
   blockHeight: number | null
   value: string
+  /**
+   * The exact amount behind `value`, if it has one; absent from activities
+   * stored before it was added.
+   */
+  fixedPointValue?: FixedPointNumber
   nonce: number
   hash: string
   blockHash: string | null
@@ -141,6 +147,25 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
   return localizedValue
 }
 
+const getFixedPointValue = (
+  transaction: Transaction | EnrichedEVMTransaction,
+): FixedPointNumber | undefined => {
+  const annotation = isEnrichedTransaction(transaction)
+    ? transaction.annotation
+    : undefined
+  switch (annotation?.type) {
+    case "asset-approval":
+      if (isMaxUint256(annotation.assetAmount.amount)) return undefined
+    // falls through
+    case "asset-transfer": {
+      const { amount, asset } = annotation.assetAmount
+      return { amount, decimals: "decimals" in asset ? asset.decimals : 0 }
+    }
+    default:
+      return { amount: transaction.value, decimals: transaction.asset.decimals }
+  }
+}
+
 export const getActivity = (
   transaction: Transaction | EnrichedEVMTransaction,
 ): Activity => {
@@ -158,6 +183,7 @@ export const getActivity = (
     hash,
     blockHash,
     value: getValue(transaction),
+    fixedPointValue: getFixedPointValue(transaction),
   }
 
   if (isEnrichedTransaction(transaction)) {
