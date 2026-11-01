@@ -7,6 +7,7 @@ import {
   selectFilteredNFTBadgesCount,
   selectFilteredNFTCollectionsCount,
   selectFilteredNFTsCount,
+  selectHasFilteredFloorPrices,
 } from "@tallyho/tally-background/redux-slices/selectors"
 
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
@@ -31,6 +32,7 @@ export default function NFTsHeader(): ReactElement {
   )
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
   const mainCurrencySign = useBackgroundSelector(selectMainCurrencySign)
+  const hasFloorPrices = useBackgroundSelector(selectHasFilteredFloorPrices)
 
   const { totalFloorPriceInETH, totalFloorPriceInUSD } =
     useTotalNFTsFloorPrice()
@@ -67,18 +69,26 @@ export default function NFTsHeader(): ReactElement {
             />
           )}
           <div className="stats_totals">
-            <span className="currency_sign">{mainCurrencySign}</span>
-            <span
-              className="currency_total"
-              data-testid="nft_header_currency_total"
-            >
-              {totalFloorPriceInUSD ?? "0"}
-            </span>
+            {hasFloorPrices && (
+              <>
+                <span className="currency_sign">{mainCurrencySign}</span>
+                <span
+                  className="currency_total"
+                  data-testid="nft_header_currency_total"
+                >
+                  {totalFloorPriceInUSD ?? "0"}
+                </span>
+              </>
+            )}
             {isLoading && (
               <SharedLoadingSpinner size="small" variant="transparent" />
             )}
           </div>
-          <div className="crypto_total">{totalFloorPriceInETH ?? "-"} ETH</div>
+          {hasFloorPrices && (
+            <div className="crypto_total">
+              {totalFloorPriceInETH ?? "-"} ETH
+            </div>
+          )}
         </div>
         <ul className="nft_counts">
           <li>

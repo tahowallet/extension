@@ -145,3 +145,10 @@ export const selectFilteredTotalFloorPrice = createSelector(
   selectFilteredNFTCollections,
   (collections) => getTotalFloorPrice(collections),
 )
+
+/** Whether any shown collection has a floor price to total. */
+export const selectHasFilteredFloorPrices = createSelector(
+  selectFilteredNFTCollections,
+  (collections) =>
+    collections.some(({ floorPrice }) => floorPrice !== undefined),
+)

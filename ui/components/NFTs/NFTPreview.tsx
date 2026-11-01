@@ -121,16 +121,16 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
                 <SharedAddress address={owner} name={ownerName} elide />
               </span>
             </div>
-            <div className="preview_section_column align_right no_shrink">
-              <span className="preview_details_header">
-                {t("preview.floorPrice")}
-              </span>
-              <span className="preview_details_value">
-                {floorPrice
-                  ? `~${floorPrice.value} ${floorPrice.tokenSymbol}`
-                  : "-"}
-              </span>
-            </div>
+            {floorPrice && (
+              <div className="preview_section_column align_right no_shrink">
+                <span className="preview_details_header">
+                  {t("preview.floorPrice")}
+                </span>
+                <span className="preview_details_value">
+                  ~{floorPrice.value} {floorPrice.tokenSymbol}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
