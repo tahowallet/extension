@@ -2,31 +2,32 @@ import * as sinon from "sinon"
 import logger from "../../../lib/logger"
 import AssetDataHelper from "../asset-data-helper"
 import SerialFallbackProvider from "../serial-fallback-provider"
-import { getAssetTransfers as getBoarAssetTransfers } from "../../../lib/boar"
-import { getAssetTransfersViaLogs } from "../../../lib/erc20-transfer-logs"
 import { createAddressOnNetwork } from "../../../tests/factories"
 
-jest.mock("../../../lib/boar", () => ({
-  getAssetTransfers: jest.fn(async () => []),
-  getTokenBalances: jest.fn(async () => []),
-  getTokenMetadata: jest.fn(async () => undefined),
-}))
-
-jest.mock("../../../lib/erc20-transfer-logs", () => ({
-  getAssetTransfersViaLogs: jest.fn(async () => []),
-}))
-
-const mockedBoarAssetTransfers = getBoarAssetTransfers as AnyMock
-const mockedLogAssetTransfers = getAssetTransfersViaLogs as AnyMock
+const mockedBoarAssetTransfers = jest.fn()
+const mockedLogAssetTransfers = jest.fn()
 
 const makeHelperWithProvider = (provider: Partial<SerialFallbackProvider>) =>
-  new AssetDataHelper({
-    providerForNetwork: () => provider as SerialFallbackProvider,
-  })
+  new AssetDataHelper(
+    { providerForNetwork: () => provider as SerialFallbackProvider },
+    {
+      viaAlchemy: mockedBoarAssetTransfers,
+      viaLogs: mockedLogAssetTransfers,
+    },
+  )
 
 describe("AssetDataHelper", () => {
+  const sandbox = sinon.createSandbox()
+
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockedBoarAssetTransfers.mockReset()
+    mockedBoarAssetTransfers.mockResolvedValue([])
+    mockedLogAssetTransfers.mockReset()
+    mockedLogAssetTransfers.mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    sandbox.restore()
   })
 
   describe("getAssetTransfers", () => {
@@ -151,23 +152,19 @@ describe("AssetDataHelper", () => {
     it("rethrows log-scanning errors, unlogged, so callers can manage retries", async () => {
       const error = new Error("range too wide")
       mockedLogAssetTransfers.mockRejectedValueOnce(error)
-      const warn = sinon.stub(logger, "warn")
-      const logError = sinon.stub(logger, "error")
+      const warn = sandbox.stub(logger, "warn")
+      const logError = sandbox.stub(logger, "error")
 
-      try {
-        const helper = makeHelperWithProvider({
-          supportsAlchemyMethods: false,
-          getBlockNumber: jest.fn(async () => 100),
-        } as unknown as Partial<SerialFallbackProvider>)
+      const helper = makeHelperWithProvider({
+        supportsAlchemyMethods: false,
+        getBlockNumber: jest.fn(async () => 100),
+      } as unknown as Partial<SerialFallbackProvider>)
 
-        await expect(
-          helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
-        ).rejects.toEqual(error)
-        expect(warn.called).toBe(false)
-        expect(logError.called).toBe(false)
-      } finally {
-        sinon.restore()
-      }
+      await expect(
+        helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
+      ).rejects.toEqual(error)
+      expect(warn.called).toBe(false)
+      expect(logError.called).toBe(false)
     })
   })
 })
