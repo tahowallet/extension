@@ -36,6 +36,7 @@ export type NetworkWatcherDependencies = {
   now?: () => number
   /** Simulated time for the watches' timers, for tests. */
   clock?: SimulatedClock
+  getBlockPrices?: typeof getBlockPrices
 }
 
 type NetworkWatch = Actor<typeof networkWatchMachine>
@@ -243,10 +244,9 @@ export default class NetworkWatcher {
       return
     }
 
-    const blockPrices = await getBlockPrices(
-      network,
-      this.dependencies.providerFor(network),
-    )
+    const blockPrices = await (
+      this.dependencies.getBlockPrices ?? getBlockPrices
+    )(network, this.dependencies.providerFor(network))
     this.dependencies.emitBlockPrices({ blockPrices, network })
   }
 

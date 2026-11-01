@@ -1,13 +1,5 @@
 import sinon from "sinon"
-import {
-  mock,
-  describe,
-  beforeEach,
-  afterEach,
-  it,
-  expect,
-  jest,
-} from "bun:test"
+import { describe, beforeEach, afterEach, it, expect, jest } from "bun:test"
 import ChainService, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
@@ -15,11 +7,6 @@ import ChainService, {
 import { ETHEREUM, MINUTE, OPTIMISM, POLYGON } from "../../../constants"
 import { EVMNetwork } from "../../../networks"
 
-const getBlockPricesMock = mock(() => {})
-mock.module("../../../lib/gas", () => {
-  const actual = require("../../../lib/gas")
-  return { ...actual, default: getBlockPricesMock }
-})
 import {
   createAddressOnNetwork,
   createArrayWith0xHash,
@@ -69,14 +56,21 @@ type ChainServiceExternalized = Omit<ChainService, ""> & {
   queueTransactionHashToRetrieve: void
 }
 
+const getBlockPricesMock = jest.fn()
+
 describe("Chain Service", () => {
   const sandbox = sinon.createSandbox()
   let chainService: ChainService
   beforeEach(async () => {
-    sandbox.restore()
     getBlockPricesMock.mockReset()
 
-    chainService = await createChainService()
+    chainService = await createChainService({
+      getBlockPrices: getBlockPricesMock,
+    })
+  })
+
+  afterEach(() => {
+    sandbox.restore()
   })
 
   describe("populatePartialTransactionRequest", () => {

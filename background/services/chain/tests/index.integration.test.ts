@@ -13,6 +13,7 @@ import {
   createChainService,
   createLegacyTransactionRequest,
   makeEthersBlock,
+  MockSerialFallbackProvider,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
 import { BOAR_RPC_URLS } from "../../../lib/boar"
@@ -243,7 +244,7 @@ describe("ChainService", () => {
       await chainService.addCustomChain(FANTOM_CHAIN_PARAMS)
       expect(
         chainService.providerForNetwork({ chainID: "250" } as EVMNetwork),
-      ).toBeInstanceOf(SerialFallbackProvider)
+      ).toBeInstanceOf(MockSerialFallbackProvider)
     })
 
     it("should start tracking the new chain", async () => {
@@ -653,10 +654,10 @@ describe("ChainService", () => {
       const previousProvider = chainService.providerForNetwork(ETHEREUM)!
       const destroySpy = sandbox.spy(previousProvider, "destroy")
       const getBlock = sandbox
-        .stub(SerialFallbackProvider.prototype, "getBlock")
+        .stub(MockSerialFallbackProvider.prototype, "getBlock")
         .resolves(makeEthersBlock())
       const subscribe = sandbox.spy(
-        SerialFallbackProvider.prototype,
+        MockSerialFallbackProvider.prototype,
         "onPendingTransaction",
       )
 
