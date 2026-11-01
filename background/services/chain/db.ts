@@ -86,16 +86,42 @@ export const DEAD_RPC_URLS = [
 ]
 
 /**
- * Drops every endpoint whose URL exactly matches one of `deadUrls`, unless
- * that would leave the chain with no endpoints at all; a chain with an empty
- * endpoint list is unusable, so in that case the list is returned unchanged
- * and the dead endpoints are left in place.
+ * Hosts of RPC providers that are gone altogether. Endpoints on these hosts
+ * or their subdomains are scrubbed whatever their path.
+ */
+export const DEAD_RPC_HOSTS = [
+  // No keyless use left; answers "You've reached the usage limit".
+  "1rpc.io",
+  // Blast API has shut down.
+  "blastapi.io",
+]
+
+/** Whether a URL is on one of the hosts, or a subdomain of one. */
+export function isOnHost(url: string, hosts: string[]): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return hosts.some(
+      (host) => hostname === host || hostname.endsWith(`.${host}`),
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Drops every endpoint whose URL exactly matches one of `deadUrls` or is on
+ * one of `deadHosts`, unless that would leave the chain with no endpoints
+ * at all; a chain with an empty endpoint list is unusable, so in that case
+ * the list is returned unchanged and the dead endpoints are left in place.
  */
 export function scrubDeadEndpoints(
   endpoints: RpcEndpoint[],
   deadUrls: string[],
+  deadHosts: string[] = [],
 ): RpcEndpoint[] {
-  const liveEndpoints = endpoints.filter(({ url }) => !deadUrls.includes(url))
+  const liveEndpoints = endpoints.filter(
+    ({ url }) => !deadUrls.includes(url) && !isOnHost(url, deadHosts),
+  )
 
   return liveEndpoints.length > 0 ? liveEndpoints : endpoints
 }
@@ -317,8 +343,8 @@ export class ChainDatabase extends Dexie {
       )
 
     // Scrubs permanently dead RPC endpoints from stored endpoint lists; see
-    // {@link DEAD_RPC_URLS} for why a migration is needed at all. Version 13
-    // runs it again for the URLs added since.
+    // {@link DEAD_RPC_URLS} for why a migration is needed at all. Later
+    // versions run it again for the URLs and hosts added since.
     const scrubStoredEndpoints = async (tx: DexieTransaction) =>
       tx
         .table("rpcConfig")
@@ -327,12 +353,17 @@ export class ChainDatabase extends Dexie {
           const { endpoints } = rpcConfig
           if (endpoints !== undefined) {
             Object.assign(rpcConfig, {
-              endpoints: scrubDeadEndpoints(endpoints, DEAD_RPC_URLS),
+              endpoints: scrubDeadEndpoints(
+                endpoints,
+                DEAD_RPC_URLS,
+                DEAD_RPC_HOSTS,
+              ),
             })
           }
         })
     this.version(12).upgrade(scrubStoredEndpoints)
     this.version(13).upgrade(scrubStoredEndpoints)
+    this.version(14).upgrade(scrubStoredEndpoints)
   }
 
   async initialize(): Promise<void> {
