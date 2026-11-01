@@ -2,6 +2,14 @@ import browser from "webextension-polyfill"
 
 type LocalStorageMock = Record<string, Record<string, unknown>>
 
+const { get: originalGet, set: originalSet } = browser.storage.local
+
+/** Puts back the storage that mockLocalStorage and its kin replace. */
+export function restoreLocalStorage(): void {
+  browser.storage.local.get = originalGet
+  browser.storage.local.set = originalSet
+}
+
 export function mockLocalStorage(): LocalStorageMock {
   let localStorage: LocalStorageMock = {}
 
