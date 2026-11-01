@@ -98,6 +98,7 @@ export default function MezoWalletCampaignBanner({
     <SharedBanner
       id={claimStateBanners[state].bannerId}
       canBeClosed
+      theme="dark"
       onDismiss={() => handleBannerDismiss()}
       style={{
         padding: 0,

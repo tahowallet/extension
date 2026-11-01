@@ -330,6 +330,11 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .search_input::placeholder {
             color: var(--green-40);
           }
+          :global([data-theme="light"]) .icon_search {
+            background: var(--green-40);
+            mask: url("./images/search_large@2x.png") center / 24px 24px
+              no-repeat;
+          }
           .icon_search {
             background: url("./images/search_large@2x.png");
             background-size: 24px 24px;

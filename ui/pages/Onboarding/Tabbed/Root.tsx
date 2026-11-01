@@ -22,6 +22,7 @@ import Ledger from "./Ledger/Ledger"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import { useIsOnboarding } from "../../../hooks"
+import { useResolvedTheme } from "../../../hooks/theme-hooks"
 import ImportPrivateKeyForm from "./ImportPrivateKeyForm"
 
 function Navigation({
@@ -32,6 +33,7 @@ function Navigation({
   isOnboarding: boolean
 }): ReactElement {
   const location = useLocation()
+  const theme = useResolvedTheme()
 
   const ROUTES_WITHOUT_BACK_BUTTON = [
     OnboardingRoutes.ONBOARDING_START,
@@ -120,7 +122,14 @@ function Navigation({
       </style>
       <div className={classNames("left_container", { hide: !isOnboarding })}>
         <div className="onboarding_branding">
-          <img src="./images/logo_onboarding.svg" alt="Onboarding logo" />
+          <img
+            src={
+              theme === "light"
+                ? "./images/logo_onboarding_light.svg"
+                : "./images/logo_onboarding.svg"
+            }
+            alt="Onboarding logo"
+          />
         </div>
         <div className="route_based_content">
           <RouteBasedContent />
