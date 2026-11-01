@@ -211,6 +211,8 @@ export default function CommonAssetListItem(
           align-items: center;
           align-self: stretch;
           flex-grow: 1;
+          /* Shrink past the content so the quick links stay in the row. */
+          min-width: 0;
           padding-left: 16px;
           outline: none;
         }
