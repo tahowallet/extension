@@ -114,28 +114,29 @@ function harness() {
 
 describe("TransactionTracker", () => {
   describe("the lookup timer", () => {
+    // A sandbox of its own: fakes left in sinon's default sandbox are
+    // re-restored by any later file's sinon.restore(), in the same process.
+    const sandbox = sinon.createSandbox()
     let clock: sinon.SinonFakeTimers
     let tracker: TransactionTracker
     let lookUp: sinon.SinonStub
 
     beforeEach(() => {
-      clock = sinon.useFakeTimers()
+      clock = sandbox.useFakeTimers()
       tracker = harness().tracker
-      lookUp = sinon.stub(tracker, "lookUp").resolves()
+      lookUp = sandbox.stub(tracker, "lookUp").resolves()
     })
 
     afterEach(() => {
-      clock.restore()
+      sandbox.restore()
     })
 
     it("doesn't start with an empty queue", () => {
-      const setInterval = sinon.spy(global, "setInterval")
       tracker.startLookups()
       clock.tick(2 * SECOND)
 
-      expect(setInterval.called).toBe(false)
+      expect(clock.countTimers()).toBe(0)
       expect(lookUp.callCount).toBe(0)
-      setInterval.restore()
     })
 
     it("isn't started twice by repeated alarms", () => {
