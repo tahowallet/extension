@@ -1,4 +1,9 @@
-import Dexie, { Collection, DexieOptions, IndexableTypeArray } from "dexie"
+import Dexie, {
+  Collection,
+  DexieOptions,
+  IndexableTypeArray,
+  Transaction as DexieTransaction,
+} from "dexie"
 
 import type { UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -63,7 +68,22 @@ export type ChainRpcConfig = {
  * seeded once and are the sole source of truth from then on, so a dead
  * endpoint sticks around until it is explicitly scrubbed by a migration.
  */
-export const DEAD_RPC_URLS = ["https://polygon-rpc.com"]
+export const DEAD_RPC_URLS = [
+  "https://polygon-rpc.com",
+  // No keyless use left on 1rpc.io.
+  "https://1rpc.io/eth",
+  "https://1rpc.io/op",
+  "https://1rpc.io/arb",
+  "https://1rpc.io/matic",
+  "https://1rpc.io/avax/c",
+  // Blast API has shut down.
+  "https://optimism-mainnet.public.blastapi.io",
+  // dRPC's free plan dropped Sepolia, and refuses eth_subscribe, closing the
+  // socket, which is all a WebSocket endpoint is for.
+  "https://sepolia.drpc.org",
+  "wss://sepolia.drpc.org",
+  "wss://mezo-testnet.drpc.org",
+]
 
 /**
  * Drops every endpoint whose URL exactly matches one of `deadUrls`, unless
@@ -297,8 +317,9 @@ export class ChainDatabase extends Dexie {
       )
 
     // Scrubs permanently dead RPC endpoints from stored endpoint lists; see
-    // {@link DEAD_RPC_URLS} for why a migration is needed at all.
-    this.version(12).upgrade(async (tx) =>
+    // {@link DEAD_RPC_URLS} for why a migration is needed at all. Version 13
+    // runs it again for the URLs added since.
+    const scrubStoredEndpoints = async (tx: DexieTransaction) =>
       tx
         .table("rpcConfig")
         .toCollection()
@@ -309,8 +330,9 @@ export class ChainDatabase extends Dexie {
               endpoints: scrubDeadEndpoints(endpoints, DEAD_RPC_URLS),
             })
           }
-        }),
-    )
+        })
+    this.version(12).upgrade(scrubStoredEndpoints)
+    this.version(13).upgrade(scrubStoredEndpoints)
   }
 
   async initialize(): Promise<void> {

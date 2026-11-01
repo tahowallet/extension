@@ -669,5 +669,26 @@ describe("Chain Database", () => {
         { url: "https://polygon-rpc.com" },
       ])
     })
+
+    it("should scrub endpoints that died after the first scrub on upgrade", async () => {
+      const legacyDb = new Dexie("tally/chain", { indexedDB })
+      legacyDb.version(12).stores({ rpcConfig: "&chainID" })
+      await legacyDb.open()
+      await legacyDb.table("rpcConfig").put({
+        chainID: OPTIMISM.chainID,
+        endpoints: [
+          { url: "https://optimism.drpc.org" },
+          { url: "https://1rpc.io/op" },
+          { url: "https://optimism-mainnet.public.blastapi.io" },
+        ],
+      })
+      legacyDb.close()
+
+      await db.open()
+
+      expect(await db.getRpcEndpointsByChainId(OPTIMISM.chainID)).toEqual([
+        { url: "https://optimism.drpc.org" },
+      ])
+    })
   })
 })
