@@ -114,7 +114,7 @@ export default function ClaimReview({
             line-height: 20px;
           }
           .left span:first-of-type {
-            color: #fff;
+            color: var(--text-strong);
           }
         `}
       </style>

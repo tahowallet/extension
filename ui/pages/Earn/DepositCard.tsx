@@ -132,7 +132,7 @@ export default function EarnDepositedCard({
               margin-bottom: 8px;
             }
             .amount {
-              color: #fff;
+              color: var(--text-strong);
               font-size: 18px;
               font-weight: 600;
               line-height: 24px;
@@ -175,7 +175,7 @@ export default function EarnDepositedCard({
               flex-direction: column;
             }
             .token_name {
-              color: #fff;
+              color: var(--text-strong);
               font-size: 22px;
               font-weight: 500;
               line-height: 32px;

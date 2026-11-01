@@ -76,7 +76,7 @@ function Navigation({
             width: 50%;
             height: 100%;
             box-sizing: border-box;
-            background: #04141480;
+            background: var(--overlay-tab);
             overflow-y: auto;
           }
 

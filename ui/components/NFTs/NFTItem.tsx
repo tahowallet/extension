@@ -78,7 +78,7 @@ export default function NFTItem<
           margin: 8px 0;
         }
         .nft_item_price {
-          background: rgba(1, 56, 52, 0.75); // --green-95
+          background: var(--overlay-raised); // --green-95
           padding: 4px 5px;
           font-weight: 500;
           font-size: 14px;

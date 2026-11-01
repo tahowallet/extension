@@ -75,7 +75,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
   galxe: {
     title: "Galxe",
     url: "https://galxe.com/",
-    color: "#D6EAE9",
+    color: "var(--white)",
     hoverColor: "#ffffff",
     icon: "galxe.svg",
     getNFTLink: (nft: NFTCached): string =>

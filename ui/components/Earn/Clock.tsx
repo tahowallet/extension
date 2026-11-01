@@ -35,13 +35,7 @@ export default function Clock(): ReactElement {
             0px 14px 16px rgba(0, 20, 19, 0.14),
             0px 10px 12px rgba(0, 20, 19, 0.54);
           border-radius: 4px;
-          background: linear-gradient(
-            180deg,
-            #033c37 0%,
-            #0b524c 50%,
-            #033c37 50%,
-            #0b524c 100%
-          );
+          background: var(--clock-gradient);
         }
         .clock_segment:after {
           content: "";
