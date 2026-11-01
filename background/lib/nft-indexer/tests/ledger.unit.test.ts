@@ -68,6 +68,30 @@ describe("heldByLedger", () => {
   })
 })
 
+const shouted = (hex: string) => `0x${hex.slice(2).toUpperCase()}`
+
+describe("ledgerEntryFor", () => {
+  it("gives a transfer the same ID whichever source found it", () => {
+    const [fromLog] = entries([TRANSFER_IN])
+    const fromAlchemy = ledgerEntryFor(account, {
+      network: ETHEREUM,
+      contractAddress: shouted(TRANSFER_IN.address),
+      tokenId: fromLog.tokenId,
+      from: shouted(fromLog.from),
+      to: ACCOUNT,
+      txHash: shouted(`${TRANSFER_IN.transactionHash}ab`),
+      blockNumber: TRANSFER_IN.blockNumber,
+      logIndex: TRANSFER_IN.logIndex,
+    })
+    const fromLogWithHash = ledgerEntryFor(account, {
+      ...parseERC721TransferLog(TRANSFER_IN, ETHEREUM)!,
+      txHash: `${TRANSFER_IN.transactionHash}ab`,
+    })
+
+    expect(fromAlchemy.id).toBe(fromLogWithHash.id)
+  })
+})
+
 describe("collection IDs", () => {
   it("round-trips a chain and contract", () => {
     const id = erc721CollectionID("1", TRANSFER_IN.address)

@@ -36,7 +36,11 @@ export function ownershipID(account: string, token: TokenKey): string {
   return `${token.chainID}:${account}:${token.contract}:${token.tokenId}`
 }
 
-/** The ledger entry for one of an account's transfers. */
+/**
+ * The ledger entry for one of an account's transfers. Its ID is the chain,
+ * account, contract, token, transaction and log index, so the same transfer
+ * found by Alchemy's API and by a log scan is one entry.
+ */
 export function ledgerEntryFor(
   { address, network }: AddressOnNetwork,
   transfer: ERC721Transfer,
@@ -44,7 +48,8 @@ export function ledgerEntryFor(
   const account = normalizeEVMAddress(address)
   const contract = normalizeEVMAddress(transfer.contractAddress)
   const { chainID } = network
-  const { tokenId, txHash, logIndex, blockNumber } = transfer
+  const { tokenId, logIndex, blockNumber } = transfer
+  const txHash = transfer.txHash.toLowerCase()
   return {
     id: `${chainID}:${account}:${contract}:${tokenId}:${txHash}:${logIndex}`,
     chainID,
