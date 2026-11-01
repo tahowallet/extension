@@ -44,7 +44,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
               className="router_link_container"
             >
               <div className="icon_wrapper">
-                <i className={`asset_icon hoverable ${iconClass}`} />
+                <i className={`asset_icon ${iconClass}`} />
               </div>
             </Link>
           )}
@@ -54,7 +54,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
       ) : (
         <Link to={{ pathname: path, state }} className="router_link_container">
           <div className="icon_wrapper">
-            <i className={`asset_icon hoverable ${iconClass}`} />
+            <i className={`asset_icon ${iconClass}`} />
           </div>
         </Link>
       )}
@@ -80,12 +80,6 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           color: var(--icon-tile-hover-icon);
         }
         .router_link_container:hover .asset_icon {
-          background-color: var(--icon-tile-hover-icon);
-        }
-        /* Light also lights the icon when the tile, not the glyph, is hovered. */
-        [data-theme="light"]
-          .router_link_container:hover
-          .asset_icon.hoverable {
           background-color: var(--icon-tile-hover-icon);
         }
       `}</style>
