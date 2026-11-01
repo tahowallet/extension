@@ -123,6 +123,9 @@
   /* The swap tile, which dark sets apart in gold. */
   --action-tile-featured: var(--trophy-gold);
   --action-tile-featured-hover: var(--gold-80);
+  /* Small icon tiles, such as a wallet type's, at rest. */
+  --icon-tile: var(--green-60);
+  --icon-tile-icon: var(--green-20);
   /* Small icon links that sit on a tile while hovered. */
   --icon-tile-hover: var(--hunter-green);
   --icon-tile-hover-icon: var(--trophy-gold);
@@ -309,6 +312,8 @@
   --action-tile-hover-icon: #fefefc;
   --action-tile-featured: var(--action-tile);
   --action-tile-featured-hover: var(--action-tile-hover);
+  --icon-tile: var(--green-80);
+  --icon-tile-icon: #002522;
   --icon-tile-hover: #002522;
   --icon-tile-hover-icon: #fefefc;
   --icon-tile-hover-shadow: var(--shadow);
