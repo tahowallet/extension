@@ -101,11 +101,11 @@ export default function NetworkUnreachableWarning({
         />
         <style jsx>{`
           .tooltip_content :global(a) {
-            color: var(--green-95);
+            color: var(--tooltip-text);
             text-decoration: underline;
           }
           .tooltip_content :global(a):hover {
-            color: var(--green-40);
+            color: var(--tooltip-text-muted);
           }
         `}</style>
       </div>

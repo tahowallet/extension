@@ -98,6 +98,19 @@
   --on-accent-active: #001413;
   --on-accent-deep: #002522;
 
+  /* Tooltips and hover hints. */
+  --tooltip-background: var(--green-20);
+  --tooltip-text: var(--green-95);
+  --tooltip-text-muted: var(--green-40);
+  --tooltip-shadow:
+    0 2px 4px rgba(0, 20, 19, 0.24), 0 6px 8px rgba(0, 20, 19, 0.14),
+    0 16px 16px rgba(0, 20, 19, 0.04);
+  /* Dark also has quieter, sunken tooltips; light draws them like the rest. */
+  --tooltip-quiet-background: var(--green-120);
+  --tooltip-quiet-text: var(--green-20);
+  --tooltip-quiet-text-strong: var(--green-5);
+  --tooltip-quiet-shadow: none;
+
   /* Send and receive tiles on the wallet home. */
   --action-tile: var(--green-40);
   --action-tile-hover: var(--gold-80);
@@ -214,6 +227,16 @@
 
   --text-strong: #002522;
   --text-bright: #002522;
+
+  /* Every tooltip is a dark bubble on the light page. */
+  --tooltip-background: #002522;
+  --tooltip-text: #fefefc;
+  --tooltip-text-muted: #b8d1d0;
+  --tooltip-shadow: var(--shadow);
+  --tooltip-quiet-background: var(--tooltip-background);
+  --tooltip-quiet-text: var(--tooltip-text);
+  --tooltip-quiet-text-strong: var(--tooltip-text);
+  --tooltip-quiet-shadow: var(--tooltip-shadow);
 
   --grey-green-80: #dcdfd8;
   --grey-green-70: #b8c4c2;

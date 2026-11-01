@@ -41,11 +41,11 @@ export default function SharedLink({
         }
         .link.tooltip {
           text-decoration: underline;
-          color: var(--green-95);
+          color: var(--tooltip-text);
           padding: 0px;
         }
         .link.tooltip:hover {
-          color: var(--green-40);
+          color: var(--tooltip-text-muted);
         }
       `}</style>
     </a>

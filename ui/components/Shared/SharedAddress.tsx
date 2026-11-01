@@ -169,7 +169,7 @@ export default function SharedAddress({
           height: 24px;
           margin-left: 10px;
           display: inline-block;
-          background-color: var(--green-5);
+          background-color: currentColor;
         }
         button:hover .copy_icon {
           background-color: var(--trophy-gold);

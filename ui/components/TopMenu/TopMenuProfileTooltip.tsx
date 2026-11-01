@@ -24,10 +24,11 @@ export default function TopMenuProfileTooltip(props: {
           cursor: pointer;
           bottom: -30px;
           right: 0;
-          background-color: var(--green-120);
+          background-color: var(--tooltip-quiet-background);
+          box-shadow: var(--tooltip-quiet-shadow);
           padding: 8px 10px 8px;
           border-radius: 8px;
-          color: var(--green-5);
+          color: var(--tooltip-quiet-text-strong);
         }
       `}</style>
     </div>

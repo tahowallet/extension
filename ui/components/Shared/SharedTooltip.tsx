@@ -123,12 +123,9 @@ export default function SharedTooltip(props: Props): ReactElement {
           .tooltip {
             width: ${width !== undefined ? `${width}px` : "auto"};
             position: absolute;
-            box-shadow:
-              0 2px 4px rgba(0, 20, 19, 0.24),
-              0 6px 8px rgba(0, 20, 19, 0.14),
-              0 16px 16px rgba(0, 20, 19, 0.04);
-            background-color: var(--green-20);
-            color: var(--green-95);
+            box-shadow: var(--tooltip-shadow);
+            background-color: var(--tooltip-background);
+            color: var(--tooltip-text);
             font-size: 14px;
             font-weight: 500;
             line-height: 20px;
@@ -147,8 +144,8 @@ export default function SharedTooltip(props: Props): ReactElement {
             }
           }
           .dark {
-            background: var(--green-120);
-            color: var(--green-20);
+            background: var(--tooltip-quiet-background);
+            color: var(--tooltip-quiet-text);
             border-radius: 4px;
             font-size: 14px;
             font-weight: 500;
