@@ -37,7 +37,7 @@ relative to it.
 | `EndpointPool`               | `rpc/endpoint-pool.ts`             | An ordered set of endpoints and which one requests start from, through `endpointPoolMachine` (`rpc/endpoint-pool-machine.ts`).                                              |
 | `Endpoint`                   | `rpc/endpoint.ts`                  | One configured endpoint's lazily built transport and its health, through `endpointMachine` (`rpc/endpoint-machine.ts`).                                                     |
 | `SubscriptionManager`        | `rpc/subscription-manager.ts`      | ethers listeners and `eth_subscribe` subscriptions, kept on one endpoint's transport and moved when told to.                                                                |
-| Outcome observers            | `rpc/request-outcome-observers.ts` | Feed request outcomes to the reachability tracker and to performance metrics.                                                                                               |
+| Outcome observers            | `rpc/request-outcome-observers.ts` | Feed request outcomes to the reachability tracker, to performance metrics and to the log.                                                                                   |
 | `NetworkReachabilityTracker` | `network-reachability.ts`          | Whether the chain can be reached at all, from exhausted walks and successes.                                                                                                |
 | Endpoint configs             | `rpc/endpoint-configs.ts`          | Turns stored endpoints, Boar's URL, method-specific endpoints and fork overrides into `EndpointConfig`s.                                                                    |
 | `TahoRPCProvider`            | `taho-rpc-provider.ts`             | The batching HTTP transport. Shrinks batches an endpoint finds too large and resends only the refused requests.                                                             |
@@ -108,8 +108,8 @@ classDiagram
     +onRequestStarted()
     +onAttempt()
     +onEndpointSuccess()
-    +onEndpointFailure()
-    +onAllEndpointsFailed()
+    +onEndpointFailure(step)
+    +onAllEndpointsFailed(pool)
     +onRequestFailed()
   }
   class NetworkReachabilityTracker {
@@ -288,6 +288,28 @@ destroyed, requests in flight reject with its destroyed error.
 endpoint refuses a batch as too large it halves the batch size, and resends
 only the refused requests, so answered ones, broadcasts included, aren't sent
 twice.
+
+### Logging and errors
+
+Each endpoint has a label naming its chain, kind, place in the walk and
+host, such as `chain 8453 standard[1] base-mainnet.g.alchemy.com`
+(`rpc/endpoint-label.ts`). Labels, and the errors described in the lines
+below, keep only a URL's host, since paths and queries can hold API keys.
+
+`loggingObserver` logs each failed attempt and what follows it at debug,
+and an exhausted pool at warn. A request that fails for good is logged at
+warn when its endpoints were at fault, and at debug when the error was the
+request's own, such as a revert. The executor logs a fallback to the
+route's next pool, and skipping or probing a cooling endpoint. Endpoints log
+cooldowns at warn, and probes, recovery and their sockets; pools log changes
+of preference; `ProviderRegistry` logs reachability changes and provider
+swaps.
+
+An error the executor rethrows carries `rpcContext`: the chain ID, the
+method and the label of the last endpoint tried. Its message, `code` and
+identity are unchanged, since callers and ethers match on them and some
+messages reach the user. An abort's reason, such as the destroyed error, is
+left alone.
 
 ## Subscriptions
 
