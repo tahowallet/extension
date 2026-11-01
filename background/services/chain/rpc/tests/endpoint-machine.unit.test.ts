@@ -39,6 +39,7 @@ type FakeTransport = JsonRpcProvider & {
   destroy?: sinon.SinonStub
   websocket?: FakeSocket
   _websocket?: FakeSocket
+  _subIds?: Record<string, Promise<string>>
 }
 
 const pollingTransport = (): FakeTransport =>
@@ -47,13 +48,21 @@ const pollingTransport = (): FakeTransport =>
     removeAllListeners: sinon.stub(),
   })
 
-const socketTransport = (readyState = CONNECTING): FakeTransport =>
+const socketTransport = (
+  readyState = CONNECTING,
+  { subscribed = false }: { subscribed?: boolean } = {},
+): FakeTransport =>
   Object.assign(Object.create(WebSocketProvider.prototype), {
     send: sinon.stub().resolves("0x1"),
     removeAllListeners: sinon.stub(),
     destroy: sinon.stub(),
     _websocket: Object.assign(new FakeSocket(), { readyState }),
+    _subIds: subscribed ? { block: Promise.resolve("0x9") } : {},
   })
+
+/** A socket that carries a subscription once open. */
+const subscribedSocket = (readyState = CONNECTING) =>
+  socketTransport(readyState, { subscribed: true })
 
 const flush = async () => {
   for (let i = 0; i < 5; i += 1) {
@@ -231,6 +240,18 @@ describe("endpointMachine", () => {
       },
     )
 
+    it("lets a socket that is still opening go when released", () => {
+      const endpoint = harness(() => socketTransport())
+      endpoint.send({ type: "FIRST_USE" })
+      const [opening] = endpoint.transports
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+      endpoint.clock.increment(10_000)
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(opening.destroy?.called).toBe(true)
+    })
+
     it("closes the socket and stops listening to it when disposed", () => {
       const endpoint = harness(() => socketTransport())
       endpoint.send({ type: "FIRST_USE" })
@@ -298,11 +319,11 @@ describe("endpointMachine", () => {
       expect(endpoint.state()).toBe("Ready")
     })
 
-    it("reconnects with a new socket when the socket closes", () => {
+    it("reconnects with a new socket when a subscribed socket closes", () => {
       let built = 0
       const endpoint = harness(() => {
         built += 1
-        return socketTransport(built === 1 ? OPEN : CONNECTING)
+        return subscribedSocket(built === 1 ? OPEN : CONNECTING)
       })
       endpoint.send({ type: "FIRST_USE" })
       const [first] = endpoint.transports
@@ -321,7 +342,7 @@ describe("endpointMachine", () => {
       let built = 0
       const endpoint = harness(() => {
         built += 1
-        return socketTransport(built === 1 ? OPEN : CONNECTING)
+        return subscribedSocket(built === 1 ? OPEN : CONNECTING)
       })
       endpoint.send({ type: "FIRST_USE" })
       const [first] = endpoint.transports
@@ -332,6 +353,44 @@ describe("endpointMachine", () => {
 
       expect(endpoint.state()).toBe("Ready")
       expect(endpoint.transports).toHaveLength(2)
+    })
+
+    it("lets an idle socket go when it closes, and opens one when next used", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [idle] = endpoint.transports
+
+      idle.websocket?.close()
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(endpoint.transports).toHaveLength(1)
+      expect(idle.removeAllListeners.called).toBe(true)
+
+      endpoint.send({ type: "FIRST_USE" })
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports).toHaveLength(2)
+    })
+
+    it("lets its socket go when released", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [released] = endpoint.transports
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+
+      expect(endpoint.state()).toBe("Unbuilt")
+      expect(released.destroy?.called).toBe(true)
+      expect(endpoint.transports).toHaveLength(1)
+    })
+
+    it("keeps a polling transport when released", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+
+      expect(endpoint.state()).toBe("Ready")
+      expect(endpoint.transports[0].removeAllListeners.called).toBe(false)
     })
 
     it("ignores SOCKET_OPENED and FIRST_USE", () => {
@@ -385,6 +444,23 @@ describe("endpointMachine", () => {
       endpoint.send({ type } as EndpointEvent)
 
       expect(endpoint.state()).toBe("CoolingDown")
+    })
+
+    it("closes its socket when released, and probes on a new one", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.coolDown()
+      const [released] = endpoint.transports
+      released.destroy?.callsFake(() => {
+        released.websocket!.readyState = CLOSED
+      })
+
+      endpoint.send({ type: "SOCKET_RELEASED" })
+      expect(endpoint.state()).toBe("CoolingDown")
+      expect(released.destroy?.called).toBe(true)
+
+      endpoint.clock.increment(15_000)
+      expect(endpoint.state()).toBe("Probing")
+      expect(endpoint.transports).toHaveLength(2)
     })
 
     it("cancels the cooldown timer when disposed", () => {
@@ -769,7 +845,7 @@ describe("Endpoint", () => {
     it("logs its socket, its cooldown and its recovery", async () => {
       const lines = logged()
       const { endpoint, clock, transports } = endpointWith(() =>
-        socketTransport(),
+        subscribedSocket(),
       )
 
       endpoint.transport
@@ -787,6 +863,20 @@ describe("Endpoint", () => {
         "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds after 5 failures within 30 seconds.",
         "debug chain 1 standard[0] rpc.example is probing after its cooldown.",
         "info chain 1 standard[0] rpc.example recovered after 15 seconds.",
+      ])
+    })
+
+    it("logs letting an idle socket go", () => {
+      const lines = logged()
+      const { endpoint, transports } = endpointWith(() => socketTransport())
+
+      endpoint.transport
+      transports[0].websocket?.open()
+      transports[0].websocket?.close()
+
+      expect(lines()).toEqual([
+        "debug chain 1 standard[0] rpc.example opened its socket.",
+        "debug chain 1 standard[0] rpc.example let its socket go until it is next used.",
       ])
     })
 

@@ -1,5 +1,5 @@
 import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers"
-import { assign, fromCallback, fromPromise, setup } from "xstate"
+import { and, assign, fromCallback, fromPromise, not, setup } from "xstate"
 
 export type EndpointHealthOptions = {
   /** Failures within the window that start a cooldown. */
@@ -35,6 +35,14 @@ const isOpenSocket = (transport: JsonRpcProvider | undefined) =>
   !isWebSocketTransport(transport) ||
   transport.websocket.readyState === SOCKET_OPEN
 
+/** Whether a transport is a socket carrying `eth_subscribe` subscriptions. */
+export const hasSubscriptions = (
+  transport: JsonRpcProvider | undefined,
+): transport is WebSocketProvider =>
+  isWebSocketTransport(transport) &&
+  // oxlint-disable-next-line no-underscore-dangle
+  Object.keys(transport._subIds ?? {}).length > 0
+
 /**
  * Drops a transport's listeners, which drive Ethers' polling loop, and closes
  * its socket if it has one.
@@ -64,6 +72,7 @@ export type EndpointEvent =
   | { type: "SOCKET_CLOSED"; transport?: JsonRpcProvider }
   | { type: "REQUEST_SUCCEEDED" }
   | { type: "REQUEST_FAILED" }
+  | { type: "SOCKET_RELEASED" }
   | { type: "DISPOSE" }
 
 export type EndpointInput = {
@@ -186,6 +195,7 @@ export const endpointMachine = setup({
       event.transport === undefined ||
       event.transport === context.transport,
     usesWebSocket: ({ context }) => isWebSocketTransport(context.transport),
+    hasSubscriptions: ({ context }) => hasSubscriptions(context.transport),
     reachesThreshold: ({ context }) => {
       const windowStart = context.now() - context.options.failureWindowMs
       return (
@@ -211,6 +221,12 @@ export const endpointMachine = setup({
         return createTransport()
       },
     }),
+    /** Closes the socket, leaving it to be replaced on the way into Probing. */
+    closeSocket: ({ context: { transport } }) => {
+      if (isWebSocketTransport(transport)) {
+        transport.destroy()
+      }
+    },
     teardownTransport: assign({
       transport: ({ context }) => {
         teardownTransport(context.transport)
@@ -260,6 +276,7 @@ export const endpointMachine = setup({
   initial: "Unbuilt",
   on: {
     DISPOSE: ".Disposed",
+    SOCKET_RELEASED: { actions: "closeSocket" },
   },
   states: {
     Unbuilt: {
@@ -288,6 +305,7 @@ export const endpointMachine = setup({
           target: "CoolingDown",
           actions: "startCooldown",
         },
+        SOCKET_RELEASED: { target: "Unbuilt", actions: "teardownTransport" },
       },
     },
     Ready: {
@@ -305,11 +323,25 @@ export const endpointMachine = setup({
           },
           { actions: "recordFailure" },
         ],
-        // Socket transports are replaced before the new state watches them.
-        SOCKET_CLOSED: {
-          guard: "isCurrentSocket",
-          target: "Connecting",
-          actions: "replaceUnopenedSocket",
+        // A socket nobody subscribes on is opened again only when next
+        // used, so idle sockets the server closes aren't reopened forever.
+        // Others are replaced before the new state watches them.
+        SOCKET_CLOSED: [
+          {
+            guard: and(["isCurrentSocket", not("hasSubscriptions")]),
+            target: "Unbuilt",
+            actions: "teardownTransport",
+          },
+          {
+            guard: "isCurrentSocket",
+            target: "Connecting",
+            actions: "replaceUnopenedSocket",
+          },
+        ],
+        SOCKET_RELEASED: {
+          guard: "usesWebSocket",
+          target: "Unbuilt",
+          actions: "teardownTransport",
         },
       },
     },

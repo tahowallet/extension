@@ -93,6 +93,8 @@ function logStatusChange(
     logger.debug(`${label} opened its socket.`)
   } else if (to === "Connecting" && from === "Ready") {
     logger.info(`${label} lost its socket and is opening a new one.`)
+  } else if (to === "Unbuilt") {
+    logger.debug(`${label} let its socket go until it is next used.`)
   }
 }
 
@@ -281,6 +283,15 @@ export default class Endpoint {
 
   recordFailure(): void {
     this.#actor.send({ type: "REQUEST_FAILED" })
+  }
+
+  /**
+   * Closes the socket once nothing is subscribed on it. A ready or
+   * connecting endpoint opens a new one when next used; an unhealthy one
+   * replaces it when it probes.
+   */
+  releaseSocket(): void {
+    this.#actor.send({ type: "SOCKET_RELEASED" })
   }
 
   onStatusChange(listener: (status: EndpointStatus) => void): () => void {

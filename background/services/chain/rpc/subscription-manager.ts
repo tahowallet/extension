@@ -234,7 +234,8 @@ export default class SubscriptionManager {
 
   /**
    * Takes everything off the current transport. A socket is closed, since
-   * its subscriptions can't be taken back; its endpoint opens a fresh one.
+   * its subscriptions can't be taken back; its endpoint opens a fresh one
+   * when next used.
    */
   #detach(): void {
     const transport = this.#transport
@@ -242,7 +243,11 @@ export default class SubscriptionManager {
       return
     }
     if (isWebSocketTransport(transport)) {
-      transport.destroy()
+      if (transport === this.#endpoint.builtTransport) {
+        this.#endpoint.releaseSocket()
+      } else {
+        transport.destroy()
+      }
     } else {
       this.#eventListeners.forEach(({ eventName, attached }) =>
         transport.off(eventName, attached),

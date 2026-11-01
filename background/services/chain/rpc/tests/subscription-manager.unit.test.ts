@@ -16,6 +16,7 @@ function fakeTransport(webSocket = false, readyState = OPEN) {
     (webSocket ? WebSocketProvider : JsonRpcProvider).prototype,
   )
   const socket = Object.assign(new EventTarget(), { readyState })
+  const subIds: Record<string, Promise<string>> = {}
   return Object.assign(base, {
     emitter,
     _websocket: socket,
@@ -32,7 +33,10 @@ function fakeTransport(webSocket = false, readyState = OPEN) {
       socket.readyState = 3
       socket.dispatchEvent(new Event("close"))
     }),
-    _subscribe: sinon.stub().resolves(),
+    _subIds: subIds,
+    _subscribe: sinon.stub().callsFake(async (tag: string) => {
+      subIds[tag] = Promise.resolve(tag)
+    }),
   }) as JsonRpcProvider & {
     emitter: EventEmitter
     _websocket: EventTarget & { readyState: number }
@@ -245,6 +249,18 @@ describe("SubscriptionManager", () => {
     await manager.moveTo(polling.endpoint)
 
     expect(socket.transports[0].destroy.called).toBe(true)
+  })
+
+  it("lets the endpoint it leaves open a socket only when next used", async () => {
+    const socket = endpointOf(true)
+    const polling = endpointOf()
+    const manager = new SubscriptionManager(socket.endpoint)
+    await manager.subscribe("tag", [], () => {})
+
+    await manager.moveTo(polling.endpoint)
+
+    expect(socket.endpoint.status).toBe("Unbuilt")
+    expect(socket.transports).toHaveLength(1)
   })
 
   it("follows its endpoint onto a new socket", async () => {

@@ -184,7 +184,10 @@ stateDiagram-v2
   Ready --> Ready: REQUEST_SUCCEEDED / clearFailures
   Ready --> Ready: REQUEST_FAILED below threshold / recordFailure
   Ready --> CoolingDown: REQUEST_FAILED reaches threshold / startCooldown
-  Ready --> Connecting: SOCKET_CLOSED / replaceUnopenedSocket
+  Ready --> Connecting: SOCKET_CLOSED with subscriptions / replaceUnopenedSocket
+  Ready --> Unbuilt: SOCKET_CLOSED without subscriptions / teardownTransport
+  Ready --> Unbuilt: SOCKET_RELEASED / teardownTransport
+  Connecting --> Unbuilt: SOCKET_RELEASED / teardownTransport
   CoolingDown --> Probing: after cooldown / replaceUnopenedSocket
   Probing --> Ready: probe answers, or REQUEST_SUCCEEDED / resetCooldown
   Probing --> CoolingDown: probe fails / extendCooldown
@@ -205,6 +208,13 @@ outages, rate limits, invalid responses, and 401 or 403. Reverts and other
 4xx responses are about the request. A socket that isn't open is replaced on
 the way into `Probing`, so a socket stuck connecting gets a successor. The
 probe and the socket-open timeout run on the actor's clock.
+
+Servers close a socket that is quiet for a minute. A socket without
+`eth_subscribe` subscriptions that closes is opened again only when the
+endpoint is next used, so an unused one isn't reopened every minute.
+`releaseSocket`, called when subscriptions move off an endpoint, does the
+same for a ready or connecting endpoint, and only closes the socket of a
+cooling or probing one.
 
 `Endpoint` reports `CoolingDown`, `Probing` and recovery to metrics as
 `open`, `half-open` and `closed`.
@@ -371,7 +381,7 @@ sequenceDiagram
     Pool->>Pool: prefer endpoint 1
     Pool--)SFP: preferredEndpointChanged(endpoint 1)
     SFP->>SM: moveTo(endpoint 1)
-    SM->>WS: detach, closing the socket
+    SM->>WS: detach, releasing the socket
     SM->>H: attach listeners
     Note over SM,H: eth_subscribe subscriptions wait for a WebSocket endpoint
     WS--)WS: cooldown, then Probing with a fresh socket
