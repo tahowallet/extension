@@ -83,7 +83,7 @@ function cursorID(chainID: string, address: string): string {
   return `${chainID}:${normalizeEVMAddress(address)}`
 }
 
-/** Queues the blocks up to `head` the cursor hasn't reached. */
+/** Queues the blocks up to `head` the cursor hasn't reached, first. */
 function withNewBlocks(
   cursor: NFTLogScanCursor,
   head: number,
@@ -119,9 +119,11 @@ function withoutBlocksBefore(
  * whose transfer API returns too few to see an account's whole NFT history.
  *
  * Each account starts with a few pages of Alchemy's ERC-721 transfers, then
- * scans logs down to the block it first received anything in, newest blocks
- * first. Ticks take a few steps per chain and keep where they got to, so a
- * long history is scanned over many ticks and restarts.
+ * scans logs down to the block it first received anything in. New blocks go
+ * first, then the history older than Alchemy's pages reached, then, if the
+ * pages ran out before the history did, the blocks they covered. Ticks take
+ * a few steps per chain and keep where they got to, so a long history is
+ * scanned over many ticks and restarts.
  */
 export default class NFTLogScanner {
   private running: Promise<void> | undefined
@@ -264,8 +266,8 @@ export default class NFTLogScanner {
   }
 
   /**
-   * Scans the newest step's worth of an account's pending blocks. Returns
-   * false if the scan failed for a reason other than pruned history.
+   * Scans the newest step's worth of an account's first pending range.
+   * Returns false if the scan failed for a reason other than pruned history.
    */
   private async step(
     provider: SerialFallbackProvider,
@@ -316,9 +318,11 @@ export default class NFTLogScanner {
 
   /**
    * Starts an account's scan: reports a few pages of Alchemy's ERC-721
-   * transfers and queues the blocks from its first transfer to `head`.
-   * Without a first transfer it only scans new blocks. Returns nothing if
-   * the first transfer couldn't be found and is worth asking again.
+   * transfers and queues the blocks from its first transfer to `head`, those
+   * the pages didn't reach first. Blocks the pages covered are queued last,
+   * and not at all if the pages held every transfer. Without a first
+   * transfer it only scans new blocks. Returns nothing if the first transfer
+   * couldn't be found and is worth asking again.
    */
   private async start(
     provider: SerialFallbackProvider,
@@ -351,25 +355,43 @@ export default class NFTLogScanner {
     }
     this.firstTransferFailures.delete(id)
 
-    await this.prime(provider, addressNetwork)
+    // Steps scan both directions, so either one's gap is scanned for both.
+    const uncovered = Math.min(
+      head,
+      Math.max(...(await this.prime(provider, addressNetwork))),
+    )
+    const pending =
+      uncovered === Number.NEGATIVE_INFINITY
+        ? []
+        : [
+            { fromBlock: floor, toBlock: uncovered },
+            { fromBlock: Math.max(floor, uncovered + 1), toBlock: head },
+          ].filter(({ fromBlock, toBlock }) => fromBlock <= toBlock)
 
     return {
       id,
       chainID,
       account: normalizeEVMAddress(addressNetwork.address),
       newestBlock: head,
-      pending: floor <= head ? [{ fromBlock: floor, toBlock: head }] : [],
+      pending,
     }
   }
 
-  /** Reports up to {@link NFT_PRIME_PAGES} pages of transfers each way. */
+  /**
+   * Reports up to {@link NFT_PRIME_PAGES} pages of transfers each way.
+   * Returns, for each direction, the newest block the pages may have missed
+   * transfers in: the oldest block they reached, since a page can end partway
+   * through one; -Infinity if they held every transfer; Infinity if they
+   * reached nothing.
+   */
   private async prime(
     provider: SerialFallbackProvider,
     addressNetwork: AddressOnNetwork,
-  ): Promise<void> {
-    await Promise.all(
+  ): Promise<number[]> {
+    return Promise.all(
       (["incoming", "outgoing"] as const).map(async (direction) => {
         let pageKey: string | undefined
+        let oldest = Number.POSITIVE_INFINITY
         try {
           for (let page = 0; page < NFT_PRIME_PAGES; page += 1) {
             // oxlint-disable-next-line no-await-in-loop
@@ -385,9 +407,13 @@ export default class NFTLogScanner {
                 result.nftTransfers,
               )
             }
+            oldest = Math.min(
+              oldest,
+              ...result.nftTransfers.map(({ blockNumber }) => blockNumber),
+            )
             pageKey = result.pageKey
             if (pageKey === undefined) {
-              return
+              return Number.NEGATIVE_INFINITY
             }
           }
         } catch (error) {
@@ -397,6 +423,7 @@ export default class NFTLogScanner {
             error,
           )
         }
+        return oldest
       }),
     )
   }

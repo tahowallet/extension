@@ -59,7 +59,7 @@ export type NFTLogScanCursor = {
   account: string
   /** The newest block the scan has reached or queued. */
   newestBlock: number
-  /** Ranges still to scan, newest first. */
+  /** Ranges still to scan, in the order to scan them, each newest first. */
   pending: BlockRange[]
 }
 

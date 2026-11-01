@@ -344,6 +344,16 @@ history takes. It then queues the blocks from the account's first
 incoming transfer, which Alchemy finds with one request, to the head;
 an account that never received anything scans new blocks only.
 
+The log scan fills what the pages didn't reach first. Pages run newest
+first, so when a direction's pages stop at the cap, blocks from the first
+transfer up to the oldest block they reached are queued first, that block
+included since a page can end partway through it. Steps query both
+directions, so the queue takes whichever direction reached less far. The
+blocks the pages covered are queued after it, as a check that costs
+nothing until the rest is done. When both directions' pages ran out, they
+held every transfer and only new blocks are scanned. When the pages failed
+or reached nothing, the whole history is queued, newest first.
+
 The `nftTransferLogs` alarm ticks once a minute. A tick takes up to five
 steps per chain, shared by its accounts in turn, and stops after 20
 seconds. A step is two `eth_getLogs` requests over the newest 10,000
@@ -361,7 +371,7 @@ so they don't cool Boar down either. A failed step ends the chain's tick
 and is retried next tick; pruned history ends the scan at the earliest
 block kept. Each account's cursor, in
 `nftLogScanCursors` keyed by chain and account, holds the newest block
-reached and the ranges left, newest first, and is saved with the tick's
+reached and the ranges left in the order they're scanned, and is saved with the tick's
 transfers at the end of the tick, so a restart repeats at most one tick.
 
 The ledger keys each transfer by chain, account, contract, token,

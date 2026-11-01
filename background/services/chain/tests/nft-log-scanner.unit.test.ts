@@ -20,19 +20,30 @@ const HEAD = 1_000_020
 // The newest block scanned, with the head's last 20 blocks left alone.
 const NEWEST = HEAD - 20
 
-const transfer = (txHash: string): ERC721Transfer =>
-  ({ txHash, tokenId: "1" }) as ERC721Transfer
+const transfer = (txHash: string, blockNumber = NEWEST): ERC721Transfer =>
+  ({ txHash, tokenId: "1", blockNumber }) as ERC721Transfer
+
+const STEP = NFT_LOG_SCAN_STEP_BLOCKS
+
+/** A tick's steps down from `toBlock`, a step's blocks at a time. */
+const stepsDownFrom = (toBlock: number, count = NFT_LOG_SCAN_STEPS_PER_TICK) =>
+  Array.from(
+    { length: count },
+    (_, index) =>
+      [toBlock - (index + 1) * STEP + 1, toBlock - index * STEP] as const,
+  )
 
 function harness({
   accounts = [createAddressOnNetwork({ network: ETHEREUM })],
   firstTransferBlock = 0,
   alchemyNetworks = [ETHEREUM],
+  cursors = new Map<string, NFTLogScanCursor>(),
 }: {
   accounts?: AddressOnNetwork[]
   firstTransferBlock?: number | null
   alchemyNetworks?: EVMNetwork[]
+  cursors?: Map<string, NFTLogScanCursor>
 } = {}) {
-  const cursors = new Map<string, NFTLogScanCursor>()
   const db = {
     getNFTLogScanCursor: async (id: string) => cursors.get(id),
     putNFTLogScanCursors: async (rows: NFTLogScanCursor[]) => {
@@ -52,7 +63,8 @@ function harness({
   )
   const lookups = {
     viaLogs: sinon.stub().resolves([]),
-    page: sinon.stub().resolves({ nftTransfers: [] }),
+    // Pages that reach nothing, leaving the whole history to the logs.
+    page: sinon.stub().resolves({ nftTransfers: [], pageKey: "more" }),
     firstTransferBlock: sinon.stub().resolves(firstTransferBlock),
     maxBlockRange: sinon.stub().returns(undefined),
   }
@@ -123,7 +135,7 @@ describe("NFTLogScanner", () => {
         firstTransferBlock: 900_000,
       })
       lookups.page.callsFake(async (_, __, direction, pageKey) => ({
-        nftTransfers: [transfer(`${direction}-${pageKey ?? "first"}`)],
+        nftTransfers: [transfer(`${direction}-${pageKey ?? "first"}`, 950_000)],
         pageKey: direction === "incoming" ? `after-${pageKey ?? 0}` : undefined,
       }))
 
@@ -144,9 +156,9 @@ describe("NFTLogScanner", () => {
       expect(cursor.pending).toEqual([
         {
           fromBlock: 900_000,
-          toBlock:
-            NEWEST - NFT_LOG_SCAN_STEPS_PER_TICK * NFT_LOG_SCAN_STEP_BLOCKS,
+          toBlock: 950_000 - NFT_LOG_SCAN_STEPS_PER_TICK * STEP,
         },
+        { fromBlock: 950_001, toBlock: NEWEST },
       ])
     })
 
@@ -194,18 +206,156 @@ describe("NFTLogScanner", () => {
     })
   })
 
+  describe("ordering history around Alchemy's pages", () => {
+    const pagesReaching =
+      (oldest: { incoming?: number; outgoing?: number }) =>
+      async (_: unknown, __: unknown, direction: "incoming" | "outgoing") => {
+        const block = oldest[direction]
+        return block === undefined
+          ? { nftTransfers: [transfer(direction, NEWEST - 10)] }
+          : { nftTransfers: [transfer(direction, block)], pageKey: "more" }
+      }
+
+    it("only scans new blocks when the pages held every transfer", async () => {
+      const { scanner, lookups, cursors, setHead, ranges } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.callsFake(pagesReaching({}))
+
+      await scanner.tick()
+      expect(lookups.viaLogs.called).toBe(false)
+      expect([...cursors.values()][0].pending).toEqual([])
+
+      setHead(HEAD + 5)
+      await scanner.tick()
+      expect(ranges()).toEqual([[NEWEST + 1, NEWEST + 5]])
+    })
+
+    it("only scans new blocks when Alchemy has no transfers", async () => {
+      const { scanner, lookups, cursors } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.resolves({ nftTransfers: [] })
+
+      await scanner.tick()
+
+      expect(lookups.viaLogs.called).toBe(false)
+      expect([...cursors.values()][0].pending).toEqual([])
+    })
+
+    it("scans the whole history, newest first, when Alchemy fails", async () => {
+      sandbox.stub(logger, "warn")
+      const { scanner, lookups, ranges } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.rejects(new Error("boom"))
+
+      await scanner.tick()
+
+      expect(ranges()).toEqual(stepsDownFrom(NEWEST))
+    })
+
+    it("scans below capped pages first, then the blocks they covered", async () => {
+      const { scanner, lookups, cursors, ranges } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.callsFake(pagesReaching({ incoming: 950_000 }))
+
+      await scanner.tick()
+      // The oldest block reached is scanned again, as a page can end in it.
+      expect(ranges()).toEqual(stepsDownFrom(950_000))
+      expect([...cursors.values()][0].pending).toEqual([
+        { fromBlock: 900_000, toBlock: 900_000 },
+        { fromBlock: 950_001, toBlock: NEWEST },
+      ])
+
+      lookups.viaLogs.resetHistory()
+      await scanner.tick()
+      expect(ranges()).toEqual([
+        [900_000, 900_000],
+        ...stepsDownFrom(NEWEST, NFT_LOG_SCAN_STEPS_PER_TICK - 1),
+      ])
+    })
+
+    it("scans below whichever direction's pages reached less far", async () => {
+      const { scanner, lookups, cursors } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.callsFake(
+        pagesReaching({ incoming: 950_000, outgoing: 970_000 }),
+      )
+
+      await scanner.tick()
+
+      expect([...cursors.values()][0].pending).toEqual([
+        {
+          fromBlock: 900_000,
+          toBlock: 970_000 - NFT_LOG_SCAN_STEPS_PER_TICK * STEP,
+        },
+        { fromBlock: 970_001, toBlock: NEWEST },
+      ])
+    })
+
+    it("scans new blocks before the history below the pages", async () => {
+      const { scanner, lookups, setHead, ranges } = harness({
+        firstTransferBlock: 900_000,
+      })
+      lookups.page.callsFake(pagesReaching({ outgoing: 950_000 }))
+      await scanner.tick()
+      lookups.viaLogs.resetHistory()
+
+      setHead(HEAD + 100)
+      await scanner.tick()
+
+      expect(ranges().slice(0, 2)).toEqual([
+        [NEWEST + 1, NEWEST + 100],
+        [900_000, 900_000],
+      ])
+      expect(ranges()[2]).toEqual([NEWEST - STEP + 1, NEWEST])
+    })
+
+    it("resumes a saved cursor in its order without starting again", async () => {
+      const [account] = [createAddressOnNetwork({ network: ETHEREUM })]
+      const id = `${ETHEREUM.chainID}:${account.address.toLowerCase()}`
+      const cursors = new Map<string, NFTLogScanCursor>([
+        [
+          id,
+          {
+            id,
+            chainID: ETHEREUM.chainID,
+            account: account.address.toLowerCase(),
+            newestBlock: NEWEST,
+            pending: [
+              { fromBlock: 900_000, toBlock: 915_000 },
+              { fromBlock: 950_001, toBlock: NEWEST },
+            ],
+          },
+        ],
+      ])
+      const { scanner, lookups, ranges } = harness({
+        accounts: [account],
+        cursors,
+      })
+
+      await scanner.tick()
+
+      expect(lookups.firstTransferBlock.called).toBe(false)
+      expect(lookups.page.called).toBe(false)
+      expect(ranges()).toEqual([
+        [905_001, 915_000],
+        [900_000, 905_000],
+        ...stepsDownFrom(NEWEST, 3),
+      ])
+    })
+  })
+
   describe("pacing", () => {
     it("takes a tick's steps, newest blocks first, a step's blocks at a time", async () => {
       const { scanner, ranges } = harness()
 
       await scanner.tick()
 
-      expect(ranges()).toEqual(
-        Array.from({ length: NFT_LOG_SCAN_STEPS_PER_TICK }, (_, index) => [
-          NEWEST - (index + 1) * NFT_LOG_SCAN_STEP_BLOCKS + 1,
-          NEWEST - index * NFT_LOG_SCAN_STEP_BLOCKS,
-        ]),
-      )
+      expect(ranges()).toEqual(stepsDownFrom(NEWEST))
     })
 
     it("steps the widest range the endpoints allow, if narrower", async () => {

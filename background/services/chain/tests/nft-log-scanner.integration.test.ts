@@ -71,7 +71,8 @@ const MINT_FROM_ALCHEMY = {
 
 /**
  * A Boar-backed provider: Alchemy's transfers, Transfer logs from a list,
- * and ERC-721 calls without Multicall3.
+ * and ERC-721 calls without Multicall3. Alchemy's incoming pages always have
+ * another, as for an account with more transfers than the scan pages through.
  */
 function boarProvider({ firstBlock }: { firstBlock: number }) {
   const logs = [MINT, OLD_TRANSFER_IN, ERC20_IN]
@@ -107,7 +108,9 @@ function boarProvider({ firstBlock }: { firstBlock: number }) {
           ],
         }
       }
-      return { transfers: params.toAddress ? [MINT_FROM_ALCHEMY] : [] }
+      return params.toAddress
+        ? { transfers: [MINT_FROM_ALCHEMY], pageKey: "more" }
+        : { transfers: [] }
     },
   )
   const call = jest.fn(async ({ data }: { data: string }) => {
@@ -183,12 +186,18 @@ describe("NFTLogScanner with Boar", () => {
 
     await tick()
 
-    // Blocks 5,000 to 30,000, newest first, in three steps of two queries.
-    expect(getLogs).toHaveBeenCalledTimes(6)
-    expect(getLogs.mock.calls.at(-1)?.[0]).toMatchObject({
-      fromBlock: 5_000,
-      toBlock: 10_000,
-    })
+    // Blocks 5,000 to 25,000, the oldest Alchemy reached, then the blocks
+    // Alchemy covered, in four steps of two queries.
+    expect(
+      getLogs.mock.calls
+        .filter((_, index) => index % 2 === 0)
+        .map(([{ fromBlock, toBlock }]) => [fromBlock, toBlock]),
+    ).toEqual([
+      [15_001, 25_000],
+      [5_001, 15_000],
+      [5_000, 5_000],
+      [25_001, 30_000],
+    ])
     const ledger = await nftsDB.getERC721Transfers(
       ETHEREUM.chainID,
       normalizeEVMAddress(ACCOUNT),
@@ -216,9 +225,10 @@ describe("NFTLogScanner with Boar", () => {
 
     // No new start: no first transfer lookup and no priming.
     expect(second.send).not.toHaveBeenCalled()
+    // Three steps reached the first transfer below Alchemy's pages, and two
+    // went into the blocks the pages covered.
     expect(second.getLogs.mock.calls[0][0]).toMatchObject({
-      toBlock:
-        head - 20 - NFT_LOG_SCAN_STEPS_PER_TICK * NFT_LOG_SCAN_STEP_BLOCKS,
+      toBlock: head - 20 - 2 * NFT_LOG_SCAN_STEP_BLOCKS,
     })
     expect(second.getLogs).toHaveBeenCalledTimes(
       2 * NFT_LOG_SCAN_STEPS_PER_TICK,
