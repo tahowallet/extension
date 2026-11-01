@@ -372,13 +372,12 @@
       rgba(0, 166, 140, 0) 100%
     );
 
-  /* Gold tiles turn ink on hover, as in Figma. */
-  --action-tile: var(--trophy-gold);
-  --action-tile-hover: #002522;
+  /*
+   * The wallet's action tiles keep dark's colours: Send and Receive rest
+   * muted, Swap rests gold, and all three turn gold on hover, lifted.
+   */
   --action-tile-hover-shadow: var(--shadow);
   --action-tile-hover-icon: #fefefc;
-  --action-tile-featured: var(--action-tile);
-  --action-tile-featured-hover: var(--action-tile-hover);
   --icon-tile: var(--green-80);
   --icon-tile-icon: #002522;
   --icon-tile-hover: #002522;
