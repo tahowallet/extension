@@ -6,6 +6,7 @@ import {
 } from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
@@ -87,12 +88,22 @@ export default function SharedAssetItem<T extends AnyAsset>(
             />
 
             <div className="left_content">
-              <div
-                className="symbol ellipsis"
-                data-testid="asset_symbol"
-                title={asset.symbol}
-              >
-                {asset.symbol}
+              <div className="symbol_line">
+                <span
+                  className="symbol ellipsis"
+                  data-testid="asset_symbol"
+                  title={asset.symbol}
+                >
+                  {asset.symbol}
+                </span>
+                {isSmartContractFungibleAsset(asset) && (
+                  <span
+                    className="contract_address"
+                    title={asset.contractAddress}
+                  >
+                    {truncateAddress(asset.contractAddress, 4)}
+                  </span>
+                )}
               </div>
               <div className="token_subtitle ellipsis" title={asset.name}>
                 {asset.name}
@@ -189,13 +200,25 @@ export default function SharedAssetItem<T extends AnyAsset>(
             width: 18px;
             height: 29px;
           }
+          .symbol_line {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            line-height: 18px;
+            margin-top: 2px;
+          }
           .symbol {
+            min-width: 0;
             color: #fff;
             font-size: 16px;
             font-weight: 500;
-            line-height: 18px;
             text-transform: uppercase;
-            margin-top: 2px;
+          }
+          /* Tells apart tokens that share a symbol, so it stays whole. */
+          .contract_address {
+            flex-shrink: 0;
+            color: var(--green-40);
+            font-size: 14px;
           }
         `}
       </style>
