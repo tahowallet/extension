@@ -229,27 +229,16 @@ export default class AssetDataHelper {
 
     // Without a working Alchemy-capable endpoint, fall back to scanning
     // standard ERC-20 Transfer logs via eth_getLogs. Native-asset transfers
-    // are not captured this way.
-    try {
-      const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
+    // are not captured this way. Failures are left to the caller, which
+    // retries and logs them.
+    const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
 
-      return await getAssetTransfersViaLogs(
-        provider,
-        addressOnNetwork,
-        startBlock,
-        resolvedEndBlock,
-        incomingOnly,
-      )
-    } catch (error) {
-      logger.warn(
-        "Problem resolving asset transfers via Transfer logs on chain " +
-          `${addressOnNetwork.network.chainID}; network may not support it.`,
-        error,
-      )
-
-      // Rethrow as consumers like ChainService need the exception to manage
-      // retries.
-      throw error
-    }
+    return getAssetTransfersViaLogs(
+      provider,
+      addressOnNetwork,
+      startBlock,
+      resolvedEndBlock,
+      incomingOnly,
+    )
   }
 }

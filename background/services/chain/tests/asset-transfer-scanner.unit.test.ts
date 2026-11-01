@@ -1,7 +1,8 @@
-import { describe, expect, it } from "bun:test"
+import { afterEach, describe, expect, it } from "bun:test"
 import * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import type { AssetTransfer } from "../../../assets"
+import logger from "../../../lib/logger"
 import { createAddressOnNetwork } from "../../../tests/factories"
 import AssetTransferScanner from "../asset-transfer-scanner"
 import type AssetDataHelper from "../asset-data-helper"
@@ -68,6 +69,8 @@ function harness({
 }
 
 describe("AssetTransferScanner", () => {
+  afterEach(() => sinon.restore())
+
   describe("recent transfers", () => {
     it("looks back the full transaction history window when the network has an Alchemy-capable endpoint", async () => {
       const { scanner, range } = harness({ supportsAlchemy: true })
@@ -128,6 +131,7 @@ describe("AssetTransferScanner", () => {
     })
 
     it("logs rather than throws when a scan fails", async () => {
+      const warn = sinon.stub(logger, "warn")
       const { scanner, assetData } = harness({ supportsAlchemy: true })
       assetData.getAssetTransfers.rejects(new Error("NETWORK_ERROR"))
 
@@ -136,6 +140,10 @@ describe("AssetTransferScanner", () => {
           createAddressOnNetwork({ network: ETHEREUM }),
         ),
       ).resolves.toBeUndefined()
+      expect(warn.callCount).toBe(1)
+      expect(String(warn.firstCall.args[0])).toContain(
+        "chain 1: couldn't load recent asset transfers in blocks 871980 to 999980",
+      )
     })
   })
 
@@ -177,6 +185,29 @@ describe("AssetTransferScanner", () => {
       )
 
       expect(range()).toEqual([0n, 3000n])
+    })
+
+    it("logs a failed scan once, with its chain, account and range, rather than throwing", async () => {
+      const warn = sinon.stub(logger, "warn")
+      const { scanner, assetData } = harness({
+        supportsAlchemy: false,
+        oldestLookup: 800_000n,
+      })
+      const error = new Error("NETWORK_ERROR")
+      assetData.getAssetTransfers.rejects(error)
+      const account = createAddressOnNetwork({ network: ETHEREUM })
+
+      await expect(
+        scanner.scanHistoricTransfersFor(account),
+      ).resolves.toBeUndefined()
+
+      expect(warn.args).toEqual([
+        [
+          "chain 1: couldn't load historic asset transfers in blocks 795000 to 800000; trying again later.",
+          { address: account.address },
+          error,
+        ],
+      ])
     })
 
     it("does nothing once it has reached genesis", async () => {

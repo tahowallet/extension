@@ -759,18 +759,8 @@ export default class ChainService extends BaseService<Events> {
       )
     })
     if (source !== SignerImportSource.internal) {
-      this.assetTransferScanner
-        .scanHistoricTransfersFor(addressNetwork)
-        .catch((e) => {
-          logger.error(
-            "chainService/addAccountToTrack: Error loading historic asset transfers for",
-            {
-              address: addressNetwork.address,
-              chainID: addressNetwork.network.chainID,
-            },
-            e,
-          )
-        })
+      // Logs its own failures.
+      void this.assetTransferScanner.scanHistoricTransfersFor(addressNetwork)
     }
   }
 

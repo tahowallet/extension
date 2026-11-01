@@ -305,7 +305,9 @@ route's next pool, and skipping or probing a cooling endpoint. An endpoint
 warns once when it starts cooling down, logs its probes and longer
 cooldowns at debug, and its recovery, with how long it was down, at info;
 pools log changes of preference; `ProviderRegistry` logs reachability changes and provider
-swaps.
+swaps. Callers log a failure where they handle it, once: a failed
+transfer scan is logged by `AssetTransferScanner`, with its chain, account
+and block range, and not by `AssetDataHelper` or `ChainService`.
 
 An error the executor rethrows carries `rpcContext`: the chain ID, the
 method and the label of the last endpoint tried. Its message, `code` and

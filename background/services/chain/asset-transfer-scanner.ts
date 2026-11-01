@@ -62,6 +62,24 @@ export type AssetTransferScannerDependencies = {
   ) => void
 }
 
+/** Logs a scan that failed, once, where the scan is handled. */
+function logScanFailure(
+  kind: "recent" | "historic",
+  { address, network }: AddressOnNetwork,
+  range: { startBlock: bigint; endBlock: bigint } | undefined,
+  error: unknown,
+): void {
+  const blocks =
+    range === undefined
+      ? ""
+      : ` in blocks ${range.startBlock} to ${range.endBlock}`
+  logger.warn(
+    `chain ${network.chainID}: couldn't load ${kind} asset transfers${blocks}; trying again later.`,
+    { address },
+    error,
+  )
+}
+
 /**
  * Finds asset transfers for tracked accounts, recent ones on alarms and
  * older ones a block range at a time, and queues their transactions for
@@ -117,21 +135,15 @@ export default class AssetTransferScanner {
     )
       ? BLOCKS_FOR_TRANSACTION_HISTORY
       : BLOCKS_PER_TRANSFER_LOG_SCAN
-    const fromBlock = Math.max(0, blockHeight - blocksToLookBack)
+    const startBlock = BigInt(Math.max(0, blockHeight - blocksToLookBack))
+    const endBlock = BigInt(blockHeight)
 
     try {
-      await this.scanBlocks(
-        addressNetwork,
-        BigInt(fromBlock),
-        BigInt(blockHeight),
-        { incomingOnly },
-      )
+      await this.scanBlocks(addressNetwork, startBlock, endBlock, {
+        incomingOnly,
+      })
     } catch (error) {
-      logger.error(
-        "Failed to load recent asset transfers",
-        addressNetwork,
-        error,
-      )
+      logScanFailure("recent", addressNetwork, { startBlock, endBlock }, error)
     }
   }
 
@@ -139,26 +151,35 @@ export default class AssetTransferScanner {
    * Scans the blocks before the oldest one scanned so far for an account.
    * Networks without Alchemy's transfer lookups move back one bounded chunk
    * per call, since each scan there is many `eth_getLogs` requests.
+   * Failures are logged.
    */
   async scanHistoricTransfersFor(
     addressNetwork: AddressOnNetwork,
   ): Promise<void> {
     const { db, getBlockHeight, supportsAlchemyMethods } = this.dependencies
-    const oldest =
-      (await db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
-      BigInt(await getBlockHeight(addressNetwork.network))
+    let range: { startBlock: bigint; endBlock: bigint } | undefined
+    try {
+      const oldest =
+        (await db.getOldestAccountAssetTransferLookup(addressNetwork)) ??
+        BigInt(await getBlockHeight(addressNetwork.network))
 
-    if (oldest === 0n) {
-      return
+      if (oldest === 0n) {
+        return
+      }
+
+      const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
+      range = {
+        startBlock:
+          supportsAlchemyMethods(addressNetwork.network) || oldest <= chunkSize
+            ? 0n
+            : oldest - chunkSize,
+        endBlock: oldest,
+      }
+
+      await this.scanBlocks(addressNetwork, range.startBlock, range.endBlock)
+    } catch (error) {
+      logScanFailure("historic", addressNetwork, range, error)
     }
-
-    const chunkSize = BigInt(BLOCKS_PER_TRANSFER_LOG_SCAN)
-    const startBlock =
-      supportsAlchemyMethods(addressNetwork.network) || oldest <= chunkSize
-        ? 0n
-        : oldest - chunkSize
-
-    await this.scanBlocks(addressNetwork, startBlock, oldest)
   }
 
   /**

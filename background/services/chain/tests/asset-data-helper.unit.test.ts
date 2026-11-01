@@ -1,3 +1,5 @@
+import * as sinon from "sinon"
+import logger from "../../../lib/logger"
 import AssetDataHelper from "../asset-data-helper"
 import SerialFallbackProvider from "../serial-fallback-provider"
 import { getAssetTransfers as getBoarAssetTransfers } from "../../../lib/boar"
@@ -146,18 +148,26 @@ describe("AssetDataHelper", () => {
       ).rejects.toEqual(logsError)
     })
 
-    it("rethrows log-scanning errors so callers can manage retries", async () => {
+    it("rethrows log-scanning errors, unlogged, so callers can manage retries", async () => {
       const error = new Error("range too wide")
       mockedLogAssetTransfers.mockRejectedValueOnce(error)
+      const warn = sinon.stub(logger, "warn")
+      const logError = sinon.stub(logger, "error")
 
-      const helper = makeHelperWithProvider({
-        supportsAlchemyMethods: false,
-        getBlockNumber: jest.fn(async () => 100),
-      } as unknown as Partial<SerialFallbackProvider>)
+      try {
+        const helper = makeHelperWithProvider({
+          supportsAlchemyMethods: false,
+          getBlockNumber: jest.fn(async () => 100),
+        } as unknown as Partial<SerialFallbackProvider>)
 
-      await expect(
-        helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
-      ).rejects.toEqual(error)
+        await expect(
+          helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
+        ).rejects.toEqual(error)
+        expect(warn.called).toBe(false)
+        expect(logError.called).toBe(false)
+      } finally {
+        sinon.restore()
+      }
     })
   })
 })
