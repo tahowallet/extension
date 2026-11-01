@@ -26,6 +26,17 @@ interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
 }
 
+/** The asset transfer lookups AssetDataHelper picks between. */
+export type AssetTransferLookups = {
+  viaAlchemy: typeof getBoarAssetTransfers
+  viaLogs: typeof getAssetTransfersViaLogs
+}
+
+const defaultAssetTransferLookups: AssetTransferLookups = {
+  viaAlchemy: getBoarAssetTransfers,
+  viaLogs: getAssetTransfersViaLogs,
+}
+
 /**
  * AssetDataHelper is a wrapper for asset-related functionality like token
  * balance and transfer lookup that may use several different strategies to
@@ -35,7 +46,10 @@ interface ProviderManager {
  * optimizations.
  */
 export default class AssetDataHelper {
-  constructor(private providerTracker: ProviderManager) {}
+  constructor(
+    private providerTracker: ProviderManager,
+    private assetTransferLookups: AssetTransferLookups = defaultAssetTransferLookups,
+  ) {}
 
   async getTokenBalance(
     addressOnNetwork: AddressOnNetwork,
@@ -189,7 +203,7 @@ export default class AssetDataHelper {
     try {
       if (provider.supportsAlchemyMethods) {
         const promises = [
-          getBoarAssetTransfers(
+          this.assetTransferLookups.viaAlchemy(
             provider,
             addressOnNetwork,
             "incoming",
@@ -199,7 +213,7 @@ export default class AssetDataHelper {
         ]
         if (!incomingOnly) {
           promises.push(
-            getBoarAssetTransfers(
+            this.assetTransferLookups.viaAlchemy(
               provider,
               addressOnNetwork,
               "outgoing",
@@ -233,7 +247,7 @@ export default class AssetDataHelper {
     // retries and logs them.
     const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
 
-    return getAssetTransfersViaLogs(
+    return this.assetTransferLookups.viaLogs(
       provider,
       addressOnNetwork,
       startBlock,
