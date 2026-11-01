@@ -177,13 +177,14 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             overflow: hidden;
             background-color: var(--asset-icon-plate);
             box-shadow: inset 0 0 0 1px var(--asset-icon-plate-border);
-            padding: var(--asset-icon-inset);
-            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
           }
           .token_icon_fallback {
-            width: 100%;
-            height: 100%;
+            width: calc(100% - 2 * var(--asset-icon-inset));
+            height: calc(100% - 2 * var(--asset-icon-inset));
             color: var(--green-60);
             font-weight: 900;
             display: flex;
@@ -217,8 +218,8 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             : ""
         }
         .token_icon {
-          width: 100%;
-          height: 100%;
+          width: calc(100% - 2 * var(--asset-icon-inset));
+          height: calc(100% - 2 * var(--asset-icon-inset));
           background-color: var(--asset-icon-plate);
           mix-blend-mode: var(--asset-icon-blend);
           border-radius: 80px;

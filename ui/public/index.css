@@ -108,7 +108,8 @@
   /* The plate behind an asset's logo, and how far the logo sits inside it. */
   --asset-icon-plate: var(--castle-black);
   --asset-icon-plate-border: transparent;
-  --asset-icon-inset: 0;
+  /* A percentage, since calc() can't subtract a unitless 0 from 100%. */
+  --asset-icon-inset: 0%;
   --asset-icon-blend: normal;
 
   color-scheme: dark;
