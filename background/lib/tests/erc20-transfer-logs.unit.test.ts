@@ -8,6 +8,7 @@ import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-e
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
+  getERC721TransfersViaLogs,
   learntEarliestLogBlock,
   learntMaxBlockRange,
   MINIMUM_LOG_BLOCK_RANGE,
@@ -617,5 +618,31 @@ describe("getAssetTransfersViaLogs", () => {
         getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 100),
       ).resolves.toEqual({ assetTransfers: [], nftTransfers: [] })
     })
+  })
+})
+
+describe("getERC721TransfersViaLogs", () => {
+  it("returns only ERC-721 transfers, from both directions", async () => {
+    const { getLogs, provider } = stubProvider()
+    getLogs.mockResolvedValueOnce([
+      transferLog({ txHash: "0xerc20", logIndex: 1 }),
+      TRANSFER_IN,
+      SELF_TRANSFER,
+    ])
+    getLogs.mockResolvedValueOnce([BURN, SELF_TRANSFER])
+
+    const nftTransfers = await getERC721TransfersViaLogs(
+      provider,
+      ADDRESS_ON_NETWORK,
+      0,
+      100,
+    )
+
+    expect(getLogs).toHaveBeenCalledTimes(2)
+    expect(nftTransfers.map(({ txHash }) => txHash)).toEqual([
+      TRANSFER_IN.transactionHash,
+      SELF_TRANSFER.transactionHash,
+      BURN.transactionHash,
+    ])
   })
 })

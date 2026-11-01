@@ -199,6 +199,65 @@ function evmLogFromEthersLog({ address, data, topics }: Log): EVMLog {
 }
 
 /**
+ * An account's `Transfer` logs in a block range, incoming then outgoing. A
+ * transfer from the account to itself matches both queries and is returned
+ * once.
+ */
+async function getTransferLogs(
+  provider: SerialFallbackProvider,
+  { address, network }: AddressOnNetwork,
+  fromBlock: number,
+  toBlock: number,
+  incomingOnly: boolean,
+): Promise<Log[]> {
+  // Indexed address topics are 32-byte left-padded; normalize first so casing
+  // can't trip up providers that compare topics as raw strings.
+  const paddedAddress = utils.hexZeroPad(normalizeEVMAddress(address), 32)
+
+  const incomingLogs = await getLogsWithAdaptiveRange(
+    provider,
+    [ERC20_TRANSFER_TOPIC, null, paddedAddress],
+    fromBlock,
+    toBlock,
+  )
+
+  const outgoingLogs = incomingOnly
+    ? []
+    : await getLogsWithAdaptiveRange(
+        provider,
+        [ERC20_TRANSFER_TOPIC, paddedAddress],
+        fromBlock,
+        toBlock,
+      )
+
+  logger.debug(
+    "Found",
+    incomingLogs.length,
+    "incoming and",
+    outgoingLogs.length,
+    "outgoing transfer logs for",
+    address,
+    "on chain",
+    network.chainID,
+    "between blocks",
+    fromBlock,
+    "and",
+    toBlock,
+  )
+
+  // De-duplicate by the unique (transaction hash, log index) pair.
+  const seenLogIds = new Set<string>()
+  return [...incomingLogs, ...outgoingLogs].filter((log) => {
+    const logId = `${log.transactionHash}-${log.logIndex}`
+    if (seenLogIds.has(logId)) {
+      return false
+    }
+    seenLogIds.add(logId)
+    return true
+  })
+}
+
+/**
  * Discover ERC-20 and ERC-721 transfer activity for an account using only
  * standard `eth_getLogs` calls. This is the fallback used on networks whose
  * RPC endpoints do not support Alchemy's enhanced `alchemy_getAssetTransfers`
@@ -248,58 +307,19 @@ export async function getAssetTransfersViaLogs(
   toBlock: number,
   incomingOnly = false,
 ): Promise<ScannedTransfers> {
-  const { address, network } = addressOnNetwork
-
-  // Indexed address topics are 32-byte left-padded; normalize first so casing
-  // can't trip up providers that compare topics as raw strings.
-  const paddedAddress = utils.hexZeroPad(normalizeEVMAddress(address), 32)
-
-  const incomingLogs = await getLogsWithAdaptiveRange(
+  const { network } = addressOnNetwork
+  const logs = await getTransferLogs(
     provider,
-    [ERC20_TRANSFER_TOPIC, null, paddedAddress],
+    addressOnNetwork,
     fromBlock,
     toBlock,
+    incomingOnly,
   )
 
-  const outgoingLogs = incomingOnly
-    ? []
-    : await getLogsWithAdaptiveRange(
-        provider,
-        [ERC20_TRANSFER_TOPIC, paddedAddress],
-        fromBlock,
-        toBlock,
-      )
-
-  logger.debug(
-    "Found",
-    incomingLogs.length,
-    "incoming and",
-    outgoingLogs.length,
-    "outgoing transfer logs for",
-    address,
-    "on chain",
-    network.chainID,
-    "between blocks",
-    fromBlock,
-    "and",
-    toBlock,
-  )
-
-  // A transfer from an address to itself matches both queries; de-duplicate by
-  // the unique (transaction hash, log index) pair so it's only counted once.
-  const seenLogIds = new Set<string>()
   const assetTransfers: AssetTransfer[] = []
   const nftTransfers: ERC721Transfer[] = []
 
-  const logs = [...incomingLogs, ...outgoingLogs]
   logs.forEach((log) => {
-    const logId = `${log.transactionHash}-${log.logIndex}`
-
-    if (seenLogIds.has(logId)) {
-      return
-    }
-    seenLogIds.add(logId)
-
     if (log.topics.length === 4) {
       const nftTransfer = parseERC721TransferLog(log, network)
       if (nftTransfer !== undefined) {
@@ -345,4 +365,28 @@ export async function getAssetTransfersViaLogs(
   })
 
   return { assetTransfers, nftTransfers }
+}
+
+/**
+ * Discover only an account's ERC-721 transfers from `Transfer` logs, for
+ * networks whose ERC-20 transfers come from Alchemy's API. The queries are
+ * those of {@link getAssetTransfersViaLogs}; logs with three topics, ERC-20
+ * transfers, are dropped.
+ */
+export async function getERC721TransfersViaLogs(
+  provider: SerialFallbackProvider,
+  addressOnNetwork: AddressOnNetwork,
+  fromBlock: number,
+  toBlock: number,
+): Promise<ERC721Transfer[]> {
+  const logs = await getTransferLogs(
+    provider,
+    addressOnNetwork,
+    fromBlock,
+    toBlock,
+    false,
+  )
+  return logs.flatMap(
+    (log) => parseERC721TransferLog(log, addressOnNetwork.network) ?? [],
+  )
 }
