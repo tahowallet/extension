@@ -45,8 +45,9 @@ import {
   AccordionPoolInfoHeader,
   AccordionPoolInfoContent,
 } from "./Earn/AccordionPoolInfo"
+import CorePage from "../components/Core/CorePage"
 
-export default function EarnDeposit(): ReactElement | null {
+export default function EarnDeposit(): ReactElement {
   const storedInput = useBackgroundSelector(selectEarnInputAmount)
   const account = useBackgroundSelector(selectCurrentAccount)
   const accountBalances = useBackgroundSelector(selectCurrentAccountBalances)
@@ -139,7 +140,7 @@ export default function EarnDeposit(): ReactElement | null {
   }, [amount, dispatch, history, inDepositProcess, vault])
 
   if (typeof vault === "undefined") {
-    return null
+    return <CorePage hasTopBar hasTabBar />
   }
 
   const pendingRewards = fromFixedPointNumber(
@@ -226,7 +227,7 @@ export default function EarnDeposit(): ReactElement | null {
   }
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <section className="primary_info">
         <BackButton path="/earn" />
         <ul className="wrapper">
@@ -653,6 +654,6 @@ export default function EarnDeposit(): ReactElement | null {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

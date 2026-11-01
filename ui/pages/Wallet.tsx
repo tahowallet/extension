@@ -37,6 +37,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
 import MezoWalletCampaignBanner from "../components/Wallet/Banner/WalletCampaignBanner"
+import CorePage from "../components/Core/CorePage"
 
 dayjs.extend(isBetween)
 
@@ -130,7 +131,7 @@ export default function Wallet(): ReactElement {
   }
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <div className="page_content">
         {isEnabled(FeatureFlags.SHOW_ISLAND_UI) && <WalletSubspaceLink />}
         <WalletAnalyticsNotificationBanner />
@@ -271,6 +272,6 @@ export default function Wallet(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

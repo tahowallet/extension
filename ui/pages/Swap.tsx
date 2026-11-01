@@ -57,6 +57,7 @@ import {
 import { useOnMount, usePrevious, useInterval } from "../hooks/react-hooks"
 import SharedLoadingDoggo from "../components/Shared/SharedLoadingDoggo"
 import SharedBackButton from "../components/Shared/SharedBackButton"
+import CorePage from "../components/Core/CorePage"
 
 const REFRESH_QUOTE_INTERVAL = 10 * SECOND
 
@@ -407,7 +408,7 @@ export default function Swap(): ReactElement {
     loadingQuote || !quote?.priceDetails || !quoteAppliesToCurrentAssets
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <div className="standard_width">
         <div className="back_button_wrap">
           <SharedBackButton path="/" />
@@ -651,6 +652,6 @@ export default function Swap(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

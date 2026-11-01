@@ -38,6 +38,7 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedLink from "../components/Shared/SharedLink"
+import CorePage from "../components/Core/CorePage"
 
 type SettingsItem = {
   title: string
@@ -435,111 +436,113 @@ export default function Settings(): ReactElement {
   }
 
   return (
-    <section className="standard_width_padded">
-      <div className="menu">
-        <h1>{t("settings.mainMenu")}</h1>
-        <ul>
-          {Object.values(settings).map(({ title, items }) => (
-            <div className="group" key={title}>
-              <span className="group_title">{title}</span>
-              {items.map((item, index) => {
-                const key = `${title}-${item.title}-${index}`
-                return (
-                  <SettingRow
-                    key={key}
-                    title={item.title}
-                    component={item.component}
-                    tooltip={item.tooltip}
-                  />
-                )
-              })}
-            </div>
-          ))}
-        </ul>
-      </div>
-      <div className="footer">
-        <div className="action_icons">
-          {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
-            <SharedIcon
-              key={icon}
-              icon={`${icon}.svg`}
-              width={18}
-              color="var(--green-20)"
-              hoverColor="var(--trophy-gold)"
-              transitionHoverTime="0.2s"
-              onClick={() => {
-                window.open(linkTo, "_blank")?.focus()
-              }}
-            />
-          ))}
+    <CorePage hasTabBar>
+      <section className="standard_width_padded">
+        <div className="menu">
+          <h1>{t("settings.mainMenu")}</h1>
+          <ul>
+            {Object.values(settings).map(({ title, items }) => (
+              <div className="group" key={title}>
+                <span className="group_title">{title}</span>
+                {items.map((item, index) => {
+                  const key = `${title}-${item.title}-${index}`
+                  return (
+                    <SettingRow
+                      key={key}
+                      title={item.title}
+                      component={item.component}
+                      tooltip={item.tooltip}
+                    />
+                  )
+                })}
+              </div>
+            ))}
+          </ul>
         </div>
-        <VersionLabel />
-      </div>
-      <style jsx>
-        {`
-          section {
-            display: flex;
-            flex-flow: column;
-            justify-content: space-between;
-            height: 544px;
-            background-color: var(--hunter-green);
-          }
-          .menu {
-            display: flex;
-            justify-content: space-between;
-            display: flex;
-            flex-direction: column;
-          }
-          h1 {
-            color: #fff;
-            font-size: 22px;
-            font-weight: 500;
-            line-height: 32px;
-            margin-bottom: 28px;
-          }
-          span {
-            color: var(--green-40);
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 24px;
-          }
-          .footer {
-            width: 100vw;
-            margin-top: 20px;
-            margin-left: -24px;
-            background-color: var(--green-95);
-            text-align: center;
-            padding-top: 16px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          .action_icons {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-          }
-          .group {
-            border-bottom: 1px solid var(--green-80);
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-          }
-          .group:last-child {
-            border-bottom: none;
-            padding: 0px;
-            margin: 0px;
-          }
-          .group_title {
-            color: var(--green-40);
-            font-family: "Segment";
-            font-style: normal;
-            font-weight: 400;
-            font-size: 16px;
-            line-height: 24px;
-          }
-        `}
-      </style>
-    </section>
+        <div className="footer">
+          <div className="action_icons">
+            {FOOTER_ACTIONS.map(({ icon, linkTo }) => (
+              <SharedIcon
+                key={icon}
+                icon={`${icon}.svg`}
+                width={18}
+                color="var(--green-20)"
+                hoverColor="var(--trophy-gold)"
+                transitionHoverTime="0.2s"
+                onClick={() => {
+                  window.open(linkTo, "_blank")?.focus()
+                }}
+              />
+            ))}
+          </div>
+          <VersionLabel />
+        </div>
+        <style jsx>
+          {`
+            section {
+              display: flex;
+              flex-flow: column;
+              justify-content: space-between;
+              height: 544px;
+              background-color: var(--hunter-green);
+            }
+            .menu {
+              display: flex;
+              justify-content: space-between;
+              display: flex;
+              flex-direction: column;
+            }
+            h1 {
+              color: #fff;
+              font-size: 22px;
+              font-weight: 500;
+              line-height: 32px;
+              margin-bottom: 28px;
+            }
+            span {
+              color: var(--green-40);
+              font-size: 16px;
+              font-weight: 400;
+              line-height: 24px;
+            }
+            .footer {
+              width: 100vw;
+              margin-top: 20px;
+              margin-left: -24px;
+              background-color: var(--green-95);
+              text-align: center;
+              padding-top: 16px;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            }
+            .action_icons {
+              display: flex;
+              justify-content: center;
+              gap: 24px;
+            }
+            .group {
+              border-bottom: 1px solid var(--green-80);
+              margin-bottom: 24px;
+              padding-bottom: 24px;
+            }
+            .group:last-child {
+              border-bottom: none;
+              padding: 0px;
+              margin: 0px;
+            }
+            .group_title {
+              color: var(--green-40);
+              font-family: "Segment";
+              font-style: normal;
+              font-weight: 400;
+              font-size: 16px;
+              line-height: 24px;
+            }
+          `}
+        </style>
+      </section>
+    </CorePage>
   )
 }

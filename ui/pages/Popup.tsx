@@ -1,6 +1,6 @@
 import React, { ReactElement, useState, useEffect } from "react"
 import { Router, Switch, Route } from "react-router-dom"
-import { ErrorBoundary } from "react-error-boundary"
+import { ErrorBoundary, FallbackProps } from "react-error-boundary"
 
 import {
   setRouteHistoryEntries,
@@ -35,11 +35,17 @@ import ErrorFallback from "./ErrorFallback"
 import pageList from "../routes/routes"
 
 const pagePreferences = Object.fromEntries(
-  pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
-    path,
-    { hasTabBar, hasTopBar, persistOnClose },
-  ]),
+  pageList.map(({ path, persistOnClose }) => [path, { persistOnClose }]),
 )
+
+/** Shows the error page when a page fails outside its own content. */
+function PageErrorFallback(props: FallbackProps): ReactElement {
+  return (
+    <CorePage>
+      <ErrorFallback {...props} />
+    </CorePage>
+  )
+}
 
 function transformLocation(
   inputLocation: Location,
@@ -179,20 +185,13 @@ export function Main(): ReactElement {
                 >
                   <div>
                     <Switch location={transformedLocation}>
-                      {pageList.map(
-                        ({ path, Component, hasTopBar, hasTabBar }) => (
-                          <Route path={path} key={path}>
-                            <CorePage
-                              hasTopBar={hasTopBar}
-                              hasTabBar={hasTabBar}
-                            >
-                              <ErrorBoundary FallbackComponent={ErrorFallback}>
-                                <Component location={transformedLocation} />
-                              </ErrorBoundary>
-                            </CorePage>
-                          </Route>
-                        ),
-                      )}
+                      {pageList.map(({ path, Component }) => (
+                        <Route path={path} key={path}>
+                          <ErrorBoundary FallbackComponent={PageErrorFallback}>
+                            <Component location={transformedLocation} />
+                          </ErrorBoundary>
+                        </Route>
+                      ))}
                     </Switch>
                   </div>
                 </CSSTransition>

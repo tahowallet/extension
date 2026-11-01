@@ -5,6 +5,7 @@ import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import ConnectedWebsitesListItem from "./ConnectedWebsitesListItem"
 import { useBackgroundSelector } from "../../hooks"
 import ConnectedWebsitesListEmpty from "./ConnectedWebsitesListEmpty"
+import CorePage from "../../components/Core/CorePage"
 
 export default function SettingsConnectedWebsites(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "settings" })
@@ -22,30 +23,32 @@ export default function SettingsConnectedWebsites(): ReactElement {
   }, [allowedPages])
 
   return (
-    <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText backPath="/settings">
-        {t("connectedWebsitesSettings.title")}
-      </SharedPageHeader>
-      <section>
-        {dappsByOrigin.length === 0 ? (
-          <ConnectedWebsitesListEmpty />
-        ) : (
-          <ul>
-            {dappsByOrigin.map((permission) => (
-              <li key={permission.origin}>
-                <ConnectedWebsitesListItem permission={permission} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <style jsx>{`
-        .wrapper {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-      `}</style>
-    </div>
+    <CorePage hasTabBar>
+      <div className="standard_width_padded wrapper">
+        <SharedPageHeader withoutBackText backPath="/settings">
+          {t("connectedWebsitesSettings.title")}
+        </SharedPageHeader>
+        <section>
+          {dappsByOrigin.length === 0 ? (
+            <ConnectedWebsitesListEmpty />
+          ) : (
+            <ul>
+              {dappsByOrigin.map((permission) => (
+                <li key={permission.origin}>
+                  <ConnectedWebsitesListItem permission={permission} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <style jsx>{`
+          .wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          }
+        `}</style>
+      </div>
+    </CorePage>
   )
 }

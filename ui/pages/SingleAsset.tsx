@@ -30,6 +30,7 @@ import { getBlockExplorerURL } from "../utils/networks"
 import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 import { trimWithEllipsis } from "../utils/textUtils"
 import AssetWarningWrapper from "../components/Wallet/UnverifiedAsset/AssetWarningWrapper"
+import CorePage from "../components/Core/CorePage"
 
 const MAX_SYMBOL_LENGTH = 10
 
@@ -107,7 +108,7 @@ export default function SingleAsset(): ReactElement {
     useState<SmartContractFungibleAsset | null>(null)
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <AssetWarningWrapper
         asset={warnedAsset}
         close={() => {
@@ -334,6 +335,6 @@ export default function SingleAsset(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

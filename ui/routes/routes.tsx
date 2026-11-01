@@ -1,4 +1,4 @@
-import { ReactElement } from "react"
+import React, { ReactElement } from "react"
 import Wallet from "../pages/Wallet"
 import SignTransaction from "../pages/SignTransaction"
 import SignData from "../pages/SignData"
@@ -24,6 +24,25 @@ import Abilities from "../pages/Abilities"
 import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
 import NewCustomNetworkRequest from "../pages/NewCustomNetworkRequest"
 import SettingsAddCustomAsset from "../pages/Settings/SettingsAddCustomAsset"
+import CorePage from "../components/Core/CorePage"
+
+// The internal signer screens also appear inside other pages, so their routes
+// supply the page frame.
+function InternalSignerSetPasswordPage(): ReactElement {
+  return (
+    <CorePage>
+      <InternalSignerSetPassword />
+    </CorePage>
+  )
+}
+
+function InternalSignerUnlockPage(): ReactElement {
+  return (
+    <CorePage>
+      <InternalSignerUnlock />
+    </CorePage>
+  )
+}
 
 type PageList = {
   path: string
@@ -31,185 +50,133 @@ type PageList = {
   // accepting here.
   // oxlint-disable-next-line typescript/no-explicit-any
   Component: (...args: any[]) => ReactElement | null
-  hasTabBar: boolean
-  hasTopBar: boolean
   persistOnClose: boolean
 }
 
 const pageList: PageList[] = [
   {
     path: "/internal-signer/set-password",
-    Component: InternalSignerSetPassword,
-    hasTabBar: false,
-    hasTopBar: false,
+    Component: InternalSignerSetPasswordPage,
     persistOnClose: false,
   },
   {
     path: "/internal-signer/unlock",
-    Component: InternalSignerUnlock,
-    hasTabBar: false,
-    hasTopBar: false,
+    Component: InternalSignerUnlockPage,
     persistOnClose: false,
   },
   {
     path: "/singleAsset",
     Component: SingleAsset,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
   {
     path: "/sign-transaction",
     Component: SignTransaction,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/add-evm-chain",
     Component: NewCustomNetworkRequest,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/sign-data",
     Component: SignData,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/personal-sign",
     Component: PersonalSign,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/portfolio",
     Component: Overview,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/earn/deposit",
     Component: EarnDeposit,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
   {
     path: "/earn",
     Component: Earn,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
   {
     path: "/settings/export-logs",
     Component: SettingsExportLogs,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/settings/connected-websites",
     Component: SettingsConnectedWebsites,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/settings/analytics",
     Component: SettingsAnalytics,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/settings/custom-networks",
     Component: SettingsCustomNetworks,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/settings/add-custom-asset",
     Component: SettingsAddCustomAsset,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/settings",
     Component: Menu,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/abilities",
     Component: Abilities,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/send",
     Component: Send,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
   {
     path: "/swap",
     Component: Swap,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
   {
     path: "/nfts",
     Component: NFTs,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/dapp-permission",
     Component: DAppPermissionRequest,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/eligible",
     Component: Eligible,
-    hasTabBar: false,
-    hasTopBar: false,
     persistOnClose: true,
   },
   {
     path: "/dev/feature-flags",
     Component: FeatureFlagsPanel,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/dev",
     Component: HiddenDevPanel,
-    hasTabBar: true,
-    hasTopBar: false,
     persistOnClose: false,
   },
   {
     path: "/",
     Component: Wallet,
-    hasTabBar: true,
-    hasTopBar: true,
     persistOnClose: true,
   },
 ]
