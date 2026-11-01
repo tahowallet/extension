@@ -761,7 +761,8 @@ flowchart TB
 ## Tests
 
 `background/tests/factories.ts` replaces `serial-fallback-provider` with a
-mock through `mock.module`, which bun applies to the whole process and can't
-undo. The provider's integration tests fail when run in the same bun process
-as a test that imports the factories, so the test scripts run each
-integration file in its own process.
+mock through `mock.module`, which applies to every file a bun process runs
+without isolation. The provider's integration tests fail when run in the same
+module registry as a test that imports the factories, so the test scripts run
+with `--parallel`, which gives each file a fresh global and module registry
+(bun's `--isolate`).
