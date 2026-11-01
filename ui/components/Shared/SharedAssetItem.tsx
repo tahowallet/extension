@@ -11,6 +11,7 @@ import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
 import { getBlockExplorerURL } from "../../utils/networks"
+import { displayAssetAmount } from "../../utils/amounts"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -51,6 +52,9 @@ export default function SharedAssetItem<T extends AnyAsset>(
     onMouseMove,
   } = props
   const { asset } = assetAndAmount
+  const amount = hasAmounts(assetAndAmount)
+    ? displayAssetAmount(assetAndAmount)
+    : undefined
   const [contractLink, setContractLink] = useState("")
 
   function handleClick() {
@@ -112,9 +116,9 @@ export default function SharedAssetItem<T extends AnyAsset>(
           </div>
 
           <div className="right_content">
-            {hasAmounts(assetAndAmount) && (
-              <div className="amount">
-                {assetAndAmount.localizedDecimalAmount}
+            {amount && (
+              <div className="amount" title={amount.title}>
+                {amount.text}
               </div>
             )}
             {contractLink && (
@@ -154,6 +158,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             min-width: 0;
           }
           .right_content {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             gap: 20px;
