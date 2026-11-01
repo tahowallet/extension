@@ -13,6 +13,11 @@ export type EndpointHealthOptions = {
   socketOpenTimeoutMs: number
   /** How long a probe, including opening its socket, gets to answer. */
   probeTimeoutMs: number
+  /**
+   * How often a socket with subscriptions sends a request, since servers
+   * close sockets that are quiet for a minute.
+   */
+  keepAliveIntervalMs: number
 }
 
 export const DEFAULT_ENDPOINT_HEALTH_OPTIONS: EndpointHealthOptions = {
@@ -23,6 +28,7 @@ export const DEFAULT_ENDPOINT_HEALTH_OPTIONS: EndpointHealthOptions = {
   cooldownBackoffMultiplier: 2,
   socketOpenTimeoutMs: 10_000,
   probeTimeoutMs: 20_000,
+  keepAliveIntervalMs: 30_000,
 }
 
 const SOCKET_OPEN = 1
@@ -187,6 +193,7 @@ export const endpointMachine = setup({
     cooldown: ({ context }) => context.cooldownMs,
     socketOpenTimeout: ({ context }) => context.options.socketOpenTimeoutMs,
     probeTimeout: ({ context }) => context.options.probeTimeoutMs,
+    keepAliveInterval: ({ context }) => context.options.keepAliveIntervalMs,
   },
   guards: {
     /** Ignores news from a socket that has since been replaced. */
@@ -221,6 +228,12 @@ export const endpointMachine = setup({
         return createTransport()
       },
     }),
+    /** A request on the socket, so the server doesn't close it as idle. */
+    keepSocketAlive: ({ context: { transport } }) => {
+      if (hasSubscriptions(transport)) {
+        transport.send("eth_chainId", []).catch(() => undefined)
+      }
+    },
     /** Closes the socket, leaving it to be replaced on the way into Probing. */
     closeSocket: ({ context: { transport } }) => {
       if (isWebSocketTransport(transport)) {
@@ -342,6 +355,16 @@ export const endpointMachine = setup({
           guard: "usesWebSocket",
           target: "Unbuilt",
           actions: "teardownTransport",
+        },
+      },
+      // Reentered to run again; it only sends while the socket has
+      // subscriptions.
+      after: {
+        keepAliveInterval: {
+          guard: "usesWebSocket",
+          target: "Ready",
+          reenter: true,
+          actions: "keepSocketAlive",
         },
       },
     },

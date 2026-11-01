@@ -187,6 +187,7 @@ stateDiagram-v2
   Ready --> Connecting: SOCKET_CLOSED with subscriptions / replaceUnopenedSocket
   Ready --> Unbuilt: SOCKET_CLOSED without subscriptions / teardownTransport
   Ready --> Unbuilt: SOCKET_RELEASED / teardownTransport
+  Ready --> Ready: after keepAliveInterval / keepSocketAlive
   Connecting --> Unbuilt: SOCKET_RELEASED / teardownTransport
   CoolingDown --> Probing: after cooldown / replaceUnopenedSocket
   Probing --> Ready: probe answers, or REQUEST_SUCCEEDED / resetCooldown
@@ -209,12 +210,14 @@ outages, rate limits, invalid responses, and 401 or 403. Reverts and other
 the way into `Probing`, so a socket stuck connecting gets a successor. The
 probe and the socket-open timeout run on the actor's clock.
 
-Servers close a socket that is quiet for a minute. A socket without
-`eth_subscribe` subscriptions that closes is opened again only when the
-endpoint is next used, so an unused one isn't reopened every minute.
-`releaseSocket`, called when subscriptions move off an endpoint, does the
-same for a ready or connecting endpoint, and only closes the socket of a
-cooling or probing one.
+Servers close a socket that is quiet for a minute. While a socket carries
+`eth_subscribe` subscriptions, its endpoint sends `eth_chainId` on it every
+30 seconds, on the actor's clock, which stops when the endpoint leaves
+`Ready` or is disposed. A socket without subscriptions that closes is opened
+again only when the endpoint is next used, so an unused one isn't reopened
+every minute. `releaseSocket`, called when subscriptions move off an
+endpoint, does the same for a ready or connecting endpoint, and only closes
+the socket of a cooling or probing one.
 
 `Endpoint` reports `CoolingDown`, `Probing` and recovery to metrics as
 `open`, `half-open` and `closed`.

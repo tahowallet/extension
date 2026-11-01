@@ -79,6 +79,7 @@ const OPTIONS = {
   cooldownBackoffMultiplier: 2,
   socketOpenTimeoutMs: 10_000,
   probeTimeoutMs: 20_000,
+  keepAliveIntervalMs: 30_000,
 }
 
 function harness(makeTransport: () => FakeTransport = pollingTransport) {
@@ -402,6 +403,86 @@ describe("endpointMachine", () => {
 
       expect(endpoint.state()).toBe("Ready")
       expect(endpoint.transports).toHaveLength(1)
+    })
+  })
+
+  describe("keeping a socket alive", () => {
+    const keepAlives = (transport: FakeTransport) =>
+      transport.send.getCalls().filter(({ args }) => args[0] === "eth_chainId")
+        .length
+
+    it("sends a request every 30 seconds while the socket has subscriptions", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+
+      endpoint.clock.increment(29_999)
+      expect(keepAlives(socket)).toBe(0)
+      endpoint.clock.increment(1)
+      expect(keepAlives(socket)).toBe(1)
+      endpoint.clock.increment(30_000)
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(3)
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("sends nothing on a socket without subscriptions, until one arrives", () => {
+      const endpoint = harness(() => socketTransport(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+
+      endpoint.clock.increment(30_000)
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(0)
+
+      socket._subIds = { block: Promise.resolve("0x9") }
+      endpoint.clock.increment(30_000)
+      expect(keepAlives(socket)).toBe(1)
+    })
+
+    it("sends nothing on a polling transport", () => {
+      const endpoint = harness()
+      endpoint.send({ type: "FIRST_USE" })
+
+      endpoint.clock.increment(90_000)
+
+      expect(keepAlives(endpoint.transports[0])).toBe(0)
+    })
+
+    it("shrugs off a request that fails", async () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      endpoint.transports[0].send.rejects(new Error("NETWORK_ERROR"))
+
+      endpoint.clock.increment(30_000)
+      await flush()
+
+      expect(endpoint.state()).toBe("Ready")
+    })
+
+    it("stops while cooling down", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+      endpoint.clock.increment(20_000)
+      endpoint.fail(5)
+
+      // Past when the next one was due, but before the probe.
+      endpoint.clock.increment(14_999)
+
+      expect(keepAlives(socket)).toBe(0)
+    })
+
+    it("stops once disposed", () => {
+      const endpoint = harness(() => subscribedSocket(OPEN))
+      endpoint.send({ type: "FIRST_USE" })
+      const [socket] = endpoint.transports
+      endpoint.clock.increment(30_000)
+
+      endpoint.send({ type: "DISPOSE" })
+      for (let i = 0; i < 4; i += 1) endpoint.clock.increment(30_000)
+
+      expect(keepAlives(socket)).toBe(1)
     })
   })
 
@@ -811,6 +892,24 @@ describe("Endpoint", () => {
     const disposed = disposing.endpoint.whenReady()
     disposing.endpoint.dispose()
     await expect(disposed).rejects.toThrow("Endpoint has been disposed")
+  })
+
+  it("stops keeping its socket alive once its signal aborts", () => {
+    const clock = new SimulatedClock()
+    const lifecycle = new AbortController()
+    const socket = subscribedSocket(OPEN)
+    const endpoint = new Endpoint(
+      { kind: "standard", createTransport: () => socket },
+      { clock, options: OPTIONS, signal: lifecycle.signal },
+    )
+    endpoint.transport
+    clock.increment(30_000)
+
+    lifecycle.abort()
+    for (let i = 0; i < 4; i += 1) clock.increment(30_000)
+
+    expect(endpoint.isDisposed).toBe(true)
+    expect(socket.send.withArgs("eth_chainId").callCount).toBe(1)
   })
 
   it("exposes its configuration", () => {
