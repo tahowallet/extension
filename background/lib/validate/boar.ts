@@ -40,6 +40,9 @@ export const boarGetAssetTransfersJTD = {
       elements: boarAssetTransferJTD,
     },
   },
+  optionalProperties: {
+    pageKey: { type: "string" },
+  },
   additionalProperties: true,
 } as const
 

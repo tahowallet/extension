@@ -171,6 +171,7 @@ var schema30 = {
       },
     },
   },
+  optionalProperties: { pageKey: { type: "string" } },
   additionalProperties: true,
 }
 function validate58(data, valCxt) {
@@ -724,9 +725,26 @@ function validate58(data, valCxt) {
       }
       errors++
     }
+    if (data.pageKey !== undefined) {
+      if (!(typeof data.pageKey == "string")) {
+        var err27 = {
+          instancePath: instancePath + "/pageKey",
+          schemaPath: "/optionalProperties/pageKey/type",
+          keyword: "type",
+          params: { type: "string", nullable: false },
+          message: "must be string",
+        }
+        if (vErrors === null) {
+          vErrors = [err27]
+        } else {
+          vErrors.push(err27)
+        }
+        errors++
+      }
+    }
   }
   if (!valid0) {
-    var err27 = {
+    var err28 = {
       instancePath: instancePath,
       schemaPath: "/properties",
       keyword: "properties",
@@ -734,9 +752,9 @@ function validate58(data, valCxt) {
       message: "must be object",
     }
     if (vErrors === null) {
-      vErrors = [err27]
+      vErrors = [err28]
     } else {
-      vErrors.push(err27)
+      vErrors.push(err28)
     }
     errors++
   }

@@ -1,7 +1,11 @@
 import { ETHEREUM } from "../../constants"
 import { storage as flagStorage } from "../../features"
 import type SerialFallbackProvider from "../../services/chain/serial-fallback-provider"
-import { getAssetTransfers } from "../boar"
+import {
+  getAssetTransfers,
+  getERC721TransferPage,
+  getFirstIncomingTransferBlock,
+} from "../boar"
 
 const ACCOUNT = "0x1111111111111111111111111111111111111111"
 const OTHER = "0x2222222222222222222222222222222222222222"
@@ -91,5 +95,80 @@ describe("getAssetTransfers", () => {
         logIndex: 5,
       },
     ])
+  })
+})
+
+describe("getERC721TransferPage", () => {
+  it("asks for a page of ERC-721 transfers and returns the next page's key", async () => {
+    const send = jest.fn(async () => ({
+      transfers: [erc721Transfer],
+      pageKey: "next",
+    }))
+    const provider = { send } as unknown as SerialFallbackProvider
+
+    const page = await getERC721TransferPage(
+      provider,
+      { address: ACCOUNT, network: ETHEREUM },
+      "outgoing",
+      "this",
+    )
+
+    expect(send).toHaveBeenCalledWith("alchemy_getAssetTransfers", [
+      {
+        fromBlock: "0x0",
+        toBlock: "latest",
+        maxCount: "0x3e8",
+        order: "desc",
+        category: ["erc721"],
+        fromAddress: ACCOUNT,
+        pageKey: "this",
+      },
+    ])
+    expect(page.pageKey).toBe("next")
+    expect(page.nftTransfers.map(({ tokenId }) => tokenId)).toEqual(["10"])
+  })
+})
+
+describe("getFirstIncomingTransferBlock", () => {
+  it("returns the block of the oldest incoming transfer", async () => {
+    const { send, provider } = providerAnswering([erc20Transfer])
+
+    await expect(
+      getFirstIncomingTransferBlock(provider, {
+        address: ACCOUNT,
+        network: ETHEREUM,
+      }),
+    ).resolves.toBe(16)
+    const [, [params]] = send.mock.calls[0] as unknown as [
+      string,
+      [{ order: string; maxCount: string; category: string[] }],
+    ]
+    expect(params.order).toBe("asc")
+    expect(params.maxCount).toBe("0x1")
+    expect(params.category).toContain("erc721")
+  })
+
+  it("returns null for an account nothing was sent to", async () => {
+    const { provider } = providerAnswering([])
+
+    await expect(
+      getFirstIncomingTransferBlock(provider, {
+        address: ACCOUNT,
+        network: ETHEREUM,
+      }),
+    ).resolves.toBeNull()
+  })
+
+  it("throws rather than guess when the answer doesn't validate", async () => {
+    const provider = {
+      send: async () => ({ unexpected: true }),
+    } as unknown as SerialFallbackProvider
+
+    await expect(
+      getFirstIncomingTransferBlock(provider, {
+        address: ACCOUNT,
+        network: ETHEREUM,
+      }),
+    ).rejects.toThrow("didn't validate")
   })
 })
