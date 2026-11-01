@@ -38,7 +38,7 @@ export default function SharedInfoModal({
           position: absolute;
           justify-content: center;
           align-items: center;
-          z-index: 3;
+          z-index: var(--z-modal);
         }
 
         @keyframes slideup {
@@ -55,7 +55,7 @@ export default function SharedInfoModal({
           height: 100vh;
           background: #001413;
           position: absolute;
-          z-index: 3;
+          z-index: var(--z-overlay);
         }
         .content {
           width: 70vw;

@@ -153,7 +153,7 @@ export default function DAppConnectPage({
           margin-left: 28px;
           margin-top: -19px;
           margin-bottom: -10px;
-          z-index: 3;
+          z-index: var(--z-raised);
         }
         .footer_actions {
           position: sticky;

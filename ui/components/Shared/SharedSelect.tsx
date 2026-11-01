@@ -234,7 +234,7 @@ export default function SharedSelect(props: Props): ReactElement {
             transition:
               max-height 0.2s ease-in-out,
               opacity 0.2s ease-in-out;
-            z-index: 1;
+            z-index: var(--z-dropdown);
           }
 
           .select.bottom .options {

@@ -133,7 +133,7 @@ function DropdownContent({ children }: ContentProps): ReactElement {
             left: 100%;
             transform: translateX(calc(-100%));
             width: max-content;
-            z-index: 10;
+            z-index: var(--z-dropdown);
             padding: 0;
             background: none;
             border: none;

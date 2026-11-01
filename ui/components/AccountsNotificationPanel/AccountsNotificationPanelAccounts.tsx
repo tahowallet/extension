@@ -537,7 +537,7 @@ export default function AccountsNotificationPanelAccounts({
             align-items: center;
             padding: 0px 12px;
             box-sizing: border-box;
-            z-index: 11;
+            z-index: var(--z-sticky);
           }
           .switcher_wrap {
             height: 432px;

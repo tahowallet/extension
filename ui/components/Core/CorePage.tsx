@@ -48,10 +48,6 @@ export default function CorePage({
             background-color: var(--hunter-green);
             height: 100%;
           }
-          .top_menu_wrap {
-            z-index: 10;
-            cursor: default;
-          }
         `}
       </style>
     </section>

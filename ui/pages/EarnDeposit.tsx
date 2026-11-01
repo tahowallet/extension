@@ -562,7 +562,7 @@ export default function EarnDeposit(): ReactElement {
             display: flex;
           }
           .single_icon_first {
-            z-index: 2;
+            z-index: var(--z-raised);
           }
           .multiple_icons div {
             margin: 0 -8px;
