@@ -40,7 +40,7 @@ jobs:
             --branch main --event push --status success --limit 1 \
             --json headSha --jq '.[0].headSha // ""')
           published=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/beta" \
-            --jq .object.sha 2>/dev/null || true)
+            --jq .object.sha 2>/dev/null) || published=""
 
           if [ "$GITHUB_EVENT_NAME" = push ]; then passing=$GITHUB_SHA; fi
           if ! [[ "$passing" =~ ^[0-9a-f]{40}$ ]]; then
