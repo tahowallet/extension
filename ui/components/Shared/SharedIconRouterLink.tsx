@@ -78,9 +78,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           background-color: var(--icon-tile-hover);
           box-shadow: var(--icon-tile-hover-shadow);
           color: var(--icon-tile-hover-icon);
-        }
-        .router_link_container:hover .asset_icon {
-          background-color: var(--icon-tile-hover-icon);
+          --asset-icon-color: var(--icon-tile-hover-icon);
         }
       `}</style>
     </>
