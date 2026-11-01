@@ -226,13 +226,13 @@ export default function Wallet(): ReactElement {
         {`
           .page_content {
             width: 100%;
-            height: inherit;
+            min-height: 100%;
+            flex-shrink: 0;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            overflow-x: hidden;
           }
           .section {
             display: flex;

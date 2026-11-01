@@ -39,6 +39,7 @@ export default function CorePage({
           }
           main {
             width: 100%;
+            overflow-x: hidden;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
