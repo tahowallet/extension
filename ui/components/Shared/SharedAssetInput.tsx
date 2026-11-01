@@ -14,6 +14,7 @@ import {
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { getAssetEntityID } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   NFTCached,
   NFTCollectionCached,
@@ -245,11 +246,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
               const { asset } = assetWithOptionalAmount
               return (
                 <SharedAssetItem
-                  key={
-                    asset.metadata?.coinGeckoID ??
-                    asset.symbol +
-                      ("contractAddress" in asset ? asset.contractAddress : "")
-                  }
+                  key={getAssetEntityID(asset)}
                   assetAndAmount={assetWithOptionalAmount}
                   onClick={() =>
                     setSelectedAssetAndClose(assetWithOptionalAmount)
