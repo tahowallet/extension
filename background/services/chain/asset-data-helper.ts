@@ -4,11 +4,8 @@ import {
   getTokenMetadata as getBoarTokenMetadata,
 } from "../../lib/boar"
 import SerialFallbackProvider from "./serial-fallback-provider"
-import {
-  AssetTransfer,
-  SmartContractAmount,
-  SmartContractFungibleAsset,
-} from "../../assets"
+import { SmartContractAmount, SmartContractFungibleAsset } from "../../assets"
+import type { ScannedTransfers } from "../../nfts"
 import type { AddressOnNetwork } from "../../accounts"
 import type { HexString } from "../../types"
 import logger from "../../lib/logger"
@@ -184,20 +181,21 @@ export default class AssetDataHelper {
   }
 
   /**
-   * Best-effort fetch of asset transfers from the current provider. May return
-   * an empty list if the current provider does not support lookup of assets.
+   * Best-effort fetch of asset and ERC-721 transfers from the current
+   * provider. May return empty lists if the current provider does not support
+   * lookup of assets.
    */
   async getAssetTransfers(
     addressOnNetwork: AddressOnNetwork,
     startBlock: number,
     endBlock?: number,
     incomingOnly = false,
-  ): Promise<AssetTransfer[]> {
+  ): Promise<ScannedTransfers> {
     const provider = this.providerTracker.providerForNetwork(
       addressOnNetwork.network,
     )
     if (typeof provider === "undefined") {
-      return []
+      return { assetTransfers: [], nftTransfers: [] }
     }
 
     try {
@@ -222,7 +220,11 @@ export default class AssetDataHelper {
             ),
           )
         }
-        return (await Promise.all(promises)).flat()
+        const results = await Promise.all(promises)
+        return {
+          assetTransfers: results.flatMap((result) => result.assetTransfers),
+          nftTransfers: results.flatMap((result) => result.nftTransfers),
+        }
       }
     } catch (error) {
       logger.warn(

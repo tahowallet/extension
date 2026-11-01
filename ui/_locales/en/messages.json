@@ -1116,6 +1116,7 @@
         "HIDE_TOKEN_FEATURES": "Hide token features",
         "SUPPORT_ACHIEVEMENTS_BANNER": "Enable achievements banner",
         "SUPPORT_NFT_SEND": "Enable sending NFTs",
+        "SUPPORT_NFT_INDEXER": "Index NFTs from transfer logs",
         "SUPPORT_ARBITRUM_NOVA": "Enable Arbitrum Nova network",
         "SUPPORT_SWAP_QUOTE_REFRESH": "Enable automatic swap quote updates",
         "SUPPORT_CUSTOM_NETWORKS": "Show custom network page on settings panel",

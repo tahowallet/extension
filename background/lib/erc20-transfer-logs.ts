@@ -4,6 +4,7 @@ import { utils } from "ethers"
 import { AddressOnNetwork } from "../accounts"
 import { AssetTransfer, SmartContractFungibleAsset } from "../assets"
 import { EVMLog } from "../networks"
+import type { ERC721Transfer, ScannedTransfers } from "../nfts"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import {
   advertisedBlockRangeLimit,
@@ -13,6 +14,7 @@ import {
   suggestedBlockRange,
 } from "../services/chain/rpc/log-query-errors"
 import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
+import { parseERC721TransferLog } from "./erc721"
 import logger from "./logger"
 import { normalizeEVMAddress } from "./utils"
 
@@ -197,20 +199,25 @@ function evmLogFromEthersLog({ address, data, topics }: Log): EVMLog {
 }
 
 /**
- * Discover ERC-20 transfer activity for an account using only standard
- * `eth_getLogs` calls. This is the fallback used on networks whose RPC
- * endpoints do not support Alchemy's enhanced `alchemy_getAssetTransfers` API;
- * the resulting `AssetTransfer`s are shaped identically to the ones produced by
- * `getAssetTransfers` in `lib/boar.ts`, so downstream consumers---token
- * discovery in the indexing service and transaction backfill in the chain
- * service---behave the same way.
+ * Discover ERC-20 and ERC-721 transfer activity for an account using only
+ * standard `eth_getLogs` calls. This is the fallback used on networks whose
+ * RPC endpoints do not support Alchemy's enhanced `alchemy_getAssetTransfers`
+ * API; the resulting `AssetTransfer`s are shaped identically to the ones
+ * produced by `getAssetTransfers` in `lib/boar.ts`, so downstream
+ * consumers---token discovery in the indexing service and transaction
+ * backfill in the chain service---behave the same way.
+ *
+ * ERC-20 and ERC-721 `Transfer` share a topic hash, so the same queries find
+ * both. Logs with three topics are ERC-20 transfers, and logs with four, whose
+ * last topic is the token ID, are ERC-721 transfers, returned as
+ * `nftTransfers`.
  *
  * Two important differences from the Alchemy-backed version:
  *
- * - Only ERC-20 `Transfer` events are captured. Native asset transfers,
- *   whether external (a plain value-bearing transaction) or internal (value
- *   moved by a contract call), emit no logs and are therefore *not* returned
- *   here. Callers that need native transfers must source them elsewhere.
+ * - Only `Transfer` events are captured. Native asset transfers, whether
+ *   external (a plain value-bearing transaction) or internal (value moved by a
+ *   contract call), emit no logs and are therefore *not* returned here.
+ *   Callers that need native transfers must source them elsewhere.
  * - The `name`/`symbol`/`decimals` of the transferred asset are not knowable
  *   from a log alone, so they are left empty/zero. The asset carries its
  *   `contractAddress` and `homeNetwork`, which is what consumers use to look
@@ -240,7 +247,7 @@ export async function getAssetTransfersViaLogs(
   fromBlock: number,
   toBlock: number,
   incomingOnly = false,
-): Promise<AssetTransfer[]> {
+): Promise<ScannedTransfers> {
   const { address, network } = addressOnNetwork
 
   // Indexed address topics are 32-byte left-padded; normalize first so casing
@@ -268,7 +275,7 @@ export async function getAssetTransfersViaLogs(
     incomingLogs.length,
     "incoming and",
     outgoingLogs.length,
-    "outgoing ERC-20 transfer logs for",
+    "outgoing transfer logs for",
     address,
     "on chain",
     network.chainID,
@@ -281,14 +288,25 @@ export async function getAssetTransfersViaLogs(
   // A transfer from an address to itself matches both queries; de-duplicate by
   // the unique (transaction hash, log index) pair so it's only counted once.
   const seenLogIds = new Set<string>()
+  const assetTransfers: AssetTransfer[] = []
+  const nftTransfers: ERC721Transfer[] = []
 
-  return [...incomingLogs, ...outgoingLogs].flatMap((log) => {
+  const logs = [...incomingLogs, ...outgoingLogs]
+  logs.forEach((log) => {
     const logId = `${log.transactionHash}-${log.logIndex}`
 
     if (seenLogIds.has(logId)) {
-      return []
+      return
     }
     seenLogIds.add(logId)
+
+    if (log.topics.length === 4) {
+      const nftTransfer = parseERC721TransferLog(log, network)
+      if (nftTransfer !== undefined) {
+        nftTransfers.push(nftTransfer)
+      }
+      return
+    }
 
     // Parse one log at a time; undecodable logs are dropped by the parser, and
     // parsing in isolation keeps each decoded transfer paired with the log it
@@ -302,7 +320,7 @@ export async function getAssetTransfersViaLogs(
         "at log index",
         log.logIndex,
       )
-      return []
+      return
     }
 
     const asset: SmartContractFungibleAsset = {
@@ -313,7 +331,7 @@ export async function getAssetTransfersViaLogs(
       homeNetwork: network,
     }
 
-    const assetTransfer: AssetTransfer = {
+    assetTransfers.push({
       network,
       assetAmount: {
         asset,
@@ -323,8 +341,8 @@ export async function getAssetTransfersViaLogs(
       to: transfer.recipientAddress,
       from: transfer.senderAddress,
       dataSource: "local",
-    }
-
-    return [assetTransfer]
+    })
   })
+
+  return { assetTransfers, nftTransfers }
 }

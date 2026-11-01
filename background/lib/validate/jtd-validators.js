@@ -142,13 +142,23 @@ var schema30 = {
           hash: { type: "string" },
           blockNum: { type: "string" },
           category: {
-            enum: ["token", "internal", "external", "erc20", "erc1155"],
+            enum: [
+              "token",
+              "internal",
+              "external",
+              "erc20",
+              "erc721",
+              "erc1155",
+              "specialnft",
+            ],
           },
           from: { type: "string", nullable: true },
           to: { type: "string", nullable: true },
           erc721TokenId: { type: "string", nullable: true },
         },
         optionalProperties: {
+          tokenId: { type: "string", nullable: true },
+          uniqueId: { type: "string" },
           rawContract: {
             properties: {
               address: { type: "string", nullable: true },
@@ -302,7 +312,9 @@ function validate58(data, valCxt) {
                       data5 === "internal" ||
                       data5 === "external" ||
                       data5 === "erc20" ||
-                      data5 === "erc1155")
+                      data5 === "erc721" ||
+                      data5 === "erc1155" ||
+                      data5 === "specialnft")
                   )
                 ) {
                   var err6 = {
@@ -445,19 +457,58 @@ function validate58(data, valCxt) {
                 }
                 errors++
               }
+              if (data1.tokenId !== undefined) {
+                var data9 = data1.tokenId
+                if (!(data9 === null || typeof data9 == "string")) {
+                  var err14 = {
+                    instancePath:
+                      instancePath + "/transfers/" + i0 + "/tokenId",
+                    schemaPath:
+                      "/properties/transfers/elements/optionalProperties/tokenId/type",
+                    keyword: "type",
+                    params: { type: "string", nullable: true },
+                    message: "must be string or null",
+                  }
+                  if (vErrors === null) {
+                    vErrors = [err14]
+                  } else {
+                    vErrors.push(err14)
+                  }
+                  errors++
+                }
+              }
+              if (data1.uniqueId !== undefined) {
+                if (!(typeof data1.uniqueId == "string")) {
+                  var err15 = {
+                    instancePath:
+                      instancePath + "/transfers/" + i0 + "/uniqueId",
+                    schemaPath:
+                      "/properties/transfers/elements/optionalProperties/uniqueId/type",
+                    keyword: "type",
+                    params: { type: "string", nullable: false },
+                    message: "must be string",
+                  }
+                  if (vErrors === null) {
+                    vErrors = [err15]
+                  } else {
+                    vErrors.push(err15)
+                  }
+                  errors++
+                }
+              }
               if (data1.rawContract !== undefined) {
-                var data9 = data1.rawContract
+                var data11 = data1.rawContract
                 var valid8 = false
                 if (
-                  data9 &&
-                  typeof data9 == "object" &&
-                  !Array.isArray(data9)
+                  data11 &&
+                  typeof data11 == "object" &&
+                  !Array.isArray(data11)
                 ) {
                   valid8 = true
-                  if (data9.address !== undefined) {
-                    var data10 = data9.address
-                    if (!(data10 === null || typeof data10 == "string")) {
-                      var err14 = {
+                  if (data11.address !== undefined) {
+                    var data12 = data11.address
+                    if (!(data12 === null || typeof data12 == "string")) {
+                      var err16 = {
                         instancePath:
                           instancePath +
                           "/transfers/" +
@@ -465,45 +516,6 @@ function validate58(data, valCxt) {
                           "/rawContract/address",
                         schemaPath:
                           "/properties/transfers/elements/optionalProperties/rawContract/properties/address/type",
-                        keyword: "type",
-                        params: { type: "string", nullable: true },
-                        message: "must be string or null",
-                      }
-                      if (vErrors === null) {
-                        vErrors = [err14]
-                      } else {
-                        vErrors.push(err14)
-                      }
-                      errors++
-                    }
-                  } else {
-                    var err15 = {
-                      instancePath:
-                        instancePath + "/transfers/" + i0 + "/rawContract",
-                      schemaPath:
-                        "/properties/transfers/elements/optionalProperties/rawContract/properties/address",
-                      keyword: "properties",
-                      params: { error: "missing", missingProperty: "address" },
-                      message: "must have property 'address'",
-                    }
-                    if (vErrors === null) {
-                      vErrors = [err15]
-                    } else {
-                      vErrors.push(err15)
-                    }
-                    errors++
-                  }
-                  if (data9.decimal !== undefined) {
-                    var data11 = data9.decimal
-                    if (!(data11 === null || typeof data11 == "string")) {
-                      var err16 = {
-                        instancePath:
-                          instancePath +
-                          "/transfers/" +
-                          i0 +
-                          "/rawContract/decimal",
-                        schemaPath:
-                          "/properties/transfers/elements/optionalProperties/rawContract/properties/decimal/type",
                         keyword: "type",
                         params: { type: "string", nullable: true },
                         message: "must be string or null",
@@ -520,10 +532,10 @@ function validate58(data, valCxt) {
                       instancePath:
                         instancePath + "/transfers/" + i0 + "/rawContract",
                       schemaPath:
-                        "/properties/transfers/elements/optionalProperties/rawContract/properties/decimal",
+                        "/properties/transfers/elements/optionalProperties/rawContract/properties/address",
                       keyword: "properties",
-                      params: { error: "missing", missingProperty: "decimal" },
-                      message: "must have property 'decimal'",
+                      params: { error: "missing", missingProperty: "address" },
+                      message: "must have property 'address'",
                     }
                     if (vErrors === null) {
                       vErrors = [err17]
@@ -532,17 +544,17 @@ function validate58(data, valCxt) {
                     }
                     errors++
                   }
-                  if (data9.value !== undefined) {
-                    var data12 = data9.value
-                    if (!(data12 === null || typeof data12 == "string")) {
+                  if (data11.decimal !== undefined) {
+                    var data13 = data11.decimal
+                    if (!(data13 === null || typeof data13 == "string")) {
                       var err18 = {
                         instancePath:
                           instancePath +
                           "/transfers/" +
                           i0 +
-                          "/rawContract/value",
+                          "/rawContract/decimal",
                         schemaPath:
-                          "/properties/transfers/elements/optionalProperties/rawContract/properties/value/type",
+                          "/properties/transfers/elements/optionalProperties/rawContract/properties/decimal/type",
                         keyword: "type",
                         params: { type: "string", nullable: true },
                         message: "must be string or null",
@@ -559,10 +571,10 @@ function validate58(data, valCxt) {
                       instancePath:
                         instancePath + "/transfers/" + i0 + "/rawContract",
                       schemaPath:
-                        "/properties/transfers/elements/optionalProperties/rawContract/properties/value",
+                        "/properties/transfers/elements/optionalProperties/rawContract/properties/decimal",
                       keyword: "properties",
-                      params: { error: "missing", missingProperty: "value" },
-                      message: "must have property 'value'",
+                      params: { error: "missing", missingProperty: "decimal" },
+                      message: "must have property 'decimal'",
                     }
                     if (vErrors === null) {
                       vErrors = [err19]
@@ -571,13 +583,52 @@ function validate58(data, valCxt) {
                     }
                     errors++
                   }
-                  for (var key0 in data9) {
+                  if (data11.value !== undefined) {
+                    var data14 = data11.value
+                    if (!(data14 === null || typeof data14 == "string")) {
+                      var err20 = {
+                        instancePath:
+                          instancePath +
+                          "/transfers/" +
+                          i0 +
+                          "/rawContract/value",
+                        schemaPath:
+                          "/properties/transfers/elements/optionalProperties/rawContract/properties/value/type",
+                        keyword: "type",
+                        params: { type: "string", nullable: true },
+                        message: "must be string or null",
+                      }
+                      if (vErrors === null) {
+                        vErrors = [err20]
+                      } else {
+                        vErrors.push(err20)
+                      }
+                      errors++
+                    }
+                  } else {
+                    var err21 = {
+                      instancePath:
+                        instancePath + "/transfers/" + i0 + "/rawContract",
+                      schemaPath:
+                        "/properties/transfers/elements/optionalProperties/rawContract/properties/value",
+                      keyword: "properties",
+                      params: { error: "missing", missingProperty: "value" },
+                      message: "must have property 'value'",
+                    }
+                    if (vErrors === null) {
+                      vErrors = [err21]
+                    } else {
+                      vErrors.push(err21)
+                    }
+                    errors++
+                  }
+                  for (var key0 in data11) {
                     if (
                       key0 !== "address" &&
                       key0 !== "decimal" &&
                       key0 !== "value"
                     ) {
-                      var err20 = {
+                      var err22 = {
                         instancePath:
                           instancePath +
                           "/transfers/" +
@@ -594,16 +645,16 @@ function validate58(data, valCxt) {
                         message: "must NOT have additional properties",
                       }
                       if (vErrors === null) {
-                        vErrors = [err20]
+                        vErrors = [err22]
                       } else {
-                        vErrors.push(err20)
+                        vErrors.push(err22)
                       }
                       errors++
                     }
                   }
                 }
                 if (!valid8) {
-                  var err21 = {
+                  var err23 = {
                     instancePath:
                       instancePath + "/transfers/" + i0 + "/rawContract",
                     schemaPath:
@@ -613,16 +664,16 @@ function validate58(data, valCxt) {
                     message: "must be object",
                   }
                   if (vErrors === null) {
-                    vErrors = [err21]
+                    vErrors = [err23]
                   } else {
-                    vErrors.push(err21)
+                    vErrors.push(err23)
                   }
                   errors++
                 }
               }
             }
             if (!valid5) {
-              var err22 = {
+              var err24 = {
                 instancePath: instancePath + "/transfers/" + i0,
                 schemaPath: "/properties/transfers/elements/properties",
                 keyword: "properties",
@@ -630,9 +681,9 @@ function validate58(data, valCxt) {
                 message: "must be object",
               }
               if (vErrors === null) {
-                vErrors = [err22]
+                vErrors = [err24]
               } else {
-                vErrors.push(err22)
+                vErrors.push(err24)
               }
               errors++
             }
@@ -643,7 +694,7 @@ function validate58(data, valCxt) {
           }
           valid2 = valid4
         } else {
-          var err23 = {
+          var err25 = {
             instancePath: instancePath + "/transfers",
             schemaPath: "/properties/transfers/elements",
             keyword: "elements",
@@ -651,15 +702,15 @@ function validate58(data, valCxt) {
             message: "must be array",
           }
           if (vErrors === null) {
-            vErrors = [err23]
+            vErrors = [err25]
           } else {
-            vErrors.push(err23)
+            vErrors.push(err25)
           }
           errors++
         }
       }
     } else {
-      var err24 = {
+      var err26 = {
         instancePath: instancePath,
         schemaPath: "/properties/transfers",
         keyword: "properties",
@@ -667,15 +718,15 @@ function validate58(data, valCxt) {
         message: "must have property 'transfers'",
       }
       if (vErrors === null) {
-        vErrors = [err24]
+        vErrors = [err26]
       } else {
-        vErrors.push(err24)
+        vErrors.push(err26)
       }
       errors++
     }
   }
   if (!valid0) {
-    var err25 = {
+    var err27 = {
       instancePath: instancePath,
       schemaPath: "/properties",
       keyword: "properties",
@@ -683,9 +734,9 @@ function validate58(data, valCxt) {
       message: "must be object",
     }
     if (vErrors === null) {
-      vErrors = [err25]
+      vErrors = [err27]
     } else {
-      vErrors.push(err25)
+      vErrors.push(err27)
     }
     errors++
   }

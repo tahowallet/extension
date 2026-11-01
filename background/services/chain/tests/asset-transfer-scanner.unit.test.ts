@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test"
 import * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import type { AssetTransfer } from "../../../assets"
+import type { ERC721Transfer } from "../../../nfts"
 import logger from "../../../lib/logger"
 import { createAddressOnNetwork } from "../../../tests/factories"
 import AssetTransferScanner from "../asset-transfer-scanner"
@@ -19,12 +20,14 @@ function harness({
   blockHeight = BLOCK_HEIGHT,
   oldestLookup = null,
   transfers = [],
+  nftTransfers = [],
   savedHashes = [],
 }: {
   supportsAlchemy: boolean
   blockHeight?: number
   oldestLookup?: bigint | null
   transfers?: Partial<AssetTransfer>[]
+  nftTransfers?: Partial<ERC721Transfer>[]
   savedHashes?: string[]
 }) {
   const db = {
@@ -33,10 +36,13 @@ function harness({
     getAllSavedTransactionHashes: sinon.stub().resolves(savedHashes),
   }
   const assetData = {
-    getAssetTransfers: sinon.stub().resolves(transfers),
+    getAssetTransfers: sinon
+      .stub()
+      .resolves({ assetTransfers: transfers, nftTransfers }),
   }
   const enqueued: [string, number][] = []
   const emitted: unknown[] = []
+  const emittedNFTs: unknown[] = []
   const accounts = [
     createAddressOnNetwork({ network: ETHEREUM }),
     createAddressOnNetwork({ network: ETHEREUM }),
@@ -52,6 +58,7 @@ function harness({
     enqueueTransactionLookup: (_, hash, __, priority) =>
       enqueued.push([hash, priority]),
     emitAssetTransfers: (_, assetTransfers) => emitted.push(assetTransfers),
+    emitNFTTransfers: (_, transfers) => emittedNFTs.push(transfers),
   })
   const range = () => {
     const [, startBlock, endBlock] = assetData.getAssetTransfers.firstCall.args
@@ -63,6 +70,7 @@ function harness({
     assetData,
     enqueued,
     emitted,
+    emittedNFTs,
     accounts,
     accountsToTrack,
     range,
@@ -274,5 +282,35 @@ describe("AssetTransferScanner", () => {
     expect(enqueued.find(([hash]) => hash === "0x25")).toEqual(["0x25", 0])
     expect(enqueued.find(([hash]) => hash === "0x26")).toEqual(["0x26", 1])
     expect(enqueued.at(-1)).toEqual(["0x27", 1])
+  })
+
+  it("emits ERC-721 transfers apart, without queueing their transactions", async () => {
+    const nftTransfers = [{ txHash: "0xnft", tokenId: "7" }]
+    const { scanner, emitted, emittedNFTs, enqueued } = harness({
+      supportsAlchemy: false,
+      nftTransfers,
+    })
+
+    await scanner.scanBlocks(
+      createAddressOnNetwork({ network: ETHEREUM }),
+      10n,
+      20n,
+    )
+
+    expect(emitted).toEqual([[]])
+    expect(emittedNFTs).toEqual([nftTransfers])
+    expect(enqueued).toEqual([])
+  })
+
+  it("emits no ERC-721 transfers when a scan found none", async () => {
+    const { scanner, emittedNFTs } = harness({ supportsAlchemy: false })
+
+    await scanner.scanBlocks(
+      createAddressOnNetwork({ network: ETHEREUM }),
+      10n,
+      20n,
+    )
+
+    expect(emittedNFTs).toEqual([])
   })
 })

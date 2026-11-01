@@ -5,12 +5,24 @@ const boarAssetTransferJTD = {
     asset: { type: "string", nullable: true },
     hash: { type: "string" },
     blockNum: { type: "string" },
-    category: { enum: ["token", "internal", "external", "erc20", "erc1155"] },
+    category: {
+      enum: [
+        "token",
+        "internal",
+        "external",
+        "erc20",
+        "erc721",
+        "erc1155",
+        "specialnft",
+      ],
+    },
     from: { type: "string", nullable: true },
     to: { type: "string", nullable: true },
     erc721TokenId: { type: "string", nullable: true },
   },
   optionalProperties: {
+    tokenId: { type: "string", nullable: true },
+    uniqueId: { type: "string" },
     rawContract: {
       properties: {
         address: { type: "string", nullable: true },
