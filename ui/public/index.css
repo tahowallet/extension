@@ -305,6 +305,10 @@
   --icon-tile-hover-icon: #fefefc;
   --icon-tile-hover-shadow: var(--shadow);
 
+  /* The connect-with toggle and Taho icon take the settings toggles' gold. */
+  --connect-toggle-knob: var(--toggle-knob);
+  --connect-toggle-knob-on: var(--toggle-knob-on);
+
   --surface-deep: #fefefc;
   --divider-black: #e3ded1;
 
