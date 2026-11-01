@@ -325,6 +325,14 @@ the range asked for is the floor. Range refusals and pruned history are
 about the request, so they aren't endpoint faults; pruned history moves on
 to the next endpoint, which may keep more.
 
+ERC-721 `Transfer` shares ERC-20's topic hash, with the token ID as a
+fourth topic, so the same queries find NFT transfers. Logs with three
+topics are ERC-20 transfers and logs with four are ERC-721 ones. With
+`SUPPORT_NFT_INDEXER` on, Alchemy-capable networks add the `erc721`
+category to the transfer call they already make. The scanner emits
+ERC-721 transfers as `nftTransfers`, without queueing transaction
+lookups, and `NFTsService` indexes them (`lib/nft-indexer`).
+
 ### Logging and errors
 
 Each endpoint has a label naming its chain, kind, place in the walk and
