@@ -3,6 +3,7 @@ import {
   advertisedBlockRangeLimit,
   earliestAvailableBlock,
   isBlockRangeLimitError,
+  isLogQueryRefusedError,
   isPrunedHistoryError,
   suggestedBlockRange,
 } from "../log-query-errors"
@@ -140,5 +141,47 @@ describe("earliestAvailableBlock", () => {
     ["missing trie node abc123", undefined],
   ])("reads %p as %p", (message, expected) => {
     expect(earliestAvailableBlock(new Error(message))).toBe(expected)
+  })
+})
+
+describe("isLogQueryRefusedError", () => {
+  it.each<[string, unknown, boolean]>([
+    [
+      "an address requirement",
+      { code: -32701, message: "Please specify an address in your request" },
+      true,
+    ],
+    ["a getLogs limit", { code: -32005, message: "limit exceeded" }, true],
+    [
+      "a request limit",
+      { code: -32011, message: "request limit reached" },
+      true,
+    ],
+    [
+      "a free plan refusal",
+      { code: 35, message: "eth_getLogs is not available on free plan" },
+      true,
+    ],
+    [
+      "an archive token requirement",
+      { code: -32602, message: "Archive requests require a personal token" },
+      true,
+    ],
+    [
+      "an administrative block",
+      new Error("forbidden by administrative rules"),
+      true,
+    ],
+    [
+      "a range limit",
+      {
+        code: 35,
+        message: "ranges over 10000 blocks are not supported on free plan",
+      },
+      false,
+    ],
+    ["a revert", new Error("execution reverted"), false],
+  ])("says %s is refused: %p", (_, error, expected) => {
+    expect(isLogQueryRefusedError(error)).toBe(expected)
   })
 })

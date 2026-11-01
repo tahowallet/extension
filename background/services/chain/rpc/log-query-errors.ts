@@ -36,6 +36,15 @@ const RANGE_LIMIT_PATTERNS = [
   new RegExp(String.raw`range.*\bmax(?:imum)?: ?${COUNT}`, "i"),
 ]
 
+/**
+ * Wordings for log queries an endpoint won't serve at any range, though
+ * another endpoint may: PublicNode's "Please specify an address", BSC
+ * dataseed's "limit exceeded", Base's "request limit reached", dRPC's free
+ * plan, PublicNode's archive token and bloXroute's administrative rules.
+ */
+const LOG_QUERY_REFUSED =
+  /specify an address|limit exceeded|request limit reached|not (?:available|supported) on (?:the )?free plan|archive requests require|forbidden by administrative rules/i
+
 const RANGE_COMPLAINT =
   /block range|range (?:is )?too (?:large|wide|big)|exceeds? (?:the )?(?:max(?:imum)? )?(?:block )?range|too many blocks/i
 
@@ -104,6 +113,17 @@ export function isBlockRangeLimitError(error: unknown): boolean {
   return (
     advertisedBlockRangeLimit(error) !== undefined ||
     RANGE_COMPLAINT.test(errorText(error))
+  )
+}
+
+/**
+ * Whether an endpoint refuses a log query outright, for a reason another
+ * endpoint may not share. A refusal that names a range limit is a range
+ * error instead, since a narrower range can succeed on the same endpoint.
+ */
+export function isLogQueryRefusedError(error: unknown): boolean {
+  return (
+    !isBlockRangeLimitError(error) && LOG_QUERY_REFUSED.test(errorText(error))
   )
 }
 

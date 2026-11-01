@@ -236,3 +236,24 @@ describe("httpStatusOf", () => {
     expect(httpStatusOf(error)).toBe(expected)
   })
 })
+
+describe("log queries an endpoint refuses outright", () => {
+  const refusal = {
+    code: -32701,
+    message: "Please specify an address in your request",
+  }
+
+  it("moves eth_getLogs on to the next endpoint without faulting this one", () => {
+    expect(
+      kindOf(standardFailurePolicy.nextStepAfter(refusal, "eth_getLogs", 1)),
+    ).toBe("tryNextEndpoint")
+    expect(indicatesEndpointFault(refusal, "eth_getLogs")).toBe(false)
+  })
+
+  it("leaves the same wording alone for other methods", () => {
+    const limit = { code: -32005, message: "limit exceeded" }
+    expect(
+      kindOf(standardFailurePolicy.nextStepAfter(limit, "eth_call", 1)),
+    ).not.toBe("tryNextEndpoint")
+  })
+})

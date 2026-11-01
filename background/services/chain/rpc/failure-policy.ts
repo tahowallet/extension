@@ -1,6 +1,7 @@
 import { getErrorType } from "../errors"
 import {
   isBlockRangeLimitError,
+  isLogQueryRefusedError,
   isPrunedHistoryError,
 } from "./log-query-errors"
 
@@ -76,6 +77,14 @@ function refusesTheRequest(error: unknown): boolean {
 }
 
 /**
+ * A log query this endpoint won't serve at all, which the next may. Limited
+ * to eth_getLogs, since the same wordings mean a rate limit elsewhere.
+ */
+function refusesThisLogQuery(error: unknown, method: string): boolean {
+  return method === "eth_getLogs" && isLogQueryRefusedError(error)
+}
+
+/**
  * True for errors that are the endpoint's fault, which count toward its
  * cooldown. Reverts, client errors and other errors about the request don't.
  */
@@ -83,7 +92,7 @@ export function indicatesEndpointFault(
   error: unknown,
   method: string,
 ): boolean {
-  if (refusesTheRequest(error)) {
+  if (refusesTheRequest(error) || refusesThisLogQuery(error, method)) {
     return false
   }
   if (indicatesOutage(error, method)) {
@@ -105,8 +114,8 @@ export function indicatesEndpointFault(
  */
 export const standardFailurePolicy: FailurePolicy = {
   nextStepAfter(error, method, attempt) {
-    // Another endpoint may keep older blocks.
-    if (isPrunedHistoryError(error)) {
+    // Another endpoint may keep older blocks, or serve the query at all.
+    if (isPrunedHistoryError(error) || refusesThisLogQuery(error, method)) {
       return { kind: "tryNextEndpoint" }
     }
     if (refusesTheRequest(error)) {
