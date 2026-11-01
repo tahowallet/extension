@@ -67,7 +67,7 @@ export default function SharedAccordion({
           icon="icons/s/arrow-toggle.svg"
           width={16}
           color="var(--green-5)"
-          hoverColor="#fff"
+          hoverColor="var(--text-strong)"
           onClick={(e) => {
             e.stopPropagation()
             toggle()

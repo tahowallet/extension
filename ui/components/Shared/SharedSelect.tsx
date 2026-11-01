@@ -203,13 +203,13 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .select.active .icon {
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
           }
 
           .select.active .button {
             background-color: var(--trophy-gold);
             border-color: var(--trophy-gold);
-            color: var(--hunter-green);
+            color: var(--on-accent);
             font-weight: 600;
           }
 

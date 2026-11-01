@@ -190,7 +190,7 @@ export default function SharedFileInput(props: Props): ReactElement {
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #fff;
+            color: var(--text-strong);
             font-weight: 600;
             font-size: 18px;
             line-height: 24px;

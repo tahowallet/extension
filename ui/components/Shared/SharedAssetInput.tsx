@@ -431,7 +431,7 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
         button {
           display: flex;
           align-items: center;
-          color: #fff;
+          color: var(--text-strong);
           font-size: 16px;
           font-weight: 500;
           line-height: 24px;
@@ -798,7 +798,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
-            color: #fff;
+            color: var(--text-strong);
           }
           .asset_input::placeholder {
             color: var(--green-40);
@@ -816,7 +816,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount {
             max-width: 125px;
             height: 32px;
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

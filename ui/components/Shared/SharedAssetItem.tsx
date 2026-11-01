@@ -190,7 +190,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             height: 29px;
           }
           .symbol {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 16px;
             font-weight: 500;
             line-height: 18px;

@@ -5,6 +5,10 @@ const DEFAULT_COLORS: ColorDetails = {
   color: "var(--green-40)",
   hoverColor: "var(--gold-80)",
 }
+const DEFAULT_ICON_COLORS: ColorDetails = {
+  color: "var(--action-tile)",
+  hoverColor: "var(--action-tile-hover)",
+}
 
 type ColorDetails = {
   color: string
@@ -87,7 +91,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             width: ${size / 2}px;
             height: ${size / 2}px;
             margin: ${size / 4}px;
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
           }
         `}
       </style>
@@ -96,7 +100,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
 }
 
 SharedSquareButton.defaultProps = {
-  iconColor: DEFAULT_COLORS,
+  iconColor: DEFAULT_ICON_COLORS,
   textColor: DEFAULT_COLORS,
   size: SIZE,
 }

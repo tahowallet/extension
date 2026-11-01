@@ -62,7 +62,7 @@ export default function SharedBackButton({
         }
 
         button:hover {
-          color: #fff;
+          color: var(--text-strong);
         }
 
         button.round {
@@ -84,7 +84,7 @@ export default function SharedBackButton({
         }
 
         button:hover .icon {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
       `}</style>
     </button>
