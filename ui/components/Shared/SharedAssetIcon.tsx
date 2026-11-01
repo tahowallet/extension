@@ -175,7 +175,10 @@ export default function SharedAssetIcon(props: Props): ReactElement {
             height: 40px;
             border-radius: 80px;
             overflow: hidden;
-            background-color: var(--castle-black);
+            background-color: var(--asset-icon-plate);
+            box-shadow: inset 0 0 0 1px var(--asset-icon-plate-border);
+            padding: var(--asset-icon-inset);
+            box-sizing: border-box;
             flex-shrink: 0;
           }
           .token_icon_fallback {
@@ -216,7 +219,9 @@ export default function SharedAssetIcon(props: Props): ReactElement {
         .token_icon {
           width: 100%;
           height: 100%;
-          background-color: var(--castle-black);
+          background-color: var(--asset-icon-plate);
+          mix-blend-mode: var(--asset-icon-blend);
+          border-radius: 80px;
           display: flex;
           align-items: center;
           justify-content: center;

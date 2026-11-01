@@ -105,6 +105,12 @@
     #0b524c 100%
   );
 
+  /* The plate behind an asset's logo, and how far the logo sits inside it. */
+  --asset-icon-plate: var(--castle-black);
+  --asset-icon-plate-border: transparent;
+  --asset-icon-inset: 0;
+  --asset-icon-blend: normal;
+
   color-scheme: dark;
 }
 
@@ -194,6 +200,15 @@
 
   --surface-deep: #fefefc;
   --divider-black: #e3ded1;
+
+  /*
+   * Logos sit inset on a card-coloured plate, darkening into it so a logo's
+   * own white backing doesn't show as a box.
+   */
+  --asset-icon-plate: var(--green-95);
+  --asset-icon-plate-border: var(--hunter-green);
+  --asset-icon-inset: 12.5%;
+  --asset-icon-blend: darken;
 
   color-scheme: light;
 }
