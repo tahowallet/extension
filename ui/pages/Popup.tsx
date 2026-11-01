@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useEffect } from "react"
-import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
+import { Router, Switch, Route } from "react-router-dom"
 import { ErrorBoundary } from "react-error-boundary"
 
 import {
@@ -18,7 +18,7 @@ import {
   selectCurrentAddressNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { Location } from "history"
+import { createMemoryHistory, Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
@@ -102,6 +102,10 @@ export function Main(): ReactElement {
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries,
   )
+  // Restored entries only seed the history; later changes come from it.
+  const [history] = useState(() =>
+    createMemoryHistory({ initialEntries: routeHistoryEntries }),
+  )
 
   // See comment above call of saveHistoryEntries
   function saveHistoryEntries(routeHistoryEntities: Location[]) {
@@ -131,7 +135,7 @@ export function Main(): ReactElement {
 
   return (
     <>
-      <Router initialEntries={routeHistoryEntries}>
+      <Router history={history}>
         <Route
           render={(routeProps) => {
             const transformedLocation = transformLocation(
@@ -156,8 +160,7 @@ export function Main(): ReactElement {
               pagePreferences[normalizedPathname]?.persistOnClose &&
               routeProps.history.action === "PUSH"
             ) {
-              // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps.history.entries)
+              saveHistoryEntries(history.entries)
             }
 
             setAnimationConditions(routeProps, setIsDirectionRight)
