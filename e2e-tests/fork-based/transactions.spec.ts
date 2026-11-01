@@ -435,7 +435,8 @@ test.describe("Transactions @fork", () => {
        *  Verify base token (ETH) is present on the list
        */
       const ethToken = await popup
-        .locator(".token_group")
+        .getByTestId("assets_list")
+        .locator("li")
         .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
       await expect(ethToken.getByText(/^\d+/)).toBeVisible()
@@ -445,7 +446,8 @@ test.describe("Transactions @fork", () => {
        *  Verify ERC-20 token (DAI) is present on the list
        */
       const usdcToken = await popup
-        .locator(".token_group")
+        .getByTestId("assets_list")
+        .locator("li")
         .filter({ has: popup.locator("div").filter({ hasText: /^USDC$/ }) })
       await expect(usdcToken.getByText(/^USDC$/i)).toBeVisible()
       await expect(usdcToken.getByText(/^2\.62$/)).toBeVisible()

@@ -70,12 +70,11 @@ export default function SharedAssetItem<T extends AnyAsset>(
   }, [asset, currentNetwork])
 
   return (
-    <li>
+    <li onMouseMove={onMouseMove}>
       <button
         type="button"
         className={classNames("token_group", { selected: isSelected })}
         onClick={handleClick}
-        onMouseMove={onMouseMove}
       >
         <div className="list_item standard_width">
           <div className="left">
@@ -106,22 +105,40 @@ export default function SharedAssetItem<T extends AnyAsset>(
                 {assetAndAmount.localizedDecimalAmount}
               </div>
             )}
-            {contractLink && (
-              <SharedIcon
-                icon="icons/s/new-tab.svg"
-                width={16}
-                color="var(--green-40)"
-                hoverColor="var(--trophy-gold)"
-                onClick={() => {
-                  window.open(contractLink, "_blank")?.focus()
-                }}
-              />
-            )}
+            {contractLink && <span className="contract_link_space" />}
           </div>
         </div>
       </button>
+      {contractLink && (
+        <div className="contract_link">
+          <SharedIcon
+            icon="icons/s/new-tab.svg"
+            width={16}
+            color="var(--green-40)"
+            hoverColor="var(--trophy-gold)"
+            onClick={() => {
+              window.open(contractLink, "_blank")?.focus()
+            }}
+          />
+        </div>
+      )}
       <style jsx>
         {`
+          li {
+            display: grid;
+            align-items: center;
+          }
+          li > * {
+            grid-area: 1 / 1;
+          }
+          .contract_link {
+            justify-self: end;
+            display: flex;
+            margin-right: 24px;
+          }
+          .contract_link_space {
+            width: 16px;
+          }
           .left {
             display: flex;
             min-width: 0;
