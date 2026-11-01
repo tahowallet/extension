@@ -5,6 +5,7 @@ import {
   endpointMachine,
   EndpointStatus,
 } from "./endpoint-machine"
+import { redactedHost } from "./endpoint-label"
 
 /**
  * `managed` endpoints are run by Taho (Boar); `method-specific` ones serve
@@ -51,6 +52,9 @@ export class EndpointDisposedError extends Error {
 export default class Endpoint {
   readonly #actor: Actor<typeof endpointMachine>
 
+  /** Names the endpoint in logs, without the parts of its URL that hold keys. */
+  readonly label: string
+
   readonly #statusListeners = new Set<(status: EndpointStatus) => void>()
 
   #status: EndpointStatus = "Unbuilt"
@@ -60,11 +64,14 @@ export default class Endpoint {
   constructor(
     readonly config: EndpointConfig,
     {
+      label,
       onBreakerTransition,
       options,
       clock,
       signal,
     }: {
+      /** See {@link endpointLabel}; defaults to the kind and host. */
+      label?: string
       onBreakerTransition?: (next: BreakerTransition) => void
       /** Disposes the endpoint when aborted. */
       signal?: AbortSignal
@@ -73,6 +80,7 @@ export default class Endpoint {
       clock?: SimulatedClock
     } = {},
   ) {
+    this.label = label ?? `${config.kind} ${redactedHost(config.url)}`
     this.#actor = createActor(endpointMachine, {
       input: {
         createTransport: config.createTransport,

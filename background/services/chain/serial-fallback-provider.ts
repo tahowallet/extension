@@ -20,6 +20,7 @@ import {
 } from "../../lib/perf-metrics"
 import Endpoint, { EndpointConfig, EndpointKind } from "./rpc/endpoint"
 import EndpointPool from "./rpc/endpoint-pool"
+import { endpointLabel } from "./rpc/endpoint-label"
 import SubscriptionManager from "./rpc/subscription-manager"
 import {
   NetworkReachabilityListener,
@@ -216,6 +217,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
               }
             : config,
           {
+            label: endpointLabel(chainID, config.kind, index, config.url),
             signal,
             onBreakerTransition: (next) =>
               recordCircuitBreakerTransition(this.chainID, index, next),
@@ -405,8 +407,19 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     this.disposeMethodSpecificPool()
     const { signal } = this.#lifecycle
     const endpoints = configs.map(
-      (config) =>
-        new Endpoint({ ...config, kind: "method-specific" }, { signal }),
+      (config, index) =>
+        new Endpoint(
+          { ...config, kind: "method-specific" },
+          {
+            label: endpointLabel(
+              this.chainID,
+              "method-specific",
+              index,
+              config.url,
+            ),
+            signal,
+          },
+        ),
     )
     // Built up front, as it always has been.
     endpoints[0].build()

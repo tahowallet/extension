@@ -3,6 +3,7 @@ import { deepCopy } from "@ethersproject/properties"
 import { ConnectionInfo, fetchJson } from "@ethersproject/web"
 import logger from "../../lib/logger"
 import { getErrorType } from "./errors"
+import { redactedHost } from "./rpc/endpoint-label"
 
 type RPCPayload = {
   method: string
@@ -284,7 +285,7 @@ export default class TahoRPCProvider extends JsonRpcProvider {
         "Setting a max batch size of",
         this.#options.maxBatchLength,
         "for rpc",
-        this.connection.url,
+        redactedHost(this.connection.url),
       )
     }
 
