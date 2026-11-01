@@ -144,28 +144,47 @@ export function Main(): ReactElement {
     createMemoryHistory({ initialEntries: routeHistoryEntries }),
   )
 
-  // See comment above call of saveHistoryEntries
-  function saveHistoryEntries(routeHistoryEntities: Location[]) {
-    const entries = routeHistoryEntities
-      .reduce((agg: Partial<Location>[], entity) => {
-        const entityCopy: Partial<Location> = { ...entity }
-        delete entityCopy.hash
-        delete entityCopy.key
-        agg.push(entityCopy)
-        return agg
-      }, [])
-      .reverse()
-
-    if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
-      dispatch(setRouteHistoryEntries(entries))
-    }
-  }
-
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature,
   )
   const hasAccounts = useBackgroundSelector(
     (state) => getAddressCount(state) > 0,
+  )
+
+  // Restoring the saved entries is a "POP", so only a "PUSH" is a navigation
+  // worth saving. Entries are saved reversed, the order `initialEntries`
+  // expects on the next open. Going back with history.goBack() is a "POP" and
+  // is not saved.
+  useEffect(
+    () =>
+      history.listen((location, action) => {
+        const { pathname } = transformLocation(
+          location,
+          isTransactionPendingSignature,
+          hasAccounts,
+        )
+        const normalizedPathname = pagePreferences[pathname] ? pathname : "/"
+        if (
+          action !== "PUSH" ||
+          !pagePreferences[normalizedPathname]?.persistOnClose
+        ) {
+          return
+        }
+
+        const entries = history.entries
+          .map(({ hash: _hash, key: _key, ...entry }) => entry)
+          .reverse()
+        if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
+          dispatch(setRouteHistoryEntries(entries))
+        }
+      }),
+    [
+      dispatch,
+      hasAccounts,
+      history,
+      isTransactionPendingSignature,
+      routeHistoryEntries,
+    ],
   )
 
   useConnectPopupMonitor()
@@ -180,25 +199,6 @@ export function Main(): ReactElement {
               isTransactionPendingSignature,
               hasAccounts,
             )
-
-            const normalizedPathname = pagePreferences[
-              transformedLocation.pathname
-            ]
-              ? transformedLocation.pathname
-              : "/"
-
-            // `initialEntries` needs to be a reversed version of route history
-            // entities. Without avoiding the initial load, entries will keep reversing.
-            // Given that restoring our route history is a "POP" `history.action`,
-            // by specifying "PUSH" we know that the most recent navigation change is by
-            // the user or explicitly added. That said, we can still certainly "POP" via
-            // history.goBack(). This case is not yet accounted for.
-            if (
-              pagePreferences[normalizedPathname]?.persistOnClose &&
-              routeProps.history.action === "PUSH"
-            ) {
-              saveHistoryEntries(history.entries)
-            }
 
             const direction = getTransitionDirection(history)
 
