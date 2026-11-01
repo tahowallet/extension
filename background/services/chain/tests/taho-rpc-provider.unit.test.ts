@@ -93,6 +93,44 @@ describe("TahoRPCProvider", () => {
     },
   )
 
+  it("sends each log query on its own and batches the rest together", async () => {
+    const provider = new LimitedProvider(8)
+    const batches: string[][] = []
+    const post = provider["postBatch"].bind(provider)
+    provider["postBatch"] = (body: string) => {
+      const parsed = JSON.parse(body) as Payload | Payload[]
+      batches.push(
+        (Array.isArray(parsed) ? parsed : [parsed]).map(({ method }) => method),
+      )
+      return post(body)
+    }
+
+    const results = await settle(
+      Promise.all(
+        [
+          "eth_getBalance",
+          "eth_getLogs",
+          "eth_call",
+          "eth_getLogs",
+          "eth_chainId",
+        ].map((method) => provider.send(method, [])),
+      ),
+    )
+
+    expect(results).toEqual([
+      "eth_getBalance",
+      "eth_getLogs",
+      "eth_call",
+      "eth_getLogs",
+      "eth_chainId",
+    ])
+    expect(batches).toEqual([
+      ["eth_getBalance", "eth_call", "eth_chainId"],
+      ["eth_getLogs"],
+      ["eth_getLogs"],
+    ])
+  })
+
   it("resends only the requests refused for the batch's size", async () => {
     const provider = new LimitedProvider(2, "items")
     const sent: string[] = []

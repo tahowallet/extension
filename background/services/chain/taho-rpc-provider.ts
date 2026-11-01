@@ -60,6 +60,13 @@ const BATCH_STALL_TIME = 10 // 10ms
 /** How long to wait before resending a batch the endpoint found too large. */
 const BATCH_SHRINK_RETRY_DELAY = 500
 
+/**
+ * Methods sent in a batch of their own. Some endpoints reject a whole batch
+ * with an HTTP error when one log query in it is too wide for their plan,
+ * taking every other request in the batch down with it.
+ */
+const sendsAlone = (method: string) => method === "eth_getLogs"
+
 const isBatchLimitMessage = (message: unknown) =>
   getErrorType(String(message), "") === "batch-limit-exceeded"
 
@@ -131,12 +138,23 @@ export default class TahoRPCProvider extends JsonRpcProvider {
 
       const batch: RPCPendingRequest[] = []
 
-      while (this.pending.length > 0) {
-        batch.push(this.pending.shift() as RPCPendingRequest)
+      if (this.pending.length === 0) {
+        return
+      }
 
-        if (batch.length === this.#options.maxBatchLength) {
-          break
+      if (sendsAlone(this.pending[0].payload.method)) {
+        batch.push(this.pending.shift() as RPCPendingRequest)
+      } else {
+        // Batch everything else in order, leaving lone methods queued.
+        const kept: RPCPendingRequest[] = []
+        while (
+          this.pending.length > 0 &&
+          batch.length < this.#options.maxBatchLength
+        ) {
+          const next = this.pending.shift() as RPCPendingRequest
+          ;(sendsAlone(next.payload.method) ? kept : batch).push(next)
         }
+        this.pending.unshift(...kept)
       }
 
       // Enforce max batch size
