@@ -308,6 +308,55 @@ describe("IndexingService", () => {
   })
 
   describe("loading account balances", () => {
+    it("should share a balance load already in flight for the same account and chain", async () => {
+      const account = createAddressOnNetwork()
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+
+      let finishLookups = () => {}
+      const lookupsFinished = new Promise<void>((resolve) => {
+        finishLookups = resolve
+      })
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        lookupsFinished.then(() => []),
+      )
+      const accountLoadSpy = getPrivateMethodSpy<
+        IndexingService["loadAccountBalancesFor"]
+      >(indexingService, "loadAccountBalancesFor")
+
+      const loads = Promise.all([
+        // oxlint-disable-next-line typescript/dot-notation
+        indexingService["loadAccountBalances"](),
+        // oxlint-disable-next-line typescript/dot-notation
+        indexingService["loadAccountBalances"](),
+      ])
+      // Hold the lookup until both passes ask for the balances.
+      while (accountLoadSpy.mock.calls.length < 2) {
+        // oxlint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, 1)
+        })
+      }
+      finishLookups()
+      await loads
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(1)
+
+      // Once the load finishes, the next pass looks balances up again.
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"]()
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(2)
+    })
+
     it("should query erc20 balances specifying token addresses", async () => {
       const indexingDb = await getIndexingDB()
 

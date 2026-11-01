@@ -143,6 +143,12 @@ export default class IndexingService extends BaseService<Events> {
 
   #pricesUpdateTimer: NodeJS.Timer | null = null
 
+  /** Balance loads in flight, keyed by chain ID and address. */
+  #balanceLoadsInFlight = new Map<
+    string,
+    Promise<[AccountBalance, SmartContractAmount[]]>
+  >()
+
   private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
       Object.keys(NETWORK_BY_CHAIN_ID).map((network) => [network, []]),
@@ -1117,7 +1123,31 @@ export default class IndexingService extends BaseService<Events> {
     }, 16 * SECOND)
   }
 
-  private async loadAccountBalancesFor(
+  /**
+   * Loads an account's balances on one chain, joining a load for the same
+   * account and chain that is already in flight.
+   */
+  private loadAccountBalancesFor(
+    addressOnNetwork: AddressOnNetwork,
+  ): Promise<[AccountBalance, SmartContractAmount[]]> {
+    const key = `${addressOnNetwork.network.chainID}:${normalizeEVMAddress(
+      addressOnNetwork.address,
+    )}`
+
+    const inFlight = this.#balanceLoadsInFlight.get(key)
+    if (inFlight !== undefined) {
+      return inFlight
+    }
+
+    const load = this.fetchAccountBalancesFor(addressOnNetwork).finally(() =>
+      this.#balanceLoadsInFlight.delete(key),
+    )
+    this.#balanceLoadsInFlight.set(key, load)
+
+    return load
+  }
+
+  private async fetchAccountBalancesFor(
     addressOnNetwork: AddressOnNetwork,
   ): Promise<[AccountBalance, SmartContractAmount[]]> {
     const { network } = addressOnNetwork
