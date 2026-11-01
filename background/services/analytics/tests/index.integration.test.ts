@@ -5,7 +5,8 @@
 /* oxlint-disable typescript/dot-notation */
 
 import {
-  mock,
+  afterAll,
+  afterEach,
   describe,
   beforeAll,
   beforeEach,
@@ -14,14 +15,6 @@ import {
   jest,
 } from "bun:test"
 import browser from "webextension-polyfill"
-
-const v4Mock = mock(() => {})
-mock.module("uuid", () => {
-  const actual = require("uuid")
-  v4Mock.mockImplementation(actual.v4)
-  return { ...actual, v4: v4Mock }
-})
-
 import AnalyticsService from ".."
 import { createAnalyticsService } from "../../../tests/factories"
 import PreferenceService from "../../preferences"
@@ -38,16 +31,30 @@ describe("AnalyticsService", () => {
   let analyticsService: AnalyticsService
   let preferenceService: PreferenceService
 
+  const originalFetch = global.fetch
+  const originalPosthogApiKey = process.env.POSTHOG_API_KEY
+
   beforeAll(() => {
     global.fetch = jest.fn() as unknown as typeof fetch
     // We need this set otherwise the posthog lib won't send the events
     process.env.POSTHOG_API_KEY = "hey hey hey"
+  })
+  afterAll(() => {
+    global.fetch = originalFetch
+    if (originalPosthogApiKey === undefined) {
+      delete process.env.POSTHOG_API_KEY
+    } else {
+      process.env.POSTHOG_API_KEY = originalPosthogApiKey
+    }
   })
   beforeEach(async () => {
     jest.clearAllMocks()
 
     analyticsService = await createAnalyticsService()
     preferenceService = analyticsService["preferenceService"]
+  })
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
   describe("the setup starts with the proper environment setup", () => {
     it("PreferenceService should be initialized with isEnabled off and hasDefaultOnBeenTurnedOn off by default", async () => {
@@ -103,11 +110,12 @@ describe("AnalyticsService", () => {
     })
 
     it("should generate a new uuid and save it to database", async () => {
-      // Called once for generating the new user uuid
-      // and once for the `New install' event
-      expect(v4Mock).toBeCalledTimes(2)
-
       expect(analyticsService["db"].setAnalyticsUUID).toBeCalledTimes(1)
+      expect(analyticsService["db"].setAnalyticsUUID).toBeCalledWith(
+        expect.stringMatching(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        ),
+      )
     })
 
     it("should send 'New Install' event", () => {

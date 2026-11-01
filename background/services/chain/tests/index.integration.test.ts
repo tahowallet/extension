@@ -1,3 +1,4 @@
+import { IDBFactory } from "fake-indexeddb"
 import sinon from "sinon"
 import ChainService from ".."
 import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
@@ -35,13 +36,14 @@ describe("ChainService", () => {
   let chainService: ChainService
 
   beforeEach(async () => {
-    sandbox.restore()
+    indexedDB = new IDBFactory()
     chainService = await createChainService()
     await chainService.startService()
   })
 
   afterEach(async () => {
     await chainService.stopService()
+    sandbox.restore()
   })
 
   describe("internalStartService", () => {
