@@ -785,8 +785,8 @@ describe("Endpoint", () => {
         "info chain 1 standard[0] rpc.example lost its socket and is opening a new one.",
         "debug chain 1 standard[0] rpc.example opened its socket.",
         "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds after 5 failures within 30 seconds.",
-        "info chain 1 standard[0] rpc.example is probing after its cooldown.",
-        "info chain 1 standard[0] rpc.example recovered.",
+        "debug chain 1 standard[0] rpc.example is probing after its cooldown.",
+        "info chain 1 standard[0] rpc.example recovered after 15 seconds.",
       ])
     })
 
@@ -803,9 +803,36 @@ describe("Endpoint", () => {
 
       expect(lines()).toEqual([
         "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds since its socket didn't open.",
-        "info chain 1 standard[0] rpc.example is probing after its cooldown, on a new socket.",
-        "warn chain 1 standard[0] rpc.example is cooling down for 30 seconds since its probe failed.",
+        "debug chain 1 standard[0] rpc.example is probing after its cooldown, on a new socket.",
+        "debug chain 1 standard[0] rpc.example is cooling down for 30 seconds since its probe failed.",
       ])
+    })
+
+    it("warns once while its probes keep failing, and says how long it was down", async () => {
+      const lines = logged()
+      const { endpoint, clock, transports } = endpointWith(() =>
+        socketTransport(),
+      )
+
+      endpoint.transport
+      transports[0].websocket?.close()
+      clock.increment(15_000)
+      transports[1].websocket?.close()
+      clock.increment(30_000)
+      transports[2].websocket?.close()
+      clock.increment(60_000)
+      transports[3].websocket?.open()
+      await flush()
+
+      const atLevel = (level: string) =>
+        lines().filter((line) => line.startsWith(`${level} `))
+      expect(atLevel("warn")).toEqual([
+        "warn chain 1 standard[0] rpc.example is cooling down for 15 seconds since its socket didn't open.",
+      ])
+      expect(atLevel("info")).toEqual([
+        "info chain 1 standard[0] rpc.example recovered after 105 seconds.",
+      ])
+      expect(atLevel("debug")).toHaveLength(5)
     })
 
     it("logs a pool's change of preference and its return to the primary", () => {

@@ -51,11 +51,16 @@ export class EndpointDisposedError extends Error {
 
 const seconds = (ms: number) => `${Math.round(ms / 1000)} seconds`
 
-/** Logs a change in an endpoint's health or socket. */
+/**
+ * Logs a change in an endpoint's health or socket. Going down is a warning
+ * and coming back is news; the probes and growing cooldowns between are
+ * debug. `downForMs` is how long a recovered endpoint was down.
+ */
 function logStatusChange(
   label: string,
   previous: SnapshotFrom<typeof endpointMachine>,
   next: SnapshotFrom<typeof endpointMachine>,
+  downForMs: number | undefined,
 ): void {
   const from = previous.value as EndpointStatus
   const to = next.value as EndpointStatus
@@ -71,15 +76,19 @@ function logStatusChange(
         : from === "Connecting"
           ? "since its socket didn't open"
           : "since its probe failed"
-    logger.warn(
+    logger[from === "Probing" ? "debug" : "warn"](
       `${label} is cooling down for ${seconds(cooldownMs)} ${reason}.`,
     )
   } else if (to === "Probing") {
-    logger.info(
+    logger.debug(
       `${label} is probing after its cooldown${replacedSocket ? ", on a new socket" : ""}.`,
     )
   } else if (to === "Ready" && from === "Probing") {
-    logger.info(`${label} recovered.`)
+    logger.info(
+      downForMs === undefined
+        ? `${label} recovered.`
+        : `${label} recovered after ${seconds(downForMs)}.`,
+    )
   } else if (to === "Ready" && from === "Connecting") {
     logger.debug(`${label} opened its socket.`)
   } else if (to === "Connecting" && from === "Ready") {
@@ -129,6 +138,9 @@ export default class Endpoint {
       ...(clock === undefined ? {} : { clock }),
     })
 
+    const now = () => clock?.now() ?? Date.now()
+    // When the endpoint last went from available to cooling down.
+    let downSince: number | undefined
     let previousSnapshot = this.#actor.getSnapshot()
     this.#actor.subscribe((snapshot) => {
       const previous = this.#status
@@ -139,7 +151,18 @@ export default class Endpoint {
         return
       }
       this.#status = next
-      logStatusChange(this.label, lastSnapshot, snapshot)
+      if (next === "CoolingDown" && previous !== "Probing") {
+        downSince = now()
+      }
+      logStatusChange(
+        this.label,
+        lastSnapshot,
+        snapshot,
+        downSince === undefined ? undefined : now() - downSince,
+      )
+      if (next === "Ready") {
+        downSince = undefined
+      }
 
       if (next === "CoolingDown") {
         onBreakerTransition?.("open")

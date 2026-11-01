@@ -301,9 +301,10 @@ request that fails for good gets one line: at warn when its endpoints were
 at fault, naming any pools it ran out of, and at debug when the error was
 the request's own, such as a revert, unless the failed attempt's line
 already said it gave up. The executor logs a fallback to the
-route's next pool, and skipping or probing a cooling endpoint. Endpoints log
-cooldowns at warn, and probes, recovery and their sockets; pools log changes
-of preference; `ProviderRegistry` logs reachability changes and provider
+route's next pool, and skipping or probing a cooling endpoint. An endpoint
+warns once when it starts cooling down, logs its probes and longer
+cooldowns at debug, and its recovery, with how long it was down, at info;
+pools log changes of preference; `ProviderRegistry` logs reachability changes and provider
 swaps.
 
 An error the executor rethrows carries `rpcContext`: the chain ID, the
