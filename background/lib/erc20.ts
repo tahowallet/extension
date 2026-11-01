@@ -213,7 +213,7 @@ export const getTokenBalances = async (
   ])
 
   // Looking up balances for N tokens in M batches on chain P
-  logger.info(
+  logger.debug(
     "Looking up balances for",
     tokenAddresses.length,
     "tokens in",
