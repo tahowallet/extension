@@ -188,7 +188,8 @@
   --green-5: #002522;
   --white: #002522;
 
-  --trophy-gold: #d08e39;
+  /* A shade under Figma's #d08e39, so off-white text on it reaches 3:1. */
+  --trophy-gold: #c4842e;
   --gold-80: #bd7d2b;
   --gold-60: #c98a3a;
   --gold-40: #b57017;
@@ -202,7 +203,7 @@
   --success: #139a62;
   --success-20: #dbf5e9;
 
-  --attention: #c4920f;
+  --attention: #b5850a;
   --attention-20: #fdf1cf;
 
   --info: #1a9cc4;
@@ -236,6 +237,11 @@
 
   --text-strong: #002522;
   --text-bright: #002522;
+  /* Off-white on gold, as in Figma's primary button. */
+  --on-accent: #fefefc;
+  --on-accent-hover: #fefefc;
+  --on-accent-active: #fefefc;
+  --on-accent-deep: #fefefc;
 
   /* Every tooltip is a dark bubble on the light page. */
   --tooltip-background: #002522;

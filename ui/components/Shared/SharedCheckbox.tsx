@@ -129,6 +129,10 @@ export default function SharedCheckbox(props: Props): ReactElement {
           height: ${size * 0.6}px;
           background: no-repeat center / cover url("/images/checkmark@2x.png");
         }
+        :global([data-theme="light"]) .checkbox_box.checked::before {
+          background: var(--on-accent);
+          mask: url("/images/checkmark@2x.png") center / cover no-repeat;
+        }
 
         .message {
           visibility: hidden;
