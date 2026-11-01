@@ -192,7 +192,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             transform: scale(0.8);
           }
           .amount {
-            color: #fefefc;
+            color: var(--text-bright);
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
@@ -205,7 +205,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           }
           .bold_amount_count {
             height: 24px;
-            color: #fefefc;
+            color: var(--text-bright);
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;

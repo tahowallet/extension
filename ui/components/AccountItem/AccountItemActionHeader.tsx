@@ -19,14 +19,14 @@ export default function AccountItemActionHeader({
           .icon {
             mask-image: url("./images/${icon}");
             mask-size: cover;
-            background-color: ${color || "#fff"};
+            background-color: ${color || "var(--text-strong)"};
             width: 16px;
             margin-right: 5px;
             height: 16px;
           }
           .action_header {
             display: flex;
-            color: ${color || "#fff"};
+            color: ${color || "var(--text-strong)"};
             flexDirection: row;
             align-items: center;
             font-size: 18px;

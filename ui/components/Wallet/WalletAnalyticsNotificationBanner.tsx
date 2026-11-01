@@ -84,14 +84,14 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
-          color: #b4cac9;
+          color: var(--grey-green-20);
           margin: 0 0 8px;
         }
         span {
           font-weight: 500;
           font-size: 14px;
           line-height: 16px;
-          color: #789594;
+          color: var(--grey-green-50);
         }
       `}</style>
     </div>

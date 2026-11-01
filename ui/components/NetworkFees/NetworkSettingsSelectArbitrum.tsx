@@ -243,7 +243,7 @@ export default function NetworkSettingsSelectArbitrum({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #002522;
+            background: var(--surface-deep);
             box-sizing: border-box;
             padding: 12px;
             margin: 8px 0;

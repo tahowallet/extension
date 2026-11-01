@@ -41,10 +41,10 @@ export default function AccountitemOptionLabel({
             width: 100%;
           }
           .hover:hover {
-            color: ${hoverColor || "#fff"};
+            color: ${hoverColor || "var(--text-strong)"};
           }
           .hover:hover .icon {
-            background-color: ${hoverColor || "#fff"};
+            background-color: ${hoverColor || "var(--text-strong)"};
           }
         `}</style>
     </div>

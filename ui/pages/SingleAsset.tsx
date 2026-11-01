@@ -284,7 +284,7 @@ export default function SingleAsset(): ReactElement {
             gap: 16px;
           }
           .asset_name {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -297,7 +297,7 @@ export default function SingleAsset(): ReactElement {
             align-items: center;
           }
           .balance {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 36px;
             font-weight: 500;
             line-height: 48px;

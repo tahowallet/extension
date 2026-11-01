@@ -379,7 +379,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           z-index: 1;
         }
         .icon_close:hover {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
         h1 {
           color: var(--${isConnected ? "success" : "green-20"});
@@ -417,7 +417,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           font-size: 14px;
         }
         .url {
-          color: #fff;
+          color: var(--text-strong);
           font-size: 16px;
           font-weight: 500;
         }
@@ -439,13 +439,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           min-width: 0;
         }
         .network_selector:hover {
-          color: #fff;
+          color: var(--text-strong);
         }
         .network_selector:hover .network_name {
-          color: #fff;
+          color: var(--text-strong);
         }
         .network_selector:hover .icon_chevron_down {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
         .network_label {
           color: var(--green-40);
@@ -453,7 +453,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           white-space: nowrap;
         }
         .network_name {
-          color: #fff;
+          color: var(--text-strong);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;

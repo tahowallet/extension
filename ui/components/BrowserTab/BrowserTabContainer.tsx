@@ -17,7 +17,7 @@ function BrowserTabContainer({
       <style jsx>{`
         .container {
           height: 100%;
-          background: #041414;
+          background: var(--tab-background);
           display: flex;
           flex-direction: column;
           align-items: center;

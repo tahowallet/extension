@@ -178,7 +178,7 @@ export default function MezoWalletCampaignBanner({
             font-size: 15px;
             letter-spacing: -0.02em;
             line-height: 18px;
-            color: #81aba8;
+            color: var(--grey-green-30);
           }
         `}
       </style>

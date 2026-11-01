@@ -94,7 +94,7 @@ export default function TopMenuProtocolSwitcher({
             min-width: 0;
           }
           button:hover {
-            color: #fff;
+            color: var(--text-strong);
           }
           .icon_chevron_down {
             flex-shrink: 0;
@@ -107,7 +107,7 @@ export default function TopMenuProtocolSwitcher({
             background-color: var(--green-40);
           }
           button:hover .icon_chevron_down {
-            background-color: #fff;
+            background-color: var(--text-strong);
           }
           .logo_overlay {
             position: absolute;

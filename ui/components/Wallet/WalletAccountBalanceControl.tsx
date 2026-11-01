@@ -74,8 +74,8 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
                 icon="icons/s/swap.svg"
                 ariaLabel={t("swap")}
                 iconColor={{
-                  color: "#3A6565",
-                  hoverColor: "#3A6565",
+                  color: "var(--grey-green-70)",
+                  hoverColor: "var(--grey-green-70)",
                 }}
                 disabled
               >
@@ -233,7 +233,7 @@ export default function WalletAccountBalanceControl(
             height: 48px;
           }
           .balance {
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 36px;
             font-weight: 500;
             line-height: 48px;
