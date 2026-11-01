@@ -54,7 +54,7 @@ import ProviderRegistry from "./provider-registry"
 import NonceAllocator from "./nonce-allocator"
 import NetworkSettings, { NetworkMetadata } from "./network-settings"
 import AssetTransferScanner from "./asset-transfer-scanner"
-import NetworkWatcher from "./network-watcher"
+import NetworkWatcher, { NetworkWatcherDependencies } from "./network-watcher"
 import TransactionSubmitter from "./transaction-submitter"
 import { TRANSACTION_CHECK_LIFETIME_MS } from "./pending-transaction-machine"
 import TransactionTracker, {
@@ -106,6 +106,12 @@ interface Events extends ServiceLifecycleEvents {
 }
 
 export type { PriorityQueuedTxToRetrieve, QueuedTxToRetrieve }
+
+/** How ChainService reaches the network; the defaults are the real thing. */
+export type ChainServiceDependencies = {
+  createProvider?: typeof createProviderForChain
+  getBlockPrices?: NetworkWatcherDependencies["getBlockPrices"]
+}
 
 /**
  * ChainService is responsible for basic network monitoring and interaction.
@@ -188,6 +194,20 @@ export default class ChainService extends BaseService<Events> {
   > = async (preferenceService, internalSignerService) =>
     new this(createDB(), await preferenceService, await internalSignerService)
 
+  /** Like create, with stand-ins for how the service reaches the network. */
+  static async createWithDependencies(
+    preferenceService: Promise<PreferenceService>,
+    internalSignerService: Promise<InternalSignerService>,
+    dependencies: ChainServiceDependencies,
+  ): Promise<ChainService> {
+    return new this(
+      createDB(),
+      await preferenceService,
+      await internalSignerService,
+      dependencies,
+    )
+  }
+
   /** Every network Taho knows about. */
   getSupportedNetworks(): EVMNetwork[] {
     return this.networkSettings.supportedNetworks()
@@ -209,6 +229,10 @@ export default class ChainService extends BaseService<Events> {
     private db: ChainDatabase,
     private preferenceService: PreferenceService,
     private internalSignerService: InternalSignerService,
+    {
+      createProvider = createProviderForChain,
+      getBlockPrices,
+    }: ChainServiceDependencies = {},
   ) {
     super({
       queuedTransactions: {
@@ -277,6 +301,7 @@ export default class ChainService extends BaseService<Events> {
       emitBlockPrices: (update) => this.emitter.emit("blockPrices", update),
       onPendingTransaction: (transaction) =>
         this.handlePendingTransaction(transaction),
+      getBlockPrices,
     })
 
     this.transactionTracker = new TransactionTracker({
@@ -330,7 +355,7 @@ export default class ChainService extends BaseService<Events> {
 
     this.providerRegistry = new ProviderRegistry({
       createProvider: (chainID, rpcEndpoints, onReachabilityChange) =>
-        createProviderForChain(
+        createProvider(
           chainID,
           endpointConfigsForChain(
             providerEnvironmentFor(
