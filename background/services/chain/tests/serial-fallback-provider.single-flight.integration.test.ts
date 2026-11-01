@@ -1,6 +1,7 @@
 import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
+import logger from "../../../lib/logger"
 import SerialFallbackProvider from "../serial-fallback-provider"
 import {
   resetForTests as resetPerfMetricsForTests,
@@ -197,5 +198,33 @@ describe("SerialFallbackProvider single-flight coalescing", () => {
     ])
     expect(third).toBe("0x42")
     expect(callCount).toBe(2)
+  })
+})
+
+describe("SerialFallbackProvider cache cleanup", () => {
+  afterEach(() => {
+    sandbox.restore()
+  })
+
+  it("logs the answers it drops at debug level", async () => {
+    const clock = sandbox.useFakeTimers({ now: Date.now(), toFake: ["Date"] })
+    const transport = new JsonRpcProvider("fake-rpc-url")
+    sandbox.stub(transport, "send").callsFake(async () => "0x1")
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { kind: "standard", createTransport: () => transport },
+    ])
+    const info = sandbox.stub(logger, "info")
+    const debug = sandbox.stub(logger, "debug")
+
+    await provider.send("eth_getBalance", [ETHEREUM.chainID, "latest"])
+    clock.tick(5_000)
+    provider.cleanupStaleCacheEntries()
+
+    const cleanupLines = (stub: Sinon.SinonStub) =>
+      stub.args.filter(([line]) => String(line).startsWith("Cleaning up"))
+    expect(cleanupLines(debug)).toHaveLength(1)
+    expect(cleanupLines(info)).toHaveLength(0)
+
+    provider.destroy()
   })
 })
