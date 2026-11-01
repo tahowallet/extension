@@ -13,18 +13,10 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
-  ARBITRUM_ONE,
-  AVALANCHE,
-  BINANCE_SMART_CHAIN,
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  ETHEREUM,
   FIAT_CURRENCIES,
   HOUR,
-  MEZO_TESTNET,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
-  OPTIMISM,
-  POLYGON,
   SECOND,
   USD,
 } from "../../constants"
@@ -56,7 +48,6 @@ import {
   isTrustedAsset,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
-import { wrapIfEnabled } from "../../features"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -820,50 +811,31 @@ export default class IndexingService extends BaseService<Events> {
       const baseAssets = await this.chainService.getNetworkBaseAssets()
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
-      // Fallback to price oracle
+      // Fall back to on-chain price feeds.
       if (basicPrices.length === 0) {
-        basicPrices = await Promise.all(
-          [
-            ETHEREUM,
-            ...wrapIfEnabled("SUPPORT_MEZO_NETWORK", MEZO_TESTNET),
-            ARBITRUM_ONE,
-            OPTIMISM,
-            BINANCE_SMART_CHAIN,
-            POLYGON,
-            AVALANCHE,
-          ].map(async (network: EVMNetwork) => {
-            const provider =
-              this.chainService.providerForNetworkOrThrow(network)
-
-            const TBTC: SmartContractFungibleAsset = {
-              name: "tBTC v2",
-              symbol: "tBTC",
-              decimals: 18,
-              homeNetwork: ETHEREUM,
-              contractAddress: "0x18084fba666a33d37592fa2633fd49a74dd93a88",
-            }
-
-            if (network === MEZO_TESTNET) {
-              const ethProvider =
-                this.chainService.providerForNetworkOrThrow(ETHEREUM)
-
-              const pricePoint = await getUSDPriceForTokens(
-                [TBTC],
-                ETHEREUM,
-                ethProvider,
-              ).then((pricePoints) =>
-                getPricePoint(
-                  MEZO_TESTNET.baseAsset,
-                  pricePoints[TBTC.contractAddress],
-                ),
-              )
-
-              return pricePoint
-            }
-
-            return getUSDPriceForBaseAsset(network, provider)
-          }),
+        const networks = this.chainService.getSupportedNetworks()
+        const results = await Promise.allSettled(
+          networks.map((network) =>
+            getUSDPriceForBaseAsset(network, (feedNetwork) =>
+              this.chainService.providerForNetwork(feedNetwork),
+            ),
+          ),
         )
+
+        basicPrices = results.flatMap((result) =>
+          result.status === "fulfilled" && result.value !== undefined
+            ? [result.value]
+            : [],
+        )
+
+        const failures = results.flatMap((result, i) =>
+          result.status === "rejected"
+            ? [`${networks[i].chainID}: ${String(result.reason)}`]
+            : [],
+        )
+        if (failures.length > 0) {
+          logger.warn("Couldn't read base asset price feeds", failures)
+        }
       }
 
       // kick off db writes and event emission, don't wait for the promises to
@@ -882,12 +854,8 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
       this.emitter.emit("prices", basicPrices)
-    } catch (e) {
-      logger.error(
-        "Error getting base asset prices from coingecko",
-        BUILT_IN_NETWORK_BASE_ASSETS,
-        FIAT_CURRENCIES,
-      )
+    } catch (error) {
+      logger.error("Error getting base asset prices", error)
     }
   }
 

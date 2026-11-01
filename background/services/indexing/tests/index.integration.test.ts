@@ -18,7 +18,9 @@ mock.module("@ethersproject/web", () => {
 })
 
 import IndexingService from ".."
-import { ETHEREUM, OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, USD } from "../../../constants"
+import logger from "../../../lib/logger"
+import * as priceOracle from "../../../lib/priceOracle"
 import {
   createAddressOnNetwork,
   createChainService,
@@ -416,6 +418,50 @@ describe("IndexingService", () => {
           expect.objectContaining({ symbol: smartContractAsset.symbol }),
         ]),
       )
+    })
+  })
+
+  describe("base asset prices", () => {
+    it("keeps the prices it could read when one chain's feed fails", async () => {
+      jest
+        .spyOn(chainService, "getSupportedNetworks")
+        .mockReturnValue([ETHEREUM, OPTIMISM])
+      const ethPrice = {
+        pair: [USD, ETHEREUM.baseAsset] as const,
+        amounts: [2266n * 10n ** 10n, 10n ** 18n] as const,
+        time: Date.now(),
+      }
+      jest
+        .spyOn(priceOracle, "getUSDPriceForBaseAsset")
+        .mockImplementation(async (network) => {
+          if (network === OPTIMISM) {
+            throw new Error("feed unreachable")
+          }
+          return {
+            ...ethPrice,
+            pair: [...ethPrice.pair],
+            amounts: [...ethPrice.amounts],
+          }
+        })
+      const error = jest.spyOn(logger, "error")
+      const warn = jest.spyOn(logger, "warn").mockImplementation(() => {})
+      const emitted = jest.fn()
+      indexingService.emitter.on("prices", emitted)
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["getBaseAssetsPrices"]()
+
+      expect(emitted).toHaveBeenCalledWith([
+        expect.objectContaining({ pair: [USD, ETHEREUM.baseAsset] }),
+      ])
+      // Other services log too; only this pass's lines matter here.
+      expect(warn).toHaveBeenCalledWith(
+        "Couldn't read base asset price feeds",
+        [expect.stringMatching(/^10: /)],
+      )
+      expect(
+        error.mock.calls.filter(([line]) => /price/i.test(String(line))),
+      ).toEqual([])
     })
   })
 })
