@@ -8,6 +8,7 @@ import {
 import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useTranslation } from "react-i18next"
+import browser from "webextension-polyfill"
 import TabBarIconButton from "./TabBarIconButton"
 import tabs, { defaultTab, TabInfo } from "../../utils/tabs"
 import { useBackgroundSelector } from "../../hooks"
@@ -19,6 +20,34 @@ const isTabSupportedByNetwork = (tab: TabInfo, network: EVMNetwork) => {
     default:
       return true
   }
+}
+
+export const FULL_TAB_ROOT = "tab.html#/"
+
+/**
+ * Opens the full-tab view of the extension and closes the popup. If a
+ * full-tab view is already open, that tab and its window are focused instead
+ * of opening a new one.
+ *
+ * Note that onboarding tabs, which are served from the same page, are never
+ * reused.
+ */
+async function openFullTab(): Promise<void> {
+  const baseURL = browser.runtime.getURL("tab.html")
+  const [existingTab] = (
+    await browser.tabs.query({ url: `${baseURL}*` })
+  ).filter((tab) => tab.id !== undefined && !tab.url?.includes("onboarding"))
+
+  if (existingTab?.id !== undefined) {
+    await browser.tabs.update(existingTab.id, { active: true })
+    if (existingTab.windowId !== undefined) {
+      await browser.windows.update(existingTab.windowId, { focused: true })
+    }
+  } else {
+    await browser.tabs.create({ url: browser.runtime.getURL(FULL_TAB_ROOT) })
+  }
+
+  window.close()
 }
 
 export default function TabBar(): ReactElement {
@@ -64,6 +93,13 @@ export default function TabBar(): ReactElement {
             showNotifications={hasNotifications(path)}
           />
         ))}
+      <TabBarIconButton
+        icon="full_tab"
+        title={t("tabs.expand")}
+        onClick={() => {
+          void openFullTab()
+        }}
+      />
       <style jsx>
         {`
           nav {
