@@ -221,6 +221,11 @@ export default function FullTabNav(): ReactElement {
         .footer {
           padding: 16px 24px 24px;
         }
+        @media (max-width: 1180px) {
+          nav {
+            width: 232px;
+          }
+        }
       `}</style>
     </nav>
   )

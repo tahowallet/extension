@@ -38,6 +38,11 @@ export default function FullTabSection({
           flex-direction: column;
           gap: 32px;
         }
+        @media (max-width: 1180px) {
+          .section {
+            padding: 32px 32px 48px;
+          }
+        }
         header {
           display: flex;
           justify-content: space-between;
