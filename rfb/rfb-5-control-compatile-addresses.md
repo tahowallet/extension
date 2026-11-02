@@ -172,9 +172,7 @@ another network:
     A Ledger account at Rootstock's derivation path (`m/44'/137'/0'/0`) is
     signed for using Ledger's Rootstock app rather than its Ethereum app, so
     the user must install and switch to that app. Since the same key material
-    still signs for the account, this counts as transaction-compatible. Note
-    that today the Ledger service refuses to sign messages on Rootstock, though
-    it places no such restriction on transactions.
+    still signs for the account, this counts as transaction-compatible.
 
 [^7]:
     [ENSIP-19][ensip19] explicitly tells clients not to treat the Ethereum
@@ -279,6 +277,7 @@ may change during implementation) is:
   `selectIsAddressControlCompatible(state, addressOnNetwork, otherNetwork)`
   reads it. Recording pairs rather than grouping networks avoids assuming
   compatibility is transitive. Only the signer-based conditions feed this map.
+
 - For one-off checks, like a Send recipient, the UI dispatches an async thunk
   that calls `isControlCompatible` directly, as it already does for name
   resolution. The name service condition is only checked this way, at the
@@ -326,7 +325,9 @@ both networks, not whether a device is currently connected or has the right
 app open; that remains the concern of the signing flow.
 
 `LedgerService` currently has an ad hoc version of this check inline in its
-message signing code, which should be replaced by `isTransactionCompatible`.
+message signing code, which compares the network's derivation path to
+Ethereum's; since Ethereum's is undefined, it never rejects any network. It
+should be replaced by `isTransactionCompatible`.
 
 #### `NameService` updates
 
