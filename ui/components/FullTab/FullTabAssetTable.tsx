@@ -154,6 +154,7 @@ export default function FullTabAssetTable({
       <style jsx>{`
         table {
           width: 100%;
+          table-layout: fixed;
           border-collapse: separate;
           border-spacing: 0;
         }
@@ -226,12 +227,17 @@ export default function FullTabAssetTable({
         .muted {
           color: var(--green-60);
         }
+        th.numeric {
+          width: 15%;
+        }
         .leading {
           width: 24px;
           padding-right: 0;
         }
+        th.actions {
+          width: 200px;
+        }
         .actions {
-          width: 1%;
           white-space: nowrap;
         }
         .actions_wrap {
