@@ -211,7 +211,8 @@ export const ERC721_TRANSFERS_PER_PAGE = 1000
 
 /**
  * One page of an account's ERC-721 transfers in one direction, newest first,
- * and the key of the next page, if there is one.
+ * and the key of the next page, if there is one. Throws if the answer
+ * doesn't validate.
  */
 export async function getERC721TransferPage(
   provider: SerialFallbackProvider,
@@ -231,11 +232,17 @@ export async function getERC721TransferPage(
       : { fromAddress: address }),
     ...(pageKey === undefined ? {} : { pageKey }),
   })
+  // An empty page with no key would read as the last one.
+  if (response === undefined) {
+    throw new Error(
+      `chain ${network.chainID}: Boar's ERC-721 transfer page didn't validate.`,
+    )
+  }
   return {
-    nftTransfers: (response?.transfers ?? []).flatMap(
+    nftTransfers: response.transfers.flatMap(
       (transfer) => erc721TransferFrom(transfer, network) ?? [],
     ),
-    pageKey: response?.pageKey,
+    pageKey: response.pageKey,
   }
 }
 

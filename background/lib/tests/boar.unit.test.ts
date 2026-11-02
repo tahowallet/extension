@@ -127,6 +127,20 @@ describe("getERC721TransferPage", () => {
     expect(page.pageKey).toBe("next")
     expect(page.nftTransfers.map(({ tokenId }) => tokenId)).toEqual(["10"])
   })
+
+  it("throws rather than report the last page when the answer doesn't validate", async () => {
+    const provider = {
+      send: async () => ({ unexpected: true }),
+    } as unknown as SerialFallbackProvider
+
+    await expect(
+      getERC721TransferPage(
+        provider,
+        { address: ACCOUNT, network: ETHEREUM },
+        "incoming",
+      ),
+    ).rejects.toThrow("didn't validate")
+  })
 })
 
 describe("getFirstIncomingTransferBlock", () => {
