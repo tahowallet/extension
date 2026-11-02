@@ -9,10 +9,12 @@ type Props = {
   disabled?: boolean
   isTooltip?: boolean
   tooltipText?: string
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
 export default function SharedIconRouterLink(props: Props): ReactElement {
-  const { path, state, iconClass, disabled, isTooltip, tooltipText } = props
+  const { path, state, iconClass, disabled, isTooltip, tooltipText, onClick } =
+    props
 
   if (disabled) {
     return (
@@ -41,6 +43,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           IconComponent={() => (
             <Link
               to={{ pathname: path, state }}
+              onClick={onClick}
               className="router_link_container"
             >
               <div className="icon_wrapper">
@@ -52,7 +55,11 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           {tooltipText}
         </SharedTooltip>
       ) : (
-        <Link to={{ pathname: path, state }} className="router_link_container">
+        <Link
+          to={{ pathname: path, state }}
+          onClick={onClick}
+          className="router_link_container"
+        >
           <div className="icon_wrapper">
             <i className={`asset_icon ${iconClass}`} />
           </div>

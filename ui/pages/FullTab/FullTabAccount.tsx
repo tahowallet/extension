@@ -9,7 +9,7 @@ import SharedAvatar from "../../components/Shared/SharedAvatar"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import FullTabNetworkSection from "../../components/FullTab/FullTabNetworkSection"
 import FullTabSection from "../../components/FullTab/FullTabSection"
-import FullTabSegmentedControl from "../../components/FullTab/FullTabSegmentedControl"
+import SharedPanelSwitcher from "../../components/Shared/SharedPanelSwitcher"
 import FullTabAccountNetworkPanel from "../../components/FullTab/FullTabAccountNetworkPanel"
 import {
   accountPath,
@@ -18,6 +18,12 @@ import {
 } from "../../components/FullTab/hooks"
 
 type AccountView = "assets" | "nfts" | "activity"
+
+const ACCOUNT_VIEWS = [
+  { value: "assets", label: "assets" },
+  { value: "nfts", label: "NFTs" },
+  { value: "activity", label: "activity" },
+] as const satisfies readonly { value: AccountView; label: string }[]
 
 const formatTotal = (total: number) =>
   total.toLocaleString(undefined, {
@@ -86,21 +92,18 @@ export default function FullTabAccount(): ReactElement {
       }
     >
       <div className="views">
-        <FullTabSegmentedControl<AccountView>
-          label={t("views")}
-          value={view}
-          onChange={(newView) =>
+        <SharedPanelSwitcher
+          panelId="account_views"
+          panelNames={ACCOUNT_VIEWS.map(({ label }) => tWallet(label))}
+          panelNumber={ACCOUNT_VIEWS.findIndex(({ value }) => value === view)}
+          setPanelNumber={(index) => {
+            const newView = ACCOUNT_VIEWS[index].value
             history.replace(
               newView === "assets"
                 ? accountPath(address)
                 : `${accountPath(address)}/${newView}`,
             )
-          }
-          segments={[
-            { value: "assets", label: tWallet("assets") },
-            { value: "nfts", label: tWallet("NFTs") },
-            { value: "activity", label: tWallet("activity") },
-          ]}
+          }}
         />
         <SwitchTransition>
           <CSSTransition
