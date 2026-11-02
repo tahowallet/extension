@@ -373,9 +373,10 @@
   --action-tile-hover-icon: #fefefc;
   --icon-tile: var(--green-80);
   --icon-tile-icon: #002522;
-  --icon-tile-hover: #002522;
-  --icon-tile-hover-icon: #fefefc;
-  --icon-tile-hover-shadow: var(--shadow);
+  /* Icon links, such as an asset's send and swap, hover onto that tan. */
+  --icon-tile-hover: var(--icon-tile);
+  --icon-tile-hover-icon: var(--icon-tile-icon);
+  --icon-tile-hover-shadow: none;
 
   /* An on toggle fills its track with ink, as dark tiles and tooltips do. */
   --toggle-track-on: #002522;

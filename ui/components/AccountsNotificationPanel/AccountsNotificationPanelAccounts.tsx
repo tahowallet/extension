@@ -240,15 +240,7 @@ function WalletTypeHeader({
           background-color: var(--icon-tile);
           margin: 0 7px 0 0;
           border-radius: 4px;
-          transition:
-            background-color 0.2s,
-            box-shadow 0.2s;
           --tile-icon: var(--icon-tile-icon);
-        }
-        .icon_wrap:hover {
-          background-color: var(--icon-tile-hover);
-          box-shadow: var(--icon-tile-hover-shadow);
-          --tile-icon: var(--icon-tile-hover-icon);
         }
         .icon {
           mask-image: url("${icon}");
