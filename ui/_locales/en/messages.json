@@ -1153,7 +1153,8 @@
     "nav": {
       "label": "Wallet sections",
       "connectedDapps": "Connected dApps",
-      "accounts": "Accounts"
+      "accounts": "Accounts",
+      "manageAccounts": "Manage"
     },
     "portfolio": {
       "assets_one": "{{count}} asset",
@@ -1177,14 +1178,23 @@
       "send": "Send",
       "swap": "Swap",
       "swapUnsupported": "Swaps aren't available on this network yet.",
-      "addressCopied": "Address copied to clipboard"
+      "addressCopied": "Address copied to clipboard",
+      "views": "Account views",
+      "network": "Network"
     },
     "unverified": {
       "title": "Unverified assets on {{network}}",
       "explainer": "These assets were found in this account but haven't been verified. Select any you don't want to see and hide them.",
       "hideSelected_one": "Hide {{count}} asset",
       "hideSelected_other": "Hide {{count}} assets",
-      "empty": "No unverified assets here."
+      "empty": "No unverified assets here.",
+      "hideNone": "Hide selected"
+    },
+    "embedded": {
+      "actingAs": "Using"
+    },
+    "settings": {
+      "defaultWallet": "Use Taho as default wallet"
     }
   }
 }
