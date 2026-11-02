@@ -279,6 +279,7 @@ may change during implementation) is:
   `selectIsAddressControlCompatible(state, addressOnNetwork, otherNetwork)`
   reads it. Recording pairs rather than grouping networks avoids assuming
   compatibility is transitive. Only the signer-based conditions feed this map.
+
 - For one-off checks, like a Send recipient, the UI dispatches an async thunk
   that calls `isControlCompatible` directly, as it already does for name
   resolution. The name service condition is only checked this way, at the
