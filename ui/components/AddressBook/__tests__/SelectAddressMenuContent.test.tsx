@@ -19,6 +19,7 @@ const entry = (
   name,
   address: normalizeEVMAddress(address),
   network,
+  additionalChainIDs: [],
   createdAt: updatedAt,
   updatedAt,
 })
