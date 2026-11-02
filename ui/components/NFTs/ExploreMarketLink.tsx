@@ -139,6 +139,7 @@ function ExploreMarketButton(props: ExploreMarketButtonProps): ReactElement {
           line-height: 24px;
           letter-spacing: 0.03em;
           text-align: center;
+          transition: color var(--fade);
         }
 
         .market_icon {

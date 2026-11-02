@@ -31,6 +31,9 @@ export default function LedgerContinueButton({
           line-height: 24px;
           letter-spacing: 0.03em;
           color: var(--on-accent);
+          transition:
+            background-color var(--fade),
+            color var(--fade);
         }
 
         .button:not(:disabled):hover {

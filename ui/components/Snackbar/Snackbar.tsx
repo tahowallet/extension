@@ -104,7 +104,9 @@ export default function Snackbar({
             color: var(--green-20);
             box-shadow: var(--shadow-raised);
             border-radius: 8px;
-            transition: all ${DISMISS_ANIMATION_MS}ms ease;
+            transition:
+              padding ${DISMISS_ANIMATION_MS}ms ease,
+              transform ${DISMISS_ANIMATION_MS}ms ease;
             opacity: 1;
             transform: translateY(0px);
             user-select: none;

@@ -138,6 +138,7 @@ export default function ActiveDAppConnection({
           background-color: var(
             --${isConnectedToDApp ? "connected" : "green-20"}
           );
+          transition: background-color var(--fade);
         }
         .network_badge {
           position: absolute;

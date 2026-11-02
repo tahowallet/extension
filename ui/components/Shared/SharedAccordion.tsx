@@ -75,7 +75,7 @@ export default function SharedAccordion({
           style={{
             margin: "2px 0 2px 8px",
             transform: `rotate(${isOpen ? "180" : "0"}deg)`,
-            transition: "transform 100ms",
+            transition: "transform 100ms, background-color var(--fade)",
           }}
         />
       </div>
@@ -95,6 +95,7 @@ export default function SharedAccordion({
           background-color: ${
             isOpen ? "var(--background, var(--green-120))" : ""
           };
+          transition: background-color var(--fade);
         }
 
         .accordion:not([aria-expanded="true"]):hover {

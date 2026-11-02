@@ -250,6 +250,9 @@ export default function NetworkSettingsSelectArbitrum({
             cursor: pointer;
             border-radius: 4px;
             border: 1px solid transparent;
+            transition:
+              border-color var(--fade),
+              box-shadow var(--fade);
           }
           .option.active {
             border-color: var(--success);
@@ -275,6 +278,7 @@ export default function NetworkSettingsSelectArbitrum({
             color: var(--green--5);
             font-size: 18px;
             font-weight: 600;
+            transition: color var(--fade);
           }
           .price {
             width: 176px;

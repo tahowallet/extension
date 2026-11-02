@@ -59,6 +59,7 @@ export default function SharedBackButton({
           display: flex;
           margin-bottom: 10px;
           margin-top: 2px;
+          transition: color var(--fade);
         }
 
         button:hover {
@@ -81,6 +82,7 @@ export default function SharedBackButton({
           width: 16px;
           height: 16px;
           background-color: var(--green-40);
+          transition: background-color var(--fade);
         }
 
         button:hover .icon {

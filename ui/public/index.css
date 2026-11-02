@@ -586,3 +586,8 @@ label {
     opacity: 0;
   }
 }
+
+:root {
+  /* Every colour cross-fade, so text and icons that change together match. */
+  --fade: 200ms ease;
+}

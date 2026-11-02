@@ -70,13 +70,13 @@ export default function FeeSettingsButton({
             border-radius: 4px;
             padding: 0.3rem;
             border: 1px solid var(--grey-green-80);
-            transition: all 0.3s ease;
+            transition: border-color var(--fade);
           }
           .settings_image {
             width: 14px;
             height: 14px;
             padding: 0 8px;
-            transition: all 0.3s ease;
+            transition: filter var(--fade);
           }
           .settings:hover {
             border: 1px solid var(--grey-green-60);

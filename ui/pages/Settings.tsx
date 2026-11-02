@@ -506,7 +506,6 @@ export default function Settings(): ReactElement {
               width={18}
               color="var(--green-20)"
               hoverColor="var(--trophy-gold)"
-              transitionHoverTime="0.2s"
               onClick={() => {
                 window.open(linkTo, "_blank")?.focus()
               }}

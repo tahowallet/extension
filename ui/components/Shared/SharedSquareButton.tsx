@@ -57,7 +57,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             line-height: 16px;
             letter-spacing: 0.03em;
             color: ${textColor.color};
-            transition: color 0.2s;
+            transition: color var(--fade);
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -79,8 +79,8 @@ export default function SharedSquareButton(props: Props): ReactElement {
             height: ${size}px;
             background-color: ${iconColor.color};
             transition:
-              background-color 0.2s,
-              box-shadow 0.2s;
+              background-color var(--fade),
+              box-shadow var(--fade);
           }
           .hoverable:hover .icon_wrap {
             background-color: ${iconColor.hoverColor};
@@ -98,7 +98,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             height: ${size / 2}px;
             margin: ${size / 4}px;
             background-color: var(--on-accent);
-            transition: background-color 0.2s;
+            transition: background-color var(--fade);
           }
         `}
       </style>

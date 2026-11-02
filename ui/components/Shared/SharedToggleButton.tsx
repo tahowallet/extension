@@ -45,7 +45,7 @@ export default function SharedToggleButton({
             padding: 4px;
             cursor: pointer;
             display: flex;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color var(--fade);
           }
           .container.is_active {
             background-color: var(--toggle-track-on);
@@ -55,7 +55,9 @@ export default function SharedToggleButton({
             height: 16px;
             border-radius: 20px;
             background-color: var(--toggle-knob);
-            transition: 0.2s ease-in-out;
+            transition:
+              transform 0.2s ease-in-out,
+              background-color var(--fade);
 
             box-shadow: var(--shadow-knob);
           }

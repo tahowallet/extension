@@ -31,6 +31,7 @@ export default function SharedLink({
       <style jsx>{`
         .link {
           color: var(--link-color, var(--trophy-gold));
+          transition: color var(--fade);
         }
         .link:hover {
           color: var(--hover-color, var(--gold-40));

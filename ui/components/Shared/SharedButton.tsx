@@ -150,8 +150,9 @@ export default function SharedButton(
             text-align: center;
             padding: 0 17px;
             transition:
-              background-color 0.2s,
-              color 0.2s;
+              background-color var(--fade),
+              border-color var(--fade),
+              color var(--fade);
           }
           .button:hover {
             background-color: var(--gold-80);
@@ -184,6 +185,7 @@ export default function SharedButton(
             background-color: var(--on-accent);
             display: inline-block;
             margin-top: -1px;
+            transition: background-color var(--fade);
           }
           .large {
             height: 48px;

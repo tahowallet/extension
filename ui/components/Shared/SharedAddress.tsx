@@ -107,7 +107,7 @@ export default function SharedAddress({
             line-height: 16px;
             white-space: nowrap;
             color: var(--green-20);
-            transition: 300ms color;
+            transition: color var(--fade);
           }
           .compact:hover {
             color: var(--gold-80);
@@ -153,7 +153,7 @@ export default function SharedAddress({
         button {
           display: flex;
           white-space: nowrap;
-          transition: 300ms color;
+          transition: color var(--fade);
           max-width: 100%;
         }
         button :last-child {
@@ -171,6 +171,7 @@ export default function SharedAddress({
           margin-left: 10px;
           display: inline-block;
           background-color: currentColor;
+          transition: background-color var(--fade);
         }
         button:hover .copy_icon {
           background-color: var(--address-icon-hover, var(--trophy-gold));

@@ -553,6 +553,7 @@ export default function EarnDeposit(): ReactElement | null {
             font-size: 16px;
             font-weight: 400;
             height: 17px;
+            transition: color var(--fade);
           }
           .contract:hover .contract_link {
             color: var(--text-strong);
@@ -580,6 +581,7 @@ export default function EarnDeposit(): ReactElement | null {
             width: 12px;
             height: 12px;
             background-color: var(--green-40);
+            transition: background-color var(--fade);
           }
           .contract:hover .external {
             background-color: var(--text-strong);
