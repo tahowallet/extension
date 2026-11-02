@@ -150,8 +150,8 @@ export default function SharedButton(
             text-align: center;
             padding: 0 17px;
             transition:
-              background-color 0.2s,
-              color 0.2s;
+              background-color var(--fade),
+              color var(--fade);
           }
           .button:hover {
             background-color: var(--gold-80);

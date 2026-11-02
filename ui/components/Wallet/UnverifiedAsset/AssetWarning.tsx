@@ -249,7 +249,7 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
           display: flex;
           align-items: center;
           gap: 4px;
-          transition: color 0.2s;
+          transition: color var(--fade);
         }
         .address_button:hover {
           color: var(--trophy-gold);

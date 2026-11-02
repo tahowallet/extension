@@ -180,7 +180,7 @@ export default function SharedSelect(props: Props): ReactElement {
             border-color: var(--green-60);
             border-style: solid;
             border-radius: 5px;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color var(--fade);
           }
 
           .button .icon {

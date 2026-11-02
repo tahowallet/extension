@@ -56,7 +56,7 @@ export default function SigningButton({
             display: flex;
             align-items: center;
             gap: 5px;
-            transition: color 0.2s;
+            transition: color var(--fade);
           }
           .signing_btn:hover {
             color: var(--${buttonData.color});

@@ -58,7 +58,7 @@ export default function TabBarIconButton(
             text-transform: capitalize;
             transition:
               opacity 0.3s ease,
-              color 0.1s ease;
+              color var(--fade);
           }
           .active .icon {
             background-color: var(--trophy-gold);
