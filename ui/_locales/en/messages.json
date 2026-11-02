@@ -1142,6 +1142,12 @@
     "settings": "Settings"
   },
   "addressBook": {
+    "selectAddress": "Select address",
+    "searchAddresses": "Search by name or address",
+    "noMatches": "No addresses match your search.",
+    "empty": "No saved addresses yet. Name an address when sending to it, and it will show up here.",
+    "addContact": "Add contact",
+    "openAddressBook": "Choose from address book",
     "addTitle": "Add to address book",
     "editTitle": "Edit address book entry",
     "nameLabel": "Choose a name",
