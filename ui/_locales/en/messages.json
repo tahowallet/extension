@@ -1175,11 +1175,7 @@
       "unverifiedAssets_other": "{{count}} unverified assets",
       "customAssets": "Custom assets",
       "noAssets": "No assets on {{network}} yet.",
-      "send": "Send",
-      "swap": "Swap",
-      "swapUnsupported": "Swaps aren't available on this network yet.",
       "addressCopied": "Address copied to clipboard",
-      "views": "Account views",
       "network": "Network"
     },
     "unverified": {

@@ -9,7 +9,6 @@ import {
   isUntrustedAsset,
 } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
 import {
   isSmartContractFungibleAsset,
   SmartContractFungibleAsset,
@@ -18,12 +17,11 @@ import {
 import SharedLoadingSpinner from "../../Shared/SharedLoadingSpinner"
 import SharedAssetIcon from "../../Shared/SharedAssetIcon"
 import styles from "./styles"
-import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
 import { displayAssetAmount } from "../../../utils/amounts"
-import SharedTooltip from "../../Shared/SharedTooltip"
 import AssetVerifyToggler from "../UnverifiedAsset/AssetVerifyToggler"
+import AssetListItemActions from "./AssetListItemActions"
 
 type CommonAssetListItemProps = {
   assetAmount: CompleteAssetAmount<SwappableAsset>
@@ -49,14 +47,6 @@ export default function CommonAssetListItem(
   const isMissingLocalizedUserValue =
     typeof assetAmount.localizedMainCurrencyAmount === "undefined"
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
-
-  // Network base assets can carry a contract address of their own---MATIC on
-  // Polygon and ETH on Optimism both do---so only pass the address along when
-  // the asset really is a token; otherwise the swap page would look for a
-  // token that does not exist instead of preselecting the base asset.
-  const contractAddress = isSmartContractFungibleAsset(assetAmount.asset)
-    ? assetAmount.asset.contractAddress
-    : undefined
 
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
   const amount = displayAssetAmount(assetAmount)
@@ -140,55 +130,10 @@ export default function CommonAssetListItem(
             onClick={handleVerifyAsset}
           />
         ) : (
-          <>
-            <SharedIconRouterLink
-              path="/send"
-              state={assetAmount.asset}
-              iconClass="asset_icon_send"
-              isTooltip
-              tooltipText="Send"
-            />
-            {networkSupportsSwaps(selectedNetwork.chainID) ? (
-              <SharedIconRouterLink
-                path="/swap"
-                state={{
-                  symbol: assetAmount.asset.symbol,
-                  contractAddress,
-                }}
-                iconClass="asset_icon_swap"
-                isTooltip
-                tooltipText="Swap"
-              />
-            ) : (
-              <SharedTooltip
-                type="dark"
-                width={180}
-                height={48}
-                horizontalPosition="left"
-                verticalPosition="bottom"
-                horizontalShift={42}
-                verticalShift={16}
-                IconComponent={() => (
-                  <div className="button_wrap">
-                    <SharedIconRouterLink
-                      path="/swap"
-                      disabled
-                      state={{
-                        symbol: assetAmount.asset.symbol,
-                        contractAddress,
-                      }}
-                      iconClass="asset_icon_swap"
-                    />
-                  </div>
-                )}
-              >
-                <div className="centered_tooltip">
-                  <div>{t("swapDisabledOne")}</div>
-                  <div>{t("swapDisabledTwo")}</div>
-                </div>
-              </SharedTooltip>
-            )}
-          </>
+          <AssetListItemActions
+            asset={assetAmount.asset}
+            network={selectedNetwork}
+          />
         )}
       </div>
       {/*
@@ -205,12 +150,6 @@ export default function CommonAssetListItem(
           font-weight: 400;
           letter-spacing: 0.42px;
           line-height: 16px;
-        }
-        .centered_tooltip {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
         }
         .asset_list_item {
           position: relative;
