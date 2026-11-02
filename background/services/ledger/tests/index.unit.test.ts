@@ -7,7 +7,8 @@ import LedgerService, {
   READINESS_POLL_FAST_INTERVAL_MS,
 } from ".."
 import { getOrCreateDB } from "../db"
-import { ETHEREUM } from "../../../constants"
+import { ETHEREUM, POLYGON, ROOTSTOCK } from "../../../constants"
+import type { EVMNetwork, Network } from "../../../networks"
 import { createTransactionRequest } from "../../../tests/factories"
 
 const PACKET_SIZE = 64
@@ -587,5 +588,88 @@ describe("LedgerService readiness polling", () => {
       expect(ledger.commands).toEqual([GET_APP_NAME, SIGN_EIP712_HASHED])
       expect(emitted).toEqual([])
     })
+  })
+})
+
+describe("LedgerService transaction compatibility", () => {
+  let ledgerService: LedgerService
+
+  beforeEach(async () => {
+    ledgerService = await LedgerService.create()
+  })
+
+  it("should be compatible across networks sharing an address format", () => {
+    expect(ledgerService.isTransactionCompatible(ETHEREUM, ROOTSTOCK)).toBe(
+      true,
+    )
+    expect(ledgerService.isTransactionCompatible(ETHEREUM, POLYGON)).toBe(true)
+  })
+
+  it("should not be compatible with a network of a different family", () => {
+    const otherFamilyNetwork = {
+      ...ETHEREUM,
+      family: "BTC",
+    } as unknown as Network
+
+    expect(
+      ledgerService.isTransactionCompatible(ETHEREUM, otherFamilyNetwork),
+    ).toBe(false)
+  })
+})
+
+describe("LedgerService message signing networks", () => {
+  let ledger: ReturnType<typeof fakeLedger>
+  let ledgerService: LedgerService
+  const originalGetDevices: unknown = Reflect.get(navigator.usb, "getDevices")
+
+  beforeEach(async () => {
+    ledger = fakeLedger()
+    Reflect.set(navigator.usb, "getDevices", async () => [])
+
+    ledgerService = await LedgerService.create()
+    await ledgerService.startService()
+
+    Reflect.set(navigator.usb, "getDevices", async () => [ledger.device])
+    await addLedgerAccount()
+
+    ledger.state.locked = false
+    ledger.state.app = "Ethereum"
+    await ledgerService.onConnection(NANO_X_PRODUCT_ID)
+  })
+
+  afterEach(async () => {
+    await ledgerService.stopService()
+    Reflect.set(navigator.usb, "getDevices", originalGetDevices)
+  })
+
+  it("signs a message on Rootstock", async () => {
+    const signature = await ledgerService.signMessage(
+      { address: LEDGER_ADDRESS, network: ROOTSTOCK },
+      "0x1234",
+      LEDGER_SIGNER,
+    )
+
+    expect(signature).toMatch(/^0x(11){32}(22){32}1b$/)
+    expect(ledger.commands).toContain(SIGN_PERSONAL_MESSAGE)
+  })
+
+  it("refuses to sign a message on a network of a different family", async () => {
+    const otherFamilyNetwork = {
+      ...ETHEREUM,
+      family: "BTC",
+    } as unknown as EVMNetwork
+
+    const error = await ledgerService
+      .signMessage(
+        { address: LEDGER_ADDRESS, network: otherFamilyNetwork },
+        "0x1234",
+        LEDGER_SIGNER,
+      )
+      .catch((caught: unknown) => caught)
+
+    expect(error).toMatchObject({
+      message: "Unsupported network for Ledger signing",
+    })
+    expect(ledger.commands).not.toContain(SIGN_PERSONAL_MESSAGE)
   })
 })
