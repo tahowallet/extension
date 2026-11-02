@@ -1140,7 +1140,8 @@
     "portfolio": "Portfolio",
     "swap": "Swap",
     "earn": "Earn",
-    "settings": "Settings"
+    "settings": "Settings",
+    "expand": "Expand"
   },
   "addressBook": {
     "selectAddress": "Select address",
@@ -1176,5 +1177,44 @@
     "ownershipWarning": "Only add networks where you're sure the same owner controls this address. On other networks the same address can belong to someone else, for example a multisig or contract deployed by another party.",
     "settingsTitle": "Address book",
     "addButtonSettings": "Add address"
+  },
+  "fullTab": {
+    "help": "Help",
+    "nav": {
+      "label": "Wallet sections",
+      "connectedDapps": "Connected dApps",
+      "accounts": "Accounts"
+    },
+    "portfolio": {
+      "assets_one": "{{count}} asset",
+      "assets_other": "{{count}} assets"
+    },
+    "table": {
+      "asset": "Asset",
+      "price": "Price",
+      "balance": "Balance",
+      "value": "Value",
+      "actions": "Actions",
+      "empty": "No assets to show."
+    },
+    "account": {
+      "eyebrow": "Account",
+      "totalBalance": "Total balance",
+      "unverifiedAssets_one": "{{count}} unverified asset",
+      "unverifiedAssets_other": "{{count}} unverified assets",
+      "customAssets": "Custom assets",
+      "noAssets": "No assets on {{network}} yet.",
+      "send": "Send",
+      "swap": "Swap",
+      "swapUnsupported": "Swaps aren't available on this network yet.",
+      "addressCopied": "Address copied to clipboard"
+    },
+    "unverified": {
+      "title": "Unverified assets on {{network}}",
+      "explainer": "These assets were found in this account but haven't been verified. Select any you don't want to see and hide them.",
+      "hideSelected_one": "Hide {{count}} asset",
+      "hideSelected_other": "Hide {{count}} assets",
+      "empty": "No unverified assets here."
+    }
   }
 }
