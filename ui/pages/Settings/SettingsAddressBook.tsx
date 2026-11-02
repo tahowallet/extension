@@ -1,9 +1,13 @@
 import React, { ReactElement, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { selectAddressBookEntries } from "@tallyho/tally-background/redux-slices/selectors"
+import {
+  selectAddressBookEntries,
+  selectCurrentNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
 import type { AddressBookEntry } from "@tallyho/tally-background/redux-slices/address-book"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
+import SharedButton from "../../components/Shared/SharedButton"
 import CorePage from "../../components/Core/CorePage"
 import AddressBookEntryForm from "../../components/AddressBook/AddressBookEntryForm"
 import AddressBookSettingsItem from "./AddressBookSettingsItem"
@@ -16,9 +20,11 @@ import { useBackgroundSelector } from "../../hooks"
 export default function SettingsAddressBook(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "addressBook" })
   const entries = useBackgroundSelector(selectAddressBookEntries)
+  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [editing, setEditing] = useState<AddressBookEntry | undefined>()
+  const [isAdding, setIsAdding] = useState(false)
 
   const filteredEntries = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
@@ -38,6 +44,17 @@ export default function SettingsAddressBook(): ReactElement {
         <SharedPageHeader withoutBackText backPath="/settings">
           {t("settingsTitle")}
         </SharedPageHeader>
+        <div className="add_row">
+          <SharedButton
+            type="tertiary"
+            size="medium"
+            iconSmall="add"
+            iconPosition="left"
+            onClick={() => setIsAdding(true)}
+          >
+            {t("addButtonSettings")}
+          </SharedButton>
+        </div>
         {entries.length > 0 && (
           <div className="search_wrap">
             <input
@@ -83,7 +100,26 @@ export default function SettingsAddressBook(): ReactElement {
           />
         )}
       </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={isAdding}
+        size="custom"
+        customSize="384px"
+        close={() => setIsAdding(false)}
+      >
+        {isAdding && (
+          // Saved on the network being viewed, like a name given from Send.
+          <AddressBookEntryForm
+            addressOnNetwork={{ network: currentNetwork }}
+            onSaved={() => setIsAdding(false)}
+          />
+        )}
+      </SharedSlideUpMenu>
       <style jsx>{`
+        .add_row {
+          display: flex;
+          justify-content: flex-end;
+          margin: -12px 0 -8px;
+        }
         .wrapper {
           display: flex;
           flex-direction: column;
