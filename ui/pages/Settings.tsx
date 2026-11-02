@@ -44,13 +44,13 @@ import SharedLink from "../components/Shared/SharedLink"
 import { isThemePreference } from "../utils/theme"
 import CorePage from "../components/Core/CorePage"
 
-type SettingsItem = {
+export type SettingsItem = {
   title: string
   component: () => ReactElement
   tooltip?: () => ReactElement
 }
 
-type SettingsList = {
+export type SettingsList = {
   [key: string]: {
     title: string
     items: SettingsItem[]
@@ -59,7 +59,7 @@ type SettingsList = {
 
 const NUMBER_OF_CLICKS_FOR_DEV_PANEL = 15
 
-const FAQ_URL =
+export const FAQ_URL =
   "https://notion.taho.xyz/Tally-Ho-Knowledge-Base-4d95ed5439c64d6db3d3d27abf1fdae5"
 
 const AUTO_LOCK_OPTIONS = [
@@ -71,7 +71,7 @@ const AUTO_LOCK_OPTIONS = [
 
 const THEME_OPTIONS: ThemePreference[] = ["system", "dark", "light"]
 
-const FOOTER_ACTIONS = [
+export const FOOTER_ACTIONS = [
   {
     icon: "icons/m/discord",
     linkTo: "https://chat.taho.xyz/",
@@ -86,7 +86,7 @@ const FOOTER_ACTIONS = [
   },
 ]
 
-function VersionLabel(): ReactElement {
+export function VersionLabel(): ReactElement {
   const { t } = useTranslation()
   const history = useHistory()
   const [clickCounter, setClickCounter] = useState(0)
@@ -134,7 +134,7 @@ function VersionLabel(): ReactElement {
   )
 }
 
-function SettingRow(props: SettingsItem): ReactElement {
+export function SettingRow(props: SettingsItem): ReactElement {
   const { title, component, tooltip = () => null } = props
 
   return (
@@ -168,7 +168,12 @@ function SettingRow(props: SettingsItem): ReactElement {
   )
 }
 
-export default function Settings(): ReactElement {
+/**
+ * A hook that returns the groups of settings shown on the settings page. It
+ * is shared with the full-tab view, which shows each group as a section of
+ * its own.
+ */
+export function useSettingsGroups(): SettingsList {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const hideDust = useSelector(selectHideDust)
@@ -486,6 +491,13 @@ export default function Settings(): ReactElement {
       items: [bugReport, needHelp],
     },
   }
+
+  return settings
+}
+
+export default function Settings(): ReactElement {
+  const { t } = useTranslation()
+  const settings = useSettingsGroups()
 
   return (
     <CorePage hasTabBar>
