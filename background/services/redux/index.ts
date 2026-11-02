@@ -516,16 +516,14 @@ export default class ReduxService extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  async addOrEditAddressName({
-    address,
-    network,
-    name,
-  }: AddressOnNetwork & { name: string }): Promise<AddressBookUpdateResult> {
-    const result = await this.nameService.addOrEditAddressBookEntry({
-      address,
-      network,
-      name,
-    })
+  async addOrEditAddressName(
+    update: AddressOnNetwork & {
+      name: string
+      additionalChainIDs?: string[]
+      previousNetwork?: EVMNetwork
+    },
+  ): Promise<AddressBookUpdateResult> {
+    const result = await this.nameService.addOrEditAddressBookEntry(update)
     if (result.success) {
       this.analyticsService.sendAnalyticsEvent(
         AnalyticsEvent.ACCOUNT_NAME_EDITED,

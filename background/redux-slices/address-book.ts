@@ -1,10 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { AddressOnNetwork } from "../accounts"
+import type { EVMNetwork } from "../networks"
 import type { AddressBookEntry } from "../services/name/db"
 import type { AddressBookUpdateResult } from "../services/name"
 import { createBackgroundAsyncThunk } from "./utils"
 
 export type { AddressBookEntry, AddressBookUpdateResult }
+
+export type AddressBookEntryUpdate = AddressOnNetwork & {
+  name: string
+  /** Other networks the user chose to apply the name on. */
+  additionalChainIDs?: string[]
+  /** When moving an entry to another network, the network it was saved on. */
+  previousNetwork?: EVMNetwork
+}
 
 export type AddressBookState = {
   /**
@@ -42,7 +51,7 @@ export default addressBookSlice.reducer
 export const saveAddressBookEntry = createBackgroundAsyncThunk(
   "addressBook/saveEntry",
   async (
-    payload: AddressOnNetwork & { name: string },
+    payload: AddressBookEntryUpdate,
     { extra: { main } },
   ): Promise<AddressBookUpdateResult> => main.addOrEditAddressName(payload),
 )

@@ -26,6 +26,7 @@ const entry = (
   address: normalizeEVMAddress(address),
   network,
   name,
+  additionalChainIDs: [],
   createdAt: updatedAt,
   updatedAt,
 })
@@ -108,5 +109,20 @@ describe("selectAddressBookEntriesForNetwork", () => {
         ({ name }) => name,
       ),
     ).toEqual(["On Ethereum"])
+  })
+
+  it("includes entries the user applied to the network", () => {
+    const state = stateWith([
+      {
+        ...entry(OTHER, POLYGON, "Chosen"),
+        additionalChainIDs: [ETHEREUM.chainID],
+      },
+    ])
+
+    expect(
+      selectAddressBookEntriesForNetwork(state, ETHEREUM).map(
+        ({ name }) => name,
+      ),
+    ).toEqual(["Chosen"])
   })
 })

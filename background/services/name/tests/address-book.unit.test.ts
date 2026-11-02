@@ -219,4 +219,90 @@ describe("NameService address book", () => {
     expect(nameService.getAddressBook()).toEqual([])
     expect(clearedNames).toEqual([tracked])
   })
+
+  it("applies an entry on networks the user chose", async () => {
+    const nameService = await createNameService()
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: ETHEREUM,
+      name: "Brother",
+      additionalChainIDs: [POLYGON.chainID],
+    })
+
+    expect(
+      await nameService.lookUpAddressBookName({
+        address: ADDRESS,
+        network: POLYGON,
+      }),
+    ).toEqual({ name: "Brother", network: POLYGON })
+    expect(
+      await nameService.lookUpAddressBookName({
+        address: ADDRESS,
+        network: OPTIMISM,
+      }),
+    ).toBeUndefined()
+  })
+
+  it("prefers a network the user chose over control compatibility", async () => {
+    const nameService = await createNameService()
+    nameService.setAddressControlCompatibilityCheck(async () => true)
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: ETHEREUM,
+      name: "Chosen",
+      additionalChainIDs: [OPTIMISM.chainID],
+    })
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: POLYGON,
+      name: "Compatible",
+    })
+
+    expect(
+      await nameService.lookUpAddressBookName({
+        address: ADDRESS,
+        network: OPTIMISM,
+      }),
+    ).toEqual({ name: "Chosen", network: OPTIMISM })
+  })
+
+  it("rejects a name another address uses on a chosen network", async () => {
+    const nameService = await createNameService()
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: ETHEREUM,
+      name: "Brother",
+      additionalChainIDs: [POLYGON.chainID],
+    })
+
+    expect(
+      await nameService.addOrEditAddressBookEntry({
+        address: OTHER_ADDRESS,
+        network: POLYGON,
+        name: "Brother",
+      }),
+    ).toEqual({ success: false, error: "duplicate-name" })
+  })
+
+  it("moves an entry to another network", async () => {
+    const nameService = await createNameService()
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: ETHEREUM,
+      name: "Brother",
+    })
+
+    await nameService.addOrEditAddressBookEntry({
+      address: ADDRESS,
+      network: POLYGON,
+      name: "Brother",
+      previousNetwork: ETHEREUM,
+    })
+    await nameService.stopService()
+
+    const restarted = await createNameService()
+    expect(restarted.getAddressBook()).toEqual([
+      expect.objectContaining({ network: POLYGON, additionalChainIDs: [] }),
+    ])
+  })
 })
