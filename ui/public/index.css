@@ -295,19 +295,15 @@
   --on-accent-active: #fefefc;
   --on-accent-deep: #fefefc;
 
-  /* Every tooltip is a dark bubble on the light page. */
+  /*
+   * Tooltips are a dark bubble on the light page. Quiet ones keep the top
+   * bar's colours, as in dark, lifted by a shadow.
+   */
   --tooltip-background: #002522;
   --tooltip-text: #fefefc;
   --tooltip-text-muted: #b8d1d0;
   --tooltip-shadow: var(--shadow);
-  --tooltip-quiet-background: var(--tooltip-background);
-  --tooltip-quiet-text: var(--tooltip-text);
-  --tooltip-quiet-text-strong: var(--tooltip-text);
   --tooltip-quiet-shadow: var(--tooltip-shadow);
-  /* As on the dark icon tiles: muted at rest, off-white on hover. */
-  --tooltip-action: var(--tooltip-text-muted);
-  --tooltip-action-hover: var(--tooltip-text);
-  --tooltip-action-icon-hover: var(--tooltip-text);
 
   --grey-green-80: #dcdfd8;
   --grey-green-70: #b8c4c2;
