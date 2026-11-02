@@ -8,6 +8,7 @@ type Props = {
   color?: string
   style?: CSSProperties
   hoverColor?: string
+  /** How long colour changes take, so an icon can keep pace with its text. */
   transitionHoverTime?: string
   ariaLabel?: string
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -21,17 +22,12 @@ export default function SharedIcon(props: Props): ReactElement {
     width,
     height = width,
     color = "transparent",
+    transitionHoverTime = "0s",
     style,
   } = props
 
   if ("onClick" in props) {
-    const {
-      hoverColor = color,
-      transitionHoverTime = "0",
-      ariaLabel,
-      onClick,
-      disabled = false,
-    } = props
+    const { hoverColor = color, ariaLabel, onClick, disabled = false } = props
 
     return (
       <button
@@ -98,6 +94,7 @@ export default function SharedIcon(props: Props): ReactElement {
           width: ${width}px;
           height: ${height}px;
           background-color: ${color};
+          transition: background-color ${transitionHoverTime};
         }
       `}</style>
     </i>
