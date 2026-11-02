@@ -373,8 +373,11 @@
   --action-tile-hover-icon: #fefefc;
   --icon-tile: var(--green-80);
   --icon-tile-icon: #002522;
-  /* Icon links, such as an asset's send and swap, hover onto that tan. */
-  --icon-tile-hover: var(--icon-tile);
+  /*
+   * Icon links, such as an asset's send and swap, hover onto the top bar's
+   * background, which stands out from the tan of a hovered asset row.
+   */
+  --icon-tile-hover: var(--green-120);
   --icon-tile-hover-icon: var(--icon-tile-icon);
   --icon-tile-hover-shadow: none;
 
