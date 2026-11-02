@@ -4,6 +4,7 @@ import {
   Route,
   Switch,
   matchPath,
+  useHistory,
   useLocation,
 } from "react-router-dom"
 import { CSSTransition, TransitionGroup } from "react-transition-group"
@@ -21,6 +22,8 @@ import ErrorFallback from "../ErrorFallback"
 import FullTabNav from "../../components/FullTab/FullTabNav"
 import FullTabEmbeddedPage from "../../components/FullTab/FullTabEmbeddedPage"
 import { accountPath } from "../../components/FullTab/hooks"
+import CorePage from "../../components/Core/CorePage"
+import AccountsNotificationPanelAccounts from "../../components/AccountsNotificationPanel/AccountsNotificationPanelAccounts"
 import FullTabPortfolio from "./FullTabPortfolio"
 import FullTabConnectedDapps from "./FullTabConnectedDapps"
 import FullTabAccount from "./FullTabAccount"
@@ -98,6 +101,7 @@ function sectionKey(pathname: string): string {
 export default function FullTabRoot(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const location = useLocation()
+  const history = useHistory()
   const hasAccounts = useBackgroundSelector(
     (state) => getAddressCount(state) > 0,
   )
@@ -139,7 +143,7 @@ export default function FullTabRoot(): ReactElement {
                 <Route path="/accounts/:address/:chainID/unverified">
                   <FullTabUnverifiedAssets />
                 </Route>
-                <Route path="/accounts/:address">
+                <Route path="/accounts/:address/:view(assets|nfts|activity)?">
                   <FullTabAccount />
                 </Route>
                 <Route path="/settings/general">
@@ -150,6 +154,17 @@ export default function FullTabRoot(): ReactElement {
                 </Route>
                 <Route path="/settings" exact>
                   <Redirect to="/settings/general" />
+                </Route>
+                <Route path="/manage-accounts">
+                  <FullTabEmbeddedPage>
+                    <CorePage>
+                      <AccountsNotificationPanelAccounts
+                        onCurrentAddressChange={(address) =>
+                          history.push(accountPath(address))
+                        }
+                      />
+                    </CorePage>
+                  </FullTabEmbeddedPage>
                 </Route>
                 <Route path="/wallet">
                   <Redirect to={accountPath(currentAccount.address)} />

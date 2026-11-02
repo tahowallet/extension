@@ -115,7 +115,9 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           isLoading={isHiding}
           onClick={hideSelected}
         >
-          {t("hideSelected", { count: selected.size })}
+          {selected.size === 0
+            ? t("hideNone")
+            : t("hideSelected", { count: selected.size })}
         </SharedButton>
       }
     >
@@ -180,7 +182,7 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           color: var(--trophy-gold);
         }
         .explainer {
-          margin: -16px 0 0;
+          margin: -8px 0 0;
           color: var(--green-40);
           max-width: 640px;
         }

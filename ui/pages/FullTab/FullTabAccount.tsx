@@ -1,5 +1,6 @@
-import React, { ReactElement } from "react"
-import { useParams } from "react-router-dom"
+import React, { ReactElement, useRef } from "react"
+import { useHistory, useParams } from "react-router-dom"
+import { CSSTransition, SwitchTransition } from "react-transition-group"
 import { useTranslation } from "react-i18next"
 import { selectAccountTotalsForOverview } from "@tallyho/tally-background/redux-slices/selectors"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
@@ -8,10 +9,15 @@ import SharedAvatar from "../../components/Shared/SharedAvatar"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import FullTabNetworkSection from "../../components/FullTab/FullTabNetworkSection"
 import FullTabSection from "../../components/FullTab/FullTabSection"
+import FullTabSegmentedControl from "../../components/FullTab/FullTabSegmentedControl"
+import FullTabAccountNetworkPanel from "../../components/FullTab/FullTabAccountNetworkPanel"
 import {
+  accountPath,
   useAccountNetworks,
   useFullTabAccount,
 } from "../../components/FullTab/hooks"
+
+type AccountView = "assets" | "nfts" | "activity"
 
 const formatTotal = (total: number) =>
   total.toLocaleString(undefined, {
@@ -26,7 +32,15 @@ const formatTotal = (total: number) =>
  */
 export default function FullTabAccount(): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "fullTab.account" })
-  const { address } = useParams<{ address: string }>()
+  const { t: tWallet } = useTranslation("translation", {
+    keyPrefix: "wallet.pages",
+  })
+  const history = useHistory()
+  const { address, view = "assets" } = useParams<{
+    address: string
+    view?: AccountView
+  }>()
+  const viewRef = useRef<HTMLDivElement>(null)
   const dispatch = useBackgroundDispatch()
   const copyAddress = () => {
     void navigator.clipboard.writeText(address)
@@ -71,14 +85,47 @@ export default function FullTabAccount(): ReactElement {
         </div>
       }
     >
-      <div className="networks">
-        {networks.map((network) => (
-          <FullTabNetworkSection
-            key={network.chainID}
-            address={address}
-            network={network}
-          />
-        ))}
+      <div className="views">
+        <FullTabSegmentedControl<AccountView>
+          label={t("views")}
+          value={view}
+          onChange={(newView) =>
+            history.replace(
+              newView === "assets"
+                ? accountPath(address)
+                : `${accountPath(address)}/${newView}`,
+            )
+          }
+          segments={[
+            { value: "assets", label: tWallet("assets") },
+            { value: "nfts", label: tWallet("NFTs") },
+            { value: "activity", label: tWallet("activity") },
+          ]}
+        />
+        <SwitchTransition>
+          <CSSTransition
+            key={view}
+            nodeRef={viewRef}
+            timeout={200}
+            classNames="view_fade"
+          >
+            <div ref={viewRef}>
+              {view === "assets" ? (
+                <div className="networks">
+                  {networks.map((network) => (
+                    <FullTabNetworkSection
+                      key={network.chainID}
+                      address={address}
+                      network={network}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <FullTabAccountNetworkPanel address={address} kind={view} />
+              )}
+            </div>
+          </CSSTransition>
+        </SwitchTransition>
       </div>
       <style jsx>{`
         .account_title {
@@ -130,6 +177,38 @@ export default function FullTabAccount(): ReactElement {
           font-size: 32px;
           font-weight: 500;
           font-variant-numeric: tabular-nums;
+        }
+        .views {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          margin-top: -8px;
+        }
+        .view_fade-enter {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        .view_fade-enter-active {
+          opacity: 1;
+          transform: none;
+          transition:
+            opacity 0.2s ease,
+            transform 0.2s ease;
+        }
+        .view_fade-exit {
+          opacity: 1;
+        }
+        .view_fade-exit-active {
+          opacity: 0;
+          transition: opacity 0.15s ease;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .view_fade-enter,
+          .view_fade-enter-active,
+          .view_fade-exit-active {
+            transform: none;
+            transition: none;
+          }
         }
         .networks {
           display: flex;

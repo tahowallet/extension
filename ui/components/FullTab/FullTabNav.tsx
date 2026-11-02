@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { NavLink } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { selectAccountTotalsForOverview } from "@tallyho/tally-background/redux-slices/selectors"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
@@ -56,7 +56,12 @@ export default function FullTabNav(): ReactElement {
           </NavItem>
         </div>
         <div className="group">
-          <h3>{t("fullTab.nav.accounts")}</h3>
+          <div className="group_header">
+            <h3>{t("fullTab.nav.accounts")}</h3>
+            <Link className="manage" to="/manage-accounts">
+              {t("fullTab.nav.manageAccounts")}
+            </Link>
+          </div>
           {accounts.map(({ address, name, shortenedAddress, avatarURL }) => {
             const totals =
               overviewTotals[normalizeEVMAddress(address)]?.totals ?? {}
@@ -138,6 +143,22 @@ export default function FullTabNav(): ReactElement {
           letter-spacing: 0.06em;
           text-transform: uppercase;
           color: var(--green-60);
+        }
+        .group_header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-right: 12px;
+        }
+        .group_header :global(.manage) {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--green-40);
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+        .group_header :global(.manage:hover) {
+          color: var(--trophy-gold);
         }
         .group :global(.nav_item) {
           position: relative;

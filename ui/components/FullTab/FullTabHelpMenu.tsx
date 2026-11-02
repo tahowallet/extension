@@ -1,6 +1,12 @@
-import React, { ReactElement, useCallback, useRef, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { CSSTransition } from "react-transition-group"
-import { useHistory } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { FAQ_URL, FOOTER_ACTIONS, VersionLabel } from "../../pages/Settings"
 import { useOnClickOutside } from "../../hooks/dom-hooks"
@@ -21,6 +27,18 @@ export default function FullTabHelpMenu(): ReactElement {
 
   const close = useCallback(() => setIsOpen(false), [])
   useOnClickOutside(containerRef, close)
+
+  const { pathname } = useLocation()
+  useEffect(close, [close, pathname])
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close()
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [close, isOpen])
 
   return (
     <div className="help" ref={containerRef}>
