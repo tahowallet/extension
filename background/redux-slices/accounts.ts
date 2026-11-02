@@ -442,9 +442,8 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
 
 export const addOrEditAddressName = createBackgroundAsyncThunk(
   "account/addOrEditAddressName",
-  async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) => {
-    await main.addOrEditAddressName(payload)
-  },
+  async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) =>
+    main.addOrEditAddressName(payload),
 )
 
 export const removeAccount = createBackgroundAsyncThunk(
