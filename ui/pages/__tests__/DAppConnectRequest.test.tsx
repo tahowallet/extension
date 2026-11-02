@@ -64,14 +64,16 @@ describe("DAppConnectRequest", () => {
     const ui = renderRequest(NEW_CONNECTION)
 
     expect(ui.getByText("Connect to dApp")).toBeVisible()
-    expect(ui.queryByText(/Allow .* to use/)).toBeNull()
+    expect(ui.queryByText(/already connected/)).toBeNull()
   })
 
   test("should ask about the requested network for a request with a chainID", () => {
     const ui = renderRequest({ ...NEW_CONNECTION, chainID: POLYGON.chainID })
 
     expect(
-      ui.getByText(`Allow Test dApp to use ${POLYGON.name}?`),
+      ui.getByText(
+        `This dApp is already connected to this account on other networks. On ${POLYGON.name}, it would get permission to:`,
+      ),
     ).toBeVisible()
     expect(ui.queryByText("Connect to dApp")).toBeNull()
   })

@@ -45,7 +45,7 @@ describe("DAppConnectPage", () => {
 
     expect(ui.getByText("Connect to dApp")).toBeVisible()
     expect(ui.getByRole("button", { name: "Connect" })).toBeVisible()
-    expect(ui.queryByText(/Allow .* to use/)).toBeNull()
+    expect(ui.queryByText(/already connected/)).toBeNull()
   })
 
   test("should ask about the network for an additional network", () => {
@@ -53,7 +53,9 @@ describe("DAppConnectPage", () => {
 
     expect(ui.getByText("Allow another network")).toBeVisible()
     expect(
-      ui.getByText(`Allow Test dApp to use ${POLYGON.name}?`),
+      ui.getByText(
+        `This dApp is already connected to this account on other networks. On ${POLYGON.name}, it would get permission to:`,
+      ),
     ).toBeVisible()
     expect(ui.getByText(POLYGON.name)).toBeVisible()
     expect(ui.getByRole("button", { name: "Allow" })).toBeVisible()

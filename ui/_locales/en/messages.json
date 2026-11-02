@@ -121,8 +121,7 @@
     "rejectConnection": "Reject",
     "acceptConnection": "Connect",
     "allowNetwork": "Allow another network",
-    "allowNetworkQuestion": "Allow {{site}} to use {{network}}?",
-    "allowNetworkPermissionListTitle": "It's already connected to this account on other networks. On {{network}}, it would get permission to:",
+    "allowNetworkPermissionListTitle": "This dApp is already connected to this account on other networks. On {{network}}, it would get permission to:",
     "acceptNetwork": "Allow"
   },
   "genericPages": {
