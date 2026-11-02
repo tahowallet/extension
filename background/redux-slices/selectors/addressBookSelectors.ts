@@ -14,44 +14,74 @@ const selectControlCompatibility = (state: RootState) =>
   state.account.controlCompatibility
 
 /**
- * Returns the chain IDs a name saved for `addressOnNetwork` applies on: the
- * network it's saved on, and every network the address is known to be
- * control-compatible with from there. See RFB 5.
+ * The address and network a name is saved for, and any other networks the
+ * user chose to apply it on.
+ */
+export type NameTarget = AddressOnNetwork & { additionalChainIDs?: string[] }
+
+/**
+ * Returns the chain IDs the address is known to be control-compatible with
+ * from `network`. See RFB 5.
  *
  * Only signer-based compatibility is known synchronously, so for an address
- * the wallet has no signer for this is just the network it's saved on.
+ * the wallet has no signer for this is empty.
  */
-function applicableChainIDs(
+function compatibleChainIDs(
   controlCompatibility: RootState["account"]["controlCompatibility"],
   { address, network }: AddressOnNetwork,
 ): Set<string> {
+  return new Set(
+    controlCompatibility[normalizeEVMAddress(address)]?.[network.chainID] ?? [],
+  )
+}
+
+/**
+ * Returns the chain IDs a name applies on: the network it's saved on, the
+ * networks the user chose, and every network the address is known to be
+ * control-compatible with from where it's saved.
+ */
+function applicableChainIDs(
+  controlCompatibility: RootState["account"]["controlCompatibility"],
+  target: NameTarget,
+): Set<string> {
   return new Set([
-    network.chainID,
-    ...(controlCompatibility[normalizeEVMAddress(address)]?.[network.chainID] ??
-      []),
+    target.network.chainID,
+    ...(target.additionalChainIDs ?? []),
+    ...compatibleChainIDs(controlCompatibility, target),
   ])
 }
 
 /**
- * The networks a name saved for `addressOnNetwork` applies on, starting with
- * the network it's saved on.
+ * The networks a name applies on, starting with the network it's saved on.
  */
 export const selectNameApplicableNetworks = createSelector(
   selectEVMNetworks,
   selectControlCompatibility,
-  (_: RootState, addressOnNetwork: AddressOnNetwork) => addressOnNetwork,
-  (evmNetworks, controlCompatibility, addressOnNetwork): EVMNetwork[] => {
-    const chainIDs = applicableChainIDs(controlCompatibility, addressOnNetwork)
+  (_: RootState, target: NameTarget) => target,
+  (evmNetworks, controlCompatibility, target): EVMNetwork[] => {
+    const chainIDs = applicableChainIDs(controlCompatibility, target)
 
     return [
-      addressOnNetwork.network,
+      target.network,
       ...evmNetworks.filter(
         (network) =>
           chainIDs.has(network.chainID) &&
-          !sameNetwork(network, addressOnNetwork.network),
+          !sameNetwork(network, target.network),
       ),
     ]
   },
+)
+
+/**
+ * The chain IDs a name saved for `addressOnNetwork` would apply on without
+ * the user choosing them, because the wallet knows the same signer controls
+ * the address there.
+ */
+export const selectKnownCompatibleChainIDs = createSelector(
+  selectControlCompatibility,
+  (_: RootState, addressOnNetwork: AddressOnNetwork) => addressOnNetwork,
+  (controlCompatibility, addressOnNetwork): Set<string> =>
+    compatibleChainIDs(controlCompatibility, addressOnNetwork),
 )
 
 /**
@@ -72,12 +102,14 @@ export const selectAddressBookEntriesForNetwork = createSelector(
         applicableChainIDs(controlCompatibility, entry).has(network.chainID),
       )
       .sort((a, b) => {
-        const aOnNetwork = sameNetwork(a.network, network)
-        const bOnNetwork = sameNetwork(b.network, network)
-        if (aOnNetwork !== bOnNetwork) {
-          return aOnNetwork ? -1 : 1
+        // As in the name service: saved on the network, then applied to it by
+        // the user, then applying through control compatibility.
+        const tier = (entry: AddressBookEntry) => {
+          if (sameNetwork(entry.network, network)) return 0
+          if (entry.additionalChainIDs.includes(network.chainID)) return 1
+          return 2
         }
-        return b.updatedAt - a.updatedAt
+        return tier(a) - tier(b) || b.updatedAt - a.updatedAt
       })
 
     const seen = new Set<string>()

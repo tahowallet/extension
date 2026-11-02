@@ -12,6 +12,12 @@ export type AddressBookEntry = {
   address: NormalizedEVMAddress
   network: EVMNetwork
   name: string
+  /**
+   * Other networks the user chose to apply the name on, beyond those it
+   * applies on through control compatibility. The user vouches that the same
+   * party controls the address on these.
+   */
+  additionalChainIDs: string[]
   createdAt: UNIXTime
   updatedAt: UNIXTime
 }
@@ -34,7 +40,11 @@ export class NameDatabase extends Dexie {
 
   async getAddressBook(): Promise<AddressBookEntry[]> {
     return (await this.addressBook.toArray()).map(
-      ({ chainID: _, ...entry }) => entry,
+      ({ chainID: _, ...entry }) => ({
+        ...entry,
+        // Entries saved before networks could be chosen have none.
+        additionalChainIDs: entry.additionalChainIDs ?? [],
+      }),
     )
   }
 

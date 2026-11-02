@@ -53,6 +53,16 @@ export type AddressBookUpdateResult =
  */
 const comparableName = (name: string) => name.trim().toLowerCase()
 
+/**
+ * The chain IDs an entry was explicitly saved for: the network it's saved on,
+ * and any the user added.
+ */
+const explicitChainIDs = ({
+  network,
+  additionalChainIDs,
+}: Pick<AddressBookEntry, "network" | "additionalChainIDs">) =>
+  new Set([network.chainID, ...additionalChainIDs])
+
 export type ResolvedAddressRecord = {
   from: NameOnNetwork
   resolved: {
@@ -224,50 +234,86 @@ export default class NameService extends BaseService<Events> {
   }
 
   /**
-   * Saves a name for an address on a network, replacing any name already saved
-   * for that address on that network. A name can't be saved if another
-   * address already uses it on the same network, since looking the name up
-   * there would then be ambiguous.
+   * Saves a name for an address on a network, and optionally on other
+   * networks the user chooses, replacing any name already saved for that
+   * address on that network. With `previousNetwork`, the entry saved there
+   * is moved to `network`.
+   *
+   * A name can't be saved if another address already uses it on one of the
+   * same networks, since looking the name up there would be ambiguous.
    */
   async addOrEditAddressBookEntry({
     address,
     network,
     name,
-  }: AddressOnNetwork & { name: string }): Promise<AddressBookUpdateResult> {
+    additionalChainIDs = [],
+    previousNetwork,
+  }: AddressOnNetwork & {
+    name: string
+    additionalChainIDs?: string[]
+    previousNetwork?: EVMNetwork
+  }): Promise<AddressBookUpdateResult> {
     const trimmedName = name.trim()
     if (trimmedName === "") {
       return { success: false, error: "empty-name" }
     }
 
     const normalizedAddress = normalizeEVMAddress(address)
+    const additional = [...new Set(additionalChainIDs)].filter(
+      (chainID) => chainID !== network.chainID,
+    )
+    const chainIDs = explicitChainIDs({
+      network,
+      additionalChainIDs: additional,
+    })
 
     const nameIsTaken = this.addressBook.some(
       (entry) =>
-        sameNetwork(entry.network, network) &&
         !sameEVMAddress(entry.address, normalizedAddress) &&
-        comparableName(entry.name) === comparableName(trimmedName),
+        comparableName(entry.name) === comparableName(trimmedName) &&
+        [...explicitChainIDs(entry)].some((chainID) => chainIDs.has(chainID)),
     )
     if (nameIsTaken) {
       return { success: false, error: "duplicate-name" }
     }
 
-    const existingEntry = this.addressBook.find(
+    const isEntryFor =
+      (entryNetwork: EVMNetwork) => (entry: AddressBookEntry) =>
+        sameNetwork(entry.network, entryNetwork) &&
+        sameEVMAddress(entry.address, normalizedAddress)
+    const existingEntry =
+      this.addressBook.find(isEntryFor(network)) ??
+      (previousNetwork === undefined
+        ? undefined
+        : this.addressBook.find(isEntryFor(previousNetwork)))
+    const replacedEntries = this.addressBook.filter(
       (entry) =>
-        sameNetwork(entry.network, network) &&
-        sameEVMAddress(entry.address, normalizedAddress),
+        isEntryFor(network)(entry) ||
+        (previousNetwork !== undefined && isEntryFor(previousNetwork)(entry)),
     )
+
     const now = Date.now()
     const entry: AddressBookEntry = {
       address: normalizedAddress,
       network,
       name: trimmedName,
+      additionalChainIDs: additional,
       createdAt: existingEntry?.createdAt ?? now,
       updatedAt: now,
     }
 
+    if (
+      previousNetwork !== undefined &&
+      !sameNetwork(previousNetwork, network)
+    ) {
+      await this.db.deleteAddressBookEntry(
+        normalizedAddress,
+        previousNetwork.chainID,
+      )
+    }
     await this.db.putAddressBookEntry(entry)
     this.addressBook = [
-      ...this.addressBook.filter((other) => other !== existingEntry),
+      ...this.addressBook.filter((other) => !replacedEntries.includes(other)),
       entry,
     ]
     this.emitter.emit("addressBook", this.addressBook)
@@ -311,7 +357,8 @@ export default class NameService extends BaseService<Events> {
 
   /**
    * Returns the address book entry that applies to an address on a network: an
-   * entry saved on that network if there is one, and otherwise the most
+   * entry saved on that network if there is one, then the most recently
+   * updated entry the user applied to that network, and otherwise the most
    * recently updated entry saved on a network the address is known to be
    * control-compatible with.
    */
@@ -360,6 +407,14 @@ export default class NameService extends BaseService<Events> {
     const onOtherNetworks = [...candidates]
       .reverse()
       .sort((a, b) => b.updatedAt - a.updatedAt)
+
+    const appliedByUser = onOtherNetworks.find((entry) =>
+      entry.additionalChainIDs.includes(network.chainID),
+    )
+    if (appliedByUser !== undefined) {
+      return appliedByUser
+    }
+
     const compatibilities = await Promise.all(
       onOtherNetworks.map(async (entry) => {
         try {
