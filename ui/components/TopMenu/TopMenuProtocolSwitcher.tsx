@@ -84,6 +84,8 @@ export default function TopMenuProtocolSwitcher({
             display: flex;
             align-items: center;
             max-width: 60%;
+            /* Shrinks first, ellipsizing the network name; see TopMenu. */
+            min-width: 0;
           }
           button {
             color: var(--green-40);
