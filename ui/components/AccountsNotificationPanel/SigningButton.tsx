@@ -47,7 +47,6 @@ export default function SigningButton({
           width={25}
           color="var(--green-40)"
           hoverColor={`var(--${buttonData.color})`}
-          transitionHoverTime="0.2s"
         />
       </button>
       <style jsx>

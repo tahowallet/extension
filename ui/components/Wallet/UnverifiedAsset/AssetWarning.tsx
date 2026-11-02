@@ -132,7 +132,6 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                         icon="icons/s/new-tab.svg"
                         color="var(--green-5)"
                         hoverColor="var(--trophy-gold)"
-                        transitionHoverTime="0.2s"
                       />
                     )}
                   </button>
@@ -173,7 +172,6 @@ export default function AssetWarning(props: AssetWarningProps): ReactElement {
                           icon="icons/s/new-tab.svg"
                           color="var(--green-5)"
                           hoverColor="var(--trophy-gold)"
-                          transitionHoverTime="0.2s"
                         />
                       )}
                     </button>
