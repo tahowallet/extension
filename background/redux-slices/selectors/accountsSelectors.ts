@@ -477,6 +477,85 @@ export const selectCurrentAccountBalances = createSelector(
   },
 )
 
+export type AccountBalancesOnNetwork = {
+  /** Trusted assets to display, honoring the hide-dust preference. */
+  assetAmounts: CompleteAssetAmount[]
+  /**
+   * Untrusted assets held by the account, listed whether or not the
+   * show-unverified-assets preference is on.
+   */
+  unverifiedAssetAmounts: CompleteAssetAmount[]
+  totalMainCurrencyAmount: number | undefined
+  totalMainCurrencyValue: string | undefined
+}
+
+/**
+ * Creates a selector for the balances of a given address on a given network,
+ * the way `selectCurrentAccountBalances` does for the selected account. Each
+ * caller should create its own selector so memoization holds per account and
+ * network.
+ *
+ * The selector returns `undefined` if the account is not tracked on the
+ * network and `"loading"` if its data has not yet loaded.
+ */
+export const makeSelectAccountBalancesOnNetwork = (
+  addressOnNetwork: AddressOnNetwork,
+) =>
+  createSelector(
+    (state: RootState) =>
+      state.account.accountsData.evm[addressOnNetwork.network.chainID]?.[
+        normalizeEVMAddress(addressOnNetwork.address)
+      ],
+    selectAssetEntities,
+    getPricesState,
+    selectHideDust,
+    selectMainCurrencySymbol,
+    (
+      accountData,
+      assetEntities,
+      prices,
+      hideDust,
+      mainCurrencySymbol,
+    ): AccountBalancesOnNetwork | "loading" | undefined => {
+      if (accountData === undefined || accountData === "loading") {
+        return accountData
+      }
+
+      const { combinedAssetAmounts, unverifiedAssetAmounts } =
+        computeCombinedAssetAmountsData(
+          hydrateBalances(accountData.balances, assetEntities),
+          mainCurrencySymbol,
+          hideDust,
+          true,
+          prices,
+        )
+
+      // Totals only count trusted assets, as the popup's do.
+      let totalMainCurrencyAmount: number | undefined
+      combinedAssetAmounts.forEach(({ mainCurrencyAmount }) => {
+        if (mainCurrencyAmount !== undefined) {
+          totalMainCurrencyAmount ??= 0
+          if (Number.isFinite(mainCurrencyAmount)) {
+            totalMainCurrencyAmount += mainCurrencyAmount
+          }
+        }
+      })
+
+      return {
+        assetAmounts: combinedAssetAmounts,
+        unverifiedAssetAmounts,
+        totalMainCurrencyAmount,
+        totalMainCurrencyValue: isDefined(totalMainCurrencyAmount)
+          ? formatCurrencyAmount(
+              mainCurrencySymbol,
+              totalMainCurrencyAmount,
+              desiredDecimals.default,
+            )
+          : undefined,
+      }
+    },
+  )
+
 export type AccountTotal = AddressOnNetwork & {
   shortenedAddress: string
   accountType: AccountType
