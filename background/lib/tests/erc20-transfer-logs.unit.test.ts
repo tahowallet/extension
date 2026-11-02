@@ -4,9 +4,12 @@ import { BigNumber, utils } from "ethers"
 import { AddressOnNetwork } from "../../accounts"
 import { ETHEREUM } from "../../constants"
 import type SerialFallbackProvider from "../../services/chain/serial-fallback-provider"
+import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-errors"
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
+  learntEarliestLogBlock,
+  learntMaxBlockRange,
   MINIMUM_LOG_BLOCK_RANGE,
 } from "../erc20-transfer-logs"
 
@@ -255,6 +258,245 @@ describe("getAssetTransfersViaLogs", () => {
         toBlock: MINIMUM_LOG_BLOCK_RANGE - 1,
       }),
     )
+  })
+
+  describe("with an endpoint that advertises its widest range", () => {
+    const BOAR_LIMIT_ERROR = Object.assign(
+      new Error(
+        "block range too large; try a block range of at most 10000 blocks",
+      ),
+      { code: -32602 },
+    )
+    const cappedProvider = () => {
+      const stub = stubProvider()
+      const ranges: [number, number][] = []
+      stub.getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          ranges.push([fromBlock, toBlock])
+          return toBlock - fromBlock + 1 > 10_000
+            ? Promise.reject(BOAR_LIMIT_ERROR)
+            : Promise.resolve([])
+        },
+      )
+      return { ...stub, ranges }
+    }
+
+    it("jumps straight to chunks of that size", async () => {
+      const { provider, ranges } = cappedProvider()
+
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        24_999,
+        true,
+      )
+
+      expect(ranges).toEqual([
+        [0, 24_999],
+        [0, 9_999],
+        [10_000, 19_999],
+        [20_000, 24_999],
+      ])
+    })
+
+    it("starts later scans on the same provider at that size", async () => {
+      const { provider, ranges } = cappedProvider()
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        10_000,
+        true,
+      )
+      ranges.length = 0
+
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        100_000,
+        119_999,
+        true,
+      )
+
+      expect(ranges).toEqual([
+        [100_000, 109_999],
+        [110_000, 119_999],
+      ])
+      expect(learntMaxBlockRange(provider)).toBe(10_000)
+      expect(learntMaxBlockRange(stubProvider().provider)).toBeUndefined()
+    })
+
+    it("halves when the refusal names no limit, then jumps once one does", async () => {
+      const { getLogs, provider } = stubProvider()
+      const ranges: number[] = []
+      getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          const count = toBlock - fromBlock + 1
+          ranges.push(count)
+          if (count > 30_000) {
+            return Promise.reject(
+              Object.assign(new Error("bad response"), { status: 400 }),
+            )
+          }
+          return count > 10_000
+            ? Promise.reject(BOAR_LIMIT_ERROR)
+            : Promise.resolve([])
+        },
+      )
+
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        39_999,
+        true,
+      )
+
+      // 40000 fails without a limit and halves; the first 20000 learns the
+      // limit, and the second half starts at it.
+      expect(ranges).toEqual([40_000, 20_000, 10_000, 10_000, 10_000, 10_000])
+    })
+
+    it("uses a suggested range for that request only", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockRejectedValueOnce(
+        new Error(
+          "query returned more than 10000 results. Try with this block range [0x0, 0x3e7].",
+        ),
+      )
+      getLogs.mockResolvedValue([])
+
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        2_999,
+        true,
+      )
+
+      expect(
+        getLogs.mock.calls.map(([{ fromBlock, toBlock }]) => [
+          fromBlock,
+          toBlock,
+        ]),
+      ).toEqual([
+        [0, 2_999],
+        [0, 999],
+        [1_000, 1_999],
+        [2_000, 2_999],
+      ])
+      expect(learntMaxBlockRange(provider)).toBeUndefined()
+    })
+  })
+
+  describe("with an endpoint that has pruned old history", () => {
+    const PRUNED_ERROR = Object.assign(
+      new Error(
+        "pruned history unavailable: requested 0, earliest available 105000000",
+      ),
+      { code: 4444 },
+    )
+    const prunedProvider = (error: unknown = PRUNED_ERROR) => {
+      const stub = stubProvider()
+      const ranges: [number, number][] = []
+      stub.getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          ranges.push([fromBlock, toBlock])
+          return fromBlock < 105_000_000
+            ? Promise.reject(error)
+            : Promise.resolve([])
+        },
+      )
+      return { ...stub, ranges }
+    }
+
+    it("retries from the earliest block it keeps", async () => {
+      const { provider, ranges } = prunedProvider()
+
+      await expect(
+        getAssetTransfersViaLogs(
+          provider,
+          ADDRESS_ON_NETWORK,
+          0,
+          105_002_000,
+          true,
+        ),
+      ).resolves.toEqual([])
+
+      expect(ranges).toEqual([
+        [0, 105_002_000],
+        [105_000_000, 105_002_000],
+      ])
+      expect(learntEarliestLogBlock(provider)).toBe(105_000_000)
+    })
+
+    it("doesn't ask below that block again", async () => {
+      const { provider, ranges } = prunedProvider()
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        105_002_000,
+        true,
+      )
+      ranges.length = 0
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+      await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        104_999_000,
+        105_001_000,
+        true,
+      )
+
+      expect(ranges).toEqual([[105_000_000, 105_001_000]])
+    })
+
+    it("takes the range asked for as too old when no earliest block is given", async () => {
+      const { provider, ranges } = prunedProvider(
+        new Error("missing trie node 1a2b"),
+      )
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
+      ).rejects.toBeInstanceOf(LogHistoryUnavailableError)
+
+      expect(ranges).toEqual([[0, 4_999]])
+      expect(learntEarliestLogBlock(provider)).toBe(5_000)
+    })
+
+    it("fetches the chunks after the earliest block when chunking a range", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockImplementation(
+        ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+          if (toBlock - fromBlock + 1 > 10_000) {
+            return Promise.reject(
+              new Error("try a block range of at most 10000 blocks"),
+            )
+          }
+          return fromBlock < 15_000
+            ? Promise.reject(new Error("header not found"))
+            : Promise.resolve([transferLog({ txHash: `0x${fromBlock}` })])
+        },
+      )
+
+      const transfers = await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        29_999,
+        true,
+      )
+
+      expect(transfers.map(({ txHash }) => txHash)).toEqual(["0x20000"])
+    })
   })
 
   it("de-duplicates a self-transfer seen by both queries", async () => {

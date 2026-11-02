@@ -11,6 +11,7 @@ import logger from "../../../lib/logger"
 import {
   mockLocalStorage,
   mockLocalStorageWithCalls,
+  restoreLocalStorage,
 } from "../../../tests/utils"
 import {
   createTransactionRequest,
@@ -41,11 +42,14 @@ const testPassword = "my password"
 // Default value that is clearly not correct for testing inspection.
 const dateNowValue = 1000000000000
 
+const startedServices: InternalSignerService[] = []
+
 const startInternalSignerService = async () => {
   const preferencesService = createPreferenceService()
   const service = await InternalSignerService.create(preferencesService)
 
   await service.startService()
+  startedServices.push(service)
 
   return service
 }
@@ -60,6 +64,19 @@ function expectBase64String(
     new RegExp(`^[0-9a-zA-Z=+/]{${min},${max ?? ""}}`),
   )
 }
+
+const { create: originalCreateAlarm } = browser.alarms
+const { addListener: originalAddAlarmListener } = browser.alarms.onAlarm
+
+afterEach(async () => {
+  await Promise.all(
+    startedServices.splice(0).map((service) => service.stopService()),
+  )
+  jest.restoreAllMocks()
+  restoreLocalStorage()
+  browser.alarms.create = originalCreateAlarm
+  browser.alarms.onAlarm.addListener = originalAddAlarmListener
+})
 
 const mockAlarms = () => {
   browser.alarms.create = jest.fn(() => Promise.resolve())
@@ -126,7 +143,7 @@ describe("InternalSignerService when uninitialized", () => {
             mnemonic,
             source: SignerImportSource.import,
           }),
-        ).resolves,
+        ).resolves.toEqual(expect.any(String)),
     )
 
     it("will create multiple distinct BIP-39 S256 accounts and expose mnemonics", async () => {
@@ -311,7 +328,7 @@ describe("InternalSignerService when saving keyrings", () => {
   })
 
   it("loads encrypted data at instantiation time", async () => {
-    browser.storage.local.set({
+    await browser.storage.local.set({
       tallyVaults: {
         version: 1,
         vaults: [

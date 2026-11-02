@@ -93,6 +93,12 @@ export default function DetailPanel({
   const isContractAddress =
     transactionRequest.annotation?.warnings?.includes("send-to-contract")
 
+  const simulationReverted = transactionRequest.annotation?.warnings?.includes(
+    "simulation-reverted",
+  )
+  const simulationRevertReason =
+    transactionRequest.annotation?.simulationRevertReason
+
   const canUseFlashbots = FLASHBOTS_SUPPORTED_CHAIN_IDS.has(
     transactionRequest.chainID,
   )
@@ -180,6 +186,22 @@ export default function DetailPanel({
           detailsCopyMessage={t("signTransaction.gasErrorCopied")}
         />
       )}
+      {simulationReverted &&
+        // Gas estimation failing already shows the same message; don't stack.
+        !(transactionLikelyFails && gasEstimationError) &&
+        (simulationRevertReason ? (
+          <TransactionSignatureDetailsWarning
+            message={t("signTransaction.simulationReverted")}
+            variant="error"
+            details={simulationRevertReason}
+            detailsCopyMessage={t("signTransaction.gasErrorCopied")}
+          />
+        ) : (
+          <TransactionSignatureDetailsWarning
+            message={t("signTransaction.simulationReverted")}
+            variant="error"
+          />
+        ))}
       <TransactionAdditionalDetails
         transactionRequest={transactionRequest}
         annotation={transactionRequest.annotation}

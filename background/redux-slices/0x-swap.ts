@@ -6,14 +6,23 @@ import {
   PricePoint,
   SwappableAsset,
 } from "../assets"
-import { getPrice, getQuote } from "../lib/0x-swap"
-import { SwapPriceResponse, SwapQuoteResponse } from "../lib/0x-swap-types"
+import {
+  getEstimatedSellAmount,
+  getMaxSellAmount,
+  getPrice,
+  getQuote,
+  getRouteFills,
+} from "../lib/0x-swap"
+import {
+  LiquidSwapPrice,
+  LiquidSwapQuote,
+  SwapQuoteResponse,
+} from "../lib/0x-swap-types"
 import { ERC20_ABI } from "../lib/erc20"
 import logger from "../lib/logger"
 import { getUSDPriceForTokens } from "../lib/priceOracle"
 import { getPricePoint } from "../lib/prices"
 import { PricesState, selectAssetPricePoint } from "./prices"
-import { setSnackbarMessage } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
 import { PriceDetails, SwapQuoteRequest } from "./utils/0x-swap-utils"
 import {
@@ -74,6 +83,13 @@ const swapSlice = createSlice({
   },
 })
 
+/**
+ * Why a swap price or quote couldn't be had. The UI chooses the words.
+ */
+export type SwapLookupFailure = {
+  failure: "invalidResponse" | "insufficientLiquidity" | "requestFailed"
+}
+
 const {
   setLatestQuoteRequest,
   setInProgressApprovalContract: setApprovalInProgress,
@@ -96,19 +112,23 @@ export default swapSlice.reducer
  */
 export const fetchSwapQuote = createBackgroundAsyncThunk(
   "0x-swap/fetchQuote",
-  async (quoteRequest: SwapQuoteRequest, { dispatch }) => {
+  async (
+    quoteRequest: SwapQuoteRequest,
+    { dispatch },
+  ): Promise<LiquidSwapQuote | SwapLookupFailure> => {
     const signer = getProvider().getSigner()
     const tradeAddress = await signer.getAddress()
-
-    // TODO: Handle lack of liquidity, errors
 
     const apiData = await getQuote({
       ...quoteRequest,
       taker: tradeAddress,
     })
 
-    if (!apiData) {
-      return null
+    if (apiData === null) {
+      return { failure: "invalidResponse" }
+    }
+    if (!apiData.liquidityAvailable) {
+      return { failure: "insufficientLiquidity" }
     }
 
     dispatch(setFinalSwapQuote(apiData))
@@ -136,10 +156,11 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     { dispatch, getState },
   ): Promise<
     | {
-        quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>
+        quote: LiquidSwapPrice
         needsApproval: boolean
         priceDetails: PriceDetails
       }
+    | SwapLookupFailure
     | undefined
   > => {
     const signer = getProvider().getSigner()
@@ -148,9 +169,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       prices: PricesState
     }
 
-    const getPriceDetails = async (
-      quote: Extract<SwapPriceResponse, { liquidityAvailable: true }>,
-    ) => {
+    const getPriceDetails = async (quote: LiquidSwapPrice) => {
       const { buyAsset, sellAsset } = quoteRequest.assets
 
       let [buyAssetPricePoint, sellAssetPricePoint] = [] as (
@@ -192,13 +211,18 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
           )
         : undefined
 
-      const sellEnriched = sellAssetPricePoint
-        ? enrichAssetAmountWithMainCurrencyValues(
-            { asset: sellAsset, amount: BigInt(quote.sellAmount) },
-            sellAssetPricePoint,
-            2,
-          )
-        : undefined
+      const enrichSellAmount = (amount: string) =>
+        sellAssetPricePoint
+          ? enrichAssetAmountWithMainCurrencyValues(
+              { asset: sellAsset, amount: BigInt(amount) },
+              sellAssetPricePoint,
+              2,
+            )
+          : undefined
+
+      const sellEnriched = enrichSellAmount(getEstimatedSellAmount(quote))
+      // The swap form shows the most an exact-out swap can spend.
+      const maxSellEnriched = enrichSellAmount(getMaxSellAmount(quote))
 
       // Calculate price impact as percentage loss in USD value
       let priceImpact = 0
@@ -216,7 +240,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
       return {
         priceImpact,
         buyCurrencyAmount: buyEnriched?.localizedMainCurrencyAmount,
-        sellCurrencyAmount: sellEnriched?.localizedMainCurrencyAmount,
+        sellCurrencyAmount: maxSellEnriched?.localizedMainCurrencyAmount,
       }
     }
 
@@ -225,9 +249,11 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     try {
       quote = await getPrice({ ...quoteRequest, taker })
 
-      if (!quote || !quote.liquidityAvailable) {
-        dispatch(setSnackbarMessage("Insufficient liquidity for this trade"))
-        return undefined
+      if (quote === null) {
+        return { failure: "invalidResponse" }
+      }
+      if (!quote.liquidityAvailable) {
+        return { failure: "insufficientLiquidity" }
       }
 
       const priceDetails = getPriceDetails(quote)
@@ -251,7 +277,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
             quote.allowanceTarget,
           )
 
-        needsApproval = existingAllowance.lt(quote.sellAmount)
+        needsApproval = existingAllowance.lt(getMaxSellAmount(quote))
       }
 
       dispatch(setLatestQuoteRequest(quoteRequest))
@@ -260,13 +286,8 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     } catch (error) {
       logger.warn("Swap price API call threw an error!", quote, error)
 
-      try {
-        if (typeof error === "object" && error !== null && "body" in error) {
-          // TODO: i18n this string
-          dispatch(setSnackbarMessage("Error while fetching swap prices"))
-        }
-      } catch (e) {
-        logger.warn("0x Api Response Parsing Failed")
+      if (typeof error === "object" && error !== null && "body" in error) {
+        return { failure: "requestFailed" }
       }
 
       return undefined
@@ -332,7 +353,7 @@ export const approveTransfer = createBackgroundAsyncThunk(
 export const executeSwap = createBackgroundAsyncThunk(
   "0x-swap/executeSwap",
   async (
-    quote: Exclude<SwapQuoteResponse, { liquidityAvailable: false }> & {
+    quote: LiquidSwapQuote & {
       sellAsset: SwappableAsset
       buyAsset: SwappableAsset
       chainId: string
@@ -346,7 +367,7 @@ export const executeSwap = createBackgroundAsyncThunk(
     const sellAssetAmount = enrichAssetAmountWithDecimalValues(
       {
         asset: quote.sellAsset,
-        amount: BigInt(quote.sellAmount),
+        amount: BigInt(getEstimatedSellAmount(quote)),
       },
       2,
     )
@@ -374,7 +395,7 @@ export const executeSwap = createBackgroundAsyncThunk(
         fromAssetAmount: sellAssetAmount,
         toAssetAmount: buyAssetAmount,
         estimatedPriceImpact: quote.estimatedPriceImpact ?? 0,
-        sources: quote.route.fills
+        sources: getRouteFills(quote)
           .map(({ source, proportionBps }) => ({
             name: source,
             percentage:

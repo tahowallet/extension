@@ -45,12 +45,12 @@ describe("Serial Fallback Provider capability routing", () => {
   it("routes alchemy_ methods to a capability-declaring endpoint ahead of Boar", async () => {
     // Creator order mirrors production: the Boar creator leads the walk.
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "boar", creator: () => boarProvider },
-      { type: "generic", creator: () => plainProvider },
+      { kind: "managed", createTransport: () => boarProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
     ])
 
@@ -69,11 +69,11 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("routes standard methods through the ordinary generic walk with no managed endpoint", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => plainProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
     ])
 
@@ -87,12 +87,12 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("routes standard methods to Boar when it heads the walk", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "boar", creator: () => boarProvider },
-      { type: "generic", creator: () => plainProvider },
+      { kind: "managed", createTransport: () => boarProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
     ])
 
@@ -107,16 +107,16 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("fails over between capability-declaring endpoints", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => plainProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => secondAlchemyProvider,
+        createTransport: () => secondAlchemyProvider,
       },
     ])
 
@@ -138,12 +138,12 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("falls back to Boar when capability endpoints are exhausted", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "boar", creator: () => boarProvider },
-      { type: "generic", creator: () => plainProvider },
+      { kind: "managed", createTransport: () => boarProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
     ])
 
@@ -163,11 +163,11 @@ describe("Serial Fallback Provider capability routing", () => {
 
   it("rejects when capability endpoints are exhausted and there is no Boar", async () => {
     const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => plainProvider },
+      { kind: "standard", createTransport: () => plainProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: () => alchemyProvider,
+        createTransport: () => alchemyProvider,
       },
     ])
 
@@ -183,35 +183,35 @@ describe("Serial Fallback Provider capability routing", () => {
     )
   })
 
-  describe("supportsAlchemy", () => {
+  describe("supportsAlchemyMethods", () => {
     it("is true when an endpoint declares the alchemy_ capability", () => {
       const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
         {
-          type: "generic",
+          kind: "standard",
           capabilities: ["alchemy_"],
-          creator: () => alchemyProvider,
+          createTransport: () => alchemyProvider,
         },
       ])
 
-      expect(fallbackProvider.supportsAlchemy).toBe(true)
+      expect(fallbackProvider.supportsAlchemyMethods).toBe(true)
       expect(fallbackProvider.supportsBoar).toBe(false)
     })
 
     it("is true when Boar is available", () => {
       const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "boar", creator: () => boarProvider },
-        { type: "generic", creator: () => plainProvider },
+        { kind: "managed", createTransport: () => boarProvider },
+        { kind: "standard", createTransport: () => plainProvider },
       ])
 
-      expect(fallbackProvider.supportsAlchemy).toBe(true)
+      expect(fallbackProvider.supportsAlchemyMethods).toBe(true)
     })
 
     it("is false without Boar or a capability-declaring endpoint", () => {
       const fallbackProvider = new SerialFallbackProvider(ETHEREUM.chainID, [
-        { type: "generic", creator: () => plainProvider },
+        { kind: "standard", createTransport: () => plainProvider },
       ])
 
-      expect(fallbackProvider.supportsAlchemy).toBe(false)
+      expect(fallbackProvider.supportsAlchemyMethods).toBe(false)
     })
   })
 })

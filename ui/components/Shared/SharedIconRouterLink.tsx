@@ -36,7 +36,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         <SharedTooltip
           type="dark"
           horizontalPosition="center"
-          verticalPosition="top"
+          verticalPosition="bottom"
           verticalShift={-10}
           IconComponent={() => (
             <Link

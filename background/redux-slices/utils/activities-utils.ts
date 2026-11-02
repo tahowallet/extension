@@ -3,14 +3,19 @@ import {
   convertToEth,
   isMaxUint256,
   normalizeEVMAddress,
-  sameEVMAddress,
   weiToGwei,
 } from "../../lib/utils"
-import { isDefined } from "../../lib/utils/type-guards"
 import { Transaction } from "../../services/chain/db"
 import { EnrichedEVMTransaction } from "../../services/enrichment"
-import { getRecipient, getSender } from "../../services/enrichment/utils"
+import {
+  type AssetTransferForAddress,
+  getAssetTransfersForAddress,
+  getRecipient,
+  getSender,
+} from "../../services/enrichment/utils"
+import { getExecutedSafeAddress } from "../../services/enrichment/safe"
 import type { HexString } from "../../types"
+import type { FixedPointNumber } from "../../lib/fixed-point"
 
 enum TxStatus {
   FAIL = 0,
@@ -28,6 +33,11 @@ export type Activity = {
   from: string
   blockHeight: number | null
   value: string
+  /**
+   * The exact amount behind `value`, if it has one; absent from activities
+   * stored before it was added.
+   */
+  fixedPointValue?: FixedPointNumber
   nonce: number
   hash: string
   blockHash: string | null
@@ -37,7 +47,6 @@ export type Activity = {
 }
 
 export type ActivityDetail = {
-  assetIconUrl?: string
   label: string
   value: string
 }
@@ -138,6 +147,25 @@ const getValue = (transaction: Transaction | EnrichedEVMTransaction) => {
   return localizedValue
 }
 
+const getFixedPointValue = (
+  transaction: Transaction | EnrichedEVMTransaction,
+): FixedPointNumber | undefined => {
+  const annotation = isEnrichedTransaction(transaction)
+    ? transaction.annotation
+    : undefined
+  switch (annotation?.type) {
+    case "asset-approval":
+      if (isMaxUint256(annotation.assetAmount.amount)) return undefined
+    // falls through
+    case "asset-transfer": {
+      const { amount, asset } = annotation.assetAmount
+      return { amount, decimals: "decimals" in asset ? asset.decimals : 0 }
+    }
+    default:
+      return { amount: transaction.value, decimals: transaction.asset.decimals }
+  }
+}
+
 export const getActivity = (
   transaction: Transaction | EnrichedEVMTransaction,
 ): Activity => {
@@ -155,6 +183,7 @@ export const getActivity = (
     hash,
     blockHash,
     value: getValue(transaction),
+    fixedPointValue: getFixedPointValue(transaction),
   }
 
   if (isEnrichedTransaction(transaction)) {
@@ -209,50 +238,52 @@ export const sortActivities = (a: Activity, b: Activity): number => {
   return b.blockHeight - a.blockHeight
 }
 
+export type ActivityBalanceChanges = {
+  address: HexString
+  transfers: AssetTransferForAddress[]
+}
+
+export type ActivityDetails = {
+  rows: ActivityDetail[]
+  /** Token movements for the account the activity is being viewed from. */
+  balanceChanges: ActivityBalanceChanges
+  /**
+   * Token movements for the Safe, when the transaction executes a Safe
+   * transaction. The Safe's own transfers are usually the point of it; the
+   * executor's balances may not change at all.
+   */
+  safeBalanceChanges?: ActivityBalanceChanges
+}
+
 export function getActivityDetails(
   tx: EnrichedEVMTransaction,
-): ActivityDetail[] {
-  const { annotation } = tx
-  const assetTransfers =
-    annotation?.subannotations === undefined
-      ? []
-      : annotation.subannotations
-          .map((subannotation) => {
-            if (
-              subannotation.type === "asset-transfer" &&
-              (sameEVMAddress(subannotation.sender.address, tx.from) ||
-                sameEVMAddress(subannotation.recipient.address, tx.from))
-            ) {
-              return {
-                direction: sameEVMAddress(subannotation.sender.address, tx.from)
-                  ? "out"
-                  : "in",
-                assetSymbol: subannotation.assetAmount.asset.symbol,
-                assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
-                localizedDecimalAmount:
-                  subannotation.assetAmount.localizedDecimalAmount,
-              }
-            }
-            return undefined
-          })
-          .filter(isDefined)
+  accountAddress: HexString = tx.from,
+): ActivityDetails {
+  const { subannotations } = tx.annotation ?? {}
+  const safeAddress = getExecutedSafeAddress(tx)
 
-  return [
-    { label: "Block Height", value: getBlockHeight(tx) },
-    { label: "Amount", value: getAmount(tx) },
-    { label: "Max Fee/Gas", value: getGweiPrice(tx.maxFeePerGas) },
-    { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
-    { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
-    { label: "Nonce", value: tx.nonce.toString() },
-    { label: "Timestamp", value: getTimestamp(tx.annotation?.blockTimestamp) },
-  ].concat(
-    assetTransfers.map((transfer) => ({
-      assetIconUrl: transfer.assetLogoUrl ?? "",
-      label: transfer.assetSymbol,
-      value:
-        transfer.direction === "in"
-          ? transfer.localizedDecimalAmount
-          : `-${transfer.localizedDecimalAmount}`,
-    })),
-  )
+  return {
+    rows: [
+      { label: "Block Height", value: getBlockHeight(tx) },
+      { label: "Amount", value: getAmount(tx) },
+      { label: "Max Fee/Gas", value: getGweiPrice(tx.maxFeePerGas) },
+      { label: "Gas Price", value: getGweiPrice(tx.gasPrice) },
+      { label: "Gas", value: "gasUsed" in tx ? tx.gasUsed.toString() : "" },
+      { label: "Nonce", value: tx.nonce.toString() },
+      {
+        label: "Timestamp",
+        value: getTimestamp(tx.annotation?.blockTimestamp),
+      },
+    ],
+    balanceChanges: {
+      address: accountAddress,
+      transfers: getAssetTransfersForAddress(subannotations, accountAddress),
+    },
+    ...(safeAddress !== undefined && {
+      safeBalanceChanges: {
+        address: safeAddress,
+        transfers: getAssetTransfersForAddress(subannotations, safeAddress),
+      },
+    }),
+  }
 }

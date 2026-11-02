@@ -11,7 +11,6 @@ function fakeLedgerDevice({
   claimFails = false,
 }: { claimFails?: boolean } = {}) {
   const calls: string[] = []
-  // Packets the device returns from its IN endpoint, in order.
   const inPackets: Buffer[] = []
   const device = {
     vendorId: ledgerUSBVendorId,
@@ -70,8 +69,7 @@ function fakeLedgerDevice({
 }
 
 /**
- * Frames a response the way the Ledger does; responses use the same HID
- * framing as requests.
+ * Ledger responses use the same HID framing as requests.
  */
 function framedResponse(channel: number, response: Buffer): Buffer[] {
   return hidFraming(channel, PACKET_SIZE).makeBlocks(response)
@@ -142,7 +140,7 @@ describe("openConnectedLedgerTransport", () => {
 
   describe("exchange", () => {
     const appNameResponse = Buffer.from("0108457468657265756d9000", "hex")
-    // A response longer than one packet, to cover multi-packet reads.
+    // Longer than one packet.
     const longResponse = Buffer.concat([
       Buffer.alloc(150, 0xab),
       Buffer.from("9000", "hex"),

@@ -11,9 +11,10 @@ import {
   LegacyEVMTransactionRequest,
 } from "../../networks"
 import { AssetDecimalAmount } from "../../redux-slices/utils/asset-utils"
-import type { UNIXTime } from "../../types"
+import type { HexString, UNIXTime } from "../../types"
 import { SignTypedDataRequest } from "../../utils/signing"
 import { ResolvedNameRecord } from "../name"
+import type { AssetTransferForAddress } from "./utils"
 
 export type BaseTransactionAnnotation = {
   /**
@@ -40,6 +41,21 @@ export type BaseTransactionAnnotation = {
    *
    */
   warnings?: Warning[]
+  /**
+   * The revert reason reported by an off-chain simulation of a pending
+   * request, if the simulation reverted and the provider supplied one.
+   */
+  simulationRevertReason?: string
+  /**
+   * The outcome of an off-chain simulation of this pending request, if one
+   * ran. Distinguishes "simulated, nothing moved" from "not simulated".
+   */
+  simulationStatus?: "success" | "reverted"
+  /**
+   * When the simulated request executes a Safe transaction, the Safe whose
+   * balance changes the simulation's subannotations include.
+   */
+  simulatedSafeAddress?: HexString
 }
 
 export type Warning =
@@ -47,6 +63,7 @@ export type Warning =
   | "send-to-contract"
   | "approve-eoa"
   | "insufficient-funds"
+  | "simulation-reverted"
 
 export type ContractDeployment = BaseTransactionAnnotation & {
   type: "contract-deployment"
@@ -65,6 +82,11 @@ export type AssetApproval = BaseTransactionAnnotation & {
 
 export type AssetTransfer = BaseTransactionAnnotation & {
   type: "asset-transfer"
+  /**
+   * The asset isn't one the wallet tracks; its metadata was read from its
+   * contract just for this annotation, so its symbol is unvetted.
+   */
+  untrackedAsset?: boolean
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   recipient: EnrichedAddressOnNetwork
   sender: EnrichedAddressOnNetwork
@@ -159,7 +181,35 @@ export type EIP2612SignTypedDataAnnotation = {
   }
 }
 
-export type SignTypedDataAnnotation = EIP2612SignTypedDataAnnotation
+/**
+ * An EIP-712 `SafeTx` signature request: an owner proposing or confirming a
+ * Safe transaction.
+ */
+export type SafeTransactionSignTypedDataAnnotation = {
+  type: "safe-transaction"
+  safeAddress: HexString
+  /**
+   * The outcome of simulating the transaction as if it had enough signatures;
+   * undefined when simulation wasn't possible.
+   */
+  simulation?: {
+    status: "success" | "reverted"
+    revertReason?: string
+    /** Simulated transfers into and out of the Safe. */
+    balanceChanges: AssetTransferForAddress[]
+  }
+  /**
+   * How many of the Safe's transactions must execute before this one. The
+   * simulation runs against current state, so it doesn't reflect them.
+   */
+  queuedBefore?: number
+  /** The transaction's nonce has already been used; it can never execute. */
+  nonceAlreadyUsed?: boolean
+}
+
+export type SignTypedDataAnnotation =
+  | EIP2612SignTypedDataAnnotation
+  | SafeTransactionSignTypedDataAnnotation
 
 export type EnrichedSignTypedDataRequest = SignTypedDataRequest & {
   annotation?: SignTypedDataAnnotation

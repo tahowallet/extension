@@ -26,6 +26,17 @@ interface ProviderManager {
   providerForNetwork(network: EVMNetwork): SerialFallbackProvider | undefined
 }
 
+/** The asset transfer lookups AssetDataHelper picks between. */
+export type AssetTransferLookups = {
+  viaAlchemy: typeof getBoarAssetTransfers
+  viaLogs: typeof getAssetTransfersViaLogs
+}
+
+const defaultAssetTransferLookups: AssetTransferLookups = {
+  viaAlchemy: getBoarAssetTransfers,
+  viaLogs: getAssetTransfersViaLogs,
+}
+
 /**
  * AssetDataHelper is a wrapper for asset-related functionality like token
  * balance and transfer lookup that may use several different strategies to
@@ -35,7 +46,10 @@ interface ProviderManager {
  * optimizations.
  */
 export default class AssetDataHelper {
-  constructor(private providerTracker: ProviderManager) {}
+  constructor(
+    private providerTracker: ProviderManager,
+    private assetTransferLookups: AssetTransferLookups = defaultAssetTransferLookups,
+  ) {}
 
   async getTokenBalance(
     addressOnNetwork: AddressOnNetwork,
@@ -83,7 +97,7 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsAlchemyMethods) {
         return {
           balances: await getBoarTokenBalances(provider, addressOnNetwork),
           dataSource: "boar",
@@ -162,7 +176,7 @@ export default class AssetDataHelper {
       return undefined
     }
 
-    if (provider.supportsAlchemy) {
+    if (provider.supportsAlchemyMethods) {
       return getBoarTokenMetadata(provider, tokenSmartContract)
     }
 
@@ -187,9 +201,9 @@ export default class AssetDataHelper {
     }
 
     try {
-      if (provider.supportsAlchemy) {
+      if (provider.supportsAlchemyMethods) {
         const promises = [
-          getBoarAssetTransfers(
+          this.assetTransferLookups.viaAlchemy(
             provider,
             addressOnNetwork,
             "incoming",
@@ -199,7 +213,7 @@ export default class AssetDataHelper {
         ]
         if (!incomingOnly) {
           promises.push(
-            getBoarAssetTransfers(
+            this.assetTransferLookups.viaAlchemy(
               provider,
               addressOnNetwork,
               "outgoing",
@@ -212,8 +226,9 @@ export default class AssetDataHelper {
       }
     } catch (error) {
       logger.warn(
-        "Problem resolving asset transfers via Alchemy-compatible helper; " +
-          "falling back to Transfer log scanning.",
+        "Problem resolving asset transfers via Alchemy-compatible helper on " +
+          `chain ${addressOnNetwork.network.chainID}; falling back to ` +
+          "Transfer log scanning.",
         error,
       )
 
@@ -228,27 +243,16 @@ export default class AssetDataHelper {
 
     // Without a working Alchemy-capable endpoint, fall back to scanning
     // standard ERC-20 Transfer logs via eth_getLogs. Native-asset transfers
-    // are not captured this way.
-    try {
-      const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
+    // are not captured this way. Failures are left to the caller, which
+    // retries and logs them.
+    const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
 
-      return await getAssetTransfersViaLogs(
-        provider,
-        addressOnNetwork,
-        startBlock,
-        resolvedEndBlock,
-        incomingOnly,
-      )
-    } catch (error) {
-      logger.warn(
-        "Problem resolving asset transfers via Transfer logs; network may " +
-          "not support it.",
-        error,
-      )
-
-      // Rethrow as consumers like ChainService need the exception to manage
-      // retries.
-      throw error
-    }
+    return this.assetTransferLookups.viaLogs(
+      provider,
+      addressOnNetwork,
+      startBlock,
+      resolvedEndBlock,
+      incomingOnly,
+    )
   }
 }

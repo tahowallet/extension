@@ -2,29 +2,26 @@ import React, { useCallback, ReactElement, useEffect, useState } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   ActivityDetail,
+  ActivityDetails,
   Activity,
   fetchSelectedActivityDetails,
 } from "@tallyho/tally-background/redux-slices/activities"
+import { useTranslation } from "react-i18next"
 import SharedAddress from "../Shared/SharedAddress"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
-import SharedAssetIcon from "../Shared/SharedAssetIcon"
+import SharedBalanceChangesList from "../Shared/SharedBalanceChangesList"
 import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import SharedIcon from "../Shared/SharedIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
 import { getBlockExplorerURL } from "../../utils/networks"
 
 function DetailRowItem(props: ActivityDetail): ReactElement {
-  const { assetIconUrl, label, value } = props
+  const { label, value } = props
 
   return (
     <li>
-      <div className="label">
-        {assetIconUrl !== undefined && (
-          <SharedAssetIcon symbol={label} logoURL={assetIconUrl} size={24} />
-        )}
-        {label}
-      </div>
+      <div className="label">{label}</div>
       <div className="right">{value}</div>
       <style jsx>
         {`
@@ -121,7 +118,10 @@ export default function WalletActivityDetails(
 ): ReactElement {
   const { activityItem, activityInitiatorAddress } = props
   const dispatch = useBackgroundDispatch()
-  const [details, setDetails] = useState<ActivityDetail[]>([])
+  const { t } = useTranslation("translation", {
+    keyPrefix: "signTransaction",
+  })
+  const [details, setDetails] = useState<ActivityDetails | undefined>()
   const network = useBackgroundSelector(selectCurrentNetwork)
 
   const blockExplorerUrl = getBlockExplorerURL(network)
@@ -138,7 +138,7 @@ export default function WalletActivityDetails(
         setDetails(
           (await dispatch(
             fetchSelectedActivityDetails(activityItem.hash),
-          )) as unknown as ActivityDetail[],
+          )) as unknown as ActivityDetails,
         )
       }
     }
@@ -174,27 +174,55 @@ export default function WalletActivityDetails(
           name={activityItem.recipient.name}
         />
       </div>
+      {details !== undefined && (
+        <div className="balance_changes">
+          {/*
+           * When a Safe transaction executes, both sides are listed even if
+           * empty, so it's explicit whose balances were checked.
+           */}
+          <SharedBalanceChangesList
+            label={t("yourAccountBalanceChanges")}
+            transfers={details.balanceChanges.transfers}
+            emptyMessage={
+              details.safeBalanceChanges === undefined
+                ? undefined
+                : t("noBalanceChanges")
+            }
+          />
+          {details.safeBalanceChanges !== undefined && (
+            <SharedBalanceChangesList
+              label={t("safeBalanceChanges")}
+              transfers={details.safeBalanceChanges.transfers}
+              emptyMessage={t("noBalanceChanges")}
+            />
+          )}
+        </div>
+      )}
       <ul>
-        {details.length <= 0 &&
+        {details === undefined &&
           Array.from({ length: 7 }).map(() => (
             <SharedSkeletonLoader
               height={24}
               style={{ margin: "10px 0 15px" }}
             />
           ))}
-        {details.map(({ assetIconUrl, label, value }) => (
-          <DetailRowItem
-            key={label}
-            assetIconUrl={assetIconUrl}
-            label={label}
-            value={value}
-          />
+        {details?.rows.map(({ label, value }) => (
+          <DetailRowItem key={label} label={label} value={value} />
         ))}
       </ul>
       <style jsx>
         {`
           .wrap {
             margin-top: -24px;
+          }
+          .balance_changes {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 16px 0;
+          }
+          .balance_changes:empty {
+            display: none;
           }
           .destination_cards {
             display: flex;

@@ -71,6 +71,11 @@ type PanelDescriptor = {
 export function useSwitchablePanels(panels: PanelDescriptor[]): JSX.Element {
   const [panelNumber, setPanelNumber] = useState(0)
 
+  // A lone panel needs no tab chrome, just its contents.
+  if (panels.length === 1) {
+    return React.createElement(React.Fragment, null, panels[0].panelElement())
+  }
+
   return React.createElement(
     React.Fragment,
     null,

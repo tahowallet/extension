@@ -102,6 +102,30 @@ type MetaData = {
   displayDetails: DisplayDetails
 }
 
+async function readMetaData(eth: Eth, type: LedgerType): Promise<MetaData> {
+  const appData = await eth.getAppConfiguration()
+
+  return {
+    ethereumVersion: appData.version,
+    isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
+    displayDetails: DisplayDetailsByLedgerType[type],
+  }
+}
+
+/**
+ * Whether the Ethereum app refused to sign because blind signing is off.
+ * hw-app-eth names the error for transactions, but passes the bare status
+ * through for hashed EIP-712 messages.
+ */
+function isBlindSigningRequiredError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (("name" in error && error.name === "EthAppPleaseEnableContractData") ||
+      ("statusCode" in error && error.statusCode === 0x6a80))
+  )
+}
+
 export type ConnectedDevice = {
   id: string
   type: LedgerType
@@ -398,22 +422,14 @@ export default class LedgerService extends BaseService<Events> {
       throw new Error("Can't derive meaningful identification address!")
     }
 
-    const appData = await eth.getAppConfiguration()
+    const metadata = await readMetaData(eth, type)
 
     const normalizedID = normalizeEVMAddress(id)
 
     const ledgerId = `${LedgerTypeAsString[type]}_${normalizedID}`
     this.#currentLedger = { id: ledgerId, type }
 
-    this.emitter.emit("connected", {
-      id: ledgerId,
-      type,
-      metadata: {
-        ethereumVersion: appData.version,
-        isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-        displayDetails: DisplayDetailsByLedgerType[type],
-      },
-    })
+    this.emitter.emit("connected", { id: ledgerId, type, metadata })
 
     const knownAddresses = await this.db.getAllAccountsByLedgerId(ledgerId)
 
@@ -422,12 +438,34 @@ export default class LedgerService extends BaseService<Events> {
         id: ledgerId,
         type,
         accountIDs: [idDerivationPath],
-        metadata: {
-          ethereumVersion: appData.version,
-          isArbitraryDataSigningEnabled: appData.arbitraryDataEnabled !== 0,
-          displayDetails: DisplayDetailsByLedgerType[type],
-        },
+        metadata,
       })
+    }
+  }
+
+  /**
+   * Re-reads the device's settings after it refuses to sign for want of blind
+   * signing, which can be turned off after connecting.
+   */
+  async #refreshAfterBlindSigningRefusal(error: unknown): Promise<void> {
+    const { transport } = this
+    const currentLedger = this.#currentLedger
+    if (
+      !isBlindSigningRequiredError(error) ||
+      transport === undefined ||
+      currentLedger === null
+    ) {
+      return
+    }
+
+    try {
+      const metadata = await readMetaData(
+        new Eth(transport),
+        currentLedger.type,
+      )
+      void this.emitter.emit("connected", { ...currentLedger, metadata })
+    } catch (refreshError) {
+      logger.warn("Failed to re-read Ledger settings:", refreshError)
     }
   }
 
@@ -774,6 +812,7 @@ export default class LedgerService extends BaseService<Events> {
 
         return signedTx
       } catch (err) {
+        await this.#refreshAfterBlindSigningRefusal(err)
         logger.error(
           `Error encountered! ledgerID: ${
             this.#currentLedger?.id ?? null
@@ -812,11 +851,12 @@ export default class LedgerService extends BaseService<Events> {
 
       await requireEthereumApp(this.transport)
 
-      const signature = await eth.signEIP712HashedMessage(
-        derivationPath,
-        hashedDomain,
-        hashedMessage,
-      )
+      const signature = await eth
+        .signEIP712HashedMessage(derivationPath, hashedDomain, hashedMessage)
+        .catch(async (error: unknown) => {
+          await this.#refreshAfterBlindSigningRefusal(error)
+          throw error
+        })
 
       this.emitter.emit(
         "signedData",
@@ -856,12 +896,11 @@ export default class LedgerService extends BaseService<Events> {
   async signMessage(
     { address, network }: AddressOnNetwork,
     hexDataToSign: HexString,
+    { deviceID, path: derivationPath }: LedgerAccountSigner,
   ): Promise<string> {
     // Currently the service assumes the Eth app, which requires a network that
     // uses the same derivation path as Ethereum, or one that starts with the
     // same components.
-    // FIXME This should take a `LedgerAccountSigner` and use `checkCanSign`
-    // FIXME like other signing methods.
     if (
       network.derivationPath !== ETHEREUM.derivationPath &&
       !network.derivationPath?.startsWith(ETHEREUM.derivationPath ?? "")
@@ -880,18 +919,14 @@ export default class LedgerService extends BaseService<Events> {
 
       const accountData = await this.db.getAccountByAddress(address)
 
-      if (!accountData) {
-        throw new Error(
-          `Address "${address}" doesn't have corresponding derivation path!`,
-        )
-      }
+      this.checkCanSign(accountData, derivationPath, deviceID)
 
       await requireEthereumApp(this.transport)
 
       const eth = new Eth(this.transport)
 
       const signature = await eth.signPersonalMessage(
-        accountData.path,
+        derivationPath,
         // Ledger requires unprefixed hex, so make sure that's what we pass.
         hexDataToSign.replace(/^0x/, ""),
       )

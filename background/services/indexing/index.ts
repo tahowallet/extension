@@ -1,4 +1,4 @@
-import logger, { logRejectedAndReturnFulfilledResults } from "../../lib/logger"
+import logger from "../../lib/logger"
 import type { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -13,18 +13,10 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import {
-  ARBITRUM_ONE,
-  AVALANCHE,
-  BINANCE_SMART_CHAIN,
-  BUILT_IN_NETWORK_BASE_ASSETS,
-  ETHEREUM,
   FIAT_CURRENCIES,
   HOUR,
-  MEZO_TESTNET,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
-  OPTIMISM,
-  POLYGON,
   SECOND,
   USD,
 } from "../../constants"
@@ -56,7 +48,6 @@ import {
   isTrustedAsset,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
-import { wrapIfEnabled } from "../../features"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -142,6 +133,12 @@ export default class IndexingService extends BaseService<Events> {
   #allAccountBalanceAlarm: NodeJS.Timer | null = null
 
   #pricesUpdateTimer: NodeJS.Timer | null = null
+
+  /** Balance loads in flight, keyed by chain ID and address. */
+  #balanceLoadsInFlight = new Map<
+    string,
+    Promise<[AccountBalance, SmartContractAmount[]]>
+  >()
 
   private cachedAssets: Record<EVMNetwork["chainID"], AnyAsset[]> =
     Object.fromEntries(
@@ -630,6 +627,16 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("refreshAsset", updatedAsset)
   }
 
+  /**
+   * Contract addresses of the tokens the user has explicitly hidden on the
+   * given network.
+   */
+  async getHiddenAssetAddresses(network: EVMNetwork): Promise<HexString[]> {
+    return (await this.db.getRemovedCustomAssetsByNetworks([network])).map(
+      ({ contractAddress }) => contractAddress,
+    )
+  }
+
   async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
     const metadata = {
       ...asset.metadata,
@@ -804,50 +811,31 @@ export default class IndexingService extends BaseService<Events> {
       const baseAssets = await this.chainService.getNetworkBaseAssets()
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
-      // Fallback to price oracle
+      // Fall back to on-chain price feeds.
       if (basicPrices.length === 0) {
-        basicPrices = await Promise.all(
-          [
-            ETHEREUM,
-            ...wrapIfEnabled("SUPPORT_MEZO_NETWORK", MEZO_TESTNET),
-            ARBITRUM_ONE,
-            OPTIMISM,
-            BINANCE_SMART_CHAIN,
-            POLYGON,
-            AVALANCHE,
-          ].map(async (network: EVMNetwork) => {
-            const provider =
-              this.chainService.providerForNetworkOrThrow(network)
-
-            const TBTC: SmartContractFungibleAsset = {
-              name: "tBTC v2",
-              symbol: "tBTC",
-              decimals: 18,
-              homeNetwork: ETHEREUM,
-              contractAddress: "0x18084fba666a33d37592fa2633fd49a74dd93a88",
-            }
-
-            if (network === MEZO_TESTNET) {
-              const ethProvider =
-                this.chainService.providerForNetworkOrThrow(ETHEREUM)
-
-              const pricePoint = await getUSDPriceForTokens(
-                [TBTC],
-                ETHEREUM,
-                ethProvider,
-              ).then((pricePoints) =>
-                getPricePoint(
-                  MEZO_TESTNET.baseAsset,
-                  pricePoints[TBTC.contractAddress],
-                ),
-              )
-
-              return pricePoint
-            }
-
-            return getUSDPriceForBaseAsset(network, provider)
-          }),
+        const networks = this.chainService.getSupportedNetworks()
+        const results = await Promise.allSettled(
+          networks.map((network) =>
+            getUSDPriceForBaseAsset(network, (feedNetwork) =>
+              this.chainService.providerForNetwork(feedNetwork),
+            ),
+          ),
         )
+
+        basicPrices = results.flatMap((result) =>
+          result.status === "fulfilled" && result.value !== undefined
+            ? [result.value]
+            : [],
+        )
+
+        const failures = results.flatMap((result, i) =>
+          result.status === "rejected"
+            ? [`${networks[i].chainID}: ${String(result.reason)}`]
+            : [],
+        )
+        if (failures.length > 0) {
+          logger.warn("Couldn't read base asset price feeds", failures)
+        }
       }
 
       // kick off db writes and event emission, don't wait for the promises to
@@ -866,12 +854,8 @@ export default class IndexingService extends BaseService<Events> {
           )
       })
       this.emitter.emit("prices", basicPrices)
-    } catch (e) {
-      logger.error(
-        "Error getting base asset prices from coingecko",
-        BUILT_IN_NETWORK_BASE_ASSETS,
-        FIAT_CURRENCIES,
-      )
+    } catch (error) {
+      logger.error("Error getting base asset prices", error)
     }
   }
 
@@ -917,33 +901,45 @@ export default class IndexingService extends BaseService<Events> {
 
       const measuredAt = Date.now()
 
-      // @TODO consider allSettled here
-      const activeAssetPricesByNetwork = logRejectedAndReturnFulfilledResults(
-        "Failed to retrieve token prices for network",
-        await Promise.allSettled(
-          activeAssetsByNetwork.map(
-            async ({ activeAssetsByAddress, network }) => {
-              const coingeckoTokenPrices = await getTokenPrices(
-                Object.keys(activeAssetsByAddress),
-                USD,
-                network,
-              )
-              if (Object.keys(coingeckoTokenPrices).length) {
-                return coingeckoTokenPrices
-              }
+      const priceResults = await Promise.allSettled(
+        activeAssetsByNetwork.map(
+          async ({ activeAssetsByAddress, network }) => {
+            const coingeckoTokenPrices = await getTokenPrices(
+              Object.keys(activeAssetsByAddress),
+              USD,
+              network,
+            )
+            if (Object.keys(coingeckoTokenPrices).length) {
+              return coingeckoTokenPrices
+            }
 
-              const provider =
-                this.chainService.providerForNetworkOrThrow(network)
+            const provider =
+              this.chainService.providerForNetworkOrThrow(network)
 
-              return getUSDPriceForTokens(
-                Object.values(activeAssetsByAddress),
-                network,
-                provider,
-              )
-            },
-          ),
+            return getUSDPriceForTokens(
+              Object.values(activeAssetsByAddress),
+              network,
+              provider,
+            )
+          },
         ),
-        activeAssetsByNetwork,
+      )
+
+      const failures = priceResults.flatMap((result, i) =>
+        result.status === "rejected"
+          ? [
+              `${activeAssetsByNetwork[i].network.chainID}: ${String(
+                result.reason,
+              )}`,
+            ]
+          : [],
+      )
+      if (failures.length > 0) {
+        logger.warn("Couldn't read token prices", failures)
+      }
+
+      const activeAssetPricesByNetwork = priceResults.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
       )
 
       const activeAssetPrices = activeAssetPricesByNetwork.flatMap(
@@ -1032,7 +1028,7 @@ export default class IndexingService extends BaseService<Events> {
     // Cache assets across all supported networks even if a network
     // may be inactive.
     const assetCacheResults = await Promise.allSettled(
-      this.chainService.supportedNetworks.map(async (network) => {
+      this.chainService.getSupportedNetworks().map(async (network) => {
         await this.cacheAssetsForNetwork(network)
 
         this.emitter.emit("assetsLoaded", {
@@ -1044,7 +1040,7 @@ export default class IndexingService extends BaseService<Events> {
     logger.errorLogRejectedPromises(
       "Error caching network asset results",
       assetCacheResults,
-      this.chainService.supportedNetworks,
+      this.chainService.getSupportedNetworks(),
     )
 
     // TODO if tokenListPrefs.autoUpdate is true, pull the latest and update if
@@ -1107,7 +1103,31 @@ export default class IndexingService extends BaseService<Events> {
     }, 16 * SECOND)
   }
 
-  private async loadAccountBalancesFor(
+  /**
+   * Loads an account's balances on one chain, joining a load for the same
+   * account and chain that is already in flight.
+   */
+  private loadAccountBalancesFor(
+    addressOnNetwork: AddressOnNetwork,
+  ): Promise<[AccountBalance, SmartContractAmount[]]> {
+    const key = `${addressOnNetwork.network.chainID}:${normalizeEVMAddress(
+      addressOnNetwork.address,
+    )}`
+
+    const inFlight = this.#balanceLoadsInFlight.get(key)
+    if (inFlight !== undefined) {
+      return inFlight
+    }
+
+    const load = this.fetchAccountBalancesFor(addressOnNetwork).finally(() =>
+      this.#balanceLoadsInFlight.delete(key),
+    )
+    this.#balanceLoadsInFlight.set(key, load)
+
+    return load
+  }
+
+  private async fetchAccountBalancesFor(
     addressOnNetwork: AddressOnNetwork,
   ): Promise<[AccountBalance, SmartContractAmount[]]> {
     const { network } = addressOnNetwork

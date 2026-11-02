@@ -6,10 +6,12 @@ import {
 } from "@tallyho/tally-background/assets"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
+import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import classNames from "classnames"
 import SharedAssetIconWithNetwork from "./SharedAssetIconWithNetwork"
 import SharedIcon from "./SharedIcon"
 import { getBlockExplorerURL } from "../../utils/networks"
+import { displayAssetAmount } from "../../utils/amounts"
 
 export type AnyAssetWithOptionalAmount<T extends AnyAsset> =
   | {
@@ -50,6 +52,9 @@ export default function SharedAssetItem<T extends AnyAsset>(
     onMouseMove,
   } = props
   const { asset } = assetAndAmount
+  const amount = hasAmounts(assetAndAmount)
+    ? displayAssetAmount(assetAndAmount)
+    : undefined
   const [contractLink, setContractLink] = useState("")
 
   function handleClick() {
@@ -87,12 +92,22 @@ export default function SharedAssetItem<T extends AnyAsset>(
             />
 
             <div className="left_content">
-              <div
-                className="symbol ellipsis"
-                data-testid="asset_symbol"
-                title={asset.symbol}
-              >
-                {asset.symbol}
+              <div className="symbol_line">
+                <span
+                  className="symbol ellipsis"
+                  data-testid="asset_symbol"
+                  title={asset.symbol}
+                >
+                  {asset.symbol}
+                </span>
+                {isSmartContractFungibleAsset(asset) && (
+                  <span
+                    className="contract_address"
+                    title={asset.contractAddress}
+                  >
+                    {truncateAddress(asset.contractAddress, 4)}
+                  </span>
+                )}
               </div>
               <div className="token_subtitle ellipsis" title={asset.name}>
                 {asset.name}
@@ -101,9 +116,9 @@ export default function SharedAssetItem<T extends AnyAsset>(
           </div>
 
           <div className="right_content">
-            {hasAmounts(assetAndAmount) && (
-              <div className="amount">
-                {assetAndAmount.localizedDecimalAmount}
+            {amount && (
+              <div className="amount" title={amount.title}>
+                {amount.text}
               </div>
             )}
             {contractLink && (
@@ -143,6 +158,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             min-width: 0;
           }
           .right_content {
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             gap: 20px;
@@ -189,13 +205,25 @@ export default function SharedAssetItem<T extends AnyAsset>(
             width: 18px;
             height: 29px;
           }
+          .symbol_line {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            line-height: 18px;
+            margin-top: 2px;
+          }
           .symbol {
+            min-width: 0;
             color: #fff;
             font-size: 16px;
             font-weight: 500;
-            line-height: 18px;
             text-transform: uppercase;
-            margin-top: 2px;
+          }
+          /* Tells apart tokens that share a symbol, so it stays whole. */
+          .contract_address {
+            flex-shrink: 0;
+            color: var(--green-40);
+            font-size: 14px;
           }
         `}
       </style>

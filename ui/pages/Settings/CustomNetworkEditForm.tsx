@@ -114,6 +114,8 @@ const saveErrorMessage = (
         reportedChainID: error.reportedChainID,
         expectedChainID: error.expectedChainID,
       })
+    case "superseded":
+      return t("errors.endpointsReplaced")
     case "unknown":
       return t("errors.saveFailed", { message: error.message })
     default:

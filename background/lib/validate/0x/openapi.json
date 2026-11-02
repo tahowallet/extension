@@ -1,0 +1,2890 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "0x API",
+    "description": "This is the official API reference for the latest 0x API (v2).",
+    "version": "v2"
+  },
+  "x-taho-source": {
+    "url": "https://raw.githubusercontent.com/0xProject/0x-docs/e149cfbd81b5c7fc2e6df59a33920e3c67a9cb0f/fern/openapi.json",
+    "committedAt": "2026-10-19T14:24:34Z",
+    "fetchedAt": "2026-10-23"
+  },
+  "paths": {
+    "/swap/allowance-holder/price": {
+      "get": {
+        "operationId": "swap::allowanceHolder::getPrice",
+        "summary": "getPrice (Allowance Holder)",
+        "description": "Get the indicative price for a swap using Allowance Holder to set allowances",
+        "tags": ["Swap"],
+        "parameters": [
+          {
+            "description": "Visit dashboard.0x.org to get your API Key",
+            "in": "header",
+            "name": "0x-api-key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API version",
+            "in": "header",
+            "name": "0x-version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "v2"
+            }
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "Chain ID. See [here](https://docs.0x.org/docs/introduction/supported-chains) for the list of supported chains",
+            "example": 1
+          },
+          {
+            "name": "buyToken",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x(?!0{40})[a-fA-F0-9]{40}$"
+            },
+            "description": "The contract address of the token to buy",
+            "example": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+          },
+          {
+            "name": "sellToken",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x(?!0{40})[a-fA-F0-9]{40}$"
+            },
+            "description": "The contract address of the token to sell",
+            "example": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          {
+            "name": "sellAmount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The amount of `sellToken` in `sellToken` base units to sell. Exactly one of `sellAmount` or `buyAmount` must be provided — specifying both will result in an error.",
+            "example": "100000000"
+          },
+          {
+            "name": "buyAmount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The amount of `buyToken` in `buyToken` base units to buy. Exactly one of `sellAmount` or `buyAmount` must be provided — specifying both will result in an error."
+          },
+          {
+            "name": "taker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address which holds the `sellToken` balance and has the allowance set for the swap",
+            "example": "0x70a9f34f9b34c64957b9c401a97bfed35b95049e"
+          },
+          {
+            "name": "txOrigin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address of the external account that started the transaction. This is only needed if `taker` is a smart contract."
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address to receive the `buyToken`. If not provided, defaults to the taker address. Not supported for wrap/unwrap operations."
+          },
+          {
+            "name": "swapFeeRecipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*0x[a-fA-F0-9]{40}(\\s*,\\s*0x[a-fA-F0-9]{40})*\\s*$"
+            },
+            "description": "The wallet address to receive the specified trading fees (supports single or multiple comma-separated values). You must also specify `swapFeeBps` or `swapFeePpm` in the request to use this feature. When multiple values are provided, must match the length of `swapFeeBps` or `swapFeePpm`."
+          },
+          {
+            "name": "swapFeeBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$"
+            },
+            "description": "The amount in Bps of the `swapFeeToken` to charge and deliver to the `swapFeeRecipient` (supports single or multiple comma-separated values). You must also specify the `swapFeeRecipient` in the request to use this feature. For security, this field has a default limit of 1000 Bps. If your application requires a higher value, please reach out to us."
+          },
+          {
+            "name": "swapFeePpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$"
+            },
+            "description": "The amount in parts-per-million (PPM) of the `swapFeeToken` to charge and deliver to the `swapFeeRecipient` (supports single or multiple comma-separated values). Mutually exclusive with `swapFeeBps`. You must also specify the `swapFeeRecipient` in the request to use this feature. Each value must be an integer from 0 to 1000000. For security, this field has a default limit of 100000 PPM. If your application requires a higher value, please reach out to us. e.g. 5000 PPM = 50 BPS = 0.5%."
+          },
+          {
+            "name": "swapFeeToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*0x(?!0{40})[a-fA-F0-9]{40}(\\s*,\\s*0x(?!0{40})[a-fA-F0-9]{40})*\\s*$"
+            },
+            "description": "The contract address of the token to receive trading fees in (supports single or multiple comma-separated values). Each token must be set to the value of either the `buyToken` or the `sellToken`. If omitted, the fee token will be determined by 0x with preference to stablecoins and highly liquid assets. You must also specify the `swapFeeRecipient` and either `swapFeeBps` or `swapFeePpm` to charge integrator fees. When multiple values are provided, must match the length of `swapFeeBps` or `swapFeePpm`."
+          },
+          {
+            "name": "tradeSurplusRecipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address to receive any trade surplus. If specified, this address will receive trade surplus when applicable. Otherwise, the taker will receive the surplus. This feature is only available to selected integrators on a custom pricing plan. In other cases, the surplus will be collected by 0x. For assistance with a custom plan, please contact support."
+          },
+          {
+            "name": "tradeSurplusMaxBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            },
+            "description": "The maximum trade surplus (positive slippage) that can be collected in Bps of the buy amount. If not provided, defaults to 10000 (100%). Must be used together with `tradeSurplusRecipient`. Mutually exclusive with `tradeSurplusMaxPpm`."
+          },
+          {
+            "name": "tradeSurplusMaxPpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "description": "The maximum trade surplus (positive slippage) that can be collected in parts-per-million (PPM) of the buy amount. Mutually exclusive with `tradeSurplusMaxBps`. If not provided, defaults to 1000000 (100%). Must be used together with `tradeSurplusRecipient`. e.g. 5000 PPM = 50 BPS = 0.5%."
+          },
+          {
+            "name": "gasPrice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target gas price (in wei) for the swap transaction. If not provided, the default value is based on the 0x gas price oracle"
+          },
+          {
+            "name": "slippageBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "description": "The maximum acceptable slippage of the `buyToken` in Bps. If this parameter is set to 0, no slippage will be tolerated. If not provided, the default slippage tolerance is 100Bps. Deprecated: use `slippagePpm` instead. `slippageBps` accepts only whole numbers."
+          },
+          {
+            "name": "slippagePpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "description": "The maximum acceptable slippage of the `buyToken` in parts-per-million (PPM). Mutually exclusive with `slippageBps`. e.g. 3000 PPM = 30 BPS = 0.30%."
+          },
+          {
+            "name": "excludedSources",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Liquidity sources e.g. Uniswap_V3, SushiSwap, 0x_RFQ to exclude from the provided quote. See https://api.0x.org/sources?chainId=<chain_id> with the desired chain's ID for a full list of sources. Separate multiple sources with a comma"
+          },
+          {
+            "name": "sellEntireBalance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "default": "false"
+            },
+            "description": "If set to `true`, the taker's entire `sellToken` balance will be sold during trade execution. The `sellAmount` should be the maximum estimated value, as close as possible to the actual taker's balance to ensure the best routing. Selling more than the `sellAmount` may cause the trade to revert. This feature is designed for cases where the precise sell amount is determined during execution. Learn more [here](https://docs.0x.org/docs/0x-swap-api/additional-topics/sell-entire-balance)."
+          },
+          {
+            "name": "wrapUnwrapMode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "not": {}
+                },
+                {
+                  "type": "string",
+                  "enum": ["direct", "settler"]
+                }
+              ]
+            },
+            "description": "Controls how native wrap/unwrap trades are executed. `direct` calls the wrapped-native token contract directly. `settler` routes wrap/unwrap through Settler or Allowance Holder for compatibility. Ignored for non-wrap/unwrap swaps. If omitted, `direct` mode is used."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowanceTarget": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "nullable": true,
+                              "description": "The target contract address for which the `taker` needs to have an allowance in order to be able to complete the swap. For swaps with the native asset (ie \"ETH\" or \"BNB\") as the `sellToken`, wrapping the native asset (i.e. \"ETH\" to \"WETH\") or unwrapping, no allowance is needed"
+                            },
+                            "blockNumber": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The block number at which the liquidity sources were sampled to generate the quote. This indicates the freshness of the quote"
+                            },
+                            "buyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `buyToken` (in `buyToken` units) that will be bought in the swap"
+                            },
+                            "buyToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to buy in the swap"
+                            },
+                            "fees": {
+                              "type": "object",
+                              "properties": {
+                                "integratorFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the integrator fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the integrator fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The specified fee to charge and deliver to the `swapFeeRecipient`."
+                                },
+                                "integratorFees": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amount": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The amount of token charged as the integrator fee"
+                                      },
+                                      "token": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The address of the token charged as the integrator fee"
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["volume"]
+                                      }
+                                    },
+                                    "required": ["amount", "token", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  "nullable": true,
+                                  "description": "The specified fees to charge and deliver to the `swapFeesRecipient`."
+                                },
+                                "zeroExFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the 0x fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the 0x fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The fee charged by 0x for the trade."
+                                },
+                                "gasFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the gas fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the gas fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["gas"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The gas fee to be used in submitting the transaction."
+                                }
+                              },
+                              "required": [
+                                "integratorFee",
+                                "integratorFees",
+                                "zeroExFee",
+                                "gasFee"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Fees to be deducted in this transaction. It contains the `integratorFee`, `zeroExFee` and `gasFee`"
+                            },
+                            "issues": {
+                              "type": "object",
+                              "properties": {
+                                "allowance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The `taker`'s current allowance of the `spender`"
+                                    },
+                                    "spender": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address to set the allowance on"
+                                    }
+                                  },
+                                  "required": ["actual", "spender"],
+                                  "additionalProperties": false,
+                                  "description": "Details of allowances that the `taker` must set for in order to execute the swap successfully. Null if no allowance is required",
+                                  "nullable": true
+                                },
+                                "balance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The contract address of the `sellToken`"
+                                    },
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The current balance of the `sellToken` in the `taker` address"
+                                    },
+                                    "expected": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The balance of the `sellToken` required for the swap to execute successfully"
+                                    }
+                                  },
+                                  "required": ["token", "actual", "expected"],
+                                  "additionalProperties": false,
+                                  "description": "Details of balance of the `sellToken` that the `taker` must hold. Null if the `taker` has sufficient balance",
+                                  "nullable": true
+                                },
+                                "simulationIncomplete": {
+                                  "type": "boolean",
+                                  "description": "This is set to `true` when 0x cannot validate the transaction. This happens when the `taker` has an insufficient balance of the `sellToken` and 0x is unable to peform ehanced quote validation with the low balance. Note that this does not necessarily mean that the trade will revert"
+                                },
+                                "invalidSourcesPassed": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "A list of invalid sources present in `excludedSources` request. See `https://api.0x.org/sources?chainId=` with the desired chain's ID for the list of valid sources"
+                                }
+                              },
+                              "required": [
+                                "allowance",
+                                "balance",
+                                "simulationIncomplete",
+                                "invalidSourcesPassed"
+                              ],
+                              "additionalProperties": false,
+                              "description": "An object containing potential issues discovered during 0x validation that can prevent the swap from being executed successfully by the `taker`"
+                            },
+                            "liquidityAvailable": {
+                              "type": "boolean",
+                              "enum": [true],
+                              "description": "This validates the availability of liquidity for the quote requested. The rest of the fields will only be returned if `true`"
+                            },
+                            "minBuyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The price which must be met or else the entire transaction will revert. This price is influenced by the `slippagePpm` or `slippageBps` parameter. On-chain sources may encounter price movements from quote to settlement"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": ["exact-in"]
+                            },
+                            "route": {
+                              "type": "object",
+                              "properties": {
+                                "fills": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "from": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The contract address of the input token"
+                                      },
+                                      "to": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The contract address of the output token"
+                                      },
+                                      "source": {
+                                        "type": "string",
+                                        "description": "The liquidity source used in the route"
+                                      },
+                                      "proportionBps": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The proportion of the trade to be filled by the `source`"
+                                      }
+                                    },
+                                    "required": [
+                                      "from",
+                                      "to",
+                                      "source",
+                                      "proportionBps"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "description": "Details of each segment that 0x routes the swap through"
+                                },
+                                "tokens": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "address": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The token address. This is the unique identifier of the token"
+                                      },
+                                      "symbol": {
+                                        "type": "string",
+                                        "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                      }
+                                    },
+                                    "required": ["address", "symbol"],
+                                    "additionalProperties": false,
+                                    "description": "Properties of the tokens involved in the swap"
+                                  },
+                                  "description": "Properties of the tokens involved in the swap"
+                                }
+                              },
+                              "required": ["fills", "tokens"],
+                              "additionalProperties": false,
+                              "description": "The path of liquidity sources to be used in executing this swap"
+                            },
+                            "sellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `sellToken` (in `sellToken` units) that will be sold in this swap"
+                            },
+                            "sellToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to sell in the swap"
+                            },
+                            "tokenMetadata": {
+                              "type": "object",
+                              "properties": {
+                                "buyToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the buy token"
+                                },
+                                "sellToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the sell token"
+                                }
+                              },
+                              "required": ["buyToken", "sellToken"],
+                              "additionalProperties": false,
+                              "description": "Swap-related metadata for the buy and sell token in the swap"
+                            },
+                            "totalNetworkFee": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated total network cost of the swap: the expected gas * `gasPrice`, plus the L1 data cost on chains that have one. `gas` is the transaction gas limit and can exceed the expected gas when the transaction carries a fallback route, so this can be less than `gas` * `gasPrice`."
+                            },
+                            "zid": {
+                              "type": "string",
+                              "description": "The unique ZeroEx identifier of the request"
+                            },
+                            "gas": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated gas limit that should be used to send the transaction to guarantee settlement"
+                            },
+                            "gasPrice": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The gas price (in wei) that should be used to send the transaction. The transaction needs to be sent with this `gasPrice` for the transaction to be successful"
+                            }
+                          },
+                          "required": [
+                            "allowanceTarget",
+                            "blockNumber",
+                            "buyAmount",
+                            "buyToken",
+                            "fees",
+                            "issues",
+                            "liquidityAvailable",
+                            "minBuyAmount",
+                            "mode",
+                            "route",
+                            "sellAmount",
+                            "sellToken",
+                            "tokenMetadata",
+                            "totalNetworkFee",
+                            "zid",
+                            "gas",
+                            "gasPrice"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowanceTarget": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "nullable": true,
+                              "description": "The target contract address for which the `taker` needs to have an allowance in order to be able to complete the swap."
+                            },
+                            "blockNumber": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The block number at which the liquidity sources were sampled to generate the quote. This indicates the freshness of the quote"
+                            },
+                            "buyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `buyToken` (in `buyToken` units) requested for the swap"
+                            },
+                            "buyToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to buy in the swap"
+                            },
+                            "estimatedNetSellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The estimated net amount of `sellToken` spent after any exact-out refund route executes"
+                            },
+                            "fees": {
+                              "type": "object",
+                              "properties": {
+                                "integratorFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the integrator fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the integrator fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The specified fee to charge and deliver to the `swapFeeRecipient`."
+                                },
+                                "integratorFees": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amount": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The amount of token charged as the integrator fee"
+                                      },
+                                      "token": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The address of the token charged as the integrator fee"
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["volume"]
+                                      }
+                                    },
+                                    "required": ["amount", "token", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  "nullable": true,
+                                  "description": "The specified fees to charge and deliver to the `swapFeesRecipient`."
+                                },
+                                "zeroExFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the 0x fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the 0x fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The fee charged by 0x for the trade."
+                                }
+                              },
+                              "required": [
+                                "integratorFee",
+                                "integratorFees",
+                                "zeroExFee"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Fees to be deducted in this transaction."
+                            },
+                            "issues": {
+                              "type": "object",
+                              "properties": {
+                                "allowance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The `taker`'s current allowance of the `spender`"
+                                    },
+                                    "spender": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address to set the allowance on"
+                                    }
+                                  },
+                                  "required": ["actual", "spender"],
+                                  "additionalProperties": false,
+                                  "description": "Details of allowances that the `taker` must set for in order to execute the swap successfully. Null if no allowance is required",
+                                  "nullable": true
+                                },
+                                "balance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The contract address of the `sellToken`"
+                                    },
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The current balance of the `sellToken` in the `taker` address"
+                                    },
+                                    "expected": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The balance of the `sellToken` required for the swap to execute successfully"
+                                    }
+                                  },
+                                  "required": ["token", "actual", "expected"],
+                                  "additionalProperties": false,
+                                  "description": "Details of balance of the `sellToken` that the `taker` must hold. Null if the `taker` has sufficient balance",
+                                  "nullable": true
+                                },
+                                "simulationIncomplete": {
+                                  "type": "boolean",
+                                  "description": "This is set to `true` when 0x cannot validate the transaction. This happens when the `taker` has an insufficient balance of the `sellToken` and 0x is unable to peform ehanced quote validation with the low balance. Note that this does not necessarily mean that the trade will revert"
+                                },
+                                "invalidSourcesPassed": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "A list of invalid sources present in `excludedSources` request. See `https://api.0x.org/sources?chainId=` with the desired chain's ID for the list of valid sources"
+                                }
+                              },
+                              "required": [
+                                "allowance",
+                                "balance",
+                                "simulationIncomplete",
+                                "invalidSourcesPassed"
+                              ],
+                              "additionalProperties": false,
+                              "description": "An object containing potential issues discovered during 0x validation that can prevent the swap from being executed successfully by the `taker`"
+                            },
+                            "liquidityAvailable": {
+                              "type": "boolean",
+                              "enum": [true],
+                              "description": "This validates the availability of liquidity for the quote requested. The rest of the fields will only be returned if `true`"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": ["exact-out"]
+                            },
+                            "routes": {
+                              "type": "object",
+                              "properties": {
+                                "forward": {
+                                  "type": "object",
+                                  "properties": {
+                                    "fills": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "from": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the input token"
+                                          },
+                                          "to": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the output token"
+                                          },
+                                          "source": {
+                                            "type": "string",
+                                            "description": "The liquidity source used in the route"
+                                          },
+                                          "proportionBps": {
+                                            "allOf": [
+                                              {},
+                                              {
+                                                "type": "string",
+                                                "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                              }
+                                            ],
+                                            "description": "The proportion of the trade to be filled by the `source`"
+                                          }
+                                        },
+                                        "required": [
+                                          "from",
+                                          "to",
+                                          "source",
+                                          "proportionBps"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "description": "Details of each segment that 0x routes the swap through"
+                                    },
+                                    "tokens": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The token address. This is the unique identifier of the token"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                          }
+                                        },
+                                        "required": ["address", "symbol"],
+                                        "additionalProperties": false,
+                                        "description": "Properties of the tokens involved in the swap"
+                                      },
+                                      "description": "Properties of the tokens involved in the swap"
+                                    }
+                                  },
+                                  "required": ["fills", "tokens"],
+                                  "additionalProperties": false,
+                                  "description": "The forward route used to acquire at least the requested buy amount"
+                                },
+                                "refund": {
+                                  "type": "object",
+                                  "properties": {
+                                    "fills": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "from": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the input token"
+                                          },
+                                          "to": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the output token"
+                                          },
+                                          "source": {
+                                            "type": "string",
+                                            "description": "The liquidity source used in the route"
+                                          },
+                                          "proportionBps": {
+                                            "allOf": [
+                                              {},
+                                              {
+                                                "type": "string",
+                                                "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                              }
+                                            ],
+                                            "description": "The proportion of the trade to be filled by the `source`"
+                                          }
+                                        },
+                                        "required": [
+                                          "from",
+                                          "to",
+                                          "source",
+                                          "proportionBps"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "description": "Details of each segment that 0x routes the swap through"
+                                    },
+                                    "tokens": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The token address. This is the unique identifier of the token"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                          }
+                                        },
+                                        "required": ["address", "symbol"],
+                                        "additionalProperties": false,
+                                        "description": "Properties of the tokens involved in the swap"
+                                      },
+                                      "description": "Properties of the tokens involved in the swap"
+                                    }
+                                  },
+                                  "required": ["fills", "tokens"],
+                                  "additionalProperties": false,
+                                  "description": "The refund route used to convert buy-token surplus back to the sell token"
+                                }
+                              },
+                              "required": ["forward", "refund"],
+                              "additionalProperties": false,
+                              "description": "The exact-out forward and refund routes"
+                            },
+                            "maxSellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The maximum amount of `sellToken` that may be spent by the exact-out swap"
+                            },
+                            "sellToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to sell in the swap"
+                            },
+                            "tokenMetadata": {
+                              "type": "object",
+                              "properties": {
+                                "buyToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the buy token"
+                                },
+                                "sellToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the sell token"
+                                }
+                              },
+                              "required": ["buyToken", "sellToken"],
+                              "additionalProperties": false,
+                              "description": "Swap-related metadata for the buy and sell token in the swap"
+                            },
+                            "totalNetworkFee": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated total network cost of the swap: the expected gas * `gasPrice`, plus the L1 data cost on chains that have one. `gas` is the transaction gas limit and can exceed the expected gas when the transaction carries a fallback route, so this can be less than `gas` * `gasPrice`."
+                            },
+                            "zid": {
+                              "type": "string",
+                              "description": "The unique ZeroEx identifier of the request"
+                            },
+                            "gas": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated gas limit that should be used to send the transaction to guarantee settlement"
+                            },
+                            "gasPrice": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The gas price (in wei) that should be used to send the transaction. The transaction needs to be sent with this `gasPrice` for the transaction to be successful"
+                            }
+                          },
+                          "required": [
+                            "allowanceTarget",
+                            "blockNumber",
+                            "buyAmount",
+                            "buyToken",
+                            "estimatedNetSellAmount",
+                            "fees",
+                            "issues",
+                            "liquidityAvailable",
+                            "mode",
+                            "routes",
+                            "maxSellAmount",
+                            "sellToken",
+                            "tokenMetadata",
+                            "totalNetworkFee",
+                            "zid",
+                            "gas",
+                            "gasPrice"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "liquidityAvailable": {
+                          "type": "boolean",
+                          "enum": [false],
+                          "description": "This validates the availability of liquidity for the quote requested. No other fields will be returned if it is `false`"
+                        },
+                        "zid": {
+                          "type": "string",
+                          "description": "The unique ZeroEx identifier of the request"
+                        }
+                      },
+                      "required": ["liquidityAvailable", "zid"],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "example": {
+                  "allowanceTarget": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+                  "blockNumber": "20114676",
+                  "buyAmount": "100032748",
+                  "buyToken": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                  "fees": {
+                    "integratorFee": null,
+                    "zeroExFee": null,
+                    "gasFee": null
+                  },
+                  "gas": "288095",
+                  "gasPrice": "7062490000",
+                  "issues": {
+                    "allowance": {
+                      "actual": "0",
+                      "spender": "0x0000000000001ff3684f28c67538d4d072c22734"
+                    },
+                    "balance": {
+                      "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                      "actual": "0",
+                      "expected": "100000000"
+                    },
+                    "simulationIncomplete": false,
+                    "invalidSourcesPassed": []
+                  },
+                  "liquidityAvailable": true,
+                  "mode": "exact-in",
+                  "minBuyAmount": "99032421",
+                  "route": {
+                    "fills": [
+                      {
+                        "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                        "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "source": "SolidlyV3",
+                        "proportionBps": "10000"
+                      }
+                    ],
+                    "tokens": [
+                      {
+                        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                        "symbol": "USDC"
+                      },
+                      {
+                        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "symbol": "USDT"
+                      }
+                    ]
+                  },
+                  "sellAmount": "100000000",
+                  "sellToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                  "tokenMetadata": {
+                    "buyToken": {
+                      "buyTaxBps": "0",
+                      "sellTaxBps": "0"
+                    },
+                    "sellToken": {
+                      "buyTaxBps": "0",
+                      "sellTaxBps": "0"
+                    }
+                  },
+                  "totalNetworkFee": "2034668056550000",
+                  "zid": "0x111111111111111111111111"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/swap/allowance-holder/quote": {
+      "get": {
+        "operationId": "swap::allowanceHolder::getQuote",
+        "summary": "getQuote (Allowance Holder)",
+        "description": "Get the firm quote for a swap using Allowance Holder to set allowances",
+        "tags": ["Swap"],
+        "parameters": [
+          {
+            "description": "Visit dashboard.0x.org to get your API Key",
+            "in": "header",
+            "name": "0x-api-key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "API version",
+            "in": "header",
+            "name": "0x-version",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "v2"
+            }
+          },
+          {
+            "name": "chainId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            },
+            "description": "Chain ID. See [here](https://docs.0x.org/docs/introduction/supported-chains) for the list of supported chains",
+            "example": 1
+          },
+          {
+            "name": "buyToken",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x(?!0{40})[a-fA-F0-9]{40}$"
+            },
+            "description": "The contract address of the token to buy",
+            "example": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+          },
+          {
+            "name": "sellToken",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x(?!0{40})[a-fA-F0-9]{40}$"
+            },
+            "description": "The contract address of the token to sell",
+            "example": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+          },
+          {
+            "name": "sellAmount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The amount of `sellToken` in `sellToken` base units to sell. Exactly one of `sellAmount` or `buyAmount` must be provided — specifying both will result in an error.",
+            "example": "100000000"
+          },
+          {
+            "name": "buyAmount",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The amount of `buyToken` in `buyToken` base units to buy. Exactly one of `sellAmount` or `buyAmount` must be provided — specifying both will result in an error."
+          },
+          {
+            "name": "taker",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address which holds the `sellToken` balance and has the allowance set for the swap",
+            "example": "0x70a9f34f9b34c64957b9c401a97bfed35b95049e"
+          },
+          {
+            "name": "txOrigin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address of the external account that started the transaction. This is only needed if `taker` is a smart contract."
+          },
+          {
+            "name": "recipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address to receive the `buyToken`. If not provided, defaults to the taker address. Not supported for wrap/unwrap operations."
+          },
+          {
+            "name": "swapFeeRecipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*0x[a-fA-F0-9]{40}(\\s*,\\s*0x[a-fA-F0-9]{40})*\\s*$"
+            },
+            "description": "The wallet address to receive the specified trading fees (supports single or multiple comma-separated values). You must also specify `swapFeeBps` or `swapFeePpm` in the request to use this feature. When multiple values are provided, must match the length of `swapFeeBps` or `swapFeePpm`."
+          },
+          {
+            "name": "swapFeeBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$"
+            },
+            "description": "The amount in Bps of the `swapFeeToken` to charge and deliver to the `swapFeeRecipient` (supports single or multiple comma-separated values). You must also specify the `swapFeeRecipient` in the request to use this feature. For security, this field has a default limit of 1000 Bps. If your application requires a higher value, please reach out to us."
+          },
+          {
+            "name": "swapFeePpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*\\d+(\\s*,\\s*\\d+)*\\s*$"
+            },
+            "description": "The amount in parts-per-million (PPM) of the `swapFeeToken` to charge and deliver to the `swapFeeRecipient` (supports single or multiple comma-separated values). Mutually exclusive with `swapFeeBps`. You must also specify the `swapFeeRecipient` in the request to use this feature. Each value must be an integer from 0 to 1000000. For security, this field has a default limit of 100000 PPM. If your application requires a higher value, please reach out to us. e.g. 5000 PPM = 50 BPS = 0.5%."
+          },
+          {
+            "name": "swapFeeToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\s*0x(?!0{40})[a-fA-F0-9]{40}(\\s*,\\s*0x(?!0{40})[a-fA-F0-9]{40})*\\s*$"
+            },
+            "description": "The contract address of the token to receive trading fees in (supports single or multiple comma-separated values). Each token must be set to the value of either the `buyToken` or the `sellToken`. If omitted, the fee token will be determined by 0x with preference to stablecoins and highly liquid assets. You must also specify the `swapFeeRecipient` and either `swapFeeBps` or `swapFeePpm` to charge integrator fees. When multiple values are provided, must match the length of `swapFeeBps` or `swapFeePpm`."
+          },
+          {
+            "name": "tradeSurplusRecipient",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "The address to receive any trade surplus. If specified, this address will receive trade surplus when applicable. Otherwise, the taker will receive the surplus. This feature is only available to selected integrators on a custom pricing plan. In other cases, the surplus will be collected by 0x. For assistance with a custom plan, please contact support."
+          },
+          {
+            "name": "tradeSurplusMaxBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            },
+            "description": "The maximum trade surplus (positive slippage) that can be collected in Bps of the buy amount. If not provided, defaults to 10000 (100%). Must be used together with `tradeSurplusRecipient`. Mutually exclusive with `tradeSurplusMaxPpm`."
+          },
+          {
+            "name": "tradeSurplusMaxPpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "description": "The maximum trade surplus (positive slippage) that can be collected in parts-per-million (PPM) of the buy amount. Mutually exclusive with `tradeSurplusMaxBps`. If not provided, defaults to 1000000 (100%). Must be used together with `tradeSurplusRecipient`. e.g. 5000 PPM = 50 BPS = 0.5%."
+          },
+          {
+            "name": "gasPrice",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The target gas price (in wei) for the swap transaction. If not provided, the default value is based on the 0x gas price oracle"
+          },
+          {
+            "name": "slippageBps",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "description": "The maximum acceptable slippage of the `buyToken` in Bps. If this parameter is set to 0, no slippage will be tolerated. If not provided, the default slippage tolerance is 100Bps. Deprecated: use `slippagePpm` instead. `slippageBps` accepts only whole numbers."
+          },
+          {
+            "name": "slippagePpm",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "description": "The maximum acceptable slippage of the `buyToken` in parts-per-million (PPM). Mutually exclusive with `slippageBps`. e.g. 3000 PPM = 30 BPS = 0.30%."
+          },
+          {
+            "name": "excludedSources",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Liquidity sources e.g. Uniswap_V3, SushiSwap, 0x_RFQ to exclude from the provided quote. `See https://api.0x.org/sources?chainId=<chain_id>` with the desired chain's ID for a full list of sources. Separate multiple sources with a comma"
+          },
+          {
+            "name": "sellEntireBalance",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"],
+              "default": "false"
+            },
+            "description": "If set to `true`, the taker's entire `sellToken` balance will be sold during trade execution. The `sellAmount` should be the maximum estimated value, as close as possible to the actual taker's balance to ensure the best routing. Selling more than the `sellAmount` may cause the trade to revert. This feature is designed for cases where the precise sell amount is determined during execution. Learn more [here](https://docs.0x.org/docs/0x-swap-api/additional-topics/sell-entire-balance)."
+          },
+          {
+            "name": "wrapUnwrapMode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "not": {}
+                },
+                {
+                  "type": "string",
+                  "enum": ["direct", "settler"]
+                }
+              ]
+            },
+            "description": "Controls how native wrap/unwrap trades are executed. `direct` calls the wrapped-native token contract directly. `settler` routes wrap/unwrap through Settler or Allowance Holder for compatibility. Ignored for non-wrap/unwrap swaps. If omitted, `direct` mode is used."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowanceTarget": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "nullable": true,
+                              "description": "The target contract address for which the `taker` needs to have an allowance in order to be able to complete the swap. For swaps with the native asset (ie \"ETH\" or \"BNB\") as the `sellToken`, wrapping the native asset (i.e. \"ETH\" to \"WETH\") or unwrapping, no allowance is needed"
+                            },
+                            "blockNumber": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The block number at which the liquidity sources were sampled to generate the quote. This indicates the freshness of the quote"
+                            },
+                            "buyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `buyToken` (in `buyToken` units) that will be bought in the swap"
+                            },
+                            "buyToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to buy in the swap"
+                            },
+                            "fees": {
+                              "type": "object",
+                              "properties": {
+                                "integratorFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the integrator fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the integrator fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The specified fee to charge and deliver to the `swapFeeRecipient`."
+                                },
+                                "integratorFees": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amount": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The amount of token charged as the integrator fee"
+                                      },
+                                      "token": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The address of the token charged as the integrator fee"
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["volume"]
+                                      }
+                                    },
+                                    "required": ["amount", "token", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  "nullable": true,
+                                  "description": "The specified fees to charge and deliver to the `swapFeesRecipient`."
+                                },
+                                "zeroExFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the 0x fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the 0x fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The fee charged by 0x for the trade."
+                                },
+                                "gasFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the gas fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the gas fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["gas"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The gas fee to be used in submitting the transaction."
+                                }
+                              },
+                              "required": [
+                                "integratorFee",
+                                "integratorFees",
+                                "zeroExFee",
+                                "gasFee"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Fees to be deducted in this transaction. It contains the `integratorFee`, `zeroExFee` and `gasFee`"
+                            },
+                            "issues": {
+                              "type": "object",
+                              "properties": {
+                                "allowance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The `taker`'s current allowance of the `spender`"
+                                    },
+                                    "spender": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address to set the allowance on"
+                                    }
+                                  },
+                                  "required": ["actual", "spender"],
+                                  "additionalProperties": false,
+                                  "description": "Details of allowances that the `taker` must set for in order to execute the swap successfully. Null if no allowance is required",
+                                  "nullable": true
+                                },
+                                "balance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The contract address of the `sellToken`"
+                                    },
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The current balance of the `sellToken` in the `taker` address"
+                                    },
+                                    "expected": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The balance of the `sellToken` required for the swap to execute successfully"
+                                    }
+                                  },
+                                  "required": ["token", "actual", "expected"],
+                                  "additionalProperties": false,
+                                  "description": "Details of balance of the `sellToken` that the `taker` must hold. Null if the `taker` has sufficient balance",
+                                  "nullable": true
+                                },
+                                "simulationIncomplete": {
+                                  "type": "boolean",
+                                  "description": "This is set to `true` when 0x cannot validate the transaction. This happens when the `taker` has an insufficient balance of the `sellToken` and 0x is unable to peform ehanced quote validation with the low balance. Note that this does not necessarily mean that the trade will revert"
+                                },
+                                "invalidSourcesPassed": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "A list of invalid sources present in `excludedSources` request. See `https://api.0x.org/sources?chainId=` with the desired chain's ID for the list of valid sources"
+                                }
+                              },
+                              "required": [
+                                "allowance",
+                                "balance",
+                                "simulationIncomplete",
+                                "invalidSourcesPassed"
+                              ],
+                              "additionalProperties": false,
+                              "description": "An object containing potential issues discovered during 0x validation that can prevent the swap from being executed successfully by the `taker`"
+                            },
+                            "liquidityAvailable": {
+                              "type": "boolean",
+                              "enum": [true],
+                              "description": "This validates the availability of liquidity for the quote requested. The rest of the fields will only be returned if `true`"
+                            },
+                            "minBuyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The price which must be met or else the entire transaction will revert. This price is influenced by the `slippagePpm` or `slippageBps` parameter. On-chain sources may encounter price movements from quote to settlement"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": ["exact-in"]
+                            },
+                            "route": {
+                              "type": "object",
+                              "properties": {
+                                "fills": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "from": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The contract address of the input token"
+                                      },
+                                      "to": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The contract address of the output token"
+                                      },
+                                      "source": {
+                                        "type": "string",
+                                        "description": "The liquidity source used in the route"
+                                      },
+                                      "proportionBps": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The proportion of the trade to be filled by the `source`"
+                                      }
+                                    },
+                                    "required": [
+                                      "from",
+                                      "to",
+                                      "source",
+                                      "proportionBps"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "description": "Details of each segment that 0x routes the swap through"
+                                },
+                                "tokens": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "address": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The token address. This is the unique identifier of the token"
+                                      },
+                                      "symbol": {
+                                        "type": "string",
+                                        "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                      }
+                                    },
+                                    "required": ["address", "symbol"],
+                                    "additionalProperties": false,
+                                    "description": "Properties of the tokens involved in the swap"
+                                  },
+                                  "description": "Properties of the tokens involved in the swap"
+                                }
+                              },
+                              "required": ["fills", "tokens"],
+                              "additionalProperties": false,
+                              "description": "The path of liquidity sources to be used in executing this swap"
+                            },
+                            "sellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `sellToken` (in `sellToken` units) that will be sold in this swap"
+                            },
+                            "sellToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to sell in the swap"
+                            },
+                            "tokenMetadata": {
+                              "type": "object",
+                              "properties": {
+                                "buyToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the buy token"
+                                },
+                                "sellToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the sell token"
+                                }
+                              },
+                              "required": ["buyToken", "sellToken"],
+                              "additionalProperties": false,
+                              "description": "Swap-related metadata for the buy and sell token in the swap"
+                            },
+                            "totalNetworkFee": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated total network cost of the swap: the expected gas * `gasPrice`, plus the L1 data cost on chains that have one. `gas` is the transaction gas limit and can exceed the expected gas when the transaction carries a fallback route, so this can be less than `gas` * `gasPrice`."
+                            },
+                            "zid": {
+                              "type": "string",
+                              "description": "The unique ZeroEx identifier of the request"
+                            },
+                            "transaction": {
+                              "type": "object",
+                              "properties": {
+                                "to": {
+                                  "type": "string",
+                                  "pattern": "^0x[a-fA-F0-9]{40}$",
+                                  "description": "The address of the target contract to send call `data` to. Do NOT use this field when setting token allowances — doing so can result in lost funds. Always use `issues.allowance.spender` or `allowanceTarget` for setting allowances."
+                                },
+                                "data": {
+                                  "type": "string",
+                                  "description": "The calldata containing transaction execution details to be sent to the `to` address"
+                                },
+                                "gas": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "nullable": true,
+                                  "description": "The estimated gas limit that should be used to send the transaction to guarantee settlement"
+                                },
+                                "gasPrice": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "description": "The gas price (in wei) that should be used to send the transaction"
+                                },
+                                "value": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "description": "The amount of ether (in wei) that should be sent with the transaction"
+                                }
+                              },
+                              "required": [
+                                "to",
+                                "data",
+                                "gas",
+                                "gasPrice",
+                                "value"
+                              ],
+                              "additionalProperties": false,
+                              "description": "This object contains the details required to submit the transaction"
+                            }
+                          },
+                          "required": [
+                            "allowanceTarget",
+                            "blockNumber",
+                            "buyAmount",
+                            "buyToken",
+                            "fees",
+                            "issues",
+                            "liquidityAvailable",
+                            "minBuyAmount",
+                            "mode",
+                            "route",
+                            "sellAmount",
+                            "sellToken",
+                            "tokenMetadata",
+                            "totalNetworkFee",
+                            "zid",
+                            "transaction"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allowanceTarget": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "nullable": true,
+                              "description": "The target contract address for which the `taker` needs to have an allowance in order to be able to complete the swap."
+                            },
+                            "blockNumber": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The block number at which the liquidity sources were sampled to generate the quote. This indicates the freshness of the quote"
+                            },
+                            "buyAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The amount of `buyToken` (in `buyToken` units) requested for the swap"
+                            },
+                            "buyToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to buy in the swap"
+                            },
+                            "estimatedNetSellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The estimated net amount of `sellToken` spent after any exact-out refund route executes"
+                            },
+                            "fees": {
+                              "type": "object",
+                              "properties": {
+                                "integratorFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the integrator fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the integrator fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The specified fee to charge and deliver to the `swapFeeRecipient`."
+                                },
+                                "integratorFees": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "amount": {
+                                        "allOf": [
+                                          {},
+                                          {
+                                            "type": "string",
+                                            "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                          }
+                                        ],
+                                        "description": "The amount of token charged as the integrator fee"
+                                      },
+                                      "token": {
+                                        "type": "string",
+                                        "pattern": "^0x[a-fA-F0-9]{40}$",
+                                        "description": "The address of the token charged as the integrator fee"
+                                      },
+                                      "type": {
+                                        "type": "string",
+                                        "enum": ["volume"]
+                                      }
+                                    },
+                                    "required": ["amount", "token", "type"],
+                                    "additionalProperties": false
+                                  },
+                                  "nullable": true,
+                                  "description": "The specified fees to charge and deliver to the `swapFeesRecipient`."
+                                },
+                                "zeroExFee": {
+                                  "type": "object",
+                                  "properties": {
+                                    "amount": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The amount of token charged as the 0x fee"
+                                    },
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address of the token charged as the 0x fee"
+                                    },
+                                    "type": {
+                                      "type": "string",
+                                      "enum": ["volume"]
+                                    }
+                                  },
+                                  "required": ["amount", "token", "type"],
+                                  "additionalProperties": false,
+                                  "nullable": true,
+                                  "description": "The fee charged by 0x for the trade."
+                                }
+                              },
+                              "required": [
+                                "integratorFee",
+                                "integratorFees",
+                                "zeroExFee"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Fees to be deducted in this transaction."
+                            },
+                            "issues": {
+                              "type": "object",
+                              "properties": {
+                                "allowance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The `taker`'s current allowance of the `spender`"
+                                    },
+                                    "spender": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The address to set the allowance on"
+                                    }
+                                  },
+                                  "required": ["actual", "spender"],
+                                  "additionalProperties": false,
+                                  "description": "Details of allowances that the `taker` must set for in order to execute the swap successfully. Null if no allowance is required",
+                                  "nullable": true
+                                },
+                                "balance": {
+                                  "type": "object",
+                                  "properties": {
+                                    "token": {
+                                      "type": "string",
+                                      "pattern": "^0x[a-fA-F0-9]{40}$",
+                                      "description": "The contract address of the `sellToken`"
+                                    },
+                                    "actual": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The current balance of the `sellToken` in the `taker` address"
+                                    },
+                                    "expected": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "description": "The balance of the `sellToken` required for the swap to execute successfully"
+                                    }
+                                  },
+                                  "required": ["token", "actual", "expected"],
+                                  "additionalProperties": false,
+                                  "description": "Details of balance of the `sellToken` that the `taker` must hold. Null if the `taker` has sufficient balance",
+                                  "nullable": true
+                                },
+                                "simulationIncomplete": {
+                                  "type": "boolean",
+                                  "description": "This is set to `true` when 0x cannot validate the transaction. This happens when the `taker` has an insufficient balance of the `sellToken` and 0x is unable to peform ehanced quote validation with the low balance. Note that this does not necessarily mean that the trade will revert"
+                                },
+                                "invalidSourcesPassed": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "description": "A list of invalid sources present in `excludedSources` request. See `https://api.0x.org/sources?chainId=` with the desired chain's ID for the list of valid sources"
+                                }
+                              },
+                              "required": [
+                                "allowance",
+                                "balance",
+                                "simulationIncomplete",
+                                "invalidSourcesPassed"
+                              ],
+                              "additionalProperties": false,
+                              "description": "An object containing potential issues discovered during 0x validation that can prevent the swap from being executed successfully by the `taker`"
+                            },
+                            "liquidityAvailable": {
+                              "type": "boolean",
+                              "enum": [true],
+                              "description": "This validates the availability of liquidity for the quote requested. The rest of the fields will only be returned if `true`"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": ["exact-out"]
+                            },
+                            "routes": {
+                              "type": "object",
+                              "properties": {
+                                "forward": {
+                                  "type": "object",
+                                  "properties": {
+                                    "fills": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "from": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the input token"
+                                          },
+                                          "to": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the output token"
+                                          },
+                                          "source": {
+                                            "type": "string",
+                                            "description": "The liquidity source used in the route"
+                                          },
+                                          "proportionBps": {
+                                            "allOf": [
+                                              {},
+                                              {
+                                                "type": "string",
+                                                "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                              }
+                                            ],
+                                            "description": "The proportion of the trade to be filled by the `source`"
+                                          }
+                                        },
+                                        "required": [
+                                          "from",
+                                          "to",
+                                          "source",
+                                          "proportionBps"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "description": "Details of each segment that 0x routes the swap through"
+                                    },
+                                    "tokens": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The token address. This is the unique identifier of the token"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                          }
+                                        },
+                                        "required": ["address", "symbol"],
+                                        "additionalProperties": false,
+                                        "description": "Properties of the tokens involved in the swap"
+                                      },
+                                      "description": "Properties of the tokens involved in the swap"
+                                    }
+                                  },
+                                  "required": ["fills", "tokens"],
+                                  "additionalProperties": false,
+                                  "description": "The forward route used to acquire at least the requested buy amount"
+                                },
+                                "refund": {
+                                  "type": "object",
+                                  "properties": {
+                                    "fills": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "from": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the input token"
+                                          },
+                                          "to": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The contract address of the output token"
+                                          },
+                                          "source": {
+                                            "type": "string",
+                                            "description": "The liquidity source used in the route"
+                                          },
+                                          "proportionBps": {
+                                            "allOf": [
+                                              {},
+                                              {
+                                                "type": "string",
+                                                "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                              }
+                                            ],
+                                            "description": "The proportion of the trade to be filled by the `source`"
+                                          }
+                                        },
+                                        "required": [
+                                          "from",
+                                          "to",
+                                          "source",
+                                          "proportionBps"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "description": "Details of each segment that 0x routes the swap through"
+                                    },
+                                    "tokens": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "address": {
+                                            "type": "string",
+                                            "pattern": "^0x[a-fA-F0-9]{40}$",
+                                            "description": "The token address. This is the unique identifier of the token"
+                                          },
+                                          "symbol": {
+                                            "type": "string",
+                                            "description": "The token symbol. This is not guaranteed to be unique, as multiple tokens can have the same symbol"
+                                          }
+                                        },
+                                        "required": ["address", "symbol"],
+                                        "additionalProperties": false,
+                                        "description": "Properties of the tokens involved in the swap"
+                                      },
+                                      "description": "Properties of the tokens involved in the swap"
+                                    }
+                                  },
+                                  "required": ["fills", "tokens"],
+                                  "additionalProperties": false,
+                                  "description": "The refund route used to convert buy-token surplus back to the sell token"
+                                }
+                              },
+                              "required": ["forward", "refund"],
+                              "additionalProperties": false,
+                              "description": "The exact-out forward and refund routes"
+                            },
+                            "maxSellAmount": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "description": "The maximum amount of `sellToken` that may be spent by the exact-out swap"
+                            },
+                            "sellToken": {
+                              "type": "string",
+                              "pattern": "^0x[a-fA-F0-9]{40}$",
+                              "description": "The contract address of the token to sell in the swap"
+                            },
+                            "tokenMetadata": {
+                              "type": "object",
+                              "properties": {
+                                "buyToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the buy token"
+                                },
+                                "sellToken": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The buy tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "sellTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The sell tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    },
+                                    "transferTaxBps": {
+                                      "allOf": [
+                                        {},
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                        }
+                                      ],
+                                      "nullable": true,
+                                      "description": "The transfer tax in bps of the token. Since each token could have arbitrary implementation, this field is best effort, meaning it would be set to `null` if the system is not able to determine the tax"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyTaxBps",
+                                    "sellTaxBps",
+                                    "transferTaxBps"
+                                  ],
+                                  "additionalProperties": false,
+                                  "description": "Swap-related metadata for the sell token"
+                                }
+                              },
+                              "required": ["buyToken", "sellToken"],
+                              "additionalProperties": false,
+                              "description": "Swap-related metadata for the buy and sell token in the swap"
+                            },
+                            "totalNetworkFee": {
+                              "allOf": [
+                                {},
+                                {
+                                  "type": "string",
+                                  "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                }
+                              ],
+                              "nullable": true,
+                              "description": "The estimated total network cost of the swap: the expected gas * `gasPrice`, plus the L1 data cost on chains that have one. `gas` is the transaction gas limit and can exceed the expected gas when the transaction carries a fallback route, so this can be less than `gas` * `gasPrice`."
+                            },
+                            "zid": {
+                              "type": "string",
+                              "description": "The unique ZeroEx identifier of the request"
+                            },
+                            "transaction": {
+                              "type": "object",
+                              "properties": {
+                                "to": {
+                                  "type": "string",
+                                  "pattern": "^0x[a-fA-F0-9]{40}$",
+                                  "description": "The address of the target contract to send call `data` to. Do NOT use this field when setting token allowances — doing so can result in lost funds. Always use `issues.allowance.spender` or `allowanceTarget` for setting allowances."
+                                },
+                                "data": {
+                                  "type": "string",
+                                  "description": "The calldata containing transaction execution details to be sent to the `to` address"
+                                },
+                                "gas": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "nullable": true,
+                                  "description": "The estimated gas limit that should be used to send the transaction to guarantee settlement"
+                                },
+                                "gasPrice": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "description": "The gas price (in wei) that should be used to send the transaction"
+                                },
+                                "value": {
+                                  "allOf": [
+                                    {},
+                                    {
+                                      "type": "string",
+                                      "pattern": "^[-+]?(0|[1-9]\\d*)(\\.\\d+)?$"
+                                    }
+                                  ],
+                                  "description": "The amount of ether (in wei) that should be sent with the transaction"
+                                }
+                              },
+                              "required": [
+                                "to",
+                                "data",
+                                "gas",
+                                "gasPrice",
+                                "value"
+                              ],
+                              "additionalProperties": false,
+                              "description": "This object contains the details required to submit the transaction"
+                            }
+                          },
+                          "required": [
+                            "allowanceTarget",
+                            "blockNumber",
+                            "buyAmount",
+                            "buyToken",
+                            "estimatedNetSellAmount",
+                            "fees",
+                            "issues",
+                            "liquidityAvailable",
+                            "mode",
+                            "routes",
+                            "maxSellAmount",
+                            "sellToken",
+                            "tokenMetadata",
+                            "totalNetworkFee",
+                            "zid",
+                            "transaction"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "liquidityAvailable": {
+                          "type": "boolean",
+                          "enum": [false],
+                          "description": "This validates the availability of liquidity for the quote requested. No other fields will be returned if it is `false`"
+                        },
+                        "zid": {
+                          "type": "string",
+                          "description": "The unique ZeroEx identifier of the request"
+                        }
+                      },
+                      "required": ["liquidityAvailable", "zid"],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "example": {
+                  "allowanceTarget": "0x000000000022d473030f116ddee9f6b43ac78ba3",
+                  "blockNumber": "20114692",
+                  "buyAmount": "100037537",
+                  "buyToken": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                  "fees": {
+                    "integratorFee": null,
+                    "zeroExFee": null,
+                    "gasFee": null
+                  },
+                  "issues": {
+                    "allowance": {
+                      "actual": "0",
+                      "spender": "0x0000000000001ff3684f28c67538d4d072c22734"
+                    },
+                    "balance": {
+                      "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                      "actual": "0",
+                      "expected": "100000000"
+                    },
+                    "simulationIncomplete": false,
+                    "invalidSourcesPassed": []
+                  },
+                  "liquidityAvailable": true,
+                  "mode": "exact-in",
+                  "minBuyAmount": "99037162",
+                  "route": {
+                    "fills": [
+                      {
+                        "from": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                        "to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "source": "SolidlyV3",
+                        "proportionBps": "10000"
+                      }
+                    ],
+                    "tokens": [
+                      {
+                        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                        "symbol": "USDC"
+                      },
+                      {
+                        "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+                        "symbol": "USDT"
+                      }
+                    ]
+                  },
+                  "sellAmount": "100000000",
+                  "sellToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+                  "tokenMetadata": {
+                    "buyToken": {
+                      "buyTaxBps": "0",
+                      "sellTaxBps": "0"
+                    },
+                    "sellToken": {
+                      "buyTaxBps": "0",
+                      "sellTaxBps": "0"
+                    }
+                  },
+                  "totalNetworkFee": "1393685870940000",
+                  "transaction": {
+                    "to": "0x7f6cee965959295cc64d0e6c00d99d6532d8e86b",
+                    "data": "0x1fff991f00000000000000000000000070a9f34f9b34c64957b9c401a97bfed35b95049e000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000000000000000000005e72fea00000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000144c1fb425e0000000000000000000000007f6cee965959295cc64d0e6c00d99d6532d8e86b000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000000000005f5e1000000000000000000000000000000000000006e898131631616b1779bad70bc17000000000000000000000000000000000000000000000000000000006670d06c00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000041ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016438c9c147000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb4800000000000000000000000000000000000000000000000000000000000027100000000000000000000000006146be494fee4c73540cb1c5f87536abf1452500000000000000000000000000000000000000000000000000000000000000004400000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000084c31b8d7a0000000000000000000000007f6cee965959295cc64d0e6c00d99d6532d8e86b00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000005f5e10000000000000000000000000000000000000000000000000000000001000276a40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                    "gas": "288079",
+                    "gasPrice": "4837860000",
+                    "value": "0"
+                  },
+                  "zid": "0x111111111111111111111111"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

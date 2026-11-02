@@ -18,9 +18,13 @@ import {
   getActivity,
   INFINITE_VALUE,
 } from "./utils/activities-utils"
-import type { Activity, ActivityDetail } from "./utils/activities-utils"
+import type {
+  Activity,
+  ActivityDetail,
+  ActivityDetails,
+} from "./utils/activities-utils"
 
-export type { Activity, ActivityDetail }
+export type { Activity, ActivityDetail, ActivityDetails }
 export { INFINITE_VALUE }
 export type Activities = {
   [address: string]: {

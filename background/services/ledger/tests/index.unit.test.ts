@@ -2,20 +2,29 @@ import { useFakeTimers, type SinonFakeTimers } from "sinon"
 import { ledgerUSBVendorId } from "@ledgerhq/devices"
 import hidFraming, { type ResponseAcc } from "@ledgerhq/devices/hid-framing"
 import LedgerService, {
+  type LedgerAccountSigner,
   READINESS_POLL_DURATION_MS,
   READINESS_POLL_FAST_INTERVAL_MS,
 } from ".."
 import { getOrCreateDB } from "../db"
 import { ETHEREUM } from "../../../constants"
+import { createTransactionRequest } from "../../../tests/factories"
 
 const PACKET_SIZE = 64
 const NANO_X_PRODUCT_ID = 0x4011
 const LEDGER_ADDRESS = "0x1111111111111111111111111111111111111111"
+const LEDGER_SIGNER: LedgerAccountSigner = {
+  type: "ledger",
+  deviceID: `LEDGER_NANO_X_${LEDGER_ADDRESS}`,
+  path: "44'/60'/0'/0/0",
+}
 
 const GET_APP_NAME = "b001"
 const GET_ADDRESS = "e002"
 const GET_APP_CONFIGURATION = "e006"
 const SIGN_PERSONAL_MESSAGE = "e008"
+const SIGN_TRANSACTION = "e004"
+const SIGN_EIP712_HASHED = "e00c"
 
 function statusWord(code: number): Buffer {
   const buffer = Buffer.alloc(2)
@@ -33,7 +42,7 @@ function lengthPrefixed(value: string): Buffer {
  * which app is open, like the real device.
  */
 function fakeLedger() {
-  const state = { locked: true, app: "BOLOS" }
+  const state = { locked: true, app: "BOLOS", blindSigning: true }
   /** The command (CLA and INS, in hex) of each APDU received, in order. */
   const commands: string[] = []
   const usbCalls: string[] = []
@@ -71,7 +80,27 @@ function fakeLedger() {
           statusWord(0x9000),
         ])
       case GET_APP_CONFIGURATION:
-        return Buffer.from([0x01, 1, 10, 3, 0x90, 0x00])
+        return Buffer.from([
+          state.blindSigning ? 0x01 : 0x00,
+          1,
+          10,
+          3,
+          0x90,
+          0x00,
+        ])
+      case SIGN_TRANSACTION:
+        // Only refusals are needed so far.
+        return statusWord(state.blindSigning ? 0x6d00 : 0x6a80)
+      case SIGN_EIP712_HASHED:
+        if (!state.blindSigning) {
+          return statusWord(0x6a80)
+        }
+        return Buffer.concat([
+          Buffer.from([27]),
+          Buffer.alloc(32, 0x11),
+          Buffer.alloc(32, 0x22),
+          statusWord(0x9000),
+        ])
       case SIGN_PERSONAL_MESSAGE:
         return Buffer.concat([
           Buffer.from([27]),
@@ -159,6 +188,15 @@ function fakeLedger() {
       return release
     },
   }
+}
+
+async function addLedgerAccount(ledgerId: string = LEDGER_SIGNER.deviceID) {
+  const db = await getOrCreateDB()
+  await db.addAccount({
+    ledgerId,
+    path: LEDGER_SIGNER.path,
+    address: LEDGER_ADDRESS,
+  })
 }
 
 function appNamePolls(commands: string[]): number {
@@ -354,12 +392,7 @@ describe("LedgerService readiness polling", () => {
   })
 
   it("serializes polls with signing", async () => {
-    const db = await getOrCreateDB()
-    await db.addAccount({
-      ledgerId: "unused",
-      path: "44'/60'/0'/0/0",
-      address: LEDGER_ADDRESS,
-    })
+    await addLedgerAccount()
 
     await ledgerService.onConnection(NANO_X_PRODUCT_ID)
     ledger.commands.length = 0
@@ -374,6 +407,7 @@ describe("LedgerService readiness polling", () => {
     const signature = ledgerService.signMessage(
       { address: LEDGER_ADDRESS, network: ETHEREUM },
       "0x1234",
+      LEDGER_SIGNER,
     )
     await clock.tickAsync(0)
     // Signing waits for the poll.
@@ -395,12 +429,7 @@ describe("LedgerService readiness polling", () => {
   })
 
   it("refuses to sign once the Ethereum app has been closed", async () => {
-    const db = await getOrCreateDB()
-    await db.addAccount({
-      ledgerId: "unused",
-      path: "44'/60'/0'/0/0",
-      address: LEDGER_ADDRESS,
-    })
+    await addLedgerAccount()
     ledger.state.locked = false
     ledger.state.app = "Ethereum"
     await ledgerService.onConnection(NANO_X_PRODUCT_ID)
@@ -408,12 +437,155 @@ describe("LedgerService readiness polling", () => {
 
     ledger.state.app = "BOLOS"
     const error = await ledgerService
-      .signMessage({ address: LEDGER_ADDRESS, network: ETHEREUM }, "0x1234")
+      .signMessage(
+        { address: LEDGER_ADDRESS, network: ETHEREUM },
+        "0x1234",
+        LEDGER_SIGNER,
+      )
       .catch((caught: unknown) => caught)
 
     expect(error).toMatchObject({
       message: expect.stringContaining("Ethereum app"),
     })
     expect(ledger.commands).not.toContain(SIGN_PERSONAL_MESSAGE)
+  })
+
+  async function signMessageOnReadyLedger(signer: LedgerAccountSigner) {
+    ledger.state.locked = false
+    ledger.state.app = "Ethereum"
+    await ledgerService.onConnection(NANO_X_PRODUCT_ID)
+    expect(emittedNames()).toContain("connected")
+
+    return ledgerService
+      .signMessage(
+        { address: LEDGER_ADDRESS, network: ETHEREUM },
+        "0x1234",
+        signer,
+      )
+      .catch((caught: unknown) => caught)
+  }
+
+  it("refuses to sign a message for an account on another Ledger", async () => {
+    await addLedgerAccount(
+      "LEDGER_NANO_X_0x2222222222222222222222222222222222222222",
+    )
+
+    const error = await signMessageOnReadyLedger({
+      ...LEDGER_SIGNER,
+      deviceID: "LEDGER_NANO_X_0x2222222222222222222222222222222222222222",
+    })
+
+    expect(error).toMatchObject({
+      message: "Cannot sign on wrong device attached!",
+    })
+    expect(ledger.commands).not.toContain(SIGN_PERSONAL_MESSAGE)
+  })
+
+  it("refuses to sign a message with a path the account doesn't have", async () => {
+    await addLedgerAccount()
+
+    const error = await signMessageOnReadyLedger({
+      ...LEDGER_SIGNER,
+      path: "44'/60'/0'/0/1",
+    })
+
+    expect(error).toMatchObject({ message: "Signing method mismatch!" })
+    expect(ledger.commands).not.toContain(SIGN_PERSONAL_MESSAGE)
+  })
+
+  describe("blind signing", () => {
+    const typedData = {
+      domain: { name: "Test", chainId: 1 },
+      types: { Test: [{ name: "contents", type: "string" }] },
+      primaryType: "Test",
+      message: { contents: "Hello" },
+    }
+
+    async function connectWithAccount() {
+      ledger.state.locked = false
+      ledger.state.app = "Ethereum"
+      await ledgerService.onConnection(NANO_X_PRODUCT_ID)
+      const deviceID = (await ledgerService.refreshConnectedLedger()) ?? ""
+      const path = "44'/60'/0'/0/0"
+      const db = await getOrCreateDB()
+      await db.addAccount({
+        ledgerId: deviceID,
+        path,
+        address: LEDGER_ADDRESS,
+      })
+      emitted.length = 0
+      ledger.commands.length = 0
+      return { type: "ledger" as const, deviceID, path }
+    }
+
+    it("re-reads the setting when the device refuses typed data without it", async () => {
+      const signer = await connectWithAccount()
+      ledger.state.blindSigning = false
+
+      const error = await ledgerService
+        .signTypedData(typedData, LEDGER_ADDRESS, signer)
+        .catch((caught: unknown) => caught)
+
+      expect(error).toMatchObject({ statusCode: 0x6a80 })
+      expect(ledger.commands).toEqual([
+        GET_APP_NAME,
+        SIGN_EIP712_HASHED,
+        GET_APP_CONFIGURATION,
+      ])
+      expect(emitted).toEqual([
+        {
+          name: "connected",
+          data: expect.objectContaining({
+            id: signer.deviceID,
+            metadata: expect.objectContaining({
+              isArbitraryDataSigningEnabled: false,
+            }),
+          }),
+        },
+      ])
+    })
+
+    it("re-reads the setting when the device refuses a transaction without it", async () => {
+      const signer = await connectWithAccount()
+      ledger.state.blindSigning = false
+
+      const error = await ledgerService
+        .signTransaction(
+          createTransactionRequest({
+            from: LEDGER_ADDRESS,
+            chainID: "1",
+            input: "0xa9059cbb",
+          }),
+          signer,
+        )
+        .catch((caught: unknown) => caught)
+
+      expect(error).toMatchObject({ name: "EthAppPleaseEnableContractData" })
+      expect(ledger.commands).toEqual([
+        GET_APP_NAME,
+        SIGN_TRANSACTION,
+        GET_APP_CONFIGURATION,
+      ])
+      expect(emitted).toEqual([
+        {
+          name: "connected",
+          data: expect.objectContaining({
+            metadata: expect.objectContaining({
+              isArbitraryDataSigningEnabled: false,
+            }),
+          }),
+        },
+      ])
+    })
+
+    it("doesn't re-read the setting after signing", async () => {
+      const signer = await connectWithAccount()
+
+      expect(
+        await ledgerService.signTypedData(typedData, LEDGER_ADDRESS, signer),
+      ).toMatch(/^0x(11){32}(22){32}1b$/)
+      expect(ledger.commands).toEqual([GET_APP_NAME, SIGN_EIP712_HASHED])
+      expect(emitted).toEqual([])
+    })
   })
 })

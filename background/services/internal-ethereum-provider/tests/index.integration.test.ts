@@ -20,13 +20,14 @@ describe("Internal Ethereum Provider Service", () => {
   let IEPService: InternalEthereumProviderService
 
   beforeEach(async () => {
-    sandbox.restore()
     IEPService = await createInternalEthereumProviderService()
     await IEPService.startService()
   })
 
   afterEach(async () => {
     await IEPService.stopService()
+    sandbox.restore()
+    jest.restoreAllMocks()
   })
 
   it("should correctly persist chains sent in via wallet_addEthereumChain", async () => {
@@ -60,9 +61,9 @@ describe("Internal Ethereum Provider Service", () => {
     await IEPService.routeSafeRPCRequest(method, EIP3085Params, origin)
 
     expect(
-      startedChainService.supportedNetworks.find(
-        (network: EVMNetwork) => network.name === "Fantom Opera",
-      ),
+      startedChainService
+        .getSupportedNetworks()
+        .find((network: EVMNetwork) => network.name === "Fantom Opera"),
     ).toBeTruthy()
   })
 

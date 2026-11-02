@@ -24,7 +24,10 @@ import logger from "@tallyho/tally-background/lib/logger"
 import { Redirect, useLocation } from "react-router-dom"
 import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { selectDefaultNetworkFeeSettings } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { selectSlippageTolerance } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectSlippageTolerance,
+  setSnackbarMessage,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { OPTIMISM, SECOND } from "@tallyho/tally-background/constants"
 
@@ -45,6 +48,7 @@ import SharedIcon from "../components/Shared/SharedIcon"
 import SharedBanner from "../components/Shared/SharedBanner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import ApproveQuoteBtn from "../components/Swap/ApproveQuoteButton"
+import SwapQuoteAmounts from "../components/Swap/SwapQuoteAmounts"
 import {
   useSwapQuote,
   getSellAssetAmounts,
@@ -328,8 +332,10 @@ export default function Swap(): ReactElement {
       buyAsset &&
       (sellAmount || buyAmount)
     ) {
-      const type = sellAmount ? "getBuyAmount" : "getSellAmount"
-      const amount = sellAmount || buyAmount
+      // Requote the side the user entered; the other side holds the quote.
+      const type =
+        quote?.type ?? (sellAmount ? "getBuyAmount" : "getSellAmount")
+      const amount = type === "getBuyAmount" ? sellAmount : buyAmount
 
       requestQuoteUpdate({
         type,
@@ -356,7 +362,12 @@ export default function Swap(): ReactElement {
     if (sellAsset && buyAsset && quote) {
       const finalQuote = await dispatch(fetchSwapQuote(quote.quoteRequest))
 
-      if (finalQuote?.liquidityAvailable) {
+      if ("failure" in finalQuote) {
+        dispatch(
+          setSnackbarMessage(t(`swap.error.quote.${finalQuote.failure}`)),
+        )
+        setIsLoading(false)
+      } else {
         const { transaction } = finalQuote
 
         await dispatch(
@@ -380,7 +391,7 @@ export default function Swap(): ReactElement {
         )
       }
     }
-  }, [dispatch, sellAsset, buyAsset, quote, currentNetwork.chainID])
+  }, [dispatch, t, sellAsset, buyAsset, quote, currentNetwork.chainID])
 
   if (!networkSupportsSwaps(currentNetwork.chainID)) {
     return <Redirect to="/" />
@@ -512,6 +523,18 @@ export default function Swap(): ReactElement {
                   message={t("swap.loadingQuote")}
                 />
               )}
+              {!loadingQuote &&
+                sellAsset &&
+                buyAsset &&
+                quoteAppliesToCurrentAssets &&
+                quoteAppliesToCurrentAmounts &&
+                quote?.amounts && (
+                  <SwapQuoteAmounts
+                    amounts={quote.amounts}
+                    sellSymbol={sellAsset.symbol}
+                    buySymbol={buyAsset.symbol}
+                  />
+                )}
             </div>
           </div>
           {isEnabled(FeatureFlags.SHOW_SWAP_REWARDS) ? (

@@ -71,6 +71,11 @@ export type EVMNetwork = Network & {
    * place of the bundled icons available for built-in networks.
    */
   iconUrl?: string
+  /**
+   * The lowercase address of the contract that wraps the base asset, such as
+   * WETH. Known for built-in networks.
+   */
+  wrappedBaseAssetAddress?: HexString
 }
 
 /**
@@ -409,6 +414,11 @@ export function toHexChainID(chainID: string | number): string {
     return chainID.toLowerCase()
   }
   return `0x${BigInt(chainID).toString(16)}`
+}
+
+/** A chain ID in the decimal form Taho stores, whatever form it came in. */
+export function toDecimalChainID(chainID: string | number): string {
+  return BigInt(toHexChainID(chainID)).toString()
 }
 
 export const sameChainID = (chainID: string, other: string): boolean =>

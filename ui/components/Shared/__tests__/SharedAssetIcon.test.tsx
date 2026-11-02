@@ -29,4 +29,18 @@ describe("SharedAssetIcon", () => {
     expect(ui.getByRole("img")).toBeVisible()
     expect(ui.getByText("?")).toBeVisible()
   })
+
+  test("should use the built-in icon for a trusted asset's symbol", () => {
+    const ui = render(<SharedAssetIcon size="small" symbol="ETH" logoURL="" />)
+
+    expect(ui.queryByText("E")).toBeNull()
+  })
+
+  test("should not let an untrusted asset borrow a built-in icon", () => {
+    const ui = render(
+      <SharedAssetIcon size="small" symbol="ETH" logoURL="" untrusted />,
+    )
+
+    expect(ui.getByText("E")).toBeVisible()
+  })
 })

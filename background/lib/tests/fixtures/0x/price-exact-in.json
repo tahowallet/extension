@@ -1,0 +1,59 @@
+{
+  "allowanceTarget": "0x0000000000001ff3684f28c67538d4d072c22734",
+  "blockNumber": "26257877",
+  "buyAmount": "239560120",
+  "buyToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "fees": {
+    "integratorFee": null,
+    "integratorFees": null,
+    "zeroExFee": {
+      "amount": "359882",
+      "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "type": "volume"
+    },
+    "gasFee": null
+  },
+  "issues": {
+    "allowance": null,
+    "balance": {
+      "token": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "actual": "36985941764277400",
+      "expected": "100000000000000000"
+    },
+    "simulationIncomplete": false,
+    "invalidSourcesPassed": []
+  },
+  "liquidityAvailable": true,
+  "minBuyAmount": "237164519",
+  "mode": "exact-in",
+  "route": {
+    "fills": [
+      {
+        "from": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "to": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "source": "Uniswap_V3",
+        "proportionBps": "10000"
+      }
+    ],
+    "tokens": [
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "symbol": "WETH"
+      },
+      {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "symbol": "USDC"
+      }
+    ]
+  },
+  "sellAmount": "100000000000000000",
+  "sellToken": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "tokenMetadata": {
+    "buyToken": { "buyTaxBps": "0", "sellTaxBps": "0", "transferTaxBps": "0" },
+    "sellToken": { "buyTaxBps": "0", "sellTaxBps": "0", "transferTaxBps": "0" }
+  },
+  "totalNetworkFee": "18071321791710",
+  "zid": "0x2857d3941b5b58ff7ec0baa1",
+  "gas": "286445",
+  "gasPrice": "63088278"
+}

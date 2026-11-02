@@ -7,14 +7,10 @@ import {
   TransportInterfaceNotAvailable,
 } from "@ledgerhq/errors"
 
-/**
- * The Ledger's WebUSB IN/OUT endpoint, as used by TransportWebUSB.
- */
 const LEDGER_ENDPOINT_NUMBER = 3
 
 /**
- * How many packets tagged with another transport's channel an exchange skips
- * before giving up, so a misbehaving device can't keep it reading forever.
+ * Keeps a misbehaving device from stalling an exchange with stale packets.
  */
 export const MAX_DISCARDED_PACKETS = 64
 
@@ -29,14 +25,9 @@ function isDisconnectError(error: unknown): boolean {
 }
 
 /**
- * A TransportWebUSB that never resets the device. The library resets the
- * Ledger when opening and closing a transport, but since Chromium's
- * "usb: Invalidate active configuration in UsbDeviceHandle upon ResetDevice"
- * (27cf6d8e7813, the kWebUsbResetInvalidatesConfiguration feature) a reset
- * drops the device's active configuration while Blink still reports it as
- * selected. selectConfiguration() is then skipped, claimInterface() fails
- * with "Unable to claim interface", and the reset's re-enumeration fires
- * another USB connect event that retries and fails the same way.
+ * A TransportWebUSB that never resets the device. Since Chromium 27cf6d8e7813
+ * (kWebUsbResetInvalidatesConfiguration), a reset unconfigures the device but
+ * leaves `device.configuration` set. Claiming the interface then fails.
  */
 class ResetlessTransportWebUSB extends TransportWebUSB {
   override async close(): Promise<void> {
@@ -46,13 +37,9 @@ class ResetlessTransportWebUSB extends TransportWebUSB {
   }
 
   /**
-   * Mirrors TransportWebUSB.exchange, but skips response packets tagged with
-   * a channel other than this transport's instead of failing with "Invalid
-   * channel". The reset this transport no longer does used to flush the
-   * device's IN endpoint; without it, a response left unread by an earlier
-   * transport (say, the extension reloaded mid-exchange) can still be queued
-   * ahead of this exchange's response, tagged with that transport's random
-   * channel.
+   * TransportWebUSB.exchange, but discards packets left on another channel by
+   * a previous transport instead of failing. Without a reset on open, a
+   * response left unread when the extension reloaded can still be queued.
    */
   override async exchange(apdu: Buffer): Promise<Buffer> {
     const response = await this.exchangeAtomicImpl(async () => {
@@ -60,8 +47,7 @@ class ResetlessTransportWebUSB extends TransportWebUSB {
       const framing = hidFraming(channel, packetSize)
 
       for (const block of framing.makeBlocks(apdu)) {
-        // Copied into a Uint8Array, which WebUSB's typings require to be
-        // backed by a plain ArrayBuffer.
+        // WebUSB's typings require a Uint8Array over a plain ArrayBuffer.
         await this.device.transferOut(
           LEDGER_ENDPOINT_NUMBER,
           new Uint8Array(block),
@@ -109,8 +95,7 @@ class ResetlessTransportWebUSB extends TransportWebUSB {
       throw error
     })
 
-    // hw-transport 6.28 types exchangeAtomicImpl as resolving to
-    // Buffer | void; it resolves to the Buffer returned above.
+    // exchangeAtomicImpl is typed as resolving to Buffer | void.
     if (!Buffer.isBuffer(response)) {
       throw new TransportError("Ledger exchange returned no response", "")
     }
@@ -120,10 +105,8 @@ class ResetlessTransportWebUSB extends TransportWebUSB {
 }
 
 /**
- * Opens a transport to the first paired Ledger, if any, the way
- * TransportWebUSB.openConnected does but without resetting the device. The
- * library's per-transport USB disconnect listener is also left out;
- * LedgerService handles disconnects through its own navigator.usb listeners.
+ * TransportWebUSB.openConnected without the device reset. It also leaves out
+ * the library's disconnect listener; LedgerService listens for disconnects.
  */
 export default async function openConnectedLedgerTransport(): Promise<TransportWebUSB | null> {
   const [device] = (await navigator.usb.getDevices()).filter(

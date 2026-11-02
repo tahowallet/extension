@@ -2,22 +2,16 @@ import { JsonRpcProvider } from "@ethersproject/providers"
 import Sinon, * as sinon from "sinon"
 import { ETHEREUM } from "../../../constants"
 import SerialFallbackProvider from "../serial-fallback-provider"
+import { PRIMARY_RECOVERY_INTERVAL_MS } from "../rpc/endpoint-pool"
 
 const sandbox = sinon.createSandbox()
 
 /**
- * Runs one of the periodic reconnect passes the constructor's interval timer
- * drives, without waiting out the interval.
+ * Fakes the timers a pool uses to drop back to its primary endpoint, so a
+ * test can run that recovery without waiting it out.
  */
-const runReconnectPass = async (
-  provider: SerialFallbackProvider,
-  pass:
-    | "attemptToReconnectToPrimaryCustomProvider"
-    | "attemptToReconnectToPrimaryCapabilityProviders",
-): Promise<void> =>
-  // Accessing a private method
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (provider as any)[pass]()
+const fakeRecoveryTimers = () =>
+  sandbox.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
 
 const stubProvider = (url: string, send: Sinon.SinonStub): JsonRpcProvider => {
   const provider = new JsonRpcProvider(url)
@@ -39,6 +33,7 @@ describe("SerialFallbackProvider provider reuse", () => {
   })
 
   it("creates each custom endpoint's provider once across repeated failovers", async () => {
+    const clock = fakeRecoveryTimers()
     const primaryCustom = stubProvider(
       "http://custom-primary.example",
       sandbox.stub().rejects(new Error("bad response")),
@@ -51,9 +46,13 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackCustom)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: primaryCreator },
-      { type: "custom", supportedMethods: [], creator: fallbackCreator },
+      { kind: "standard", createTransport: () => genericProvider },
+      { kind: "method-specific", methods: [], createTransport: primaryCreator },
+      {
+        kind: "method-specific",
+        methods: [],
+        createTransport: fallbackCreator,
+      },
     ])
 
     await expect(
@@ -65,10 +64,7 @@ describe("SerialFallbackProvider provider reuse", () => {
 
     // Drop back to the primary custom endpoint the way the periodic reconnect
     // does, then fail over to the fallback again.
-    await runReconnectPass(
-      provider,
-      "attemptToReconnectToPrimaryCustomProvider",
-    )
+    await clock.tickAsync(PRIMARY_RECOVERY_INTERVAL_MS)
 
     await expect(
       provider.send("eth_getBlockByNumber", ["0x2", false]),
@@ -81,6 +77,7 @@ describe("SerialFallbackProvider provider reuse", () => {
   })
 
   it("creates each capability endpoint's provider once across repeated failovers", async () => {
+    const clock = fakeRecoveryTimers()
     const primaryAlchemy = stubProvider(
       "http://alchemy-primary.example",
       sandbox.stub().rejects(new Error("bad response")),
@@ -93,16 +90,16 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackAlchemy)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: primaryCreator,
+        createTransport: primaryCreator,
       },
       {
-        type: "generic",
+        kind: "standard",
         capabilities: ["alchemy_"],
-        creator: fallbackCreator,
+        createTransport: fallbackCreator,
       },
     ])
 
@@ -113,10 +110,7 @@ describe("SerialFallbackProvider provider reuse", () => {
     expect(primaryCreator.callCount).toEqual(1)
     expect(fallbackCreator.callCount).toEqual(1)
 
-    await runReconnectPass(
-      provider,
-      "attemptToReconnectToPrimaryCapabilityProviders",
-    )
+    await clock.tickAsync(PRIMARY_RECOVERY_INTERVAL_MS)
 
     await expect(
       provider.send("alchemy_getAssetTransfers", [{ fromBlock: "0x2" }]),
@@ -139,20 +133,48 @@ describe("SerialFallbackProvider provider reuse", () => {
     const secondCreator = sandbox.stub().returns(secondCustom)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: firstCreator },
+      { kind: "standard", createTransport: () => genericProvider },
+      { kind: "method-specific", methods: [], createTransport: firstCreator },
     ])
 
     const teardown = sandbox.spy(firstCustom, "removeAllListeners")
 
-    provider.addCustomProviders([
-      { type: "custom", supportedMethods: [], creator: secondCreator },
+    provider.setMethodSpecificEndpoints([
+      { kind: "method-specific", methods: [], createTransport: secondCreator },
     ])
 
     // The provider cached for the old list is torn down rather than left
     // holding a connection nothing will use again.
     expect(teardown.called).toBe(true)
     expect(secondCreator.callCount).toEqual(1)
+  })
+
+  it("lets go of its lifecycle signal when method-specific endpoints are replaced", () => {
+    const adds = sandbox.spy(AbortSignal.prototype, "addEventListener")
+    const removes = sandbox.spy(AbortSignal.prototype, "removeEventListener")
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { kind: "standard", createTransport: () => genericProvider },
+    ])
+    const replace = () =>
+      provider.setMethodSpecificEndpoints([
+        {
+          kind: "method-specific",
+          methods: [],
+          createTransport: () =>
+            stubProvider("http://custom.example", sandbox.stub()),
+        },
+      ])
+    const abortListeners = () =>
+      adds.args.filter(([type]) => type === "abort").length -
+      removes.args.filter(([type]) => type === "abort").length
+
+    replace()
+    const afterOne = abortListeners()
+    replace()
+    replace()
+    replace()
+
+    expect(abortListeners()).toBe(afterOne)
   })
 
   it("stops its periodic timers and drops listeners when destroyed", () => {
@@ -166,8 +188,12 @@ describe("SerialFallbackProvider provider reuse", () => {
     )
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
-      { type: "custom", supportedMethods: [], creator: () => customProvider },
+      { kind: "standard", createTransport: () => genericProvider },
+      {
+        kind: "method-specific",
+        methods: [],
+        createTransport: () => customProvider,
+      },
     ])
 
     const genericTeardown = sandbox.spy(genericProvider, "removeAllListeners")
@@ -185,7 +211,7 @@ describe("SerialFallbackProvider provider reuse", () => {
 
   it("constructs nothing new once destroyed, even when an in-flight request fails", async () => {
     // A request already in flight when the provider is retired must not walk
-    // the reconnect path into a creator: that would open a fresh connection to
+    // the reconnect path into a createTransport: that would open a fresh connection to
     // an endpoint the user has just removed, and keep it open for good.
     let releaseFirstCall: (error: Error) => void = () => {}
     const primarySend = sandbox.stub().callsFake(
@@ -203,8 +229,8 @@ describe("SerialFallbackProvider provider reuse", () => {
     const fallbackCreator = sandbox.stub().returns(fallbackProvider)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: primaryCreator },
-      { type: "generic", creator: fallbackCreator },
+      { kind: "standard", createTransport: primaryCreator },
+      { kind: "standard", createTransport: fallbackCreator },
     ])
 
     // The constructor builds the first provider eagerly; nothing else has
@@ -217,16 +243,37 @@ describe("SerialFallbackProvider provider reuse", () => {
     provider.destroy()
     releaseFirstCall(new Error("bad response"))
 
-    await expect(inFlight).rejects.toThrow("bad response")
+    await expect(inFlight).rejects.toThrow("has been destroyed")
 
     // No failover, no reconnect, no new connection to either endpoint.
     expect(fallbackCreator.callCount).toEqual(0)
     expect(primaryCreator.callCount).toEqual(1)
   })
 
+  it("rejects a request in flight with the destroyed error", async () => {
+    genericSendStub.returns(new Promise(() => {}))
+    const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
+      { kind: "standard", createTransport: () => genericProvider },
+    ])
+
+    const inFlight = provider.send("eth_getBalance", ["0xDeadBeef", "latest"])
+    provider.destroy()
+
+    await expect(inFlight).rejects.toThrow("has been destroyed")
+  })
+
+  it("says so when it has no endpoints to walk", () => {
+    expect(
+      () =>
+        new SerialFallbackProvider(ETHEREUM.chainID, [
+          { kind: "method-specific", createTransport: () => genericProvider },
+        ]),
+    ).toThrow("No RPC endpoints to build a provider for chain 1")
+  })
+
   it("rejects new requests once destroyed rather than reconnecting", async () => {
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
     ])
 
     provider.destroy()
@@ -247,13 +294,13 @@ describe("SerialFallbackProvider provider reuse", () => {
     const customCreator = sandbox.stub().returns(customProvider)
 
     const provider = new SerialFallbackProvider(ETHEREUM.chainID, [
-      { type: "generic", creator: () => genericProvider },
+      { kind: "standard", createTransport: () => genericProvider },
     ])
 
     provider.destroy()
 
-    provider.addCustomProviders([
-      { type: "custom", supportedMethods: [], creator: customCreator },
+    provider.setMethodSpecificEndpoints([
+      { kind: "method-specific", methods: [], createTransport: customCreator },
     ])
 
     expect(customCreator.called).toBe(false)
