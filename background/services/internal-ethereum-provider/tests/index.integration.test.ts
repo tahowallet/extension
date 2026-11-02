@@ -20,13 +20,14 @@ describe("Internal Ethereum Provider Service", () => {
   let IEPService: InternalEthereumProviderService
 
   beforeEach(async () => {
-    sandbox.restore()
     IEPService = await createInternalEthereumProviderService()
     await IEPService.startService()
   })
 
   afterEach(async () => {
     await IEPService.stopService()
+    sandbox.restore()
+    jest.restoreAllMocks()
   })
 
   it("should correctly persist chains sent in via wallet_addEthereumChain", async () => {

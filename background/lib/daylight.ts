@@ -84,6 +84,7 @@ export const getDaylightAbilities = async (
   address: string,
   // Amount of times to retry fetching abilities for an address that is not fully synced yet.
   retries = DEFAULT_RETRIES,
+  fetch: typeof fetchJson = fetchJson,
 ): Promise<DaylightAbility[]> => {
   // Learn more at https://docs.daylight.xyz/reference/get_v1-wallets-address-abilities
   const requestURL = new URL(
@@ -101,7 +102,7 @@ export const getDaylightAbilities = async (
   requestURL.searchParams.set("markAsShown", "true")
 
   try {
-    const response: AbilitiesResponse = await fetchJson({
+    const response: AbilitiesResponse = await fetch({
       url: requestURL.toString(),
       ...(process.env.DAYLIGHT_API_KEY && {
         headers: {
@@ -111,7 +112,7 @@ export const getDaylightAbilities = async (
     })
 
     if (retries > 0 && response.status === "pending") {
-      return await getDaylightAbilities(address, retries - 1)
+      return await getDaylightAbilities(address, retries - 1, fetch)
     }
 
     return response.abilities

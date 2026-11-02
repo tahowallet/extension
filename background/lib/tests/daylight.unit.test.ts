@@ -1,29 +1,18 @@
 import { mock, describe, it, expect } from "bun:test"
-
-const fetchJsonMock = mock((..._args: unknown[]): Promise<unknown> =>
-  Promise.resolve(),
-)
-mock.module("@ethersproject/web", () => {
-  const actual = require("@ethersproject/web")
-  fetchJsonMock.mockImplementation(actual.fetchJson)
-  return { ...actual, fetchJson: fetchJsonMock }
-})
-
 import * as daylight from "../daylight"
 
 describe("Daylight", () => {
   describe("getDaylightAbilities", () => {
     it("Should retry the correct number of times if response status is 'pending'", async () => {
-      const fetchJsonResponse = {
+      const fetchJsonMock = mock(async () => ({
         abilities: [],
         status: "pending",
-      }
-
-      fetchJsonMock.mockResolvedValue(fetchJsonResponse)
+      }))
 
       await daylight.getDaylightAbilities(
         "0x208e94d5661a73360d9387d3ca169e5c130090cd",
         5,
+        fetchJsonMock,
       )
 
       expect(fetchJsonMock).toHaveBeenCalledTimes(6)
