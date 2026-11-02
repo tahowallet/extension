@@ -156,8 +156,9 @@ export function isProbablyEVMAddress(str: string): boolean {
   return false
 }
 
-export function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}…${address.slice(-5)}`
+/** Shorten an address to its "0x" and four characters, and its last `tailLength`. */
+export function truncateAddress(address: string, tailLength = 5): string {
+  return `${address.slice(0, 6)}…${address.slice(-tailLength)}`
 }
 
 export const getNumericStringValueFromBigNumber = (

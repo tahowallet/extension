@@ -21,6 +21,7 @@ import styles from "./styles"
 import SharedIconRouterLink from "../../Shared/SharedIconRouterLink"
 import { useBackgroundSelector } from "../../../hooks"
 import { trimWithEllipsis } from "../../../utils/textUtils"
+import { displayAssetAmount } from "../../../utils/amounts"
 import SharedTooltip from "../../Shared/SharedTooltip"
 import AssetVerifyToggler from "../UnverifiedAsset/AssetVerifyToggler"
 
@@ -58,6 +59,7 @@ export default function CommonAssetListItem(
     : undefined
 
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
+  const amount = displayAssetAmount(assetAmount)
 
   const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault()
@@ -90,10 +92,18 @@ export default function CommonAssetListItem(
           />
           <div className="asset_left_content">
             <div className="asset_amount">
-              <span className="bold_amount_count" data-testid="asset_amount">
-                {assetAmount.localizedDecimalAmount}
+              <span
+                className="bold_amount_count"
+                data-testid="asset_amount"
+                title={amount.title}
+              >
+                {amount.text}
               </span>
-              <span title={assetAmount.asset.symbol} data-testid="asset_symbol">
+              <span
+                className="asset_symbol"
+                title={assetAmount.asset.symbol}
+                data-testid="asset_symbol"
+              >
                 {trimWithEllipsis(assetAmount.asset.symbol, MAX_SYMBOL_LENGTH)}
               </span>
             </div>

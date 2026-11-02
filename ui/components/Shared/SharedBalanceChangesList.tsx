@@ -5,6 +5,7 @@ import SharedAddress from "./SharedAddress"
 import SharedAssetIcon from "./SharedAssetIcon"
 import SharedIcon from "./SharedIcon"
 import SharedTooltip from "./SharedTooltip"
+import { displayAmount } from "../../utils/amounts"
 
 type SharedBalanceChangesListProps = {
   label: string
@@ -35,67 +36,77 @@ export default function SharedBalanceChangesList({
         ) : (
           <div className="simulated_changes_label">{label}</div>
         )}
-        {transfers.map((transfer, index) => (
-          <div
-            // Transfers carry no stable id, and the same asset can move more
-            // than once in a single transaction.
-            // eslint-disable-next-line react/no-array-index-key
-            key={`${transfer.assetSymbol}-${index}`}
-            className="simulated_changes_row"
-          >
-            <div className="simulated_changes_asset">
-              <SharedAssetIcon
-                size={24}
-                logoURL={transfer.assetLogoUrl ?? ""}
-                symbol={transfer.assetSymbol}
-                untrusted={transfer.untrackedAsset}
-              />
-              <span
-                className={`simulated_changes_amount ${transfer.direction}`}
-              >
-                {transfer.direction === "in" ? "+" : "-"}
-                {transfer.localizedDecimalAmount}
-              </span>
-              <span
-                className="simulated_changes_symbol"
-                title={transfer.assetSymbol}
-              >
-                {transfer.assetSymbol}
-              </span>
-              {transfer.untrackedAsset && (
-                <SharedTooltip
-                  width={200}
-                  verticalPosition="top"
-                  // Centered: opening rightward runs past the popup's edge.
-                  horizontalPosition="center"
-                  style={{ margin: "-5px 0", flexShrink: 0 }}
-                  IconComponent={() => (
-                    <SharedIcon
-                      icon="icons/s/notif-attention.svg"
-                      // Sized to the 14px row text it sits in.
-                      width={14}
-                      color="var(--attention)"
-                      ariaLabel={t("untrackedToken")}
-                    />
-                  )}
+        {transfers.map((transfer, index) => {
+          const amount =
+            transfer.fixedPointAmount === undefined
+              ? { text: transfer.localizedDecimalAmount }
+              : displayAmount(
+                  transfer.fixedPointAmount,
+                  transfer.localizedDecimalAmount,
+                )
+          return (
+            <div
+              // Transfers carry no stable id, and the same asset can move more
+              // than once in a single transaction.
+              // eslint-disable-next-line react/no-array-index-key
+              key={`${transfer.assetSymbol}-${index}`}
+              className="simulated_changes_row"
+            >
+              <div className="simulated_changes_asset">
+                <SharedAssetIcon
+                  size={24}
+                  logoURL={transfer.assetLogoUrl ?? ""}
+                  symbol={transfer.assetSymbol}
+                  untrusted={transfer.untrackedAsset}
+                />
+                <span
+                  className={`simulated_changes_amount ${transfer.direction}`}
+                  title={amount.title}
                 >
-                  {t("untrackedTokenExplanation")}
-                </SharedTooltip>
-              )}
+                  {transfer.direction === "in" ? "+" : "-"}
+                  {amount.text}
+                </span>
+                <span
+                  className="simulated_changes_symbol"
+                  title={transfer.assetSymbol}
+                >
+                  {transfer.assetSymbol}
+                </span>
+                {transfer.untrackedAsset && (
+                  <SharedTooltip
+                    width={200}
+                    verticalPosition="top"
+                    // Centered: opening rightward runs past the popup's edge.
+                    horizontalPosition="center"
+                    style={{ margin: "-5px 0", flexShrink: 0 }}
+                    IconComponent={() => (
+                      <SharedIcon
+                        icon="icons/s/notif-attention.svg"
+                        // Sized to the 14px row text it sits in.
+                        width={14}
+                        color="var(--attention)"
+                        ariaLabel={t("untrackedToken")}
+                      />
+                    )}
+                  >
+                    {t("untrackedTokenExplanation")}
+                  </SharedTooltip>
+                )}
+              </div>
+              <div className="simulated_changes_counterparty">
+                {transfer.direction === "in"
+                  ? t("balanceChangeFrom")
+                  : t("balanceChangeTo")}
+                <SharedAddress
+                  address={transfer.counterparty.address}
+                  name={transfer.counterparty.name}
+                  nameResolverSystem={transfer.counterparty.nameResolverSystem}
+                  compact
+                />
+              </div>
             </div>
-            <div className="simulated_changes_counterparty">
-              {transfer.direction === "in"
-                ? t("balanceChangeFrom")
-                : t("balanceChangeTo")}
-              <SharedAddress
-                address={transfer.counterparty.address}
-                name={transfer.counterparty.name}
-                nameResolverSystem={transfer.counterparty.nameResolverSystem}
-                compact
-              />
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <style jsx>{`
         .simulated_changes {
