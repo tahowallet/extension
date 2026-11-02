@@ -3,7 +3,11 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { addOrEditAddressName } from "@tallyho/tally-background/redux-slices/accounts"
 import { useDispatch } from "react-redux"
 import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { selectNameApplicableNetworks } from "@tallyho/tally-background/redux-slices/selectors"
+import type { AddressBookUpdateResult } from "@tallyho/tally-background/redux-slices/address-book"
 import { useTranslation } from "react-i18next"
+import { useBackgroundSelector } from "../../hooks"
+import SharedNetworkIconStack from "../Shared/SharedNetworkIconStack"
 import SharedButton from "../Shared/SharedButton"
 import SharedAccountItemSummary from "../Shared/SharedAccountItemSummary"
 import AccountItemActionHeader from "./AccountItemActionHeader"
@@ -23,6 +27,12 @@ export default function AccountItemEditName({
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem",
   })
+  const { t: tAddressBook } = useTranslation("translation", {
+    keyPrefix: "addressBook",
+  })
+  const applicableNetworks = useBackgroundSelector((state) =>
+    selectNameApplicableNetworks(state, addressOnNetwork),
+  )
   const dispatch = useDispatch()
   const [newName, setNewName] = useState("")
   const [error, setError] = useState("")
@@ -37,7 +47,7 @@ export default function AccountItemEditName({
   }, [newName, error, touched, t])
 
   const onSubmit = useCallback(
-    (
+    async (
       event:
         | React.FormEvent<HTMLFormElement>
         | React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -51,15 +61,23 @@ export default function AccountItemEditName({
       if (error) {
         return
       }
-      dispatch(
+      const result = (await dispatch(
         addOrEditAddressName({
           ...addressOnNetwork,
           name: newName,
         }),
-      )
+      )) as unknown as AddressBookUpdateResult | undefined
+      if (result !== undefined && !result.success) {
+        setError(
+          result.error === "duplicate-name"
+            ? tAddressBook("duplicateNameError")
+            : t("noNameError"),
+        )
+        return
+      }
       close()
     },
-    [addressOnNetwork, close, dispatch, error, newName, t],
+    [addressOnNetwork, close, dispatch, error, newName, t, tAddressBook],
   )
 
   return (
@@ -93,6 +111,13 @@ export default function AccountItemEditName({
             }}
           />
         </form>
+        <div className="applies_on" title={tAddressBook("appliesOnExplainer")}>
+          <span>{tAddressBook("appliesOnLabel")}</span>
+          <SharedNetworkIconStack
+            networks={applicableNetworks}
+            tooltipVerticalPosition="top"
+          />
+        </div>
       </div>
       <div className="button_container">
         <SharedButton
@@ -132,8 +157,18 @@ export default function AccountItemEditName({
           font-size: 16px;
           margin-top: 21px;
         }
+        .applies_on {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-top: 8px;
+          color: var(--green-40);
+          font-size: 14px;
+          line-height: 20px;
+        }
         .button_container {
-          margin-top: 52px;
+          margin-top: 24px;
           display: flex;
           flex-direction: row;
           justify-content: space-between;
