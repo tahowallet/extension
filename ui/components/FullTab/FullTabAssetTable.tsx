@@ -77,7 +77,7 @@ export default function FullTabAssetTable({
         <tr>
           {renderLeading && <th className="leading">{leadingHeader}</th>}
           <th>{t("asset")}</th>
-          <th className="numeric">{t("price")}</th>
+          <th className="numeric price">{t("price")}</th>
           <th className="numeric">{t("balance")}</th>
           <th className="numeric">{t("value")}</th>
           {renderActions && (
@@ -117,7 +117,7 @@ export default function FullTabAssetTable({
                   </div>
                 </div>
               </td>
-              <td className="numeric">
+              <td className="numeric price">
                 {untrusted ? (
                   <span className="muted">—</span>
                 ) : (
@@ -236,6 +236,19 @@ export default function FullTabAssetTable({
         }
         th.actions {
           width: 200px;
+        }
+        /* In narrow windows, the unit price column is hidden and the other
+           numeric columns widen to take its space. */
+        @media (max-width: 1180px) {
+          .price {
+            display: none;
+          }
+          th.numeric {
+            width: 22%;
+          }
+          th.actions {
+            width: 104px;
+          }
         }
         .actions {
           white-space: nowrap;
