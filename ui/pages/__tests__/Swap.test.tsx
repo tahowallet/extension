@@ -42,6 +42,7 @@ const renderSwap = (
     {
       preloadedState: {
         account: {
+          controlCompatibility: {},
           accountsData: {
             evm: {
               [POLYGON.chainID]: {

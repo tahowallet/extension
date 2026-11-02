@@ -2,6 +2,7 @@ import sinon from "sinon"
 import { Wallet } from "ethers"
 import {
   createAddressOnNetwork,
+  createChainService,
   createInternalSignerService,
   createLedgerService,
   createNameService,
@@ -9,7 +10,7 @@ import {
   createSigningService,
 } from "../../../tests/factories"
 import { ETHEREUM, OPTIMISM } from "../../../constants"
-import type { NameOnNetwork } from "../../../accounts"
+import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import type { EVMNetwork } from "../../../networks"
 import type { HexString } from "../../../types"
 import type { ResolvedAddressRecord } from "../../name"
@@ -19,9 +20,10 @@ import {
   type PrivateKey,
   SignerInternalTypes,
 } from "../../internal-signer"
+import type ChainService from "../../chain"
 import type LedgerService from "../../ledger"
 import type NameService from "../../name"
-import SigningService from "../index"
+import SigningService, { type ControlCompatibility } from "../index"
 import { SigningDatabase } from "../db"
 
 describe("Signing Service Unit", () => {
@@ -226,6 +228,200 @@ describe("Signing Service Unit", () => {
       expect(await signingService.getSignersForAddress(ledgerAddress)).toEqual([
         { type: "ledger", deviceID: "ledger-id", path: "m/44'/60'/0'/0/0" },
       ])
+    })
+  })
+
+  describe("control compatibility map", () => {
+    let internalSignerService: InternalSignerService
+    let chainService: ChainService
+    let trackedAccounts: AddressOnNetwork[]
+
+    const keyringAddress = createRandomAddress()
+    const otherAddress = createRandomAddress()
+    const singleNetworkAddress = createRandomAddress()
+    const keyring: Keyring = {
+      type: SignerInternalTypes.mnemonicBIP39S256,
+      id: "keyring-id",
+      path: "m/44'/60'/0'/0",
+      addresses: [keyringAddress],
+    }
+
+    // Keyring-controlled on both networks; the other address has no signer;
+    // the single-network address is tracked on Ethereum only.
+    const expectedMap: ControlCompatibility = {
+      [keyringAddress]: {
+        [ETHEREUM.chainID]: [OPTIMISM.chainID],
+        [OPTIMISM.chainID]: [ETHEREUM.chainID],
+      },
+      [otherAddress]: {
+        [ETHEREUM.chainID]: [],
+        [OPTIMISM.chainID]: [],
+      },
+      [singleNetworkAddress]: {
+        [ETHEREUM.chainID]: [],
+      },
+    }
+
+    const createTrackingService = async () =>
+      createSigningService({
+        internalSignerService: Promise.resolve(internalSignerService),
+        chainService: Promise.resolve(chainService),
+      })
+
+    beforeEach(async () => {
+      internalSignerService = await createInternalSignerService()
+      sandbox.stub(internalSignerService, "locked").returns(false)
+      chainService = await createChainService({
+        internalSignerService: Promise.resolve(internalSignerService),
+      })
+      trackedAccounts = [
+        { address: keyringAddress, network: ETHEREUM },
+        { address: keyringAddress, network: OPTIMISM },
+        { address: otherAddress, network: ETHEREUM },
+        { address: otherAddress, network: OPTIMISM },
+        { address: singleNetworkAddress, network: ETHEREUM },
+      ]
+      sandbox
+        .stub(chainService, "getAccountsToTrack")
+        .callsFake(async () => trackedAccounts)
+
+      signingService = await createTrackingService()
+      await internalSignerService.emitter.emit("internalSigners", {
+        privateKeys: [],
+        keyrings: [keyring],
+        metadata: {},
+      })
+
+      // Wait for the startup computation so each test starts from a settled
+      // service.
+      const started = signingService.emitter.once("controlCompatibility")
+      await signingService.startService()
+      await started
+    })
+
+    it("maps each tracked address and network to the networks it is compatible with", async () => {
+      expect(await signingService.getControlCompatibility()).toEqual(
+        expectedMap,
+      )
+    })
+
+    it("groups tracked networks by address regardless of checksum casing", async () => {
+      trackedAccounts = [
+        { address: keyringAddress, network: ETHEREUM },
+        {
+          address: keyringAddress
+            .toUpperCase()
+            .replace("0X", "0x") as HexString,
+          network: OPTIMISM,
+        },
+      ]
+
+      expect(await signingService.getControlCompatibility()).toEqual({
+        [keyringAddress]: {
+          [ETHEREUM.chainID]: [OPTIMISM.chainID],
+          [OPTIMISM.chainID]: [ETHEREUM.chainID],
+        },
+      })
+    })
+
+    it("reads each address's signers once, not once per network pair", async () => {
+      const getSignersSpy = sandbox.spy(signingService, "getSignersForAddress")
+
+      await signingService.getControlCompatibility()
+
+      // Three tracked addresses, each on one or two networks.
+      expect(getSignersSpy.callCount).toBe(3)
+    })
+
+    it("emits the map once the service starts", async () => {
+      signingService = await createTrackingService()
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await signingService.startService()
+
+      expect(await emitted).toEqual(expectedMap)
+    })
+
+    it("recomputes when an account is tracked on another network", async () => {
+      trackedAccounts = [
+        ...trackedAccounts,
+        { address: singleNetworkAddress, network: OPTIMISM },
+      ]
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await chainService.emitter.emit("newAccountToTrack", {
+        address: singleNetworkAddress,
+        network: OPTIMISM,
+      })
+
+      expect(await emitted).toEqual({
+        ...expectedMap,
+        [singleNetworkAddress]: {
+          [ETHEREUM.chainID]: [],
+          [OPTIMISM.chainID]: [],
+        },
+      })
+    })
+
+    it("recomputes when a network is subscribed", async () => {
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await chainService.emitter.emit("networkSubscribed", ETHEREUM)
+
+      expect(await emitted).toEqual(expectedMap)
+    })
+
+    it("recomputes when an account is removed", async () => {
+      trackedAccounts = trackedAccounts.filter(
+        ({ address }) => address !== otherAddress,
+      )
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await signingService.removeAccount(otherAddress)
+
+      const { [otherAddress]: _, ...withoutOther } = expectedMap
+      expect(await emitted).toEqual(withoutOther)
+    })
+
+    it("recomputes when the internal signers change", async () => {
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await internalSignerService.emitter.emit("internalSigners", {
+        privateKeys: [],
+        keyrings: [],
+        metadata: {},
+      })
+
+      expect(await emitted).toEqual({
+        ...expectedMap,
+        [keyringAddress]: {
+          [ETHEREUM.chainID]: [],
+          [OPTIMISM.chainID]: [],
+        },
+      })
+    })
+
+    it("coalesces a burst of triggers into one computation", async () => {
+      const computeSpy = sandbox.spy(signingService, "getControlCompatibility")
+      const emitted = signingService.emitter.once("controlCompatibility")
+
+      await Promise.all([
+        chainService.emitter.emit("newAccountToTrack", {
+          address: otherAddress,
+          network: ETHEREUM,
+        }),
+        chainService.emitter.emit("newAccountToTrack", {
+          address: otherAddress,
+          network: OPTIMISM,
+        }),
+        chainService.emitter.emit("networkSubscribed", ETHEREUM),
+      ])
+      await emitted
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10)
+      })
+
+      expect(computeSpy.callCount).toBe(1)
     })
   })
 

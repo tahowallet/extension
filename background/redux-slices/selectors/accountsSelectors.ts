@@ -265,6 +265,7 @@ const computeCombinedAssetAmountsData = (
 }
 
 const getAccountState = (state: RootState) => state.account
+
 const getCurrentAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
   return state.account.accountsData.evm[network.chainID]?.[
@@ -272,6 +273,29 @@ const getCurrentAccountState = (state: RootState) => {
   ]
 }
 export const getPricesState = (state: RootState): PricesState => state.prices
+
+/**
+ * Returns true if `addressOnNetwork` is known to be control-compatible with
+ * `otherNetwork`, per the control compatibility map the signing service
+ * computes. The same network is always compatible. Compatibility that isn't
+ * known is reported as false. See RFB 5.
+ */
+export const selectIsAddressControlCompatible = (
+  state: RootState,
+  addressOnNetwork: AddressOnNetwork,
+  otherNetwork: EVMNetwork,
+): boolean => {
+  if (sameNetwork(addressOnNetwork.network, otherNetwork)) {
+    return true
+  }
+
+  const compatibleChainIDs =
+    getAccountState(state).controlCompatibility[
+      normalizeEVMAddress(addressOnNetwork.address)
+    ]?.[addressOnNetwork.network.chainID]
+
+  return compatibleChainIDs?.includes(otherNetwork.chainID) ?? false
+}
 
 /**
  * Computes the combined asset amounts across all accounts and non-test

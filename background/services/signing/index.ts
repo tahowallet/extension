@@ -49,10 +49,20 @@ export type SignatureResponse =
     }
   | ErrorResponse
 
+/**
+ * For each of the user's addresses, and each chain ID it's tracked on, the
+ * other chain IDs it's tracked on that it's known to be control-compatible
+ * with. See RFB 5.
+ */
+export type ControlCompatibility = {
+  [address: NormalizedEVMAddress]: { [chainID: string]: string[] }
+}
+
 type Events = ServiceLifecycleEvents & {
   signingTxResponse: TXSignatureResponse
   signingDataResponse: SignatureResponse
   personalSigningResponse: SignatureResponse
+  controlCompatibility: ControlCompatibility
 }
 
 /**
@@ -140,6 +150,12 @@ function getSigningErrorReason(err: unknown): SigningErrorReason {
 export default class SigningService extends BaseService<Events> {
   addressHandlers: AddressHandler[] = []
 
+  // Control compatibility recomputes are coalesced: a trigger schedules one
+  // run on the next tick, and triggers that land during a run cause one more.
+  private controlCompatibilityScheduled = false
+  private controlCompatibilityRunning = false
+  private controlCompatibilityStale = false
+
   static create: ServiceCreatorFunction<
     Events,
     SigningService,
@@ -182,12 +198,114 @@ export default class SigningService extends BaseService<Events> {
         } catch (error) {
           logger.error("Error updating internal signer address registry", error)
         }
+        this.scheduleControlCompatibilityUpdate()
       },
+    )
+
+    // Each of these can change the tracked accounts or networks that
+    // compatibility is computed over.
+    this.chainService.emitter.on("newAccountToTrack", () =>
+      this.scheduleControlCompatibilityUpdate(),
+    )
+    this.chainService.emitter.on("networkSubscribed", () =>
+      this.scheduleControlCompatibilityUpdate(),
+    )
+    this.chainService.emitter.on("customChainAdded", () =>
+      this.scheduleControlCompatibilityUpdate(),
+    )
+    // The Ledger registry is written after an address is derived, so this run
+    // may not see the new account. The newAccountToTrack run that follows the
+    // write does.
+    this.ledgerService.emitter.on("address", () =>
+      this.scheduleControlCompatibilityUpdate(),
     )
   }
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService() // Not needed, but better to stick to the patterns
+
+    this.scheduleControlCompatibilityUpdate()
+  }
+
+  /**
+   * Computes control compatibility for every tracked address, checking each
+   * pair of networks that address is tracked on. Only signer-based conditions
+   * apply, so this makes no network calls. See RFB 5.
+   */
+  async getControlCompatibility(): Promise<ControlCompatibility> {
+    const networksByAddress = new Map<NormalizedEVMAddress, EVMNetwork[]>()
+    const accounts = await this.chainService.getAccountsToTrack()
+    accounts.forEach(({ address, network }) => {
+      const normalizedAddress = normalizeEVMAddress(address)
+      const networks = networksByAddress.get(normalizedAddress) ?? []
+      if (!networks.some(({ chainID }) => chainID === network.chainID)) {
+        networks.push(network)
+      }
+      networksByAddress.set(normalizedAddress, networks)
+    })
+
+    const controlCompatibility: ControlCompatibility = {}
+    await Promise.all(
+      [...networksByAddress].map(async ([address, networks]) => {
+        // Signers don't depend on the pair of networks, so read them once.
+        const signers = await this.getSignersForAddress(address)
+
+        const compatibilityByChainID: { [chainID: string]: string[] } = {}
+        networks.forEach((network) => {
+          compatibilityByChainID[network.chainID] = networks
+            .filter(
+              (otherNetwork) =>
+                otherNetwork.chainID !== network.chainID &&
+                (sameNetwork(network, otherNetwork) ||
+                  (sameAddressFormat(network, otherNetwork) &&
+                    this.hasTransactionCompatibleSigner(
+                      signers,
+                      network,
+                      otherNetwork,
+                    ))),
+            )
+            .map(({ chainID }) => chainID)
+        })
+
+        controlCompatibility[address] = compatibilityByChainID
+      }),
+    )
+
+    return controlCompatibility
+  }
+
+  private scheduleControlCompatibilityUpdate(): void {
+    if (this.controlCompatibilityScheduled) {
+      return
+    }
+    this.controlCompatibilityScheduled = true
+
+    setTimeout(() => {
+      this.controlCompatibilityScheduled = false
+      void this.runControlCompatibilityUpdate()
+    }, 0)
+  }
+
+  private async runControlCompatibilityUpdate(): Promise<void> {
+    if (this.controlCompatibilityRunning) {
+      this.controlCompatibilityStale = true
+      return
+    }
+
+    this.controlCompatibilityRunning = true
+    try {
+      do {
+        this.controlCompatibilityStale = false
+        try {
+          const controlCompatibility = await this.getControlCompatibility()
+          this.emitter.emit("controlCompatibility", controlCompatibility)
+        } catch (error) {
+          logger.error("Error computing control compatibility", error)
+        }
+      } while (this.controlCompatibilityStale)
+    } finally {
+      this.controlCompatibilityRunning = false
+    }
   }
 
   async deriveAddress(signerID: AccountSigner): Promise<HexString> {
@@ -260,7 +378,31 @@ export default class SigningService extends BaseService<Events> {
     }
 
     const signers = await this.getSignersForAddress(address)
-    const hasCompatibleSigner = signers.some((signer) => {
+    if (this.hasTransactionCompatibleSigner(signers, network, otherNetwork)) {
+      return true
+    }
+
+    if ("name" in objectOnNetwork) {
+      return this.nameService.isNameOwnershipCompatible(
+        objectOnNetwork,
+        otherNetwork,
+      )
+    }
+
+    return false
+  }
+
+  /**
+   * Returns true if any of `signers` can sign transactions for both networks.
+   * Synchronous, so callers that check many network pairs for one address can
+   * read its signers once. Assumes the networks have the same address format.
+   */
+  private hasTransactionCompatibleSigner(
+    signers: AccountSigner[],
+    network: EVMNetwork,
+    otherNetwork: EVMNetwork,
+  ): boolean {
+    return signers.some((signer) => {
       switch (signer.type) {
         case "keyring":
         case "private-key":
@@ -279,18 +421,6 @@ export default class SigningService extends BaseService<Events> {
           return assertUnreachable(signer)
       }
     })
-    if (hasCompatibleSigner) {
-      return true
-    }
-
-    if ("name" in objectOnNetwork) {
-      return this.nameService.isNameOwnershipCompatible(
-        objectOnNetwork,
-        otherNetwork,
-      )
-    }
-
-    return false
   }
 
   private async signTransactionWithNonce(
@@ -339,6 +469,8 @@ export default class SigningService extends BaseService<Events> {
       }
     }
     await this.chainService.removeAccountToTrack(address)
+
+    this.scheduleControlCompatibilityUpdate()
   }
 
   /**

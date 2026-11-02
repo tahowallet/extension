@@ -42,6 +42,7 @@ import {
   AccountType,
   deleteAccount,
   loadAccount,
+  setControlCompatibility,
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
@@ -1010,6 +1011,10 @@ export default class ReduxService extends BaseService<never> {
     this.ledgerService.emitter.on("address", ({ address }) =>
       this.signingService.addTrackedAddress(address, "ledger"),
     )
+
+    this.signingService.emitter.on("controlCompatibility", (compatibility) => {
+      this.store.dispatch(setControlCompatibility(compatibility))
+    })
   }
 
   async connectLedgerService(): Promise<void> {
