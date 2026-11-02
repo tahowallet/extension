@@ -72,19 +72,10 @@ export const FeatureFlags = Object.keys({
  * default (e.g. `HIDE_...`, when set to `true`, might indicate disabling a
  * feature).
  *
- * If the `SWITCH_RUNTIME_FLAGS` feature flag is disabled all flags are read from
- * environment variables.
- *
- * If the `SWITCH_RUNTIME_FLAGS` feature flag is on then the value for runtime
- * flags are read from localStorage first, and, if the value does not exist in
- * localStorage, then it is read from the environment variables.
- *
- * The value for build time flags is always read from environment variables.
+ * Build time flags are read from environment variables. Runtime flags are read
+ * from environment variables unless overridden in memory at startup.
  */
-export function isEnabled(
-  flagName: FeatureFlagType,
-  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS,
-): boolean {
+export function isEnabled(flagName: FeatureFlagType): boolean {
   // Guard to narrow flag type
   const isBuildTimeFlag = (flag: string): flag is BuildTimeFlagType =>
     flag in BuildTimeFlag
@@ -100,11 +91,6 @@ export function isEnabled(
     return flagValue === "true"
   }
 
-  if (checkBrowserStorage) {
-    const state = "" as string // localStorage.getItem(flagName)
-    return state !== null ? state === "true" : flagValue
-  }
-
   return flagValue
 }
 
@@ -112,11 +98,8 @@ export function isEnabled(
  * Checks the inverse of `isEnabled`; used for clarity as an alternative to
  * `!isEnabled`.
  */
-export function isDisabled(
-  flagName: FeatureFlagType,
-  checkBrowserStorage: boolean = BuildTimeFlag.SWITCH_RUNTIME_FLAGS,
-): boolean {
-  return !isEnabled(flagName, checkBrowserStorage)
+export function isDisabled(flagName: FeatureFlagType): boolean {
+  return !isEnabled(flagName)
 }
 
 /**
