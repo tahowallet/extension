@@ -585,6 +585,7 @@
     "showUnverifiedAssets": "Show unverified assets",
     "language": "Language",
     "bugReport": "Bug report",
+    "addressBook": "Address book",
     "connectedWebsites": "Connected websites",
     "addCustomAsset": "Custom assets",
     "analytics": "Analytics",
@@ -1166,6 +1167,7 @@
     "appliesOnNetworks_one": "Name applies on {{networks}}",
     "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}",
     "appliesOnLabel": "Applies on",
-    "appliesOnExplainer": "Names apply on the network they're saved on, and on other networks only where the wallet knows the same keys control the address."
+    "appliesOnExplainer": "Names apply on the network they're saved on, and on other networks only where the wallet knows the same keys control the address.",
+    "settingsTitle": "Address book"
   }
 }
