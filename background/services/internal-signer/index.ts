@@ -19,7 +19,12 @@ import {
   VaultVersion,
 } from "./encryption"
 import type { HexString, EIP712TypedData, UNIXTime } from "../../types"
-import { SignedTransaction, TransactionRequestWithNonce } from "../../networks"
+import {
+  Network,
+  sameAddressFormat,
+  SignedTransaction,
+  TransactionRequestWithNonce,
+} from "../../networks"
 
 import BaseService from "../base"
 import { FORK } from "../../constants"
@@ -229,6 +234,17 @@ export default class InternalSignerService extends BaseService<Events> {
    */
   locked(): boolean {
     return this.#cachedKey === null
+  }
+
+  /**
+   * Returns true if this service's signers can sign transactions for both
+   * networks from the same key material. Internal signers hold private keys
+   * directly, whether derived from a keyring or imported, so any two networks
+   * with the same address format qualify. See RFB 5.
+   */
+  // oxlint-disable-next-line class-methods-use-this
+  isTransactionCompatible(network: Network, otherNetwork: Network): boolean {
+    return sameAddressFormat(network, otherNetwork)
   }
 
   /**
