@@ -167,6 +167,7 @@ export default function CommonAssetListItem(
                   verticalPosition="bottom"
                   horizontalShift={42}
                   verticalShift={16}
+                  showDelay={100}
                   IconComponent={() => (
                     <div className="button_wrap">
                       <SharedIconRouterLink

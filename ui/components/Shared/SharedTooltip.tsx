@@ -14,6 +14,8 @@ interface Props {
   type?: "default" | "dark"
   isOpen?: boolean
   disabled?: boolean
+  /** Milliseconds a hover waits before showing; --tooltip-show-delay overrides it. */
+  showDelay?: number
   children: React.ReactNode
   style?: CSSProperties & Record<string, unknown>
   // TODO: find a better way to tell the IconComponent that the tooltip it open
@@ -75,6 +77,7 @@ export default function SharedTooltip(props: Props): ReactElement {
     type = "default",
     isOpen = false,
     disabled = false,
+    showDelay = 0,
     IconComponent,
     style,
   } = props
@@ -105,6 +108,7 @@ export default function SharedTooltip(props: Props): ReactElement {
         <div
           className={classNames("tooltip", {
             dark: type === "dark",
+            delayed: showDelay > 0,
           })}
         >
           {children}
@@ -144,6 +148,15 @@ export default function SharedTooltip(props: Props): ReactElement {
             z-index: 20;
             ${getVerticalPosition(verticalPosition, height, verticalShift)}
             ${getHorizontalPosition(horizontalPosition, width, horizontalShift)}
+          }
+          .delayed {
+            animation: tooltip_appear 0s
+              var(--tooltip-show-delay, ${showDelay}ms) both;
+          }
+          @keyframes tooltip_appear {
+            from {
+              visibility: hidden;
+            }
           }
           .dark {
             background: var(--green-120);
