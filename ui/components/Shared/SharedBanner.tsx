@@ -10,6 +10,8 @@ type BannerProps = {
   iconAriaLabel?: string
   hasShadow?: boolean
   style?: CSSProperties
+  /** Pins the banner to a theme, for artwork drawn for that theme. */
+  theme?: "dark" | "light"
 }
 
 export type CanBeClosedProps =
@@ -23,6 +25,7 @@ function Banner(props: BannerProps): ReactElement {
     iconAriaLabel,
     hasShadow = false,
     style,
+    theme,
     children,
   } = props
 
@@ -32,6 +35,7 @@ function Banner(props: BannerProps): ReactElement {
         shadow: hasShadow,
       })}
       style={style}
+      data-theme={theme}
     >
       {icon && (
         <SharedIcon
@@ -56,10 +60,7 @@ function Banner(props: BannerProps): ReactElement {
             position: relative;
           }
           .banner_wrap.shadow {
-            box-shadow:
-              0px 16px 16px rgba(7, 17, 17, 0.3),
-              0px 6px 8px rgba(7, 17, 17, 0.24),
-              0px 2px 4px rgba(7, 17, 17, 0.34);
+            box-shadow: var(--shadow-card);
           }
           .banner_content {
             margin: 2px 0;
@@ -80,6 +81,7 @@ function BannerWithClose(
     icon,
     iconColor,
     style,
+    theme,
     iconAriaLabel,
     hasShadow,
     onDismiss,
@@ -94,6 +96,7 @@ function BannerWithClose(
       iconColor={iconColor}
       iconAriaLabel={iconAriaLabel}
       style={style}
+      theme={theme}
       hasShadow={hasShadow}
     >
       <SharedIcon

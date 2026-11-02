@@ -10,7 +10,8 @@ export default `
     margin-bottom: 16px;
     justify-content: space-between;
     align-items: center;
-    gap: 8px
+    gap: 8px;
+    transition: background-color var(--fade);
   }
   .asset_list_item:hover {
     background-color: var(--green-80);
@@ -34,7 +35,7 @@ export default `
   }
   .asset_amount {
     height: 17px;
-    color: #fefefc;
+    color: var(--text-bright);
     font-size: 14px;
     font-weight: 400;
     letter-spacing: 0.42px;
@@ -50,7 +51,7 @@ export default `
   .bold_amount_count {
     flex-shrink: 0;
     height: 24px;
-    color: #fefefc;
+    color: var(--text-bright);
     font-size: 18px;
     font-weight: 600;
     line-height: 24px;

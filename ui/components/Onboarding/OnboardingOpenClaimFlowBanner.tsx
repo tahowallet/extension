@@ -77,7 +77,7 @@ function EligibleCTAContent({
           icon="close.svg"
           width={12}
           color="var(--green-40)"
-          hoverColor="#fff"
+          hoverColor="var(--text-strong)"
           ariaLabel="Close banner"
           onClick={handleCloseBanner}
           style={{ alignSelf: "flex-start", margin: "10px 12px" }}
@@ -131,7 +131,7 @@ function EligibleCTAContent({
             line-height: 38px;
           }
           .claimable_amount.has_highlight {
-            color: #22c480;
+            color: var(--success-alt);
           }
           .link_content {
             width: 40px;
@@ -142,6 +142,7 @@ function EligibleCTAContent({
             justify-content: center;
             align-items: center;
             font-size: 18px;
+            transition: background-color var(--fade);
           }
           .link_content.disabled {
             background-color: var(--green-60);

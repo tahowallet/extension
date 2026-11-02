@@ -20,31 +20,7 @@ export function HeaderContainer({
             box-sizing: border-box;
             flex-direction: column;
             align-items: center;
-            background:   
-                /* filter */
-              linear-gradient(
-                180deg,
-                rgba(11, 41, 38, 0) 0%,
-                var(--hunter-green) 140px /* bg fades at 140px height */
-              ),
-              /* bottom-right */
-              radial-gradient(
-                  366px 366px at 507px 349px,
-                  #fc49c0 0%,
-                  rgba(255, 127, 240, 0) 100%
-                ),
-              /* top-left */
-              radial-gradient(
-                  366px 366px at -99px -238px,
-                  #ff00b8 0%,
-                  rgba(255, 0, 153, 0) 100%
-                ),
-              /* top-down light */
-              radial-gradient(
-                  93.95% 101.67% at 45.05% 0%,
-                  #1a968c 4.17%,
-                  #002522 120%
-                );
+            background: var(--nft-header-gradient);
           }
         `}
       </style>
@@ -93,7 +69,7 @@ export function EmptyHeader(): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
-          color: var(--green-40);
+          color: var(--nft-header-text);
           text-align: center;
           margin: 0;
           margin-bottom: 16px;

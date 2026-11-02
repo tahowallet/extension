@@ -147,7 +147,10 @@ export default function SharedFileInput(props: Props): ReactElement {
             width: 100%;
           }
           .file_drop {
-            transition: all 300ms ease-in-out;
+            transition:
+              opacity 300ms ease-in-out,
+              padding 300ms ease-in-out,
+              max-height 300ms ease-in-out;
             max-height: 152px;
             position: relative;
             display: flex;
@@ -185,12 +188,15 @@ export default function SharedFileInput(props: Props): ReactElement {
             color: var(--trophy-gold);
           }
           .file_status {
-            transition: all 300ms ease-in-out;
+            transition:
+              opacity 300ms ease-in-out,
+              padding 300ms ease-in-out,
+              max-height 300ms ease-in-out;
             max-height: 42px;
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #fff;
+            color: var(--text-strong);
             font-weight: 600;
             font-size: 18px;
             line-height: 24px;

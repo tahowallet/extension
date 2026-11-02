@@ -73,6 +73,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          transition: color var(--fade);
         }
 
         .disabled .label {
@@ -102,6 +103,9 @@ export default function SharedCheckbox(props: Props): ReactElement {
           box-sizing: border-box;
           cursor: pointer;
           margin-top: ${label ? 4 : 0}px;
+          transition:
+            background-color var(--fade),
+            border-color var(--fade);
         }
 
         .disabled .checkbox_box {
@@ -128,6 +132,10 @@ export default function SharedCheckbox(props: Props): ReactElement {
           width: ${size * 0.6}px;
           height: ${size * 0.6}px;
           background: no-repeat center / cover url("/images/checkmark@2x.png");
+        }
+        :global([data-theme="light"]) .checkbox_box.checked::before {
+          background: var(--on-accent);
+          mask: url("/images/checkmark@2x.png") center / cover no-repeat;
         }
 
         .message {

@@ -57,15 +57,18 @@ export default function SharedAvatar({
           width: ${width};
           height: ${width};
           border-radius: ${borderRadius};
-          background-color: ${background};
           flex-shrink: 0;
         }
+        /*
+         * The backing colour sits under the image on the same element, so the
+         * rounded corner is cut once; on a separate layer it shows as a halo.
+         */
         .avatar {
           width: 100%;
           height: 100%;
           border-radius: ${borderRadius};
           flex-shrink: 0;
-          background: url("${avatarURL ?? backupAvatar}");
+          background: url("${avatarURL ?? backupAvatar}") ${background};
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;

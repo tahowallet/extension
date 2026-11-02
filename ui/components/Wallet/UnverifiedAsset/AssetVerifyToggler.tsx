@@ -24,7 +24,7 @@ export default function AssetVerifyToggler({
           align-items: center;
           display: flex;
           gap: 4px;
-          transition: color 0.2s;
+          transition: color var(--fade);
           white-space: nowrap;
         }
         .asset_verify_toggler:hover {
@@ -42,7 +42,6 @@ export default function AssetVerifyToggler({
         {`
           .asset_verify_toggler:hover .icon {
             background-color: ${hoverColor};
-            transition: color 0.2s;
           }
         `}
       </style>

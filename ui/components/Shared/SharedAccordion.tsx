@@ -66,8 +66,8 @@ export default function SharedAccordion({
         <SharedIcon
           icon="icons/s/arrow-toggle.svg"
           width={16}
-          color="var(--green-5)"
-          hoverColor="#fff"
+          color="var(--accordion-icon)"
+          hoverColor="var(--accordion-icon)"
           onClick={(e) => {
             e.stopPropagation()
             toggle()
@@ -75,7 +75,7 @@ export default function SharedAccordion({
           style={{
             margin: "2px 0 2px 8px",
             transform: `rotate(${isOpen ? "180" : "0"}deg)`,
-            transition: "transform 100ms",
+            transition: "transform 100ms, background-color var(--fade)",
           }}
         />
       </div>
@@ -95,6 +95,7 @@ export default function SharedAccordion({
           background-color: ${
             isOpen ? "var(--background, var(--green-120))" : ""
           };
+          transition: background-color var(--fade);
         }
 
         .accordion:not([aria-expanded="true"]):hover {
@@ -106,6 +107,12 @@ export default function SharedAccordion({
           align-items: center;
           padding: var(--header-padding, "4px 8px");
           cursor: pointer;
+          --accordion-icon: var(--green-5);
+        }
+
+        /* The arrow lights with the header, not only under the cursor. */
+        .accordion_header:hover {
+          --accordion-icon: var(--text-strong);
         }
 
         .accordion_header_content {

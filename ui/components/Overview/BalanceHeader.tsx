@@ -31,7 +31,7 @@ export default function BalanceHeader({
       <style jsx>{`
         .balance_header {
           width: 100%;
-          background: linear-gradient(250.02deg, #034f4b 0%, #033734 66.93%);
+          background: var(--balance-header-gradient);
           border-radius: 8px 8px 0 0;
           padding: 16px 0;
           margin: 0;

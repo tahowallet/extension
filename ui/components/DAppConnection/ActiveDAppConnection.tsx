@@ -119,7 +119,7 @@ export default function ActiveDAppConnection({
           padding-right: 6px;
         }
         .connection_button:hover .connection_img {
-          background-color: var(--success);
+          background-color: var(--connected);
         }
         .connection_icon_wrapper {
           position: relative;
@@ -136,8 +136,9 @@ export default function ActiveDAppConnection({
           width: 32px;
           height: 32px;
           background-color: var(
-            --${isConnectedToDApp ? "success" : "green-20"}
+            --${isConnectedToDApp ? "connected" : "green-20"}
           );
+          transition: background-color var(--fade);
         }
         .network_badge {
           position: absolute;

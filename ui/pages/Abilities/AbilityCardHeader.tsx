@@ -61,7 +61,7 @@ function AbilityCardHeader({ ability }: { ability: Ability }): ReactElement {
           line-height: 16px;
           align-items: center;
           letter-spacing: 0.03em;
-          color: #b4cac9;
+          color: var(--grey-green-20);
         }
       `}</style>
     </>

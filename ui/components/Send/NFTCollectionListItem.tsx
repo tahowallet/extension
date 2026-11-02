@@ -54,6 +54,7 @@ export default function NFTCollectionListItem({
           flex-grow: 1;
           overflow: hidden;
           gap: 8px;
+          transition: color var(--fade);
         }
 
         .label:hover {

@@ -68,7 +68,7 @@ export default function AccountItemEditName({
         <AccountItemActionHeader
           label={t("editName")}
           icon="icons/s/edit.svg"
-          color="#fff"
+          color="var(--text-strong)"
         />
       </div>
       <div className="account_container standard_width">

@@ -57,7 +57,7 @@ export default function PasswordInput(props: PasswordInputProps): ReactElement {
             background-position: center;
             background-color: var(--green-60);
             background-size: 16px;
-            transition: all 0.12s ease-out;
+            transition: background-color var(--fade);
             transform: translateY(50%);
           }
           .icon.active {

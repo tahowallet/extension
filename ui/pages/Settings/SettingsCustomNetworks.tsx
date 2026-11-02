@@ -416,6 +416,10 @@ export default function SettingsCustomNetworks(): ReactElement {
           width: 132px;
           height: 32px;
         }
+        /* Dark lettering and no baked-in shadow. */
+        :global([data-theme="light"]) .icon {
+          background-image: url("./images/chain_list_light.svg");
+        }
         .custom_rpc_wrap {
           padding-bottom: 32px;
         }
