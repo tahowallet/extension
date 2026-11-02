@@ -295,11 +295,11 @@
   --on-accent-active: #fefefc;
   --on-accent-deep: #fefefc;
 
-  /* Tooltips take the top bar's colours, lifted off the page by a shadow. */
+  /* Tooltips take the top bar's colours, lifted off the page by a soft shadow. */
   --tooltip-background: var(--green-120);
   --tooltip-text: var(--green-20);
   --tooltip-text-muted: var(--green-40);
-  --tooltip-shadow: var(--shadow);
+  --tooltip-shadow: var(--shadow-subtle);
   --tooltip-quiet-shadow: var(--tooltip-shadow);
 
   --grey-green-80: #dcdfd8;
