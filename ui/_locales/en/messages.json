@@ -1164,6 +1164,8 @@
     "appliesOnTitle_one": "Name applies on 1 network",
     "appliesOnTitle_other": "Name applies on {{count}} networks",
     "appliesOnNetworks_one": "Name applies on {{networks}}",
-    "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}"
+    "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}",
+    "appliesOnLabel": "Applies on",
+    "appliesOnExplainer": "Names apply on the network they're saved on, and on other networks only where the wallet knows the same keys control the address."
   }
 }
