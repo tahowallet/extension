@@ -61,6 +61,10 @@ type PageTransitionProps = {
   onExited?: () => void
 }
 
+/** Whether the OS asks for less motion, in which case pages swap at once. */
+const prefersReducedMotion = (): boolean =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+
 /** A page entering or leaving the popup. */
 function PageTransition({
   children,
@@ -72,7 +76,7 @@ function PageTransition({
     <CSSTransition
       {...transitionProps}
       nodeRef={nodeRef}
-      timeout={300}
+      timeout={prefersReducedMotion() ? 0 : 300}
       classNames="page-transition"
     >
       <div ref={nodeRef}>{children}</div>
@@ -268,6 +272,14 @@ export function Main(): ReactElement {
           .page-transition-exit-active {
             opacity: 0;
             pointer-events: none;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .page-transition-enter > section > main,
+            .page-transition-enter-active > section > main {
+              opacity: 1;
+              transform: none;
+              transition: none;
+            }
           }
 
           .hide {
