@@ -142,6 +142,7 @@ function EligibleCTAContent({
             justify-content: center;
             align-items: center;
             font-size: 18px;
+            transition: background-color var(--fade);
           }
           .link_content.disabled {
             background-color: var(--green-60);

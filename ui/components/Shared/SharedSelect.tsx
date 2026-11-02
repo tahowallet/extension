@@ -180,7 +180,10 @@ export default function SharedSelect(props: Props): ReactElement {
             border-color: var(--green-60);
             border-style: solid;
             border-radius: 5px;
-            transition: background-color var(--fade);
+            transition:
+              background-color var(--fade),
+              border-color var(--fade),
+              color var(--fade);
           }
 
           .button .icon {
@@ -189,7 +192,9 @@ export default function SharedSelect(props: Props): ReactElement {
             width: 15px;
             height: 8px;
             background-color: var(--green-60);
-            transition: transform 0.2s ease-in-out;
+            transition:
+              transform 0.2s ease-in-out,
+              background-color var(--fade);
           }
 
           .select.top .icon,
@@ -257,6 +262,7 @@ export default function SharedSelect(props: Props): ReactElement {
             cursor: pointer;
             padding: 0 16px;
             color: var(--green-20);
+            transition: color var(--fade);
           }
 
           .option.selected {

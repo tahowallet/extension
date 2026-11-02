@@ -58,7 +58,9 @@ export default function SharedButtonUp<T extends HTMLElement>(props: {
           align-items: center;
           z-index: 3;
           opacity: 1;
-          transition: opacity 100ms ease-in;
+          transition:
+            opacity 100ms ease-in,
+            background-color var(--fade);
         }
         .button_up.hidden {
           opacity: 0;

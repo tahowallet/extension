@@ -103,6 +103,7 @@ export default function TopMenu(): ReactElement {
             width: 32px;
             height: 32px;
             margin-right: 2px;
+            transition: background-color var(--fade);
           }
           button:hover {
             background-color: var(--green-80);

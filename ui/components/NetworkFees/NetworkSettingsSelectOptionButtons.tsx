@@ -28,6 +28,7 @@ const buttonStyle = `
     border-radius: 4px;
     border: 1px solid transparent;
     position: relative;
+    transition: border-color var(--fade), box-shadow var(--fade);
   }
   .network_option.active {
     border-color: var(--success);
@@ -52,6 +53,7 @@ const buttonStyle = `
   .name,
   .price {
     color: var(--green--5);
+    transition: color var(--fade);
   }
   .subtext {
     color: var(--green-60);

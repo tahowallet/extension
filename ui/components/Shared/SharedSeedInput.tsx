@@ -92,6 +92,7 @@ export default function SharedSeedInput(props: Props): ReactElement {
           color: var(--white);
           font-family: inherit;
           overflow-y: scroll;
+          transition: border-color var(--fade);
         }
 
         #recovery_phrase * {

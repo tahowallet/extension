@@ -441,6 +441,7 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
           font-weight: 500;
           line-height: 24px;
           text-transform: uppercase;
+          transition: color var(--fade);
         }
         button:disabled {
           cursor: default;

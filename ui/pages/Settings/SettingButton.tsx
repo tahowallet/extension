@@ -33,6 +33,7 @@ export default function SettingButton(props: {
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
+            transition: color var(--fade);
           }
           .button_row {
             width: 336px;

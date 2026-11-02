@@ -73,6 +73,7 @@ export default function SharedCheckbox(props: Props): ReactElement {
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;
+          transition: color var(--fade);
         }
 
         .disabled .label {
@@ -102,6 +103,9 @@ export default function SharedCheckbox(props: Props): ReactElement {
           box-sizing: border-box;
           cursor: pointer;
           margin-top: ${label ? 4 : 0}px;
+          transition:
+            background-color var(--fade),
+            border-color var(--fade);
         }
 
         .disabled .checkbox_box {

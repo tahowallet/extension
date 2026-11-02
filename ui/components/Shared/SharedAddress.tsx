@@ -171,6 +171,7 @@ export default function SharedAddress({
           margin-left: 10px;
           display: inline-block;
           background-color: currentColor;
+          transition: background-color var(--fade);
         }
         button:hover .copy_icon {
           background-color: var(--address-icon-hover, var(--trophy-gold));
