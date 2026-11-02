@@ -42,7 +42,6 @@ export default function AssetVerifyToggler({
         {`
           .asset_verify_toggler:hover .icon {
             background-color: ${hoverColor};
-            transition: color var(--fade);
           }
         `}
       </style>
