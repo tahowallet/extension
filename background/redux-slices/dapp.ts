@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import Emittery from "emittery"
 import {
   DeniedPermission,
+  Permission,
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -26,7 +27,7 @@ export type DAppPermissionState = {
       // @TODO Re-key by origin-chainID-address
       [chainID: string]: {
         [address: string]: {
-          [origin: string]: PermissionRequest
+          [origin: string]: Permission
         }
       }
     }
@@ -43,7 +44,7 @@ export const initialState: DAppPermissionState = {
 export type Events = {
   requestPermission: PermissionRequest
   grantPermission: PermissionRequest
-  denyOrRevokePermission: DeniedPermission
+  denyOrRevokePermission: Omit<DeniedPermission, "chainID">
   switchNetworkForOrigin: { origin: string; network: EVMNetwork }
 }
 
@@ -61,9 +62,10 @@ export const grantPermission = createBackgroundAsyncThunk(
 )
 
 // Async thunk to bubble the permissionDenyOrRevoke action from store to emitter.
+// The permission is denied or revoked on every network.
 export const denyOrRevokePermission = createBackgroundAsyncThunk(
   "dapp-permission/permissionDenyOrRevoke",
-  async (permission: DeniedPermission) => {
+  async (permission: Omit<DeniedPermission, "chainID">) => {
     await emitter.emit("denyOrRevokePermission", permission)
     return permission
   },
@@ -90,7 +92,7 @@ const dappSlice = createSlice({
           evm: {
             [chainID: string]: {
               [address: string]: {
-                [origin: string]: PermissionRequest
+                [origin: string]: Permission
               }
             }
           }
@@ -177,20 +179,24 @@ const dappSlice = createSlice({
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]
 
-          // Support all networks regardless of which one initiated grant request
-          const permissions = [
-            ETHEREUM,
-            ROOTSTOCK,
-            POLYGON,
-            OPTIMISM,
-            AVALANCHE,
-            BINANCE_SMART_CHAIN,
-            SEPOLIA,
-            ARBITRUM_SEPOLIA,
-            ARBITRUM_NOVA,
-          ].map((network) => ({
+          const chainIDs =
+            permission.chainID === undefined
+              ? [
+                  ETHEREUM,
+                  ROOTSTOCK,
+                  POLYGON,
+                  OPTIMISM,
+                  AVALANCHE,
+                  BINANCE_SMART_CHAIN,
+                  SEPOLIA,
+                  ARBITRUM_SEPOLIA,
+                  ARBITRUM_NOVA,
+                ].map((network) => network.chainID)
+              : [permission.chainID]
+
+          const permissions = chainIDs.map((chainID) => ({
             ...permission,
-            chainID: network.chainID,
+            chainID,
           }))
 
           const allowedPermission = keyPermissionsByChainIdAddressOrigin(
@@ -205,7 +211,9 @@ const dappSlice = createSlice({
         denyOrRevokePermission.fulfilled,
         (
           immerState,
-          { payload: permission }: { payload: PermissionRequest },
+          {
+            payload: permission,
+          }: { payload: Omit<DeniedPermission, "chainID"> },
         ) => {
           const updatedPermissionRequests = { ...immerState.permissionRequests }
           delete updatedPermissionRequests[permission.origin]

@@ -3,8 +3,10 @@ import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import { useTranslation } from "react-i18next"
 import { selectDefaultWallet } from "@tallyho/tally-background/redux-slices/ui"
+import { EVMNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedAccountItemSummary from "../../components/Shared/SharedAccountItemSummary"
+import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import RequestingDAppBlock from "./RequestingDApp"
 import { useBackgroundSelector } from "../../hooks"
 import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectionInfoBar"
@@ -12,6 +14,11 @@ import DAppConnectionInfoBar from "../../components/DAppConnection/DAppConnectio
 type DAppConnectPageProps = {
   permission: PermissionRequest
   currentAccountTotal: AccountTotal
+  /**
+   * Set when a site that's already connected for this account asks to use
+   * another network; the page then asks about that network specifically.
+   */
+  additionalNetwork?: EVMNetwork
   denyPermission: () => Promise<void>
   grantPermission: () => Promise<void>
 }
@@ -19,6 +26,7 @@ type DAppConnectPageProps = {
 export default function DAppConnectPage({
   permission,
   currentAccountTotal,
+  additionalNetwork,
   denyPermission,
   grantPermission,
 }: DAppConnectPageProps): ReactElement {
@@ -51,8 +59,14 @@ export default function DAppConnectPage({
   return (
     <>
       <DAppConnectionInfoBar />
-      <section className="standard_width">
-        <h1 className="serif_header">{t("connectToDapp")}</h1>
+      <section
+        className={`standard_width${additionalNetwork === undefined ? "" : " additional_network"}`}
+      >
+        <h1 className="serif_header">
+          {additionalNetwork === undefined
+            ? t("connectToDapp")
+            : t("allowNetwork")}
+        </h1>
         <div className="connection_destination">
           <RequestingDAppBlock
             title={title}
@@ -67,9 +81,19 @@ export default function DAppConnectPage({
             accountTotal={currentAccountTotal}
           />
         </div>
+        {additionalNetwork !== undefined && (
+          <div className="connection_destination network_destination">
+            <SharedNetworkIcon network={additionalNetwork} size={24} />
+            <span className="network_name">{additionalNetwork.name}</span>
+          </div>
+        )}
         <ul className="permissions_list">
           <li className="permissions_list_title">
-            {t("dappPermissionListTitle")}
+            {additionalNetwork === undefined
+              ? t("dappPermissionListTitle")
+              : t("allowNetworkPermissionListTitle", {
+                  network: additionalNetwork.name,
+                })}
           </li>
           <li>
             <ul>
@@ -94,7 +118,9 @@ export default function DAppConnectPage({
           size="large"
           onClick={grantPermission}
         >
-          {t("acceptConnection")}
+          {additionalNetwork === undefined
+            ? t("acceptConnection")
+            : t("acceptNetwork")}
         </SharedButton>
       </div>
       <style jsx>{`
@@ -116,8 +142,12 @@ export default function DAppConnectPage({
           margin-bottom: 25px;
           text-align: center;
         }
+        .additional_network h1 {
+          margin-top: 24px;
+        }
         .permissions_list {
           margin-left: 16px;
+          margin-bottom: 24px;
         }
         ul {
           display: flex;
@@ -147,6 +177,16 @@ export default function DAppConnectPage({
           padding: 16px;
           box-sizing: border-box;
           margin-bottom: 8px;
+        }
+        .network_destination {
+          height: 56px;
+          justify-content: flex-start;
+          gap: 12px;
+        }
+        .network_name {
+          color: var(--text-strong);
+          font-size: 16px;
+          font-weight: 500;
         }
         .icon_connection {
           background: url("./images/bolt@2x.png") center no-repeat;

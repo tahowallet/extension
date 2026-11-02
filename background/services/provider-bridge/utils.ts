@@ -1,5 +1,5 @@
 import {
-  PermissionRequest,
+  Permission,
   EIP1193Error,
   EIP1193_ERROR_CODES,
   isEIP1193Error,
@@ -14,14 +14,14 @@ export type PermissionMap = {
   evm: {
     [chainID: string]: {
       [address: string]: {
-        [origin: string]: PermissionRequest
+        [origin: string]: Permission
       }
     }
   }
 }
 
 export const keyPermissionsByChainIdAddressOrigin = (
-  permissions: PermissionRequest[],
+  permissions: Permission[],
   permissionMap?: PermissionMap,
 ): PermissionMap => {
   const map = permissionMap ?? { evm: {} }
@@ -184,7 +184,7 @@ export const validateAddEthereumChainParameter = ({
  * @returns JSON RPC request's params - unchanged or flipped
  */
 export function parseRPCRequestParams(
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
   method: string,
   params: RPCRequest["params"],
 ): RPCRequest["params"] {

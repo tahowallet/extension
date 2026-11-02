@@ -1,4 +1,4 @@
-import { PermissionRequest } from "@tallyho/provider-bridge-shared"
+import { Permission } from "@tallyho/provider-bridge-shared"
 import { denyOrRevokePermission } from "@tallyho/tally-background/redux-slices/dapp"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import React, { useCallback } from "react"
@@ -7,7 +7,7 @@ import SharedIcon from "../../components/Shared/SharedIcon"
 import { useBackgroundDispatch } from "../../hooks"
 
 type ConnectedWebsitesListItemProps = {
-  permission: PermissionRequest
+  permission: Permission
 }
 
 export default function ConnectedWebsitesListItem(

@@ -1398,14 +1398,27 @@ export default class ReduxService extends BaseService<never> {
     providerBridgeSliceEmitter.on("grantPermission", async (permission) => {
       this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.DAPP_CONNECTED, {
         origin: permission.origin,
-        chainId: permission.chainID,
+        chainId:
+          permission.chainID ??
+          (
+            await this.internalEthereumProviderService.getCurrentOrDefaultNetworkForOrigin(
+              permission.origin,
+            )
+          ).chainID,
       })
 
+      const chainIDs =
+        permission.chainID === undefined
+          ? this.chainService
+              .getSupportedNetworks()
+              .map(({ chainID }) => chainID)
+          : [permission.chainID]
+
       await Promise.all(
-        this.chainService.getSupportedNetworks().map(async (network) => {
+        chainIDs.map(async (chainID) => {
           await this.providerBridgeService.grantPermission({
             ...permission,
-            chainID: network.chainID,
+            chainID,
           })
         }),
       )
