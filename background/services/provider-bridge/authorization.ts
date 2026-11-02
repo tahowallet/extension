@@ -2,7 +2,7 @@ import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/a
 import {
   EIP1193Error,
   EIP1193_ERROR_CODES,
-  PermissionRequest,
+  Permission,
 } from "@tallyho/provider-bridge-shared"
 import { sameEVMAddress } from "../../lib/utils"
 import { toHexChainID } from "../../networks"
@@ -10,7 +10,7 @@ import type { HexString } from "../../types"
 
 export function checkPermissionSignTypedData(
   walletAddress: HexString,
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
 ): void {
   if (
     enablingPermission.state !== "allow" ||
@@ -22,7 +22,7 @@ export function checkPermissionSignTypedData(
 
 export function checkPermissionSign(
   walletAddress: HexString,
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
 ): void {
   if (
     enablingPermission.state !== "allow" ||
@@ -34,7 +34,7 @@ export function checkPermissionSign(
 
 export function checkPermissionSignTransaction(
   transactionRequest: EthersTransactionRequest,
-  enablingPermission: PermissionRequest,
+  enablingPermission: Permission,
 ): void {
   if (typeof transactionRequest.chainId !== "undefined") {
     if (
