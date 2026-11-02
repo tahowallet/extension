@@ -1,6 +1,12 @@
-import React, { ReactElement, useState, useEffect } from "react"
-import { MemoryRouter as Router, Switch, Route } from "react-router-dom"
-import { ErrorBoundary } from "react-error-boundary"
+import React, {
+  ReactElement,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
+import { Router, Switch, Route } from "react-router-dom"
+import { ErrorBoundary, FallbackProps } from "react-error-boundary"
 
 import {
   setRouteHistoryEntries,
@@ -18,16 +24,14 @@ import {
   selectCurrentAddressNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsTransactionPendingSignature } from "@tallyho/tally-background/redux-slices/selectors/transactionConstructionSelectors"
-import { Location } from "history"
+import { createMemoryHistory, Location } from "history"
 import {
   useIsDappPopup,
   useBackgroundDispatch,
   useBackgroundSelector,
 } from "../hooks"
 
-import setAnimationConditions, {
-  animationStyles,
-} from "../utils/pageTransition"
+import getTransitionDirection from "../utils/pageTransition"
 
 import CorePage from "../components/Core/CorePage"
 import ThemeSync from "../components/Core/ThemeSync"
@@ -36,11 +40,49 @@ import ErrorFallback from "./ErrorFallback"
 import pageList from "../routes/routes"
 
 const pagePreferences = Object.fromEntries(
-  pageList.map(({ path, hasTabBar, hasTopBar, persistOnClose }) => [
-    path,
-    { hasTabBar, hasTopBar, persistOnClose },
-  ]),
+  pageList.map(({ path, persistOnClose }) => [path, { persistOnClose }]),
 )
+
+/** Shows the error page when a page fails outside its own content. */
+function PageErrorFallback(props: FallbackProps): ReactElement {
+  return (
+    <CorePage>
+      <ErrorFallback {...props} />
+    </CorePage>
+  )
+}
+
+type PageTransitionProps = {
+  children: ReactNode
+  // Set by TransitionGroup.
+  in?: boolean
+  enter?: boolean
+  exit?: boolean
+  onExited?: () => void
+}
+
+/** Whether the OS asks for less motion, in which case pages swap at once. */
+const prefersReducedMotion = (): boolean =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+
+/** A page entering or leaving the popup. */
+function PageTransition({
+  children,
+  ...transitionProps
+}: PageTransitionProps): ReactElement {
+  const nodeRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <CSSTransition
+      {...transitionProps}
+      nodeRef={nodeRef}
+      timeout={prefersReducedMotion() ? 0 : 300}
+      classNames="page-transition"
+    >
+      <div ref={nodeRef}>{children}</div>
+    </CSSTransition>
+  )
+}
 
 function transformLocation(
   inputLocation: Location,
@@ -98,28 +140,14 @@ export function Main(): ReactElement {
   })
 
   const isDappPopup = useIsDappPopup()
-  const [isDirectionRight, setIsDirectionRight] = useState(true)
 
   const routeHistoryEntries = useBackgroundSelector(
     (state) => state.ui.routeHistoryEntries,
   )
-
-  // See comment above call of saveHistoryEntries
-  function saveHistoryEntries(routeHistoryEntities: Location[]) {
-    const entries = routeHistoryEntities
-      .reduce((agg: Partial<Location>[], entity) => {
-        const entityCopy: Partial<Location> = { ...entity }
-        delete entityCopy.hash
-        delete entityCopy.key
-        agg.push(entityCopy)
-        return agg
-      }, [])
-      .reverse()
-
-    if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
-      dispatch(setRouteHistoryEntries(entries))
-    }
-  }
+  // Restored entries only seed the history; later changes come from it.
+  const [history] = useState(() =>
+    createMemoryHistory({ initialEntries: routeHistoryEntries }),
+  )
 
   const isTransactionPendingSignature = useBackgroundSelector(
     selectIsTransactionPendingSignature,
@@ -128,11 +156,47 @@ export function Main(): ReactElement {
     (state) => getAddressCount(state) > 0,
   )
 
+  // Restoring the saved entries is a "POP", so only a "PUSH" is a navigation
+  // worth saving. Entries are saved reversed, the order `initialEntries`
+  // expects on the next open. Going back with history.goBack() is a "POP" and
+  // is not saved.
+  useEffect(
+    () =>
+      history.listen((location, action) => {
+        const { pathname } = transformLocation(
+          location,
+          isTransactionPendingSignature,
+          hasAccounts,
+        )
+        const normalizedPathname = pagePreferences[pathname] ? pathname : "/"
+        if (
+          action !== "PUSH" ||
+          !pagePreferences[normalizedPathname]?.persistOnClose
+        ) {
+          return
+        }
+
+        const entries = history.entries
+          .map(({ hash: _hash, key: _key, ...entry }) => entry)
+          .reverse()
+        if (JSON.stringify(routeHistoryEntries) !== JSON.stringify(entries)) {
+          dispatch(setRouteHistoryEntries(entries))
+        }
+      }),
+    [
+      dispatch,
+      hasAccounts,
+      history,
+      isTransactionPendingSignature,
+      routeHistoryEntries,
+    ],
+  )
+
   useConnectPopupMonitor()
 
   return (
     <>
-      <Router initialEntries={routeHistoryEntries}>
+      <Router history={history}>
         <Route
           render={(routeProps) => {
             const transformedLocation = transformLocation(
@@ -141,33 +205,11 @@ export function Main(): ReactElement {
               hasAccounts,
             )
 
-            const normalizedPathname = pagePreferences[
-              transformedLocation.pathname
-            ]
-              ? transformedLocation.pathname
-              : "/"
-
-            // `initialEntries` needs to be a reversed version of route history
-            // entities. Without avoiding the initial load, entries will keep reversing.
-            // Given that restoring our route history is a "POP" `history.action`,
-            // by specifying "PUSH" we know that the most recent navigation change is by
-            // the user or explicitly added. That said, we can still certainly "POP" via
-            // history.goBack(). This case is not yet accounted for.
-            if (
-              pagePreferences[normalizedPathname]?.persistOnClose &&
-              routeProps.history.action === "PUSH"
-            ) {
-              // @ts-expect-error TODO: fix the typing
-              saveHistoryEntries(routeProps.history.entries)
-            }
-
-            setAnimationConditions(routeProps, setIsDirectionRight)
+            const direction = getTransitionDirection(history)
 
             return (
-              <TransitionGroup>
-                <CSSTransition
-                  timeout={300}
-                  classNames="page-transition"
+              <TransitionGroup className={`pages page_slide_${direction}`}>
+                <PageTransition
                   key={
                     routeProps.location.pathname.includes("onboarding") ||
                     routeProps.location.pathname.includes("internal-signer")
@@ -175,25 +217,16 @@ export function Main(): ReactElement {
                       : transformedLocation.key
                   }
                 >
-                  <div>
-                    <Switch location={transformedLocation}>
-                      {pageList.map(
-                        ({ path, Component, hasTopBar, hasTabBar }) => (
-                          <Route path={path} key={path}>
-                            <CorePage
-                              hasTopBar={hasTopBar}
-                              hasTabBar={hasTabBar}
-                            >
-                              <ErrorBoundary FallbackComponent={ErrorFallback}>
-                                <Component location={transformedLocation} />
-                              </ErrorBoundary>
-                            </CorePage>
-                          </Route>
-                        ),
-                      )}
-                    </Switch>
-                  </div>
-                </CSSTransition>
+                  <Switch location={transformedLocation}>
+                    {pageList.map(({ path, Component }) => (
+                      <Route path={path} key={path}>
+                        <ErrorBoundary FallbackComponent={PageErrorFallback}>
+                          <Component location={transformedLocation} />
+                        </ErrorBoundary>
+                      </Route>
+                    ))}
+                  </Switch>
+                </PageTransition>
               </TransitionGroup>
             )
           }}
@@ -206,7 +239,48 @@ export function Main(): ReactElement {
             background: transparent;
           }
 
-          ${animationStyles(isDirectionRight)}
+          .pages {
+            display: grid;
+            height: 100%;
+            /* A page sliding in from the right would otherwise widen the popup. */
+            overflow-x: clip;
+          }
+          .pages > * {
+            grid-area: 1 / 1;
+            min-height: 0;
+          }
+          .page_slide_right {
+            --page-slide-from: -7px;
+          }
+          .page_slide_left {
+            --page-slide-from: 7px;
+          }
+          .page-transition-enter > section > main {
+            opacity: 0.3;
+            transform: translateX(var(--page-slide-from));
+          }
+          .page-transition-enter-active > section > main {
+            opacity: 1;
+            transform: translateX(0px);
+            transition:
+              transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
+              opacity 250ms;
+          }
+          .page-transition-exit {
+            opacity: 1;
+          }
+          .page-transition-exit-active {
+            opacity: 0;
+            pointer-events: none;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .page-transition-enter > section > main,
+            .page-transition-enter-active > section > main {
+              opacity: 1;
+              transform: none;
+              transition: none;
+            }
+          }
 
           .hide {
             opacity: 0;

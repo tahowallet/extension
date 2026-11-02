@@ -9,7 +9,7 @@ type Props = {
   shortenedAddress: string
   name: string | undefined
   avatarURL: string | undefined
-  showHoverStyle: boolean
+  showHoverStyle?: boolean
   showLockStatus?: boolean
 }
 
@@ -18,7 +18,7 @@ export default function SharedCurrentAccountInformation({
   shortenedAddress,
   name,
   avatarURL,
-  showHoverStyle,
+  showHoverStyle = false,
   showLockStatus,
 }: Props): ReactElement {
   const areInternalSignersUnlocked = useAreInternalSignersUnlocked(false)
@@ -71,8 +71,4 @@ export default function SharedCurrentAccountInformation({
       </style>
     </div>
   )
-}
-
-SharedCurrentAccountInformation.defaultProps = {
-  showHoverStyle: false,
 }

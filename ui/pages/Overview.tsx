@@ -14,6 +14,7 @@ import NetworksChart from "../components/Overview/NetworksChart"
 import AccountList from "../components/Overview/AccountList"
 import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
 import AbilitiesHeader from "../components/Overview/AbilitiesHeader"
+import CorePage from "../components/Core/CorePage"
 
 export default function Overview(): ReactElement {
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
@@ -29,36 +30,38 @@ export default function Overview(): ReactElement {
   )
 
   return (
-    <section className="stats">
-      <BalanceHeader
-        balance={balance}
-        initializationTimeExpired={initializationLoadingTimeExpired}
-      />
-      <AbilitiesHeader />
-      <AccountList
-        accountsTotal={accountsTotal}
-        accountsCount={accountsCount}
-      />
-      <NetworksChart
-        accountsTotal={accountsTotal}
-        networksCount={networksCount}
-      />
-      <NFTsPortfolioOverview />
-      <OverviewAssetsTable
-        assets={combinedData.assets}
-        initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-      />
-      <style jsx>
-        {`
-          .stats {
-            padding: 16px 16px 24px;
-            width: calc(100% - 32px);
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-          }
-        `}
-      </style>
-    </section>
+    <CorePage hasTabBar>
+      <section className="stats">
+        <BalanceHeader
+          balance={balance}
+          initializationTimeExpired={initializationLoadingTimeExpired}
+        />
+        <AbilitiesHeader />
+        <AccountList
+          accountsTotal={accountsTotal}
+          accountsCount={accountsCount}
+        />
+        <NetworksChart
+          accountsTotal={accountsTotal}
+          networksCount={networksCount}
+        />
+        <NFTsPortfolioOverview />
+        <OverviewAssetsTable
+          assets={combinedData.assets}
+          initializationLoadingTimeExpired={initializationLoadingTimeExpired}
+        />
+        <style jsx>
+          {`
+            .stats {
+              padding: 16px 16px 24px;
+              width: calc(100% - 32px);
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+            }
+          `}
+        </style>
+      </section>
+    </CorePage>
   )
 }

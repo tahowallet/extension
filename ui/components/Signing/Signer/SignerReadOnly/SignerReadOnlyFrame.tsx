@@ -26,7 +26,7 @@ export default function SignerReadOnlyFrame<T extends SignOperationType>({
       </footer>
       <style jsx>{`
         .signature-details {
-          margin-bottom: 84px;
+          margin-bottom: 4px;
         }
       `}</style>
     </>

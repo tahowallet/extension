@@ -77,7 +77,7 @@ function DefaultConnectionPopover({ close }: PopoverProps): ReactElement {
             transparent 30%
           );
 
-          z-index: 4;
+          z-index: var(--z-popover);
         }
 
         section {

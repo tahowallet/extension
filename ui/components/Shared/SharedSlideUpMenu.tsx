@@ -22,7 +22,7 @@ type Props = {
   ) => void
   children: React.ReactNode
   customSize?: string
-  size: SharedSlideUpMenuSize
+  size?: SharedSlideUpMenuSize
   isFullScreen?: boolean
   isScrollable?: boolean
   allowOverflow?: boolean
@@ -43,10 +43,10 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
   const {
     isOpen,
     close,
-    size,
+    size = "medium",
     children,
     customSize,
-    isFullScreen,
+    isFullScreen = false,
     isDark,
     isScrollable,
     allowOverflow,
@@ -114,7 +114,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             left: 0px;
             right: 0px;
             bottom: 0px;
-            z-index: 999;
+            z-index: var(--z-slideover);
             transform: translateY(0); /* open by default */
             opacity: 1;
             transition: transform cubic-bezier(0.19, 1, 0.22, 1)
@@ -136,7 +136,7 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
             bottom: 0;
             top: 0;
             cursor: pointer;
-            z-index: 998;
+            z-index: var(--z-overlay);
             background: var(--green-120);
             opacity: 0.7;
             transition:
@@ -178,9 +178,4 @@ export default function SharedSlideUpMenu(props: Props): ReactElement {
       </style>
     </>
   )
-}
-
-SharedSlideUpMenu.defaultProps = {
-  size: "medium",
-  isFullScreen: false,
 }

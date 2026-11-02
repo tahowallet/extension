@@ -37,6 +37,8 @@ export const test = base.extend<WalletTestFixtures>({
       executablePath: process.env.E2E_CHROME_EXECUTABLE || undefined,
       // set to some path in order to store browser session data
       headless: false,
+      // Pages swap at once instead of sliding, so clicks don't wait them out.
+      reducedMotion: "reduce",
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,

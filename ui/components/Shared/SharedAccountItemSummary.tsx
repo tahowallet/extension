@@ -24,7 +24,7 @@ interface Props {
 }
 
 export default function SharedAccountItemSummary(props: Props): ReactElement {
-  const { isSelected, accountTotal, children, style } = props
+  const { isSelected = false, accountTotal, children, style } = props
   const { t } = useTranslation()
   const {
     address,
@@ -154,8 +154,4 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
       `}</style>
     </div>
   )
-}
-
-SharedAccountItemSummary.defaultProps = {
-  isSelected: false,
 }

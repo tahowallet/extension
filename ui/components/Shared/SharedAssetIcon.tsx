@@ -9,9 +9,9 @@ import { storageGatewayURL } from "@tallyho/tally-background/lib/storage-gateway
 import classNames from "classnames"
 
 type Props = {
-  size: "small" | "medium" | "large" | number
-  logoURL: string
-  symbol: string
+  size?: "small" | "medium" | "large" | number
+  logoURL?: string | null
+  symbol?: string
   /**
    * For an asset we can't vouch for. Its symbol and logo are whatever the
    * asset says they are, so neither picks the icon: an untrusted token
@@ -90,7 +90,12 @@ function useIntersectionObserver<T extends React.RefObject<HTMLElement>>(
 }
 
 export default function SharedAssetIcon(props: Props): ReactElement {
-  const { size, logoURL: assetLogoURL, symbol, untrusted = false } = props
+  const {
+    size = "medium",
+    logoURL: assetLogoURL = null,
+    symbol = "ETH",
+    untrusted = false,
+  } = props
   const logoURL = untrusted ? "" : assetLogoURL
 
   const [imageURL, setImageURL] = useState("")
@@ -276,10 +281,4 @@ export default function SharedAssetIcon(props: Props): ReactElement {
       `}</style>
     </div>
   )
-}
-
-SharedAssetIcon.defaultProps = {
-  size: "medium",
-  logoURL: null,
-  symbol: "ETH",
 }

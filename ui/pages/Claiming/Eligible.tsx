@@ -20,6 +20,7 @@ import SharedSlideUpMenu from "../../components/Shared/SharedSlideUpMenu"
 import { doggoTokenDecimalDigits } from "../../utils/constants"
 import TopMenuProfileButton from "../../components/TopMenu/TopMenuProfileButton"
 import SharedBackButton from "../../components/Shared/SharedBackButton"
+import CorePage from "../../components/Core/CorePage"
 
 export default function Eligible(): ReactElement | null {
   const dispatch = useBackgroundDispatch()
@@ -120,101 +121,103 @@ export default function Eligible(): ReactElement | null {
   ]
 
   return (
-    <div className="wrap">
-      {infoModalVisible ? (
-        <ClaimInfoModal setModalVisible={setInfoModalVisible} />
-      ) : null}
+    <CorePage>
+      <div className="wrap">
+        {infoModalVisible ? (
+          <ClaimInfoModal setModalVisible={setInfoModalVisible} />
+        ) : null}
 
-      <SharedSlideUpMenu
-        isOpen={showSuccessStep}
-        close={handleSuccessModalClose}
-        size="large"
-        isDark
-      >
-        <ClaimSuccessModalContent close={handleSuccessModalClose} />
-      </SharedSlideUpMenu>
+        <SharedSlideUpMenu
+          isOpen={showSuccessStep}
+          close={handleSuccessModalClose}
+          size="large"
+          isDark
+        >
+          <ClaimSuccessModalContent close={handleSuccessModalClose} />
+        </SharedSlideUpMenu>
 
-      <div className="eligible">
-        <div className="top_bar standard_width">
-          <SharedBackButton
-            path="/"
-            onClick={
-              step > 1
-                ? () => {
-                    setStep(step - 1)
-                  }
-                : undefined
-            }
-          />
-          <div className="profile_wrap">
-            <TopMenuProfileButton />
+        <div className="eligible">
+          <div className="top_bar standard_width">
+            <SharedBackButton
+              path="/"
+              onClick={
+                step > 1
+                  ? () => {
+                      setStep(step - 1)
+                    }
+                  : undefined
+              }
+            />
+            <div className="profile_wrap">
+              <TopMenuProfileButton />
+            </div>
+          </div>
+          <div className="steps-container">
+            {stepsComponents[step - 1].component}
           </div>
         </div>
-        <div className="steps-container">
-          {stepsComponents[step - 1].component}
-        </div>
+        <footer>
+          <ClaimFooter
+            step={step}
+            advanceStep={advanceStep}
+            showSuccess={() => {
+              setShowSuccessStep(true)
+            }}
+            isAdvanceable={stepsComponents[step - 1].canAdvance}
+          />
+        </footer>
+        <style jsx>
+          {`
+            .steps-container {
+              align-self: flex-start;
+              margin-top: -10px;
+              height: 492px;
+              overflow: scroll;
+              padding: 0px 16px;
+              background-image: url("./images/dark_forest_bg@2x.png");
+              background-size: 384px 274px;
+              background-position: top;
+              background-color: var(--hunter-green);
+              background-attachment: local, scroll;
+              background-repeat: no-repeat;
+              margin-bottom: -16px;
+            }
+            .wrap {
+              width: 100%;
+              display: flex;
+              flex-flow: column;
+              position: relative;
+            }
+            .eligible {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              flex-grow: 1;
+              width: 100%;
+              margin: 0 auto;
+              box-sizing: border-box;
+              background-color: var(--green-95);
+            }
+            footer {
+              background-color: var(--hunter-green);
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              height: 63px;
+            }
+            .top_bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .profile_wrap {
+              pointer-events: none;
+              transform: translateY(-5px);
+            }
+          `}
+        </style>
       </div>
-      <footer>
-        <ClaimFooter
-          step={step}
-          advanceStep={advanceStep}
-          showSuccess={() => {
-            setShowSuccessStep(true)
-          }}
-          isAdvanceable={stepsComponents[step - 1].canAdvance}
-        />
-      </footer>
-      <style jsx>
-        {`
-          .steps-container {
-            align-self: flex-start;
-            margin-top: -10px;
-            height: 492px;
-            overflow: scroll;
-            padding: 0px 16px;
-            background-image: url("./images/dark_forest_bg@2x.png");
-            background-size: 384px 274px;
-            background-position: top;
-            background-color: var(--hunter-green);
-            background-attachment: local, scroll;
-            background-repeat: no-repeat;
-            margin-bottom: -16px;
-          }
-          .wrap {
-            width: 100%;
-            display: flex;
-            flex-flow: column;
-            position: relative;
-          }
-          .eligible {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            flex-grow: 1;
-            width: 100%;
-            margin: 0 auto;
-            box-sizing: border-box;
-            background-color: var(--green-95);
-          }
-          footer {
-            background-color: var(--hunter-green);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 63px;
-          }
-          .top_bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-          .profile_wrap {
-            pointer-events: none;
-            transform: translateY(-5px);
-          }
-        `}
-      </style>
-    </div>
+    </CorePage>
   )
 }

@@ -181,7 +181,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             line-height: 20px;
             border-radius: 3px;
             padding: 12px;
-            z-index: 20;
+            z-index: var(--z-tooltip);
             ${getVerticalPosition(placement, height, verticalShift)}
             ${getHorizontalPosition(horizontalPosition, width, horizontalShift)}
           }

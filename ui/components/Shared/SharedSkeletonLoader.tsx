@@ -13,8 +13,8 @@ export default function SharedSkeletonLoader(props: {
   const {
     width,
     height,
-    borderRadius,
-    isLoaded,
+    borderRadius = 8,
+    isLoaded = false,
     testId = "loading_skeleton",
     style,
     children,
@@ -51,5 +51,3 @@ export default function SharedSkeletonLoader(props: {
     </div>
   )
 }
-
-SharedSkeletonLoader.defaultProps = { borderRadius: 8, isLoaded: false }

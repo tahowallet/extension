@@ -340,7 +340,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           position: fixed;
           top: 44px;
           left: 0;
-          z-index: 998;
+          z-index: var(--z-popover);
           overflow: hidden;
           clip-path: inset(0 0 0 0);
           transition: clip-path cubic-bezier(0.19, 1, 0.22, 1)

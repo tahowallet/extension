@@ -39,6 +39,7 @@ import TopMenuProtocolListItem from "../../components/TopMenu/TopMenuProtocolLis
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import { useSetState } from "../../hooks/react-hooks"
 import { trimWithEllipsis } from "../../utils/textUtils"
+import CorePage from "../../components/Core/CorePage"
 
 const HELPDESK_CUSTOM_TOKENS_LINK =
   "https://tahowallet.notion.site/Adding-Custom-Tokens-2facd9b82b5f4685a7d4766caeb05a4c"
@@ -215,245 +216,248 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const shouldDisplayAsset = assetData?.exists && isTrusted
 
   return (
-    <div className="standard_width_padded wrapper">
-      <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
-      <style jsx>{`
-        .tooltip_wrap {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-        }
+    <CorePage hasTabBar>
+      <div className="standard_width_padded wrapper">
+        <SharedPageHeader withoutBackText>{t("title")}</SharedPageHeader>
+        <style jsx>{`
+          .tooltip_wrap {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+          }
 
-        .input_container {
-          position: relative;
-          --input-padding: 0 32px 0 16px;
-        }
+          .input_container {
+            position: relative;
+            --input-padding: 0 32px 0 16px;
+          }
 
-        .network_select ul {
-          overflow-y: auto;
-          max-height: 460px;
-        }
+          .network_select ul {
+            overflow-y: auto;
+            max-height: 460px;
+          }
 
-        .network_select {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          padding: 0 16px;
-        }
+          .network_select {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 0 16px;
+          }
 
-        .network_select_title {
-          font-size: 16px;
-          font-weight: 500;
-          line-height: 24px;
-          letter-spacing: 0em;
-          text-align: left;
-        }
-      `}</style>
-      <SharedSlideUpMenu
-        isOpen={isNetworkSelectOpen}
-        isScrollable
-        style={{ display: "flex", flexDirection: "column" }}
-        close={() => setNetworkSelectOpen(false)}
-      >
-        <div className="network_select">
-          <div className="network_select_title">{t("networkSelect.title")}</div>
-          <ul>
-            {networks.map((network) => (
-              <TopMenuProtocolListItem
-                key={network.chainID}
-                network={network}
-                isSelected={chosenNetwork.chainID === network.chainID}
-                onSelect={(selectedNetwork) => {
-                  setChosenNetwork(selectedNetwork)
-                  setNetworkSelectOpen(false)
-                  handleTokenInfoChange(tokenAddress, selectedNetwork)
-                }}
-                showSelectedText={false}
-                info={
-                  productionNetworkDescription[network.chainID] ||
-                  sharedT("protocol.compatibleChain")
-                }
-              />
-            ))}
-          </ul>
-        </div>
-      </SharedSlideUpMenu>
-      <style jsx>{`
-        .network_select_input:hover {
-          --icon-color: var(--green-5);
-        }
-
-        .network_select_input {
-          border: 2px solid var(--green-60);
-          border-radius: 4px;
-          display: flex;
-          padding: 8px 16px;
-          gap: 8px;
-          align-items: center;
-          cursor: pointer;
-        }
-      `}</style>
-      <form onSubmit={handleFormSubmit}>
-        <div
-          role="button"
-          onClick={() => setNetworkSelectOpen(true)}
-          onKeyUp={() => setNetworkSelectOpen(true)}
-          className="network_select_input"
-          tabIndex={-1}
+          .network_select_title {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            letter-spacing: 0em;
+            text-align: left;
+          }
+        `}</style>
+        <SharedSlideUpMenu
+          isOpen={isNetworkSelectOpen}
+          isScrollable
+          style={{ display: "flex", flexDirection: "column" }}
+          close={() => setNetworkSelectOpen(false)}
         >
-          <SharedNetworkIcon network={chosenNetwork} size={16} />
-          <span>{chosenNetwork.name}</span>
-          <SharedIcon
-            width={16}
-            height={8}
-            icon="chevron_down.svg"
-            color="var(--icon-color, var(--white))"
-            style={{ marginLeft: "auto" }}
-          />
-        </div>
-        <div className="input_container">
-          <SharedInput
-            label={t("input.contractAddress.label")}
-            errorMessage={
-              hasAssetDetailLoadError ? t("error.invalidToken") : ""
-            }
-            onChange={(addressLike) => {
-              setTokenAddress(addressLike)
-              handleTokenInfoChange(addressLike, chosenNetwork)
-            }}
-          />
-          <div className="tooltip_wrap">
-            <SharedTooltip
-              width={219}
-              horizontalShift={100}
-              style={{ "--tooltip-icon-color": "var(--green-20)" }}
-            >
-              <Trans
-                t={t}
-                i18nKey="input.tooltip"
-                components={{
-                  url: (
-                    <SharedLink
-                      type="tooltip"
-                      url={HELPDESK_CUSTOM_TOKENS_LINK}
-                    />
-                  ),
-                }}
-              />
-            </SharedTooltip>
-          </div>
-        </div>
-        <div className="form_controls">
-          <div className="token_details_container">
-            {assetData && !isLoadingAssetDetails ? (
-              <SharedAssetIcon
-                size={40}
-                logoURL={assetData?.asset.metadata?.logoURL}
-                symbol={assetData.asset.symbol}
-              />
-            ) : (
-              <PlaceholderIcon />
-            )}
-            <div className="token_details">
-              <div className="balance">
-                <strong title={String(assetData?.balance)}>
-                  {assetData?.balance ?? t("asset.label.balance")}
-                </strong>
-                <span className="symbol">
-                  {assetData?.asset?.symbol
-                    ? trimWithEllipsis(
-                        assetData.asset.symbol,
-                        MAX_SYMBOL_LENGTH,
-                      )
-                    : t("asset.label.symbol")}
-                </span>
-              </div>
-              <span className="network_name">{chosenNetwork.name}</span>
+          <div className="network_select">
+            <div className="network_select_title">
+              {t("networkSelect.title")}
             </div>
+            <ul>
+              {networks.map((network) => (
+                <TopMenuProtocolListItem
+                  key={network.chainID}
+                  network={network}
+                  isSelected={chosenNetwork.chainID === network.chainID}
+                  onSelect={(selectedNetwork) => {
+                    setChosenNetwork(selectedNetwork)
+                    setNetworkSelectOpen(false)
+                    handleTokenInfoChange(tokenAddress, selectedNetwork)
+                  }}
+                  showSelectedText={false}
+                  info={
+                    productionNetworkDescription[network.chainID] ||
+                    sharedT("protocol.compatibleChain")
+                  }
+                />
+              ))}
+            </ul>
           </div>
-          <SharedButton
-            type="primary"
-            size="medium"
-            isFormSubmit
-            isDisabled={
-              !assetData ||
-              isLoadingAssetDetails ||
-              hasAssetDetailLoadError ||
-              shouldDisplayAsset ||
-              isImportingToken
-            }
-            isLoading={isLoadingAssetDetails || isImportingToken}
+        </SharedSlideUpMenu>
+        <style jsx>{`
+          .network_select_input:hover {
+            --icon-color: var(--green-5);
+          }
+
+          .network_select_input {
+            border: 2px solid var(--green-60);
+            border-radius: 4px;
+            display: flex;
+            padding: 8px 16px;
+            gap: 8px;
+            align-items: center;
+            cursor: pointer;
+          }
+        `}</style>
+        <form onSubmit={handleFormSubmit}>
+          <div
+            role="button"
+            onClick={() => setNetworkSelectOpen(true)}
+            onKeyUp={() => setNetworkSelectOpen(true)}
+            className="network_select_input"
+            tabIndex={-1}
           >
-            {t("submit")}
-          </SharedButton>
-        </div>
-        {shouldDisplayAsset ? (
-          <div className="alert">
+            <SharedNetworkIcon network={chosenNetwork} size={16} />
+            <span>{chosenNetwork.name}</span>
             <SharedIcon
-              color="var(--success)"
-              width={24}
-              style={{ minWidth: 24 }}
-              icon="icons/m/notif-correct.svg"
+              width={16}
+              height={8}
+              icon="chevron_down.svg"
+              color="var(--icon-color, var(--white))"
+              style={{ marginLeft: "auto" }}
             />
-            <div className="alert_content">
-              <div className="title">{t("warning.alreadyExists.title")}</div>
-              <div className="desc">{renderWarningText()}</div>
+          </div>
+          <div className="input_container">
+            <SharedInput
+              label={t("input.contractAddress.label")}
+              errorMessage={
+                hasAssetDetailLoadError ? t("error.invalidToken") : ""
+              }
+              onChange={(addressLike) => {
+                setTokenAddress(addressLike)
+                handleTokenInfoChange(addressLike, chosenNetwork)
+              }}
+            />
+            <div className="tooltip_wrap">
+              <SharedTooltip
+                width={219}
+                horizontalShift={100}
+                style={{ "--tooltip-icon-color": "var(--green-20)" }}
+              >
+                <Trans
+                  t={t}
+                  i18nKey="input.tooltip"
+                  components={{
+                    url: (
+                      <SharedLink
+                        type="tooltip"
+                        url={HELPDESK_CUSTOM_TOKENS_LINK}
+                      />
+                    ),
+                  }}
+                />
+              </SharedTooltip>
             </div>
           </div>
-        ) : (
-          showWarningAboutDust && (
+          <div className="form_controls">
+            <div className="token_details_container">
+              {assetData && !isLoadingAssetDetails ? (
+                <SharedAssetIcon
+                  size={40}
+                  logoURL={assetData?.asset.metadata?.logoURL}
+                  symbol={assetData.asset.symbol}
+                />
+              ) : (
+                <PlaceholderIcon />
+              )}
+              <div className="token_details">
+                <div className="balance">
+                  <strong title={String(assetData?.balance)}>
+                    {assetData?.balance ?? t("asset.label.balance")}
+                  </strong>
+                  <span className="symbol">
+                    {assetData?.asset?.symbol
+                      ? trimWithEllipsis(
+                          assetData.asset.symbol,
+                          MAX_SYMBOL_LENGTH,
+                        )
+                      : t("asset.label.symbol")}
+                  </span>
+                </div>
+                <span className="network_name">{chosenNetwork.name}</span>
+              </div>
+            </div>
+            <SharedButton
+              type="primary"
+              size="medium"
+              isFormSubmit
+              isDisabled={
+                !assetData ||
+                isLoadingAssetDetails ||
+                hasAssetDetailLoadError ||
+                shouldDisplayAsset ||
+                isImportingToken
+              }
+              isLoading={isLoadingAssetDetails || isImportingToken}
+            >
+              {t("submit")}
+            </SharedButton>
+          </div>
+          {shouldDisplayAsset ? (
             <div className="alert">
               <SharedIcon
-                color="var(--attention)"
+                color="var(--success)"
                 width={24}
                 style={{ minWidth: 24 }}
-                icon="icons/m/notif-attention.svg"
+                icon="icons/m/notif-correct.svg"
               />
               <div className="alert_content">
-                <div className="title" style={{ color: "var(--attention)" }}>
-                  {t("warning.dust.title", warningOptions)}
-                </div>
+                <div className="title">{t("warning.alreadyExists.title")}</div>
+                <div className="desc">{renderWarningText()}</div>
               </div>
             </div>
-          )
-        )}
-      </form>
-      <style jsx>{`
-        .alert {
-          background: var(--green-120);
-          border-radius: 8px;
-          padding: 8px;
-          padding-right: 24px;
-          display: flex;
-          gap: 8px;
-        }
+          ) : (
+            showWarningAboutDust && (
+              <div className="alert">
+                <SharedIcon
+                  color="var(--attention)"
+                  width={24}
+                  style={{ minWidth: 24 }}
+                  icon="icons/m/notif-attention.svg"
+                />
+                <div className="alert_content">
+                  <div className="title" style={{ color: "var(--attention)" }}>
+                    {t("warning.dust.title", warningOptions)}
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </form>
+        <style jsx>{`
+          .alert {
+            background: var(--green-120);
+            border-radius: 8px;
+            padding: 8px;
+            padding-right: 24px;
+            display: flex;
+            gap: 8px;
+          }
 
-        .alert .title {
-          color: var(--success);
-          font-size: 16px;
-          font-weight: 500;
-          line-height: 24px;
-          letter-spacing: 0em;
-          text-align: left;
-        }
+          .alert .title {
+            color: var(--success);
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            letter-spacing: 0em;
+            text-align: left;
+          }
 
-        .alert .desc {
-          font-size: 16px;
-          font-weight: 500;
-          line-height: 24px;
-          letter-spacing: 0em;
-          text-align: left;
-          color: var(--green-40);
-        }
-      `}</style>
-      <footer>
-        <SharedLink
-          text={t("footer.hint")}
-          url={HELPDESK_CUSTOM_TOKENS_LINK}
-          styles={{ "--link-color": "var(--green-40)" }}
-        />
-      </footer>
-      <style jsx>{`
+          .alert .desc {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            letter-spacing: 0em;
+            text-align: left;
+            color: var(--green-40);
+          }
+        `}</style>
+        <footer>
+          <SharedLink
+            text={t("footer.hint")}
+            url={HELPDESK_CUSTOM_TOKENS_LINK}
+            styles={{ "--link-color": "var(--green-40)" }}
+          />
+        </footer>
+        <style jsx>{`
         form {
           all: unset;
           max-width: 100%;
@@ -539,6 +543,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
           gap: 32px;
         }
       `}</style>
-    </div>
+      </div>
+    </CorePage>
   )
 }

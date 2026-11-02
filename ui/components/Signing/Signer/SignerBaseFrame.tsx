@@ -50,11 +50,8 @@ export default function SignerBaseFrame({
       <style jsx>
         {`
           .signature-details {
-            /*
-             * Adjust for fixed-position footer, plus some extra to visually
-             * deal with the drop shadow.
-             */
-            margin-bottom: 84px;
+            /* Leave room for the footer's drop shadow. */
+            margin-bottom: 4px;
           }
         `}
       </style>

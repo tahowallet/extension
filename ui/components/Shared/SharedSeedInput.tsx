@@ -107,7 +107,7 @@ export default function SharedSeedInput(props: Props): ReactElement {
           padding: 0 6px;
           color: var(--trophy-gold);
           background: var(--hunter-green);
-          z-index: 999;
+          z-index: var(--z-raised);
         }
 
         #recovery_phrase:focus {

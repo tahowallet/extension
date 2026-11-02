@@ -61,8 +61,7 @@ export default function CommonAssetListItem(
   const isUntrusted = isUntrustedAsset(assetAmount.asset)
   const amount = displayAssetAmount(assetAmount)
 
-  const handleVerifyAsset = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault()
+  const handleVerifyAsset = () => {
     if (
       isSmartContractFungibleAsset(assetAmount.asset) &&
       onUnverifiedAssetWarningClick
@@ -72,17 +71,18 @@ export default function CommonAssetListItem(
   }
 
   return (
-    <Link
-      to={{
-        pathname: "/singleAsset",
-        state: assetAmount.asset,
-      }}
+    <div
+      className="asset_list_item"
+      data-testid="asset_list_item"
+      data-assetid={getFullAssetID(assetAmount.asset)}
+      data-trusted={isTrustedAsset(assetAmount.asset)}
     >
-      <div
-        className="asset_list_item"
-        data-testid="asset_list_item"
-        data-assetid={getFullAssetID(assetAmount.asset)}
-        data-trusted={isTrustedAsset(assetAmount.asset)}
+      <Link
+        className="asset_link"
+        to={{
+          pathname: "/singleAsset",
+          state: assetAmount.asset,
+        }}
       >
         <div className="asset_left">
           <SharedAssetIcon
@@ -129,68 +129,72 @@ export default function CommonAssetListItem(
             }
           </div>
         </div>
-        <div className="asset_right">
-          {isUntrusted ? (
-            <AssetVerifyToggler
-              text={t("unverifiedAssets.verifyAsset")}
-              icon="notif-attention"
-              color="var(--attention)"
-              hoverColor="var(--white)"
-              onClick={(event) => handleVerifyAsset(event)}
+      </Link>
+      <div className="asset_right">
+        {isUntrusted ? (
+          <AssetVerifyToggler
+            text={t("unverifiedAssets.verifyAsset")}
+            icon="notif-attention"
+            color="var(--attention)"
+            hoverColor="var(--white)"
+            onClick={handleVerifyAsset}
+          />
+        ) : (
+          <>
+            <SharedIconRouterLink
+              path="/send"
+              state={assetAmount.asset}
+              iconClass="asset_icon_send"
+              isTooltip
+              tooltipText="Send"
             />
-          ) : (
-            <>
+            {networkSupportsSwaps(selectedNetwork.chainID) ? (
               <SharedIconRouterLink
-                path="/send"
-                state={assetAmount.asset}
-                iconClass="asset_icon_send"
+                path="/swap"
+                state={{
+                  symbol: assetAmount.asset.symbol,
+                  contractAddress,
+                }}
+                iconClass="asset_icon_swap"
                 isTooltip
-                tooltipText="Send"
+                tooltipText="Swap"
               />
-              {networkSupportsSwaps(selectedNetwork.chainID) ? (
-                <SharedIconRouterLink
-                  path="/swap"
-                  state={{
-                    symbol: assetAmount.asset.symbol,
-                    contractAddress,
-                  }}
-                  iconClass="asset_icon_swap"
-                  isTooltip
-                  tooltipText="Swap"
-                />
-              ) : (
-                <SharedTooltip
-                  type="dark"
-                  width={180}
-                  height={48}
-                  horizontalPosition="left"
-                  verticalPosition="bottom"
-                  horizontalShift={42}
-                  verticalShift={16}
-                  IconComponent={() => (
-                    <div className="button_wrap">
-                      <SharedIconRouterLink
-                        path="/swap"
-                        disabled
-                        state={{
-                          symbol: assetAmount.asset.symbol,
-                          contractAddress,
-                        }}
-                        iconClass="asset_icon_swap"
-                      />
-                    </div>
-                  )}
-                >
-                  <div className="centered_tooltip">
-                    <div>{t("swapDisabledOne")}</div>
-                    <div>{t("swapDisabledTwo")}</div>
+            ) : (
+              <SharedTooltip
+                type="dark"
+                width={180}
+                height={48}
+                horizontalPosition="left"
+                verticalPosition="bottom"
+                horizontalShift={42}
+                verticalShift={16}
+                IconComponent={() => (
+                  <div className="button_wrap">
+                    <SharedIconRouterLink
+                      path="/swap"
+                      disabled
+                      state={{
+                        symbol: assetAmount.asset.symbol,
+                        contractAddress,
+                      }}
+                      iconClass="asset_icon_swap"
+                    />
                   </div>
-                </SharedTooltip>
-              )}
-            </>
-          )}
-        </div>
+                )}
+              >
+                <div className="centered_tooltip">
+                  <div>{t("swapDisabledOne")}</div>
+                  <div>{t("swapDisabledTwo")}</div>
+                </div>
+              </SharedTooltip>
+            )}
+          </>
+        )}
       </div>
+      {/*
+       * styled-jsx glues the interpolated styles onto the next selector as an
+       * ancestor, so that rule must not target the row itself.
+       */}
       <style jsx>{`
         ${styles}
         .price {
@@ -208,7 +212,45 @@ export default function CommonAssetListItem(
           justify-content: center;
           align-items: center;
         }
+        .asset_list_item {
+          position: relative;
+          padding: 0 16px 0 0;
+        }
+        .asset_list_item :global(.asset_link) {
+          display: flex;
+          align-items: center;
+          align-self: stretch;
+          flex-grow: 1;
+          /* Shrink past the content so the quick links stay in the row. */
+          min-width: 0;
+          padding-left: 16px;
+          outline: none;
+        }
+        /* The link covers the row; its content and the quick links sit above. */
+        .asset_list_item :global(.asset_link::after) {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+        }
+        .asset_list_item :global(.asset_link:focus-visible::after) {
+          outline: auto;
+        }
+        .asset_left {
+          position: relative;
+          z-index: var(--z-raised);
+        }
+        .asset_right {
+          pointer-events: none;
+        }
+        .asset_right :global(a),
+        .asset_right :global(button),
+        .asset_right :global(.icon_wrapper) {
+          position: relative;
+          z-index: var(--z-raised);
+          pointer-events: auto;
+        }
       `}</style>
-    </Link>
+    </div>
   )
 }

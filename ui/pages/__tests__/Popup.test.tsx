@@ -52,15 +52,11 @@ jest.mock("../../routes/routes", () => ({
     {
       path: "/settings/custom-networks",
       Component: SettingsCustomNetworks,
-      hasTabBar: true,
-      hasTopBar: false,
       persistOnClose: true,
     },
     {
       path: "/",
       Component: WarningsPage,
-      hasTabBar: true,
-      hasTopBar: false,
       persistOnClose: true,
     },
   ],

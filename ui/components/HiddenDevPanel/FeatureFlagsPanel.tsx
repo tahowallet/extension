@@ -10,6 +10,7 @@ import { setLocalStorageItem } from "../../hooks"
 import BalanceReloader from "../BalanceReloader/BalanceReloader"
 import SharedPageHeader from "../Shared/SharedPageHeader"
 import SharedToggleButton from "../Shared/SharedToggleButton"
+import CorePage from "../Core/CorePage"
 
 function FeatureFlag(props: { name: RuntimeFlagType }): ReactElement {
   const { name } = props
@@ -53,25 +54,27 @@ export default function FeatureFlagsPanel(): ReactElement {
   })
 
   return (
-    <section className="standard_width">
-      <SharedPageHeader backPath="/dev" withoutBackText>
-        {t("title")} <BalanceReloader />
-      </SharedPageHeader>
-      <ul className="flags_wrap">
-        {(Object.keys(RuntimeFlag) as RuntimeFlagType[]).map((flagName) => (
-          <FeatureFlag key={flagName} name={flagName} />
-        ))}
-      </ul>
-      <style jsx>{`
-        section {
-          margin-bottom: 35px;
-        }
-        .flags_wrap {
-          display: flex;
-          flex-direction: column;
-          margin-top: 16px;
-        }
-      `}</style>
-    </section>
+    <CorePage hasTabBar>
+      <section className="standard_width">
+        <SharedPageHeader backPath="/dev" withoutBackText>
+          {t("title")} <BalanceReloader />
+        </SharedPageHeader>
+        <ul className="flags_wrap">
+          {(Object.keys(RuntimeFlag) as RuntimeFlagType[]).map((flagName) => (
+            <FeatureFlag key={flagName} name={flagName} />
+          ))}
+        </ul>
+        <style jsx>{`
+          section {
+            margin-bottom: 35px;
+          }
+          .flags_wrap {
+            display: flex;
+            flex-direction: column;
+            margin-top: 16px;
+          }
+        `}</style>
+      </section>
+    </CorePage>
   )
 }

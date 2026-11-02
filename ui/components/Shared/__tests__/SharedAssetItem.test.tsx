@@ -16,7 +16,7 @@ const WMATIC: SmartContractFungibleAsset = {
 }
 
 const explorerIcon = (container: HTMLElement) =>
-  container.querySelector(".right_content button.icon")
+  container.querySelector(".contract_link button.icon")
 
 describe("SharedAssetItem", () => {
   // MATIC on Polygon (like ETH on Optimism) is a network base asset that also

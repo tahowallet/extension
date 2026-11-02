@@ -75,6 +75,3 @@ export default function PasswordInput(props: PasswordInputProps): ReactElement {
     </div>
   )
 }
-
-const { type: _, ...defaultProps } = SharedInput.defaultProps
-PasswordInput.defaultProps = defaultProps

@@ -8,6 +8,7 @@ import NFTsHeader from "../components/NFTs/NFTsHeader"
 import { useBackgroundSelector, useNFTsReload } from "../hooks"
 import NFTListPortfolio from "../components/NFTs/NFTListPortfolio"
 import SharedButtonUp from "../components/Shared/SharedButtonUp"
+import CorePage from "../components/Core/CorePage"
 
 const PANEL_NAMES = ["NFTs", "Badges"]
 
@@ -21,41 +22,46 @@ export default function NFTs(): ReactElement {
   useNFTsReload()
 
   return (
-    <div className="page_content" ref={pageRef}>
-      <NFTsHeader />
-      <div className="panel_switcher_wrap">
-        <SharedPanelSwitcher
-          setPanelNumber={setPanelNumber}
-          panelNumber={panelNumber}
-          panelNames={PANEL_NAMES}
-        />
-      </div>
-      <div className="standard_width">
-        {panelNumber === 0 && (
-          <NFTListPortfolio type="nfts" isEmptyPortfolio={!(allNftCount > 0)} />
-        )}
-        {panelNumber === 1 && (
-          <NFTListPortfolio
-            type="badge"
-            isEmptyPortfolio={!(allBadgesCount > 0)}
+    <CorePage hasTabBar>
+      <div className="page_content" ref={pageRef}>
+        <NFTsHeader />
+        <div className="panel_switcher_wrap">
+          <SharedPanelSwitcher
+            setPanelNumber={setPanelNumber}
+            panelNumber={panelNumber}
+            panelNames={PANEL_NAMES}
           />
-        )}
+        </div>
+        <div className="standard_width">
+          {panelNumber === 0 && (
+            <NFTListPortfolio
+              type="nfts"
+              isEmptyPortfolio={!(allNftCount > 0)}
+            />
+          )}
+          {panelNumber === 1 && (
+            <NFTListPortfolio
+              type="badge"
+              isEmptyPortfolio={!(allBadgesCount > 0)}
+            />
+          )}
+        </div>
+        <SharedButtonUp elementRef={pageRef} offset={100} />
+        <style jsx>
+          {`
+            .page_content {
+              width: 100%;
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+              align-items: center;
+            }
+            .panel_switcher_wrap {
+              width: 100%;
+            }
+          `}
+        </style>
       </div>
-      <SharedButtonUp elementRef={pageRef} offset={100} />
-      <style jsx>
-        {`
-          .page_content {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-          }
-          .panel_switcher_wrap {
-            width: 100%;
-          }
-        `}
-      </style>
-    </div>
+    </CorePage>
   )
 }

@@ -1,22 +1,32 @@
 import React, { ReactElement } from "react"
+import { ErrorBoundary } from "react-error-boundary"
 import Snackbar from "../Snackbar/Snackbar"
 import TabBar from "../TabBar/TabBar"
 import TopMenu from "../TopMenu/TopMenu"
+import ErrorFallback from "../../pages/ErrorFallback"
 
 interface Props {
-  children: React.ReactNode
+  children?: React.ReactNode
   hasTopBar?: boolean
   hasTabBar?: boolean
 }
 
-export default function CorePage(props: Props): ReactElement {
-  const { children, hasTopBar, hasTabBar } = props
-
+/**
+ * The frame of a popup page: the optional top and tab bars around a
+ * scrolling main area. Errors in the page's content render in its place.
+ */
+export default function CorePage({
+  children,
+  hasTopBar = false,
+  hasTabBar = false,
+}: Props): ReactElement {
   return (
     <section>
       {hasTopBar && <TopMenu />}
       <main>
-        {children}
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          {children}
+        </ErrorBoundary>
         <Snackbar />
       </main>
       {hasTabBar && <TabBar />}
@@ -29,6 +39,7 @@ export default function CorePage(props: Props): ReactElement {
           }
           main {
             width: 100%;
+            overflow-x: hidden;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -38,16 +49,8 @@ export default function CorePage(props: Props): ReactElement {
             background-color: var(--hunter-green);
             height: 100%;
           }
-          .top_menu_wrap {
-            z-index: 10;
-            cursor: default;
-          }
         `}
       </style>
     </section>
   )
-}
-
-CorePage.defaultProps = {
-  hasTopBar: true,
 }

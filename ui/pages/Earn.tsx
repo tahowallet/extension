@@ -19,6 +19,7 @@ import PoolCard from "./Earn/PoolCard"
 import HeaderComingSoon from "./Earn/HeaderComingSoon"
 import HeaderDeploy from "./Earn/HeaderDeploy"
 import NotificationVaults from "./Earn/NotificationVaults"
+import CorePage from "../components/Core/CorePage"
 
 export default function Earn(): ReactElement {
   const isValutDataStale = useBackgroundSelector(selectIsVaultDataStale)
@@ -64,7 +65,7 @@ export default function Earn(): ReactElement {
     vaultsWithLockedValues?.filter((vault) => vault.userDeposited > 0n) ?? []
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       {stage === EarnStages.ComingSoon && <HeaderComingSoon />}
       {stage === EarnStages.Deploying && <HeaderDeploy />}
       {stage !== EarnStages.ComingSoon && stage !== EarnStages.Deploying && (
@@ -159,6 +160,6 @@ export default function Earn(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }

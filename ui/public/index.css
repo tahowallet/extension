@@ -410,6 +410,19 @@
   color-scheme: light;
 }
 
+/* Stacking layers, lowest first. They don't change with the theme. */
+:root {
+  --z-raised: 1; /* above neighbouring page content */
+  --z-sticky: 10; /* top and tab bars, sticky footers, floating buttons */
+  --z-dropdown: 20; /* selects and menus that open over the page */
+  --z-popover: 100; /* panels anchored to the top menu */
+  --z-overlay: 200; /* backdrops behind slide-overs and modals */
+  --z-slideover: 300;
+  --z-modal: 400;
+  --z-tooltip: 500;
+  --z-snackbar: 600;
+}
+
 /* Subtrees pinned to a theme, such as artwork cards, take its text colour. */
 [data-theme] {
   color: var(--white);

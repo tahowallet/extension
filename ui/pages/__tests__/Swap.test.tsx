@@ -1,4 +1,4 @@
-import React from "react"
+import React, { ReactNode } from "react"
 import { MemoryRouter, Route } from "react-router-dom"
 import { MATIC, POLYGON } from "@tallyho/tally-background/constants"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
@@ -9,6 +9,12 @@ import { createAccountData } from "@tallyho/tally-background/tests/factories"
 import Swap from "../Swap"
 import { renderWithProviders } from "../../tests/test-utils"
 import { TEST_ADDRESS } from "../../tests/factories"
+
+// The page frame brings the top and tab bars, which need the extension APIs.
+jest.mock("../../components/Core/CorePage", () => ({
+  __esModule: true,
+  default: ({ children }: { children: ReactNode }) => children,
+}))
 
 const WMATIC: SmartContractFungibleAsset = {
   name: "Wrapped Matic",

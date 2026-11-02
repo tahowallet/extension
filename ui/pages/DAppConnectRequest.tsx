@@ -14,6 +14,7 @@ import { Redirect } from "react-router-dom"
 import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import DAppConnectPage from "./DAppConnect/DAppConnectPage"
 import ErrorFallback from "./ErrorFallback"
+import CorePage from "../components/Core/CorePage"
 
 export default function DAppConnectRequest(): ReactElement {
   const dispatch = useBackgroundDispatch()
@@ -78,7 +79,11 @@ export default function DAppConnectRequest(): ReactElement {
     (requestedChainID !== undefined && additionalNetwork === undefined)
   ) {
     // something went wrong with permissions request
-    return <ErrorFallback />
+    return (
+      <CorePage>
+        <ErrorFallback />
+      </CorePage>
+    )
   }
 
   if (typeof currentAccountTotal === "undefined") {
@@ -87,27 +92,30 @@ export default function DAppConnectRequest(): ReactElement {
   }
 
   return (
-    <div className="page">
-      <DAppConnectPage
-        permission={permission}
-        currentAccountTotal={currentAccountTotal}
-        additionalNetwork={additionalNetwork}
-        denyPermission={deny}
-        grantPermission={grant}
-      />
-      <style jsx>{`
-        .page {
-          background-color: var(--green-95);
-          height: 100vh;
-          width: 100%;
-          z-index: 1000;
-        }
-      `}</style>
-      <style jsx global>{`
-        body {
-          background-color: var(--green-95);
-        }
-      `}</style>
-    </div>
+    <CorePage>
+      <div className="page">
+        <DAppConnectPage
+          permission={permission}
+          currentAccountTotal={currentAccountTotal}
+          additionalNetwork={additionalNetwork}
+          denyPermission={deny}
+          grantPermission={grant}
+        />
+        <style jsx>{`
+          .page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            width: 100%;
+            background-color: var(--green-95);
+          }
+        `}</style>
+        <style jsx global>{`
+          body {
+            background-color: var(--green-95);
+          }
+        `}</style>
+      </div>
+    </CorePage>
   )
 }

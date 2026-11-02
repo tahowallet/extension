@@ -1,74 +1,40 @@
-import { RouteComponentProps } from "react-router-dom"
-import tabs from "./tabs"
+import { MemoryHistory } from "history"
+import tabs, { defaultTab } from "./tabs"
 
-export default function setAnimationConditions(
-  routeProps: RouteComponentProps & {
-    history?: {
-      entries?: {
-        state: {
-          isBack: boolean
-        }
-        pathname: string
-      }[]
-    }
-    location?: {
-      pathname: string
-    }
-  },
-  setIsDirectionRight: (choice: boolean) => void,
-): void {
-  const { entries } = routeProps.history
-  const locationName = routeProps.location.pathname.split("/")[1]
-  const prevLocationName =
-    (entries &&
-      entries[entries.length - 2] &&
-      entries[entries.length - 2].pathname.split("/")[1]) ||
-    ""
+/**
+ * The direction a page slides in: right when going back or to a tab on the
+ * left, left otherwise.
+ */
+export type TransitionDirection = "right" | "left"
 
-  const tabRoutes = tabs.map((tab) => tab.path)
-
-  const isGoingBetweenTabs =
-    tabRoutes.includes(locationName) && tabRoutes.includes(prevLocationName)
-
-  const isGoingToATabLeftOfTab =
-    tabRoutes.includes(locationName) &&
-    tabRoutes.indexOf(locationName) < tabRoutes.indexOf(prevLocationName)
-
-  const isGoingBack =
-    entries &&
-    entries[entries.length - 1] &&
-    entries[entries.length - 1]?.state?.isBack
-
-  if (isGoingBack) {
-    setIsDirectionRight(true)
-  } else if (isGoingBetweenTabs) {
-    if (isGoingToATabLeftOfTab) {
-      setIsDirectionRight(true)
-    } else if (!isGoingToATabLeftOfTab) {
-      setIsDirectionRight(false)
-    }
-  } else {
-    setIsDirectionRight(false)
-  }
+/** The position of the tab a path belongs to, or -1 outside the tabs. */
+function tabIndex(pathname: string): number {
+  const tabPath = `/${pathname.split("/")[1]}`
+  return tabs.findIndex(
+    ({ path }) =>
+      path === tabPath || (tabPath === "/" && path === defaultTab.path),
+  )
 }
 
-export function animationStyles(isDirectionRight: boolean): string {
-  return `
-      .page-transition-enter > section > main {
-        opacity: 0.3;
-        transform: ${isDirectionRight ? "translateX(-7px)" : "translateX(7px)"};
-      }
-      .page-transition-enter-active > section > main {
-        opacity: 1;
-        transform: translateX(0px);
-        transition: transform cubic-bezier(0.25, 0.4, 0.55, 1.4) 250ms,
-          opacity 250ms;
-      }
-      .page-transition-exit {
-        opacity: 1;
-      }
-      .page-transition-exit-active {
-        opacity: 0;
-      }
-      `
+export default function getTransitionDirection(
+  history: MemoryHistory,
+): TransitionDirection {
+  const { entries, index, action } = history
+  const current = entries[index]
+  const previous = entries[action === "POP" ? index + 1 : index - 1]
+
+  const isGoingBack =
+    action === "POP" ||
+    (current?.state as { isBack?: boolean } | undefined)?.isBack === true
+  if (isGoingBack || !current || !previous) {
+    return "right"
+  }
+
+  const currentTab = tabIndex(current.pathname)
+  const previousTab = tabIndex(previous.pathname)
+  if (currentTab !== -1 && previousTab !== -1 && currentTab < previousTab) {
+    return "right"
+  }
+
+  return "left"
 }

@@ -11,12 +11,12 @@ type SharedAddressProps = {
   id?: string
   address: string
   name?: string | undefined
-  elide: boolean
+  elide?: boolean
   nameResolverSystem?: NameResolverSystem
   /**
    * Always show the address, even if `name` is passed.
    */
-  alwaysShowAddress: boolean
+  alwaysShowAddress?: boolean
   /**
    * Show a copy icon after the content text.
    */
@@ -51,9 +51,9 @@ export default function SharedAddress({
   id,
   name,
   address,
-  elide,
+  elide = false,
   nameResolverSystem,
-  alwaysShowAddress,
+  alwaysShowAddress = false,
   showCopyIcon,
   compact = false,
 }: SharedAddressProps): ReactElement {
@@ -193,9 +193,4 @@ export default function SharedAddress({
       `}</style>
     </button>
   )
-}
-
-SharedAddress.defaultProps = {
-  alwaysShowAddress: false,
-  elide: false,
 }

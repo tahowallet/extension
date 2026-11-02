@@ -9,9 +9,9 @@ import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 type Props = {
   info: string
   network: EVMNetwork
-  isSelected: boolean
+  isSelected?: boolean
   isHighlighted?: boolean
-  isDisabled: boolean
+  isDisabled?: boolean
   onSelect: (network: EVMNetwork) => void
   onMouseMove?: () => void
   showSelectedText?: boolean
@@ -34,12 +34,12 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
   const { t } = useTranslation()
   const {
     info,
-    isSelected,
+    isSelected = false,
     isHighlighted,
     network,
     onSelect,
     onMouseMove,
-    isDisabled,
+    isDisabled = false,
     showSelectedText = true,
     isUnreachable = false,
   } = props
@@ -211,9 +211,4 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
       </style>
     </li>
   )
-}
-
-TopMenuProtocolListItem.defaultProps = {
-  isSelected: false,
-  isDisabled: false,
 }

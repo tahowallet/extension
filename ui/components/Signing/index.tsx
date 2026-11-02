@@ -62,7 +62,6 @@ function SigningLoaded<T extends SignOperationType>({
             flex-direction: column;
             align-items: center;
             background-color: var(--green-95);
-            z-index: 5;
           }
           section :global(h1.title) {
             color: var(--trophy-gold);
@@ -72,8 +71,10 @@ function SigningLoaded<T extends SignOperationType>({
             text-align: center;
           }
           section > :global(footer) {
-            position: fixed;
+            position: sticky;
             bottom: 0px;
+            flex-shrink: 0;
+            margin-top: auto;
             display: flex;
             width: 100%;
             padding: 0px 16px;

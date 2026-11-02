@@ -10,7 +10,7 @@ interface AccountitemOptionLabelProps {
 }
 
 export default function AccountitemOptionLabel({
-  hoverable,
+  hoverable = false,
   label,
   icon,
   color,
@@ -51,7 +51,4 @@ export default function AccountitemOptionLabel({
         `}</style>
     </div>
   )
-}
-AccountitemOptionLabel.defaultProps = {
-  hoverable: false,
 }

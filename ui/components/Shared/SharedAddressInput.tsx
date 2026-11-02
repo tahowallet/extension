@@ -8,7 +8,7 @@ import SharedLoadingSpinner from "./SharedLoadingSpinner"
 
 type Props = {
   value?: string
-  label: string
+  label?: string
   onAddressChange: (
     value: { address: HexString; name?: string } | undefined,
   ) => void
@@ -21,7 +21,7 @@ type Props = {
 
 export default function SharedAddressInput({
   value,
-  label,
+  label = "ETH address or name (e.g. ENS or UNS)",
   onAddressChange,
   onFocus,
   onKeyDown,
@@ -70,8 +70,4 @@ export default function SharedAddressInput({
       `}</style>
     </>
   )
-}
-
-SharedAddressInput.defaultProps = {
-  label: "ETH address or name (e.g. ENS or UNS)",
 }

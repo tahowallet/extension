@@ -49,6 +49,7 @@ import {
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import SharedIcon from "../components/Shared/SharedIcon"
+import CorePage from "../components/Core/CorePage"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
@@ -197,7 +198,7 @@ export default function Send(): ReactElement {
     !sameEVMAddress(destinationAddress, userAddressValue)
 
   return (
-    <>
+    <CorePage hasTopBar hasTabBar>
       <div className="standard_width">
         <div className="back_button_wrap">
           <SharedBackButton path="/" />
@@ -335,7 +336,7 @@ export default function Send(): ReactElement {
             position: absolute;
             margin-left: -1px;
             margin-top: -4px;
-            z-index: 10;
+            z-index: var(--z-raised);
           }
           .header {
             display: flex;
@@ -455,6 +456,6 @@ export default function Send(): ReactElement {
           }
         `}
       </style>
-    </>
+    </CorePage>
   )
 }
