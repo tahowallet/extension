@@ -182,6 +182,7 @@ type CreateSigningServiceOverrides = {
   internalSignerService?: Promise<InternalSignerService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
+  nameService?: Promise<NameService>
 }
 
 type CreateAbilitiesServiceOverrides = {
@@ -201,12 +202,16 @@ type CreateInternalEthereumProviderServiceOverrides = {
 
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {},
-): Promise<SigningService> =>
-  SigningService.create(
+): Promise<SigningService> => {
+  const chainService = overrides.chainService ?? createChainService()
+
+  return SigningService.create(
     overrides.internalSignerService ?? createInternalSignerService(),
     overrides.ledgerService ?? createLedgerService(),
-    overrides.chainService ?? createChainService(),
+    chainService,
+    overrides.nameService ?? createNameService({ chainService }),
   )
+}
 
 export async function createAnalyticsService(overrides?: {
   preferenceService?: Promise<PreferenceService>

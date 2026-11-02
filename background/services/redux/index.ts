@@ -263,6 +263,7 @@ export default class ReduxService extends BaseService<never> {
       internalSignerService,
       ledgerService,
       chainService,
+      nameService,
     )
 
     const analyticsService = AnalyticsService.create(
