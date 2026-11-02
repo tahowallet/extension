@@ -982,6 +982,7 @@
     "sendButton": "Continue",
     "receiveAddress": "Receive address",
     "sendToContractWarning": "This is a contract address, sending assets could result in loss of funds.",
+    "sendToNameOnEthereumWarning": "This name points to an Ethereum address. It isn't known to be controlled by the same person on {{network}}.",
     "pages": {
       "assets": "Assets",
       "NFTs": "NFTs",

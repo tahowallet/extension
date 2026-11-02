@@ -1,7 +1,9 @@
-import type { HexString } from "@tallyho/tally-background/types"
 import React, { ReactElement, useEffect, useState } from "react"
 import { useDelayContentChange } from "../../hooks"
-import { useAddressOrNameValidation } from "../../hooks/validation-hooks"
+import {
+  ResolvedAddressOrName,
+  useAddressOrNameValidation,
+} from "../../hooks/validation-hooks"
 
 import SharedInput from "./SharedInput"
 import SharedLoadingSpinner from "./SharedLoadingSpinner"
@@ -9,9 +11,7 @@ import SharedLoadingSpinner from "./SharedLoadingSpinner"
 type Props = {
   value?: string
   label?: string
-  onAddressChange: (
-    value: { address: HexString; name?: string } | undefined,
-  ) => void
+  onAddressChange: (value: ResolvedAddressOrName | undefined) => void
   onFocus?: () => void
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   id?: string

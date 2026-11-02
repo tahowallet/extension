@@ -1,12 +1,16 @@
 import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
-import { ROOTSTOCK } from "@tallyho/tally-background/constants"
+import { ETHEREUM, ROOTSTOCK } from "@tallyho/tally-background/constants"
+import type { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   isProbablyEVMAddress,
   normalizeEVMAddress,
   isValidChecksumAddress,
   isMixedCaseAddress,
 } from "@tallyho/tally-background/lib/utils"
-import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
+import {
+  checkControlCompatibility,
+  resolveNameOnNetwork,
+} from "@tallyho/tally-background/redux-slices/accounts"
 import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import type { HexString } from "@tallyho/tally-background/types"
 import { useRef, useState, useCallback } from "react"
@@ -133,16 +137,38 @@ export const useParsedValidation = <T>(
 }
 
 /**
+ * The valid value reported by `useAddressOrNameValidation`.
+ */
+export type ResolvedAddressOrName = {
+  address: HexString
+  name?: string
+  /**
+   * Only set for names: the network the name was resolved on. That is the
+   * current network, or Ethereum mainnet when the name only resolved there.
+   */
+  resolvedNetwork?: EVMNetwork
+  /**
+   * Only set for names. False when the name resolved on Ethereum mainnet and
+   * the address is not known to be control-compatible with the current network
+   * (see RFB 5). The name is still valid in that case.
+   */
+  controlCompatible?: boolean
+}
+
+/**
  * An AsyncValidationHook that attempts to resolve strings as either addresses
  * or names resolvable via internal name resolution. Empty strings or strings
  * of entirely whitespace do not trigger an error, but do trigger the change
  * handler with a value of `undefined`.
  *
  * Address-like strings are immediately considered valid, while non-address
- * strings are resolved asynchronously.
+ * strings are resolved asynchronously. A name that does not resolve on the
+ * current network falls back to Ethereum mainnet (unless the current network
+ * is Ethereum mainnet), and is then reported with whether it is
+ * control-compatible with the current network.
  */
 export const useAddressOrNameValidation: AsyncValidationHook<
-  { address: HexString; name?: string } | undefined
+  ResolvedAddressOrName | undefined
 > = (onValidChange) => {
   const [errorMessage, setErrorMessage] = useState<string | undefined>()
   const [rawValue, setRawValue] = useState<string>("")
@@ -160,6 +186,12 @@ export const useAddressOrNameValidation: AsyncValidationHook<
       const trimmed = newValue.trim()
 
       setErrorMessage(undefined)
+      // Whatever this input is, a name lookup still in flight is now outdated:
+      // clear the marker its `isStale()` check reads, so its late result is
+      // dropped. The name branch below sets the marker again if it needs to.
+      validatingValue.current = undefined
+      setIsValidating(false)
+
       if (trimmed === "") {
         onValidChange(undefined)
       } else if (isProbablyEVMAddress(trimmed)) {
@@ -178,23 +210,74 @@ export const useAddressOrNameValidation: AsyncValidationHook<
         setIsValidating(true)
         validatingValue.current = trimmed
 
+        // Asynchronicity means we could already have started validating another
+        // value before this validation completed; ignore those cases. Every
+        // await below checks this, as the fallback adds another round trip.
+        const isStale = () => validatingValue.current !== trimmed
+        const settle = (value: ResolvedAddressOrName | undefined) => {
+          onValidChange(value)
+          if (value === undefined) {
+            setErrorMessage("Address could not be found")
+          }
+          setIsValidating(false)
+          validatingValue.current = undefined
+        }
+
         const resolved = (await dispatch(
           resolveNameOnNetwork({ name: trimmed, network }),
         )) as unknown as AddressOnNetwork | undefined
 
-        // Asynchronicity means we could already have started validating another
-        // value before this validation completed; ignore those cases.
-        if (validatingValue.current === trimmed) {
-          if (resolved === undefined) {
-            onValidChange(undefined)
-            setErrorMessage("Address could not be found")
-          } else {
-            onValidChange({ name: trimmed, address: resolved.address })
-          }
-
-          setIsValidating(false)
-          validatingValue.current = undefined
+        if (isStale()) {
+          return
         }
+
+        if (resolved !== undefined) {
+          settle({
+            name: trimmed,
+            address: resolved.address,
+            resolvedNetwork: network,
+            controlCompatible: true,
+          })
+          return
+        }
+
+        // No record for the current network. Fall back to Ethereum mainnet,
+        // unless that is the current network already.
+        if (network.chainID === ETHEREUM.chainID) {
+          settle(undefined)
+          return
+        }
+
+        const mainnetResolved = (await dispatch(
+          resolveNameOnNetwork({ name: trimmed, network: ETHEREUM }),
+        )) as unknown as AddressOnNetwork | undefined
+
+        if (isStale()) {
+          return
+        }
+
+        if (mainnetResolved === undefined) {
+          settle(undefined)
+          return
+        }
+
+        const controlCompatible = (await dispatch(
+          checkControlCompatibility({
+            objectOnNetwork: { name: trimmed, network: ETHEREUM },
+            otherNetwork: network,
+          }),
+        )) as unknown as boolean
+
+        if (isStale()) {
+          return
+        }
+
+        settle({
+          name: trimmed,
+          address: mainnetResolved.address,
+          resolvedNetwork: ETHEREUM,
+          controlCompatible,
+        })
       }
     },
     [dispatch, network, onValidChange],
