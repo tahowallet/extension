@@ -7,6 +7,7 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
+  selectAddressBookEntriesForNetwork,
   selectCurrentAccount,
   selectCurrentAccountBalances,
   selectCurrentAccountNFTs,
@@ -51,6 +52,9 @@ import SharedWarningMessage from "../components/Shared/SharedWarningMessage"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import SharedIcon from "../components/Shared/SharedIcon"
 import CorePage from "../components/Core/CorePage"
+import SharedSlideUpMenu from "../components/Shared/SharedSlideUpMenu"
+import SelectAddressMenuContent from "../components/AddressBook/SelectAddressMenuContent"
+import AddressBookEntryForm from "../components/AddressBook/AddressBookEntryForm"
 
 export default function Send(): ReactElement {
   const { t } = useTranslation()
@@ -207,6 +211,21 @@ export default function Send(): ReactElement {
   const showControlWarning =
     resolvedNameToAddress && isRecipientNotControlCompatible
 
+  const [isAddressBookOpen, setIsAddressBookOpen] = useState(false)
+  const [isAddingContact, setIsAddingContact] = useState(false)
+
+  const addressBookEntries = useBackgroundSelector((state) =>
+    selectAddressBookEntriesForNetwork(state, currentNetwork),
+  )
+  // Offer to save an address typed in directly, unless a name already applies
+  // to it here.
+  const canAddContact =
+    destinationAddress !== undefined &&
+    !resolvedNameToAddress &&
+    !addressBookEntries.some((entry) =>
+      sameEVMAddress(entry.address, destinationAddress),
+    )
+
   return (
     <CorePage hasTopBar hasTabBar>
       <div className="standard_width">
@@ -254,12 +273,35 @@ export default function Send(): ReactElement {
             )}
           </div>
           <div className="form_input send_to_field">
-            <label htmlFor="send_address">{t("wallet.sendTo")}</label>
+            <div className="send_to_label_row">
+              <label htmlFor="send_address">{t("wallet.sendTo")}</label>
+              <div className="send_to_actions">
+                {canAddContact && (
+                  <SharedButton
+                    type="tertiary"
+                    size="small"
+                    iconSmall="add"
+                    iconPosition="left"
+                    onClick={() => setIsAddingContact(true)}
+                  >
+                    {t("addressBook.addContact")}
+                  </SharedButton>
+                )}
+                <button
+                  type="button"
+                  className="address_book_button"
+                  aria-label={t("addressBook.openAddressBook")}
+                  title={t("addressBook.openAddressBook")}
+                  onClick={() => setIsAddressBookOpen(true)}
+                />
+              </div>
+            </div>
             <input
               id="send_address"
               type="text"
               placeholder="0x..."
               spellCheck={false}
+              value={userAddressValue}
               onChange={(event) => handleAddressChange(event.target.value)}
               className={classNames({
                 error: addressErrorMessage !== undefined,
@@ -334,6 +376,42 @@ export default function Send(): ReactElement {
           </div>
         </div>
       </div>
+      <SharedSlideUpMenu
+        isOpen={isAddressBookOpen}
+        isScrollable
+        style={{ display: "flex", flexDirection: "column" }}
+        testid="select_address_slide_up"
+        close={() => setIsAddressBookOpen(false)}
+      >
+        <SelectAddressMenuContent
+          network={currentNetwork}
+          onSelect={(selected) => {
+            // A saved name resolves through the address book like a typed one
+            // would; an account with no saved name is filled in by address.
+            handleAddressChange(selected.savedEntry?.name ?? selected.address)
+            setIsAddressBookOpen(false)
+          }}
+        />
+      </SharedSlideUpMenu>
+      <SharedSlideUpMenu
+        isOpen={isAddingContact}
+        size="custom"
+        customSize="296px"
+        close={() => setIsAddingContact(false)}
+      >
+        {destinationAddress !== undefined && (
+          <AddressBookEntryForm
+            addressOnNetwork={{
+              address: destinationAddress,
+              network: currentNetwork,
+            }}
+            onSaved={(name) => {
+              setIsAddingContact(false)
+              handleAddressChange(name)
+            }}
+          />
+        )}
+      </SharedSlideUpMenu>
       <style jsx>
         {`
           .icon_activity_send_medium {
@@ -396,6 +474,30 @@ export default function Send(): ReactElement {
             color: var(--green-40);
             text-align: right;
             font-size: 14px;
+          }
+          .send_to_label_row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            min-height: 24px;
+            margin-bottom: 4px;
+          }
+          .send_to_actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .address_book_button {
+            width: 24px;
+            height: 24px;
+            mask: url("./images/icons/m/contacts.svg") center / 24px 24px
+              no-repeat;
+            background-color: var(--green-40);
+            transition: background-color var(--fade);
+          }
+          .address_book_button:hover {
+            background-color: var(--trophy-gold);
           }
           input#send_address {
             box-sizing: border-box;
