@@ -57,16 +57,27 @@ export const CHAIN_ID_TO_NFT_METADATA_PROVIDER = Object.entries(
   {},
 )
 
+/** Networks that had an NFT tab before the indexer, when SimpleHash served them. */
+const PRE_INDEXER_NFT_TAB_CHAIN_IDS = [
+  ETHEREUM,
+  POLYGON,
+  OPTIMISM,
+  ARBITRUM_ONE,
+  AVALANCHE,
+  BINANCE_SMART_CHAIN,
+  ZK_SYNC,
+].map(({ chainID }) => chainID)
+
 /**
- * Networks with an in-wallet NFT tab: those POAPs or campaigns cover, and
- * the indexer's while its flag is on.
+ * Networks with an in-wallet NFT tab: those POAPs or campaigns cover, plus
+ * the indexer's while its flag is on, or the tabs as they were while it's off.
  */
 export const NETWORKS_SUPPORTING_NFTS = new Set([
   ...NFT_PROVIDER_TO_CHAIN.poap,
   ...NFT_PROVIDER_TO_CHAIN.campaign,
   ...(isEnabled(FeatureFlags.SUPPORT_NFT_INDEXER)
     ? NFT_PROVIDER_TO_CHAIN.indexer
-    : []),
+    : PRE_INDEXER_NFT_TAB_CHAIN_IDS),
 ])
 
 export type NFTsWithPagesResponse = {

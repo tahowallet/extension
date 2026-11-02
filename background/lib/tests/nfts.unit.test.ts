@@ -1,6 +1,7 @@
 import * as sinon from "sinon"
 import { ETHEREUM, POLYGON, ROOTSTOCK } from "../../constants"
 import { storage as flagStorage } from "../../features"
+import { NETWORKS_SUPPORTING_NFTS } from "../../nfts"
 import { POAP_COLLECTION_ID } from "../poap"
 import { getNFTCollections, getNFTs, getNFTsTransfers } from "../nfts"
 import type NFTIndexer from "../nft-indexer"
@@ -24,6 +25,12 @@ describe("NFT sources", () => {
   afterEach(() => flagStorage.delete("SUPPORT_NFT_INDEXER"))
 
   describe("with the NFT indexer off", () => {
+    it("keeps the NFT tabs networks had before it", () => {
+      expect(NETWORKS_SUPPORTING_NFTS.has(ETHEREUM.chainID)).toBe(true)
+      expect(NETWORKS_SUPPORTING_NFTS.has(POLYGON.chainID)).toBe(true)
+      expect(NETWORKS_SUPPORTING_NFTS.has(ROOTSTOCK.chainID)).toBe(false)
+    })
+
     it("asks the indexer nothing", async () => {
       const indexer = stubIndexer()
       const asIndexer = indexer as unknown as NFTIndexer
