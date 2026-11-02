@@ -1140,5 +1140,11 @@
     "swap": "Swap",
     "earn": "Earn",
     "settings": "Settings"
+  },
+  "addressBook": {
+    "appliesOnTitle_one": "Name applies on 1 network",
+    "appliesOnTitle_other": "Name applies on {{count}} networks",
+    "appliesOnNetworks_one": "Name applies on {{networks}}",
+    "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}"
   }
 }
