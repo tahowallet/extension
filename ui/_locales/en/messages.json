@@ -1171,6 +1171,10 @@
     "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}",
     "appliesOnLabel": "Applies on",
     "appliesOnExplainer": "Names apply on the network they're saved on, and on other networks only where the wallet knows the same keys control the address.",
+    "appliesOnSummary_one": "{{network}} and 1 more",
+    "appliesOnSummary_other": "{{network}} and {{count}} more",
+    "sameKeysTag": "Same keys",
+    "ownershipWarning": "On other networks the same address can belong to someone else, for example a contract deployed by another party; only add if you're sure the same owner controls it",
     "settingsTitle": "Address book",
     "addButtonSettings": "Add address"
   }
