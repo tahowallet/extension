@@ -267,7 +267,7 @@ may change during implementation) is:
   ```typescript
   controlCompatibility: {
     // The chain IDs each address is known to be control-compatible with,
-    // for each chain ID it's tracked on.
+    // for each chain ID the wallet knows about.
     [address: NormalizedEVMAddress]: { [chainID: string]: string[] }
   }
   ```
@@ -277,6 +277,10 @@ may change during implementation) is:
   `selectIsAddressControlCompatible(state, addressOnNetwork, otherNetwork)`
   reads it. Recording pairs rather than grouping networks avoids assuming
   compatibility is transitive. Only the signer-based conditions feed this map.
+  It covers every network the wallet knows about, not only those an address
+  is tracked on: addresses are only tracked on networks the user has visited,
+  and a name given to an address should apply wherever the same signer
+  controls it.
 
 - For one-off checks, like a Send recipient, the UI dispatches an async thunk
   that calls `isControlCompatible` directly, as it already does for name
