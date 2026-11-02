@@ -1,6 +1,7 @@
 import { combineReducers } from "redux"
 
 import accountsReducer from "./accounts"
+import addressBookReducer from "./address-book"
 import assetsReducer from "./assets"
 import activitiesReducer from "./activities"
 import internalSignerReducer from "./internal-signer"
@@ -19,6 +20,7 @@ import pricesReducer from "./prices"
 
 const mainReducer = combineReducers({
   account: accountsReducer,
+  addressBook: addressBookReducer,
   assets: assetsReducer,
   activities: activitiesReducer,
   internalSigner: internalSignerReducer,

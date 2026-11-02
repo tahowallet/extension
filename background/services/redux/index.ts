@@ -41,6 +41,7 @@ import { Eligible, ReferrerStats } from "../island/types"
 
 import {
   AccountType,
+  clearAccountName,
   deleteAccount,
   loadAccount,
   setControlCompatibility,
@@ -48,6 +49,7 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
+import { setAddressBook } from "../../redux-slices/address-book"
 import {
   assetsLoaded,
   refreshAsset,
@@ -896,6 +898,14 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async connectNameService(): Promise<void> {
+    this.nameService.emitter.on("addressBook", (entries) => {
+      this.store.dispatch(setAddressBook(entries))
+    })
+
+    this.nameService.emitter.on("clearedName", (addressOnNetwork) => {
+      this.store.dispatch(clearAccountName(addressOnNetwork))
+    })
+
     this.nameService.emitter.on(
       "resolvedName",
       async ({
