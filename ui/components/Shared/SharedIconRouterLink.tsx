@@ -38,7 +38,6 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           horizontalPosition="center"
           verticalPosition="top"
           verticalShift={-10}
-          showDelay={100}
           IconComponent={() => (
             <Link
               to={{ pathname: path, state }}
