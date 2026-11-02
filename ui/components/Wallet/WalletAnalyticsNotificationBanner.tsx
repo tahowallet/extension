@@ -63,7 +63,9 @@ export default function WalletAnalyticsNotificationBanner(): ReactElement {
         .container {
           margin: 0 8px;
           max-height: 200px;
-          transition: all 500ms ease;
+          transition:
+            max-height 500ms ease,
+            opacity 500ms ease;
         }
         .container.hide {
           max-height: 0;

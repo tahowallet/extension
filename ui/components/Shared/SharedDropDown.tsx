@@ -92,7 +92,7 @@ function FadeIn({
   }
 
   const styles: React.CSSProperties = {
-    transition: "ease-in .1s",
+    transition: "opacity 0.1s ease-in",
     opacity: isOpen ? 1 : 0,
   }
 

@@ -184,7 +184,13 @@ export default function NFTCollection(props: {
           padding: 0;
           background: transparent;
           width: 168px;
-          transition: all 200ms ease-in-out;
+          transition:
+            width 200ms ease-in-out,
+            margin 200ms ease-in-out,
+            padding 200ms ease-in-out,
+            border-radius 200ms ease-in-out,
+            background var(--fade),
+            box-shadow var(--fade);
         }
         .nft_collection.expanded {
           width: 352px;

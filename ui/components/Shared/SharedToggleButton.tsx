@@ -55,7 +55,9 @@ export default function SharedToggleButton({
             height: 16px;
             border-radius: 20px;
             background-color: var(--toggle-knob);
-            transition: 0.2s ease-in-out;
+            transition:
+              transform 0.2s ease-in-out,
+              background-color var(--fade);
 
             box-shadow: var(--shadow-knob);
           }
