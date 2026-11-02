@@ -61,7 +61,7 @@ describe("ReduxService", () => {
       // Only the services the provider bridge listeners use.
       const service = {
         providerBridgeService: { emitter: new Emittery(), grantPermission },
-        chainService: { supportedNetworks: [ETHEREUM, POLYGON] },
+        chainService: { getSupportedNetworks: () => [ETHEREUM, POLYGON] },
         internalEthereumProviderService: {
           getCurrentOrDefaultNetworkForOrigin: () => Promise.resolve(POLYGON),
         },
