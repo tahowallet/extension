@@ -98,6 +98,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             height: ${size / 2}px;
             margin: ${size / 4}px;
             background-color: var(--on-accent);
+            transition: background-color 0.2s;
           }
         `}
       </style>
