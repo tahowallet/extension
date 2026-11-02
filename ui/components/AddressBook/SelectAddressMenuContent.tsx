@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
-import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import type { AddressBookEntry } from "@tallyho/tally-background/redux-slices/address-book"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import {
   selectAccountTotals,
@@ -30,8 +30,13 @@ export type SelectableAddress = {
   name: string
   isOwnAccount: boolean
   isCurrentAccount: boolean
+  /**
+   * For an account not in the address book, the name it already goes by: its
+   * own name or its ENS name. Used to prefill the form when editing it.
+   */
+  existingName?: string
   /** The address book entry the name comes from, if any. */
-  savedEntry?: AddressOnNetwork & { name: string }
+  savedEntry?: AddressBookEntry
 }
 
 type Props = {
@@ -83,6 +88,7 @@ export default function SelectAddressMenuContent({
           account.address,
           currentAccount.address,
         ),
+        existingName: account.name,
       }))
 
     return [...saved, ...unsavedAccounts].sort((a, b) =>
@@ -193,18 +199,17 @@ export default function SelectAddressMenuContent({
       )}
       <SharedSlideUpMenu
         isOpen={editing !== undefined}
-        size="custom"
-        customSize="296px"
+        size="auto"
         close={() => setEditing(undefined)}
       >
         {editing !== undefined && (
           <AddressBookEntryForm
             // Edit an entry where it's saved, so the name keeps applying where
             // it already does.
-            addressOnNetwork={
-              editing.savedEntry ?? { address: editing.address, network }
-            }
-            savedName={editing.savedEntry?.name}
+            entry={editing.savedEntry}
+            initialName={editing.existingName}
+            address={editing.address}
+            network={network}
             onSaved={() => setEditing(undefined)}
             onRemoved={() => setEditing(undefined)}
           />

@@ -87,14 +87,13 @@ export default function SettingsAddressBook(): ReactElement {
       </div>
       <SharedSlideUpMenu
         isOpen={editing !== undefined}
-        size="custom"
-        customSize="296px"
+        size="auto"
         close={() => setEditing(undefined)}
       >
         {editing !== undefined && (
           <AddressBookEntryForm
-            addressOnNetwork={editing}
-            savedName={editing.name}
+            entry={editing}
+            network={editing.network}
             onSaved={() => setEditing(undefined)}
             onRemoved={() => setEditing(undefined)}
           />
@@ -102,14 +101,14 @@ export default function SettingsAddressBook(): ReactElement {
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isAdding}
-        size="custom"
-        customSize="384px"
+        size="auto"
         close={() => setIsAdding(false)}
       >
         {isAdding && (
-          // Saved on the network being viewed, like a name given from Send.
+          // Saved on the network being viewed unless changed, like a name
+          // given from Send.
           <AddressBookEntryForm
-            addressOnNetwork={{ network: currentNetwork }}
+            network={currentNetwork}
             onSaved={() => setIsAdding(false)}
           />
         )}

@@ -85,6 +85,18 @@ describe("SelectAddressMenuContent", () => {
     expect(ui.queryByText("Your account")).not.toBeInTheDocument()
   })
 
+  it("edits an account's own name as an entry headed as an edit", async () => {
+    const ui = renderMenu()
+
+    // The account is listed after the saved entries, by name.
+    const buttons = ui.getAllByRole("button", { name: "Edit" })
+    await userEvent.click(buttons[buttons.length - 1])
+
+    expect(ui.getByText("Edit address book entry")).toBeInTheDocument()
+    expect(ui.queryByText("Add to address book")).not.toBeInTheDocument()
+    expect(ui.getByLabelText("Choose a name")).toHaveValue("test.crypto")
+  })
+
   it("filters by name or address", async () => {
     const ui = renderMenu()
     const search = ui.getByPlaceholderText("Search by name or address")
