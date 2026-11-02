@@ -1,5 +1,5 @@
 import type { HexString, UNIXTime } from "../../types"
-import { normalizeAddressOnNetwork } from "../../lib/utils"
+import { normalizeAddressOnNetwork, sameEVMAddress } from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -171,8 +171,42 @@ export default class NameService extends BaseService<Events> {
     nameOnNetwork: NameOnNetwork,
     otherNetwork: EVMNetwork,
   ): Promise<boolean> {
-    // TODO Implement per RFB 5.
-    return false
+    const otherNameOnNetwork: NameOnNetwork = {
+      name: nameOnNetwork.name,
+      network: otherNetwork,
+    }
+
+    const ownershipSpanningResolvers = this.resolvers.filter(
+      (resolver) =>
+        resolver.recordOwnershipSpansNetworks === true &&
+        resolver.canAttemptAddressResolution(nameOnNetwork) &&
+        resolver.canAttemptAddressResolution(otherNameOnNetwork),
+    )
+
+    const compatibilities = await Promise.all(
+      ownershipSpanningResolvers.map(async (resolver) => {
+        const [resolvedOnNetwork, resolvedOnOtherNetwork] = await Promise.all(
+          [nameOnNetwork, otherNameOnNetwork].map(async (name) => {
+            try {
+              return await resolver.lookUpAddressForName(name)
+            } catch (error) {
+              return undefined
+            }
+          }),
+        )
+
+        return (
+          resolvedOnNetwork !== undefined &&
+          resolvedOnOtherNetwork !== undefined &&
+          sameEVMAddress(
+            resolvedOnNetwork.address,
+            resolvedOnOtherNetwork.address,
+          )
+        )
+      }),
+    )
+
+    return compatibilities.some((compatible) => compatible)
   }
 
   async lookUpEthereumAddress(

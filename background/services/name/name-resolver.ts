@@ -19,6 +19,13 @@ export interface NameResolver<ResolverType extends string> {
   type: ResolverType
 
   /**
+   * True if all of a name's records, on every network, are controlled by the
+   * same owner, so that a name resolving to the same address on two networks
+   * means the same owner asserts that address on both. See RFB 5.
+   */
+  recordOwnershipSpansNetworks?: boolean
+
+  /**
    * Given an address and network, synchronously returns a boolean indicating
    * whether this name resolver can attempt to resolve it. This is useful for
    * avoiding lookups for names that are statically known to be malformed per
