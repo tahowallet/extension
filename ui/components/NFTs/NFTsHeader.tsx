@@ -145,7 +145,7 @@ export default function NFTsHeader(): ReactElement {
           font-weight: 500;
           line-height: 48px;
           letter-spacing: 0em;
-          color: #fff;
+          color: var(--text-strong);
         }
 
         .currency_sign {

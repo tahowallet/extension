@@ -9,6 +9,7 @@ import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedActivityIcon from "../Shared/SharedActivityIcon"
 import useActivityViewDetails from "../../hooks/activity-hooks"
+import { displayAmount } from "../../utils/amounts"
 
 interface Props {
   onClick: () => void
@@ -51,6 +52,10 @@ export default function WalletActivityListItem(props: Props): ReactElement {
     activity,
     activityInitiatorAddress,
   )
+  const amount =
+    activity.fixedPointValue === undefined
+      ? { text: activityViewDetails.assetValue }
+      : displayAmount(activity.fixedPointValue, activityViewDetails.assetValue)
 
   return (
     <li data-testid="activity_list_item">
@@ -92,11 +97,13 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             <div className="amount" data-testid="activity_list_item_amount">
               <span
                 className="bold_amount_count"
-                title={activityViewDetails.assetValue}
+                title={amount.title ?? amount.text}
               >
-                {activityViewDetails.assetValue}
+                {amount.text}
               </span>
-              <span className="name">{activityViewDetails.assetSymbol}</span>
+              <span className="name" title={activityViewDetails.assetSymbol}>
+                {activityViewDetails.assetSymbol}
+              </span>
             </div>
           </div>
           <div ref={outcomeRef} className="right">
@@ -135,6 +142,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             margin-bottom: 16px;
             justify-content: space-between;
             align-items: center;
+            transition: background-color var(--fade);
           }
           button:hover {
             background-color: var(--green-80);
@@ -174,6 +182,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
           .left {
             display: flex;
             align-items: center;
+            min-width: 0;
           }
           .token_icon_wrap {
             width: 32px;
@@ -192,20 +201,21 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             transform: scale(0.8);
           }
           .amount {
-            color: #fefefc;
+            color: var(--text-bright);
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0.42px;
             line-height: 16px;
             text-transform: uppercase;
             display: flex;
-            flex-wrap: wrap;
             padding: 0px 8px;
             align-items: center;
+            min-width: 0;
           }
           .bold_amount_count {
+            flex-shrink: 0;
             height: 24px;
-            color: #fefefc;
+            color: var(--text-bright);
             font-size: 18px;
             font-weight: 600;
             line-height: 24px;
@@ -217,6 +227,9 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             text-transform: none;
           }
           .name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
             padding-top: 3px;
           }

@@ -98,12 +98,12 @@ export default class TransactionsHelper {
     // click.
 
     await expect(this.popup.getByText(/^Send to$/)).toBeVisible()
-    await expect(
-      await this.popup.getByRole("button", { name: sendToAddressShortened }),
-    ).toBeEnabled()
-    await this.popup
+    // The simulated balance changes name the recipient too.
+    const recipientButton = this.popup
+      .locator(".send_to")
       .getByRole("button", { name: sendToAddressShortened })
-      .click()
+    await expect(recipientButton).toBeEnabled()
+    await recipientButton.click()
 
     await expect(async () => {
       const clipboardRecipientAddress = await this.popup.evaluate(() =>

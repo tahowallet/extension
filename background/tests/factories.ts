@@ -92,6 +92,10 @@ export class MockSerialFallbackProvider {
     return "false"
   }
 
+  canServeNow(_method: string): boolean {
+    return !this.isDestroyed
+  }
+
   subscriptionDataSource = "generic-rpc"
 
   dataSourceFor() {

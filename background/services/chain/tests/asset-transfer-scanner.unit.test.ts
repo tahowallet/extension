@@ -17,6 +17,7 @@ const RECENT_END_BLOCK = BigInt(BLOCK_HEIGHT - 20)
 
 function harness({
   supportsAlchemy,
+  servableMethods = ["alchemy_getAssetTransfers", "eth_getLogs"],
   blockHeight = BLOCK_HEIGHT,
   oldestLookup = null,
   transfers = [],
@@ -24,6 +25,7 @@ function harness({
   savedHashes = [],
 }: {
   supportsAlchemy: boolean
+  servableMethods?: string[]
   blockHeight?: number
   oldestLookup?: bigint | null
   transfers?: Partial<AssetTransfer>[]
@@ -55,6 +57,7 @@ function harness({
     accountsToTrack,
     isSupported: () => true,
     supportsAlchemyMethods: () => supportsAlchemy,
+    canServeNow: (_, method) => servableMethods.includes(method),
     enqueueTransactionLookup: (_, hash, __, priority) =>
       enqueued.push([hash, priority]),
     emitAssetTransfers: (_, assetTransfers) => emitted.push(assetTransfers),
@@ -253,6 +256,36 @@ describe("AssetTransferScanner", () => {
       )
 
       expect(assetData.getAssetTransfers.called).toBe(false)
+    })
+  })
+
+  describe("when every endpoint is cooling down", () => {
+    it("skips recent and historic scans without a lookup or a warning", async () => {
+      const { scanner, assetData } = harness({
+        supportsAlchemy: false,
+        servableMethods: [],
+        oldestLookup: 500_000n,
+      })
+      const warn = sinon.stub(logger, "warn")
+
+      await scanner.scanRecentTransfers()
+      await scanner.scanHistoricTransfers()
+
+      expect(assetData.getAssetTransfers.called).toBe(false)
+      expect(warn.called).toBe(false)
+    })
+
+    it("still scans logs when only the Alchemy endpoint is cooling", async () => {
+      const { scanner, assetData } = harness({
+        supportsAlchemy: true,
+        servableMethods: ["eth_getLogs"],
+      })
+
+      await scanner.scanRecentTransfersFor(
+        createAddressOnNetwork({ network: ETHEREUM }),
+      )
+
+      expect(assetData.getAssetTransfers.calledOnce).toBe(true)
     })
   })
 

@@ -20,6 +20,7 @@ export default function PortalBanner(): ReactElement | null {
     <SharedBanner
       id={hasIslandAssets ? PORTAL_ID_WITH_ASSETS : PORTAL_ID_NO_ASSETS}
       canBeClosed
+      theme="dark"
       style={{
         padding: "8px 11px 0 0",
         marginBottom: 18,

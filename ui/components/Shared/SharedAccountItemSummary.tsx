@@ -106,7 +106,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           width: 52px;
           height: 52px;
           border-radius: 16px;
-          border: 2px solid #22c480;
+          border: 2px solid var(--success-alt);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -120,7 +120,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           overflow: hidden;
         }
         .address_name {
-          color: #fff;
+          color: var(--text-strong);
           font-size: 18px;
           font-weight: 600;
           overflow: hidden;
@@ -136,7 +136,7 @@ export default function SharedAccountItemSummary(props: Props): ReactElement {
           font-size: 16px;
         }
         .connected_status {
-          color: #22c480;
+          color: var(--success-alt);
           font-size: 18px;
           font-weight: 600;
           line-height: 24px;

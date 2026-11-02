@@ -53,6 +53,9 @@ export default function SharedCurrentAccountInformation({
             position: relative;
             min-width: 0; // Allow the account address/name to collapse to an ellipsis.
           }
+          .account_info_label {
+            transition: color var(--fade);
+          }
           .hover:hover .account_info_label {
             color: var(--trophy-gold);
           }

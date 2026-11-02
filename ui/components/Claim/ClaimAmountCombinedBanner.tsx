@@ -42,13 +42,13 @@ export default function ClaimAmountCombinedBanner(): ReactElement {
             padding-right: 32px;
           }
           .title {
-            color: #99a8a7;
+            color: var(--grey-green-40);
             font-size: 14px;
           }
           .amount {
             font-family: Quincy CF;
             font-size: 36px;
-            color: #22c480;
+            color: var(--success-alt);
           }
           .currency {
             color: var(--green-60);

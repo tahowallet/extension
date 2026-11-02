@@ -35,7 +35,7 @@ export default function EIP191Info({
           margin-bottom: 6px;
         }
         .light {
-          color: #ccd3d3;
+          color: var(--grey-green-10);
           white-space: pre-wrap;
         }
         .label {

@@ -92,7 +92,7 @@ function FadeIn({
   }
 
   const styles: React.CSSProperties = {
-    transition: "ease-in .1s",
+    transition: "opacity 0.1s ease-in",
     opacity: isOpen ? 1 : 0,
   }
 
@@ -221,6 +221,7 @@ export default function SharedDropdown({
                     width: 4px;
                     height: 20px;
                     border: 10px solid transparent;
+                    transition: background-color var(--fade);
                   }
                   .icon_settings:hover {
                     background-color: var(--green-40);
@@ -237,10 +238,7 @@ export default function SharedDropdown({
                     border-radius: 4px;
                     z-index: 1;
 
-                    box-shadow:
-                      0px 2px 4px 0px #00141357,
-                      0px 6px 8px 0px #0014133d,
-                      0px 16px 16px 0px #00141324;
+                    box-shadow: var(--shadow-menu);
                   }
                   ul.options {
                     display: flex;

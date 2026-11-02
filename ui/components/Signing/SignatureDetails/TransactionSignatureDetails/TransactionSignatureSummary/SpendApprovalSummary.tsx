@@ -26,6 +26,7 @@ import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryP
 import TransactionSignatureSummaryBody from "./TransactionSignatureSummaryBody"
 import SharedSkeletonLoader from "../../../../Shared/SharedSkeletonLoader"
 import { useDappPermission } from "../../../../../hooks/dapp-hooks"
+import { displayAmount } from "../../../../../utils/amounts"
 
 export default function SpendApprovalSummary({
   transactionRequest,
@@ -58,6 +59,15 @@ export default function SpendApprovalSummary({
   const [hasError, setHasError] = useState(false)
 
   const changing = approvalLimitInput !== null
+  const approvalLimitFixedPoint =
+    approvalLimitString === null
+      ? undefined
+      : parseToFixedPointNumber(approvalLimitString)
+  const approvalLimitDisplay =
+    approvalLimitFixedPoint &&
+    displayAmount(approvalLimitFixedPoint, approvalLimitString ?? undefined)
+  const approvalLimitText =
+    approvalLimitDisplay?.text ?? approvalLimitString ?? "Infinite"
 
   const handleChangeClick = () => {
     setApprovalLimitInput(approvalLimitString ?? "")
@@ -222,10 +232,11 @@ export default function SpendApprovalSummary({
                   className={classNames("spend_amount", {
                     has_error: approvalLimitString === null,
                   })}
-                >
-                  {`${
-                    approvalLimitString ?? "Infinite"
+                  title={`${
+                    approvalLimitDisplay?.title ?? approvalLimitText
                   } ${asset.symbol.toUpperCase()}`}
+                >
+                  {`${approvalLimitText} ${asset.symbol.toUpperCase()}`}
                 </span>
               </SharedSkeletonLoader>
               <SharedButton
@@ -261,7 +272,7 @@ export default function SpendApprovalSummary({
             z-index: 1;
           }
           .site {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
@@ -302,7 +313,12 @@ export default function SpendApprovalSummary({
             margin-top: 24px;
           }
           .spend_amount {
-            color: #fff;
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-strong);
             font-size: 16px;
             line-height: 24px;
           }

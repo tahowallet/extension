@@ -1,6 +1,8 @@
-import { BigNumber, utils } from "ethers"
+import { BigNumber, ethers, utils } from "ethers"
 
-import { parseLogsForERC20Transfers } from "../erc20"
+import logger from "../logger"
+import { getTokenBalances, parseLogsForERC20Transfers } from "../erc20"
+import { createAddressOnNetwork } from "../../tests/factories"
 import {
   ACCOUNT,
   COLLECTION,
@@ -54,5 +56,32 @@ describe("parseLogsForERC20Transfers", () => {
         },
       ]),
     ).toEqual([])
+  })
+})
+
+describe("getTokenBalances", () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it("logs each balance lookup at debug level", async () => {
+    const info = jest.spyOn(logger, "info").mockImplementation(() => {})
+    const debug = jest.spyOn(logger, "debug").mockImplementation(() => {})
+
+    await getTokenBalances(
+      createAddressOnNetwork(),
+      [],
+      new ethers.providers.StaticJsonRpcProvider("http://127.0.0.1:1", 1),
+    )
+
+    expect(debug).toHaveBeenCalledWith(
+      "Looking up balances for",
+      0,
+      "tokens in",
+      0,
+      "batches on chain",
+      "1",
+    )
+    expect(info).not.toHaveBeenCalled()
   })
 })

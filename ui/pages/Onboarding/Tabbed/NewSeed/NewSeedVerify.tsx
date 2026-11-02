@@ -48,6 +48,7 @@ function SeedWord(props: SeedWordProps): ReactElement {
           line-height: 24px;
           display: flex;
           gap: 8px;
+          transition: color var(--fade);
         }
 
         .word_index {
@@ -89,6 +90,10 @@ function SeedWord(props: SeedWordProps): ReactElement {
           padding: 4px 8px;
           padding-right: 32px;
           text-align: left;
+          transition:
+            background-color var(--fade),
+            border-color var(--fade),
+            color var(--fade);
         }
         .dash {
           padding: 4px 0;

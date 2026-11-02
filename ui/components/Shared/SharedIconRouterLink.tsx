@@ -36,7 +36,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
         <SharedTooltip
           type="dark"
           horizontalPosition="center"
-          verticalPosition="top"
+          verticalPosition="bottom"
           verticalShift={-10}
           IconComponent={() => (
             <Link
@@ -44,7 +44,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
               className="router_link_container"
             >
               <div className="icon_wrapper">
-                <i className={`asset_icon hoverable ${iconClass}`} />
+                <i className={`asset_icon ${iconClass}`} />
               </div>
             </Link>
           )}
@@ -54,7 +54,7 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
       ) : (
         <Link to={{ pathname: path, state }} className="router_link_container">
           <div className="icon_wrapper">
-            <i className={`asset_icon hoverable ${iconClass}`} />
+            <i className={`asset_icon ${iconClass}`} />
           </div>
         </Link>
       )}
@@ -67,6 +67,10 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           display: flex;
           padding: 0.5em;
           border-radius: 4px;
+          transition:
+            background-color var(--fade),
+            box-shadow var(--fade),
+            color var(--fade);
         }
         .disabled_asset_icon {
           mask-size: cover;
@@ -75,11 +79,10 @@ export default function SharedIconRouterLink(props: Props): ReactElement {
           height: 12px;
         }
         .router_link_container:hover .icon_wrapper {
-          background-color: var(--hunter-green);
-          color: var(--trophy-gold);
-        }
-        .router_link_container:hover .asset_icon {
-          background-color: var(--trophy-gold);
+          background-color: var(--icon-tile-hover);
+          box-shadow: var(--icon-tile-hover-shadow);
+          color: var(--icon-tile-hover-icon);
+          --asset-icon-color: var(--icon-tile-hover-icon);
         }
       `}</style>
     </>

@@ -50,7 +50,7 @@ export default function PasswordStrengthBar(
           font-weight: 500;
           line-height: 16px;
           color: var(--green-40);
-          transition: color 300ms;
+          transition: color var(--fade);
         }
         .bar_shape {
           height: 4px;
@@ -71,7 +71,7 @@ export default function PasswordStrengthBar(
           background-color: var(--green-60);
           transition:
             width 300ms,
-            background-color 300ms;
+            background-color var(--fade);
         }
 
         .bar_weak.bar_wrap {

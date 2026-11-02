@@ -497,7 +497,7 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   cleanupStaleCacheEntries(): void {
     const dropped = this.#requestCache.dropStaleAnswers()
     if (dropped > 0) {
-      logger.info(
+      logger.debug(
         `Cleaning up ${dropped} cache entries on RPC for chain id: ${this.chainID}`,
       )
     }

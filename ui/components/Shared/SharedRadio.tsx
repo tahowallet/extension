@@ -60,7 +60,9 @@ export default function SharedRadio({
           vertical-align: top;
           cursor: pointer;
           text-align: center;
-          transition: all 250ms ease;
+          transition:
+            background-color var(--fade),
+            box-shadow var(--fade);
           background-color: var(--green-80);
           box-shadow: inset 0 0 0 2px var(--green-60);
         }

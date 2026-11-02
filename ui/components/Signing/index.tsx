@@ -81,7 +81,7 @@ function SigningLoaded<T extends SignOperationType>({
             align-items: center;
             height: 80px;
             justify-content: space-between;
-            box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+            box-shadow: var(--shadow-edge);
             background-color: var(--green-95);
           }
         `}

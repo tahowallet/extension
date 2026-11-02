@@ -59,10 +59,11 @@ export default function SharedBackButton({
           display: flex;
           margin-bottom: 10px;
           margin-top: 2px;
+          transition: color var(--fade);
         }
 
         button:hover {
-          color: #fff;
+          color: var(--text-strong);
         }
 
         button.round {
@@ -81,10 +82,11 @@ export default function SharedBackButton({
           width: 16px;
           height: 16px;
           background-color: var(--green-40);
+          transition: background-color var(--fade);
         }
 
         button:hover .icon {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
       `}</style>
     </button>

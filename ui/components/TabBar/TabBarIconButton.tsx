@@ -45,7 +45,9 @@ export default function TabBarIconButton(
             height: 24px;
             cursor: pointer;
             background-color: var(--green-40);
-            transition: transform 0.1s ease;
+            transition:
+              transform 0.1s ease,
+              background-color var(--fade);
           }
           span {
             position: absolute;
@@ -58,7 +60,7 @@ export default function TabBarIconButton(
             text-transform: capitalize;
             transition:
               opacity 0.3s ease,
-              color 0.1s ease;
+              color var(--fade);
           }
           .active .icon {
             background-color: var(--trophy-gold);

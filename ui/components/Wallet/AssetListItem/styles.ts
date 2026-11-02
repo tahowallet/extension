@@ -10,28 +10,32 @@ export default `
     margin-bottom: 16px;
     justify-content: space-between;
     align-items: center;
-    gap: 8px
+    gap: 8px;
+    transition: background-color var(--fade);
   }
   .asset_list_item:hover {
     background-color: var(--green-80);
   }
   .asset_left {
     display: flex;
+    min-width: 0;
   }
   .asset_left_content {
     display: flex;
     flex-direction: column;
     justify-content: center;
     margin-left: 16px;
+    min-width: 0;
   }
   .asset_right {
+    flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
     align-items: center;
   }
   .asset_amount {
     height: 17px;
-    color: #fefefc;
+    color: var(--text-bright);
     font-size: 14px;
     font-weight: 400;
     letter-spacing: 0.42px;
@@ -39,17 +43,25 @@ export default `
     text-transform: uppercase;
     margin-bottom: 8px;
     margin-top: -1px;
-    overflow-wrap: anywhere;
-    word-break: break-all;
+    display: flex;
+    align-items: baseline;
+    white-space: nowrap;
+    overflow-x: clip;
   }
   .bold_amount_count {
-    width: 70px;
+    flex-shrink: 0;
     height: 24px;
-    color: #fefefc;
+    color: var(--text-bright);
     font-size: 18px;
     font-weight: 600;
     line-height: 24px;
     margin-right: 4px;
+  }
+  /* Amounts are kept short, so the symbol is what gives way. */
+  .asset_symbol {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .verify_asset {
     display: flex;

@@ -57,6 +57,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
           .option {
             margin-right: 16px;
             cursor: pointer;
+            transition: color var(--fade);
           }
           .option:hover {
             color: var(--panel-switcher-secondary, var(--gold-40));

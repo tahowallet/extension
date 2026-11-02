@@ -107,7 +107,7 @@ export default function SharedAddress({
             line-height: 16px;
             white-space: nowrap;
             color: var(--green-20);
-            transition: 300ms color;
+            transition: color var(--fade);
           }
           .compact:hover {
             color: var(--gold-80);
@@ -153,14 +153,15 @@ export default function SharedAddress({
         button {
           display: flex;
           white-space: nowrap;
-          transition: 300ms color;
+          transition: color var(--fade);
           max-width: 100%;
         }
         button :last-child {
           top: 3px;
         }
+        /* A dark surface, such as a tooltip, can set its own hover colours. */
         button:hover {
-          color: var(--gold-80);
+          color: var(--address-hover, var(--gold-80));
         }
         .copy_icon {
           mask-image: url("./images/copy@2x.png");
@@ -169,10 +170,11 @@ export default function SharedAddress({
           height: 24px;
           margin-left: 10px;
           display: inline-block;
-          background-color: var(--green-5);
+          background-color: currentColor;
+          transition: background-color var(--fade);
         }
         button:hover .copy_icon {
-          background-color: var(--trophy-gold);
+          background-color: var(--address-icon-hover, var(--trophy-gold));
         }
         .name_source_tooltip {
           margin: 0;

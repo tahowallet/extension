@@ -1044,7 +1044,7 @@ describe("Endpoint", () => {
 
       expect(lines()).toEqual([
         "info The standard pool now prefers chain 1 standard[1] rpc1.example, and checks on its primary again in 10 s.",
-        "info The standard pool is back on its primary, chain 1 standard[0] rpc0.example.",
+        "debug The standard pool is back on its primary, chain 1 standard[0] rpc0.example.",
         "info The standard pool now prefers chain 1 standard[1] rpc1.example, and checks on its primary again in 30 s.",
       ])
     })

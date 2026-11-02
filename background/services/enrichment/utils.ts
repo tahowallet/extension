@@ -14,6 +14,7 @@ import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import type { AddressOnNetwork } from "../../accounts"
 import type { NameResolverSystem } from "../name"
 import { isDefined } from "../../lib/utils/type-guards"
+import type { FixedPointNumber } from "../../lib/fixed-point"
 
 export function isEIP2612TypedData(
   typedData: EIP712TypedData,
@@ -174,6 +175,8 @@ export type AssetTransferForAddress = {
   assetSymbol: string
   assetLogoUrl?: string
   localizedDecimalAmount: string
+  /** The exact amount; absent from activities stored before it was added. */
+  fixedPointAmount?: FixedPointNumber
   /**
    * The other side of the transfer: its recipient, or its sender if "in",
    * with the name it resolved to and where that name came from, if any.
@@ -221,6 +224,13 @@ export function getAssetTransfersForAddress(
           assetLogoUrl: subannotation.assetAmount.asset.metadata?.logoURL,
           localizedDecimalAmount:
             subannotation.assetAmount.localizedDecimalAmount,
+          fixedPointAmount: {
+            amount: subannotation.assetAmount.amount,
+            decimals:
+              "decimals" in subannotation.assetAmount.asset
+                ? subannotation.assetAmount.asset.decimals
+                : 0,
+          },
         }
       }
       return undefined

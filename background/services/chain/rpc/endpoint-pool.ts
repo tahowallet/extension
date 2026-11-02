@@ -66,11 +66,16 @@ export default class EndpointPool {
     this.#actor.on("preferredEndpointChanged", ({ index }) => {
       const endpoint = this.endpoints[index]
       const wait = recoveryIntervalMs(this.#actor.getSnapshot().context)
-      logger.info(
-        index === 0
-          ? `The ${name} pool is back on its primary, ${endpoint.label}.`
-          : `The ${name} pool now prefers ${endpoint.label}, and checks on its primary again in ${describeWait(wait)}.`,
-      )
+      // Leaving the primary is news; returning to it is routine.
+      if (index === 0) {
+        logger.debug(
+          `The ${name} pool is back on its primary, ${endpoint.label}.`,
+        )
+      } else {
+        logger.info(
+          `The ${name} pool now prefers ${endpoint.label}, and checks on its primary again in ${describeWait(wait)}.`,
+        )
+      }
       this.#listeners.forEach((listener) => listener(endpoint))
     })
     this.#actor.start()
