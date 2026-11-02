@@ -395,16 +395,13 @@ export default function Send(): ReactElement {
       </SharedSlideUpMenu>
       <SharedSlideUpMenu
         isOpen={isAddingContact}
-        size="custom"
-        customSize="296px"
+        size="auto"
         close={() => setIsAddingContact(false)}
       >
         {destinationAddress !== undefined && (
           <AddressBookEntryForm
-            addressOnNetwork={{
-              address: destinationAddress,
-              network: currentNetwork,
-            }}
+            address={destinationAddress}
+            network={currentNetwork}
             onSaved={(name) => {
               setIsAddingContact(false)
               handleAddressChange(name)
