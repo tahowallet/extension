@@ -147,6 +147,7 @@ export default function DAppConnectPage({
         }
         .permissions_list {
           margin-left: 16px;
+          margin-bottom: 24px;
         }
         ul {
           display: flex;
