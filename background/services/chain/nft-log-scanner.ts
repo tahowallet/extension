@@ -12,7 +12,7 @@ import logger from "../../lib/logger"
 import { normalizeEVMAddress } from "../../lib/utils"
 import type { AddressOnNetwork } from "../../accounts"
 import type { EVMNetwork } from "../../networks"
-import type { ERC721Transfer } from "../../nfts"
+import { ERC721Transfer, NFT_PROVIDER_TO_CHAIN } from "../../nfts"
 import { LogHistoryUnavailableError } from "./rpc/log-query-errors"
 import type { BlockRange, ChainDatabase, NFTLogScanCursor } from "./db"
 import type SerialFallbackProvider from "./serial-fallback-provider"
@@ -115,15 +115,16 @@ function withoutBlocksBefore(
 }
 
 /**
- * Finds ERC-721 transfers on Alchemy-capable networks from `Transfer` logs,
- * whose transfer API returns too few to see an account's whole NFT history.
+ * Finds ERC-721 transfers on the NFT indexer's networks from `Transfer`
+ * logs, which see an account's whole NFT history.
  *
- * Each account starts with a few pages of Alchemy's ERC-721 transfers, then
- * scans logs down to the block it first received anything in. New blocks go
- * first, then the history older than Alchemy's pages reached, then, if the
- * pages ran out before the history did, the blocks they covered. Ticks take
- * a few steps per chain and keep where they got to, so a long history is
- * scanned over many ticks and restarts.
+ * On Alchemy-capable networks, each account starts with a few pages of
+ * Alchemy's ERC-721 transfers, then scans logs down to the block it first
+ * received anything in. New blocks go first, then the history older than
+ * Alchemy's pages reached, then, if the pages ran out before the history
+ * did, the blocks they covered. Other networks scan from genesis. Ticks
+ * take a few steps per chain and keep where they got to, so a long history
+ * is scanned over many ticks and restarts.
  */
 export default class NFTLogScanner {
   private running: Promise<void> | undefined
@@ -141,7 +142,7 @@ export default class NFTLogScanner {
   }
 
   /**
-   * Takes a tick's steps on every Alchemy-capable chain, with the NFT
+   * Takes a tick's steps on every chain the NFT indexer covers, with the
    * indexer on. A tick called while one runs joins it.
    */
   async tick(): Promise<void> {
@@ -155,11 +156,10 @@ export default class NFTLogScanner {
   }
 
   private async tickChains(): Promise<void> {
-    const { accountsToTrack, providerFor } = this.dependencies
     const byChain = new Map<string, Map<string, AddressOnNetwork>>()
-    ;(await accountsToTrack()).forEach((addressNetwork) => {
+    ;(await this.dependencies.accountsToTrack()).forEach((addressNetwork) => {
       const { chainID } = addressNetwork.network
-      if (providerFor(addressNetwork.network)?.supportsAlchemyMethods) {
+      if (NFT_PROVIDER_TO_CHAIN.indexer.includes(chainID)) {
         const accounts = byChain.get(chainID) ?? new Map()
         accounts.set(cursorID(chainID, addressNetwork.address), addressNetwork)
         byChain.set(chainID, accounts)
@@ -317,12 +317,13 @@ export default class NFTLogScanner {
   }
 
   /**
-   * Starts an account's scan: reports a few pages of Alchemy's ERC-721
+   * Starts an account's scan. Without Alchemy's API, it queues every block
+   * to `head`. With it, it reports a few pages of Alchemy's ERC-721
    * transfers and queues the blocks from its first transfer to `head`, those
    * the pages didn't reach first. Blocks the pages covered are queued last,
    * and not at all if the pages held every transfer. Without a first
-   * transfer it only scans new blocks. Returns nothing if the first transfer
-   * couldn't be found and is worth asking again.
+   * transfer it only scans new blocks. Returns nothing if Alchemy's API
+   * should be asked again later.
    */
   private async start(
     provider: SerialFallbackProvider,
@@ -331,6 +332,17 @@ export default class NFTLogScanner {
   ): Promise<NFTLogScanCursor | undefined> {
     const { chainID } = addressNetwork.network
     const id = cursorID(chainID, addressNetwork.address)
+    const cursor = (pending: BlockRange[]): NFTLogScanCursor => ({
+      id,
+      chainID,
+      account: normalizeEVMAddress(addressNetwork.address),
+      newestBlock: head,
+      pending: pending.filter(({ fromBlock, toBlock }) => fromBlock <= toBlock),
+    })
+
+    if (!provider.supportsAlchemyMethods) {
+      return cursor([{ fromBlock: 0, toBlock: head }])
+    }
     if (!NFTLogScanner.isServing(provider, "alchemy_getAssetTransfers")) {
       return undefined
     }
@@ -360,21 +372,14 @@ export default class NFTLogScanner {
       head,
       Math.max(...(await this.prime(provider, addressNetwork))),
     )
-    const pending =
+    return cursor(
       uncovered === Number.NEGATIVE_INFINITY
         ? []
         : [
             { fromBlock: floor, toBlock: uncovered },
             { fromBlock: Math.max(floor, uncovered + 1), toBlock: head },
-          ].filter(({ fromBlock, toBlock }) => fromBlock <= toBlock)
-
-    return {
-      id,
-      chainID,
-      account: normalizeEVMAddress(addressNetwork.address),
-      newestBlock: head,
-      pending,
-    }
+          ],
+    )
   }
 
   /**

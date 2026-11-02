@@ -1,5 +1,5 @@
 import * as sinon from "sinon"
-import { ETHEREUM, POLYGON } from "../../../constants"
+import { ETHEREUM, POLYGON, ROOTSTOCK } from "../../../constants"
 import { storage as flagStorage } from "../../../features"
 import logger from "../../../lib/logger"
 import type { AddressOnNetwork } from "../../../accounts"
@@ -51,7 +51,7 @@ function harness({
     },
   }
   const providers = new Map(
-    [ETHEREUM, POLYGON].map((network) => [
+    [ETHEREUM, POLYGON, ROOTSTOCK].map((network) => [
       network.chainID,
       {
         chainID: network.chainID,
@@ -120,8 +120,29 @@ describe("NFTLogScanner", () => {
     expect(cursors.size).toBe(0)
   })
 
-  it("leaves networks without Alchemy's API to the asset transfer scan", async () => {
-    const { scanner, lookups, cursors } = harness({ alchemyNetworks: [] })
+  it("scans from genesis on networks without Alchemy's API", async () => {
+    const { scanner, lookups, cursors, ranges } = harness({
+      alchemyNetworks: [],
+    })
+
+    await scanner.tick()
+
+    expect(lookups.firstTransferBlock.called).toBe(false)
+    expect(lookups.page.called).toBe(false)
+    expect(ranges()).toEqual(stepsDownFrom(NEWEST))
+    expect([...cursors.values()][0].pending).toEqual([
+      {
+        fromBlock: 0,
+        toBlock: NEWEST - NFT_LOG_SCAN_STEPS_PER_TICK * STEP,
+      },
+    ])
+  })
+
+  it("leaves networks the NFT indexer doesn't cover alone", async () => {
+    const { scanner, lookups, cursors } = harness({
+      accounts: [createAddressOnNetwork({ network: ROOTSTOCK })],
+      alchemyNetworks: [],
+    })
 
     await scanner.tick()
 

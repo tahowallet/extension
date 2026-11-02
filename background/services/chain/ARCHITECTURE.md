@@ -22,7 +22,7 @@ relative to it.
 | `TransactionSubmitter`      | `transaction-submitter.ts`       | Populating requests, estimating gas, and broadcasting signed transactions.                                                                                                                       |
 | `NonceAllocator`            | `nonce-allocator.ts`             | Nonces for outgoing transactions, per address and chain.                                                                                                                                         |
 | `AssetTransferScanner`      | `asset-transfer-scanner.ts`      | Recent and historic asset transfer scans, which queue lookups for transactions they find.                                                                                                        |
-| `NFTLogScanner`             | `nft-log-scanner.ts`             | With the NFT indexer on, paced ERC-721 log scans on Alchemy-capable networks and their cursors.                                                                                                  |
+| `NFTLogScanner`             | `nft-log-scanner.ts`             | With the NFT indexer on, paced ERC-721 log scans on the indexer's networks and their cursors.                                                                                                    |
 | `AssetDataHelper`           | `asset-data-helper.ts`           | Token balances and transfers, from Alchemy methods or logs.                                                                                                                                      |
 | `ChainDatabase`             | `db.ts`                          | IndexedDB: networks, endpoints, transactions, blocks, balances, NFT log scan cursors.                                                                                                            |
 
@@ -334,10 +334,13 @@ category to the transfer call they already make. The scanner emits
 ERC-721 transfers as `nftTransfers`, without queueing transaction
 lookups, and `NFTsService` indexes them (`lib/nft-indexer`).
 
-That call returns 25 transfers, shared with ERC-20 ones, so with the flag
-on `NFTLogScanner` also scans ERC-721 logs on Alchemy-capable networks.
-It keeps only four-topic logs there, so ERC-20 transfers still come from
-Alchemy alone. An account's scan starts by reporting up to three pages
+That call returns 25 transfers, shared with ERC-20 ones, and other
+networks' transfer scans cover only the blocks they're asked for, so with
+the flag on `NFTLogScanner` scans ERC-721 logs over each account's whole
+history on every network the indexer covers. It keeps only four-topic
+logs, so ERC-20 transfers still come from the transfer scans. Without
+Alchemy's API, an account's scan queues every block from genesis to the
+head. With it, an account's scan starts by reporting up to three pages
 each way of Alchemy's ERC-721 transfers, a thousand to a page, which is a
 handful of requests against the thousands of `eth_getLogs` ones the same
 history takes. It then queues the blocks from the account's first
@@ -362,7 +365,8 @@ the provider. Once the range is known, a chain gets at most ten
 `eth_getLogs` requests a minute, however many accounts it has, and
 mainnet's 24 million blocks take about eight hours of ticks for one
 account. Chains with faster blocks, such as Arbitrum, take far longer,
-which is what the Alchemy pages and the first transfer are for. New
+which is what the Alchemy pages and the first transfer are for; without
+them, the whole chain is scanned at the same pace. New
 blocks are queued ahead of older history. A tick starts at most one new
 account per chain, and doesn't run while the chain is unreachable or
 `canServeNow("eth_getLogs")` says Boar is cooling down, so it never
