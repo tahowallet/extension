@@ -142,6 +142,7 @@ export default function WalletActivityListItem(props: Props): ReactElement {
             margin-bottom: 16px;
             justify-content: space-between;
             align-items: center;
+            transition: background-color var(--fade);
           }
           button:hover {
             background-color: var(--green-80);

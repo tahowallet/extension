@@ -172,6 +172,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             box-sizing: border-box;
             width: 100%;
             padding: 7.5px 24px;
+            transition: background-color var(--fade);
           }
           .token_group.selected {
             background-color: var(--hunter-green);
@@ -186,6 +187,7 @@ export default function SharedAssetItem<T extends AnyAsset>(
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background-color var(--fade);
           }
           .token_group.selected .token_icon_wrap {
             background-color: var(--green-120);

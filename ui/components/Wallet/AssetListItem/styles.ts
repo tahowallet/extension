@@ -10,7 +10,8 @@ export default `
     margin-bottom: 16px;
     justify-content: space-between;
     align-items: center;
-    gap: 8px
+    gap: 8px;
+    transition: background-color var(--fade);
   }
   .asset_list_item:hover {
     background-color: var(--green-80);

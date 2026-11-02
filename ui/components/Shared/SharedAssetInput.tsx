@@ -442,6 +442,7 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
           font-weight: 500;
           line-height: 24px;
           text-transform: uppercase;
+          transition: color var(--fade);
         }
         button:disabled {
           cursor: default;
@@ -828,7 +829,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             line-height: 32px;
             text-align: right;
             text-overflow: ellipsis;
-            transition: color 100ms ease-in;
+            transition: color var(--fade);
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {

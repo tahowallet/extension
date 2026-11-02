@@ -77,7 +77,7 @@ export default function AccountList({
                 style={{
                   marginLeft: 5,
                   transform: `rotate(${isOpen ? "180" : "0"}deg)`,
-                  transition: "transform 100ms",
+                  transition: "transform 100ms, background-color var(--fade)",
                 }}
               />
             </button>
@@ -122,6 +122,7 @@ export default function AccountList({
         .accounts_toggle {
           display: flex;
           align-items: center;
+          transition: color var(--fade);
         }
         .accounts_toggle:hover {
           color: var(--green-5);

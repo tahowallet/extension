@@ -40,7 +40,9 @@ export default function SharedProgressIndicator(props: {
             height: 6px;
             border-radius: 3px;
             margin: 0px 3px;
-            transition: 0.2s ease-in-out;
+            transition:
+              width 0.2s ease-in-out,
+              background var(--fade);
           }
           .static {
             cursor: default;

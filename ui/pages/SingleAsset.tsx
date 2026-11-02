@@ -340,6 +340,7 @@ export default function SingleAsset(): ReactElement {
             height: 16px;
             background-color: var(--green-40);
             margin: 0 5px;
+            transition: background-color var(--fade);
           }
           .new_tab_link:hover .icon_new_tab {
             background-color: var(--trophy-gold);

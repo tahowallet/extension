@@ -380,6 +380,7 @@ function WalletSignerAccounts({
           box-sizing: border-box;
           padding: 8px 0px 8px 24px;
           cursor: pointer;
+          transition: background-color var(--fade);
         }
       `}</style>
     </section>

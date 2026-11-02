@@ -50,6 +50,7 @@ export default function BalanceReloader(): ReactElement {
           width: 17px;
           height: 17px;
           margin-left: 10px;
+          transition: background-color var(--fade);
         }
         .reload:hover {
           background-color: var(--trophy-gold);

@@ -51,6 +51,7 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             background-color: var(--asset-icon-color);
             width: 12px;
             height: 12px;
+            transition: background-color var(--fade);
           }
           /* An icon that is a button of its own, with no tile. */
           a.asset_icon:hover,

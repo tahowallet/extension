@@ -165,7 +165,11 @@ export default function ImportPrivateKeyJSON(props: Props): ReactElement {
           max-height: 230px;
         }
         .hidden_animation {
-          transition: all 300ms ease-in-out;
+          transition:
+            opacity 300ms ease-in-out,
+            max-height 300ms ease-in-out,
+            margin 300ms ease-in-out,
+            padding 300ms ease-in-out;
         }
         .confetti {
           font-size: 36px;

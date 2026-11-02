@@ -123,7 +123,7 @@ export default function EarnCard({ vault }: EarnCardProps): ReactElement {
           align-items: center;
           margin-top: 26px;
           margin-bottom: 16px;
-          transition: all 0.2s ease;
+          transition: box-shadow var(--fade);
           color: white;
         }
         .card:hover {

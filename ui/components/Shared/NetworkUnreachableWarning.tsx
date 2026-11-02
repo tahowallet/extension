@@ -103,6 +103,7 @@ export default function NetworkUnreachableWarning({
           .tooltip_content :global(a) {
             color: var(--tooltip-text);
             text-decoration: underline;
+            transition: color var(--fade);
           }
           .tooltip_content :global(a):hover {
             color: var(--tooltip-text-muted);

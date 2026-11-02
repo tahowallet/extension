@@ -168,7 +168,7 @@ export default function TransactionSignatureDetailsWarning(
             cursor: pointer;
             color: var(--green-40);
             font-size: 14px;
-            transition: color 0.2s;
+            transition: color var(--fade);
           }
           .copy_button:hover {
             color: var(--green-20);

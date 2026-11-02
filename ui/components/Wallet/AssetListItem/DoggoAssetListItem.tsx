@@ -81,6 +81,7 @@ export default function DoggoAssetListItem({
             margin-bottom: -5px;
             margin-left: -13px;
             cursor: pointer;
+            transition: background-color var(--fade);
           }
           .locked:hover,
           .locked.hover {

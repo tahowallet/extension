@@ -114,7 +114,7 @@ export default function EarnDepositedCard({
               padding: 16px;
               margin-bottom: 20px;
               margin-top: 30px;
-              transition: all 0.2s ease;
+              transition: box-shadow var(--fade);
             }
             .card:hover {
               box-shadow: var(--shadow-lifted-flat);

@@ -106,7 +106,7 @@ export default function NFTsHover(props: {
           width: 32px;
           height: 32px;
           border-radius: 100%;
-          transition: background 200ms ease-in-out;
+          transition: background var(--fade);
         }
         .nft_hover:hover .nft_hover_icon {
           background: ${backgroundHover ?? background};

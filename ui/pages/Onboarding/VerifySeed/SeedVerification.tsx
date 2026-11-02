@@ -43,6 +43,7 @@ function SeedWord(
           display: flex;
           margin-bottom: 24px;
           width: 140px;
+          transition: color var(--fade);
         }
         .word_index {
           width: 15px;

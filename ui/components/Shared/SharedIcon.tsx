@@ -8,7 +8,6 @@ type Props = {
   color?: string
   style?: CSSProperties
   hoverColor?: string
-  transitionHoverTime: string
   ariaLabel?: string
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   disabled?: boolean
@@ -25,13 +24,7 @@ export default function SharedIcon(props: Props): ReactElement {
   } = props
 
   if ("onClick" in props) {
-    const {
-      hoverColor = color,
-      transitionHoverTime,
-      ariaLabel,
-      onClick,
-      disabled = false,
-    } = props
+    const { hoverColor = color, ariaLabel, onClick, disabled = false } = props
 
     return (
       <button
@@ -51,7 +44,7 @@ export default function SharedIcon(props: Props): ReactElement {
             width: ${width}px;
             height: ${height}px;
             background-color: ${color};
-            transition: background-color ${transitionHoverTime};
+            transition: background-color var(--fade);
           }
 
           .icon:disabled {
@@ -98,12 +91,9 @@ export default function SharedIcon(props: Props): ReactElement {
           width: ${width}px;
           height: ${height}px;
           background-color: ${color};
+          transition: background-color var(--fade);
         }
       `}</style>
     </i>
   )
-}
-
-SharedIcon.defaultProps = {
-  transitionHoverTime: "0",
 }
