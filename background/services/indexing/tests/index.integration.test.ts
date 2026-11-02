@@ -18,7 +18,9 @@ mock.module("@ethersproject/web", () => {
 })
 
 import IndexingService from ".."
-import { ETHEREUM, OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, USD } from "../../../constants"
+import logger from "../../../lib/logger"
+import * as priceOracle from "../../../lib/priceOracle"
 import {
   createAddressOnNetwork,
   createChainService,
@@ -215,7 +217,7 @@ describe("IndexingService", () => {
          * for every supported network after tokenlist load
          */
         expect(cacheSpy).toHaveBeenCalledTimes(
-          chainService.supportedNetworks.length + trackedNetworks.length,
+          chainService.getSupportedNetworks().length + trackedNetworks.length,
         )
 
         expect(
@@ -308,6 +310,55 @@ describe("IndexingService", () => {
   })
 
   describe("loading account balances", () => {
+    it("should share a balance load already in flight for the same account and chain", async () => {
+      const account = createAddressOnNetwork()
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+
+      let finishLookups = () => {}
+      const lookupsFinished = new Promise<void>((resolve) => {
+        finishLookups = resolve
+      })
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        lookupsFinished.then(() => []),
+      )
+      const accountLoadSpy = getPrivateMethodSpy<
+        IndexingService["loadAccountBalancesFor"]
+      >(indexingService, "loadAccountBalancesFor")
+
+      const loads = Promise.all([
+        // oxlint-disable-next-line typescript/dot-notation
+        indexingService["loadAccountBalances"](),
+        // oxlint-disable-next-line typescript/dot-notation
+        indexingService["loadAccountBalances"](),
+      ])
+      // Hold the lookup until both passes ask for the balances.
+      while (accountLoadSpy.mock.calls.length < 2) {
+        // oxlint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, 1)
+        })
+      }
+      finishLookups()
+      await loads
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(1)
+
+      // Once the load finishes, the next pass looks balances up again.
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"]()
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(2)
+    })
+
     it("should query erc20 balances specifying token addresses", async () => {
       const indexingDb = await getIndexingDB()
 
@@ -367,6 +418,113 @@ describe("IndexingService", () => {
           expect.objectContaining({ symbol: smartContractAsset.symbol }),
         ]),
       )
+    })
+  })
+
+  describe("base asset prices", () => {
+    it("keeps the prices it could read when one chain's feed fails", async () => {
+      jest
+        .spyOn(chainService, "getSupportedNetworks")
+        .mockReturnValue([ETHEREUM, OPTIMISM])
+      const ethPrice = {
+        pair: [USD, ETHEREUM.baseAsset] as const,
+        amounts: [2266n * 10n ** 10n, 10n ** 18n] as const,
+        time: Date.now(),
+      }
+      jest
+        .spyOn(priceOracle, "getUSDPriceForBaseAsset")
+        .mockImplementation(async (network) => {
+          if (network === OPTIMISM) {
+            throw new Error("feed unreachable")
+          }
+          return {
+            ...ethPrice,
+            pair: [...ethPrice.pair],
+            amounts: [...ethPrice.amounts],
+          }
+        })
+      const error = jest.spyOn(logger, "error")
+      const warn = jest.spyOn(logger, "warn").mockImplementation(() => {})
+      const emitted = jest.fn()
+      indexingService.emitter.on("prices", emitted)
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["getBaseAssetsPrices"]()
+
+      expect(emitted).toHaveBeenCalledWith([
+        expect.objectContaining({ pair: [USD, ETHEREUM.baseAsset] }),
+      ])
+      // Other services log too; only this pass's lines matter here.
+      expect(warn).toHaveBeenCalledWith(
+        "Couldn't read base asset price feeds",
+        [expect.stringMatching(/^10: /)],
+      )
+      expect(
+        error.mock.calls.filter(([line]) => /price/i.test(String(line))),
+      ).toEqual([])
+    })
+  })
+
+  describe("token prices", () => {
+    it("keeps the prices it could read when one chain fails", async () => {
+      const ethereumToken = createSmartContractAsset({
+        homeNetwork: ETHEREUM,
+        metadata: {
+          tokenLists: [{ name: "Example", url: "https://tokens.example" }],
+        },
+      })
+      const optimismToken = createSmartContractAsset({
+        homeNetwork: OPTIMISM,
+        metadata: {
+          tokenLists: [{ name: "Example", url: "https://tokens.example" }],
+        },
+      })
+      const indexingDb = await getIndexingDB()
+      await indexingDb.addAssetToTrack(ethereumToken)
+      await indexingDb.addAssetToTrack(optimismToken)
+      // Adding doesn't wait for the write; reading does.
+      await indexingDb.getAssetsToTrack()
+      jest
+        .spyOn(chainService, "providerForNetworkOrThrow")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockReturnValue({} as any)
+
+      jest
+        .spyOn(priceOracle, "getUSDPriceForTokens")
+        .mockImplementation(async (_assets, network) => {
+          if (network === OPTIMISM) {
+            throw new Error("provider unreachable")
+          }
+          return {
+            [ethereumToken.contractAddress]: {
+              unitPrice: { asset: USD, amount: 10n ** 10n },
+              time: Date.now(),
+            },
+          }
+        })
+      const error = jest.spyOn(logger, "error")
+      const warn = jest.spyOn(logger, "warn").mockImplementation(() => {})
+      const emitted = jest.fn()
+      indexingService.emitter.on("prices", emitted)
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["getTrackedAssetsPrices"]()
+
+      expect(emitted).toHaveBeenCalledWith([
+        expect.objectContaining({
+          pair: [
+            expect.objectContaining({ symbol: ethereumToken.symbol }),
+            USD,
+          ],
+        }),
+      ])
+      // Other services log too; only this pass's lines matter here.
+      expect(warn).toHaveBeenCalledWith("Couldn't read token prices", [
+        expect.stringMatching(/^10: /),
+      ])
+      expect(
+        error.mock.calls.filter(([line]) => /price/i.test(String(line))),
+      ).toEqual([])
     })
   })
 })

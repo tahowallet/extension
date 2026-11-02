@@ -16,6 +16,7 @@ import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
 import SharedAddress from "../../../../Shared/SharedAddress"
+import { displayAssetAmount } from "../../../../../utils/amounts"
 
 type TransferSummaryBaseProps = {
   title?: string
@@ -43,6 +44,7 @@ export function TransferSummaryBase({
   const localizedMainCurrencyAmount =
     enrichAssetAmountWithMainCurrencyValues(assetAmount, assetPricePoint, 2)
       .localizedMainCurrencyAmount ?? "-"
+  const amount = displayAssetAmount(assetAmount)
 
   return (
     <>
@@ -61,8 +63,11 @@ export function TransferSummaryBase({
         <div className="divider" />
         <div className="container">
           <span className="label">{t("spendAmountLabel")}</span>
-          <span className="spend_amount">
-            {assetAmount.localizedDecimalAmount} {assetAmount.asset.symbol}
+          <span
+            className="spend_amount"
+            title={`${amount.title ?? amount.text} ${assetAmount.asset.symbol}`}
+          >
+            {amount.text} {assetAmount.asset.symbol}
           </span>
           <span className="label">${`${localizedMainCurrencyAmount}`}</span>
         </div>
@@ -76,6 +81,10 @@ export function TransferSummaryBase({
               margin-bottom: 4px;
             }
             .spend_amount {
+              max-width: 100%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
               color: var(--text-strong);
               font-size: 28px;
               text-align: right;

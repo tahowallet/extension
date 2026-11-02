@@ -52,18 +52,21 @@ const PARAMS = {
 describe("ProviderBridgeService", () => {
   let providerBridgeService: ProviderBridgeService
   const sandbox = sinon.createSandbox()
+  const { getCurrent, create } = browser.windows
 
   beforeEach(async () => {
     browser.windows.getCurrent = jest.fn(() => Promise.resolve(WINDOW))
     browser.windows.create = jest.fn(() => Promise.resolve(WINDOW))
     providerBridgeService = await createProviderBridgeService()
     await providerBridgeService.startService()
-    sandbox.restore()
   })
 
   afterEach(async () => {
     await providerBridgeService.stopService()
-    jest.clearAllMocks()
+    sandbox.restore()
+    jest.restoreAllMocks()
+    browser.windows.getCurrent = getCurrent
+    browser.windows.create = create
   })
 
   describe("routeContentScriptRPCRequest", () => {

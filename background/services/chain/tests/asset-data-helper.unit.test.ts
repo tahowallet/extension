@@ -1,35 +1,38 @@
+import * as sinon from "sinon"
+import logger from "../../../lib/logger"
 import AssetDataHelper from "../asset-data-helper"
 import SerialFallbackProvider from "../serial-fallback-provider"
-import { getAssetTransfers as getBoarAssetTransfers } from "../../../lib/boar"
-import { getAssetTransfersViaLogs } from "../../../lib/erc20-transfer-logs"
 import { createAddressOnNetwork } from "../../../tests/factories"
 
-jest.mock("../../../lib/boar", () => ({
-  getAssetTransfers: jest.fn(async () => []),
-  getTokenBalances: jest.fn(async () => []),
-  getTokenMetadata: jest.fn(async () => undefined),
-}))
-
-jest.mock("../../../lib/erc20-transfer-logs", () => ({
-  getAssetTransfersViaLogs: jest.fn(async () => []),
-}))
-
-const mockedBoarAssetTransfers = getBoarAssetTransfers as AnyMock
-const mockedLogAssetTransfers = getAssetTransfersViaLogs as AnyMock
+const mockedBoarAssetTransfers = jest.fn()
+const mockedLogAssetTransfers = jest.fn()
 
 const makeHelperWithProvider = (provider: Partial<SerialFallbackProvider>) =>
-  new AssetDataHelper({
-    providerForNetwork: () => provider as SerialFallbackProvider,
-  })
+  new AssetDataHelper(
+    { providerForNetwork: () => provider as SerialFallbackProvider },
+    {
+      viaAlchemy: mockedBoarAssetTransfers,
+      viaLogs: mockedLogAssetTransfers,
+    },
+  )
 
 describe("AssetDataHelper", () => {
+  const sandbox = sinon.createSandbox()
+
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockedBoarAssetTransfers.mockReset()
+    mockedBoarAssetTransfers.mockResolvedValue([])
+    mockedLogAssetTransfers.mockReset()
+    mockedLogAssetTransfers.mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    sandbox.restore()
   })
 
   describe("getAssetTransfers", () => {
     it("uses the Alchemy-compatible helper when the provider supports it", async () => {
-      const helper = makeHelperWithProvider({ supportsAlchemy: true })
+      const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
       const addressOnNetwork = createAddressOnNetwork()
 
       await helper.getAssetTransfers(addressOnNetwork, 0, 100)
@@ -40,7 +43,7 @@ describe("AssetDataHelper", () => {
     })
 
     it("only looks up incoming transfers when incomingOnly is set", async () => {
-      const helper = makeHelperWithProvider({ supportsAlchemy: true })
+      const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
       const addressOnNetwork = createAddressOnNetwork()
 
       await helper.getAssetTransfers(addressOnNetwork, 0, 100, true)
@@ -57,7 +60,7 @@ describe("AssetDataHelper", () => {
 
     it("falls back to Transfer log scanning without Alchemy support", async () => {
       const provider = {
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 100),
       }
       const helper = makeHelperWithProvider(
@@ -79,7 +82,7 @@ describe("AssetDataHelper", () => {
 
     it("resolves the end block for log scanning when none is given", async () => {
       const provider = {
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 123),
       }
       const helper = makeHelperWithProvider(
@@ -108,7 +111,7 @@ describe("AssetDataHelper", () => {
       )
 
       const provider = {
-        supportsAlchemy: true,
+        supportsAlchemyMethods: true,
         getBlockNumber: jest.fn(async () => 100),
       }
       const helper = makeHelperWithProvider(
@@ -137,7 +140,7 @@ describe("AssetDataHelper", () => {
       mockedLogAssetTransfers.mockRejectedValueOnce(logsError)
 
       const helper = makeHelperWithProvider({
-        supportsAlchemy: true,
+        supportsAlchemyMethods: true,
         getBlockNumber: jest.fn(async () => 100),
       } as unknown as Partial<SerialFallbackProvider>)
 
@@ -146,18 +149,22 @@ describe("AssetDataHelper", () => {
       ).rejects.toEqual(logsError)
     })
 
-    it("rethrows log-scanning errors so callers can manage retries", async () => {
+    it("rethrows log-scanning errors, unlogged, so callers can manage retries", async () => {
       const error = new Error("range too wide")
       mockedLogAssetTransfers.mockRejectedValueOnce(error)
+      const warn = sandbox.stub(logger, "warn")
+      const logError = sandbox.stub(logger, "error")
 
       const helper = makeHelperWithProvider({
-        supportsAlchemy: false,
+        supportsAlchemyMethods: false,
         getBlockNumber: jest.fn(async () => 100),
       } as unknown as Partial<SerialFallbackProvider>)
 
       await expect(
         helper.getAssetTransfers(createAddressOnNetwork(), 0, 50),
       ).rejects.toEqual(error)
+      expect(warn.called).toBe(false)
+      expect(logError.called).toBe(false)
     })
   })
 })

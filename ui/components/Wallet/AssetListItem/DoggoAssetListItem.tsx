@@ -8,6 +8,7 @@ import SharedIcon from "../../Shared/SharedIcon"
 import SharedTooltip from "../../Shared/SharedTooltip"
 import BonusProgramModal from "../../BonusProgram/BonusProgramModal"
 import styles from "./styles"
+import { displayAssetAmount } from "../../../utils/amounts"
 
 export default function DoggoAssetListItem({
   assetAmount,
@@ -15,6 +16,7 @@ export default function DoggoAssetListItem({
   assetAmount: CompleteAssetAmount
 }): ReactElement {
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
+  const amount = displayAssetAmount(assetAmount)
 
   return (
     <>
@@ -23,10 +25,10 @@ export default function DoggoAssetListItem({
           <SharedAssetIcon symbol="DOGGO" />
           <div className="asset_left_content">
             <div className="asset_amount">
-              <span className="bold_amount_count">
-                {assetAmount.localizedDecimalAmount}
+              <span className="bold_amount_count" title={amount.title}>
+                {amount.text}
               </span>
-              {assetAmount.asset.symbol}
+              <span className="asset_symbol">{assetAmount.asset.symbol}</span>
             </div>
             <SharedTooltip
               width={220}

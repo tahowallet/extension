@@ -2,10 +2,11 @@
  *  Batch request issues
  *
  *  These are typically due to length or size in bytes of the payload and match
- *  errors from geth, nethermind, and ankr
+ *  errors from geth, nethermind and ankr, dRPC's free plan ("Batch of more
+ *  than 3 requests are not allowed") and BlockPI ("Max messages exceeded").
  */
 const BATCH_LIMIT_REGEXP =
-  /batch size (is )?too large|batch size limit exceeded|batch too large/i
+  /batch size (is )?too large|batch size limit exceeded|batch too large|batch of more than \d+ requests are not allowed|max messages exceeded/i
 
 /**
  *  Network related issues
@@ -132,6 +133,18 @@ export class RpcEndpointValidationError extends Error {
       failure.kind === "unreachable"
         ? `RPC endpoint could not be reached: ${failure.url}`
         : `RPC endpoint ${failure.url} reports chain ID ${failure.reportedChainID}, expected ${failure.expectedChainID}`,
+    )
+  }
+}
+
+/**
+ * An endpoint list that was never saved, because endpoints that were
+ * already saved, such as a re-added chain's, replaced it first.
+ */
+export class EndpointUpdateSupersededError extends Error {
+  constructor(chainID: string) {
+    super(
+      `The RPC endpoints for chain ${chainID} were replaced before this change was saved`,
     )
   }
 }

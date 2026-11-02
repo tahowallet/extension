@@ -129,6 +129,35 @@ function purgeSensitiveFailSafe(log: string): string {
   )
 }
 
+/**
+ * Formats a logged value for storage. Objects are stored as JSON, which
+ * leaves out an error's message, so an error whose JSON has neither a
+ * `message` nor a `reason` leads with its name and message.
+ */
+export function formatLoggedValue(loggedValue: unknown): string {
+  if (typeof loggedValue !== "object" || loggedValue === null) {
+    return String(loggedValue)
+  }
+
+  let json: string
+  try {
+    json = JSON.stringify(loggedValue)
+  } catch (_) {
+    // If we can't stringify thats OK, we'll still see [object Object] in the
+    // logs.
+    return String(loggedValue)
+  }
+
+  if (
+    !(loggedValue instanceof Error) ||
+    Object.prototype.propertyIsEnumerable.call(loggedValue, "message") ||
+    Object.prototype.propertyIsEnumerable.call(loggedValue, "reason")
+  ) {
+    return json
+  }
+  return json === "{}" ? String(loggedValue) : `${String(loggedValue)} ${json}`
+}
+
 const BLINK_PREFIX = "    at "
 const WEBKIT_GECKO_DELIMITER = "@"
 const WEBKIT_MARKER = "@"
@@ -458,21 +487,7 @@ export class Logger {
     input: unknown[],
     stackTrace: string[] | undefined,
   ) {
-    const formattedInput = input
-      .map((loggedValue) => {
-        if (typeof loggedValue === "object") {
-          try {
-            return JSON.stringify(loggedValue)
-          } catch (_) {
-            // If we can't stringify thats OK, we'll still see [object Object] or
-            // null in the logs.
-            return String(loggedValue)
-          }
-        } else {
-          return String(loggedValue)
-        }
-      })
-      .join(" ")
+    const formattedInput = input.map(formatLoggedValue).join(" ")
 
     const formattedStackTrace =
       stackTrace === undefined ? "" : `\n${stackTrace.join("\n")}`
