@@ -142,16 +142,8 @@ export default function SharedTooltip(props: Props): ReactElement {
             border-radius: 3px;
             padding: 12px;
             z-index: 20;
-            animation: tooltip_appear var(--tooltip-fade-duration, 150ms)
-              ease-out var(--tooltip-show-delay, 150ms) both;
             ${getVerticalPosition(verticalPosition, height, verticalShift)}
             ${getHorizontalPosition(horizontalPosition, width, horizontalShift)}
-          }
-          @keyframes tooltip_appear {
-            from {
-              opacity: 0;
-              visibility: hidden;
-            }
           }
           .dark {
             background: var(--green-120);
