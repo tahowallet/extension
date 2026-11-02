@@ -1,5 +1,9 @@
-import type { HexString, UNIXTime } from "../../types"
-import { normalizeAddressOnNetwork, sameEVMAddress } from "../../lib/utils"
+import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
+import {
+  normalizeAddressOnNetwork,
+  normalizeEVMAddress,
+  sameEVMAddress,
+} from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -8,7 +12,7 @@ import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
 import type { AddressOnNetwork, NameOnNetwork } from "../../accounts"
-import type { EVMNetwork } from "../../networks"
+import { sameNetwork, type EVMNetwork } from "../../networks"
 import { SECOND } from "../../constants"
 
 import { NameResolver } from "./name-resolver"
@@ -24,8 +28,30 @@ import {
 import PreferenceService from "../preferences"
 import { isFulfilledPromise } from "../../lib/utils/type-guards"
 import { wrapIfEnabled } from "../../features"
+import { AddressBookEntry, NameDatabase, getOrCreateDB } from "./db"
 
-export type { NameResolverSystem }
+export type { NameResolverSystem, AddressBookEntry }
+
+/**
+ * Answers whether an address saved on one network is known to be controlled by
+ * the same party on another. Provided by the signing service, which the name
+ * service can't depend on directly since it depends on the name service. See
+ * RFB 5.
+ */
+export type AddressControlCompatibilityCheck = (
+  addressOnNetwork: AddressOnNetwork,
+  otherNetwork: EVMNetwork,
+) => Promise<boolean>
+
+export type AddressBookUpdateResult =
+  | { success: true }
+  | { success: false; error: "empty-name" | "duplicate-name" }
+
+/**
+ * Names are compared ignoring case and surrounding whitespace, so that two
+ * entries can't look the same to the user while resolving differently.
+ */
+const comparableName = (name: string) => name.trim().toLowerCase()
 
 export type ResolvedAddressRecord = {
   from: NameOnNetwork
@@ -60,6 +86,13 @@ type Events = ServiceLifecycleEvents & {
   resolvedAddress: ResolvedAddressRecord
   resolvedName: ResolvedNameRecord
   resolvedAvatar: ResolvedAvatarRecord
+  /**
+   * Emitted when a name that previously applied to an address on a network
+   * no longer does, e.g. after an address book entry is removed.
+   */
+  clearedName: AddressOnNetwork
+  /** The full address book, emitted on startup and after every change. */
+  addressBook: AddressBookEntry[]
 }
 
 // A minimum record expiry that avoids infinite resolution loops.
@@ -74,6 +107,21 @@ const MINIMUM_RECORD_EXPIRY = 10 * SECOND
  */
 export default class NameService extends BaseService<Events> {
   private resolvers: NameResolver<NameResolverSystem>[] = []
+
+  /**
+   * In-memory copy of the persisted address book, so lookups don't need to hit
+   * the database.
+   */
+  private addressBook: AddressBookEntry[] = []
+
+  /**
+   * Until the signing service provides a real check, an entry only applies on
+   * the network it was saved on.
+   */
+  private isAddressControlCompatible: AddressControlCompatibilityCheck = async (
+    addressOnNetwork,
+    otherNetwork,
+  ) => sameNetwork(addressOnNetwork.network, otherNetwork)
 
   /**
    * Cached resolution for avatar URIs that are not yet URLs, e.g. for EIP155.
@@ -109,17 +157,18 @@ export default class NameService extends BaseService<Events> {
     NameService,
     [Promise<ChainService>, Promise<PreferenceService>]
   > = async (chainService, preferenceService) =>
-    new this(await chainService, await preferenceService)
+    new this(await chainService, await preferenceService, await getOrCreateDB())
 
   private constructor(
     private chainService: ChainService,
     preferenceService: PreferenceService,
+    private db: NameDatabase,
   ) {
     super({})
 
     this.resolvers = [
       // User-controlled resolvers are higher priority.
-      addressBookResolverFor(preferenceService),
+      addressBookResolverFor(this),
       knownContractResolverFor(preferenceService),
       // Third-party resolvers are used when the user has not defined a name
       // for the given resource.
@@ -128,14 +177,6 @@ export default class NameService extends BaseService<Events> {
       rnsResolver(),
       ...wrapIfEnabled("SUPPORT_MEZO_NETWORK", mezoResolver()),
     ]
-
-    preferenceService.emitter.on(
-      "addressBookEntryModified",
-      async ({ network, address }) => {
-        this.clearNameCacheEntry(network.chainID, address)
-        await this.lookUpName({ network, address })
-      },
-    )
 
     chainService.emitter.on("newAccountToTrack", async (addressOnNetwork) => {
       try {
@@ -159,6 +200,204 @@ export default class NameService extends BaseService<Events> {
         )
       }
     })
+  }
+
+  protected override async internalStartService(): Promise<void> {
+    await super.internalStartService()
+
+    this.addressBook = await this.db.getAddressBook()
+    this.emitter.emit("addressBook", this.addressBook)
+  }
+
+  /**
+   * Sets how the name service decides whether an address book entry saved on
+   * one network applies on another. See {@link AddressControlCompatibilityCheck}.
+   */
+  setAddressControlCompatibilityCheck(
+    check: AddressControlCompatibilityCheck,
+  ): void {
+    this.isAddressControlCompatible = check
+  }
+
+  getAddressBook(): AddressBookEntry[] {
+    return this.addressBook
+  }
+
+  /**
+   * Saves a name for an address on a network, replacing any name already saved
+   * for that address on that network. A name can't be saved if another
+   * address already uses it on the same network, since looking the name up
+   * there would then be ambiguous.
+   */
+  async addOrEditAddressBookEntry({
+    address,
+    network,
+    name,
+  }: AddressOnNetwork & { name: string }): Promise<AddressBookUpdateResult> {
+    const trimmedName = name.trim()
+    if (trimmedName === "") {
+      return { success: false, error: "empty-name" }
+    }
+
+    const normalizedAddress = normalizeEVMAddress(address)
+
+    const nameIsTaken = this.addressBook.some(
+      (entry) =>
+        sameNetwork(entry.network, network) &&
+        !sameEVMAddress(entry.address, normalizedAddress) &&
+        comparableName(entry.name) === comparableName(trimmedName),
+    )
+    if (nameIsTaken) {
+      return { success: false, error: "duplicate-name" }
+    }
+
+    const existingEntry = this.addressBook.find(
+      (entry) =>
+        sameNetwork(entry.network, network) &&
+        sameEVMAddress(entry.address, normalizedAddress),
+    )
+    const now = Date.now()
+    const entry: AddressBookEntry = {
+      address: normalizedAddress,
+      network,
+      name: trimmedName,
+      createdAt: existingEntry?.createdAt ?? now,
+      updatedAt: now,
+    }
+
+    await this.db.putAddressBookEntry(entry)
+    this.addressBook = [
+      ...this.addressBook.filter((other) => other !== existingEntry),
+      entry,
+    ]
+    this.emitter.emit("addressBook", this.addressBook)
+
+    await this.refreshNamesForAddress(normalizedAddress)
+
+    return { success: true }
+  }
+
+  async removeAddressBookEntry({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<void> {
+    const normalizedAddress = normalizeEVMAddress(address)
+
+    await this.db.deleteAddressBookEntry(normalizedAddress, network.chainID)
+    this.addressBook = this.addressBook.filter(
+      (entry) =>
+        !(
+          sameNetwork(entry.network, network) &&
+          sameEVMAddress(entry.address, normalizedAddress)
+        ),
+    )
+    this.emitter.emit("addressBook", this.addressBook)
+
+    await this.refreshNamesForAddress(normalizedAddress)
+  }
+
+  /**
+   * Re-resolves names for every tracked account that has an address book
+   * entry, for use when the conditions deciding which networks an entry
+   * applies on may have changed, e.g. when control compatibility changes.
+   */
+  async refreshAddressBookNames(): Promise<void> {
+    const addresses = new Set(this.addressBook.map(({ address }) => address))
+
+    await Promise.all(
+      [...addresses].map((address) => this.refreshNamesForAddress(address)),
+    )
+  }
+
+  /**
+   * Returns the address book entry that applies to an address on a network: an
+   * entry saved on that network if there is one, and otherwise the most
+   * recently updated entry saved on a network the address is known to be
+   * control-compatible with.
+   */
+  async lookUpAddressBookName({
+    address,
+    network,
+  }: AddressOnNetwork): Promise<NameOnNetwork | undefined> {
+    const entry = await this.findApplicableEntry(network, (candidate) =>
+      sameEVMAddress(candidate.address, address),
+    )
+
+    return entry === undefined ? undefined : { name: entry.name, network }
+  }
+
+  /**
+   * Returns the address an address book name refers to on a network, using
+   * the same rules as {@link lookUpAddressBookName}.
+   */
+  async lookUpAddressBookAddress({
+    name,
+    network,
+  }: NameOnNetwork): Promise<AddressOnNetwork | undefined> {
+    const entry = await this.findApplicableEntry(
+      network,
+      (candidate) => comparableName(candidate.name) === comparableName(name),
+    )
+
+    return entry === undefined ? undefined : { address: entry.address, network }
+  }
+
+  private async findApplicableEntry(
+    network: EVMNetwork,
+    matches: (entry: AddressBookEntry) => boolean,
+  ): Promise<AddressBookEntry | undefined> {
+    const candidates = this.addressBook.filter(matches)
+
+    const onNetwork = candidates.find((entry) =>
+      sameNetwork(entry.network, network),
+    )
+    if (onNetwork !== undefined) {
+      return onNetwork
+    }
+
+    // Entries are kept in write order, so reversing before a stable sort makes
+    // the latest write win when timestamps tie.
+    const onOtherNetworks = [...candidates]
+      .reverse()
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+    const compatibilities = await Promise.all(
+      onOtherNetworks.map(async (entry) => {
+        try {
+          return await this.isAddressControlCompatible(entry, network)
+        } catch (error) {
+          return false
+        }
+      }),
+    )
+
+    // Most recently updated first, so the latest applicable entry wins.
+    return onOtherNetworks.find((_, index) => compatibilities[index])
+  }
+
+  /**
+   * Re-resolves the name of an address on every network it's tracked on,
+   * emitting `clearedName` where no name applies anymore.
+   */
+  private async refreshNamesForAddress(
+    address: NormalizedEVMAddress,
+  ): Promise<void> {
+    const trackedAccounts = await this.chainService.getAccountsToTrack()
+
+    await Promise.all(
+      trackedAccounts
+        .filter((account) => sameEVMAddress(account.address, address))
+        .map(async (account) => {
+          this.clearNameCacheEntry(account.network.chainID, address)
+          try {
+            const record = await this.lookUpName(account, false)
+            if (record === undefined) {
+              this.emitter.emit("clearedName", account)
+            }
+          } catch (error) {
+            logger.error("Error refreshing name for address", account, error)
+          }
+        }),
+    )
   }
 
   /**

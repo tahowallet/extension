@@ -27,6 +27,7 @@ import {
   NFTsService,
   AnalyticsService,
 } from ".."
+import type { AddressBookUpdateResult } from "../name"
 
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
@@ -513,17 +514,26 @@ export default class ReduxService extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  addOrEditAddressName({
+  async addOrEditAddressName({
     address,
     network,
     name,
-  }: AddressOnNetwork & { name: string }): void {
-    this.preferenceService.addOrEditNameInAddressBook({
+  }: AddressOnNetwork & { name: string }): Promise<AddressBookUpdateResult> {
+    const result = await this.nameService.addOrEditAddressBookEntry({
       address,
       network,
       name,
     })
-    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
+    if (result.success) {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.ACCOUNT_NAME_EDITED,
+      )
+    }
+    return result
+  }
+
+  async removeAddressName(addressOnNetwork: AddressOnNetwork): Promise<void> {
+    await this.nameService.removeAddressBookEntry(addressOnNetwork)
   }
 
   async removeAccount(
