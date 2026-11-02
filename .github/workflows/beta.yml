@@ -71,6 +71,8 @@ jobs:
         run: scripts/workflows/build-extension.sh beta
         env:
           BUILD_NUMBER: ${{ github.run_number }}
+          # Features that ship to beta testers ahead of production.
+          SUPPORT_NFT_INDEXER: "true"
           BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
           BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
           BOAR_RPC_URL_POLYGON: ${{ secrets.BOAR_RPC_URL_POLYGON }}
