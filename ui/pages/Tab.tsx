@@ -7,7 +7,7 @@ import ThemeSync from "../components/Core/ThemeSync"
 import Snackbar from "../components/Snackbar/Snackbar"
 import TabbedOnboardingRoot from "./Onboarding/Tabbed/Root"
 
-import TabNotFound from "./TabNotFound"
+import FullTabRoot from "./FullTab/FullTabRoot"
 
 /**
  * Entry point for UI shown in browser tabs.
@@ -25,7 +25,7 @@ export default function Tab({ store }: { store: Store }): ReactElement {
                 <TabbedOnboardingRoot />
               </Route>
               <Route>
-                <TabNotFound />
+                <FullTabRoot />
               </Route>
             </Switch>
           </HashRouter>
