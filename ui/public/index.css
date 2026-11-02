@@ -295,13 +295,10 @@
   --on-accent-active: #fefefc;
   --on-accent-deep: #fefefc;
 
-  /*
-   * Tooltips are a dark bubble on the light page. Quiet ones keep the top
-   * bar's colours, as in dark, lifted by a shadow.
-   */
-  --tooltip-background: #002522;
-  --tooltip-text: #fefefc;
-  --tooltip-text-muted: #b8d1d0;
+  /* Tooltips take the top bar's colours, lifted off the page by a shadow. */
+  --tooltip-background: var(--green-120);
+  --tooltip-text: var(--green-20);
+  --tooltip-text-muted: var(--green-40);
   --tooltip-shadow: var(--shadow);
   --tooltip-quiet-shadow: var(--tooltip-shadow);
 
