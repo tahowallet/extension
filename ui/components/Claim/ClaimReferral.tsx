@@ -41,6 +41,7 @@ function DAOButton(
           align-items: center;
           flex-direction: column;
           box-shadow: var(--shadow);
+          transition: background-color var(--fade);
         }
         .icon {
           width: 48px;
@@ -58,6 +59,7 @@ function DAOButton(
           border-radius: 200px;
           margin-top: 8px;
           box-sizing: border-box;
+          transition: border-color var(--fade);
         }
         .option:hover {
           background-color: var(--green-80);
@@ -172,7 +174,7 @@ export default function ClaimReferral(props: {
           }
           .title {
             height: 32px;
-            color: #fff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

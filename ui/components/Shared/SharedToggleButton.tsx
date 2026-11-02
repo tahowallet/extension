@@ -3,23 +3,15 @@ import classNames from "classnames"
 
 type SharedToggleButtonProps = {
   onChange: (toggleValue: boolean) => void
-  /**
-   * The color of the toggle bulb when the toggle is on. Any valid CSS color
-   * (including a `var` expression) can be used.
-   */
-  onColor?: string
-  /**
-   * The color of the toggle bulb when the toggle is off. Any valid CSS color
-   * (including a `var` expression) can be used.
-   */
-  offColor?: string
   value?: boolean | undefined
 }
 
+/**
+ * A two-state switch drawn from the `--toggle-*` tokens. A caller recolours it
+ * by setting those tokens on an ancestor.
+ */
 export default function SharedToggleButton({
   onChange,
-  onColor,
-  offColor,
   value,
 }: SharedToggleButtonProps): ReactElement {
   const [isActive, setIsActive] = useState(value || false)
@@ -48,24 +40,30 @@ export default function SharedToggleButton({
             width: 40px;
             height: 24px;
             border-radius: 20px;
-            background-color: var(--green-80);
+            background-color: var(--toggle-track);
             box-sizing: border-box;
             padding: 4px;
             cursor: pointer;
             display: flex;
+            transition: background-color var(--fade);
+          }
+          .container.is_active {
+            background-color: var(--toggle-track-on);
           }
           .bulb {
             width: 16px;
             height: 16px;
             border-radius: 20px;
-            background-color: ${offColor ?? "var(--green-40)"};
-            transition: 0.2s ease-in-out;
+            background-color: var(--toggle-knob);
+            transition:
+              transform 0.2s ease-in-out,
+              background-color var(--fade);
 
-            box-shadow: 0px 1px 1px rgba(0, 20, 19, 0.3);
+            box-shadow: var(--shadow-knob);
           }
           .is_active .bulb {
             transform: translateX(16px);
-            background-color: ${onColor ?? "var(--trophy-gold)"};
+            background-color: var(--toggle-knob-on);
           }
         `}
       </style>

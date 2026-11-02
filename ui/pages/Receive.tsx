@@ -57,7 +57,7 @@ export default function Receive(): ReactElement | null {
           }
           h1 {
             height: 32px;
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -69,7 +69,7 @@ export default function Receive(): ReactElement | null {
             width: 176px;
             height: 176px;
             border-radius: 16px;
-            background-color: #ffffff;
+            background-color: var(--text-strong);
             margin-top: 31px;
             display: flex;
             align-items: center;

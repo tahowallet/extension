@@ -17,7 +17,7 @@ function BrowserTabContainer({
       <style jsx>{`
         .container {
           height: 100%;
-          background: #041414;
+          background: var(--tab-background);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -113,6 +113,20 @@ function BrowserTabContainer({
             hsla(175, 58.06%, 12.16%, 0) 90.01%
           );
           opacity: 0.45;
+        }
+
+        :global([data-theme="light"]) .gradient-1,
+        :global([data-theme="light"]) .gradient-3 {
+          opacity: 0.08;
+        }
+        :global([data-theme="light"]) .gradient-2 {
+          background: radial-gradient(
+            circle,
+            #fefefc 0%,
+            #f5f1e6 50%,
+            #ece6d6 100%
+          );
+          background-size: 200% 200%;
         }
       `}</style>
     </>

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import SharedAssetIcon from "../Shared/SharedAssetIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import { displayAssetAmount } from "../../utils/amounts"
 
 interface Props {
   assets: CompleteAssetAmount[]
@@ -43,39 +44,44 @@ export default function OverviewAssetsTable(props: Props): ReactElement | null {
           </tr>
         </thead>
         <tbody>
-          {assets.sort(assetSortCompare).map((asset) => (
-            <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
-              <td>
-                <div className="asset_descriptor">
-                  <SharedAssetIcon
-                    size="small"
-                    logoURL={asset?.asset?.metadata?.logoURL}
-                    symbol={asset?.asset?.symbol}
-                  />
-                  <span className="asset_name">{asset.asset.symbol}</span>
-                </div>
-              </td>
-              <td>
-                {asset.localizedUnitPrice ? (
-                  <div>${asset.localizedUnitPrice}</div>
-                ) : (
-                  <div className="loading_wrap">
-                    {!initializationLoadingTimeExpired && (
-                      <SharedLoadingSpinner size="small" />
-                    )}
+          {assets.sort(assetSortCompare).map((asset) => {
+            const amount = displayAssetAmount(asset)
+            return (
+              <tr key={asset.asset.metadata?.coinGeckoID || asset.asset.symbol}>
+                <td>
+                  <div className="asset_descriptor">
+                    <SharedAssetIcon
+                      size="small"
+                      logoURL={asset?.asset?.metadata?.logoURL}
+                      symbol={asset?.asset?.symbol}
+                    />
+                    <span className="asset_name" title={asset.asset.symbol}>
+                      {asset.asset.symbol}
+                    </span>
                   </div>
-                )}
-              </td>
-              <td>
-                {asset.localizedMainCurrencyAmount && (
-                  <div>${asset.localizedMainCurrencyAmount}</div>
-                )}
-                <div className="balance_token_amount">
-                  {asset.localizedDecimalAmount}
-                </div>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td>
+                  {asset.localizedUnitPrice ? (
+                    <div>${asset.localizedUnitPrice}</div>
+                  ) : (
+                    <div className="loading_wrap">
+                      {!initializationLoadingTimeExpired && (
+                        <SharedLoadingSpinner size="small" />
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td>
+                  {asset.localizedMainCurrencyAmount && (
+                    <div>${asset.localizedMainCurrencyAmount}</div>
+                  )}
+                  <div className="balance_token_amount" title={amount.title}>
+                    {amount.text}
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
         <style jsx>{`
         .assets_table {
@@ -131,6 +137,10 @@ export default function OverviewAssetsTable(props: Props): ReactElement | null {
         }
         .asset_name {
           margin-left: 7px;
+          max-width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .loading_wrap {
           display: flex;

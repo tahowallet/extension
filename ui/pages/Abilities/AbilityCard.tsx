@@ -175,7 +175,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement | null {
             padding: 16px;
             width: 320px;
             max-height: 355px;
-            background: rgba(4, 20, 20, 0.4);
+            background: var(--overlay-soft);
             border-radius: 12px;
             margin-bottom: 16px;
           }
@@ -210,7 +210,7 @@ function AbilityCard({ ability }: { ability: Ability }): ReactElement | null {
             font-weight: 500;
             font-size: 16px;
             line-height: 24px;
-            color: #789594;
+            color: var(--grey-green-50);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;

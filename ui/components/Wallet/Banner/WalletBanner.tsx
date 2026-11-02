@@ -257,7 +257,10 @@ export default function WalletBanner(): ReactElement {
           margin: 0;
           pointer-events: none;
           opacity: 0;
-          transition: all 500ms ease;
+          transition:
+            max-height 500ms ease,
+            margin 500ms ease,
+            opacity 500ms ease;
         }
       `}</style>
     </div>

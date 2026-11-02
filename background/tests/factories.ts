@@ -51,62 +51,64 @@ import {
 } from "../services"
 import AbilitiesService from "../services/abilities"
 import {
+  ChainServiceDependencies,
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
 import type { EIP712TypedData } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
-import { mock } from "bun:test"
+import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
-// We don't want the chain service to use a real provider in tests.
-// Use mock.module() with an inline factory to avoid the circular dependency
-// between the __mocks__ file and this factories file.
-mock.module("../services/chain/serial-fallback-provider", () => {
-  class MockSerialFallbackProvider {
-    // Mirrors the real provider's retirement latch so callers that check whether
-    // a replaced or removed provider was actually retired see the same thing
-    // they would in production.
-    isDestroyed = false
+// A stand-in for SerialFallbackProvider so the chain service doesn't reach a
+// real endpoint in tests.
+export class MockSerialFallbackProvider {
+  // Mirrors the real provider's retirement latch so callers that check whether
+  // a replaced or removed provider was actually retired see the same thing
+  // they would in production.
+  isDestroyed = false
 
-    destroy(): void {
-      // Nothing to tear down in the mock; provider replacement still calls this.
-      this.isDestroyed = true
-    }
-
-    async getBlock() {
-      // Lazily import to break circular dependency
-      const { makeEthersBlock } = require("./factories")
-      return makeEthersBlock()
-    }
-    async getBlockNumber() {
-      return 1
-    }
-    async getBalance() {
-      return BigNumber.from(100)
-    }
-    async getFeeData() {
-      const { makeEthersFeeData } = require("./factories")
-      return makeEthersFeeData()
-    }
-    async getCode() {
-      return "false"
-    }
-    subscriptionDataSource = "generic-rpc"
-
-    dataSourceFor() {
-      return "generic-rpc"
-    }
-
-    async onPendingTransaction() {
-      return Promise.resolve()
-    }
+  destroy(): void {
+    // Nothing to tear down in the mock; provider replacement still calls this.
+    this.isDestroyed = true
   }
 
-  return {
-    default: MockSerialFallbackProvider,
-    createProviderForChain: () => new MockSerialFallbackProvider(),
+  async getBlock() {
+    return makeEthersBlock()
   }
-})
+
+  async getBlockNumber() {
+    return 1
+  }
+
+  async getBalance() {
+    return BigNumber.from(100)
+  }
+
+  async getFeeData() {
+    return makeEthersFeeData()
+  }
+
+  async getCode() {
+    return "false"
+  }
+
+  canServeNow(_method: string): boolean {
+    return !this.isDestroyed
+  }
+
+  subscriptionDataSource = "generic-rpc"
+
+  dataSourceFor() {
+    return "generic-rpc"
+  }
+
+  async onPendingTransaction(_addressOnNetwork: AddressOnNetwork) {
+    return Promise.resolve()
+  }
+}
+
+export const createMockProvider = (): SerialFallbackProvider =>
+  new MockSerialFallbackProvider() as unknown as SerialFallbackProvider
 
 const createRandom0xHash = () =>
   keccak256(Buffer.from(Math.random().toString()))
@@ -131,14 +133,19 @@ export const createInternalSignerService = async (
 type CreateChainServiceOverrides = {
   preferenceService?: Promise<PreferenceService>
   internalSignerService?: Promise<InternalSignerService>
+  getBlockPrices?: ChainServiceDependencies["getBlockPrices"]
 }
 
 export const createChainService = async (
   overrides: CreateChainServiceOverrides = {},
 ): Promise<ChainService> =>
-  ChainService.create(
+  ChainService.createWithDependencies(
     overrides.preferenceService ?? createPreferenceService(),
     overrides.internalSignerService ?? createInternalSignerService(),
+    {
+      createProvider: createMockProvider,
+      getBlockPrices: overrides.getBlockPrices,
+    },
   )
 
 export async function createNameService(overrides?: {

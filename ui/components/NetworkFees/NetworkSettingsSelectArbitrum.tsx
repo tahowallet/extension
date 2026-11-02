@@ -243,20 +243,20 @@ export default function NetworkSettingsSelectArbitrum({
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #002522;
+            background: var(--surface-deep);
             box-sizing: border-box;
             padding: 12px;
             margin: 8px 0;
             cursor: pointer;
             border-radius: 4px;
             border: 1px solid transparent;
+            transition:
+              border-color var(--fade),
+              box-shadow var(--fade);
           }
           .option.active {
             border-color: var(--success);
-            box-shadow:
-              0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
+            box-shadow: var(--shadow-menu);
           }
           .option.active .name {
             color: var(--success);
@@ -278,6 +278,7 @@ export default function NetworkSettingsSelectArbitrum({
             color: var(--green--5);
             font-size: 18px;
             font-weight: 600;
+            transition: color var(--fade);
           }
           .price {
             width: 176px;

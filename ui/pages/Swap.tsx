@@ -423,7 +423,7 @@ export default function Swap(): ReactElement {
                 icon="cog@2x.png"
                 width={20}
                 color="var(--green-60)"
-                hoverColor="#fff"
+                hoverColor="var(--text-strong)"
                 style={{ margin: "17px 0 25px" }}
               />
             )}
@@ -594,13 +594,13 @@ export default function Swap(): ReactElement {
           }
           .divider {
             width: 384px;
-            border-bottom: 1px solid #000000;
+            border-bottom: 1px solid var(--divider-black);
             margin-left: -16px;
           }
           .total_amount_number {
             width: 150px;
             height: 32px;
-            color: #e7296d;
+            color: var(--price-impact);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

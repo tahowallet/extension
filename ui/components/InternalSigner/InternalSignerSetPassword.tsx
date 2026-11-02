@@ -124,6 +124,9 @@ export default function InternalSignerSetPassword(): ReactElement {
             right: 0px;
             margin: 0 auto;
           }
+          :global([data-theme="light"]) .wordmark {
+            background-image: url("./images/wordmark_light.svg");
+          }
           .serif_header {
             text-align: center;
             margin: 40px 30px 7px 30px;

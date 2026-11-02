@@ -13,11 +13,12 @@ const LABEL = "chain 8453 standard[1] base-mainnet.g.alchemy.com"
 describe("loggingObserver", () => {
   let debug: sinon.SinonStub
   let warn: sinon.SinonStub
+  let info: sinon.SinonStub
 
   beforeEach(() => {
     debug = sinon.stub(logger, "debug")
     warn = sinon.stub(logger, "warn")
-    sinon.stub(logger, "info")
+    info = sinon.stub(logger, "info")
   })
 
   afterEach(() => sinon.restore())
@@ -149,8 +150,61 @@ describe("loggingObserver", () => {
     observer.onRequestFailed?.(request, new NoEndpointAvailableError())
 
     expect(lines(warn)).toEqual([
-      "chain 8453: giving up on eth_getLogs with NETWORK_ERROR: circuit open and no fallback available.",
+      "chain 8453: giving up on eth_getLogs, since no endpoint is available.",
     ])
+  })
+
+  it("warns once while a pool has no endpoint available, and says when one answers", () => {
+    const observer = loggingObserver()
+    const cooling = endpoint()
+    const pool = new EndpointPool("standard", [cooling])
+    const failWithoutEndpoint = () => {
+      const each = { ...request }
+      observer.onAllEndpointsFailed?.(
+        each,
+        new NoEndpointAvailableError(),
+        pool,
+      )
+      observer.onRequestFailed?.(each, new NoEndpointAvailableError())
+    }
+
+    failWithoutEndpoint()
+    failWithoutEndpoint()
+    failWithoutEndpoint()
+
+    expect(lines(warn)).toEqual([
+      "chain 8453's standard pool has no endpoint available; failing requests until one recovers.",
+    ])
+    expect(lines(debug)).toEqual([
+      "chain 8453's standard pool has no endpoint available, so eth_getLogs failed.",
+      "chain 8453's standard pool has no endpoint available, so eth_getLogs failed.",
+    ])
+
+    observer.onEndpointSuccess?.(request, cooling)
+    observer.onEndpointSuccess?.(request, cooling)
+
+    expect(lines(info)).toEqual([
+      "chain 8453's standard pool has an endpoint available again.",
+    ])
+
+    failWithoutEndpoint()
+
+    expect(lines(warn)).toHaveLength(2)
+  })
+
+  it("leaves a pool unavailable when an endpoint outside it answers", () => {
+    const observer = loggingObserver()
+    const pool = new EndpointPool("standard", [endpoint()])
+
+    observer.onAllEndpointsFailed?.(
+      request,
+      new NoEndpointAvailableError(),
+      pool,
+    )
+    observer.onRequestFailed?.(request, new NoEndpointAvailableError())
+    observer.onEndpointSuccess?.(request, endpoint())
+
+    expect(info.called).toBe(false)
   })
 
   it("warns when a request fails for good on its endpoints, and not for the request's own errors", () => {

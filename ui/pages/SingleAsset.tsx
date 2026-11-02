@@ -29,6 +29,7 @@ import { blockExplorer } from "../utils/constants"
 import { getBlockExplorerURL } from "../utils/networks"
 import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 import { trimWithEllipsis } from "../utils/textUtils"
+import { displayAssetAmount } from "../utils/amounts"
 import AssetWarningWrapper from "../components/Wallet/UnverifiedAsset/AssetWarningWrapper"
 import CorePage from "../components/Core/CorePage"
 
@@ -77,28 +78,25 @@ export default function SingleAsset(): ReactElement {
     }),
   )
 
-  const { asset, localizedMainCurrencyAmount, localizedDecimalAmount } =
-    useBackgroundSelector((state) => {
-      const balances = selectCurrentAccountBalances(state)
+  const assetAmount = useBackgroundSelector((state) => {
+    const balances = selectCurrentAccountBalances(state)
 
-      if (typeof balances === "undefined") {
-        return undefined
-      }
-
-      return balances.allAssetAmounts.find(({ asset: candidateAsset }) => {
-        if (typeof contractAddress !== "undefined") {
-          return (
-            isSmartContractFungibleAsset(candidateAsset) &&
-            sameEVMAddress(candidateAsset.contractAddress, contractAddress)
-          )
-        }
-        return candidateAsset.symbol === symbol
-      })
-    }) ?? {
-      asset: undefined,
-      localizedMainCurrencyAmount: undefined,
-      localizedDecimalAmount: undefined,
+    if (typeof balances === "undefined") {
+      return undefined
     }
+
+    return balances.allAssetAmounts.find(({ asset: candidateAsset }) => {
+      if (typeof contractAddress !== "undefined") {
+        return (
+          isSmartContractFungibleAsset(candidateAsset) &&
+          sameEVMAddress(candidateAsset.contractAddress, contractAddress)
+        )
+      }
+      return candidateAsset.symbol === symbol
+    })
+  })
+  const { asset, localizedMainCurrencyAmount } = assetAmount ?? {}
+  const balance = assetAmount && displayAssetAmount(assetAmount)
 
   const blockExplorerURL = getBlockExplorerURL(currentNetwork)
 
@@ -136,7 +134,11 @@ export default function SingleAsset(): ReactElement {
                 symbol={asset?.symbol}
                 untrusted={isTrusted === false}
               />
-              <span className="asset_name" data-testid="asset_symbol">
+              <span
+                className="asset_name"
+                data-testid="asset_symbol"
+                title={symbol}
+              >
                 {trimWithEllipsis(symbol, MAX_SYMBOL_LENGTH)}
               </span>
               {contractAddress && (
@@ -165,8 +167,12 @@ export default function SingleAsset(): ReactElement {
                 </SharedTooltip>
               )}
             </div>
-            <div className="balance" data-testid="asset_balance">
-              {localizedDecimalAmount}
+            <div
+              className="balance"
+              data-testid="asset_balance"
+              title={balance?.title ?? balance?.text}
+            >
+              {balance?.text}
             </div>
             {localizedMainCurrencyAmount && (
               <div className="usd_value" data-testid="asset_currency_value">
@@ -269,7 +275,11 @@ export default function SingleAsset(): ReactElement {
             padding-bottom: 24px;
             gap: 4px;
           }
+          .header .left {
+            min-width: 0;
+          }
           .header .right {
+            flex-shrink: 0;
             height: 95px;
             display: flex;
             flex-direction: column;
@@ -285,20 +295,27 @@ export default function SingleAsset(): ReactElement {
             gap: 16px;
           }
           .asset_name {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
             text-transform: uppercase;
             margin-left: 8px;
-            word-break: break-word;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
           .asset_wrap {
             display: flex;
             align-items: center;
+            min-width: 0;
           }
           .balance {
-            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-strong);
             font-size: 36px;
             font-weight: 500;
             line-height: 48px;
@@ -324,6 +341,7 @@ export default function SingleAsset(): ReactElement {
             height: 16px;
             background-color: var(--green-40);
             margin: 0 5px;
+            transition: background-color var(--fade);
           }
           .new_tab_link:hover .icon_new_tab {
             background-color: var(--trophy-gold);

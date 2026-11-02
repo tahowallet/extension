@@ -690,5 +690,36 @@ describe("Chain Database", () => {
         { url: "https://optimism.drpc.org" },
       ])
     })
+
+    it("should scrub endpoints on providers that are gone on upgrade", async () => {
+      const legacyDb = new Dexie("tally/chain", { indexedDB })
+      legacyDb.version(13).stores({ rpcConfig: "&chainID" })
+      await legacyDb.open()
+      await legacyDb.table("rpcConfig").bulkPut([
+        {
+          chainID: "8453",
+          endpoints: [
+            { url: "https://base.example.com" },
+            { url: "https://1rpc.io/base" },
+            { url: "https://base-mainnet.public.blastapi.io" },
+          ],
+        },
+        {
+          chainID: "42170",
+          endpoints: [{ url: "https://arbitrum-nova.public.blastapi.io" }],
+        },
+      ])
+      legacyDb.close()
+
+      await db.open()
+
+      expect(await db.getRpcEndpointsByChainId("8453")).toEqual([
+        { url: "https://base.example.com" },
+      ])
+      // The chain's only endpoint stays, rather than leaving it unusable.
+      expect(await db.getRpcEndpointsByChainId("42170")).toEqual([
+        { url: "https://arbitrum-nova.public.blastapi.io" },
+      ])
+    })
   })
 })

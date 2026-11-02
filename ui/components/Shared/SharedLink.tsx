@@ -31,6 +31,7 @@ export default function SharedLink({
       <style jsx>{`
         .link {
           color: var(--link-color, var(--trophy-gold));
+          transition: color var(--fade);
         }
         .link:hover {
           color: var(--hover-color, var(--gold-40));
@@ -41,11 +42,11 @@ export default function SharedLink({
         }
         .link.tooltip {
           text-decoration: underline;
-          color: var(--green-95);
+          color: var(--tooltip-text);
           padding: 0px;
         }
         .link.tooltip:hover {
-          color: var(--green-40);
+          color: var(--tooltip-text-muted);
         }
       `}</style>
     </a>

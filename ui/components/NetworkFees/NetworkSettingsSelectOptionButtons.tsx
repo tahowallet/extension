@@ -28,11 +28,11 @@ const buttonStyle = `
     border-radius: 4px;
     border: 1px solid transparent;
     position: relative;
+    transition: border-color var(--fade), box-shadow var(--fade);
   }
   .network_option.active {
     border-color: var(--success);
-    box-shadow: 0px 16px 16px rgba(0, 20, 19, 0.14),
-      0px 6px 8px rgba(0, 20, 19, 0.24), 0px 2px 4px rgba(0, 20, 19, 0.34);
+    box-shadow: var(--shadow-menu);
   }
   .network_option.active .name {
     color: var(--success);
@@ -53,6 +53,7 @@ const buttonStyle = `
   .name,
   .price {
     color: var(--green--5);
+    transition: color var(--fade);
   }
   .subtext {
     color: var(--green-60);

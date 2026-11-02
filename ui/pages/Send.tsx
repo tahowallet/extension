@@ -327,7 +327,7 @@ export default function Send(): ReactElement {
           .title {
             flex-grow: 1;
             height: 32px;
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
@@ -386,7 +386,7 @@ export default function Send(): ReactElement {
             font-size: 22px;
             font-weight: 500;
             line-height: 72px;
-            color: #fff;
+            color: var(--text-strong);
 
             border-radius: 4px;
             background-color: var(--green-95);
@@ -428,13 +428,13 @@ export default function Send(): ReactElement {
             margin-left: 16px;
             margin-bottom: 5px;
 
-            transition: color 0.2s;
+            transition: color var(--fade);
           }
           input#send_address ~ .address:hover {
             color: var(--gold-80);
           }
           input#send_address ~ .address > :global(.icon) {
-            transition: background-color 0.2s;
+            transition: background-color var(--fade);
           }
           input#send_address ~ .address:hover > :global(.icon) {
             background-color: var(--gold-80);

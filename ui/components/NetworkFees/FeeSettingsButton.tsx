@@ -69,17 +69,17 @@ export default function FeeSettingsButton({
             line-height: 20px;
             border-radius: 4px;
             padding: 0.3rem;
-            border: 1px solid #33514e;
-            transition: all 0.3s ease;
+            border: 1px solid var(--grey-green-80);
+            transition: border-color var(--fade);
           }
           .settings_image {
             width: 14px;
             height: 14px;
             padding: 0 8px;
-            transition: all 0.3s ease;
+            transition: filter var(--fade);
           }
           .settings:hover {
-            border: 1px solid #578f89;
+            border: 1px solid var(--grey-green-60);
           }
           .settings:hover .settings_image {
             filter: brightness(1.5);

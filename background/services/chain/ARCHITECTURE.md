@@ -760,9 +760,9 @@ flowchart TB
 
 ## Tests
 
-`background/tests/factories.ts` replaces `serial-fallback-provider` with a
-mock through `mock.module`, which applies to every file a bun process runs
-without isolation. The provider's integration tests fail when run in the same
-module registry as a test that imports the factories, so the test scripts run
-with `--parallel`, which gives each file a fresh global and module registry
-(bun's `--isolate`).
+`createChainService` in `background/tests/factories.ts` builds the service
+with `ChainService.createWithDependencies`, handing it a mock provider and,
+when a test asks, a stand-in gas price lookup, so tests never reach a real
+endpoint. The test scripts run with `--parallel`, which gives each file a
+fresh global and module registry (bun's `--isolate`), but each file also
+cleans up after itself and passes in a shared process.

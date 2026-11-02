@@ -93,10 +93,7 @@ export default function AbilitiesHeader(): null /* ReactElement */ {
 
         .small_banner {
           cursor: pointer;
-          box-shadow:
-            0px 8px 8px rgba(7, 17, 17, 0.24),
-            0px 2px 4px rgba(7, 17, 17, 0.12),
-            0px 2px 2px rgba(7, 17, 17, 0.22);
+          box-shadow: var(--shadow-subtle);
           background: radial-gradient(
               78.69% 248.21% at 114.77% 133.93%,
               rgba(9, 86, 72, 0.85) 0%,
@@ -119,10 +116,7 @@ export default function AbilitiesHeader(): null /* ReactElement */ {
             rgba(9, 86, 72, 0.85) 0%,
             rgba(5, 103, 95, 0.35) 100%
           );
-          box-shadow:
-            0px 16px 16px rgba(7, 17, 17, 0.3),
-            0px 6px 8px rgba(7, 17, 17, 0.24),
-            0px 2px 4px rgba(7, 17, 17, 0.34);
+          box-shadow: var(--shadow-card);
 
           position: absolute;
           content: "";
@@ -142,10 +136,7 @@ export default function AbilitiesHeader(): null /* ReactElement */ {
             rgb(247, 103, 52, 0.5) 0%,
             rgba(19, 48, 46, 0.5) 100%
           );
-          box-shadow:
-            0px 16px 16px rgba(7, 17, 17, 0.3),
-            0px 6px 8px rgba(7, 17, 17, 0.24),
-            0px 2px 4px rgba(7, 17, 17, 0.34);
+          box-shadow: var(--shadow-card);
         }
 
         .abilities_info {

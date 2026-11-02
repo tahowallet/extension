@@ -7,6 +7,7 @@ import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import NFTImage from "./NFTImage"
 import NFTHover from "./NFTHover"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import { displayAmount } from "../../utils/amounts"
 
 export default function NFTItem<
   T extends NFTCached | NFTCollectionCached,
@@ -24,6 +25,7 @@ export default function NFTItem<
     item.floorPrice?.value !== undefined &&
     item.floorPrice
   const nftsCount = "nftCount" in item && item.nftCount
+  const count = nftsCount ? displayAmount(nftsCount) : undefined
   const isBadge = "isBadge" in item && item.isBadge
 
   const [hasHover, setHasHover] = useState(false)
@@ -70,7 +72,11 @@ export default function NFTItem<
       </div>
       <div className="nft_item_details">
         <span className="ellipsis">{name?.length ? name : "No title"}</span>
-        {!!nftsCount && <span className="nft_item_count">({nftsCount})</span>}
+        {count && (
+          <span className="nft_item_count" title={count.title}>
+            ({count.text})
+          </span>
+        )}
       </div>
       <style jsx>{`
         .nft_item {
@@ -78,7 +84,7 @@ export default function NFTItem<
           margin: 8px 0;
         }
         .nft_item_price {
-          background: rgba(1, 56, 52, 0.75); // --green-95
+          background: var(--overlay-raised); // --green-95
           padding: 4px 5px;
           font-weight: 500;
           font-size: 14px;

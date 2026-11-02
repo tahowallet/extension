@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme="dark"] {
   --hunter-green: #002825;
   --castle-black: #0a0806;
   --green-120: #001413;
@@ -42,8 +43,372 @@
   --shadow:
     0px 16px 16px rgba(0, 33, 30, 0.14), 0px 6px 8px rgba(0, 33, 30, 0.24),
     0px 2px 4px rgba(0, 33, 30, 0.34);
+  /* Modals, snackbars and other surfaces above the page. */
+  --shadow-raised:
+    0px 24px 24px rgba(0, 20, 19, 0.14), 0px 14px 16px rgba(0, 20, 19, 0.24),
+    0px 10px 12px rgba(0, 20, 19, 0.34);
+  /* Small cards that sit just off the page. */
+  --shadow-subtle:
+    0px 8px 8px rgba(7, 17, 17, 0.24), 0px 2px 4px rgba(7, 17, 17, 0.12),
+    0px 2px 2px rgba(7, 17, 17, 0.22);
 
-  /* Stacking layers, lowest first. */
+  /*
+   * Shadows by role. Dark grew one per component; light draws each from the
+   * three elevations above.
+   */
+  --shadow-menu:
+    0px 16px 16px rgba(0, 20, 19, 0.14), 0px 6px 8px rgba(0, 20, 19, 0.24),
+    0px 2px 4px rgba(0, 20, 19, 0.34);
+  --shadow-card:
+    0px 16px 16px rgba(7, 17, 17, 0.3), 0px 6px 8px rgba(7, 17, 17, 0.24),
+    0px 2px 4px rgba(7, 17, 17, 0.34);
+  --shadow-floating:
+    0px 10px 12px 0px rgba(7, 17, 17, 0.34),
+    0px 14px 16px 0px rgba(7, 17, 17, 0.24),
+    0px 24px 24px 0px rgba(7, 17, 17, 0.14);
+  --shadow-lifted:
+    0px 24px 24px rgba(0, 20, 19, 0.04), 0px 14px 16px rgba(0, 20, 19, 0.14),
+    0px 10px 12px rgba(0, 20, 19, 0.54);
+  --shadow-lifted-flat: 0px 10px 12px 0px #0014138a;
+  --shadow-heavy:
+    0 3px 7px rgb(0 20 19 / 54%), 0 14px 16px rgb(0 20 19 / 54%),
+    0 32px 32px rgb(0 20 19 / 20%);
+  /* Bars pinned to the top or bottom of the popup. */
+  --shadow-edge: 0 0 5px rgba(0, 20, 19, 0.5);
+  /* A toggle's knob. */
+  --shadow-knob: 0px 1px 1px rgba(0, 20, 19, 0.3);
+  --text-shadow-balance: 0 2px 2px #072926;
+
+  /*
+   * The palette above is named after its dark-theme values, but components
+   * use it by role: --hunter-green is the page, --green-95 a raised surface,
+   * --green-120 a sunken one, and --green-60 through --green-5 are text from
+   * muted to emphasised. A theme re-points the ramp and keeps those roles.
+   *
+   * The tokens below cover roles the ramp can't express.
+   */
+
+  /* Strongest text: headings and selected values. */
+  --text-strong: #ffffff;
+  /* Serif headers and balances. */
+  --text-bright: #fefefc;
+  /* Text and icons on gold, attention and other fixed-colour fills. */
+  --on-accent: #002825;
+  --on-accent-hover: #013834;
+  --on-accent-active: #001413;
+  --on-accent-deep: #002522;
+
+  /* Tooltips and hover hints. */
+  --tooltip-background: var(--green-20);
+  --tooltip-text: var(--green-95);
+  --tooltip-text-muted: var(--green-40);
+  --tooltip-shadow:
+    0 2px 4px rgba(0, 20, 19, 0.24), 0 6px 8px rgba(0, 20, 19, 0.14),
+    0 16px 16px rgba(0, 20, 19, 0.04);
+  /* Dark also has quieter, sunken tooltips; light draws them like the rest. */
+  --tooltip-quiet-background: var(--green-120);
+  --tooltip-quiet-text: var(--green-20);
+  --tooltip-quiet-text-strong: var(--green-5);
+  --tooltip-quiet-shadow: none;
+  /* Something clickable in a tooltip, such as the copy-address button. */
+  --tooltip-action: var(--tooltip-quiet-text-strong);
+  --tooltip-action-hover: var(--gold-80);
+  --tooltip-action-icon-hover: var(--trophy-gold);
+
+  /* Send and receive tiles on the wallet home. */
+  --action-tile: var(--green-40);
+  --action-tile-hover: var(--gold-80);
+  --action-tile-hover-shadow: none;
+  --action-tile-hover-icon: var(--on-accent);
+  /* The swap tile, which dark sets apart in gold. */
+  --action-tile-featured: var(--trophy-gold);
+  --action-tile-featured-hover: var(--gold-80);
+  /* Small icon tiles, such as a wallet type's, at rest. */
+  --icon-tile: var(--green-60);
+  --icon-tile-icon: var(--green-20);
+  /* Small icon links that sit on a tile while hovered. */
+  --icon-tile-hover: var(--hunter-green);
+  --icon-tile-hover-icon: var(--trophy-gold);
+  --icon-tile-hover-shadow: none;
+
+  /* Toggles: the track off and on, and the knob off and on. */
+  --toggle-track: var(--green-80);
+  --toggle-track-on: var(--green-80);
+  --toggle-knob: var(--green-40);
+  --toggle-knob-on: var(--trophy-gold);
+  /* The connect-with toggle, which dark draws in green. */
+  --connect-toggle-knob: var(--white);
+  --connect-toggle-knob-on: var(--success);
+  /* The wallet icons beside it: unchosen, and chosen. */
+  --connect-wallet-icon: var(--green-20);
+  --connect-other-wallet-icon-on: var(--white);
+  --connect-taho-icon-on: var(--success);
+  /* The connected-site bolt and heading. */
+  --connected: var(--success);
+
+  --surface-deep: #002522;
+  --divider-black: #000000;
+
+  /* Older greys that predate the green ramp. */
+  --grey-green-80: #33514e;
+  --grey-green-70: #3a6565;
+  --grey-green-60: #578f89;
+  --grey-green-50: #789594;
+  --grey-green-40: #99a8a7;
+  --grey-green-30: #81aba8;
+  --grey-green-20: #b4cac9;
+  --grey-green-10: #ccd3d3;
+
+  --success-alt: #22c480;
+  --error-alt: #d64045;
+  --price-impact: #e7296d;
+
+  /* Backdrop behind modals and slide-up menus. */
+  --overlay: rgba(0, 20, 19, 0.75);
+  --overlay-raised: rgba(1, 56, 52, 0.75);
+  --overlay-soft: rgba(4, 20, 20, 0.4);
+  --overlay-tab: #04141480;
+
+  --tab-background: #041414;
+  --balance-header-gradient: linear-gradient(
+    250.02deg,
+    #034f4b 0%,
+    #033734 66.93%
+  );
+  --pool-card-gradient: linear-gradient(180deg, #034f4b 0%, #033633 100%);
+  --clock-gradient: linear-gradient(
+    180deg,
+    #033c37 0%,
+    #0b524c 50%,
+    #033c37 50%,
+    #0b524c 100%
+  );
+  /*
+   * The NFTs header: a teal light from the top with pink glows at the
+   * corners, faded into the page by 140px.
+   */
+  --nft-header-gradient:
+    linear-gradient(180deg, rgba(11, 41, 38, 0) 0%, var(--hunter-green) 140px),
+    radial-gradient(
+      366px 366px at 507px 349px,
+      #fc49c0 0%,
+      rgba(255, 127, 240, 0) 100%
+    ),
+    radial-gradient(
+      366px 366px at -99px -238px,
+      #ff00b8 0%,
+      rgba(255, 0, 153, 0) 100%
+    ),
+    radial-gradient(93.95% 101.67% at 45.05% 0%, #1a968c 4.17%, #002522 120%);
+  --nft-header-text: var(--green-40);
+  /* The Abilities page: orange from the top left, teal from the bottom right. */
+  --abilities-gradient:
+    radial-gradient(
+      103.39% 72.17% at -5.73% -7.67%,
+      rgb(247, 103, 52, 0.5) 0%,
+      rgba(19, 48, 46, 0) 100%
+    ),
+    radial-gradient(
+      78.69% 248.21% at 114.77% 133.93%,
+      rgba(9, 86, 72, 0.85) 0%,
+      rgba(0, 37, 34, 0) 100%
+    );
+
+  /* The plate behind an asset's logo, and how far the logo sits inside it. */
+  --asset-icon-plate: var(--castle-black);
+  --asset-icon-plate-border: transparent;
+  /* A percentage, since calc() can't subtract a unitless 0 from 100%. */
+  --asset-icon-inset: 0%;
+  --asset-icon-blend: normal;
+
+  color-scheme: dark;
+}
+
+/*
+ * Light inverts the green ramp by role: the page is warm off-white, raised
+ * surfaces are lighter still, and the text greens darken as they gain
+ * emphasis. Values from Figma's "UI - Light" where it has them.
+ */
+[data-theme="light"] {
+  --hunter-green: #faf8f1;
+  --green-120: #efeadd;
+  --green-95: #fefefc;
+  --green-80: #e3ded1;
+  --green-60: #8a9b99;
+  --green-40: #667c7a;
+  --green-20: #33514e;
+  --green-5: #002522;
+  --white: #002522;
+
+  /* A shade under Figma's #d08e39, so off-white text on it reaches 3:1. */
+  --trophy-gold: #c4842e;
+  --gold-80: #bd7d2b;
+  --gold-60: #c98a3a;
+  --gold-40: #b57017;
+  --gold-20: #9a5f12;
+  --gold-5: #7a4a0d;
+
+  --error: #d9363c;
+  --error-80: #a8282e;
+  --error-20: #fbe3e3;
+
+  --success: #139a62;
+  --success-20: #dbf5e9;
+
+  --attention: #b5850a;
+  --attention-20: #fdf1cf;
+
+  --info: #1a9cc4;
+  --info-20: #dff5fc;
+
+  --link: #0a8fb8;
+
+  --trading-outgoing: #d6447a;
+  --trading-incoming: #0c9a89;
+
+  /* Figma's elevation, then the same scaled up and down. */
+  --shadow:
+    0px 16px 16px rgba(0, 37, 34, 0.04), 0px 6px 8px rgba(0, 37, 34, 0.14),
+    0px 2px 4px rgba(0, 37, 34, 0.24);
+  --shadow-raised:
+    0px 24px 24px rgba(0, 37, 34, 0.04), 0px 14px 16px rgba(0, 37, 34, 0.14),
+    0px 10px 12px rgba(0, 37, 34, 0.24);
+  --shadow-subtle:
+    0px 8px 8px rgba(0, 37, 34, 0.04), 0px 3px 4px rgba(0, 37, 34, 0.14),
+    0px 1px 2px rgba(0, 37, 34, 0.24);
+
+  --shadow-menu: var(--shadow);
+  --shadow-card: var(--shadow);
+  --shadow-floating: var(--shadow-raised);
+  --shadow-lifted: var(--shadow-raised);
+  --shadow-lifted-flat: var(--shadow-raised);
+  --shadow-heavy: var(--shadow-raised);
+  --shadow-edge: 0px 0px 8px rgba(0, 37, 34, 0.08);
+  --shadow-knob: 0px 1px 2px rgba(0, 37, 34, 0.24);
+  --text-shadow-balance: none;
+
+  --text-strong: #002522;
+  --text-bright: #002522;
+  /* Off-white on gold, as in Figma's primary button. */
+  --on-accent: #fefefc;
+  --on-accent-hover: #fefefc;
+  --on-accent-active: #fefefc;
+  --on-accent-deep: #fefefc;
+
+  /* Tooltips take the top bar's colours, lifted off the page by a soft shadow. */
+  --tooltip-background: var(--green-120);
+  --tooltip-text: var(--green-20);
+  --tooltip-text-muted: var(--green-40);
+  --tooltip-shadow: var(--shadow-subtle);
+  --tooltip-quiet-shadow: var(--tooltip-shadow);
+
+  --grey-green-80: #dcdfd8;
+  --grey-green-70: #b8c4c2;
+  --grey-green-60: #b7c3c0;
+  --grey-green-50: #5f7674;
+  --grey-green-40: #667c7a;
+  --grey-green-30: #5f7c79;
+  --grey-green-20: #47615e;
+  --grey-green-10: #3d5653;
+
+  --success-alt: #139a62;
+  --error-alt: #c62f35;
+  --price-impact: #c81d5b;
+
+  --overlay: rgba(0, 40, 37, 0.45);
+  --overlay-raised: rgba(254, 254, 252, 0.8);
+  --overlay-soft: rgba(0, 40, 37, 0.12);
+  --overlay-tab: #00282533;
+
+  --tab-background: #f3f0e6;
+  --balance-header-gradient: linear-gradient(
+    250.02deg,
+    #fefefc 0%,
+    #f5f1e6 66.93%
+  );
+  --pool-card-gradient: linear-gradient(180deg, #fefefc 0%, #f3efe4 100%);
+  --clock-gradient: linear-gradient(
+    180deg,
+    #fefefc 0%,
+    #f3efe4 50%,
+    #fefefc 50%,
+    #f3efe4 100%
+  );
+  /* Pale tints of the same lights, with only a trace of the pink. */
+  --nft-header-gradient:
+    linear-gradient(
+      180deg,
+      rgba(250, 248, 241, 0) 0%,
+      var(--hunter-green) 140px
+    ),
+    radial-gradient(
+      366px 366px at -99px -238px,
+      rgba(255, 0, 184, 0.06) 0%,
+      rgba(255, 0, 184, 0) 100%
+    ),
+    radial-gradient(
+      93.95% 101.67% at 45.05% 0%,
+      rgba(0, 166, 140, 0.1) 4.17%,
+      rgba(208, 142, 57, 0.06) 120%
+    );
+  /* Darker than --green-40, which falls short of 4.5:1 on the tint. */
+  --nft-header-text: var(--grey-green-20);
+  --abilities-gradient:
+    radial-gradient(
+      103.39% 72.17% at -5.73% -7.67%,
+      rgba(208, 142, 57, 0.14) 0%,
+      rgba(208, 142, 57, 0) 100%
+    ),
+    radial-gradient(
+      78.69% 248.21% at 114.77% 133.93%,
+      rgba(0, 166, 140, 0.12) 0%,
+      rgba(0, 166, 140, 0) 100%
+    );
+
+  /*
+   * The wallet's action tiles keep dark's colours: Send and Receive rest
+   * muted, Swap rests gold, and all three turn gold on hover, lifted.
+   */
+  --action-tile-hover-shadow: var(--shadow);
+  --action-tile-hover-icon: #fefefc;
+  --icon-tile: var(--green-80);
+  --icon-tile-icon: #002522;
+  /*
+   * Icon links, such as an asset's send and swap, hover onto the top bar's
+   * background, which stands out from the tan of a hovered asset row.
+   */
+  --icon-tile-hover: var(--green-120);
+  --icon-tile-hover-icon: var(--icon-tile-icon);
+  --icon-tile-hover-shadow: none;
+
+  /* An on toggle fills its track with ink, as dark tiles and tooltips do. */
+  --toggle-track-on: #002522;
+  --toggle-knob-on: #fefefc;
+  --connect-toggle-knob: var(--toggle-knob);
+  --connect-toggle-knob-on: var(--toggle-knob-on);
+  --connect-wallet-icon: var(--green-60);
+  --connect-other-wallet-icon-on: #002522;
+  --connect-taho-icon-on: #002522;
+  /* Deeper than --success, so connection status reads on the beige menu. */
+  --connected: #0b6b44;
+
+  --surface-deep: #fefefc;
+  --divider-black: #e3ded1;
+
+  /*
+   * Logos sit inset on a card-coloured plate, darkening into it so a logo's
+   * own white backing doesn't show as a box.
+   */
+  --asset-icon-plate: var(--green-95);
+  --asset-icon-plate-border: var(--hunter-green);
+  --asset-icon-inset: 12.5%;
+  --asset-icon-blend: darken;
+
+  color-scheme: light;
+}
+
+/* Stacking layers, lowest first. They don't change with the theme. */
+:root {
   --z-raised: 1; /* above neighbouring page content */
   --z-sticky: 10; /* top and tab bars, sticky footers, floating buttons */
   --z-dropdown: 20; /* selects and menus that open over the page */
@@ -53,6 +418,11 @@
   --z-modal: 400;
   --z-tooltip: 500;
   --z-snackbar: 600;
+}
+
+/* Subtrees pinned to a theme, such as artwork cards, take its text colour. */
+[data-theme] {
+  color: var(--white);
 }
 
 ::-webkit-scrollbar {
@@ -135,7 +505,7 @@ form {
 }
 
 .serif_header {
-  color: #fefefc;
+  color: var(--text-bright);
   font-family: "Quincy CF";
   font-size: 38px;
   font-weight: 400;
@@ -228,4 +598,9 @@ label {
   100% {
     opacity: 0;
   }
+}
+
+:root {
+  /* Every colour cross-fade, so text and icons that change together match. */
+  --fade: 200ms ease;
 }

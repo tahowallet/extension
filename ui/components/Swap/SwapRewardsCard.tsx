@@ -60,7 +60,7 @@ export default function SwapRewardsCard(): ReactElement {
           margin: 0;
         }
         .details {
-          color: var(--hunter-green);
+          color: var(--tooltip-text);
           font-size: 16px;
           font-weight: 500;
           display: flex;
@@ -72,7 +72,7 @@ export default function SwapRewardsCard(): ReactElement {
           mask-size: cover;
           width: 16px;
           height: 16px;
-          background-color: var(--hunter-green);
+          background-color: var(--tooltip-text);
           margin-left: 5px;
         }
         .tooltip_inline_wrap {

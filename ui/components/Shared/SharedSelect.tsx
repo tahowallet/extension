@@ -180,7 +180,10 @@ export default function SharedSelect(props: Props): ReactElement {
             border-color: var(--green-60);
             border-style: solid;
             border-radius: 5px;
-            transition: background-color 0.2s ease-in-out;
+            transition:
+              background-color var(--fade),
+              border-color var(--fade),
+              color var(--fade);
           }
 
           .button .icon {
@@ -189,7 +192,9 @@ export default function SharedSelect(props: Props): ReactElement {
             width: 15px;
             height: 8px;
             background-color: var(--green-60);
-            transition: transform 0.2s ease-in-out;
+            transition:
+              transform 0.2s ease-in-out,
+              background-color var(--fade);
           }
 
           .select.top .icon,
@@ -203,13 +208,13 @@ export default function SharedSelect(props: Props): ReactElement {
           }
 
           .select.active .icon {
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
           }
 
           .select.active .button {
             background-color: var(--trophy-gold);
             border-color: var(--trophy-gold);
-            color: var(--hunter-green);
+            color: var(--on-accent);
             font-weight: 600;
           }
 
@@ -223,10 +228,7 @@ export default function SharedSelect(props: Props): ReactElement {
             border-radius: 5px;
             overflow-y: auto;
             color: var(--green-60);
-            box-shadow:
-              0px 16px 16px rgba(0, 20, 19, 0.14),
-              0px 6px 8px rgba(0, 20, 19, 0.24),
-              0px 2px 4px rgba(0, 20, 19, 0.34);
+            box-shadow: var(--shadow-menu);
             max-height: 0;
             height: fit-content;
             opacity: 0;
@@ -260,6 +262,7 @@ export default function SharedSelect(props: Props): ReactElement {
             cursor: pointer;
             padding: 0 16px;
             color: var(--green-20);
+            transition: color var(--fade);
           }
 
           .option.selected {

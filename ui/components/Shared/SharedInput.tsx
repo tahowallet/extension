@@ -124,6 +124,10 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
             padding: var(--input-padding, 0px 16px);
             box-sizing: border-box;
             text-align: left;
+            transition:
+              border-color var(--fade),
+              color var(--fade),
+              background-color var(--fade);
           }
           input::placeholder {
             color: var(--green-40);
@@ -163,7 +167,9 @@ export function SharedTypedInput<T = string>(props: Props<T>): ReactElement {
               font-size 0.2s ease,
               transform 0.2s ease,
               font-weight 0.2s ease,
-              padding 0.2s ease;
+              padding 0.2s ease,
+              color var(--fade),
+              background-color var(--fade);
           }
           input:disabled {
             color: var(--green-40);

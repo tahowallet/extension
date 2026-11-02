@@ -377,12 +377,13 @@ export default function TopMenuConnectedDAppInfo(props: {
           top: 24px;
           background-color: var(--green-20);
           z-index: 1;
+          transition: background-color var(--fade);
         }
         .icon_close:hover {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
         h1 {
-          color: var(--${isConnected ? "success" : "green-20"});
+          color: var(--${isConnected ? "connected" : "green-20"});
           font-size: 16px;
           font-weight: 400;
           line-height: 24px;
@@ -417,7 +418,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           font-size: 14px;
         }
         .url {
-          color: #fff;
+          color: var(--text-strong);
           font-size: 16px;
           font-weight: 500;
         }
@@ -437,15 +438,16 @@ export default function TopMenuConnectedDAppInfo(props: {
           color: var(--green-40);
           font-size: 14px;
           min-width: 0;
+          transition: color var(--fade);
         }
         .network_selector:hover {
-          color: #fff;
+          color: var(--text-strong);
         }
         .network_selector:hover .network_name {
-          color: #fff;
+          color: var(--text-strong);
         }
         .network_selector:hover .icon_chevron_down {
-          background-color: #fff;
+          background-color: var(--text-strong);
         }
         .network_label {
           color: var(--green-40);
@@ -453,10 +455,11 @@ export default function TopMenuConnectedDAppInfo(props: {
           white-space: nowrap;
         }
         .network_name {
-          color: #fff;
+          color: var(--text-strong);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          transition: color var(--fade);
         }
         .icon_chevron_down {
           mask-image: url("./images/chevron_down.svg");
@@ -465,6 +468,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           height: 8px;
           background-color: var(--green-40);
           flex-shrink: 0;
+          transition: background-color var(--fade);
         }
         .disconnect_button {
           display: flex;
@@ -474,6 +478,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           font-size: 14px;
           font-weight: 500;
           flex-shrink: 0;
+          transition: color var(--fade);
         }
         .disconnect_button:hover {
           color: var(--error-80);
@@ -487,6 +492,7 @@ export default function TopMenuConnectedDAppInfo(props: {
           width: 16px;
           height: 18px;
           background-color: var(--error);
+          transition: background-color var(--fade);
         }
         .dAppInfo_wrap {
           width: 100%;

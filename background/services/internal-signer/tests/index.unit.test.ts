@@ -9,7 +9,7 @@ import {
   createTransactionRequest,
   createTypedData,
 } from "../../../tests/factories"
-import { mockLocalStorage } from "../../../tests/utils"
+import { mockLocalStorage, restoreLocalStorage } from "../../../tests/utils"
 
 const HD_WALLET_MOCK = {
   mnemonic:
@@ -38,6 +38,7 @@ describe("InternalSignerService", () => {
 
   afterEach(async () => {
     await internalSignerService.stopService()
+    restoreLocalStorage()
   })
 
   describe("generated HD wallet", () => {

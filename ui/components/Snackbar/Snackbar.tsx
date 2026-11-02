@@ -102,12 +102,11 @@ export default function Snackbar({
             font-weight: 500;
             background: var(--green-120);
             color: var(--green-20);
-            box-shadow:
-              0px 24px 24px rgba(0, 20, 19, 0.14),
-              0px 14px 16px rgba(0, 20, 19, 0.24),
-              0px 10px 12px rgba(0, 20, 19, 0.34);
+            box-shadow: var(--shadow-raised);
             border-radius: 8px;
-            transition: all ${DISMISS_ANIMATION_MS}ms ease;
+            transition:
+              padding ${DISMISS_ANIMATION_MS}ms ease,
+              transform ${DISMISS_ANIMATION_MS}ms ease;
             opacity: 1;
             transform: translateY(0px);
             user-select: none;

@@ -125,7 +125,7 @@ export default function DAppConnectPage({
           margin-left: 5px;
         }
         .permissions_list_title {
-          color: #fff;
+          color: var(--text-strong);
           margin-bottom: 8px;
           margin-top: 15px;
           margin-left: 0px;
@@ -166,7 +166,7 @@ export default function DAppConnectPage({
           align-items: center;
           height: 80px;
           justify-content: space-between;
-          box-shadow: 0 0 5px rgba(0, 20, 19, 0.5);
+          box-shadow: var(--shadow-edge);
           background-color: var(--green-95);
         }
       `}</style>

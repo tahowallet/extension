@@ -69,7 +69,7 @@ export default function NFTsHover(props: {
         <SharedIcon
           icon={`${icon}@2x.png`}
           width={size}
-          color="var(--hunter-green)"
+          color="var(--on-accent)"
           style={style}
         />
       </div>
@@ -84,7 +84,7 @@ export default function NFTsHover(props: {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: rgba(0, 20, 19, 0.75); // --green-120
+          background: var(--overlay); // --green-120
           border-radius: 4px;
           backdrop-filter: blur(8px);
           font-size: 14px;
@@ -106,7 +106,7 @@ export default function NFTsHover(props: {
           width: 32px;
           height: 32px;
           border-radius: 100%;
-          transition: background 200ms ease-in-out;
+          transition: background var(--fade);
         }
         .nft_hover:hover .nft_hover_icon {
           background: ${backgroundHover ?? background};

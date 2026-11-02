@@ -142,7 +142,7 @@ export default function SharedButton(
             display: flex;
             align-items: center;
             justify-content: space-between;
-            color: var(--hunter-green);
+            color: var(--on-accent);
             font-size: 16px;
             font-weight: 600;
             letter-spacing: 0.48px;
@@ -150,22 +150,23 @@ export default function SharedButton(
             text-align: center;
             padding: 0 17px;
             transition:
-              background-color 0.2s,
-              color 0.2s;
+              background-color var(--fade),
+              border-color var(--fade),
+              color var(--fade);
           }
           .button:hover {
             background-color: var(--gold-80);
-            color: var(--green-95);
+            color: var(--on-accent-hover);
           }
           .button:hover .icon_button {
-            background-color: var(--green-95);
+            background-color: var(--on-accent-hover);
           }
           .button:active {
             background-color: var(--trophy-gold);
-            color: var(--green-120);
+            color: var(--on-accent-active);
           }
           .button:active .icon_button {
-            background-color: var(--green-120);
+            background-color: var(--on-accent-active);
           }
           .button_content {
             display: flex;
@@ -181,9 +182,10 @@ export default function SharedButton(
             width: 16px;
             height: 16px;
             margin-left: 9px;
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
             display: inline-block;
             margin-top: -1px;
+            transition: background-color var(--fade);
           }
           .large {
             height: 48px;
@@ -218,7 +220,7 @@ export default function SharedButton(
             border-color: var(--trophy-gold);
           }
           .primaryGreen {
-            color: var(--hunter-green);
+            color: var(--on-accent);
             background-color: var(--trophy-gold);
           }
           .disabled {
@@ -284,11 +286,11 @@ export default function SharedButton(
             background-color: #fff;
           }
           .white {
-            color: #ffffff;
+            color: var(--text-strong);
             font-weight: 500;
           }
           .white .icon_button {
-            background-color: #ffffff;
+            background-color: var(--text-strong);
           }
           .gray {
             color: var(--green-20);
@@ -321,18 +323,18 @@ export default function SharedButton(
             background-color: var(--green-60);
           }
           .deemphasized_white {
-            color: #fff;
+            color: var(--text-strong);
             background-color: var(--green-95);
           }
           .deemphasized_white .icon_button {
-            background-color: #fff;
+            background-color: var(--text-strong);
           }
           .deemphasized_white:hover {
             background-color: var(--green-60);
-            color: #fff;
+            color: var(--text-strong);
           }
           .deemphasized_white:hover .icon_button {
-            background-color: #fff;
+            background-color: var(--text-strong);
           }
           .small {
             padding: 0 12px;
@@ -344,10 +346,10 @@ export default function SharedButton(
             background-color: var(--attention);
           }
           .warning {
-            color: var(--hunter-green);
+            color: var(--on-accent);
           }
           .warning .icon_button {
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
           }
           .icon_left {
             flex-direction: row-reverse;

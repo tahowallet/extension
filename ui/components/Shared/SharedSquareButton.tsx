@@ -5,6 +5,10 @@ const DEFAULT_COLORS: ColorDetails = {
   color: "var(--green-40)",
   hoverColor: "var(--gold-80)",
 }
+const DEFAULT_ICON_COLORS: ColorDetails = {
+  color: "var(--action-tile)",
+  hoverColor: "var(--action-tile-hover)",
+}
 
 type ColorDetails = {
   color: string
@@ -25,7 +29,7 @@ type Props = {
 export default function SharedSquareButton(props: Props): ReactElement {
   const {
     icon,
-    iconColor = DEFAULT_COLORS,
+    iconColor = DEFAULT_ICON_COLORS,
     textColor = DEFAULT_COLORS,
     size = SIZE,
     ariaLabel,
@@ -53,7 +57,7 @@ export default function SharedSquareButton(props: Props): ReactElement {
             line-height: 16px;
             letter-spacing: 0.03em;
             color: ${textColor.color};
-            transition: color 0.2s;
+            transition: color var(--fade);
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -74,10 +78,16 @@ export default function SharedSquareButton(props: Props): ReactElement {
             width: ${size}px;
             height: ${size}px;
             background-color: ${iconColor.color};
-            transition: background-color 0.2s;
+            transition:
+              background-color var(--fade),
+              box-shadow var(--fade);
           }
           .hoverable:hover .icon_wrap {
             background-color: ${iconColor.hoverColor};
+            box-shadow: var(--action-tile-hover-shadow);
+          }
+          .hoverable:hover .icon {
+            background-color: var(--action-tile-hover-icon);
           }
           .icon {
             mask-image: url("./images/${icon}");
@@ -87,7 +97,8 @@ export default function SharedSquareButton(props: Props): ReactElement {
             width: ${size / 2}px;
             height: ${size / 2}px;
             margin: ${size / 4}px;
-            background-color: var(--hunter-green);
+            background-color: var(--on-accent);
+            transition: background-color var(--fade);
           }
         `}
       </style>

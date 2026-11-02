@@ -51,6 +51,7 @@ export function AddWalletRow({
           font-weight: 600;
           color: var(--green-20);
           line-height: 24px;
+          transition: color var(--fade);
         }
 
         .option:hover {

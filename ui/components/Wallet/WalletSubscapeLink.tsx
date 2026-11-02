@@ -58,10 +58,7 @@ export default function WalletSubspaceLink(): ReactElement {
           font-size: 18px;
           font-weight: 600;
           background: var(--subscape-background);
-          box-shadow:
-            0px 10px 12px 0px rgba(7, 17, 17, 0.34),
-            0px 14px 16px 0px rgba(7, 17, 17, 0.24),
-            0px 24px 24px 0px rgba(7, 17, 17, 0.14);
+          box-shadow: var(--shadow-floating);
         }
         .subscape_link.icon_only {
           transform: translateX(160px);

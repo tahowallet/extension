@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill"
-import React, { ReactElement, useEffect, useState } from "react"
+import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { Trans, useTranslation } from "react-i18next"
 import {
@@ -17,6 +17,9 @@ import {
   selectUseFlashbots,
   selectAutoLockTimer as selectAutoLockInterval,
   updateAutoLockInterval,
+  selectThemePreference,
+  setThemePreference,
+  ThemePreference,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { FLASHBOTS_DOCS_URL, MINUTE } from "@tallyho/tally-background/constants"
@@ -38,6 +41,7 @@ import { useBackgroundSelector } from "../hooks"
 import SharedIcon from "../components/Shared/SharedIcon"
 import SharedTooltip from "../components/Shared/SharedTooltip"
 import SharedLink from "../components/Shared/SharedLink"
+import { isThemePreference } from "../utils/theme"
 import CorePage from "../components/Core/CorePage"
 
 type SettingsItem = {
@@ -64,6 +68,8 @@ const AUTO_LOCK_OPTIONS = [
   { label: "30", value: String(30 * MINUTE) },
   { label: "60", value: String(60 * MINUTE) },
 ]
+
+const THEME_OPTIONS: ThemePreference[] = ["system", "dark", "light"]
 
 const FOOTER_ACTIONS = [
   {
@@ -357,6 +363,39 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const themePreference = useBackgroundSelector(selectThemePreference)
+  const changeTheme = useCallback(
+    (value: string) => {
+      if (isThemePreference(value)) dispatch(setThemePreference(value))
+    },
+    [dispatch],
+  )
+
+  const appearance = {
+    title: t("settings.theme.label"),
+    component: () => (
+      <div className="select_wrapper">
+        <SharedSelect
+          options={THEME_OPTIONS.map((value) => ({
+            value,
+            label: t(`settings.theme.${value}`),
+          }))}
+          defaultIndex={THEME_OPTIONS.indexOf(themePreference)}
+          width="100%"
+          onChange={changeTheme}
+        />
+        <style jsx>
+          {`
+            .select_wrapper {
+              width: 118px;
+              z-index: var(--z-dropdown);
+            }
+          `}
+        </style>
+      </div>
+    ),
+  }
+
   const notificationBanner = {
     title: t("settings.showBanners"),
     component: () => (
@@ -409,6 +448,7 @@ export default function Settings(): ReactElement {
       items: [
         dAppsSettings,
         analytics,
+        appearance,
         ...wrapIfEnabled(FeatureFlags.SUPPORT_MULTIPLE_LANGUAGES, languages),
         ...wrapIfEnabled(
           FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER,
@@ -468,7 +508,6 @@ export default function Settings(): ReactElement {
                 width={18}
                 color="var(--green-20)"
                 hoverColor="var(--trophy-gold)"
-                transitionHoverTime="0.2s"
                 onClick={() => {
                   window.open(linkTo, "_blank")?.focus()
                 }}
@@ -493,7 +532,7 @@ export default function Settings(): ReactElement {
               flex-direction: column;
             }
             h1 {
-              color: #fff;
+              color: var(--text-strong);
               font-size: 22px;
               font-weight: 500;
               line-height: 32px;

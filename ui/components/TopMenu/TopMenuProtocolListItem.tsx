@@ -114,7 +114,7 @@ export default function TopMenuProtocolListItem(props: Props): ReactElement {
             width: 45px;
             height: 20px;
             text-transform: uppercase;
-            color: var(--green-95);
+            color: var(--on-accent-hover);
             background-color: var(--success);
             font-size: 12px;
             font-weight: 700;

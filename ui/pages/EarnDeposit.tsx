@@ -517,7 +517,7 @@ export default function EarnDeposit(): ReactElement {
           .divider {
             height: 1px;
             width: 100%;
-            background-color: #33514e;
+            background-color: var(--grey-green-80);
           }
           .amount {
             font-size: 18px;
@@ -554,9 +554,10 @@ export default function EarnDeposit(): ReactElement {
             font-size: 16px;
             font-weight: 400;
             height: 17px;
+            transition: color var(--fade);
           }
           .contract:hover .contract_link {
-            color: #fff;
+            color: var(--text-strong);
           }
           .multiple_icons {
             display: flex;
@@ -569,8 +570,8 @@ export default function EarnDeposit(): ReactElement {
           }
           .accordion_wrap {
             width: 100%;
-            border-top: 1px solid #33514e;
-            border-bottom: 1px solid #33514e;
+            border-top: 1px solid var(--grey-green-80);
+            border-bottom: 1px solid var(--grey-green-80);
           }
           .row:last-child .accordion_wrap {
             border-bottom: 0;
@@ -581,9 +582,10 @@ export default function EarnDeposit(): ReactElement {
             width: 12px;
             height: 12px;
             background-color: var(--green-40);
+            transition: background-color var(--fade);
           }
           .contract:hover .external {
-            background-color: #fff;
+            background-color: var(--text-strong);
           }
           .wrapper {
             width: 100%;
@@ -593,14 +595,14 @@ export default function EarnDeposit(): ReactElement {
             box-sizing: border-box;
             padding: 12px 0 0;
             gap: 12px;
-            border: 1px solid #33514e;
+            border: 1px solid var(--grey-green-80);
             margin-bottom: 16px;
           }
           .wrapper.dark {
             background-color: var(--hunter-green);
           }
           .asset_name {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

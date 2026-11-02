@@ -7,8 +7,8 @@ import {
   createNameService,
   createAnyEVMBlock,
   createTransactionRequest,
+  createMockProvider,
 } from "../../../tests/factories"
-import { createProviderForChain } from "../../chain/serial-fallback-provider"
 import resolveTransactionAnnotation, {
   annotationsFromLogs,
 } from "../transactions"
@@ -65,7 +65,7 @@ describe("Enrichment Service Transactions", () => {
 
       sandbox
         .stub(chainService, "providerForNetworkOrThrow")
-        .returns(createProviderForChain("1", []))
+        .returns(createMockProvider())
 
       const subannotations = await annotationsFromLogs(
         chainService,

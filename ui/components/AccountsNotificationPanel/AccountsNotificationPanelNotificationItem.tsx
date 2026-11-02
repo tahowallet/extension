@@ -19,7 +19,7 @@ export default function NotificationItem(): ReactElement {
           font-size: 14px;
         }
         .white {
-          color: #fff;
+          color: var(--text-strong);
           padding: 0px 0.5px;
         }
         .icon_notification {

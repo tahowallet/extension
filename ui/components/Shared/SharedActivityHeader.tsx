@@ -20,7 +20,7 @@ export default function SharedActivityHeader(props: Props): ReactElement {
             margin-bottom: 25px;
             margin-top: 17px;
             height: 32px;
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;

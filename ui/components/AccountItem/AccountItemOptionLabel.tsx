@@ -28,6 +28,7 @@ export default function AccountitemOptionLabel({
             width: 16px;
             margin-right: 5px;
             height: 16px;
+            transition: background-color var(--fade);
           }
           .option_label {
             display: flex;
@@ -39,12 +40,13 @@ export default function AccountitemOptionLabel({
             line-height 24px;
             font-weight: 500;
             width: 100%;
+            transition: color var(--fade);
           }
           .hover:hover {
-            color: ${hoverColor || "#fff"};
+            color: ${hoverColor || "var(--text-strong)"};
           }
           .hover:hover .icon {
-            background-color: ${hoverColor || "#fff"};
+            background-color: ${hoverColor || "var(--text-strong)"};
           }
         `}</style>
     </div>

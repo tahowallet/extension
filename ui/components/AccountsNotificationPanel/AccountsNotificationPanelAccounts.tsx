@@ -237,14 +237,15 @@ function WalletTypeHeader({
           margin: 8px 0px;
         }
         .icon_wrap {
-          background-color: var(--green-60);
+          background-color: var(--icon-tile);
           margin: 0 7px 0 0;
           border-radius: 4px;
+          --tile-icon: var(--icon-tile-icon);
         }
         .icon {
           mask-image: url("${icon}");
           mask-size: cover;
-          background-color: var(--green-20);
+          background-color: var(--tile-icon);
           width: 24px;
           height: 24px;
         }
@@ -379,6 +380,7 @@ function WalletSignerAccounts({
           box-sizing: border-box;
           padding: 8px 0px 8px 24px;
           cursor: pointer;
+          transition: background-color var(--fade);
         }
       `}</style>
     </section>
