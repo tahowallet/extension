@@ -390,6 +390,26 @@ export const resolveNameOnNetwork = createBackgroundAsyncThunk(
 )
 
 /**
+ * Async thunk whose dispatch promise resolves to true if the given address or
+ * name is known to be control-compatible with `otherNetwork`, and false
+ * otherwise, including when compatibility isn't known. Meant for one-off
+ * checks, like a Send recipient; see RFB 5.
+ */
+export const checkControlCompatibility = createBackgroundAsyncThunk(
+  "account/checkControlCompatibility",
+  async (
+    {
+      objectOnNetwork,
+      otherNetwork,
+    }: {
+      objectOnNetwork: AddressOnNetwork | NameOnNetwork
+      otherNetwork: EVMNetwork
+    },
+    { extra: { main } },
+  ) => main.isControlCompatible(objectOnNetwork, otherNetwork),
+)
+
+/**
  * Async thunk whose dispatch promise will return when the account has been
  * added.
  *

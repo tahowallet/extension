@@ -1897,6 +1897,21 @@ export default class ReduxService extends BaseService<never> {
     }
   }
 
+  async isControlCompatible(
+    objectOnNetwork: AddressOnNetwork | NameOnNetwork,
+    otherNetwork: EVMNetwork,
+  ): Promise<boolean> {
+    try {
+      return await this.signingService.isControlCompatible(
+        objectOnNetwork,
+        otherNetwork,
+      )
+    } catch (error) {
+      logger.info("Error checking control compatibility: ", error)
+      return false
+    }
+  }
+
   async pollForAbilities(address: NormalizedEVMAddress): Promise<void> {
     return this.abilitiesService.pollForAbilities(address)
   }
