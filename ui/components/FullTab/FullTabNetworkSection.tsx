@@ -4,13 +4,13 @@ import { Link } from "react-router-dom"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { makeSelectAccountBalancesOnNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
-import { networkSupportsSwaps } from "@tallyho/tally-background/lib/0x-swap"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { useBackgroundSelector } from "../../hooks"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import FullTabAssetTable from "./FullTabAssetTable"
-import FullTabActionButton from "./FullTabActionButton"
+import AssetListItemActions from "../Wallet/AssetListItem/AssetListItemActions"
 import { accountPath, useOpenPageAs } from "./hooks"
 
 type Props = {
@@ -42,7 +42,6 @@ export default function FullTabNetworkSection({
   const balances = useBackgroundSelector(selectBalances)
   const isLoading = balances === "loading" || balances === undefined
 
-  const supportsSwaps = networkSupportsSwaps(network.chainID)
   const unverifiedCount = isLoading ? 0 : balances.unverifiedAssetAmounts.length
 
   return (
@@ -90,31 +89,18 @@ export default function FullTabNetworkSection({
             onRowClick={({ asset }) =>
               openPageAs({ address, network }, "/singleAsset", asset)
             }
-            renderActions={({ asset }) => (
-              <>
-                <FullTabActionButton
-                  icon="icons/s/send.svg"
-                  label={t("send")}
-                  onClick={() =>
-                    openPageAs({ address, network }, "/send", asset)
+            renderActions={({ asset }) =>
+              isSmartContractFungibleAsset(asset) ||
+              isNetworkBaseAsset(asset) ? (
+                <AssetListItemActions
+                  asset={asset}
+                  network={network}
+                  onNavigate={(pathname, state) =>
+                    openPageAs({ address, network }, pathname, state)
                   }
                 />
-                <FullTabActionButton
-                  icon="icons/s/swap.svg"
-                  label={t("swap")}
-                  disabled={!supportsSwaps}
-                  title={supportsSwaps ? undefined : t("swapUnsupported")}
-                  onClick={() =>
-                    openPageAs({ address, network }, "/swap", {
-                      symbol: asset.symbol,
-                      contractAddress: isSmartContractFungibleAsset(asset)
-                        ? asset.contractAddress
-                        : undefined,
-                    })
-                  }
-                />
-              </>
-            )}
+              ) : null
+            }
           />
         )}
       </div>
