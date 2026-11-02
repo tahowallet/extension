@@ -272,7 +272,7 @@ export default function SpendApprovalSummary({
             z-index: 1;
           }
           .site {
-            color: #fff;
+            color: var(--text-strong);
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
@@ -318,7 +318,7 @@ export default function SpendApprovalSummary({
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            color: #fff;
+            color: var(--text-strong);
             font-size: 16px;
             line-height: 24px;
           }

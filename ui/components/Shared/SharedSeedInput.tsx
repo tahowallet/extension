@@ -55,7 +55,14 @@ export default function SharedSeedInput(props: Props): ReactElement {
           position: absolute;
           font-size: 12px;
           line-height: 16px;
-          transition: all 0.2s ease-in-out;
+          transition:
+            font-size 0.2s ease-in-out,
+            line-height 0.2s ease-in-out,
+            top 0.2s ease-in-out,
+            left 0.2s ease-in-out,
+            padding 0.2s ease-in-out,
+            color var(--fade),
+            background var(--fade);
           pointer-events: none;
         }
 
@@ -85,6 +92,7 @@ export default function SharedSeedInput(props: Props): ReactElement {
           color: var(--white);
           font-family: inherit;
           overflow-y: scroll;
+          transition: border-color var(--fade);
         }
 
         #recovery_phrase * {
@@ -99,7 +107,6 @@ export default function SharedSeedInput(props: Props): ReactElement {
           padding: 0 6px;
           color: var(--trophy-gold);
           background: var(--hunter-green);
-          transition: all 0.2s ease-in-out;
           z-index: 999;
         }
 

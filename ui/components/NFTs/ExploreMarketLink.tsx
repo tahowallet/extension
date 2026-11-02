@@ -75,7 +75,7 @@ export const MARKET_LINK: Record<string, MarketDetails> = {
   galxe: {
     title: "Galxe",
     url: "https://galxe.com/",
-    color: "#D6EAE9",
+    color: "var(--white)",
     hoverColor: "#ffffff",
     icon: "galxe.svg",
     getNFTLink: (nft: NFTCached): string =>
@@ -139,6 +139,7 @@ function ExploreMarketButton(props: ExploreMarketButtonProps): ReactElement {
           line-height: 24px;
           letter-spacing: 0.03em;
           text-align: center;
+          transition: color var(--fade);
         }
 
         .market_icon {

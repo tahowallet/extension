@@ -114,10 +114,10 @@ export default function EarnDepositedCard({
               padding: 16px;
               margin-bottom: 20px;
               margin-top: 30px;
-              transition: all 0.2s ease;
+              transition: box-shadow var(--fade);
             }
             .card:hover {
-              box-shadow: 0px 10px 12px 0px #0014138a;
+              box-shadow: var(--shadow-lifted-flat);
               background: linear-gradient(
                 180deg,
                 #284340 0%,
@@ -132,7 +132,7 @@ export default function EarnDepositedCard({
               margin-bottom: 8px;
             }
             .amount {
-              color: #fff;
+              color: var(--text-strong);
               font-size: 18px;
               font-weight: 600;
               line-height: 24px;
@@ -175,7 +175,7 @@ export default function EarnDepositedCard({
               flex-direction: column;
             }
             .token_name {
-              color: #fff;
+              color: var(--text-strong);
               font-size: 22px;
               font-weight: 500;
               line-height: 32px;

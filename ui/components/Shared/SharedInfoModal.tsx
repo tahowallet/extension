@@ -53,7 +53,7 @@ export default function SharedInfoModal({
           opacity: 0.7;
           width: 100vw;
           height: 100vh;
-          background: #001413;
+          background: var(--green-120);
           position: absolute;
           z-index: 3;
         }
@@ -61,7 +61,7 @@ export default function SharedInfoModal({
           width: 70vw;
           height: 70vh;
           padding: 24px;
-          background: #001413;
+          background: var(--green-120);
           z-index: 4;
           text-align: center;
           display: flex;
@@ -79,13 +79,13 @@ export default function SharedInfoModal({
           text-transform: uppercase;
           display: flex;
           align-items: center;
-          color: #d64045;
+          color: var(--error-alt);
         }
         .button {
           height: 40px;
           border-radius: 4px;
           background-color: var(--trophy-gold);
-          color: #002522;
+          color: var(--on-accent-deep);
           font-size: 20px;
           letter-spacing: 0.48px;
           line-height: 24px;

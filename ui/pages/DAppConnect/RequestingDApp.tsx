@@ -44,7 +44,7 @@ export default function RequestingDAppBlock(props: {
           flex-shrink: 0;
         }
         .dapp_title {
-          color: #fff;
+          color: var(--text-strong);
           font-size: 16px;
           font-weight: 500;
         }

@@ -39,17 +39,24 @@ export default function WalletAssetListItem(props: Props): ReactElement {
       )}
       <style jsx global>
         {`
+          .asset_list_item {
+            --asset-icon-color: var(--green-60);
+          }
+          .asset_list_item:hover {
+            --asset-icon-color: var(--green-40);
+          }
+          /* Icons take their colour from the row, or from a tile they sit on. */
           .asset_icon {
             mask-size: cover;
-            background-color: var(--green-60);
+            background-color: var(--asset-icon-color);
             width: 12px;
             height: 12px;
+            transition: background-color var(--fade);
           }
-          .asset_list_item:hover .asset_icon:not(:hover) {
-            background-color: var(--green-40);
-          }
-          .asset_icon:hover {
-            background-color: var(--trophy-gold);
+          /* An icon that is a button of its own, with no tile. */
+          a.asset_icon:hover,
+          button.asset_icon:hover {
+            --asset-icon-color: var(--trophy-gold);
           }
           .asset_icon_earn {
             width: 22px;

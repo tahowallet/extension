@@ -92,9 +92,10 @@ export default function TopMenuProtocolSwitcher({
             user-select: none;
             white-space: nowrap;
             min-width: 0;
+            transition: color var(--fade);
           }
           button:hover {
-            color: #fff;
+            color: var(--text-strong);
           }
           .icon_chevron_down {
             flex-shrink: 0;
@@ -105,9 +106,10 @@ export default function TopMenuProtocolSwitcher({
             margin-left: 7px;
             margin-top: 2px;
             background-color: var(--green-40);
+            transition: background-color var(--fade);
           }
           button:hover .icon_chevron_down {
-            background-color: #fff;
+            background-color: var(--text-strong);
           }
           .logo_overlay {
             position: absolute;
@@ -127,6 +129,7 @@ export default function TopMenuProtocolSwitcher({
             align-items: center;
             justify-content: center;
             margin-right: 5px;
+            transition: background-color var(--fade);
           }
           button:hover .icon_wrap {
             background-color: var(--green-80) !important;

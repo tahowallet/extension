@@ -85,7 +85,7 @@ export function TransferSummaryBase({
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
-              color: #fff;
+              color: var(--text-strong);
               font-size: 28px;
               text-align: right;
               text-transform: uppercase;

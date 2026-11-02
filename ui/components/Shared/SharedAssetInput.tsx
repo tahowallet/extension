@@ -331,6 +331,11 @@ function SelectAssetMenuContent<T extends AnyAsset>(
           .search_input::placeholder {
             color: var(--green-40);
           }
+          :global([data-theme="light"]) .icon_search {
+            background: var(--green-40);
+            mask: url("./images/search_large@2x.png") center / 24px 24px
+              no-repeat;
+          }
           .icon_search {
             background: url("./images/search_large@2x.png");
             background-size: 24px 24px;
@@ -432,11 +437,12 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
         button {
           display: flex;
           align-items: center;
-          color: #fff;
+          color: var(--text-strong);
           font-size: 16px;
           font-weight: 500;
           line-height: 24px;
           text-transform: uppercase;
+          transition: color var(--fade);
         }
         button:disabled {
           cursor: default;
@@ -799,7 +805,7 @@ export default function SharedAssetInput<T extends AnyAsset>(
             font-size: 28px;
             font-weight: 500;
             line-height: 32px;
-            color: #fff;
+            color: var(--text-strong);
           }
           .asset_input::placeholder {
             color: var(--green-40);
@@ -817,13 +823,13 @@ export default function SharedAssetInput<T extends AnyAsset>(
           .input_amount {
             max-width: 125px;
             height: 32px;
-            color: #ffffff;
+            color: var(--text-strong);
             font-size: 22px;
             font-weight: 500;
             line-height: 32px;
             text-align: right;
             text-overflow: ellipsis;
-            transition: color 100ms ease-in;
+            transition: color var(--fade);
           }
           input::-webkit-outer-spin-button,
           input::-webkit-inner-spin-button {

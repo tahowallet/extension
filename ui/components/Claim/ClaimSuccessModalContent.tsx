@@ -46,7 +46,7 @@ export default function ClaimSuccessModalContent({
           }
           h1 {
             width: 325px;
-            color: #fff;
+            color: var(--text-strong);
             font-size: 36px;
             font-weight: 500;
             line-height: 42px;

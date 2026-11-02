@@ -22,6 +22,7 @@ function OnboardingStep(props: OnboardingStepProps): ReactElement {
             height: 6px;
             border-radius: 100px;
             background-color: var(--green-60);
+            transition: background-color var(--fade);
           }
           li {
             display: block;
@@ -34,6 +35,7 @@ function OnboardingStep(props: OnboardingStepProps): ReactElement {
             align-items: center;
             flex-direction: column;
             padding: 0px 11px;
+            transition: color var(--fade);
           }
           .active {
             color: var(--trophy-gold);

@@ -61,7 +61,7 @@ function EditSectionForm({
         <AccountItemActionHeader
           label={t("editName")}
           icon="icons/s/edit.svg"
-          color="#fff"
+          color="var(--text-strong)"
         />
       </div>
       <div className="wallet_title">
@@ -104,14 +104,15 @@ function EditSectionForm({
       </form>
       <style jsx>{`
         .icon_wrap {
-          background-color: var(--green-60);
+          background-color: var(--icon-tile);
           margin: 0 7px 0 0;
           border-radius: 4px;
+          --tile-icon: var(--icon-tile-icon);
         }
         .icon {
           mask-image: url("${accountTypeIcon}");
           mask-size: cover;
-          background-color: var(--green-20);
+          background-color: var(--tile-icon);
           width: 24px;
           height: 24px;
         }

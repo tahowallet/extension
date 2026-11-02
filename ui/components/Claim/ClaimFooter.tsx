@@ -100,7 +100,9 @@ export default function ClaimFooter({
             height: 6px;
             background: var(--trophy-gold);
             border-radius: 100px;
-            transition: all 0.5s ease-out;
+            transition:
+              width 0.5s ease-out,
+              background var(--fade);
             margin: 0 2px;
           }
           .inactive {
@@ -108,7 +110,9 @@ export default function ClaimFooter({
             height: 6px;
             background: var(--green-60);
             border-radius: 100px;
-            transition: all 0.5s ease-in;
+            transition:
+              width 0.5s ease-in,
+              background var(--fade);
             margin: 0 2px;
           }
         `}
