@@ -3,6 +3,7 @@ import { LogHistoryUnavailableError } from "./rpc/log-query-errors"
 import type { AddressOnNetwork } from "../../accounts"
 import type { AssetTransfer } from "../../assets"
 import type { EVMNetwork } from "../../networks"
+import type { ERC721Transfer } from "../../nfts"
 import type { HexString, UNIXTime } from "../../types"
 import type AssetDataHelper from "./asset-data-helper"
 import type { ChainDatabase } from "./db"
@@ -62,6 +63,10 @@ export type AssetTransferScannerDependencies = {
   emitAssetTransfers: (
     addressNetwork: AddressOnNetwork,
     assetTransfers: AssetTransfer[],
+  ) => void
+  emitNFTTransfers: (
+    addressNetwork: AddressOnNetwork,
+    nftTransfers: ERC721Transfer[],
   ) => void
 }
 
@@ -223,7 +228,8 @@ export default class AssetTransferScanner {
 
   /**
    * Finds an account's transfers in a block range, records the range as
-   * scanned, emits the transfers, and queues lookups for their transactions.
+   * scanned, emits the transfers, and queues lookups for the transactions of
+   * fungible ones.
    */
   async scanBlocks(
     addressNetwork: AddressOnNetwork,
@@ -240,7 +246,7 @@ export default class AssetTransferScanner {
       )
     }
 
-    const assetTransfers = await assetData.getAssetTransfers(
+    const { assetTransfers, nftTransfers } = await assetData.getAssetTransfers(
       addressNetwork,
       Number(startBlock),
       Number(endBlock),
@@ -254,6 +260,9 @@ export default class AssetTransferScanner {
     )
 
     this.dependencies.emitAssetTransfers(addressNetwork, assetTransfers)
+    if (nftTransfers.length > 0) {
+      this.dependencies.emitNFTTransfers(addressNetwork, nftTransfers)
+    }
 
     const firstSeen = Date.now()
     const savedTransactionHashes = new Set(

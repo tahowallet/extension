@@ -62,6 +62,7 @@ export default function NFTImage({
             loading: isLoading,
             badge: isBadge,
             zoom: isZoomed,
+            no_preview: imageUrl === noPreviewLink,
           })}
           alt={alt}
           src={imageUrl}
@@ -70,7 +71,7 @@ export default function NFTImage({
           onError={({ currentTarget }) => {
             // oxlint-disable-next-line no-param-reassign
             currentTarget.onerror = null // prevents looping
-            setImageUrl("./images/no_preview.svg")
+            setImageUrl(noPreviewLink)
             setIsLoading(false)
           }}
         />
@@ -97,6 +98,9 @@ export default function NFTImage({
           transform: scale(1);
           flex-grow: 1;
           transition: transform 200ms ease-in-out;
+        }
+        :global([data-theme="light"]) img.no_preview {
+          content: url("./images/no_preview_light.svg");
         }
         img.zoom {
           transform: scale(1.5);

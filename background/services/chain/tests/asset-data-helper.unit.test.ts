@@ -1,8 +1,12 @@
 import * as sinon from "sinon"
+import { storage as flagStorage } from "../../../features"
 import logger from "../../../lib/logger"
 import AssetDataHelper from "../asset-data-helper"
 import SerialFallbackProvider from "../serial-fallback-provider"
 import { createAddressOnNetwork } from "../../../tests/factories"
+import type { ScannedTransfers } from "../../../nfts"
+
+const NO_TRANSFERS = { assetTransfers: [], nftTransfers: [] }
 
 const mockedBoarAssetTransfers = jest.fn()
 const mockedLogAssetTransfers = jest.fn()
@@ -21,9 +25,9 @@ describe("AssetDataHelper", () => {
 
   beforeEach(() => {
     mockedBoarAssetTransfers.mockReset()
-    mockedBoarAssetTransfers.mockResolvedValue([])
+    mockedBoarAssetTransfers.mockResolvedValue(NO_TRANSFERS)
     mockedLogAssetTransfers.mockReset()
-    mockedLogAssetTransfers.mockResolvedValue([])
+    mockedLogAssetTransfers.mockResolvedValue(NO_TRANSFERS)
   })
 
   afterEach(() => {
@@ -40,6 +44,51 @@ describe("AssetDataHelper", () => {
       // Incoming and outgoing lookups.
       expect(mockedBoarAssetTransfers).toHaveBeenCalledTimes(2)
       expect(mockedLogAssetTransfers).not.toHaveBeenCalled()
+    })
+
+    it("still takes ERC-20 transfers from Alchemy with the NFT indexer on", async () => {
+      flagStorage.set("SUPPORT_NFT_INDEXER", "true")
+      try {
+        mockedBoarAssetTransfers.mockResolvedValue({
+          assetTransfers: [{ txHash: "0xerc20" }],
+          nftTransfers: [],
+        })
+        const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
+
+        const { assetTransfers } = await helper.getAssetTransfers(
+          createAddressOnNetwork(),
+          0,
+          100,
+        )
+
+        expect(assetTransfers.map(({ txHash }) => txHash)).toEqual([
+          "0xerc20",
+          "0xerc20",
+        ])
+        expect(mockedLogAssetTransfers).not.toHaveBeenCalled()
+      } finally {
+        flagStorage.delete("SUPPORT_NFT_INDEXER")
+      }
+    })
+
+    it("merges both directions' fungible and ERC-721 transfers", async () => {
+      mockedBoarAssetTransfers
+        .mockResolvedValueOnce({
+          assetTransfers: [{ txHash: "0xin" }],
+          nftTransfers: [{ txHash: "0xnftin" }],
+        })
+        .mockResolvedValueOnce({
+          assetTransfers: [{ txHash: "0xout" }],
+          nftTransfers: [{ txHash: "0xnftout" }],
+        })
+      const helper = makeHelperWithProvider({ supportsAlchemyMethods: true })
+
+      await expect(
+        helper.getAssetTransfers(createAddressOnNetwork(), 0, 100),
+      ).resolves.toEqual({
+        assetTransfers: [{ txHash: "0xin" }, { txHash: "0xout" }],
+        nftTransfers: [{ txHash: "0xnftin" }, { txHash: "0xnftout" }],
+      } as unknown as ScannedTransfers)
     })
 
     it("only looks up incoming transfers when incomingOnly is set", async () => {
@@ -121,7 +170,7 @@ describe("AssetDataHelper", () => {
 
       await expect(
         helper.getAssetTransfers(addressOnNetwork, 0, 50),
-      ).resolves.toEqual([])
+      ).resolves.toEqual(NO_TRANSFERS)
 
       expect(mockedLogAssetTransfers).toHaveBeenCalledWith(
         provider,

@@ -16,6 +16,8 @@ import {
 } from "./validate"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
+import { FeatureFlags, isEnabled } from "../features"
+import type { ERC721Transfer, ScannedTransfers } from "../nfts"
 
 // We can't use destructuring because webpack has to replace all instances of
 // `process.env` variables in the bundled output. Each chain URL must be
@@ -30,9 +32,83 @@ export const BOAR_RPC_URLS: Readonly<Record<string, string | undefined>> = {
   "31612": process.env.BOAR_RPC_URL_MEZO,
 }
 
+type BoarAssetTransfers = ValidatedType<typeof isValidBoarAssetTransferResponse>
+
+/**
+ * The ERC-721 transfer an Alchemy-compatible transfer entry describes, or
+ * `undefined` if it describes something else.
+ */
+function erc721TransferFrom(
+  transfer: BoarAssetTransfers["transfers"][number],
+  network: EVMNetwork,
+): ERC721Transfer | undefined {
+  const tokenId = transfer.tokenId ?? transfer.erc721TokenId
+  const contractAddress = transfer.rawContract?.address
+  if (
+    transfer.category !== "erc721" ||
+    !tokenId ||
+    !contractAddress ||
+    !transfer.from ||
+    !transfer.to
+  ) {
+    return undefined
+  }
+
+  // uniqueId looks like `<hash>:log:<index>`.
+  const logIndex = Number(transfer.uniqueId?.split(":log:")[1] ?? 0)
+
+  return {
+    network,
+    contractAddress,
+    tokenId: BigInt(tokenId).toString(),
+    from: transfer.from,
+    to: transfer.to,
+    txHash: transfer.hash,
+    blockNumber: Number(BigInt(transfer.blockNum)),
+    logIndex: Number.isNaN(logIndex) ? 0 : logIndex,
+  }
+}
+
+/**
+ * Sends an `alchemy_getAssetTransfers` request, returning its validated
+ * response, or `undefined` if it didn't validate.
+ */
+async function sendAssetTransfersRequest(
+  provider: SerialFallbackProvider,
+  params: Record<string, unknown>,
+): Promise<BoarAssetTransfers | undefined> {
+  const rpcResponse: unknown = await provider.send(
+    "alchemy_getAssetTransfers",
+    [params],
+  )
+  if (isValidBoarAssetTransferResponse(rpcResponse)) {
+    return rpcResponse
+  }
+  logger.warn(
+    "Boar asset transfer response didn't validate, did the API change?",
+    rpcResponse,
+    isValidBoarAssetTransferResponse.errors,
+  )
+  return undefined
+}
+
+/**
+ * The transfer categories looked up for an account; `internal` is only
+ * served on Ethereum Mainnet and Sepolia.
+ */
+function transferCategories(network: EVMNetwork, withERC721: boolean) {
+  return [
+    "external",
+    "erc20",
+    ...(network.name === "Ethereum" ? ["internal"] : []),
+    ...(withERC721 ? ["erc721"] : []),
+  ]
+}
+
 /**
  * Use Boar's getAssetTransfers call to get historical transfers for an
- * account.
+ * account. With the NFT indexer on, ERC-721 transfers come back as
+ * `nftTransfers` from the same call.
  *
  * Note that pagination isn't supported in this wrapper, so any responses after
  * 1k transfers will be dropped.
@@ -53,7 +129,7 @@ export async function getAssetTransfers(
   toBlock?: number,
   order: "asc" | "desc" = "desc",
   maxCount = 25,
-): Promise<AssetTransfer[]> {
+): Promise<ScannedTransfers> {
   const { address: account, network } = addressOnNetwork
 
   const params = {
@@ -72,38 +148,24 @@ export async function getAssetTransfers(
     extraParams.fromAddress = account
   }
 
-  // Categories that are most important to us, supported both on Ethereum Mainnet and polygon
-  const category = ["external", "erc20"]
+  const response = await sendAssetTransfersRequest(provider, {
+    ...params,
+    ...extraParams,
+    category: transferCategories(
+      network,
+      isEnabled(FeatureFlags.SUPPORT_NFT_INDEXER),
+    ),
+  })
+  const transfers = response?.transfers ?? []
 
-  if (addressOnNetwork.network.name === "Ethereum") {
-    // "internal" is supported only on Ethereum Mainnet and Sepolia atm
-    category.push("internal")
-  }
+  const nftTransfers = transfers.flatMap(
+    (transfer) => erc721TransferFrom(transfer, network) ?? [],
+  )
 
-  const rpcResponse = await provider.send("alchemy_getAssetTransfers", [
-    {
-      ...params,
-      ...extraParams,
-      category,
-    },
-  ])
-
-  return [rpcResponse]
-    .flatMap((jsonResponse: unknown) => {
-      if (isValidBoarAssetTransferResponse(jsonResponse)) {
-        return jsonResponse.transfers
-      }
-
-      logger.warn(
-        "Boar asset transfer response didn't validate, did the API change?",
-        jsonResponse,
-        isValidBoarAssetTransferResponse.errors,
-      )
-      return []
-    })
+  const assetTransfers = transfers
     .map((transfer) => {
-      // TODO handle NFT asset lookup properly
-      if (transfer.erc721TokenId) {
+      // NFTs are handled above.
+      if (transfer.erc721TokenId || transfer.category === "erc721") {
         return null
       }
 
@@ -140,6 +202,74 @@ export async function getAssetTransfers(
       } as AssetTransfer
     })
     .filter((t): t is AssetTransfer => t !== null)
+
+  return { assetTransfers, nftTransfers }
+}
+
+/** Transfers per page of {@link getERC721TransferPage}, Alchemy's most. */
+export const ERC721_TRANSFERS_PER_PAGE = 1000
+
+/**
+ * One page of an account's ERC-721 transfers in one direction, newest first,
+ * and the key of the next page, if there is one. Throws if the answer
+ * doesn't validate.
+ */
+export async function getERC721TransferPage(
+  provider: SerialFallbackProvider,
+  addressOnNetwork: AddressOnNetwork,
+  direction: "incoming" | "outgoing",
+  pageKey?: string,
+): Promise<{ nftTransfers: ERC721Transfer[]; pageKey?: string }> {
+  const { address, network } = addressOnNetwork
+  const response = await sendAssetTransfersRequest(provider, {
+    fromBlock: "0x0",
+    toBlock: "latest",
+    maxCount: utils.hexValue(ERC721_TRANSFERS_PER_PAGE),
+    order: "desc",
+    category: ["erc721"],
+    ...(direction === "incoming"
+      ? { toAddress: address }
+      : { fromAddress: address }),
+    ...(pageKey === undefined ? {} : { pageKey }),
+  })
+  // An empty page with no key would read as the last one.
+  if (response === undefined) {
+    throw new Error(
+      `chain ${network.chainID}: Boar's ERC-721 transfer page didn't validate.`,
+    )
+  }
+  return {
+    nftTransfers: response.transfers.flatMap(
+      (transfer) => erc721TransferFrom(transfer, network) ?? [],
+    ),
+    pageKey: response.pageKey,
+  }
+}
+
+/**
+ * The block of an account's first incoming transfer of the kinds Alchemy
+ * tracks, NFTs included, or `null` if it has none. The account held no NFTs
+ * before it. Throws if the answer doesn't validate.
+ */
+export async function getFirstIncomingTransferBlock(
+  provider: SerialFallbackProvider,
+  { address, network }: AddressOnNetwork,
+): Promise<number | null> {
+  const response = await sendAssetTransfersRequest(provider, {
+    fromBlock: "0x0",
+    toBlock: "latest",
+    maxCount: utils.hexValue(1),
+    order: "asc",
+    category: transferCategories(network, true),
+    toAddress: address,
+  })
+  if (response === undefined) {
+    throw new Error(
+      `chain ${network.chainID}: Boar's first transfer response didn't validate.`,
+    )
+  }
+  const [first] = response.transfers
+  return first === undefined ? null : Number(BigInt(first.blockNum))
 }
 
 /**

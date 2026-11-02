@@ -153,6 +153,9 @@ export type ERC20TransferLog = {
  * it only tries to blindly parse each log as if it were an ERC20 Transfer
  * event.
  *
+ * Logs with other than three topics are skipped: ERC-721 `Transfer` shares
+ * the topic hash but indexes its token ID as a fourth topic.
+ *
  * @param logs An arbitrary list of EVMLogs, some of which may represent ERC20
  *        `Transfer` events.
  * @return Information on any logs that were parsable as ERC20 `Transfer`
@@ -162,6 +165,10 @@ export type ERC20TransferLog = {
 export function parseLogsForERC20Transfers(logs: EVMLog[]): ERC20TransferLog[] {
   return logs
     .map(({ contractAddress, data, topics }) => {
+      if (topics.length !== 3) {
+        return undefined
+      }
+
       try {
         const decoded = ERC20_INTERFACE.decodeEventLog(
           ERC20_EVENTS.Transfer,

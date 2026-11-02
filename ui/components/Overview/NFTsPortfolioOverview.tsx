@@ -4,6 +4,7 @@ import {
   selectFilteredNFTsCount,
   selectFilteredNFTCollectionsCount,
   selectFilteredNFTBadgesCount,
+  selectHasFilteredFloorPrices,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useBackgroundSelector, useTotalNFTsFloorPrice } from "../../hooks"
 import SharedTooltip from "../Shared/SharedTooltip"
@@ -18,6 +19,7 @@ export default function NFTsPortfolioOverview(): ReactElement {
   const badgeCount = useBackgroundSelector(selectFilteredNFTBadgesCount)
 
   const { totalFloorPriceInUSD } = useTotalNFTsFloorPrice()
+  const hasFloorPrices = useBackgroundSelector(selectHasFilteredFloorPrices)
   return (
     <section>
       <header>
@@ -25,7 +27,9 @@ export default function NFTsPortfolioOverview(): ReactElement {
         <SharedTooltip width={180} horizontalPosition="right">
           {t("overview.nftsTooltip")}
         </SharedTooltip>
-        <span className="estimate">~${totalFloorPriceInUSD}</span>
+        {hasFloorPrices && (
+          <span className="estimate">~${totalFloorPriceInUSD}</span>
+        )}
       </header>
       <div>
         <Trans
