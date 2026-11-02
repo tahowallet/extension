@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
 import {
@@ -12,23 +12,31 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import {
+  isProbablyEVMAddress,
+  normalizeEVMAddress,
   sameEVMAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
-import { sameNetwork } from "@tallyho/tally-background/networks"
+import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedNetworkIconStack from "../Shared/SharedNetworkIconStack"
 
 type Props = {
-  addressOnNetwork: AddressOnNetwork
+  /**
+   * The address to name, and the network to save the name on. With only a
+   * network, the form asks for the address too.
+   */
+  addressOnNetwork:
+    | AddressOnNetwork
+    | { address?: undefined; network: EVMNetwork }
   /**
    * The name currently saved for this address on its network, if any. When
    * set, the form edits that entry and offers to remove it.
    */
   savedName?: string
-  onSaved?: (name: string) => void
+  onSaved?: (name: string, addressOnNetwork: AddressOnNetwork) => void
   onRemoved?: () => void
 }
 
@@ -37,7 +45,7 @@ type Props = {
  * it on its network, showing which networks the name will apply on.
  */
 export default function AddressBookEntryForm({
-  addressOnNetwork,
+  addressOnNetwork: givenAddressOnNetwork,
   savedName,
   onSaved,
   onRemoved,
@@ -46,9 +54,25 @@ export default function AddressBookEntryForm({
   const dispatch = useBackgroundDispatch()
   const isEditing = savedName !== undefined
 
+  const asksForAddress = givenAddressOnNetwork.address === undefined
+  const { network } = givenAddressOnNetwork
+
   const [name, setName] = useState(savedName ?? "")
   const [error, setError] = useState<string | undefined>()
+  const [enteredAddress, setEnteredAddress] = useState("")
+  const [addressError, setAddressError] = useState<string | undefined>()
   const [isSaving, setIsSaving] = useState(false)
+
+  const address =
+    givenAddressOnNetwork.address ??
+    (isProbablyEVMAddress(enteredAddress.trim())
+      ? normalizeEVMAddress(enteredAddress.trim())
+      : undefined)
+  // Until an address is entered, the name can only apply where it's saved.
+  const addressOnNetwork = useMemo(
+    () => ({ address: address ?? "", network }),
+    [address, network],
+  )
 
   const applicableNetworks = useBackgroundSelector((state) =>
     selectNameApplicableNetworks(state, addressOnNetwork),
@@ -56,6 +80,11 @@ export default function AddressBookEntryForm({
   const entriesOnNetwork = useBackgroundSelector((state) =>
     selectAddressBookEntriesForNetwork(state, addressOnNetwork.network),
   )
+
+  const validateAddress = (candidate: string): string | undefined =>
+    isProbablyEVMAddress(candidate.trim())
+      ? undefined
+      : t("invalidAddressError")
 
   const validate = (candidate: string): string | undefined => {
     const trimmed = candidate.trim()
@@ -65,7 +94,7 @@ export default function AddressBookEntryForm({
     const isTaken = entriesOnNetwork.some(
       (entry) =>
         sameNetwork(entry.network, addressOnNetwork.network) &&
-        !sameEVMAddress(entry.address, addressOnNetwork.address) &&
+        !sameEVMAddress(entry.address, address) &&
         entry.name.trim().toLowerCase() === trimmed.toLowerCase(),
     )
     return isTaken ? t("duplicateNameError") : undefined
@@ -76,14 +105,22 @@ export default function AddressBookEntryForm({
 
     const validationError = validate(name)
     setError(validationError)
-    if (validationError !== undefined) {
+    const enteredAddressError = asksForAddress
+      ? validateAddress(enteredAddress)
+      : undefined
+    setAddressError(enteredAddressError)
+    if (
+      validationError !== undefined ||
+      enteredAddressError !== undefined ||
+      address === undefined
+    ) {
       return
     }
 
     setIsSaving(true)
     try {
       const result = (await dispatch(
-        saveAddressBookEntry({ ...addressOnNetwork, name: name.trim() }),
+        saveAddressBookEntry({ address, network, name: name.trim() }),
       )) as unknown as AddressBookUpdateResult
 
       if (!result.success) {
@@ -100,14 +137,17 @@ export default function AddressBookEntryForm({
           isEditing ? t("editedSnackbar") : t("savedSnackbar"),
         ),
       )
-      onSaved?.(name.trim())
+      onSaved?.(name.trim(), { address, network })
     } finally {
       setIsSaving(false)
     }
   }
 
   const remove = async () => {
-    await dispatch(removeAddressBookEntry(addressOnNetwork))
+    if (address === undefined) {
+      return
+    }
+    await dispatch(removeAddressBookEntry({ address, network }))
     dispatch(setSnackbarMessage(t("removedSnackbar")))
     onRemoved?.()
   }
@@ -120,17 +160,40 @@ export default function AddressBookEntryForm({
       onKeyDown={(event) => event.stopPropagation()}
     >
       <h3 className="title">{isEditing ? t("editTitle") : t("addTitle")}</h3>
-      <div className="address_row">
-        <span className="address" title={addressOnNetwork.address}>
-          {truncateAddress(addressOnNetwork.address)}
-        </span>
-        <SharedNetworkIconStack networks={applicableNetworks} />
-      </div>
+      {asksForAddress ? (
+        <div className="address_input_row">
+          <div className="address_input">
+            <SharedInput
+              id="address_book_entry_address"
+              label={t("addressLabel")}
+              placeholder="0x..."
+              autoFocus
+              focusedLabelBackgroundColor="var(--green-95)"
+              errorMessage={addressError}
+              onChange={(value) => {
+                setEnteredAddress(value ?? "")
+                if (addressError !== undefined) {
+                  setAddressError(validateAddress(value ?? ""))
+                }
+              }}
+            />
+          </div>
+          <SharedNetworkIconStack networks={applicableNetworks} />
+        </div>
+      ) : (
+        <div className="address_row">
+          <span className="address" title={addressOnNetwork.address}>
+            {truncateAddress(addressOnNetwork.address)}
+          </span>
+          <SharedNetworkIconStack networks={applicableNetworks} />
+        </div>
+      )}
       <div className="input_wrap">
         <SharedInput
+          id="address_book_entry_name"
           label={t("nameLabel")}
           value={savedName}
-          autoFocus
+          autoFocus={!asksForAddress}
           autoSelect={isEditing}
           maxLength={64}
           focusedLabelBackgroundColor="var(--green-95)"
@@ -148,7 +211,10 @@ export default function AddressBookEntryForm({
           type="primary"
           size="medium"
           isLoading={isSaving}
-          isDisabled={name.trim() === ""}
+          isDisabled={
+            name.trim() === "" ||
+            (asksForAddress && enteredAddress.trim() === "")
+          }
           onClick={() => save()}
         >
           {isEditing ? t("saveButton") : t("addButton")}
@@ -185,6 +251,16 @@ export default function AddressBookEntryForm({
           justify-content: space-between;
           gap: 8px;
           margin-bottom: 24px;
+        }
+        .address_input_row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        .address_input {
+          flex-grow: 1;
+          min-width: 0;
         }
         .address {
           color: var(--green-40);
