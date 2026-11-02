@@ -1,5 +1,12 @@
 import classNames from "classnames"
-import React, { CSSProperties, ReactElement, useEffect, useState } from "react"
+import React, {
+  CSSProperties,
+  ReactElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 
 type VerticalPosition = "top" | "bottom"
 type HorizontalPosition = "left" | "center" | "right"
@@ -79,10 +86,45 @@ export default function SharedTooltip(props: Props): ReactElement {
     style,
   } = props
   const [isShowingTooltip, setIsShowingTooltip] = useState(isOpen)
+  const tooltipRef = useRef<HTMLDivElement>(null)
+  // The side the tooltip opens on: verticalPosition, unless that runs out of
+  // viewport and the other side doesn't.
+  const [placement, setPlacement] = useState(verticalPosition)
 
   useEffect(() => {
     setIsShowingTooltip(isOpen)
   }, [isOpen])
+
+  // Measured before paint, so a flipped tooltip never shows on the wrong side.
+  useLayoutEffect(() => {
+    const tooltip = tooltipRef.current
+    if (!isShowingTooltip || tooltip === null) {
+      setPlacement(verticalPosition)
+      return
+    }
+
+    const {
+      top,
+      bottom,
+      height: tooltipHeight,
+    } = tooltip.getBoundingClientRect()
+    const anchor = tooltip.parentElement?.getBoundingClientRect()
+    if (anchor === undefined) return
+
+    if (
+      verticalPosition === "bottom" &&
+      bottom > window.innerHeight &&
+      anchor.top - tooltipHeight >= 0
+    ) {
+      setPlacement("top")
+    } else if (
+      verticalPosition === "top" &&
+      top < 0 &&
+      anchor.bottom + tooltipHeight <= window.innerHeight
+    ) {
+      setPlacement("bottom")
+    }
+  }, [isShowingTooltip, verticalPosition])
 
   return (
     <div
@@ -103,6 +145,7 @@ export default function SharedTooltip(props: Props): ReactElement {
       )}
       {!disabled && isShowingTooltip ? (
         <div
+          ref={tooltipRef}
           className={classNames("tooltip", {
             dark: type === "dark",
           })}
@@ -142,7 +185,7 @@ export default function SharedTooltip(props: Props): ReactElement {
             border-radius: 3px;
             padding: 12px;
             z-index: 20;
-            ${getVerticalPosition(verticalPosition, height, verticalShift)}
+            ${getVerticalPosition(placement, height, verticalShift)}
             ${getHorizontalPosition(horizontalPosition, width, horizontalShift)}
           }
           .dark {
