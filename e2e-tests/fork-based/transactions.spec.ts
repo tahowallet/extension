@@ -1,9 +1,24 @@
+import type { Page } from "@playwright/test"
 import { Wallet, utils } from "ethers"
 import { test, expect } from "../utils"
 import ForkEnvHelper from "../utils/fork-env-helper"
 
 const WALLET_JSON = process.env.FORK_TEST_WALLET_JSON_BODY ?? ""
 const WALLET_PASSWORD = process.env.FORK_TEST_WALLET_JSON_PASSWORD ?? ""
+
+/**
+ * Expects an activity list, or its explainer when it's empty. The setup's
+ * transfers land in the list only once the background scan finds them,
+ * which may or may not have happened yet.
+ */
+async function expectActivityListOrExplainer(popup: Page): Promise<void> {
+  await expect(
+    popup
+      .getByText(/^Taho will populate your historical activity/)
+      .or(popup.getByTestId("activity_list").locator("li"))
+      .first(),
+  ).toBeVisible()
+}
 
 test.describe("Transactions @fork", () => {
   const ERC20_ASSET_WALLET = "0x40ec5B33f54e0E8A33A975908C5BA1c14e5BbbDf"
@@ -180,15 +195,7 @@ test.describe("Transactions @fork", () => {
       // Check (maybe?) nonce value timestamp and gas (21k).
       // Open scan website from the link in the header. (optional)
       // Compare values from the scan website and extension. (optional)
-      await expect(
-        popup
-          .getByText(
-            `Taho will populate your historical activity over time; this may
-              take an hour or more for accounts that have been active for a long
-              time. For new accounts, new activity will show up here.`,
-          )
-          .first(),
-      ).toBeVisible()
+      await expectActivityListOrExplainer(popup)
 
       /**
        * Navifgate to `Wallet` -> `Activity`
@@ -201,15 +208,7 @@ test.describe("Transactions @fork", () => {
        */
       // TODO: If we ever fix displaying asset activity on fork, we should
       // repeat the checks of tx details here.
-      await expect(
-        popup
-          .getByText(
-            `Taho will populate your historical activity over time; this may
-            take an hour or more for accounts that have been active for a long
-            time. For new accounts, new activity will show up here.`,
-          )
-          .first(),
-      ).toBeVisible()
+      await expectActivityListOrExplainer(popup)
 
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,
@@ -346,15 +345,7 @@ test.describe("Transactions @fork", () => {
         "https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f",
       )
       // This is what we expect currently on a forked network.
-      await expect(
-        popup
-          .getByText(
-            `Taho will populate your historical activity over time; this may
-          take an hour or more for accounts that have been active for a long
-          time. For new accounts, new activity will show up here.`,
-          )
-          .first(),
-      ).toBeVisible()
+      await expectActivityListOrExplainer(popup)
     })
   })
 
@@ -437,7 +428,9 @@ test.describe("Transactions @fork", () => {
       const ethToken = await popup
         .getByTestId("assets_list")
         .locator("li")
-        .filter({ has: popup.locator("div").filter({ hasText: /^ETH$/ }) })
+        .filter({
+          has: popup.getByTestId("asset_symbol").filter({ hasText: /^ETH$/ }),
+        })
       await expect(ethToken.getByText(/^Ether$/)).toBeVisible()
       await expect(ethToken.getByText(/^\d+/)).toBeVisible()
       await expect(ethToken.locator(".icon")).toHaveCount(0)
@@ -448,7 +441,9 @@ test.describe("Transactions @fork", () => {
       const usdcToken = await popup
         .getByTestId("assets_list")
         .locator("li")
-        .filter({ has: popup.locator("div").filter({ hasText: /^USDC$/ }) })
+        .filter({
+          has: popup.getByTestId("asset_symbol").filter({ hasText: /^USDC$/ }),
+        })
       await expect(usdcToken.getByText(/^USDC$/i)).toBeVisible()
       await expect(usdcToken.getByText(/^2\.62$/)).toBeVisible()
       await expect(usdcToken.locator(".icon")).toBeVisible()
@@ -557,15 +552,7 @@ test.describe("Transactions @fork", () => {
       // Check (maybe?) nonce value timestamp and gas (21k).
       // Open scan website from the link in the header. (optional)
       // Compare values from the scan website and extension. (optional)
-      await expect(
-        popup
-          .getByText(
-            `Taho will populate your historical activity over time; this may
-            take an hour or more for accounts that have been active for a long
-            time. For new accounts, new activity will show up here.`,
-          )
-          .first(),
-      ).toBeVisible()
+      await expectActivityListOrExplainer(popup)
 
       /**
        * Navifgate to `Wallet` -> `Activity`
@@ -578,15 +565,7 @@ test.describe("Transactions @fork", () => {
        */
       // TODO: If we ever fix displaying asset activity on fork, we should
       // repeat the checks of tx details here.
-      await expect(
-        popup
-          .getByText(
-            `Taho will populate your historical activity over time; this may
-              take an hour or more for accounts that have been active for a long
-              time. For new accounts, new activity will show up here.`,
-          )
-          .first(),
-      ).toBeVisible()
+      await expectActivityListOrExplainer(popup)
 
       await walletPageHelper.assertCommonElements(
         /^Ethereum$/,

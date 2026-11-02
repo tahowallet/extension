@@ -166,6 +166,8 @@
   /* Backdrop behind modals and slide-up menus. */
   --overlay: rgba(0, 20, 19, 0.75);
   --overlay-raised: rgba(1, 56, 52, 0.75);
+  /* Behind the details laid over an NFT's image. */
+  --nft-details-backdrop: var(--overlay);
   --overlay-soft: rgba(4, 20, 20, 0.4);
   --overlay-tab: #04141480;
 
@@ -317,6 +319,7 @@
 
   --overlay: rgba(0, 40, 37, 0.45);
   --overlay-raised: rgba(254, 254, 252, 0.8);
+  --nft-details-backdrop: var(--overlay-raised);
   --overlay-soft: rgba(0, 40, 37, 0.12);
   --overlay-tab: #00282533;
 

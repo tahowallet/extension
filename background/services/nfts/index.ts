@@ -1,8 +1,13 @@
 import { fetchJson } from "@ethersproject/web"
 import { Contract } from "ethers"
 import type { AddressOnNetwork } from "../../accounts"
-import { getNFTCollections, getNFTs, getNFTsTransfers } from "../../lib/nfts"
-import { getSimpleHashNFTs } from "../../lib/simple-hash"
+import {
+  getNFTCollections,
+  getNFTs,
+  getNFTsTransfers,
+  NextPagesMap,
+} from "../../lib/nfts"
+import NFTIndexer from "../../lib/nft-indexer"
 import { POAP_COLLECTION_ID } from "../../lib/poap"
 import { NFTCollection, NFT, TransferredNFT } from "../../nfts"
 import BaseService from "../base"
@@ -10,13 +15,14 @@ import ChainService from "../chain"
 
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDB, NFTsDatabase, FreshCollectionsMap } from "./db"
-import { getUNIXTimestamp, normalizeEVMAddress } from "../../lib/utils"
-import { MEZO_TESTNET, MINUTE } from "../../constants"
+import { normalizeEVMAddress } from "../../lib/utils"
+import { MEZO_TESTNET } from "../../constants"
 import { sameNetwork } from "../../networks"
 import MATSNET_NFT_CAMPAIGN, {
   NFT_COLLECTION_ID,
 } from "../campaign/matsnet-nft"
-import { isDisabled } from "../../features"
+import { FeatureFlags, isDisabled, isEnabled } from "../../features"
+import logger from "../../lib/logger"
 
 interface Events extends ServiceLifecycleEvents {
   isReloadingNFTs: boolean
@@ -31,14 +37,12 @@ interface Events extends ServiceLifecycleEvents {
   }
 }
 
-type NextPageURLsMap = { [collectionID: string]: { [address: string]: string } }
-
 export default class NFTsService extends BaseService<Events> {
-  #nextPageUrls: NextPageURLsMap = {}
-
-  #transfersLookupTimestamp: number
+  #nextPages: NextPagesMap = {}
 
   #freshCollections: FreshCollectionsMap = {}
+
+  readonly #indexer: NFTIndexer
 
   static create: ServiceCreatorFunction<
     Events,
@@ -52,7 +56,10 @@ export default class NFTsService extends BaseService<Events> {
     private chainService: ChainService,
   ) {
     super()
-    this.#transfersLookupTimestamp = getUNIXTimestamp() // will be discarded when chainService starts
+    this.#indexer = new NFTIndexer({
+      db,
+      providerFor: (network) => chainService.providerForNetwork(network),
+    })
   }
 
   protected override async internalStartService(): Promise<void> {
@@ -71,8 +78,7 @@ export default class NFTsService extends BaseService<Events> {
     this.chainService.emitter.once("serviceStarted").then(async () => {
       this.emitter.emit("isReloadingNFTs", true)
 
-      const { transfersLookupTimestamp, freshCollections } =
-        await this.db.getPreferences()
+      const { freshCollections } = await this.db.getPreferences()
       let collections = await this.db.getAllCollections() // initialize redux from database if possible
 
       if (!collections.length) {
@@ -80,10 +86,6 @@ export default class NFTsService extends BaseService<Events> {
         await this.initializeCollections()
         collections = await this.db.getAllCollections()
       }
-
-      // use latest lookup timestamp
-      this.#transfersLookupTimestamp =
-        transfersLookupTimestamp ?? (await this.setTransfersLookupTimestamp())
 
       this.#freshCollections = Object.keys(freshCollections).length
         ? freshCollections
@@ -99,6 +101,30 @@ export default class NFTsService extends BaseService<Events> {
         this.emitter.emit("isReloadingNFTs", true)
         await this.initializeCollections([addressOnNetwork])
         this.emitter.emit("isReloadingNFTs", false)
+      },
+    )
+
+    this.chainService.emitter.on(
+      "nftTransfers",
+      async ({ addressNetwork, nftTransfers }) => {
+        if (!isEnabled(FeatureFlags.SUPPORT_NFT_INDEXER)) {
+          return
+        }
+        try {
+          const added = await this.#indexer.recordTransfers(
+            addressNetwork,
+            nftTransfers,
+          )
+          if (added > 0) {
+            await this.refreshIndexedCollections([addressNetwork])
+          }
+        } catch (error) {
+          logger.warn(
+            `chain ${addressNetwork.network.chainID}: couldn't index NFT transfers.`,
+            { address: addressNetwork.address },
+            error,
+          )
+        }
       },
     )
   }
@@ -120,18 +146,23 @@ export default class NFTsService extends BaseService<Events> {
 
     if (!accountsToFetch.length) return
 
-    const transfers = await this.fetchTransferredNFTs(accountsToFetch)
-
-    if (transfers.length) {
-      await this.fetchCollections(accountsToFetch) // refetch only if there are some transfers
-    }
+    await this.refreshIndexedCollections(accountsToFetch)
     await this.fetchPOAPs(accountsToFetch)
     await this.fetchCampaignNFTs(accountsToFetch)
   }
 
+  /** Checks indexed NFTs' ownership, refetching collections on changes. */
+  async refreshIndexedCollections(accounts: AddressOnNetwork[]): Promise<void> {
+    const transfers = await this.fetchTransferredNFTs(accounts)
+
+    if (transfers.length) {
+      await this.fetchCollections(accounts) // refetch only if there are some transfers
+    }
+  }
+
   async fetchCollections(accounts: AddressOnNetwork[]): Promise<void> {
     await Promise.all(
-      getNFTCollections(accounts).map(async (request) =>
+      getNFTCollections(accounts, this.#indexer).map(async (request) =>
         request.then(async (collections) => {
           await this.db.updateCollections(collections)
 
@@ -165,10 +196,12 @@ export default class NFTsService extends BaseService<Events> {
       await this.fetchNFTsFromDatabase(collectionID, account)
     } else {
       await Promise.allSettled(
-        getNFTs([account], [collectionID]).map(async (request) => {
-          const { nfts, nextPageURLs } = await request
-          await this.updateSavedNFTs(collectionID, account, nfts, nextPageURLs)
-        }),
+        getNFTs([account], [collectionID], this.#indexer).map(
+          async (request) => {
+            const { nfts, nextPages } = await request
+            await this.updateSavedNFTs(collectionID, account, nfts, nextPages)
+          },
+        ),
       )
     }
   }
@@ -243,7 +276,7 @@ export default class NFTsService extends BaseService<Events> {
       collectionID,
       account,
       nfts: await this.db.getCollectionNFTsForAccount(collectionID, account),
-      hasNextPage: !!this.#nextPageUrls[collectionID]?.[account.address],
+      hasNextPage: !!this.#nextPages[collectionID]?.[account.address],
     })
   }
 
@@ -251,22 +284,21 @@ export default class NFTsService extends BaseService<Events> {
     collectionID: string,
     account: AddressOnNetwork,
   ): Promise<void> {
-    const nextPage = this.#nextPageUrls[collectionID]?.[account.address]
+    const page = this.#nextPages[collectionID]?.[account.address]
 
-    if (nextPage) {
-      await getSimpleHashNFTs(
+    if (page) {
+      const { nfts, nextPage } = await this.#indexer.getNFTs(
         account.address,
         collectionID,
         [account.network.chainID],
-        nextPage,
-      ).then(async ({ nfts, nextPageURL }) => {
-        delete this.#nextPageUrls[collectionID][account.address]
+        page,
+      )
+      delete this.#nextPages[collectionID][account.address]
 
-        const nextPageMap: NextPageURLsMap = nextPageURL
-          ? { [collectionID]: { [account.address]: nextPageURL } }
-          : {}
-        await this.updateSavedNFTs(collectionID, account, nfts, nextPageMap)
-      })
+      const nextPages: NextPagesMap = nextPage
+        ? { [collectionID]: { [account.address]: nextPage } }
+        : {}
+      await this.updateSavedNFTs(collectionID, account, nfts, nextPages)
     }
   }
 
@@ -274,7 +306,7 @@ export default class NFTsService extends BaseService<Events> {
     collectionID: string,
     account: AddressOnNetwork,
     nfts: NFT[],
-    nextPageURLs: NextPageURLsMap,
+    nextPages: NextPagesMap,
   ): Promise<void> {
     await this.db.updateNFTs(nfts)
 
@@ -283,7 +315,7 @@ export default class NFTsService extends BaseService<Events> {
       account,
     )
 
-    this.updateNextPages(nextPageURLs)
+    this.updateNextPages(nextPages)
 
     let updatedCollection: NFTCollection | undefined
 
@@ -318,7 +350,7 @@ export default class NFTsService extends BaseService<Events> {
     this.setFreshCollection(collectionID, account.address, !!updatedNFTs.length)
     await this.db.setFreshCollections(this.#freshCollections)
 
-    const hasNextPage = !!Object.keys(nextPageURLs).length
+    const hasNextPage = !!Object.keys(nextPages).length
 
     await this.emitter.emit("updateNFTs", {
       collectionID,
@@ -328,11 +360,11 @@ export default class NFTsService extends BaseService<Events> {
     })
   }
 
-  updateNextPages(nextPageURLs: NextPageURLsMap): void {
-    Object.keys(nextPageURLs).forEach((collectionID) =>
-      Object.entries(nextPageURLs[collectionID]).forEach(([address, url]) => {
-        this.#nextPageUrls[collectionID] ??= {}
-        this.#nextPageUrls[collectionID][address] = url
+  updateNextPages(nextPages: NextPagesMap): void {
+    Object.keys(nextPages).forEach((collectionID) =>
+      Object.entries(nextPages[collectionID]).forEach(([address, page]) => {
+        this.#nextPages[collectionID] ??= {}
+        this.#nextPages[collectionID][address] = page
       }),
     )
   }
@@ -359,22 +391,10 @@ export default class NFTsService extends BaseService<Events> {
     await this.db.setFreshCollections(this.#freshCollections)
   }
 
-  async setTransfersLookupTimestamp(): Promise<number> {
-    // indexing transfers can take some time, let's add some margin to the timestamp
-    const timestamp = getUNIXTimestamp(Date.now() - 2 * MINUTE)
-    await this.db.setTransfersLookupTimestamp(timestamp)
-    return timestamp
-  }
-
   async fetchTransferredNFTs(
     accounts: AddressOnNetwork[],
   ): Promise<TransferredNFT[]> {
-    const transfers = await getNFTsTransfers(
-      accounts,
-      this.#transfersLookupTimestamp,
-    )
-
-    this.#transfersLookupTimestamp = await this.setTransfersLookupTimestamp()
+    const transfers = await getNFTsTransfers(accounts, this.#indexer)
 
     // mark collections with transferred NFTs to be refetched
     transfers.forEach((transfer) => {

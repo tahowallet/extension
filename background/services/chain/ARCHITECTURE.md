@@ -22,8 +22,9 @@ relative to it.
 | `TransactionSubmitter`      | `transaction-submitter.ts`       | Populating requests, estimating gas, and broadcasting signed transactions.                                                                                                                       |
 | `NonceAllocator`            | `nonce-allocator.ts`             | Nonces for outgoing transactions, per address and chain.                                                                                                                                         |
 | `AssetTransferScanner`      | `asset-transfer-scanner.ts`      | Recent and historic asset transfer scans, which queue lookups for transactions they find.                                                                                                        |
+| `NFTLogScanner`             | `nft-log-scanner.ts`             | With the NFT indexer on, paced ERC-721 log scans on the indexer's networks and their cursors.                                                                                                    |
 | `AssetDataHelper`           | `asset-data-helper.ts`           | Token balances and transfers, from Alchemy methods or logs.                                                                                                                                      |
-| `ChainDatabase`             | `db.ts`                          | IndexedDB: networks, endpoints, transactions, blocks, balances.                                                                                                                                  |
+| `ChainDatabase`             | `db.ts`                          | IndexedDB: networks, endpoints, transactions, blocks, balances, NFT log scan cursors.                                                                                                            |
 
 ### RPC provider stack
 
@@ -324,6 +325,62 @@ it, and a range entirely below it is `LogHistoryUnavailableError`, where
 the range asked for is the floor. Range refusals and pruned history are
 about the request, so they aren't endpoint faults; pruned history moves on
 to the next endpoint, which may keep more.
+
+ERC-721 `Transfer` shares ERC-20's topic hash, with the token ID as a
+fourth topic, so the same queries find NFT transfers. Logs with three
+topics are ERC-20 transfers and logs with four are ERC-721 ones. With
+`SUPPORT_NFT_INDEXER` on, Alchemy-capable networks add the `erc721`
+category to the transfer call they already make. The scanner emits
+ERC-721 transfers as `nftTransfers`, without queueing transaction
+lookups, and `NFTsService` indexes them (`lib/nft-indexer`).
+
+That call returns 25 transfers, shared with ERC-20 ones, and other
+networks' transfer scans cover only the blocks they're asked for, so with
+the flag on `NFTLogScanner` scans ERC-721 logs over each account's whole
+history on every network the indexer covers. It keeps only four-topic
+logs, so ERC-20 transfers still come from the transfer scans. Without
+Alchemy's API, an account's scan queues every block from genesis to the
+head. With it, an account's scan starts by reporting up to three pages
+each way of Alchemy's ERC-721 transfers, a thousand to a page, which is a
+handful of requests against the thousands of `eth_getLogs` ones the same
+history takes. It then queues the blocks from the account's first
+incoming transfer, which Alchemy finds with one request, to the head;
+an account that never received anything scans new blocks only.
+
+The log scan fills what the pages didn't reach first. Pages run newest
+first, so when a direction's pages stop at the cap, blocks from the first
+transfer up to the oldest block they reached are queued first, that block
+included since a page can end partway through it. Steps query both
+directions, so the queue takes whichever direction reached less far. The
+blocks the pages covered are queued after it, as a check that costs
+nothing until the rest is done. When both directions' pages ran out, they
+held every transfer and only new blocks are scanned. When the pages failed
+or reached nothing, the whole history is queued, newest first.
+
+The `nftTransferLogs` alarm ticks once a minute. A tick takes up to five
+steps per chain, shared by its accounts in turn, and stops after 20
+seconds. A step is two `eth_getLogs` requests over the newest 10,000
+pending blocks, Boar's cap, or the narrower range the endpoints taught
+the provider. Once the range is known, a chain gets at most ten
+`eth_getLogs` requests a minute, however many accounts it has, and
+mainnet's 24 million blocks take about eight hours of ticks for one
+account. Chains with faster blocks, such as Arbitrum, take far longer,
+which is what the Alchemy pages and the first transfer are for; without
+them, the whole chain is scanned at the same pace. New
+blocks are queued ahead of older history. A tick starts at most one new
+account per chain, and doesn't run while the chain is unreachable or
+`canServeNow("eth_getLogs")` says Boar is cooling down, so it never
+probes Boar. Refused ranges and pruned history aren't endpoint faults,
+so they don't cool Boar down either. A failed step ends the chain's tick
+and is retried next tick; pruned history ends the scan at the earliest
+block kept. Each account's cursor, in
+`nftLogScanCursors` keyed by chain and account, holds the newest block
+reached and the ranges left in the order they're scanned, and is saved with the tick's
+transfers at the end of the tick, so a restart repeats at most one tick.
+
+The ledger keys each transfer by chain, account, contract, token,
+lowercased transaction hash and log index, so a transfer both sources
+report is one entry, and `ownerOf` still decides what the account holds.
 
 ### Logging and errors
 
@@ -677,6 +734,9 @@ classDiagram
     +scanRecentTransfers(options)
     +scanHistoricTransfers()
   }
+  class NFTLogScanner {
+    +tick()
+  }
   class ChainDatabase
   class AssetDataHelper
   ChainService *-- ProviderRegistry
@@ -686,6 +746,7 @@ classDiagram
   ChainService *-- TransactionSubmitter
   ChainService *-- NonceAllocator
   ChainService *-- AssetTransferScanner
+  ChainService *-- NFTLogScanner
   ChainService *-- AssetDataHelper
   ChainService --> ChainDatabase
   NetworkSettings --> ProviderRegistry : updateEndpoints, replaceProvider, removeProvider
@@ -702,6 +763,8 @@ classDiagram
   NetworkSettings --> ChainDatabase
   TransactionTracker --> ChainDatabase
   AssetTransferScanner --> ChainDatabase
+  NFTLogScanner --> ChainDatabase
+  NFTLogScanner ..> ChainService : providerFor, nftTransfers events
 ```
 
 The parts don't hold each other, apart from `NetworkSettings` holding the

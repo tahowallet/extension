@@ -8,10 +8,17 @@ import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-e
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
+  getERC721TransfersViaLogs,
   learntEarliestLogBlock,
   learntMaxBlockRange,
   MINIMUM_LOG_BLOCK_RANGE,
 } from "../erc20-transfer-logs"
+import {
+  BURN,
+  erc721TransferLog,
+  SELF_TRANSFER,
+  TRANSFER_IN,
+} from "./fixtures/erc721/transfer-logs"
 
 const ACCOUNT_ADDRESS = "0x1111111111111111111111111111111111111111"
 const COUNTERPARTY_ADDRESS = "0x2222222222222222222222222222222222222222"
@@ -100,7 +107,7 @@ describe("getAssetTransfersViaLogs", () => {
     ])
     getLogs.mockResolvedValueOnce([])
 
-    const transfers = await getAssetTransfersViaLogs(
+    const { assetTransfers: transfers } = await getAssetTransfersViaLogs(
       provider,
       ADDRESS_ON_NETWORK,
       100,
@@ -152,7 +159,7 @@ describe("getAssetTransfersViaLogs", () => {
       },
     )
 
-    const transfers = await getAssetTransfersViaLogs(
+    const { assetTransfers: transfers } = await getAssetTransfersViaLogs(
       provider,
       ADDRESS_ON_NETWORK,
       fromBlock,
@@ -220,7 +227,7 @@ describe("getAssetTransfersViaLogs", () => {
 
       await expect(
         getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 4_999, true),
-      ).resolves.toEqual([])
+      ).resolves.toEqual({ assetTransfers: [], nftTransfers: [] })
 
       // Every range the provider actually served was within its cap, and the
       // whole 5000-block span is covered by them.
@@ -422,7 +429,7 @@ describe("getAssetTransfersViaLogs", () => {
           105_002_000,
           true,
         ),
-      ).resolves.toEqual([])
+      ).resolves.toEqual({ assetTransfers: [], nftTransfers: [] })
 
       expect(ranges).toEqual([
         [0, 105_002_000],
@@ -487,7 +494,7 @@ describe("getAssetTransfersViaLogs", () => {
         },
       )
 
-      const transfers = await getAssetTransfersViaLogs(
+      const { assetTransfers: transfers } = await getAssetTransfersViaLogs(
         provider,
         ADDRESS_ON_NETWORK,
         0,
@@ -514,7 +521,7 @@ describe("getAssetTransfersViaLogs", () => {
     getLogs.mockResolvedValueOnce([selfTransferLog])
     getLogs.mockResolvedValueOnce([selfTransferLog])
 
-    const transfers = await getAssetTransfersViaLogs(
+    const { assetTransfers: transfers } = await getAssetTransfersViaLogs(
       provider,
       ADDRESS_ON_NETWORK,
       100,
@@ -545,7 +552,7 @@ describe("getAssetTransfersViaLogs", () => {
     ])
     getLogs.mockResolvedValueOnce([])
 
-    const transfers = await getAssetTransfersViaLogs(
+    const { assetTransfers: transfers } = await getAssetTransfersViaLogs(
       provider,
       ADDRESS_ON_NETWORK,
       100,
@@ -553,5 +560,89 @@ describe("getAssetTransfersViaLogs", () => {
     )
 
     expect(transfers.map(({ txHash }) => txHash)).toEqual(["0xgood"])
+  })
+
+  describe("with ERC-721 transfers among the logs", () => {
+    it("returns four-topic logs as NFT transfers, apart from ERC-20 ones", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockResolvedValueOnce([
+        transferLog({ txHash: "0xerc20", logIndex: 1 }),
+        TRANSFER_IN,
+      ])
+      getLogs.mockResolvedValueOnce([BURN])
+
+      const { assetTransfers, nftTransfers } = await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        100,
+      )
+
+      expect(assetTransfers.map(({ txHash }) => txHash)).toEqual(["0xerc20"])
+      expect(
+        nftTransfers.map(({ tokenId, blockNumber }) => [tokenId, blockNumber]),
+      ).toEqual([
+        ["3", 12],
+        ["2", 20],
+      ])
+      expect(nftTransfers[0].network).toBe(ETHEREUM)
+    })
+
+    it("de-duplicates an NFT self-transfer seen by both queries", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockResolvedValueOnce([SELF_TRANSFER])
+      getLogs.mockResolvedValueOnce([SELF_TRANSFER])
+
+      const { nftTransfers } = await getAssetTransfersViaLogs(
+        provider,
+        ADDRESS_ON_NETWORK,
+        0,
+        100,
+      )
+
+      expect(nftTransfers).toHaveLength(1)
+    })
+
+    it("drops four-topic logs of other events", async () => {
+      const { getLogs, provider } = stubProvider()
+      const other = erc721TransferLog({
+        from: ACCOUNT_ADDRESS,
+        to: COUNTERPARTY_ADDRESS,
+        tokenId: 1n,
+      })
+      other.topics[0] = utils.id("Approval(address,address,uint256)")
+      getLogs.mockResolvedValueOnce([other])
+      getLogs.mockResolvedValueOnce([])
+
+      await expect(
+        getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 100),
+      ).resolves.toEqual({ assetTransfers: [], nftTransfers: [] })
+    })
+  })
+})
+
+describe("getERC721TransfersViaLogs", () => {
+  it("returns only ERC-721 transfers, from both directions", async () => {
+    const { getLogs, provider } = stubProvider()
+    getLogs.mockResolvedValueOnce([
+      transferLog({ txHash: "0xerc20", logIndex: 1 }),
+      TRANSFER_IN,
+      SELF_TRANSFER,
+    ])
+    getLogs.mockResolvedValueOnce([BURN, SELF_TRANSFER])
+
+    const nftTransfers = await getERC721TransfersViaLogs(
+      provider,
+      ADDRESS_ON_NETWORK,
+      0,
+      100,
+    )
+
+    expect(getLogs).toHaveBeenCalledTimes(2)
+    expect(nftTransfers.map(({ txHash }) => txHash)).toEqual([
+      TRANSFER_IN.transactionHash,
+      SELF_TRANSFER.transactionHash,
+      BURN.transactionHash,
+    ])
   })
 })

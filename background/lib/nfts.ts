@@ -1,9 +1,4 @@
 import type { AddressOnNetwork } from "../accounts"
-import {
-  getSimpleHashCollections,
-  getSimpleHashNFTs,
-  getSimpleHashNFTsTransfers,
-} from "./simple-hash"
 import { getPoapNFTs, getPoapCollections, POAP_COLLECTION_ID } from "./poap"
 import {
   NFT,
@@ -12,9 +7,15 @@ import {
   NFTCollection,
   TransferredNFT,
 } from "../nfts"
-import type { UNIXTime } from "../types"
 import { MEZO_TESTNET } from "../constants"
 import { NFT_COLLECTION_ID } from "../services/campaign/matsnet-nft"
+import { FeatureFlags, isEnabled } from "../features"
+import type NFTIndexer from "./nft-indexer"
+
+/** Cursors of the next pages, by collection and address. */
+export type NextPagesMap = {
+  [collectionID: string]: { [address: string]: string }
+}
 
 function groupChainsByAddress(accounts: AddressOnNetwork[]) {
   return accounts.reduce<{ [address: string]: string[] }>((acc, account) => {
@@ -30,21 +31,30 @@ function groupChainsByAddress(accounts: AddressOnNetwork[]) {
   }, {})
 }
 
+/** The networks among `chainIDs` the indexer serves, while it's enabled. */
+function indexedChains(chainIDs: string[]): string[] {
+  if (!isEnabled(FeatureFlags.SUPPORT_NFT_INDEXER)) {
+    return []
+  }
+  return chainIDs.filter((chainID) =>
+    NFT_PROVIDER_TO_CHAIN.indexer.includes(chainID),
+  )
+}
+
 export function getNFTs(
   accounts: AddressOnNetwork[],
   collections: string[],
+  indexer: NFTIndexer,
 ): Promise<{
   nfts: NFT[]
-  nextPageURLs: { [collectionID: string]: { [address: string]: string } }
+  nextPages: NextPagesMap
 }>[] {
   const chainIDsByAddress = groupChainsByAddress(accounts)
 
   return Object.entries(chainIDsByAddress).flatMap(
     async ([address, chainIDs]) => {
       const nfts: NFT[] = []
-      const nextPageURLs: {
-        [collectionID: string]: { [address: string]: string }
-      } = {}
+      const nextPages: NextPagesMap = {}
 
       const poapChains = chainIDs.filter((chainID) =>
         NFT_PROVIDER_TO_CHAIN.poap.includes(chainID),
@@ -55,23 +65,22 @@ export function getNFTs(
         nfts.push(...poapNFTs)
       }
 
-      const simpleHashChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID),
-      )
+      const chainsToIndex = indexedChains(chainIDs)
 
-      if (simpleHashChains.length) {
+      if (chainsToIndex.length) {
         await Promise.allSettled(
           collections.map(async (collectionID) => {
-            if (collectionID === POAP_COLLECTION_ID) return // Don't fetch POAP from SimpleHash
+            const { nfts: indexedNFTs, nextPage } = await indexer.getNFTs(
+              address,
+              collectionID,
+              chainsToIndex,
+            )
 
-            const { nfts: simpleHashNFTs, nextPageURL } =
-              await getSimpleHashNFTs(address, collectionID, simpleHashChains)
+            nfts.push(...indexedNFTs)
 
-            nfts.push(...simpleHashNFTs)
-
-            if (nextPageURL) {
-              nextPageURLs[collectionID] ??= {}
-              nextPageURLs[collectionID][address] = nextPageURL
+            if (nextPage) {
+              nextPages[collectionID] ??= {}
+              nextPages[collectionID][address] = nextPage
             }
           }),
         )
@@ -79,7 +88,7 @@ export function getNFTs(
 
       return {
         nfts,
-        nextPageURLs,
+        nextPages,
       }
     },
   )
@@ -87,6 +96,7 @@ export function getNFTs(
 
 export function getNFTCollections(
   accounts: AddressOnNetwork[],
+  indexer: NFTIndexer,
 ): Promise<NFTCollection[]>[] {
   const chainIDsByAddress = groupChainsByAddress(accounts)
 
@@ -119,12 +129,12 @@ export function getNFTCollections(
         })
       }
 
-      const simpleHashChains = chainIDs.filter((chainID) =>
-        NFT_PROVIDER_TO_CHAIN.simplehash.includes(chainID),
-      )
+      const chainsToIndex = indexedChains(chainIDs)
 
-      if (simpleHashChains.length) {
-        collections.push(...(await getSimpleHashCollections(address, chainIDs)))
+      if (chainsToIndex.length) {
+        collections.push(
+          ...(await indexer.getNFTCollections(address, chainsToIndex)),
+        )
       }
 
       return collections
@@ -132,28 +142,20 @@ export function getNFTCollections(
   )
 }
 
+/**
+ * NFTs the accounts gained or lost since ownership was last checked on the
+ * indexer's networks.
+ */
 export async function getNFTsTransfers(
   accounts: AddressOnNetwork[],
-  timestamp: UNIXTime,
+  indexer: NFTIndexer,
 ): Promise<TransferredNFT[]> {
-  const { addresses, chains } = accounts.reduce<{
-    addresses: Set<string>
-    chains: Set<string>
-  }>(
-    (acc, account) => {
-      acc.addresses.add(account.address)
-      acc.chains.add(account.network.chainID)
-
-      return acc
-    },
-    { addresses: new Set(), chains: new Set() },
+  const indexedAccounts = accounts.filter(
+    ({ network: { chainID } }) => indexedChains([chainID]).length > 0,
   )
+  if (!indexedAccounts.length) {
+    return []
+  }
 
-  const transfers = await getSimpleHashNFTsTransfers(
-    [...addresses],
-    [...chains],
-    timestamp,
-  )
-
-  return transfers
+  return indexer.getNFTsTransfers(indexedAccounts)
 }

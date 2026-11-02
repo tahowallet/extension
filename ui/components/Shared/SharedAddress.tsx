@@ -134,7 +134,7 @@ export default function SharedAddress({
       className={classNames({ ellipsis: elide })}
     >
       <p className={classNames({ ellipsis: elide })}>
-        {trimWithEllipsis(primaryText, 15)}
+        {elide ? primaryText : trimWithEllipsis(primaryText, 15)}
         {name !== undefined && nameResolverSystem !== undefined && (
           <>
             <SharedTooltip width={130}>
