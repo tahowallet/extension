@@ -4,6 +4,7 @@ import Snackbar from "../Snackbar/Snackbar"
 import TabBar from "../TabBar/TabBar"
 import TopMenu from "../TopMenu/TopMenu"
 import ErrorFallback from "../../pages/ErrorFallback"
+import { useIsEmbeddedPage } from "../FullTab/EmbeddedPageContext"
 
 interface Props {
   children?: React.ReactNode
@@ -20,16 +21,20 @@ export default function CorePage({
   hasTopBar = false,
   hasTabBar = false,
 }: Props): ReactElement {
+  // Inside the full-tab view, the view's own left nav replaces the popup's top
+  // and tab bars, so they aren't rendered.
+  const isEmbedded = useIsEmbeddedPage()
+
   return (
     <section>
-      {hasTopBar && <TopMenu />}
+      {hasTopBar && !isEmbedded && <TopMenu />}
       <main>
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           {children}
         </ErrorBoundary>
         <Snackbar />
       </main>
-      {hasTabBar && <TabBar />}
+      {hasTabBar && !isEmbedded && <TabBar />}
       <style jsx>
         {`
           section {
