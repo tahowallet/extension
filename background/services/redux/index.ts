@@ -898,6 +898,13 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async connectNameService(): Promise<void> {
+    // The signing service depends on the name service, so the name service is
+    // handed its control compatibility check rather than depending on it back.
+    this.nameService.setAddressControlCompatibilityCheck(
+      (addressOnNetwork, otherNetwork) =>
+        this.signingService.isControlCompatible(addressOnNetwork, otherNetwork),
+    )
+
     this.nameService.emitter.on("addressBook", (entries) => {
       this.store.dispatch(setAddressBook(entries))
     })
@@ -1034,6 +1041,9 @@ export default class ReduxService extends BaseService<never> {
 
     this.signingService.emitter.on("controlCompatibility", (compatibility) => {
       this.store.dispatch(setControlCompatibility(compatibility))
+      // Which networks an address book entry applies on follows control
+      // compatibility, so names may need to change with it.
+      void this.nameService.refreshAddressBookNames()
     })
   }
 
