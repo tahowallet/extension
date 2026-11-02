@@ -59,7 +59,9 @@ export default function DAppConnectPage({
   return (
     <>
       <DAppConnectionInfoBar />
-      <section className="standard_width">
+      <section
+        className={`standard_width${additionalNetwork === undefined ? "" : " additional_network"}`}
+      >
         <h1 className="serif_header">
           {additionalNetwork === undefined
             ? t("connectToDapp")
@@ -139,6 +141,9 @@ export default function DAppConnectPage({
           margin-top: 45px;
           margin-bottom: 25px;
           text-align: center;
+        }
+        .additional_network h1 {
+          margin-top: 24px;
         }
         .permissions_list {
           margin-left: 16px;
