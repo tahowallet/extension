@@ -291,7 +291,7 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
           padding: 4px 8px;
           width: calc(100% - 48px);
           justify-content: space-between;
-          background: var(--overlay); // --green-120
+          background: var(--nft-details-backdrop);
           border-radius: 8px;
         }
         .preview_backdrop {
