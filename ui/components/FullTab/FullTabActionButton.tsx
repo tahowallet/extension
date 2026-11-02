@@ -21,11 +21,12 @@ export default function FullTabActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={title}
+      title={title ?? label}
+      aria-label={label}
       className="action"
     >
       <span className="action_icon" aria-hidden />
-      {label}
+      <span className="label">{label}</span>
       <style jsx>{`
         .action {
           display: inline-flex;
@@ -57,6 +58,16 @@ export default function FullTabActionButton({
         }
         .action:enabled:active {
           transform: scale(0.96);
+        }
+        @media (max-width: 1180px) {
+          .action {
+            padding: 0;
+            width: 32px;
+            justify-content: center;
+          }
+          .label {
+            display: none;
+          }
         }
         .action:disabled {
           cursor: default;
