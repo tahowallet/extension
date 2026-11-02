@@ -35,19 +35,13 @@ export type {
 
 export type Preferences = Omit<DbPreferences, "id" | "savedAt">
 
-type AddressBookEntry = {
+type KnownContract = {
   network: EVMNetwork
   address: HexString
   name: string
 }
 
-type InMemoryAddressBook = AddressBookEntry[]
-
-const sameAddressBookEntry = (a: AddressOnNetwork, b: AddressOnNetwork) =>
-  normalizeEVMAddress(a.address) === normalizeEVMAddress(b.address) &&
-  sameNetwork(a.network, b.network)
-
-const BUILT_IN_CONTRACTS = [
+const BUILT_IN_CONTRACTS: KnownContract[] = [
   {
     network: ETHEREUM,
     // 0x v1 Exchange Proxy
@@ -157,7 +151,6 @@ interface Events extends ServiceLifecycleEvents {
   initializeNotificationsPreferences: boolean
   initializeShowTestNetworks: boolean
   updateAnalyticsPreferences: AnalyticsPreferences
-  addressBookEntryModified: AddressBookEntry
   updatedSignerSettings: AccountSignerSettings[]
   updateAutoLockInterval: UNIXTime
   dismissableItemMarkedAsShown: DismissableItem
@@ -169,9 +162,7 @@ interface Events extends ServiceLifecycleEvents {
  * event when preferences change.
  */
 export default class PreferenceService extends BaseService<Events> {
-  private knownContracts: InMemoryAddressBook = BUILT_IN_CONTRACTS
-
-  private addressBook: InMemoryAddressBook = []
+  private knownContracts: KnownContract[] = BUILT_IN_CONTRACTS
 
   /*
    * Create a new PreferenceService. The service isn't initialized until
@@ -222,42 +213,8 @@ export default class PreferenceService extends BaseService<Events> {
     await super.internalStopService()
   }
 
-  // TODO Implement the following 6 methods as something stored in the database
-  // TODO and user-manageable.
-
-  addOrEditNameInAddressBook(newEntry: AddressBookEntry): void {
-    const correspondingEntryIndex = this.addressBook.findIndex((entry) =>
-      sameAddressBookEntry(newEntry, entry),
-    )
-    if (correspondingEntryIndex !== -1) {
-      this.addressBook[correspondingEntryIndex] = newEntry
-    } else {
-      this.addressBook.push({
-        network: newEntry.network,
-        name: newEntry.name,
-        address: normalizeEVMAddress(newEntry.address),
-      })
-    }
-    this.emitter.emit("addressBookEntryModified", newEntry)
-  }
-
-  lookUpAddressForName({
-    name,
-    network,
-  }: NameOnNetwork): AddressOnNetwork | undefined {
-    return this.addressBook.find(
-      ({ name: entryName, network: entryNetwork }) =>
-        sameNetwork(network, entryNetwork) && name === entryName,
-    )
-  }
-
-  lookUpNameForAddress(
-    addressOnNetwork: AddressOnNetwork,
-  ): NameOnNetwork | undefined {
-    return this.addressBook.find((addressBookEntry) =>
-      sameAddressBookEntry(addressBookEntry, addressOnNetwork),
-    )
-  }
+  // The user's address book is held by the NameService; these cover the
+  // built-in names for well-known contracts.
 
   async lookUpAddressForContractName({
     name,
