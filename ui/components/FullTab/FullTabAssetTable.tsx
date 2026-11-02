@@ -213,6 +213,13 @@ export default function FullTabAssetTable({
         tr.clickable {
           cursor: pointer;
         }
+        /* Row icon colors match the popup's asset rows, including on hover. */
+        tbody tr {
+          --asset-icon-color: var(--green-60);
+        }
+        tbody tr:hover {
+          --asset-icon-color: var(--green-40);
+        }
         tr.clickable:hover td {
           background-color: var(--green-95);
         }
@@ -235,7 +242,7 @@ export default function FullTabAssetTable({
           padding-right: 0;
         }
         th.actions {
-          width: 200px;
+          width: 96px;
         }
         /* In narrow windows, the unit price column is hidden and the other
            numeric columns widen to take its space. */
@@ -246,17 +253,14 @@ export default function FullTabAssetTable({
           th.numeric {
             width: 22%;
           }
-          th.actions {
-            width: 104px;
-          }
         }
         .actions {
           white-space: nowrap;
         }
         .actions_wrap {
           display: flex;
-          gap: 8px;
           justify-content: flex-end;
+          align-items: center;
         }
         .asset {
           display: flex;

@@ -70,12 +70,6 @@ export default function WalletAssetListItem(props: Props): ReactElement {
             height: 22px;
             mask-image: url("./images/gift@2x.png");
           }
-          .asset_icon_send {
-            mask-image: url("./images/send_asset.svg");
-          }
-          .asset_icon_swap {
-            mask-image: url("./images/swap_asset.svg");
-          }
         `}
       </style>
     </li>
