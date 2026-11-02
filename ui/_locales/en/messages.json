@@ -1171,6 +1171,7 @@
     "appliesOnNetworks_other": "Name applies on {{count}} networks: {{networks}}",
     "appliesOnLabel": "Applies on",
     "appliesOnExplainer": "Names apply on the network they're saved on, and on other networks only where the wallet knows the same keys control the address.",
-    "settingsTitle": "Address book"
+    "settingsTitle": "Address book",
+    "addButtonSettings": "Add address"
   }
 }
