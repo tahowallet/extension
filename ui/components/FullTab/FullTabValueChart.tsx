@@ -43,6 +43,13 @@ type History = AsyncThunkFulfillmentType<typeof fetchValueHistory> & {
   rangeKey: RangeKey
 }
 
+const emptyHistory = (rangeKey: RangeKey): History => ({
+  points: [],
+  coverageStart: undefined,
+  backfilling: false,
+  rangeKey,
+})
+
 const formatValue = (value: number, compact = false) =>
   `$${value.toLocaleString(undefined, {
     maximumFractionDigits: compact && value >= 1000 ? 0 : 2,
@@ -107,29 +114,38 @@ export default function FullTabValueChart({
       inFlight.current = true
       setLoading(true)
       const to = Date.now()
-      const result = (await dispatch(
-        fetchValueHistory({
-          addresses,
-          chainIDs,
-          assetID,
-          from: to - range.span,
-          to,
-          samples: SAMPLES,
-        }),
-      )) as unknown as History | { payload?: History }
-      inFlight.current = false
-      // The background answers with the thunk's fulfilled action.
-      const value = "points" in result ? result : result.payload
-      if (!cancelled) {
-        setLoading(false)
-        setHistory({
-          ...(value ?? {
-            points: [],
-            coverageStart: undefined,
-            backfilling: false,
+      try {
+        const result = (await dispatch(
+          fetchValueHistory({
+            addresses,
+            chainIDs,
+            assetID,
+            from: to - range.span,
+            to,
+            samples: SAMPLES,
           }),
-          rangeKey,
-        })
+        )) as unknown as History | { payload?: History }
+        // The background answers with the thunk's resulting action rather
+        // than its value, and a rejected action carries no payload.
+        const value = "points" in result ? result : result.payload
+        if (!cancelled) {
+          // If the request failed, keep what's already drawn; the next
+          // refresh will try again.
+          setHistory((current) =>
+            value
+              ? { ...value, rangeKey }
+              : (current ?? emptyHistory(rangeKey)),
+          )
+        }
+      } catch {
+        // As above, keep what's drawn on a failure, but show an empty chart
+        // rather than leaving a first load spinning.
+        if (!cancelled) {
+          setHistory((current) => current ?? emptyHistory(rangeKey))
+        }
+      } finally {
+        inFlight.current = false
+        if (!cancelled) setLoading(false)
       }
     }
     inFlight.current = false
