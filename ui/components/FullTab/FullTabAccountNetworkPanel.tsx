@@ -1,18 +1,18 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import {
-  selectCurrentAccount,
-  selectCurrentAccountActivities,
-} from "@tallyho/tally-background/redux-slices/selectors"
-import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { sameNetwork } from "@tallyho/tally-background/networks"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import WalletActivityList from "../Wallet/WalletActivityList"
-import NFTListCurrentWallet from "../NFTs/NFTListCurrentWallet"
-import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
-import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { BOAR_SUPPORTED_CHAIN_IDS } from "@tallyho/tally-background/constants"
+import { useBackgroundSelector, useNFTsReload } from "../../hooks"
+import NFTList from "../NFTs/NFTList"
+import NFTsExploreBanner from "../NFTs/NFTsExploreBanner"
+import FullTabActivityTable, {
+  NetworkActivity,
+  mergeNetworkActivity,
+} from "./FullTabActivityTable"
+import FullTabNetworkFilter, {
+  NetworkFilterOption,
+} from "./FullTabNetworkFilter"
 import { useAccountNetworks } from "./hooks"
 
 type Props = {
@@ -20,79 +20,170 @@ type Props = {
   kind: "activity" | "nfts"
 }
 
-function ActivityForCurrentAccount(): ReactElement {
-  const activities = useBackgroundSelector(selectCurrentAccountActivities)
-  return <WalletActivityList activities={activities ?? []} />
+/**
+ * Tracks which of the given network options are currently shown, returning
+ * the set of shown chain IDs and a setter for it. All networks are shown by
+ * default.
+ *
+ * Note that the hook tracks hidden networks rather than shown ones, so that a
+ * network the account newly appears on starts out shown.
+ */
+function useNetworkSelection(options: NetworkFilterOption[]) {
+  const chainIDs = options.map(({ network }) => network.chainID).join(",")
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+
+  const selected = useMemo(
+    () =>
+      new Set(
+        chainIDs
+          .split(",")
+          .filter((chainID) => chainID !== "" && !hidden.has(chainID)),
+      ),
+    [chainIDs, hidden],
+  )
+  const setSelected = (next: Set<string>) =>
+    setHidden(
+      new Set(chainIDs.split(",").filter((chainID) => !next.has(chainID))),
+    )
+
+  return [selected, setSelected] as const
 }
 
 /**
- * An account's activity or NFTs on one network at a time. The popup's
- * components for these act on the selected account, so picking a network
- * here selects the account on it.
+ * Shows an account's activity across all of its networks, newest first, with
+ * a filter to narrow it down by network.
  */
-export default function FullTabAccountNetworkPanel({
-  address,
-  kind,
-}: Props): ReactElement {
+function AccountActivity({ address }: { address: string }): ReactElement {
   const { t } = useTranslation()
-  const dispatch = useBackgroundDispatch()
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
-  const accountNetworks = useAccountNetworks(address)
-  const networks =
-    kind === "nfts"
-      ? accountNetworks.filter(({ chainID }) =>
-          NETWORKS_SUPPORTING_NFTS.has(chainID),
-        )
-      : accountNetworks
-
-  const isCurrentAccount = sameEVMAddress(currentAccount.address, address)
-  const currentNetwork = networks.find((network) =>
-    sameNetwork(network, currentAccount.network),
+  const networks = useAccountNetworks(address)
+  const activitiesByNetwork = useBackgroundSelector(
+    (state) => state.activities.activities[normalizeEVMAddress(address)],
   )
-  const isSelected = isCurrentAccount && currentNetwork !== undefined
 
-  useEffect(() => {
-    if (!isSelected && networks.length > 0) {
-      void dispatch(setNewSelectedAccount({ address, network: networks[0] }))
-    }
-  }, [address, dispatch, isSelected, networks])
+  const byNetwork = useMemo(
+    () =>
+      networks.map((network) => ({
+        network,
+        entries: (activitiesByNetwork?.[network.chainID] ?? []).map(
+          (activity): NetworkActivity => ({ activity, network, address }),
+        ),
+      })),
+    [activitiesByNetwork, address, networks],
+  )
+
+  const options = byNetwork.map(({ network, entries }) => ({
+    network,
+    count: entries.length,
+  }))
+  const [selected, setSelected] = useNetworkSelection(options)
+
+  const entries = useMemo(
+    () =>
+      mergeNetworkActivity(
+        byNetwork
+          .filter(({ network }) => selected.has(network.chainID))
+          .map(({ entries: networkEntries }) => networkEntries),
+      ),
+    [byNetwork, selected],
+  )
+
+  const indexesHistory = networks.some(({ chainID }) =>
+    BOAR_SUPPORTED_CHAIN_IDS.has(chainID),
+  )
 
   return (
     <div className="panel">
-      <div
-        className="networks"
-        role="radiogroup"
-        aria-label={t("fullTab.account.network")}
-      >
-        {networks.map((network) => {
-          const checked =
-            isSelected && sameNetwork(network, currentAccount.network)
-          return (
-            <button
-              key={network.chainID}
-              type="button"
-              role="radio"
-              aria-checked={checked}
-              className={checked ? "chip checked" : "chip"}
-              onClick={() =>
-                dispatch(setNewSelectedAccount({ address, network }))
-              }
-            >
-              <SharedNetworkIcon network={network} size={18} />
-              {network.name}
-            </button>
-          )
-        })}
-      </div>
+      <FullTabNetworkFilter
+        options={options}
+        selected={selected}
+        onChange={setSelected}
+      />
       <div className="card">
-        {!isSelected ? (
-          <div className="loading">
-            <SharedLoadingSpinner />
-          </div>
-        ) : kind === "activity" ? (
-          <ActivityForCurrentAccount />
+        <FullTabActivityTable
+          entries={entries}
+          showNetwork={selected.size !== 1}
+          emptyMessage={
+            indexesHistory
+              ? t("wallet.activities.historicalActivityExplainer")
+              : t("wallet.activities.defaultHistoricalActivityExplainer")
+          }
+        />
+      </div>
+      <style jsx>{`
+        .panel {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .card {
+          background: var(--green-120);
+          border: 1px solid var(--green-95);
+          border-radius: 12px;
+          overflow: hidden;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+/**
+ * Shows an account's NFTs across the networks that support NFTs, with a
+ * filter to narrow them down by network. If the account holds no NFTs, shows
+ * the NFT explore banner instead.
+ */
+function AccountNFTs({ address }: { address: string }): ReactElement {
+  const accountNetworks = useAccountNetworks(address)
+  const networks = useMemo(
+    () =>
+      accountNetworks.filter(({ chainID }) =>
+        NETWORKS_SUPPORTING_NFTS.has(chainID),
+      ),
+    [accountNetworks],
+  )
+  const nfts = useBackgroundSelector((state) => state.nfts.nfts)
+  const isLoading = useBackgroundSelector((state) => state.nfts.isReloading)
+  const normalizedAddress = normalizeEVMAddress(address)
+
+  useNFTsReload()
+
+  const byNetwork = useMemo(
+    () =>
+      networks.map((network) => {
+        const collections = Object.values(
+          nfts[network.chainID]?.[normalizedAddress] ?? {},
+        )
+        return {
+          network,
+          collections,
+          count: collections.reduce(
+            (sum, { nfts: collectionNFTs }) => sum + collectionNFTs.length,
+            0,
+          ),
+        }
+      }),
+    [networks, nfts, normalizedAddress],
+  )
+
+  const options = byNetwork.map(({ network, count }) => ({ network, count }))
+  const [selected, setSelected] = useNetworkSelection(options)
+
+  const collections = byNetwork
+    .filter(({ network }) => selected.has(network.chainID))
+    .flatMap(({ collections: networkCollections }) => networkCollections)
+  const total = byNetwork.reduce((sum, { count }) => sum + count, 0)
+
+  return (
+    <div className="panel">
+      <FullTabNetworkFilter
+        options={options}
+        selected={selected}
+        onChange={setSelected}
+      />
+      <div className="card">
+        {total === 0 && !isLoading ? (
+          <NFTsExploreBanner type="nfts" />
         ) : (
-          <NFTListCurrentWallet />
+          <NFTList collections={collections} />
         )}
       </div>
       <style jsx>{`
@@ -101,45 +192,9 @@ export default function FullTabAccountNetworkPanel({
           flex-direction: column;
           gap: 16px;
         }
-        .networks {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          height: 32px;
-          padding: 0 14px 0 8px;
-          border-radius: 16px;
-          border: 1px solid var(--green-80);
-          color: var(--green-40);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition:
-            border-color 0.2s ease,
-            color 0.2s ease,
-            background-color 0.2s ease;
-        }
-        .chip:hover {
-          color: var(--green-20);
-          border-color: var(--green-60);
-        }
-        .chip.checked {
-          color: var(--text-strong);
-          border-color: var(--trophy-gold);
-          background: var(--green-95);
-        }
         .card {
           position: relative;
-          max-width: 720px;
-          min-height: 400px;
-          max-height: 640px;
-          overflow-y: auto;
           padding: 16px;
-          box-sizing: border-box;
           background: var(--green-120);
           border: 1px solid var(--green-95);
           border-radius: 12px;
@@ -148,12 +203,24 @@ export default function FullTabAccountNetworkPanel({
              within the card. */
           transform: translateZ(0);
         }
-        .loading {
-          display: flex;
-          justify-content: center;
-          padding: 40px;
-        }
       `}</style>
     </div>
+  )
+}
+
+/**
+ * Shows an account's activity or NFTs, depending on `kind`, with a filter to
+ * narrow them down by network.
+ */
+export default function FullTabAccountNetworkPanel({
+  address,
+  kind,
+}: Props): ReactElement {
+  // Keying by address remounts the panel when the account changes, so each
+  // account starts out with every network shown.
+  return kind === "activity" ? (
+    <AccountActivity key={address} address={address} />
+  ) : (
+    <AccountNFTs key={address} address={address} />
   )
 }
