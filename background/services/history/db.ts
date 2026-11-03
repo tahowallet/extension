@@ -131,6 +131,14 @@ export class HistoryDatabase extends Dexie {
         await transaction
           .table<BalanceRecord, string>("holdings")
           .bulkPut([...latest.values()])
+
+        // Version 1 backfill walked each series back a day at a time and
+        // kept per-series progress, failure backoffs, and "unavailable"
+        // marks that version 2 doesn't use. Its price marks reuse version
+        // 2's keys, so an old "unavailable" mark would stop a price series
+        // from ever being backfilled. Since progress is now read from the
+        // data itself, clearing the table and starting over loses nothing.
+        await transaction.table("backfill").clear()
       })
   }
 
