@@ -22,6 +22,13 @@ type Props = {
   showValue?: boolean
   showOptionValue?: boolean
   width?: string | number
+  /**
+   * The size of the select, `default` if unset. Compact selects suit short
+   * values set in a row, such as those on the settings page: they use tighter
+   * option rows with left-aligned labels, and their option list is sized to
+   * show four options at a time.
+   */
+  size?: "default" | "compact"
 }
 
 export default function SharedSelect(props: Props): ReactElement {
@@ -36,6 +43,7 @@ export default function SharedSelect(props: Props): ReactElement {
     showValue,
     showOptionValue,
     width = "320px",
+    size = "default",
   } = props
 
   const cssWidth = typeof width === "number" ? `${width}px` : width
@@ -90,6 +98,7 @@ export default function SharedSelect(props: Props): ReactElement {
       <div
         className={classNames("select", [placement], {
           active: isDropdownOpen,
+          compact: size === "compact",
         })}
         ref={selectContainerRef}
       >
@@ -283,6 +292,41 @@ export default function SharedSelect(props: Props): ReactElement {
 
           .option:not(:last-child) .option_content {
             border-bottom: 1px solid var(--green-80);
+          }
+
+          /* Compact selects follow the auto-lock timer select in the
+             "UI - Dark" Figma file. */
+          .compact .button {
+            gap: 8px;
+            padding: 0 12px 0 14px;
+            white-space: nowrap;
+          }
+          .compact .options {
+            text-align: left;
+          }
+          .compact.bottom .options {
+            top: 45px;
+          }
+          .compact.top .options {
+            bottom: 45px;
+          }
+          /* Fits four 40px option rows and their dividers. */
+          .compact .options.show {
+            max-height: 164px;
+          }
+          .compact .option {
+            padding: 0 5px;
+          }
+          .compact .option_content {
+            padding: 8px 9.5px;
+          }
+          /* Compact lists mark the current value by brightening it. */
+          .compact .option {
+            color: var(--green-40);
+          }
+          .compact .option.selected,
+          .compact .option:hover:not(.selected) {
+            color: var(--green-5);
           }
 
           .custom_option {

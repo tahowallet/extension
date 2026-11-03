@@ -353,13 +353,17 @@ export function useSettingsGroups(): SettingsList {
               ({ value }) => value === String(autoLockInterval),
             )}
             width="100%"
+            size="compact"
             onChange={(newValue) => dispatch(updateAutoLockInterval(newValue))}
           />
         </div>
         <style jsx>
           {`
             .select_wrapper {
-              width: 118px;
+              width: 108px;
+              /* Keeps the row the same height as its neighbors, which only
+                 hold text. */
+              margin: -4px 0;
               z-index: var(--z-dropdown);
             }
           `}
@@ -387,12 +391,16 @@ export function useSettingsGroups(): SettingsList {
           }))}
           defaultIndex={THEME_OPTIONS.indexOf(themePreference)}
           width="100%"
+          size="compact"
           onChange={changeTheme}
         />
         <style jsx>
           {`
             .select_wrapper {
-              width: 118px;
+              width: 108px;
+              /* Keeps the row the same height as its neighbors, which only
+                 hold text. */
+              margin: -4px 0;
               z-index: var(--z-dropdown);
             }
           `}
