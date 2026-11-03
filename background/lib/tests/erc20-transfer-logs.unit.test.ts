@@ -4,7 +4,10 @@ import { BigNumber, utils } from "ethers"
 import { AddressOnNetwork } from "../../accounts"
 import { ETHEREUM } from "../../constants"
 import type SerialFallbackProvider from "../../services/chain/serial-fallback-provider"
-import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-errors"
+import {
+  LogHistoryUnavailableError,
+  LogScanPausedError,
+} from "../../services/chain/rpc/log-query-errors"
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
@@ -62,7 +65,11 @@ const stubProvider = () => {
 
   return {
     getLogs,
-    provider: { getLogs } as unknown as SerialFallbackProvider,
+    provider: {
+      getLogs,
+      reachability: "reachable",
+      canServeNow: () => true,
+    } as unknown as SerialFallbackProvider,
   }
 }
 
@@ -644,5 +651,64 @@ describe("getERC721TransfersViaLogs", () => {
       SELF_TRANSFER.transactionHash,
       BURN.transactionHash,
     ])
+  })
+})
+
+describe("getAssetTransfersViaLogs under strain", () => {
+  const timeout = () =>
+    Promise.reject(Object.assign(new Error("timeout"), { code: "TIMEOUT" }))
+
+  it("starts later scans at the width a timeout forced", async () => {
+    const { getLogs, provider } = stubProvider()
+    const ranges: number[] = []
+    getLogs.mockImplementation(
+      ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+        const count = toBlock - fromBlock + 1
+        ranges.push(count)
+        return count > 5_000 ? timeout() : Promise.resolve([])
+      },
+    )
+
+    await getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true)
+    ranges.length = 0
+    await getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true)
+
+    // The second scan goes straight to the halved width.
+    expect(ranges).toEqual([5_000, 5_000])
+  })
+
+  it("doesn't split a rate-limited query into more queries", async () => {
+    const { getLogs, provider } = stubProvider()
+    getLogs.mockRejectedValue(
+      Object.assign(new Error("Too Many Requests"), { status: 429 }),
+    )
+
+    await expect(
+      getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true),
+    ).rejects.toThrow("Too Many Requests")
+    expect(getLogs).toHaveBeenCalledTimes(1)
+  })
+
+  it("stops a scan once the chain can't take log queries", async () => {
+    const { getLogs } = stubProvider()
+    let reachable = true
+    const provider = {
+      chainID: "1",
+      getLogs,
+      get reachability() {
+        return reachable ? "reachable" : "unreachable"
+      },
+      canServeNow: () => reachable,
+    } as unknown as SerialFallbackProvider
+    getLogs.mockImplementation(() => {
+      // The first failure takes the chain down with it.
+      reachable = false
+      return timeout()
+    })
+
+    await expect(
+      getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 99_999, true),
+    ).rejects.toBeInstanceOf(LogScanPausedError)
+    expect(getLogs).toHaveBeenCalledTimes(1)
   })
 })

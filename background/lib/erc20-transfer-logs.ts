@@ -10,9 +10,13 @@ import {
   advertisedBlockRangeLimit,
   earliestAvailableBlock,
   isPrunedHistoryError,
+  isTimeoutError,
   LogHistoryUnavailableError,
+  LogScanPausedError,
   suggestedBlockRange,
 } from "../services/chain/rpc/log-query-errors"
+import { NoEndpointAvailableError } from "../services/chain/rpc/endpoint"
+import { getErrorType } from "../services/chain/errors"
 import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
 import { parseERC721TransferLog } from "./erc721"
 import logger from "./logger"
@@ -36,6 +40,20 @@ export const ERC20_TRANSFER_TOPIC = ERC20_INTERFACE.getEventTopic("Transfer")
  * 1000-block caps common among public endpoints.
  */
 export const MINIMUM_LOG_BLOCK_RANGE = 100
+
+/**
+ * Checks whether a log query failed for a reason a narrower block range can't
+ * fix: a rate limit, or a provider with no endpoint left to try. Splitting the
+ * range in these cases would only double the number of requests being
+ * refused.
+ */
+function isNotAboutRange(error: unknown): boolean {
+  if (error instanceof NoEndpointAvailableError) return true
+  const { status, code } = (error ?? {}) as { status?: unknown; code?: unknown }
+  if (status === 429 || code === 429) return true
+  const text = error instanceof Error ? error.message : String(error)
+  return getErrorType(text, "eth_getLogs") === "rate-limit-error"
+}
 
 /** What a provider's endpoints have said about log queries this session. */
 type LogQueryLimits = {
@@ -87,6 +105,15 @@ export function learntEarliestLogBlock(
  * is halved, down to {@link MINIMUM_LOG_BLOCK_RANGE}. Chunks are fetched one
  * at a time so a provider already refusing requests isn't sent more.
  *
+ * A range that times out is halved as well, and the halved width is then kept
+ * for later scans the same way an advertised limit is, so that each scan
+ * doesn't have to time out its way down again. Rate limits and providers with
+ * no endpoint left to try are not about the range, so they are thrown rather
+ * than split into more requests.
+ *
+ * Before each request, if the chain can't take log queries right now, the
+ * scan stops with a {@link LogScanPausedError}.
+ *
  * Pruned history works the same way: the earliest block an endpoint keeps is
  * remembered, the range starts there, and a range entirely before it throws
  * {@link LogHistoryUnavailableError}. When the endpoint doesn't say which
@@ -98,6 +125,13 @@ async function getLogsWithAdaptiveRange(
   fromBlock: number,
   toBlock: number,
 ): Promise<Log[]> {
+  if (
+    provider.reachability === "unreachable" ||
+    !provider.canServeNow("eth_getLogs")
+  ) {
+    throw new LogScanPausedError(provider.chainID)
+  }
+
   const limits = limitsFor(provider)
   const { earliestBlock } = limits
   if (earliestBlock !== undefined && fromBlock < earliestBlock) {
@@ -177,16 +211,37 @@ async function getLogsWithAdaptiveRange(
       return inChunksOf(suggested)
     }
 
+    // A rate limit or a provider with no endpoint left to try would fail the
+    // same way for a narrower range, so those aren't split. Other failures
+    // may still be about the range, since some endpoints refuse a wide one
+    // with nothing more specific than a "bad response".
+    if (isNotAboutRange(error)) {
+      throw error
+    }
+    const timedOut = isTimeoutError(error)
+
     // Only split while both halves would stay at or above the minimum chunk
     // size; below that, treat the error as a real failure.
     if (blockCount < MINIMUM_LOG_BLOCK_RANGE * 2) {
       throw error
     }
 
-    logger.debug(
-      `chain ${provider.chainID}: eth_getLogs failed for blocks ${fromBlock} to ${toBlock}; halving the range.`,
-    )
-    return inChunksOf(Math.ceil(blockCount / 2))
+    const half = Math.ceil(blockCount / 2)
+    if (
+      timedOut &&
+      (limits.maxBlockRange === undefined || half < limits.maxBlockRange)
+    ) {
+      // Remember the halved width so later scans start there.
+      limits.maxBlockRange = half
+      logger.debug(
+        `chain ${provider.chainID}: eth_getLogs timed out for ${blockCount} blocks; using at most ${half} from now on.`,
+      )
+    } else {
+      logger.debug(
+        `chain ${provider.chainID}: eth_getLogs failed for blocks ${fromBlock} to ${toBlock}; halving the range.`,
+      )
+    }
+    return inChunksOf(half)
   }
 }
 

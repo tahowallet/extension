@@ -46,7 +46,7 @@ const LOG_QUERY_REFUSED =
   /specify an address|limit exceeded|request limit reached|not (?:available|supported) on (?:the )?free plan|archive requests require|forbidden by administrative rules/i
 
 const RANGE_COMPLAINT =
-  /block range|range (?:is )?too (?:large|wide|big)|exceeds? (?:the )?(?:max(?:imum)? )?(?:block )?range|too many blocks/i
+  /block range|range (?:is )?too (?:large|wide|big)|exceeds? (?:the )?(?:max(?:imum)? )?(?:block )?range|too many blocks|(?:more than \d+|too many) (?:results|logs)|response (?:size|is too (?:big|large))/i
 
 // Alchemy and Infura name a range that would work: "[0x1, 0x2710]".
 const SUGGESTED_RANGE = /\[\s*(0x[0-9a-f]+)\s*,\s*(0x[0-9a-f]+)\s*\]/i
@@ -139,6 +139,34 @@ export class LogHistoryUnavailableError extends Error {
     super(`chain ${chainID} keeps no logs before block ${earliestBlock}`)
     this.name = "LogHistoryUnavailableError"
   }
+}
+
+/**
+ * Thrown before a log query is made if the chain's provider can't take one
+ * right now, either because the network is unreachable or because its
+ * endpoints are cooling down after failures. Scans that hit this should stop
+ * and pick up where they left off on a later pass, rather than splitting
+ * their range into more and more queries that no endpoint is going to answer.
+ */
+export class LogScanPausedError extends Error {
+  constructor(readonly chainID: string) {
+    super(`chain ${chainID} can't take log queries right now`)
+    this.name = "LogScanPausedError"
+  }
+}
+
+/**
+ * Checks whether a log query failed because it timed out, going by either
+ * Ethers' `TIMEOUT` error code or the error's message. For a wide block
+ * range, a timeout usually means the query matched more logs than the
+ * endpoint could gather in time, so a narrower range is likely to succeed.
+ */
+export function isTimeoutError(error: unknown): boolean {
+  if (typeof error === "object" && error !== null) {
+    const { code } = error as { code?: unknown }
+    if (code === "TIMEOUT") return true
+  }
+  return /time(?:d)? ?out/i.test(errorText(error))
 }
 
 /** The JSON-RPC code Boar and others use for pruned history. */
