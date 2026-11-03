@@ -75,6 +75,12 @@ export type BackfillState = {
   failures?: number
 }
 
+/** Extracts the times from a list of `[series+time]` compound index keys. */
+const timesOf = (keys: unknown[]): number[] =>
+  keys.flatMap((key) =>
+    Array.isArray(key) && typeof key[1] === "number" ? [key[1]] : [],
+  )
+
 export const holdingKeyFor = (address: string, assetID: string): string =>
   `${address.toLowerCase()}|${assetID}`
 
@@ -91,6 +97,13 @@ export class HistoryDatabase extends Dexie {
 
   private backfill!: Dexie.Table<BackfillState, string>
 
+  /**
+   * Each holding's latest balance record, keyed by holding key. This table
+   * lets the database find an account's holdings without reading its whole
+   * balance history.
+   */
+  private holdings!: Dexie.Table<BalanceRecord, string>
+
   constructor(options?: DexieOptions) {
     super("tally/history", options)
     this.version(1).stores({
@@ -98,10 +111,55 @@ export class HistoryDatabase extends Dexie {
       balances: "++id,[holdingKey+time],[address+chainID],address,time",
       backfill: "&key",
     })
+    this.version(2)
+      .stores({
+        prices: "++id,[priceKey+time],[symbol+priceKey],time",
+        balances: "++id,[holdingKey+time],address,time",
+        backfill: "&key",
+        holdings: "&holdingKey,address",
+      })
+      .upgrade(async (transaction) => {
+        const latest = new Map<string, BalanceRecord>()
+        await transaction
+          .table<BalanceRecord, number>("balances")
+          .each((record) => {
+            const seen = latest.get(record.holdingKey)
+            if (!seen || seen.time < record.time) {
+              latest.set(record.holdingKey, record)
+            }
+          })
+        await transaction
+          .table<BalanceRecord, string>("holdings")
+          .bulkPut([...latest.values()])
+      })
   }
 
   async addPrices(records: PriceRecord[]): Promise<void> {
     await this.prices.bulkAdd(records)
+  }
+
+  /**
+   * Updates each holding's latest record in the holdings table from the
+   * passed records, ignoring any that are older than the stored record.
+   */
+  private async noteHoldings(records: BalanceRecord[]): Promise<void> {
+    const latest = new Map<string, BalanceRecord>()
+    records.forEach((record) => {
+      const seen = latest.get(record.holdingKey)
+      if (!seen || seen.time < record.time)
+        latest.set(record.holdingKey, record)
+    })
+    const candidates = [...latest.values()]
+    const existing = await this.holdings.bulkGet(
+      candidates.map(({ holdingKey }) => holdingKey),
+    )
+    const newer = candidates.filter(
+      (record, index) =>
+        existing[index] === undefined || existing[index].time < record.time,
+    )
+    if (newer.length > 0) {
+      await this.holdings.bulkPut(newer.map(({ id: _, ...record }) => record))
+    }
   }
 
   /**
@@ -125,10 +183,12 @@ export class HistoryDatabase extends Dexie {
       return
     }
     await this.balances.add(record)
+    await this.noteHoldings([record])
   }
 
   async addBalances(records: BalanceRecord[]): Promise<void> {
     await this.balances.bulkAdd(records)
+    await this.noteHoldings(records)
   }
 
   /**
@@ -168,15 +228,19 @@ export class HistoryDatabase extends Dexie {
     return points.map(({ time, value }) => ({ time, value }))
   }
 
-  /** The price keys recorded for a symbol, for valuing by symbol. */
+  /**
+   * Returns the price keys recorded for a symbol, which are used to value
+   * assets by symbol. Note that this reads only the index, not the prices
+   * themselves.
+   */
   async getPriceKeysForSymbol(symbol: string): Promise<string[]> {
-    const keys = await this.prices.where("symbol").equals(symbol).keys()
-    const records = await this.prices.bulkGet(keys as number[])
-    return [
-      ...new Set(
-        records.flatMap((record) => (record ? [record.priceKey] : [])),
-      ),
-    ]
+    const keys = await this.prices
+      .where("[symbol+priceKey]")
+      .between([symbol, Dexie.minKey], [symbol, Dexie.maxKey])
+      .uniqueKeys()
+    return keys.flatMap((key) =>
+      Array.isArray(key) && typeof key[1] === "string" ? [key[1]] : [],
+    )
   }
 
   async getEarliestPriceTime(priceKey: string): Promise<number | undefined> {
@@ -192,11 +256,12 @@ export class HistoryDatabase extends Dexie {
     from: number,
     to: number,
   ): Promise<number[]> {
-    const records = await this.prices
-      .where("[priceKey+time]")
-      .between([priceKey, from], [priceKey, to], true, true)
-      .toArray()
-    return records.map(({ time }) => time)
+    return timesOf(
+      await this.prices
+        .where("[priceKey+time]")
+        .between([priceKey, from], [priceKey, to], true, true)
+        .keys(),
+    )
   }
 
   /**
@@ -204,17 +269,10 @@ export class HistoryDatabase extends Dexie {
    * each as its latest balance record.
    */
   async getHoldings(addresses: string[]): Promise<BalanceRecord[]> {
-    const latestByHolding = new Map<string, BalanceRecord>()
-    await this.balances
+    return this.holdings
       .where("address")
       .anyOf(addresses.map((address) => address.toLowerCase()))
-      .each((record) => {
-        const seen = latestByHolding.get(record.holdingKey)
-        if (!seen || seen.time < record.time) {
-          latestByHolding.set(record.holdingKey, record)
-        }
-      })
-    return [...latestByHolding.values()]
+      .toArray()
   }
 
   async getBalanceSeries(
@@ -250,11 +308,12 @@ export class HistoryDatabase extends Dexie {
     from: number,
     to: number,
   ): Promise<number[]> {
-    const records = await this.balances
-      .where("[holdingKey+time]")
-      .between([holdingKey, from], [holdingKey, to], true, true)
-      .toArray()
-    return records.map(({ time }) => time)
+    return timesOf(
+      await this.balances
+        .where("[holdingKey+time]")
+        .between([holdingKey, from], [holdingKey, to], true, true)
+        .keys(),
+    )
   }
 
   async getBackfillState(key: string): Promise<BackfillState> {
@@ -270,34 +329,37 @@ export class HistoryDatabase extends Dexie {
    * `now`, and returns the number of points dropped.
    */
   async compact(now: number): Promise<number> {
-    const compactTable = async <
-      T extends { id?: number; time: number },
-      K extends keyof T,
-    >(
-      table: Dexie.Table<T, number>,
-      seriesKey: K,
+    // Only the series index's keys and their records' ids are read, so that
+    // compaction never has to load whole records.
+    const compactTable = async (
+      table: Dexie.Table<{ time: number }, number>,
+      index: string,
     ) => {
+      const collection = table.orderBy(index)
+      const [keys, ids] = await Promise.all([
+        collection.keys(),
+        collection.primaryKeys(),
+      ])
       const bySeries = new Map<unknown, { id: number; time: number }[]>()
-      await table.each((record) => {
-        if (record.id === undefined) return
-        const key = record[seriesKey]
-        const series = bySeries.get(key) ?? []
-        series.push({ id: record.id, time: record.time })
-        bySeries.set(key, series)
+      keys.forEach((key, position) => {
+        if (!Array.isArray(key) || typeof key[1] !== "number") return
+        const series = bySeries.get(key[0]) ?? []
+        series.push({ id: ids[position], time: key[1] })
+        bySeries.set(key[0], series)
       })
       const toDelete = [...bySeries.values()].flatMap((series) =>
         compactableIndexes(
           series.map(({ time }) => time),
           now,
-        ).map((index) => series[index].id),
+        ).map((position) => series[position].id),
       )
       await table.bulkDelete(toDelete)
       return toDelete.length
     }
 
     const [prices, balances] = await Promise.all([
-      compactTable(this.prices, "priceKey"),
-      compactTable(this.balances, "holdingKey"),
+      compactTable(this.prices, "[priceKey+time]"),
+      compactTable(this.balances, "[holdingKey+time]"),
     ])
     return prices + balances
   }
