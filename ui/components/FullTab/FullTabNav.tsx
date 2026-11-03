@@ -1,12 +1,8 @@
 import React, { ReactElement } from "react"
 import { Link, NavLink } from "react-router-dom"
 import { useTranslation } from "react-i18next"
-import { selectAccountTotalsForOverview } from "@tallyho/tally-background/redux-slices/selectors"
-import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
-import { useBackgroundSelector } from "../../hooks"
-import SharedAvatar from "../Shared/SharedAvatar"
 import FullTabHelpMenu from "./FullTabHelpMenu"
-import { accountPath, useFullTabAccounts } from "./hooks"
+import FullTabAccountGroups from "./FullTabAccountGroups"
 
 function NavItem({
   to,
@@ -37,8 +33,6 @@ function NavItem({
  */
 export default function FullTabNav(): ReactElement {
   const { t } = useTranslation()
-  const accounts = useFullTabAccounts()
-  const overviewTotals = useBackgroundSelector(selectAccountTotalsForOverview)
 
   return (
     <nav aria-label="Main">
@@ -62,32 +56,7 @@ export default function FullTabNav(): ReactElement {
               {t("fullTab.nav.manageAccounts")}
             </Link>
           </div>
-          {accounts.map(({ address, name, shortenedAddress, avatarURL }) => {
-            const totals =
-              overviewTotals[normalizeEVMAddress(address)]?.totals ?? {}
-            const total = Object.values(totals).reduce(
-              (sum, value) => sum + value,
-              0,
-            )
-            return (
-              <NavItem key={address} to={accountPath(address)}>
-                <SharedAvatar
-                  width="24px"
-                  avatarURL={avatarURL}
-                  backupAvatar="./images/avatar@2x.png"
-                />
-                <span className="account_name" title={address}>
-                  {name ?? shortenedAddress}
-                </span>
-                <span className="account_total">
-                  $
-                  {total.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
-                  })}
-                </span>
-              </NavItem>
-            )
-          })}
+          <FullTabAccountGroups />
         </div>
         <div className="group">
           <h3>{t("settings.mainMenu")}</h3>
@@ -171,6 +140,7 @@ export default function FullTabNav(): ReactElement {
           color: var(--green-40);
           font-size: 16px;
           font-weight: 500;
+          white-space: nowrap;
           text-decoration: none;
           transition:
             background-color 0.2s ease,
