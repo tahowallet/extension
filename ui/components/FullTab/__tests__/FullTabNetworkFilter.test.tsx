@@ -21,11 +21,10 @@ const options: NetworkFilterOption[] = [
   { network: AVALANCHE, count: 3 },
   { network: BINANCE_SMART_CHAIN, count: 4 },
 ]
+const allChainIDs = options.map(({ network }) => network.chainID)
 
 function Harness({ onChange }: { onChange?: (s: Set<string>) => void }) {
-  const [selected, setSelected] = useState(
-    new Set(options.map(({ network }) => network.chainID)),
-  )
+  const [selected, setSelected] = useState(new Set(allChainIDs))
   return (
     <FullTabNetworkFilter
       options={options}
@@ -38,66 +37,63 @@ function Harness({ onChange }: { onChange?: (s: Set<string>) => void }) {
   )
 }
 
+const openFilter = () =>
+  userEvent.click(screen.getByRole("button", { expanded: false }))
+
 describe("FullTabNetworkFilter", () => {
-  it("stacks the first few networks and summarizes the rest", () => {
+  it("stacks three icons and an ellipsis past four, with a summary", () => {
     render(<Harness />)
 
-    expect(screen.getByText("+2 more")).toBeInTheDocument()
+    expect(screen.getByTestId("network_stack_more")).toBeInTheDocument()
+    expect(screen.getByText("Ethereum and 5 more")).toBeInTheDocument()
   })
 
   it("lists every network with its count when opened", async () => {
     render(<Harness />)
+    await openFilter()
 
-    await userEvent.click(screen.getByRole("button", { name: "Networks" }))
-
-    const menu = screen.getByRole("dialog", { name: "Networks" })
-    expect(menu).toHaveTextContent("Ethereum5")
-    expect(menu).toHaveTextContent("BNB Chain4")
+    expect(screen.getByRole("checkbox", { name: /Ethereum/ })).toBeChecked()
+    expect(
+      screen.getByRole("checkbox", { name: /BNB Chain/ }),
+    ).toHaveAccessibleName("BNB Chain 4")
     // The all-networks row totals every network's count.
-    expect(menu).toHaveTextContent("Networks15")
+    expect(screen.getByRole("checkbox", { name: "Networks 15" })).toBeChecked()
   })
 
   it("deselects networks one at a time", async () => {
     const onChange = jest.fn()
     render(<Harness onChange={onChange} />)
-    await userEvent.click(screen.getByRole("button", { name: "Networks" }))
+    await openFilter()
 
-    const [, ethereumCheckbox] = screen.getAllByRole("checkbox")
-    await userEvent.click(ethereumCheckbox)
+    await userEvent.click(screen.getByRole("checkbox", { name: /Ethereum/ }))
+    await userEvent.click(screen.getByText("Optimism"))
+
     expect(onChange).toHaveBeenLastCalledWith(
       new Set(
-        options
-          .map(({ network }) => network.chainID)
-          .filter((chainID) => chainID !== ETHEREUM.chainID),
+        allChainIDs.filter(
+          (chainID) =>
+            chainID !== ETHEREUM.chainID && chainID !== OPTIMISM.chainID,
+        ),
       ),
     )
-
-    await userEvent.click(screen.getByRole("checkbox", { name: /Optimism/ }))
-    expect(onChange).toHaveBeenLastCalledWith(
-      new Set(
-        options
-          .map(({ network }) => network.chainID)
-          .filter(
-            (chainID) =>
-              chainID !== ETHEREUM.chainID && chainID !== OPTIMISM.chainID,
-          ),
-      ),
-    )
-    // Four of six shown now, so nothing is summarized.
-    expect(screen.queryByText(/more$/)).not.toBeInTheDocument()
+    // Four networks fit in the stack without an ellipsis.
+    expect(screen.queryByTestId("network_stack_more")).not.toBeInTheDocument()
+    expect(screen.getByText("Polygon and 3 more")).toBeInTheDocument()
+    expect(
+      screen.getByRole("checkbox", { name: "Networks 15" }),
+    ).toHaveProperty("indeterminate", true)
   })
 
   it("selects and deselects every network at once", async () => {
     const onChange = jest.fn()
     render(<Harness onChange={onChange} />)
-    await userEvent.click(screen.getByRole("button", { name: "Networks" }))
+    await openFilter()
 
-    await userEvent.click(screen.getAllByRole("checkbox")[0])
+    const all = screen.getByRole("checkbox", { name: "Networks 15" })
+    await userEvent.click(all)
     expect(onChange).toHaveBeenLastCalledWith(new Set())
 
-    await userEvent.click(screen.getAllByRole("checkbox")[0])
-    expect(onChange).toHaveBeenLastCalledWith(
-      new Set(options.map(({ network }) => network.chainID)),
-    )
+    await userEvent.click(all)
+    expect(onChange).toHaveBeenLastCalledWith(new Set(allChainIDs))
   })
 })
