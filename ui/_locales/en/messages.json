@@ -1194,6 +1194,18 @@
     "networkFilter": {
       "summary_one": "{{network}} and 1 more",
       "summary_other": "{{network}} and {{count}} more"
+    },
+    "chart": {
+      "ranges": {
+        "day": "1D",
+        "week": "1W",
+        "month": "1M",
+        "quarter": "3M",
+        "year": "1Y"
+      },
+      "historyBegins": "History begins {{date}}",
+      "backfilling": "Filling in earlier history…",
+      "empty": "No history yet"
     }
   }
 }

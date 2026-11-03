@@ -7,6 +7,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import {
+  getFullAssetID,
   isNetworkBaseAsset,
   isTrustedAsset,
   isVerifiedAsset,
@@ -23,6 +24,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FullTabSection from "../../components/FullTab/FullTabSection"
+import FullTabValueChart from "../../components/FullTab/FullTabValueChart"
 import FullTabDialog from "../../components/FullTab/FullTabDialog"
 import FullTabActivityTable from "../../components/FullTab/FullTabActivityTable"
 import {
@@ -295,6 +297,14 @@ export default function FullTabAsset(): ReactElement {
         </div>
       }
     >
+      {isTrusted && (
+        <FullTabValueChart
+          addresses={[address]}
+          chainIDs={[network.chainID]}
+          assetID={getFullAssetID(asset)}
+          label={`${asset.symbol} · ${t("fullTab.table.value")}`}
+        />
+      )}
       <div className="stats">
         <Stat
           label={t("overview.tableHeader.balance")}
@@ -422,7 +432,6 @@ export default function FullTabAsset(): ReactElement {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          margin-top: 16px;
         }
         h2 {
           margin: 0;

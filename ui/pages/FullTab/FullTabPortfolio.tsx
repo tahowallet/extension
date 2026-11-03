@@ -2,6 +2,7 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import {
   getAddressCount,
+  getAllAddresses,
   getNetworkCountForOverview,
   getTotalBalanceForOverview,
   selectAccountAndTimestampedActivities,
@@ -15,6 +16,7 @@ import NetworksChart from "../../components/Overview/NetworksChart"
 import NFTsPortfolioOverview from "../../components/Overview/NFTsPortfolioOverview"
 import FullTabSection from "../../components/FullTab/FullTabSection"
 import FullTabAssetTable from "../../components/FullTab/FullTabAssetTable"
+import FullTabValueChart from "../../components/FullTab/FullTabValueChart"
 
 /**
  * The full-tab portfolio page, which shows the wallet's total balance and
@@ -26,6 +28,7 @@ export default function FullTabPortfolio(): ReactElement {
   const balance = useBackgroundSelector(getTotalBalanceForOverview)
   const networksCount = useBackgroundSelector(getNetworkCountForOverview)
   const accountsCount = useBackgroundSelector(getAddressCount)
+  const addresses = useBackgroundSelector(getAllAddresses)
   const { combinedData } = useBackgroundSelector(
     selectAccountAndTimestampedActivities,
   )
@@ -49,6 +52,12 @@ export default function FullTabPortfolio(): ReactElement {
           <BalanceHeader
             balance={balance}
             initializationTimeExpired={initializationLoadingTimeExpired}
+          />
+        </div>
+        <div className="wide">
+          <FullTabValueChart
+            addresses={addresses}
+            label={t("overview.totalBalanceEverywhere")}
           />
         </div>
         <div className="card padded">
