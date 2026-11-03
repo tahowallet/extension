@@ -144,11 +144,6 @@ function SignerLedgerSigningTransaction({
           value={`ETH ${maxFeeAmountString}`}
         />
       </TransactionDetailContainer>
-
-      <footer className="cannot_reject_warning">
-        <span className="block_icon" />
-        Tx can only be Rejected from Ledger
-      </footer>
     </>
   )
 }
