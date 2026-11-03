@@ -1210,7 +1210,7 @@
     },
     "unverified": {
       "title": "Unverified assets on {{network}}",
-      "explainer": "These assets were found in this account but haven't been verified. Select any you don't want to see and hide them.",
+      "explainer": "These assets were found in this account but haven't been verified. Verify the ones you trust, one at a time, or select any you don't want to see and hide them.",
       "hideSelected_one": "Hide {{count}} asset",
       "hideSelected_other": "Hide {{count}} assets",
       "empty": "No unverified assets here.",
