@@ -14,6 +14,31 @@ type WebSocketSubscription = {
   processFunc: (result: unknown) => void
 }
 
+/**
+ * Checks whether an endpoint refused a subscription because it doesn't
+ * support that kind of subscription at all, rather than because of a
+ * transient failure. This is the case when, for example, an Alchemy-specific
+ * subscription like `alchemy_pendingTransactions` is sent to a standard
+ * endpoint, which answers with an unknown method or unknown variant error.
+ *
+ * Retrying such a subscription on the same endpoint will always fail the same
+ * way.
+ */
+export function isUnsupportedSubscriptionError(error: unknown): boolean {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? error.code
+      : undefined
+  const text = error instanceof Error ? error.message : String(error)
+  return (
+    code === -32601 ||
+    code === -32602 ||
+    /unknown variant|not supported|unsupported|method not found|does not exist/i.test(
+      text,
+    )
+  )
+}
+
 type EventListener = {
   eventName: EventType
   /** What the caller passed. */
@@ -44,6 +69,12 @@ export default class SubscriptionManager {
   #movesInFlight = 0
 
   #cleared = false
+
+  /**
+   * For each endpoint, the tags of subscriptions it refused as unsupported.
+   * Subscriptions with these tags are not sent to that endpoint again.
+   */
+  #refusedTags = new WeakMap<Endpoint, Set<string>>()
 
   constructor(
     endpoint: Endpoint,
@@ -209,18 +240,43 @@ export default class SubscriptionManager {
 
     if (isWebSocketTransport(transport)) {
       // One subscription the endpoint refuses shouldn't cost the others.
+      // Subscriptions this endpoint refused as unsupported aren't sent to it
+      // again. They're still tracked, so they're restored when the manager
+      // moves to an endpoint that supports them, such as one with
+      // Alchemy-specific APIs.
+      const refused = this.#refusedTags.get(endpoint) ?? new Set<string>()
+      this.#refusedTags.set(endpoint, refused)
+      const skipped = new Map<string, number>()
       for (const { tag, params, processFunc } of this.#webSocketSubscriptions) {
+        if (refused.has(tag)) {
+          skipped.set(tag, (skipped.get(tag) ?? 0) + 1)
+          continue
+        }
         try {
           // oxlint-disable-next-line no-await-in-loop, no-underscore-dangle
           await transport._subscribe(tag, params, processFunc)
         } catch (error) {
-          logger.error(
-            `Error moving a subscription to ${endpoint.label}`,
-            tag,
-            error,
-          )
+          if (isUnsupportedSubscriptionError(error)) {
+            refused.add(tag)
+            skipped.set(tag, (skipped.get(tag) ?? 0) + 1)
+            logger.warn(
+              `${endpoint.label} doesn't support ${tag} subscriptions; keeping them for endpoints that do.`,
+              error,
+            )
+          } else {
+            logger.error(
+              `Error moving a subscription to ${endpoint.label}`,
+              tag,
+              error,
+            )
+          }
         }
       }
+      skipped.forEach((count, tag) =>
+        logger.debug(
+          `Left ${count} ${tag} subscriptions off ${endpoint.label}, which doesn't support them.`,
+        ),
+      )
     }
 
     logger.debug(
