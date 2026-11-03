@@ -110,7 +110,7 @@ export default function FullTabHelpMenu(): ReactElement {
         <span className="question" aria-hidden>
           ?
         </span>
-        <span className="label">{t("fullTab.help")}</span>
+        <span className="label">{t("settings.group.helpCenter")}</span>
       </button>
       <style jsx>{`
         .help {
@@ -159,7 +159,7 @@ export default function FullTabHelpMenu(): ReactElement {
         .help_pill:hover .label,
         .help_pill:focus-visible .label,
         .help_pill.open .label {
-          max-width: 80px;
+          max-width: 120px;
           opacity: 1;
           transform: none;
         }

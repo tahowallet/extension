@@ -23,7 +23,7 @@ export default function FullTabSettings({ group }: Props): ReactElement {
     group === "general"
       ? [
           {
-            title: t("fullTab.settings.defaultWallet"),
+            title: t("settings.setAsDefault"),
             component: () => (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <WalletDefaultToggle />

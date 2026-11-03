@@ -29,7 +29,7 @@ export default function FullTabNetworkSection({
   address,
   network,
 }: Props): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "fullTab.account" })
+  const { t } = useTranslation()
   const openPageAs = useOpenPageAs()
   const initializationLoadingTimeExpired = useBackgroundSelector(
     selectInitializationTimeExpired,
@@ -62,7 +62,12 @@ export default function FullTabNetworkSection({
               className="pill attention"
               to={`${accountPath(address)}/${network.chainID}/unverified`}
             >
-              {t("unverifiedAssets", { count: unverifiedCount })}
+              {t("wallet.unverifiedAssets.hiddenAssets", {
+                stateOfHiddenAssets: t(
+                  "wallet.unverifiedAssets.stateOfHiddenAssets2",
+                ),
+                amount: unverifiedCount,
+              })}
             </Link>
           )}
           <button
@@ -72,7 +77,7 @@ export default function FullTabNetworkSection({
               openPageAs({ address, network }, "/settings/add-custom-asset")
             }
           >
-            {t("customAssets")}
+            {t("settings.addCustomAsset")}
           </button>
         </div>
       </header>
@@ -85,7 +90,6 @@ export default function FullTabNetworkSection({
           <FullTabAssetTable
             assetAmounts={balances.assetAmounts}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-            emptyMessage={t("noAssets", { network: network.name })}
             onRowClick={({ asset }) =>
               openPageAs({ address, network }, "/singleAsset", asset)
             }

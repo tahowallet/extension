@@ -41,7 +41,7 @@ export default function FullTabNav(): ReactElement {
   const overviewTotals = useBackgroundSelector(selectAccountTotalsForOverview)
 
   return (
-    <nav aria-label={t("fullTab.nav.label")}>
+    <nav aria-label="Main">
       <div className="logo">
         <img src="./images/doggo_gold.svg" alt="" width={36} height={36} />
         <span className="wordmark">Taho</span>
@@ -52,12 +52,12 @@ export default function FullTabNav(): ReactElement {
             {t("tabs.portfolio")}
           </NavItem>
           <NavItem to="/dapps" icon="icons/m/connected.svg">
-            {t("fullTab.nav.connectedDapps")}
+            {t("settings.connectedWebsites")}
           </NavItem>
         </div>
         <div className="group">
           <div className="group_header">
-            <h3>{t("fullTab.nav.accounts")}</h3>
+            <h3>{t("overview.accounts")}</h3>
             <Link className="manage" to="/manage-accounts">
               {t("fullTab.nav.manageAccounts")}
             </Link>

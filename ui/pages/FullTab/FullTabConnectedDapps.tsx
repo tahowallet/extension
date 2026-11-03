@@ -24,7 +24,7 @@ export default function FullTabConnectedDapps(): ReactElement {
   }, [allowedPages])
 
   return (
-    <FullTabSection title={t("fullTab.nav.connectedDapps")}>
+    <FullTabSection title={t("settings.connectedWebsites")}>
       {dappsByOrigin.length === 0 ? (
         <div className="empty">
           <ConnectedWebsitesListEmpty />

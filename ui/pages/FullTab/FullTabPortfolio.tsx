@@ -68,9 +68,9 @@ export default function FullTabPortfolio(): ReactElement {
         </div>
         <div className="wide">
           <h2>
-            {t("fullTab.portfolio.assets", {
-              count: combinedData.assets.length,
-            })}
+            {`${t("overview.tableHeader.asset")} (${
+              combinedData.assets.length
+            })`}
           </h2>
           <div className="card">
             <FullTabAssetTable

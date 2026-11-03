@@ -37,7 +37,7 @@ const formatTotal = (total: number) =>
  * each network it's tracked on, its activity, or its NFTs.
  */
 export default function FullTabAccount(): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "fullTab.account" })
+  const { t } = useTranslation()
   const { t: tWallet } = useTranslation("translation", {
     keyPrefix: "wallet.pages",
   })
@@ -50,7 +50,7 @@ export default function FullTabAccount(): ReactElement {
   const dispatch = useBackgroundDispatch()
   const copyAddress = () => {
     void navigator.clipboard.writeText(address)
-    void dispatch(setSnackbarMessage(t("addressCopied")))
+    void dispatch(setSnackbarMessage(t("topMenu.addressCopiedMsg")))
   }
   const account = useFullTabAccount(address)
   const networks = useAccountNetworks(address)
@@ -61,7 +61,6 @@ export default function FullTabAccount(): ReactElement {
 
   return (
     <FullTabSection
-      eyebrow={t("eyebrow")}
       title={
         <div className="account_title">
           <SharedAvatar
@@ -86,7 +85,7 @@ export default function FullTabAccount(): ReactElement {
       }
       aside={
         <div className="total">
-          <span className="total_label">{t("totalBalance")}</span>
+          <span className="total_label">{t("wallet.totalAccountBalance")}</span>
           <span className="total_value">${formatTotal(total)}</span>
         </div>
       }
