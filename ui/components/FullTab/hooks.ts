@@ -14,6 +14,11 @@ import {
   normalizeEVMAddress,
   sameEVMAddress,
 } from "@tallyho/tally-background/lib/utils"
+import {
+  AnyAsset,
+  isSmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
+import { isNetworkBaseAsset } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 /**
@@ -42,6 +47,24 @@ export function useOpenPageAs(): (
 /** The path of an account's page in the full-tab view. */
 export const accountPath = (address: string): string =>
   `/accounts/${normalizeEVMAddress(address)}`
+
+/**
+ * The asset id used in asset paths for a network's base asset, which has no
+ * contract address to identify it.
+ */
+export const BASE_ASSET_ID = "base"
+
+/** The path of an asset's page for an account on a network. */
+export const assetPath = (
+  address: string,
+  chainID: string,
+  asset: AnyAsset,
+): string =>
+  `${accountPath(address)}/${chainID}/assets/${
+    isSmartContractFungibleAsset(asset) && !isNetworkBaseAsset(asset)
+      ? normalizeEVMAddress(asset.contractAddress)
+      : BASE_ASSET_ID
+  }`
 
 /**
  * Returns the accounts in the wallet, with their names and avatars as

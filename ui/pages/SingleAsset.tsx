@@ -30,6 +30,7 @@ import { getBlockExplorerURL } from "../utils/networks"
 import AssetVerifyToggler from "../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
 import { trimWithEllipsis } from "../utils/textUtils"
 import { displayAssetAmount } from "../utils/amounts"
+import { activityInvolvesAsset } from "../utils/activities"
 import AssetWarningWrapper from "../components/Wallet/UnverifiedAsset/AssetWarningWrapper"
 import CorePage from "../components/Core/CorePage"
 
@@ -53,29 +54,9 @@ export default function SingleAsset(): ReactElement {
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
 
   const filteredActivities = useBackgroundSelector((state) =>
-    (selectCurrentAccountActivities(state) ?? []).filter((activity) => {
-      if (
-        typeof contractAddress !== "undefined" &&
-        contractAddress === activity.to
-      ) {
-        return true
-      }
-      switch (activity?.type) {
-        case "asset-transfer":
-        case "asset-approval":
-          return activity.assetSymbol === symbol
-        case "asset-swap":
-          return (
-            // TODO: this should recognize both assets of the swap but it is
-            // ignored right now as swaps are recognized as contract interactions
-            activity.assetSymbol === symbol
-          )
-        case "contract-interaction":
-        case "contract-deployment":
-        default:
-          return false
-      }
-    }),
+    (selectCurrentAccountActivities(state) ?? []).filter((activity) =>
+      activityInvolvesAsset(activity, symbol, contractAddress),
+    ),
   )
 
   const assetAmount = useBackgroundSelector((state) => {
