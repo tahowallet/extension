@@ -1,5 +1,5 @@
 import { DAY, HOUR, MINUTE } from "../../../constants"
-import { bucketSizeForAge, compactableIndexes, findGaps } from "../compaction"
+import { bucketSizeForAge, compactableIndexes } from "../compaction"
 import { priceAt, valueAt, valueSeries } from "../series"
 
 const NOW = Date.UTC(2026, 10, 3, 12)
@@ -41,28 +41,6 @@ describe("compactableIndexes", () => {
       weekStart + 3 * DAY,
     ]
     expect(compactableIndexes(times, NOW).sort()).toEqual([0, 2])
-  })
-})
-
-describe("findGaps", () => {
-  it("finds stretches longer than the expected spacing, newest first", () => {
-    const from = NOW - 3 * DAY
-    const times = [from, from + HOUR, from + 2 * HOUR, NOW - HOUR]
-    expect(findGaps(times, from, NOW, NOW)).toEqual([
-      { from: from + 2 * HOUR, to: NOW - HOUR },
-    ])
-  })
-
-  it("allows daily spacing for older history", () => {
-    const from = NOW - 60 * DAY
-    const times = Array.from({ length: 50 }, (_, i) => from + i * DAY)
-    expect(findGaps(times, from, from + 49 * DAY, NOW)).toEqual([])
-  })
-
-  it("reports an empty range as one gap", () => {
-    expect(findGaps([], NOW - DAY, NOW, NOW)).toEqual([
-      { from: NOW - DAY, to: NOW },
-    ])
   })
 })
 

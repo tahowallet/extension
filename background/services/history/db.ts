@@ -49,10 +49,19 @@ export type BalanceRecord = {
  * source reaches and any recent failures.
  */
 export type BackfillState = {
-  /** `price:${priceKey}` or `balance:${holdingKey}`. */
+  /** The series' key, either `price:${priceKey}` or `balances:${chainID}`. */
   key: string
-  /** The earliest time backfill has reached; nothing earlier is attempted. */
-  reachedBack?: number
+  /**
+   * The time before which the source has no data, for example because an
+   * endpoint doesn't keep archive state or a token wasn't listed yet.
+   * Backfill doesn't attempt anything earlier than the floor.
+   */
+  floor?: number
+  /**
+   * When the floor was found. After a while, the floor is ignored and
+   * backfill tries to reach past it again.
+   */
+  floorAt?: number
   /**
    * Set when the source can't serve the series at all, in which case backfill
    * doesn't attempt it.

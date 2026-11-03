@@ -131,7 +131,7 @@ export function hasContractCode(
  * from https://docs.chain.link/data-feeds/price-feeds/addresses and were
  * checked on chain with `eth_getCode` and `description()`.
  */
-const BASE_ASSET_USD_FEEDS: {
+export const BASE_ASSET_USD_FEEDS: {
   [chainID: string]: { feedNetwork: EVMNetwork; feedAddress: string }
 } = {
   [ETHEREUM.chainID]: {
@@ -169,7 +169,7 @@ const BASE_ASSET_USD_FEEDS: {
   ),
 }
 
-const CHAINLINK_AGGREGATOR_INTERFACE = new ethers.utils.Interface([
+export const CHAINLINK_AGGREGATOR_INTERFACE = new ethers.utils.Interface([
   "function decimals() view returns (uint8)",
   "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
 ])
