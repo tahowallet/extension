@@ -272,6 +272,8 @@ export default class IndexingService extends BaseService<Events> {
   /**
    * Prunes raw price and balance measurements older than `before`, a UNIX
    * time in milliseconds, and returns the number of measurements dropped.
+   * Each call drops a limited number of rows; see
+   * {@link IndexingDatabase.pruneMeasurements}.
    */
   async pruneRawHistory(before: number): Promise<number> {
     return this.db.pruneMeasurements(before)

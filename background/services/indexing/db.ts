@@ -275,19 +275,50 @@ export class IndexingDatabase extends Dexie {
 
   /**
    * Drops raw price and balance measurements older than `before`, a UNIX
-   * time in milliseconds. Charts read compacted history from the history
-   * service instead; the latest balance lookup only reads the last week.
+   * time in milliseconds, and returns the number of rows dropped. Charts read
+   * compacted history from the history service instead, and the latest
+   * balance lookup only reads the last week, so older raw measurements are
+   * no longer needed.
+   *
+   * A long-lived install can have millions of these rows, and a single delete
+   * across all of them would hold the prices and balances tables in one
+   * transaction for as long as it takes. Instead, rows are deleted in batches
+   * of `batchSize`, each in its own transaction and followed by a pause of
+   * `pause` milliseconds, so that other reads and writes can get in between.
+   * At most `maxRows` rows are dropped per call; the rest wait for the next
+   * call.
    */
-  async pruneMeasurements(before: number): Promise<number> {
-    const [prices, balances] = await Promise.all([
-      // Price points carry UNIX seconds.
-      this.prices
-        .where("time")
-        .below(Math.floor(before / 1000))
-        .delete(),
-      this.balances.where("retrievedAt").below(before).delete(),
-    ])
-    return prices + balances
+  async pruneMeasurements(
+    before: number,
+    { batchSize = 500, maxRows = 20_000, pause = 50 } = {},
+  ): Promise<number> {
+    let dropped = 0
+    const prune = async (
+      table: Dexie.Table<unknown, number>,
+      index: string,
+      bound: number,
+    ) => {
+      while (dropped < maxRows) {
+        // oxlint-disable-next-line no-await-in-loop
+        const ids = await table
+          .where(index)
+          .below(bound)
+          .limit(Math.min(batchSize, maxRows - dropped))
+          .primaryKeys()
+        if (ids.length === 0) return
+        // oxlint-disable-next-line no-await-in-loop
+        await table.bulkDelete(ids)
+        dropped += ids.length
+        // oxlint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, pause)
+        })
+      }
+    }
+    // Price points carry UNIX seconds.
+    await prune(this.prices, "time", Math.floor(before / 1000))
+    await prune(this.balances, "retrievedAt", before)
+    return dropped
   }
 
   async getLatestAccountBalance(
