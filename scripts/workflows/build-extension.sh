@@ -2,12 +2,14 @@
 
 # Builds the extension in CI.
 #
-# Usage: scripts/workflows/build-extension.sh <dev|production> [mainnet-fork]
+# Usage: scripts/workflows/build-extension.sh <dev|production|beta> [mainnet-fork]
 #
 # - dev: starts .env from the PR's testing env block (ENV_BLOCK, written
 #   verbatim, never interpreted) and marks analytics as BETA.
 # - production: appends to any existing .env, marking analytics as PROD, or as
 #   BETA for the mainnet fork build.
+# - beta: a production build for the Taho BETA store listing, versioned with
+#   BUILD_NUMBER and marking analytics as BETA.
 # - mainnet-fork: renames the built zips with a -fork suffix, so they can sit
 #   alongside the regular build's zips.
 #
@@ -16,7 +18,7 @@
 
 set -euo pipefail
 
-variant="${1:?Usage: build-extension.sh <dev|production> [mainnet-fork]}"
+variant="${1:?Usage: build-extension.sh <dev|production|beta> [mainnet-fork]}"
 fork="${2:-}"
 
 if [ -n "$fork" ] && [ "$fork" != "mainnet-fork" ]; then
@@ -35,6 +37,11 @@ case "$variant" in
     else
       analytics_source="PROD"
     fi
+    ;;
+  beta)
+    : "${BUILD_NUMBER:?beta builds need a BUILD_NUMBER}"
+    export RELEASE_CHANNEL=beta
+    analytics_source="BETA"
     ;;
   *)
     echo "Unknown build variant: $variant" >&2

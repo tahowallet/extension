@@ -1,0 +1,118 @@
+name: Beta
+
+# Publishes the newest main commit that passed Build to the unlisted Taho BETA
+# listing on the Chrome Web Store, once a night. The beta tag marks the last
+# commit submitted; if it's still the newest passing commit, nothing runs.
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}
+
+# Runs queue rather than overlap, so two never submit at once.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+# Jobs get a read-only token unless they ask for more below.
+permissions:
+  contents: read
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Listing Build runs.
+      actions: read
+      contents: read
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
+    steps:
+      - name: Pick the newest unpublished commit that passed Build
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passing=$(gh run list -R "$GITHUB_REPOSITORY" --workflow build.yml \
+            --branch main --event push --status success --limit 1 \
+            --json headSha --jq '.[0].headSha // ""')
+          published=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/beta" \
+            --jq .object.sha 2>/dev/null) || published=""
+
+          if ! [[ "$passing" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "No passing Build run on main."
+          elif [ "$passing" = "$published" ]; then
+            echo "$passing is already published."
+          else
+            echo "Publishing $passing (last published: ${published:-none})."
+            echo "sha=$passing" >> "$GITHUB_OUTPUT"
+          fi
+  publish:
+    needs: pick
+    if: needs.pick.outputs.sha != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only main can deploy to this environment, and only this environment's
+    # jobs can sign in as the store publisher.
+    environment: nightly
+    permissions:
+      # Moving the beta tag.
+      contents: write
+      # Signing in to Google as the store publisher.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.pick.outputs.sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install --frozen-lockfile
+      - name: Beta build
+        run: scripts/workflows/build-extension.sh beta
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          # Features that ship to beta testers ahead of production.
+          SUPPORT_NFT_INDEXER: "true"
+          BOAR_RPC_URL_ETHEREUM: ${{ secrets.BOAR_RPC_URL_ETHEREUM }}
+          BOAR_RPC_URL_OPTIMISM: ${{ secrets.BOAR_RPC_URL_OPTIMISM }}
+          BOAR_RPC_URL_POLYGON: ${{ secrets.BOAR_RPC_URL_POLYGON }}
+          BOAR_RPC_URL_ARBITRUM_ONE: ${{ secrets.BOAR_RPC_URL_ARBITRUM_ONE }}
+          BOAR_RPC_URL_SEPOLIA: ${{ secrets.BOAR_RPC_URL_SEPOLIA }}
+          BOAR_RPC_URL_MEZO: ${{ secrets.BOAR_RPC_URL_MEZO }}
+          UNS_API_KEY: ${{ secrets.UNS_API_KEY }}
+          SIMPLE_HASH_API_KEY: ${{ secrets.SIMPLE_HASH_API_KEY }}
+          ZEROX_API_KEY: ${{ secrets.ZEROX_API_KEY }}
+          COMMIT_SHA: ${{ needs.pick.outputs.sha }}
+          POAP_API_KEY: ${{ secrets.POAP_API_KEY }}
+          DAYLIGHT_API_KEY: ${{ secrets.DAYLIGHT_API_KEY }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: extension-beta-${{ github.run_number }}
+          path: dist/chrome.zip
+      # Signs in after the build, with no credentials file, so nothing the
+      # build runs can see the token.
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        id: google
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+      - name: Submit to the Chrome Web Store
+        id: store
+        run: bun scripts/workflows/publish-chrome-web-store.ts dist/chrome.zip
+        env:
+          CHROME_WEB_STORE_TOKEN: ${{ steps.google.outputs.access_token }}
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+      - name: Mark the commit as published
+        if: steps.store.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.pick.outputs.sha }}
+        run: |
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/beta" \
+            -f sha="$SHA" -F force=true --silent \
+            || gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref=refs/tags/beta -f sha="$SHA" --silent

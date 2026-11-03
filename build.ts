@@ -35,8 +35,23 @@ try {
 }
 
 const baseVersion = process.env.npm_package_version ?? ""
-const buildVersion =
-  !isProduction && gitBranch ? `${baseVersion}+${gitBranch}` : baseVersion
+
+// Release channel builds, such as beta, are published to their own store
+// listing. Store versions must keep increasing, so the build number becomes a
+// fourth version part.
+const releaseChannel = process.env.RELEASE_CHANNEL ?? ""
+const buildNumber = process.env.BUILD_NUMBER ?? ""
+if (releaseChannel && !/^\d+$/.test(buildNumber)) {
+  throw new Error(`RELEASE_CHANNEL=${releaseChannel} needs a BUILD_NUMBER`)
+}
+const channelVersion = releaseChannel ? `${baseVersion}.${buildNumber}` : ""
+
+let buildVersion = baseVersion
+if (channelVersion) {
+  buildVersion = `${channelVersion} ${releaseChannel}`
+} else if (!isProduction && gitBranch) {
+  buildVersion = `${baseVersion}+${gitBranch}`
+}
 
 // ---------------------------------------------------------------------------
 // Environment variables — replicate dotenv-webpack behaviour
@@ -99,12 +114,13 @@ const envDefines = loadEnvDefines()
 function mergeManifest(browser: string): string {
   const manifestDir = path.resolve("manifest")
 
-  // Ordered by priority: base, mode, browser, browser+mode
+  // Ordered by priority: base, mode, browser, browser+mode, release channel
   const candidates = [
     "manifest.json",
     `manifest.${mode}.json`,
     `manifest.${browser}.json`,
     `manifest.${browser}.${mode}.json`,
+    ...(releaseChannel ? [`manifest.${releaseChannel}.json`] : []),
   ]
 
   const layers: object[] = []
@@ -178,25 +194,30 @@ function copyDirRecursive(src: string, dest: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Branch badge overlay (dev builds only)
+// Icon badge overlay (dev and release channel builds)
 // ---------------------------------------------------------------------------
-async function overlayBranchBadge(outdir: string) {
-  if (!gitBranch) return
 
-  // Build initials: split on / and -, take first letter of each, cap at 4
-  const initials = gitBranch
+// Build initials: split on / and -, take first letter of each, cap at 4
+const branchInitials = (branch: string) =>
+  branch
     .split(/[/\-]/)
     .filter(Boolean)
     .map((s) => s[0].toUpperCase())
     .slice(0, 4)
     .join("")
 
+/** Badges the icon with `initials`, coloured by a hash of `colorSeed`. */
+async function overlayBadge(
+  outdir: string,
+  initials: string,
+  colorSeed: string,
+) {
   if (!initials) return
 
-  // Hash branch name → hue
+  // Hash the seed → hue
   let hash = 0
-  for (let i = 0; i < gitBranch.length; i++) {
-    hash = (hash * 31 + gitBranch.charCodeAt(i)) | 0
+  for (let i = 0; i < colorSeed.length; i++) {
+    hash = (hash * 31 + colorSeed.charCodeAt(i)) | 0
   }
   const hue = ((hash % 360) + 360) % 360
   const bgColor = `hsl(${hue}, 65%, 45%)`
@@ -224,7 +245,7 @@ async function overlayBranchBadge(outdir: string) {
     .toBuffer()
 
   fs.writeFileSync(iconPath, buf)
-  console.log(`  Branch badge "${initials}" applied to icon (${gitBranch})`)
+  console.log(`  Badge "${initials}" applied to icon (${colorSeed})`)
 }
 
 // ---------------------------------------------------------------------------
@@ -371,14 +392,19 @@ async function buildForBrowser(browser: string) {
   // Copy static assets
   copyStaticAssets(browser, outdir)
 
-  // Overlay branch badge on icon for dev builds
-  if (!isProduction) {
-    await overlayBranchBadge(outdir)
+  // Overlay a badge on the icon for dev and release channel builds
+  if (channelVersion) {
+    await overlayBadge(outdir, "β", releaseChannel)
+  } else if (!isProduction && gitBranch) {
+    await overlayBadge(outdir, branchInitials(gitBranch), gitBranch)
   }
 
-  // Write merged manifest, adding version_name with branch info for dev builds
+  // Write merged manifest, adding version_name with branch or channel info
   const manifestObj = JSON.parse(mergeManifest(browser))
-  if (!isProduction && gitBranch) {
+  if (channelVersion) {
+    manifestObj.version = channelVersion
+    manifestObj.version_name = buildVersion
+  } else if (!isProduction && gitBranch) {
     manifestObj.version_name = buildVersion
   }
   fs.writeFileSync(
