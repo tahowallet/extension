@@ -6,6 +6,7 @@ import {
 } from "../../tests/factories"
 import accountsReducer, {
   AccountState,
+  initialState as accountsInitialState,
   loadAccount,
   updateAccountBalance,
 } from "../accounts"
@@ -43,7 +44,7 @@ function buildState(): RootState {
     }),
   ]
 
-  let account: AccountState = { accountsData: { evm: {} } }
+  let account: AccountState = accountsInitialState
   account = accountsReducer(
     account,
     loadAccount({ address: ADDRESS, network: ETHEREUM }),
