@@ -42,6 +42,40 @@ describe("HistoryDatabase", () => {
     expect(points.map(({ value }) => value)).toEqual([1, 2, 2])
   })
 
+  it("keeps one live point per five minutes for a balance that keeps changing", async () => {
+    const holdingKey = holdingKeyFor(ADDRESS, ASSET_ID)
+    // A balance that grows every block, reported in batches.
+    await db.addLiveBalances([balance(NOW, 1)])
+    await db.addLiveBalances([balance(NOW + MINUTE, 1.1)])
+    await db.addLiveBalances([
+      balance(NOW + 2 * MINUTE, 1.2),
+      balance(NOW + 3 * MINUTE, 1.3),
+    ])
+    await db.addLiveBalances([balance(NOW + 6 * MINUTE, 1.4)])
+
+    const { points } = await db.getBalanceSeries(holdingKey, 0, NOW + HOUR)
+    // The first five-minute window keeps only its latest value, and the next
+    // window starts a new point.
+    expect(points).toEqual([
+      { time: NOW + 3 * MINUTE, value: 1.3 },
+      { time: NOW + 6 * MINUTE, value: 1.4 },
+    ])
+    const [holding] = await db.getHoldings([ADDRESS])
+    expect(holding.value).toBe(1.4)
+  })
+
+  it("doesn't replace backfilled points with live ones", async () => {
+    await db.addBalances([{ ...balance(NOW, 1), source: "backfill" }])
+    await db.addLiveBalances([balance(NOW + MINUTE, 2)])
+
+    const { points } = await db.getBalanceSeries(
+      holdingKeyFor(ADDRESS, ASSET_ID),
+      0,
+      NOW + HOUR,
+    )
+    expect(points.map(({ value }) => value)).toEqual([1, 2])
+  })
+
   it("reads a series with its last point before the window", async () => {
     await db.addBalances([
       balance(NOW - 3 * DAY, 1),
@@ -76,13 +110,15 @@ describe("HistoryDatabase", () => {
       })),
     )
 
-    expect(await db.compact(NOW)).toBe(2)
+    expect(await db.compact(NOW)).toBe(3)
     const { points } = await db.getBalanceSeries(
       holdingKeyFor(ADDRESS, ASSET_ID),
       0,
       NOW,
     )
-    expect(points.map(({ value }) => value)).toEqual([2, 4, 3])
+    // Two days back, one point is kept per hour; within the last day, one is
+    // kept per five minutes.
+    expect(points.map(({ value }) => value)).toEqual([2, 3])
   })
 
   it("lists holdings once each, with their latest record", async () => {
