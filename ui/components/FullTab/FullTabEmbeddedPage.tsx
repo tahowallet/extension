@@ -1,5 +1,4 @@
 import React, { ReactElement, ReactNode } from "react"
-import { useTranslation } from "react-i18next"
 import { selectCurrentAccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors/uiSelectors"
 import { useBackgroundSelector } from "../../hooks"
@@ -18,7 +17,6 @@ export default function FullTabEmbeddedPage({
 }: {
   children: ReactNode
 }): ReactElement {
-  const { t } = useTranslation()
   const account = useBackgroundSelector(selectCurrentAccountTotal)
   const network = useBackgroundSelector(selectCurrentNetwork)
 
@@ -26,7 +24,6 @@ export default function FullTabEmbeddedPage({
     <div className="embedded">
       <div className="context_bar">
         <div className="acting_as">
-          <span className="label">{t("fullTab.embedded.actingAs")}</span>
           <SharedAvatar
             width="20px"
             avatarURL={account?.avatarURL}
@@ -75,9 +72,6 @@ export default function FullTabEmbeddedPage({
           max-width: 384px;
           overflow: hidden;
           white-space: nowrap;
-        }
-        .label {
-          color: var(--green-40);
         }
         .divider {
           color: var(--green-60);
