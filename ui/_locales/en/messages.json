@@ -1162,7 +1162,8 @@
       "title": "Unverified assets on {{network}}"
     },
     "networkFilter": {
-      "more": "+{{count}} more"
+      "summary_one": "{{network}} and 1 more",
+      "summary_other": "{{network}} and {{count}} more"
     }
   }
 }
