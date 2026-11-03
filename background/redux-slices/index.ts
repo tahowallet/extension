@@ -16,6 +16,9 @@ import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
 import pricesReducer from "./prices"
+// The history slice keeps no state, but it is imported here so that its
+// background thunks are registered as aliases.
+import "./history"
 
 const mainReducer = combineReducers({
   account: accountsReducer,

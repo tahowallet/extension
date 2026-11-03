@@ -273,6 +273,23 @@ export class IndexingDatabase extends Dexie {
     await this.prices.add(measurement)
   }
 
+  /**
+   * Drops raw price and balance measurements older than `before`, a UNIX
+   * time in milliseconds. Charts read compacted history from the history
+   * service instead; the latest balance lookup only reads the last week.
+   */
+  async pruneMeasurements(before: number): Promise<number> {
+    const [prices, balances] = await Promise.all([
+      // Price points carry UNIX seconds.
+      this.prices
+        .where("time")
+        .below(Math.floor(before / 1000))
+        .delete(),
+      this.balances.where("retrievedAt").below(before).delete(),
+    ])
+    return prices + balances
+  }
+
   async getLatestAccountBalance(
     address: string,
     network: EVMNetwork,
