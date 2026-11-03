@@ -44,4 +44,30 @@ describe("SharedNetworkIconStack", () => {
     })
     expect(ui.getByText("Name applies on 5 networks")).toBeInTheDocument()
   })
+
+  it("takes its own wording", async () => {
+    const ui = renderWithProviders(
+      <SharedNetworkIconStack
+        networks={FIVE_NETWORKS}
+        label="Activity on 5 networks"
+        title="Shown networks"
+      />,
+    )
+
+    await userEvent.hover(
+      ui.getByRole("img", { name: "Activity on 5 networks" }),
+    )
+
+    expect(ui.getByText("Shown networks")).toBeInTheDocument()
+  })
+
+  it("is only decoration without its tooltip", async () => {
+    const ui = renderWithProviders(
+      <SharedNetworkIconStack networks={FIVE_NETWORKS} tooltip={false} />,
+    )
+
+    expect(ui.queryByRole("img")).not.toBeInTheDocument()
+    await userEvent.hover(ui.getByTestId("network_stack_more"))
+    expect(ui.queryByText("Name applies on 5 networks")).not.toBeInTheDocument()
+  })
 })
