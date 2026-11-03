@@ -51,38 +51,11 @@ export function compactableIndexes(times: number[], now: number): number[] {
 }
 
 /**
- * The spacing history is expected to have at a given age once compacted,
- * for finding gaps worth infilling. Recent history is expected hourly even
- * though it is kept finer, since that is what backfill sources provide.
+ * Returns the spacing that history of the given age is expected to have once
+ * compacted, which is the spacing backfill fills to. Recent history is
+ * expected hourly even though it is kept at a finer resolution, since hourly
+ * points are what backfill sources provide.
  */
 export function expectedSpacingForAge(age: number): number {
   return Math.max(bucketSizeForAge(age), HOUR)
-}
-
-/**
- * Finds stretches between `from` and `to` with no point for longer than the
- * expected spacing at their age, so they can be infilled. Returns the gaps
- * newest first, since recent history matters most.
- */
-export function findGaps(
-  times: number[],
-  from: number,
-  to: number,
-  now: number,
-): { from: number; to: number }[] {
-  const sorted = [...times]
-    .filter((time) => time >= from && time <= to)
-    .sort((a, b) => a - b)
-  const edges = [from, ...sorted, to]
-  const gaps: { from: number; to: number }[] = []
-
-  for (let i = 1; i < edges.length; i += 1) {
-    const start = edges[i - 1]
-    const end = edges[i]
-    // Judge a gap by the coarser spacing of its older end.
-    const allowed = expectedSpacingForAge(now - start) * 1.5
-    if (end - start > allowed) gaps.push({ from: start, to: end })
-  }
-
-  return gaps.reverse()
 }
