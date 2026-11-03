@@ -38,7 +38,10 @@ type Props = {
   label: string
 }
 
-type History = AsyncThunkFulfillmentType<typeof fetchValueHistory>
+type History = AsyncThunkFulfillmentType<typeof fetchValueHistory> & {
+  /** The range the history was fetched for, and so the range it's drawn on. */
+  rangeKey: RangeKey
+}
 
 const formatValue = (value: number, compact = false) =>
   `$${value.toLocaleString(undefined, {
@@ -80,16 +83,29 @@ export default function FullTabValueChart({
   const dispatch = useBackgroundDispatch()
   const [rangeKey, setRangeKey] = useState<RangeKey>("month")
   const [history, setHistory] = useState<History | null>(null)
+  const [loading, setLoading] = useState(false)
+  const inFlight = useRef(false)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [width, setWidth] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const range = RANGES.find(({ key }) => key === rangeKey) ?? RANGES[2]
-  const queryKey = JSON.stringify({ addresses, chainIDs, assetID, rangeKey })
+  const subjectKey = JSON.stringify({ addresses, chainIDs, assetID })
+  const queryKey = JSON.stringify({ subjectKey, rangeKey })
+
+  // Showing a different subject's history would be misleading, so history is
+  // cleared when the subject changes. A different range for the same subject,
+  // on the other hand, stays up until the new range arrives.
+  useEffect(() => setHistory(null), [subjectKey])
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
+      // Skip this load if the previous one is still running, so that a slow
+      // answer doesn't pile more queries up behind it.
+      if (inFlight.current) return
+      inFlight.current = true
+      setLoading(true)
       const to = Date.now()
       const result = (await dispatch(
         fetchValueHistory({
@@ -101,14 +117,22 @@ export default function FullTabValueChart({
           samples: SAMPLES,
         }),
       )) as unknown as History | { payload?: History }
+      inFlight.current = false
       // The background answers with the thunk's fulfilled action.
       const value = "points" in result ? result : result.payload
-      if (!cancelled)
-        setHistory(
-          value ?? { points: [], coverageStart: undefined, backfilling: false },
-        )
+      if (!cancelled) {
+        setLoading(false)
+        setHistory({
+          ...(value ?? {
+            points: [],
+            coverageStart: undefined,
+            backfilling: false,
+          }),
+          rangeKey,
+        })
+      }
     }
-    setHistory(null)
+    inFlight.current = false
     void load()
     // Refresh every minute to pick up live updates and backfill progress.
     const interval = window.setInterval(() => void load(), 60_000)
@@ -132,10 +156,14 @@ export default function FullTabValueChart({
   }, [])
 
   const points = useMemo(() => history?.points ?? [], [history])
+  // History is drawn on the range it was fetched for until history for the
+  // newly selected range arrives.
+  const shownRange =
+    RANGES.find(({ key }) => key === history?.rangeKey) ?? range
   const plotWidth = Math.max(width - PADDING.left - PADDING.right, 0)
   const plotHeight = HEIGHT - PADDING.top - PADDING.bottom
   const to = points.length > 0 ? points[points.length - 1].time : Date.now()
-  const from = to - range.span
+  const from = to - shownRange.span
 
   const geometry = useMemo(() => {
     if (points.length === 0 || plotWidth === 0) return null
@@ -190,7 +218,7 @@ export default function FullTabValueChart({
   const coverageCut =
     geometry &&
     coverageStart !== undefined &&
-    coverageStart > from + range.span * 0.02
+    coverageStart > from + shownRange.span * 0.02
       ? geometry.x(coverageStart)
       : undefined
 
@@ -226,7 +254,11 @@ export default function FullTabValueChart({
           />
         </div>
       </div>
-      <div className="plot" ref={containerRef}>
+      <div
+        className={`plot${loading && history !== null ? " updating" : ""}`}
+        ref={containerRef}
+        aria-busy={loading}
+      >
         {history === null && (
           <div className="overlay">
             <SharedLoadingSpinner size="small" />
@@ -243,7 +275,7 @@ export default function FullTabValueChart({
             height={HEIGHT}
             role="img"
             aria-label={label}
-            key={queryKey}
+            key={`${subjectKey}:${shownRange.key}`}
           >
             <defs>
               <linearGradient id="value_fill" x1="0" x2="0" y1="0" y2="1">
@@ -278,7 +310,7 @@ export default function FullTabValueChart({
                 </text>
               </g>
             ))}
-            {[from, from + range.span / 2, to].map((time, index) => (
+            {[from, from + shownRange.span / 2, to].map((time, index) => (
               <text
                 key={time}
                 className="axis"
@@ -286,7 +318,7 @@ export default function FullTabValueChart({
                 y={HEIGHT - 4}
                 textAnchor={(["start", "middle", "end"] as const)[index]}
               >
-                {dayjs(time).format(range.format)}
+                {dayjs(time).format(shownRange.format)}
               </text>
             ))}
             {coverageCut !== undefined && (
@@ -409,6 +441,12 @@ export default function FullTabValueChart({
           position: relative;
           height: ${HEIGHT}px;
           margin-top: 8px;
+        }
+        .plot svg {
+          transition: opacity 160ms ease-out;
+        }
+        .plot.updating svg {
+          opacity: 0.5;
         }
         .overlay {
           position: absolute;
