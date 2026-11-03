@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { useOnClickOutside } from "../../hooks/dom-hooks"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
+import SharedNetworkIconStack from "../Shared/SharedNetworkIconStack"
 
 export type NetworkFilterOption = {
   network: EVMNetwork
@@ -30,74 +31,15 @@ type Props = {
   maxIcons?: number
 }
 
-const ICON_SIZE = 18
-
 /**
- * Overlapping network icons, drawn the way the address book's "Applies on"
- * indicator (SharedNetworkIconStack, in #3889) draws them: each a quarter
- * under the last, ringed in the background color, ending in an ellipsis
- * when there are more than fit.
- */
-function NetworkStack({
-  networks,
-  maxIcons,
-}: {
-  networks: EVMNetwork[]
-  maxIcons: number
-}): ReactElement {
-  const isTruncated = networks.length > maxIcons
-  const shown = isTruncated ? networks.slice(0, maxIcons - 1) : networks
-  return (
-    <span className="stack" aria-hidden>
-      {shown.map((network) => (
-        <span key={network.chainID} className="stack_item">
-          <SharedNetworkIcon network={network} size={ICON_SIZE} />
-        </span>
-      ))}
-      {isTruncated && (
-        <span className="stack_item more" data-testid="network_stack_more">
-          <span>…</span>
-        </span>
-      )}
-      <style jsx>{`
-        .stack {
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          padding-left: ${ICON_SIZE / 4}px;
-        }
-        .stack_item {
-          position: relative;
-          display: flex;
-          width: ${ICON_SIZE}px;
-          height: ${ICON_SIZE}px;
-          margin-left: -${ICON_SIZE / 4}px;
-          border-radius: 50%;
-          box-shadow: 0 0 0 2px var(--hunter-green);
-          background-color: var(--hunter-green);
-          overflow: hidden;
-        }
-        .more {
-          align-items: center;
-          justify-content: center;
-          background-color: var(--green-80);
-          color: var(--green-20);
-          font-size: ${Math.round(ICON_SIZE * 0.75)}px;
-          line-height: ${ICON_SIZE}px;
-          font-weight: 600;
-        }
-        .more span {
-          margin-top: -${Math.round(ICON_SIZE / 4)}px;
-        }
-      `}</style>
-    </span>
-  )
-}
-
-/**
- * Which networks a view shows: the shown networks as a stack of icons with
- * a summary, opening a list of every network with its count, where each can
- * be selected and deselected. All networks are shown by default.
+ * A filter that controls which networks a view shows. Its button shows the
+ * currently shown networks as a stack of network icons, like the address
+ * book's, followed by a summary of them. Clicking it opens a list of every
+ * network with its item count, where each network can be selected or
+ * deselected, along with a row that selects or deselects them all.
+ *
+ * Note that this component doesn't track the selection itself; callers pass
+ * the shown networks in `selected` and update them from `onChange`.
  */
 export default function FullTabNetworkFilter({
   options,
@@ -164,7 +106,15 @@ export default function FullTabNetworkFilter({
       >
         <span className="label">{t("overview.networks")}</span>
         {shown.length > 0 && (
-          <NetworkStack networks={shown} maxIcons={maxIcons} />
+          // The list this button opens already names every network, so the
+          // stack's own tooltip is turned off.
+          <SharedNetworkIconStack
+            networks={shown}
+            maxIcons={maxIcons}
+            size={18}
+            ringColor="var(--hunter-green)"
+            tooltip={false}
+          />
         )}
         <span className="summary">{summary}</span>
         <span className={`chevron ${isOpen ? "open" : ""}`} aria-hidden />
