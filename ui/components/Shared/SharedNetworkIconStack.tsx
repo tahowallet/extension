@@ -18,6 +18,26 @@ type Props = {
    */
   ringColor?: string
   tooltipVerticalPosition?: "top" | "bottom"
+  /**
+   * An accessible label describing what the stack's networks are for, read by
+   * screen readers. Defaults to the address book's wording, which describes
+   * the networks a name applies on. Note that there is no default when
+   * `tooltip` is off.
+   */
+  label?: string
+  /**
+   * The heading shown above the tooltip's list of networks. Defaults to the
+   * address book's wording.
+   */
+  title?: string
+  /**
+   * Whether hovering the stack shows a tooltip listing its networks. Defaults
+   * to `true`. Turn it off when the stack sits inside a control that already
+   * lists the networks itself, such as a network filter. Without its tooltip,
+   * the stack is treated as decoration and hidden from screen readers, unless
+   * it is given an explicit `label`.
+   */
+  tooltip?: boolean
 }
 
 /**
@@ -38,10 +58,15 @@ function StackIcons({
   isTruncated: boolean
   size: number
   ringColor: string
-  label: string
+  label: string | undefined
 }): ReactElement {
   return (
-    <div className="stack" role="img" aria-label={label}>
+    <div
+      className="stack"
+      {...(label === undefined
+        ? { "aria-hidden": true }
+        : { role: "img", "aria-label": label })}
+    >
       {networks.map((network) => (
         <div key={network.chainID} className="stack_item">
           <SharedNetworkIcon network={network} size={size} />
@@ -98,6 +123,9 @@ export default function SharedNetworkIconStack({
   size = 16,
   ringColor = "var(--green-95)",
   tooltipVerticalPosition = "bottom",
+  label: labelOverride,
+  title,
+  tooltip = true,
 }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "addressBook" })
 
@@ -107,10 +135,11 @@ export default function SharedNetworkIconStack({
     [isTruncated, maxIcons, networks],
   )
 
-  const label = t("appliesOnNetworks", {
+  const defaultLabel = t("appliesOnNetworks", {
     count: networks.length,
     networks: networks.map(({ name }) => name).join(", "),
   })
+  const label = tooltip ? (labelOverride ?? defaultLabel) : labelOverride
 
   const IconComponent = useCallback(
     () => (
@@ -130,6 +159,8 @@ export default function SharedNetworkIconStack({
   const iconCount = shownNetworks.length + (isTruncated ? 1 : 0)
   const stackWidth = size + (iconCount - 1) * size * 0.75
 
+  if (!tooltip) return <IconComponent />
+
   return (
     <SharedTooltip
       verticalPosition={tooltipVerticalPosition}
@@ -142,7 +173,7 @@ export default function SharedNetworkIconStack({
     >
       <div className="networks_tooltip">
         <div className="title">
-          {t("appliesOnTitle", { count: networks.length })}
+          {title ?? t("appliesOnTitle", { count: networks.length })}
         </div>
         <ul>
           {networks.map((network) => (
