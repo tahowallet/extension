@@ -132,10 +132,18 @@ describe("HistoryDatabase", () => {
       backfill: "&key",
     })
     await v1.table("balances").bulkAdd([balance(NOW - DAY, 1), balance(NOW, 7)])
+    await v1.table("backfill").bulkPut([
+      { key: "price:1/base", reachedBack: NOW - DAY, unavailable: true },
+      { key: `balance:${holdingKeyFor(ADDRESS, ASSET_ID)}`, failures: 3 },
+    ])
     v1.close()
 
     const upgraded = new HistoryDatabase()
     const holdings = await upgraded.getHoldings([ADDRESS])
     expect(holdings.map(({ value }) => value)).toEqual([7])
+    // Version 1's backfill bookkeeping doesn't carry over.
+    expect(await upgraded.getBackfillState("price:1/base")).toEqual({
+      key: "price:1/base",
+    })
   })
 })
