@@ -54,6 +54,11 @@ export default function FullTabConnectedDapps(): ReactElement {
           border-radius: 12px;
           padding: 8px 16px;
         }
+        /* Each row sits in its own card, so the row's own divider is
+           removed. */
+        li :global(.container) {
+          border-bottom: none;
+        }
         .empty {
           max-width: 400px;
         }
