@@ -34,6 +34,8 @@ type Props = {
   leadingHeader?: ReactNode
   onRowClick?: (assetAmount: CompleteAssetAmount) => void
   emptyMessage?: string
+  /** Width of the trailing actions column, in pixels. */
+  actionsWidth?: number
 }
 
 /**
@@ -52,6 +54,7 @@ export default function FullTabAssetTable({
   leadingHeader,
   onRowClick,
   emptyMessage,
+  actionsWidth = 96,
 }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "fullTab.table" })
 
@@ -242,7 +245,7 @@ export default function FullTabAssetTable({
           padding-right: 0;
         }
         th.actions {
-          width: 96px;
+          width: ${actionsWidth}px;
         }
         /* In narrow windows, the unit price column is hidden and the other
            numeric columns widen to take its space. */
