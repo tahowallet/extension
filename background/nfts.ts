@@ -144,6 +144,12 @@ export type ERC721Transfer = {
 export type ScannedTransfers = {
   assetTransfers: AssetTransfer[]
   nftTransfers: ERC721Transfer[]
+  /**
+   * The first block that was actually scanned, if a lookup covered less than
+   * the range it was asked for. Callers should treat blocks before this one as
+   * not yet scanned, and look them up on a later pass.
+   */
+  coveredFromBlock?: number
 }
 
 export type TransferredNFT = {

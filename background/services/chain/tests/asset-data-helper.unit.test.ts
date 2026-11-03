@@ -181,6 +181,28 @@ describe("AssetDataHelper", () => {
       )
     })
 
+    it("scans only the newest step of a long range when Alchemy fails", async () => {
+      mockedBoarAssetTransfers.mockRejectedValue(new Error("timeout"))
+      const provider = { supportsAlchemyMethods: true }
+      const helper = makeHelperWithProvider(
+        provider as unknown as Partial<SerialFallbackProvider>,
+      )
+      const addressOnNetwork = createAddressOnNetwork()
+
+      await expect(
+        helper.getAssetTransfers(addressOnNetwork, 0, 1_000_000),
+      ).resolves.toEqual({ ...NO_TRANSFERS, coveredFromBlock: 995_001 })
+
+      // One scanner step, rather than a log scan back to genesis.
+      expect(mockedLogAssetTransfers).toHaveBeenCalledWith(
+        provider,
+        addressOnNetwork,
+        995_001,
+        1_000_000,
+        false,
+      )
+    })
+
     it("rejects when both the Alchemy path and the log fallback fail", async () => {
       // The log fallback still rethrows, which is what lets callers like
       // ChainService manage their own retries.

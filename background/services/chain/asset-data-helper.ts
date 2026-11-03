@@ -16,6 +16,7 @@ import {
   getTokenBalances,
 } from "../../lib/erc20"
 import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
+import { BLOCKS_PER_TRANSFER_LOG_SCAN } from "./asset-transfer-scanner"
 import { FeatureFlags, isEnabled } from "../../features"
 import { DOGGO, FORK } from "../../constants"
 
@@ -247,14 +248,27 @@ export default class AssetDataHelper {
     // standard ERC-20 Transfer logs via eth_getLogs. Native-asset transfers
     // are not captured this way. Failures are left to the caller, which
     // retries and logs them.
+    //
+    // A range meant for a single Alchemy call can reach all the way back to
+    // genesis, which as log queries can mean thousands of requests. Instead,
+    // scan only the newest BLOCKS_PER_TRANSFER_LOG_SCAN blocks of it and
+    // report where the scan started, so the caller can pick up the rest of
+    // the range a step at a time.
     const resolvedEndBlock = endBlock ?? (await provider.getBlockNumber())
+    const fromBlock = Math.max(
+      startBlock,
+      resolvedEndBlock - BLOCKS_PER_TRANSFER_LOG_SCAN + 1,
+    )
 
-    return this.assetTransferLookups.viaLogs(
+    const scanned = await this.assetTransferLookups.viaLogs(
       provider,
       addressOnNetwork,
-      startBlock,
+      fromBlock,
       resolvedEndBlock,
       incomingOnly,
     )
+    return fromBlock > startBlock
+      ? { ...scanned, coveredFromBlock: fromBlock }
+      : scanned
   }
 }

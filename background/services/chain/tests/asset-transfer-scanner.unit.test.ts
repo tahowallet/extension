@@ -317,6 +317,26 @@ describe("AssetTransferScanner", () => {
     expect(enqueued.at(-1)).toEqual(["0x27", 1])
   })
 
+  it("records only the blocks a lookup covered", async () => {
+    const { scanner, db, assetData } = harness({ supportsAlchemy: true })
+    assetData.getAssetTransfers.resolves({
+      assetTransfers: [],
+      nftTransfers: [],
+      coveredFromBlock: 15,
+    })
+
+    await scanner.scanBlocks(
+      createAddressOnNetwork({ network: ETHEREUM }),
+      0n,
+      20n,
+    )
+
+    // The rest is left for a later historic scan.
+    expect(db.recordAccountAssetTransferLookup.firstCall.args.slice(1)).toEqual(
+      [15n, 20n],
+    )
+  })
+
   it("emits ERC-721 transfers apart, without queueing their transactions", async () => {
     const nftTransfers = [{ txHash: "0xnft", tokenId: "7" }]
     const { scanner, emitted, emittedNFTs, enqueued } = harness({

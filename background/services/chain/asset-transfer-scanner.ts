@@ -31,7 +31,7 @@ const BLOCKS_FOR_TRANSACTION_HISTORY = 128000
 // requests. Keeping each scan comfortably under the usual caps keeps it at one
 // request per direction, and the recurring recent/historic alarms below are
 // what extend coverage over time.
-const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
+export const BLOCKS_PER_TRANSFER_LOG_SCAN = 5000
 
 // The number of blocks before the current block height to start looking for
 // asset transfers. This is important to allow nodes like Erigon and
@@ -246,16 +246,19 @@ export default class AssetTransferScanner {
       )
     }
 
-    const { assetTransfers, nftTransfers } = await assetData.getAssetTransfers(
-      addressNetwork,
-      Number(startBlock),
-      Number(endBlock),
-      incomingOnly,
-    )
+    const { assetTransfers, nftTransfers, coveredFromBlock } =
+      await assetData.getAssetTransfers(
+        addressNetwork,
+        Number(startBlock),
+        Number(endBlock),
+        incomingOnly,
+      )
 
+    // Only record the blocks that were actually scanned, so that a later
+    // scan picks up the rest of the range.
     await db.recordAccountAssetTransferLookup(
       addressNetwork,
-      startBlock,
+      coveredFromBlock === undefined ? startBlock : BigInt(coveredFromBlock),
       endBlock,
     )
 
