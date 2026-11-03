@@ -74,6 +74,18 @@ const READ_COST = 2
 const COINGECKO_RATES = { active: 0.5, idle: 2 }
 const COINGECKO_BURST = 2
 
+/**
+ * Value history queries that take at least this long log a warning with
+ * their per-phase timings.
+ */
+const SLOW_QUERY_MS = 1_000
+
+/** Backfill ticks that take at least this long log a warning. */
+const SLOW_TICK_MS = 5_000
+
+/** The minimum spacing between recorded live prices for each asset. */
+const LIVE_PRICE_SPACING = 5 * MINUTE
+
 /** Seconds without input after which Chrome reports the user idle. */
 const IDLE_AFTER_SECONDS = 5 * 60
 
@@ -217,6 +229,12 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     })
   }
 
+  /**
+   * The time of the latest recorded live price for each price key, used to
+   * space live prices out by {@link LIVE_PRICE_SPACING}.
+   */
+  #lastLivePriceAt = new Map<string, number>()
+
   private async recordPrices(pricePoints: PricePoint[]): Promise<void> {
     const records = pricePoints.flatMap((pricePoint) => {
       const fiatIndex = pricePoint.pair.findIndex(({ symbol }) =>
@@ -248,15 +266,25 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         },
       ]
     })
-    if (records.length > 0) await this.db.addPrices(records)
+    // Prices arrive every minute for every tracked asset, but history only
+    // keeps one every few minutes per asset, which is all that compaction
+    // would keep anyway.
+    const kept = records.filter(({ priceKey, time }) => {
+      const last = this.#lastLivePriceAt.get(priceKey)
+      if (last !== undefined && time - last < LIVE_PRICE_SPACING) return false
+      this.#lastLivePriceAt.set(priceKey, time)
+      return true
+    })
+    if (kept.length > 0) await this.db.addPrices(kept)
   }
 
   private async recordBalances(balances: AccountBalance[]): Promise<void> {
-    await Promise.all(
+    if (balances.length === 0) return
+    await this.db.addLiveBalances(
       balances.map(({ address, network, assetAmount, retrievedAt }) => {
         const { asset, amount } = assetAmount
         const assetID = getFullAssetID(asset)
-        return this.db.addBalance({
+        return {
           holdingKey: holdingKeyFor(address, assetID),
           address: normalizeEVMAddress(address),
           chainID: network.chainID,
@@ -265,8 +293,8 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
           trusted: isTrustedAsset(asset),
           time: retrievedAt,
           value: Number(amount) / 10 ** asset.decimals,
-          source: "live",
-        })
+          source: "live" as const,
+        }
       }),
     )
   }
@@ -324,6 +352,14 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   #feedDecimals = new Map<string, number>()
 
   #ticking = false
+
+  /**
+   * Whether each series still has backfill work, as of the last tick that
+   * checked it, keyed by `balances:${chainID}` or `price:${assetID}`. Charts
+   * read this rather than working it out from two years of a series'
+   * history.
+   */
+  #pending = new Map<string, boolean>()
 
   private budgetFor(source: string): RateBudget {
     let budget = this.#budgets.get(source)
@@ -410,6 +446,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   async backfillTick(now = Date.now()): Promise<void> {
     if (this.#ticking) return
     this.#ticking = true
+    const startedAt = performance.now()
     try {
       const idle = await isUserIdle()
       const accounts = await this.chainService.getAccountsToTrack()
@@ -433,6 +470,10 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       logger.warn("History backfill tick failed", error)
     } finally {
       this.#ticking = false
+      const elapsed = Math.round(performance.now() - startedAt)
+      if (elapsed >= SLOW_TICK_MS) {
+        logger.warn(`History backfill tick took ${elapsed}ms.`)
+      }
     }
   }
 
@@ -482,6 +523,11 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         }),
       )
     ).flat()
+
+    this.#pending.set(
+      `balances:${network.chainID}`,
+      missing.some(({ buckets }) => buckets.length > 0),
+    )
 
     const target = missing
       .flatMap(({ buckets }) => buckets.slice(0, 1))
@@ -565,6 +611,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
           const buckets = missingBuckets(times, now, {
             floor: activeFloor(state, now),
           })
+          this.#pending.set(key, buckets.length > 0)
           return buckets.length > 0 ? [{ holding, state, buckets }] : []
         }),
       )
@@ -686,22 +733,6 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     )
   }
 
-  /** Whether backfill has work left for a series of times. */
-  private async stillBackfilling(
-    key: string,
-    times: () => Promise<number[]>,
-    now: number,
-  ): Promise<boolean> {
-    const state = await this.db.getBackfillState(key)
-    if (state.unavailable) return false
-    return (
-      missingBuckets(await times(), now, {
-        floor: activeFloor(state, now),
-        limit: 1,
-      }).length > 0
-    )
-  }
-
   /**
    * Returns the value over time of the queried accounts' holdings, sampled at
    * `samples` points across the queried span, along with when coverage starts
@@ -709,11 +740,20 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    */
   async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
     const { addresses, chainIDs, assetID, from, to, samples } = query
+    const timings: Record<string, number> = {}
+    let phaseStart = performance.now()
+    const phase = (name: string) => {
+      const now = performance.now()
+      timings[name] = Math.round(now - phaseStart)
+      phaseStart = now
+    }
+
     const holdings = (await this.db.getHoldings(addresses)).filter(
       (holding) =>
         (chainIDs === undefined || chainIDs.includes(holding.chainID)) &&
         (assetID === undefined ? holding.trusted : holding.assetID === assetID),
     )
+    phase("holdings")
 
     const series = await Promise.all(
       holdings.map(async (holding) => {
@@ -724,6 +764,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         return { holding, balances, priceKey }
       }),
     )
+    phase("balances")
 
     const prices = new Map<string, HistoryPoint[]>()
     await Promise.all(
@@ -733,6 +774,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         },
       ),
     )
+    phase("prices")
 
     const { points, coverageStart } = valueSeries({
       holdings: series.map(({ priceKey, balances }) => ({
@@ -745,25 +787,31 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       samples,
       priceTolerance: DAY,
     })
+    phase("values")
 
-    const now = Date.now()
-    const since = now - BACKFILL_HORIZON
-    const backfilling = (
-      await Promise.all(
-        series.flatMap(({ holding, priceKey }) => [
-          this.stillBackfilling(
-            `balances:${holding.chainID}`,
-            () => this.db.getBalanceTimes(holding.holdingKey, since, now),
-            now,
-          ),
-          this.stillBackfilling(
-            `price:${priceKey}`,
-            () => this.db.getPriceTimes(priceKey, since, now),
-            now,
-          ),
-        ]),
+    // A series that no backfill tick has checked yet counts as still
+    // backfilling.
+    const backfilling = series.some(
+      ({ holding }) =>
+        (this.#pending.get(`balances:${holding.chainID}`) ?? true) ||
+        (this.#pending.get(`price:${holding.assetID}`) ?? true),
+    )
+
+    const total = Object.values(timings).reduce((sum, ms) => sum + ms, 0)
+    if (total >= SLOW_QUERY_MS) {
+      const balancePoints = series.reduce(
+        (sum, { balances }) => sum + balances.points.length,
+        0,
       )
-    ).some(Boolean)
+      const pricePoints = [...prices.values()].reduce(
+        (sum, priceSeries) => sum + priceSeries.length,
+        0,
+      )
+      logger.warn(
+        `Value history took ${total}ms for ${holdings.length} holdings, ${prices.size} price series, ${balancePoints} balance and ${pricePoints} price points.`,
+        timings,
+      )
+    }
 
     return { points, coverageStart, backfilling }
   }
