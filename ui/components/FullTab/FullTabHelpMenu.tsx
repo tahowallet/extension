@@ -110,18 +110,21 @@ export default function FullTabHelpMenu(): ReactElement {
         <span className="question" aria-hidden>
           ?
         </span>
-        {t("fullTab.help")}
+        <span className="label">{t("fullTab.help")}</span>
       </button>
       <style jsx>{`
         .help {
           position: relative;
         }
+        /* At rest, only the question mark is shown. The label slides out
+           when the pill is hovered or has keyboard focus, and while the menu
+           is open. */
         .help_pill {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 0;
           height: 36px;
-          padding: 0 16px 0 6px;
+          padding: 0 6px;
           border-radius: 18px;
           background: var(--green-95);
           color: var(--green-20);
@@ -130,12 +133,41 @@ export default function FullTabHelpMenu(): ReactElement {
           cursor: pointer;
           transition:
             background-color 0.2s ease,
-            color 0.2s ease;
+            color 0.2s ease,
+            gap 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+            padding 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .label {
+          max-width: 0;
+          overflow: hidden;
+          white-space: nowrap;
+          opacity: 0;
+          transform: translateX(-4px);
+          transition:
+            max-width 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+            opacity 0.2s ease,
+            transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .help_pill:hover,
+        .help_pill:focus-visible,
         .help_pill.open {
+          gap: 8px;
+          padding: 0 16px 0 6px;
           background: var(--green-80);
           color: var(--text-strong);
+        }
+        .help_pill:hover .label,
+        .help_pill:focus-visible .label,
+        .help_pill.open .label {
+          max-width: 80px;
+          opacity: 1;
+          transform: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .help_pill,
+          .label {
+            transition: none;
+          }
         }
         .question {
           display: inline-flex;
