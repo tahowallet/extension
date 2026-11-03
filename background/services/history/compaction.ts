@@ -1,15 +1,20 @@
-import { DAY, HOUR } from "../../constants"
+import { DAY, HOUR, MINUTE } from "../../constants"
 
 /**
- * How finely history is kept as it ages, after the retention plan in issue
- * #214: every point for the latest day, then one an hour for a week, one a
- * day for three months, and one a week after that.
+ * Retention tiers describe how finely history is kept as it ages, following
+ * the retention plan in issue #214: one point every five minutes for the
+ * latest day, then one an hour for a week, one a day for three months, and
+ * one a week after that.
  *
- * Each tier gives the age it starts at and the bucket size points in it
- * collapse to. A bucket size of 0 keeps every point.
+ * Note that #214 kept every point for the latest day. However, prices arrive
+ * every minute for every tracked asset, which is far more than a chart can
+ * show, so the latest day is kept at five-minute resolution instead.
+ *
+ * Each tier gives the age at which it starts and the bucket size that points
+ * in it are collapsed to. A bucket size of 0 keeps every point.
  */
 export const RETENTION_TIERS: readonly { fromAge: number; bucket: number }[] = [
-  { fromAge: 0, bucket: 0 },
+  { fromAge: 0, bucket: 5 * MINUTE },
   { fromAge: DAY, bucket: HOUR },
   { fromAge: 7 * DAY, bucket: DAY },
   { fromAge: 90 * DAY, bucket: 7 * DAY },

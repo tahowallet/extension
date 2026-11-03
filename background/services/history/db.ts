@@ -1,5 +1,5 @@
 import Dexie, { DexieOptions } from "dexie"
-import { HOUR } from "../../constants"
+import { HOUR, MINUTE } from "../../constants"
 import { compactableIndexes } from "./compaction"
 import { HistoryPoint } from "./series"
 
@@ -80,6 +80,9 @@ const timesOf = (keys: unknown[]): number[] =>
   keys.flatMap((key) =>
     Array.isArray(key) && typeof key[1] === "number" ? [key[1]] : [],
   )
+
+/** The window within which live balances keep at most one point per series. */
+export const LIVE_BALANCE_SPACING = 5 * MINUTE
 
 export const holdingKeyFor = (address: string, assetID: string): string =>
   `${address.toLowerCase()}|${assetID}`
@@ -171,27 +174,83 @@ export class HistoryDatabase extends Dexie {
   }
 
   /**
-   * Records a balance unless it repeats the series' latest one from within
-   * the last hour: balances are step functions, so repeats add nothing but
-   * proof the balance held, which an hourly point gives.
+   * Records live balances, skipping any that are no newer than their series'
+   * latest point, or that repeat its value within an hour of it. Balances are
+   * step functions, so a repeated value adds nothing but proof that the
+   * balance held, and an hourly point is enough for that.
+   *
+   * A balance that changes every block, like an interest-bearing token's,
+   * keeps one point per {@link LIVE_BALANCE_SPACING} window: if the latest
+   * point is also live and falls in the same window, the new balance replaces
+   * it. That way, the latest point is always current without storing a point
+   * per block.
+   *
+   * The wallet reports all of an account's balances at once, and often, so
+   * the batch is checked against the holdings table and written in a single
+   * transaction rather than with a lookup and a write per balance.
+   *
+   * Returns the number of balances that were added or replaced.
    */
-  async addBalance(record: BalanceRecord): Promise<void> {
-    const latest = await this.balances
-      .where("[holdingKey+time]")
-      .between(
-        [record.holdingKey, Dexie.minKey],
-        [record.holdingKey, Dexie.maxKey],
+  async addLiveBalances(records: BalanceRecord[]): Promise<number> {
+    const latestInBatch = new Map<string, BalanceRecord>()
+    records.forEach((record) => {
+      const seen = latestInBatch.get(record.holdingKey)
+      if (!seen || seen.time < record.time) {
+        latestInBatch.set(record.holdingKey, record)
+      }
+    })
+    const candidates = [...latestInBatch.values()]
+
+    return this.transaction("rw", this.balances, this.holdings, async () => {
+      const latest = await this.holdings.bulkGet(
+        candidates.map(({ holdingKey }) => holdingKey),
       )
-      .last()
-    if (
-      latest &&
-      latest.value === record.value &&
-      record.time - latest.time < HOUR
-    ) {
-      return
-    }
-    await this.balances.add(record)
-    await this.noteHoldings([record])
+      const added: BalanceRecord[] = []
+      const replaced: BalanceRecord[] = []
+      candidates.forEach((record, index) => {
+        const known = latest[index]
+        if (known === undefined) {
+          added.push(record)
+          return
+        }
+        if (
+          record.time <= known.time ||
+          (record.value === known.value && record.time - known.time < HOUR)
+        ) {
+          return
+        }
+        if (
+          known.id !== undefined &&
+          known.source === "live" &&
+          Math.floor(record.time / LIVE_BALANCE_SPACING) ===
+            Math.floor(known.time / LIVE_BALANCE_SPACING)
+        ) {
+          replaced.push({ ...record, id: known.id })
+        } else {
+          added.push(record)
+        }
+      })
+
+      const addedIDs =
+        added.length > 0
+          ? await this.balances.bulkAdd(
+              added.map(({ id: _, ...record }) => record),
+              { allKeys: true },
+            )
+          : []
+      if (replaced.length > 0) await this.balances.bulkPut(replaced)
+      // Holdings keep the id of their latest point so that a later balance
+      // in the same window can replace it.
+      await this.holdings.bulkPut([
+        ...added.map((record, index) => ({ ...record, id: addedIDs[index] })),
+        ...replaced,
+      ])
+      return added.length + replaced.length
+    })
+  }
+
+  async addBalance(record: BalanceRecord): Promise<void> {
+    await this.addLiveBalances([record])
   }
 
   async addBalances(records: BalanceRecord[]): Promise<void> {

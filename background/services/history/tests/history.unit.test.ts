@@ -6,7 +6,7 @@ const NOW = Date.UTC(2026, 10, 3, 12)
 
 describe("bucketSizeForAge", () => {
   it("follows the #214 tiers", () => {
-    expect(bucketSizeForAge(5 * MINUTE)).toBe(0)
+    expect(bucketSizeForAge(5 * MINUTE)).toBe(5 * MINUTE)
     expect(bucketSizeForAge(2 * DAY)).toBe(HOUR)
     expect(bucketSizeForAge(30 * DAY)).toBe(DAY)
     expect(bucketSizeForAge(200 * DAY)).toBe(7 * DAY)
@@ -14,9 +14,9 @@ describe("bucketSizeForAge", () => {
 })
 
 describe("compactableIndexes", () => {
-  it("keeps every point from the last day", () => {
-    const times = [NOW - MINUTE, NOW - 2 * MINUTE, NOW - 3 * MINUTE]
-    expect(compactableIndexes(times, NOW)).toEqual([])
+  it("keeps one point every five minutes from the last day", () => {
+    const times = [NOW - MINUTE, NOW - 2 * MINUTE, NOW - 6 * MINUTE]
+    expect(compactableIndexes(times, NOW)).toEqual([1])
   })
 
   it("keeps only the latest point per bucket once older", () => {
