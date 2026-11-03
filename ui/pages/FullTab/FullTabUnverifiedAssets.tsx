@@ -133,10 +133,18 @@ export default function FullTabUnverifiedAssets(): ReactElement {
     }
   }
 
-  // Accounts only link here when they have unverified assets on the network.
-  // Once there are none, e.g. after verifying or hiding the last one, or for
-  // a network the wallet doesn't know, the account's asset list takes over.
-  const hasLoaded = balances !== undefined && balances !== "loading"
+  // Accounts only link to this page when they have unverified assets on the
+  // network. Once there are none, for example after the last one is verified
+  // or hidden, or if the network isn't one the wallet knows, this redirects
+  // to the account's page instead.
+  //
+  // Note that right after the wallet starts, balances can load before the
+  // assets they refer to, so an empty list is only treated as empty once the
+  // initialization time has expired.
+  const hasLoaded =
+    balances !== undefined &&
+    balances !== "loading" &&
+    initializationLoadingTimeExpired
   if (!network || (hasLoaded && unverifiedAssetAmounts.length === 0)) {
     return <Redirect to={accountPath(address)} />
   }
