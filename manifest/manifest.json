@@ -50,7 +50,7 @@
     "default_title": "Taho",
     "default_popup": "popup.html"
   },
-  "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab"],
+  "permissions": ["alarms", "storage", "unlimitedStorage", "activeTab", "idle"],
   "optional_permissions": ["notifications"],
   "background": {
     "service_worker": "background.js"
