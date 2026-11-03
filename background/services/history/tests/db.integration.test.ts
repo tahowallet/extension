@@ -1,3 +1,4 @@
+import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
 import { DAY, HOUR, MINUTE } from "../../../constants"
 import { BalanceRecord, HistoryDatabase, holdingKeyFor } from "../db"
@@ -90,5 +91,51 @@ describe("HistoryDatabase", () => {
     const holdings = await db.getHoldings([ADDRESS.toUpperCase()])
     expect(holdings).toHaveLength(1)
     expect(holdings[0].value).toBe(5)
+  })
+
+  it("keeps a holding's latest record when older history arrives", async () => {
+    await db.addBalance(balance(NOW, 5))
+    await db.addBalances([balance(NOW - 30 * DAY, 1)])
+
+    const [holding] = await db.getHoldings([ADDRESS])
+    expect(holding.value).toBe(5)
+    expect(holding.time).toBe(NOW)
+  })
+
+  it("finds price keys by symbol and times by series", async () => {
+    await db.addPrices(
+      ["1/base", "10/base", "1/base"].map((priceKey, index) => ({
+        priceKey,
+        symbol: "ETH",
+        time: NOW - index * HOUR,
+        value: 1,
+        source: "live" as const,
+      })),
+    )
+    expect((await db.getPriceKeysForSymbol("ETH")).sort()).toEqual([
+      "1/base",
+      "10/base",
+    ])
+    expect(await db.getPriceTimes("1/base", 0, NOW)).toEqual([
+      NOW - 2 * HOUR,
+      NOW,
+    ])
+  })
+
+  it("builds the holdings table from existing history on upgrade", async () => {
+    db.close()
+    // Set up a version 1 database, as it existed before the holdings table.
+    const v1 = new Dexie("tally/history")
+    v1.version(1).stores({
+      prices: "++id,[priceKey+time],symbol,time",
+      balances: "++id,[holdingKey+time],[address+chainID],address,time",
+      backfill: "&key",
+    })
+    await v1.table("balances").bulkAdd([balance(NOW - DAY, 1), balance(NOW, 7)])
+    v1.close()
+
+    const upgraded = new HistoryDatabase()
+    const holdings = await upgraded.getHoldings([ADDRESS])
+    expect(holdings.map(({ value }) => value)).toEqual([7])
   })
 })
