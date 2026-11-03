@@ -34,7 +34,7 @@ export default function FullTabAccountNetworkPanel({
   address,
   kind,
 }: Props): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "fullTab.account" })
+  const { t } = useTranslation()
   const dispatch = useBackgroundDispatch()
   const currentAccount = useBackgroundSelector(selectCurrentAccount)
   const accountNetworks = useAccountNetworks(address)
@@ -59,7 +59,11 @@ export default function FullTabAccountNetworkPanel({
 
   return (
     <div className="panel">
-      <div className="networks" role="radiogroup" aria-label={t("network")}>
+      <div
+        className="networks"
+        role="radiogroup"
+        aria-label={t("fullTab.account.network")}
+      >
         {networks.map((network) => {
           const checked =
             isSelected && sameNetwork(network, currentAccount.network)

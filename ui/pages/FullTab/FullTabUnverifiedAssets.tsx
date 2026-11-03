@@ -5,8 +5,8 @@ import React, {
   useMemo,
   useState,
 } from "react"
-import { Link, useParams } from "react-router-dom"
-import { useTranslation } from "react-i18next"
+import { Link, Redirect, useParams } from "react-router-dom"
+import { Trans, useTranslation } from "react-i18next"
 import { makeSelectAccountBalancesOnNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
   selectInitializationTimeExpired,
@@ -133,6 +133,14 @@ export default function FullTabUnverifiedAssets(): ReactElement {
     }
   }
 
+  // Accounts only link here when they have unverified assets on the network.
+  // Once there are none, e.g. after verifying or hiding the last one, or for
+  // a network the wallet doesn't know, the account's asset list takes over.
+  const hasLoaded = balances !== undefined && balances !== "loading"
+  if (!network || (hasLoaded && unverifiedAssetAmounts.length === 0)) {
+    return <Redirect to={accountPath(address)} />
+  }
+
   return (
     <FullTabSection
       eyebrow={
@@ -155,17 +163,18 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           onClick={hideSelected}
         >
           {selected.size === 0
-            ? t("hideNone")
-            : t("hideSelected", { count: selected.size })}
+            ? tWallet("verifiedAssets.dontShow")
+            : `${tWallet("verifiedAssets.dontShow")} (${selected.size})`}
         </SharedButton>
       }
     >
-      <p className="explainer">{t("explainer")}</p>
+      <p className="explainer">
+        <Trans i18nKey="settings.unverifiedAssets.tooltip" />
+      </p>
       <div className="table_card">
         <FullTabAssetTable
           assetAmounts={unverifiedAssetAmounts}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-          emptyMessage={t("empty")}
           actionsWidth={168}
           leadingHeader={
             <SharedCheckbox
