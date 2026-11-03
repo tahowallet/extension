@@ -70,10 +70,6 @@ export default function AccountList({
                 width={12}
                 height={10}
                 color="var(--green-40)"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggle()
-                }}
                 style={{
                   marginLeft: 5,
                   transform: `rotate(${isOpen ? "180" : "0"}deg)`,
@@ -130,7 +126,7 @@ export default function AccountList({
       `}</style>
       <style global jsx>
         {`
-          .accounts_toggle:hover button {
+          .accounts_toggle:hover .icon {
             background-color: var(--green-5);
           }
         `}
