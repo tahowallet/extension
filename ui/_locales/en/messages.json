@@ -1160,6 +1160,9 @@
     },
     "unverified": {
       "title": "Unverified assets on {{network}}"
+    },
+    "networkFilter": {
+      "more": "+{{count}} more"
     }
   }
 }
