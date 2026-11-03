@@ -10,6 +10,7 @@ import { encodeJSON, decodeJSON } from "./lib/utils"
 
 import { RootState } from "./redux-slices"
 import { BackgroundAsyncThunkAction } from "./redux-slices/utils"
+import { watchEventLoop } from "./lib/stall-watch"
 
 export { browser }
 
@@ -80,6 +81,10 @@ export async function newProxyStore(): Promise<ProxyStore<RootState>> {
  * Starts the Redux subsystems, including all services.
  */
 export async function startRedux(): Promise<ReduxService> {
+  // Watch for event loop stalls, which would otherwise only show up as a
+  // frozen UI with nothing in the logs to explain it.
+  watchEventLoop()
+
   const reduxService = await ReduxService.create()
 
   reduxService.startService()

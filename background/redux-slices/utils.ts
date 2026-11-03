@@ -7,6 +7,7 @@ import {
   createAsyncThunk,
 } from "@reduxjs/toolkit"
 import logger from "../lib/logger"
+import { watchThunk } from "../lib/stall-watch"
 // FIXME: this utility file should not depend on actual services.
 // Creating a properly typed version of `createBackgroundAsyncThunk`
 // elsewhere has proven quite hard, so we are hardwiring typing here.
@@ -166,7 +167,7 @@ export function createBackgroundAsyncThunk<
       ...args: Parameters<typeof payloadCreator>
     ): Promise<ReturnType<typeof payloadCreator>> => {
       try {
-        return await payloadCreator(...args)
+        return await watchThunk(typePrefix, async () => payloadCreator(...args))
       } catch (error) {
         logger.error("Async thunk failed", error)
         throw error

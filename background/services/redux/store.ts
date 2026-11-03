@@ -20,6 +20,18 @@ import { diff as deepDiff, patch } from "./differ"
 import logger from "../../lib/logger"
 import { recordReduxDiff, recordReduxPersist } from "../../lib/perf-metrics"
 
+/**
+ * How long, in ms, diffing the store for the UI can take before it's logged
+ * as slow. Diffing is synchronous, so nothing else in the background runs
+ * while it does.
+ */
+const SLOW_DIFF_MS = 200
+/**
+ * How long, in ms, a dispatched thunk's reply can wait for pending store
+ * updates to reach the UI before the wait is logged as slow.
+ */
+const SLOW_UPDATE_WAIT_MS = 1_000
+
 // Manifest v3/webext-redux v3 requirement, create at the top level to properly
 // attach to event handlers.
 const wrapStore = createWrapStore()
@@ -205,7 +217,11 @@ export function initializeStore<ThunkArgType>(
       if (lastState !== newState) {
         const diffStartedAt = Date.now()
         const diff = deepDiff(lastState, newState)
-        recordReduxDiff(Date.now() - diffStartedAt)
+        const diffDuration = Date.now() - diffStartedAt
+        recordReduxDiff(diffDuration)
+        if (diffDuration >= SLOW_DIFF_MS) {
+          logger.warn(`Diffing the store for the UI took ${diffDuration}ms.`)
+        }
 
         if (diff !== undefined) {
           updateFn(newState, [diff])
@@ -246,7 +262,14 @@ export function initializeStore<ThunkArgType>(
         // By this time, all pending updates should've been tracked.
         // since we're dealing with a thunk, we need to wait for
         // the store to be updated
+        const waitStartedAt = Date.now()
         await storeUpdateLock
+        const waited = Date.now() - waitStartedAt
+        if (waited >= SLOW_UPDATE_WAIT_MS) {
+          logger.warn(
+            `A dispatch's reply waited ${waited}ms for store updates to reach the UI.`,
+          )
+        }
 
         send({
           error: null,
