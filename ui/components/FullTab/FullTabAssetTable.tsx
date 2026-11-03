@@ -56,7 +56,7 @@ export default function FullTabAssetTable({
   emptyMessage,
   actionsWidth = 96,
 }: Props): ReactElement {
-  const { t } = useTranslation("translation", { keyPrefix: "fullTab.table" })
+  const { t } = useTranslation()
 
   const loadingOrEmpty = (value: string | undefined, prefix = "$") => {
     if (value !== undefined) return `${prefix}${value}`
@@ -66,11 +66,22 @@ export default function FullTabAssetTable({
     return <span className="muted">—</span>
   }
 
-  if (assetAmounts.length === 0) {
+  // Base assets are always listed once balances have loaded, so an empty list
+  // normally means balances are still loading. Callers that expect an empty
+  // list, for example of unverified assets, pass an `emptyMessage` to show
+  // instead.
+  if (assetAmounts.length === 0 && emptyMessage !== undefined) {
     return (
       <p style={{ color: "var(--green-40)", padding: 16, margin: 0 }}>
-        {emptyMessage ?? t("empty")}
+        {emptyMessage}
       </p>
+    )
+  }
+  if (assetAmounts.length === 0 && !initializationLoadingTimeExpired) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", padding: 24 }}>
+        <SharedLoadingSpinner size="small" />
+      </div>
     )
   }
 
@@ -79,13 +90,11 @@ export default function FullTabAssetTable({
       <thead>
         <tr>
           {renderLeading && <th className="leading">{leadingHeader}</th>}
-          <th>{t("asset")}</th>
-          <th className="numeric price">{t("price")}</th>
-          <th className="numeric">{t("balance")}</th>
-          <th className="numeric">{t("value")}</th>
-          {renderActions && (
-            <th className="actions" aria-label={t("actions")} />
-          )}
+          <th>{t("overview.tableHeader.asset")}</th>
+          <th className="numeric price">{t("overview.tableHeader.price")}</th>
+          <th className="numeric">{t("overview.tableHeader.balance")}</th>
+          <th className="numeric">{t("fullTab.table.value")}</th>
+          {renderActions && <th className="actions" />}
         </tr>
       </thead>
       <tbody>
@@ -100,7 +109,18 @@ export default function FullTabAssetTable({
               onClick={() => onRowClick?.(assetAmount)}
             >
               {renderLeading && (
-                <td className="leading">{renderLeading(assetAmount)}</td>
+                <td className="leading">
+                  {/* The leading control (e.g. a checkbox) handles its own
+                      clicks, so they are stopped here. If they reached the
+                      row, its click handler could undo them. */}
+                  {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+                  <div
+                    className="leading_wrap"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {renderLeading(assetAmount)}
+                  </div>
+                </td>
               )}
               <td>
                 <div className="asset">
@@ -259,6 +279,11 @@ export default function FullTabAssetTable({
         }
         .actions {
           white-space: nowrap;
+        }
+        /* The wrapper hugs the control, so that clicks elsewhere in the
+           leading cell still reach the row. */
+        .leading_wrap {
+          display: inline-flex;
         }
         .actions_wrap {
           display: flex;
