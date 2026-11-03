@@ -1,10 +1,23 @@
-import React, { ReactElement, useEffect, useMemo, useState } from "react"
+import React, {
+  ReactElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 import { Link, useParams } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { makeSelectAccountBalancesOnNetwork } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectInitializationTimeExpired,
+  setNewSelectedAccount,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { hideAsset } from "@tallyho/tally-background/redux-slices/assets"
-import { isSmartContractFungibleAsset } from "@tallyho/tally-background/assets"
+import {
+  isSmartContractFungibleAsset,
+  SmartContractFungibleAsset,
+} from "@tallyho/tally-background/assets"
+import { Activity } from "@tallyho/tally-background/redux-slices/activities"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import FullTabSection from "../../components/FullTab/FullTabSection"
@@ -15,15 +28,21 @@ import SharedCheckbox from "../../components/Shared/SharedCheckbox"
 import SharedButton from "../../components/Shared/SharedButton"
 import SharedNetworkIcon from "../../components/Shared/SharedNetworkIcon"
 import { accountPath, useFullTabAccount } from "../../components/FullTab/hooks"
+import FullTabDialog from "../../components/FullTab/FullTabDialog"
+import AssetVerifyToggler from "../../components/Wallet/UnverifiedAsset/AssetVerifyToggler"
+import AssetWarning from "../../components/Wallet/UnverifiedAsset/AssetWarning"
+import WalletActivityDetails from "../../components/Wallet/WalletActivityDetails"
 
 /**
- * The unverified assets an account holds on a network, which can be selected
- * and hidden in bulk.
+ * The full-tab page for the unverified assets an account holds on a network.
+ * Assets can be selected and hidden in bulk, or reviewed and verified one at
+ * a time in a dialog.
  */
 export default function FullTabUnverifiedAssets(): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "fullTab.unverified",
   })
+  const { t: tWallet } = useTranslation("translation", { keyPrefix: "wallet" })
   const dispatch = useBackgroundDispatch()
   const { address, chainID } = useParams<{
     address: string
@@ -53,6 +72,26 @@ export default function FullTabUnverifiedAssets(): ReactElement {
   )
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  // The asset being reviewed in the popup's verify-or-hide details. Those
+  // details read the selected account and network, so reviewing an asset
+  // first selects this page's account and network.
+  const [reviewedAsset, setReviewedAsset] =
+    useState<SmartContractFungibleAsset | null>(null)
+  const [activityDetails, setActivityDetails] = useState<{
+    activityItem: Activity
+    activityInitiatorAddress: string
+  }>()
+  const closeReview = useCallback(() => {
+    setReviewedAsset(null)
+    setActivityDetails(undefined)
+  }, [])
+  const review = async (asset: SmartContractFungibleAsset) => {
+    if (network) {
+      await dispatch(setNewSelectedAccount({ address, network }))
+    }
+    setReviewedAsset(asset)
+  }
   const [isHiding, setIsHiding] = useState(false)
 
   // Drops selections for assets that are no longer listed, for example once
@@ -127,6 +166,7 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           assetAmounts={unverifiedAssetAmounts}
           initializationLoadingTimeExpired={initializationLoadingTimeExpired}
           emptyMessage={t("empty")}
+          actionsWidth={168}
           leadingHeader={
             <SharedCheckbox
               checked={allSelected}
@@ -153,8 +193,52 @@ export default function FullTabUnverifiedAssets(): ReactElement {
             const id = assetKey(asset)
             toggle(id, !selected.has(id))
           }}
+          renderActions={({ asset }) =>
+            isSmartContractFungibleAsset(asset) ? (
+              <AssetVerifyToggler
+                text={tWallet("unverifiedAssets.verifyAsset")}
+                icon="notif-attention"
+                color="var(--attention)"
+                hoverColor="var(--white)"
+                onClick={() => {
+                  void review(asset)
+                }}
+              />
+            ) : null
+          }
         />
       </div>
+      <FullTabDialog
+        isOpen={reviewedAsset !== null}
+        onClose={closeReview}
+        label={tWallet("unverifiedAssets.verifyAsset")}
+      >
+        {activityDetails ? (
+          <>
+            <button
+              type="button"
+              className="dialog_back"
+              onClick={() => setActivityDetails(undefined)}
+            >
+              ← {reviewedAsset?.symbol}
+            </button>
+            <WalletActivityDetails
+              activityItem={activityDetails.activityItem}
+              activityInitiatorAddress={
+                activityDetails.activityInitiatorAddress
+              }
+            />
+          </>
+        ) : (
+          reviewedAsset && (
+            <AssetWarning
+              asset={reviewedAsset}
+              close={closeReview}
+              openActivityDetails={setActivityDetails}
+            />
+          )
+        )}
+      </FullTabDialog>
       <style jsx>{`
         .title {
           display: flex;
@@ -182,9 +266,19 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           color: var(--trophy-gold);
         }
         .explainer {
-          margin: -8px 0 0;
+          margin: -8px 0 24px;
           color: var(--green-40);
           max-width: 640px;
+        }
+        .dialog_back {
+          margin: -8px 16px 8px;
+          color: var(--green-40);
+          font-size: 14px;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+        .dialog_back:hover {
+          color: var(--trophy-gold);
         }
         .table_card {
           background: var(--green-120);
