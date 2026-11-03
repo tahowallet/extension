@@ -1,6 +1,6 @@
 import React, { ReactElement, useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { Link } from "react-router-dom"
+import { Link, useHistory } from "react-router-dom"
 import { EVMNetwork } from "@tallyho/tally-background/networks"
 import { makeSelectAccountBalancesOnNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
@@ -11,7 +11,7 @@ import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import FullTabAssetTable from "./FullTabAssetTable"
 import AssetListItemActions from "../Wallet/AssetListItem/AssetListItemActions"
-import { accountPath, useOpenPageAs } from "./hooks"
+import { accountPath, assetPath, useOpenPageAs } from "./hooks"
 
 type Props = {
   address: string
@@ -31,6 +31,7 @@ export default function FullTabNetworkSection({
 }: Props): ReactElement {
   const { t } = useTranslation()
   const openPageAs = useOpenPageAs()
+  const history = useHistory()
   const initializationLoadingTimeExpired = useBackgroundSelector(
     selectInitializationTimeExpired,
   )
@@ -91,7 +92,7 @@ export default function FullTabNetworkSection({
             assetAmounts={balances.assetAmounts}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
             onRowClick={({ asset }) =>
-              openPageAs({ address, network }, "/singleAsset", asset)
+              history.push(assetPath(address, network.chainID, asset))
             }
             renderActions={({ asset }) =>
               isSmartContractFungibleAsset(asset) ||

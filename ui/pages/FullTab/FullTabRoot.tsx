@@ -28,6 +28,7 @@ import FullTabPortfolio from "./FullTabPortfolio"
 import FullTabConnectedDapps from "./FullTabConnectedDapps"
 import FullTabAccount from "./FullTabAccount"
 import FullTabUnverifiedAssets from "./FullTabUnverifiedAssets"
+import FullTabAsset from "./FullTabAsset"
 import FullTabSettings from "./FullTabSettings"
 
 /**
@@ -84,6 +85,10 @@ function sectionKey(pathname: string): string {
     path: "/accounts/:address/:chainID/unverified",
   })
   if (unverified) return unverified.url
+  const asset = matchPath(pathname, {
+    path: "/accounts/:address/:chainID/assets/:assetID",
+  })
+  if (asset) return asset.url
   const account = matchPath(pathname, { path: "/accounts/:address" })
   if (account) return account.url
   return pathname
@@ -139,6 +144,9 @@ export default function FullTabRoot(): ReactElement {
                 </Route>
                 <Route path="/dapps">
                   <FullTabConnectedDapps />
+                </Route>
+                <Route path="/accounts/:address/:chainID/assets/:assetID">
+                  <FullTabAsset />
                 </Route>
                 <Route path="/accounts/:address/:chainID/unverified">
                   <FullTabUnverifiedAssets />
