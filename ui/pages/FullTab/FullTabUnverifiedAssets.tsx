@@ -283,7 +283,7 @@ export default function FullTabUnverifiedAssets(): ReactElement {
           color: var(--trophy-gold);
         }
         .explainer {
-          margin: -8px 0 24px;
+          margin: -8px 0 0;
           color: var(--green-40);
           max-width: 640px;
         }

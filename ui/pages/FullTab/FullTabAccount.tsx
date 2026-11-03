@@ -9,6 +9,7 @@ import SharedAvatar from "../../components/Shared/SharedAvatar"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import FullTabNetworkSection from "../../components/FullTab/FullTabNetworkSection"
 import FullTabSection from "../../components/FullTab/FullTabSection"
+import FullTabValueChart from "../../components/FullTab/FullTabValueChart"
 import SharedPanelSwitcher from "../../components/Shared/SharedPanelSwitcher"
 import FullTabAccountNetworkPanel from "../../components/FullTab/FullTabAccountNetworkPanel"
 import {
@@ -90,6 +91,10 @@ export default function FullTabAccount(): ReactElement {
         </div>
       }
     >
+      <FullTabValueChart
+        addresses={[address]}
+        label={t("wallet.totalAccountBalance")}
+      />
       <div className="views">
         <SharedPanelSwitcher
           panelId="account_views"
@@ -184,7 +189,6 @@ export default function FullTabAccount(): ReactElement {
           display: flex;
           flex-direction: column;
           gap: 24px;
-          margin-top: -8px;
         }
         .view_fade-enter {
           opacity: 0;

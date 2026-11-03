@@ -20,7 +20,7 @@ export default function SharedPanelSwitcher(props: Props): ReactElement {
   return (
     <nav>
       <ul role="tablist" data-testid={panelId}>
-        {panelNames.slice(0, 3).map((name, index) => (
+        {panelNames.map((name, index) => (
           <li key={name}>
             <button
               type="button"
