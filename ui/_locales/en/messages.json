@@ -1178,6 +1178,8 @@
       "backfilling": "Filling in earlier history…",
       "estimated": "Estimated while balance history fills in",
       "estimatedUnavailable": "Estimated: some balance history isn't available before {{date}}",
+      "estimatedPoint": "estimated",
+      "reconstructedPoint": "rebuilt from token transfers",
       "empty": "No history yet"
     }
   }
