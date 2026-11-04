@@ -89,6 +89,12 @@ export type ValueSeriesInput = {
 export type ValueSeries = {
   points: HistoryPoint[]
   /**
+   * The last sample whose value assumed some holding's earliest known
+   * balance, because its balance history doesn't reach back that far yet;
+   * `undefined` if no sample did.
+   */
+  estimatedUntil: number | undefined
+  /**
    * The earliest sample at which any holding had a valued balance, or
    * `undefined` if there was none.
    */
@@ -100,9 +106,16 @@ export type ValueSeries = {
  * total is the sum of each holding's balance at that time multiplied by its
  * asset's price at that time. Every series must be sorted oldest first.
  *
- * Holdings without a balance or a price at a sample add nothing to it, the
- * same way unpriced assets add nothing to the wallet's current totals.
- * Samples taken before any holding has a valued balance are left out.
+ * Holdings without a price at a sample add nothing to it, the same way
+ * unpriced assets add nothing to the wallet's current totals. Samples taken
+ * before any holding has a valued balance are left out.
+ *
+ * Before a holding's balance history begins, its earliest known balance is
+ * assumed, valued at the prices of the time. Balance history is often still
+ * being backfilled, or can't be at all where endpoints keep no old state, and
+ * leaving such holdings out would show a gain the moment their history
+ * begins. Samples that rely on this are reported with
+ * {@link ValueSeries.estimatedUntil}.
  *
  * Each series is walked once alongside the samples, which are in time order,
  * so the work grows with the number of points rather than with points times
@@ -123,10 +136,12 @@ export function valueSeries({
   )
   const totals = new Float64Array(sampleCount)
   const valued = new Uint8Array(sampleCount)
+  const estimated = new Uint8Array(sampleCount)
 
   holdings.forEach(({ priceKey, balances }) => {
     const priceSeries = prices.get(priceKey)
     if (priceSeries === undefined || priceSeries.times.length === 0) return
+    if (balances.times.length === 0) return
     // The index of the latest balance and price at or before each sample,
     // advanced as the samples move forward.
     let balance = -1
@@ -144,7 +159,6 @@ export function valueSeries({
       ) {
         price += 1
       }
-      if (balance === -1) return
       let priceValue: number | undefined
       if (price !== -1) {
         priceValue = priceSeries.values[price]
@@ -152,17 +166,20 @@ export function valueSeries({
         priceValue = priceSeries.values[0]
       }
       if (priceValue === undefined) return
-      totals[sample] += balances.values[balance] * priceValue
+      if (balance === -1) estimated[sample] = 1
+      totals[sample] += balances.values[Math.max(balance, 0)] * priceValue
       valued[sample] = 1
     })
   })
 
   const points: HistoryPoint[] = []
   let coverageStart: number | undefined
+  let estimatedUntil: number | undefined
   sampleTimes.forEach((time, sample) => {
     if (valued[sample] === 0) return
     coverageStart ??= time
+    if (estimated[sample] === 1) estimatedUntil = time
     points.push({ time, value: totals[sample] })
   })
-  return { points, coverageStart }
+  return { points, coverageStart, estimatedUntil }
 }

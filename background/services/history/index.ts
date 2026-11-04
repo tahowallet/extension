@@ -190,6 +190,12 @@ export type ValueHistoryQuery = {
 export type ValueHistory = {
   points: HistoryPoint[]
   coverageStart: number | undefined
+  /**
+   * The last point whose value assumed some holding's earliest known balance,
+   * because its balance history doesn't reach back that far yet; see
+   * {@link valueSeries}.
+   */
+  estimatedUntil: number | undefined
   /** Whether backfill still has work to do for any of the queried series. */
   backfilling: boolean
 }
@@ -780,7 +786,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     ])
     phase("prices")
 
-    const { points, coverageStart } = valueSeries({
+    const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: valued.map(({ holding, priceKey }) => ({
         priceKey,
         balances: holding,
@@ -811,6 +817,6 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       )
     }
 
-    return { points, coverageStart, backfilling }
+    return { points, coverageStart, estimatedUntil, backfilling }
   }
 }
