@@ -1,4 +1,5 @@
 import { fetchJson } from "@ethersproject/web"
+import { HistoricalStateUnavailableError } from "../chain/serial-fallback-provider"
 import { utils } from "ethers"
 import { MINUTE } from "../../constants"
 import { AdaptiveSize } from "../../lib/adaptive-size"
@@ -157,7 +158,10 @@ export class BlockClock {
  */
 function historicalReadError(error: unknown): Error {
   const message = error instanceof Error ? error.message : String(error)
-  if (ARCHIVE_UNAVAILABLE.test(message)) {
+  if (
+    error instanceof HistoricalStateUnavailableError ||
+    ARCHIVE_UNAVAILABLE.test(message)
+  ) {
     return new UnavailableError(`No historical state: ${message}`)
   }
   return error instanceof Error ? error : new RetryLaterError(message)

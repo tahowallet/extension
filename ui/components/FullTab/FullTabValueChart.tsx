@@ -35,6 +35,7 @@ const emptyHistory = (rangeKey: RangeKey): History => ({
   points: [],
   coverageStart: undefined,
   estimatedUntil: undefined,
+  balanceHistoryFrom: undefined,
   backfilling: false,
   rangeKey,
 })
@@ -356,7 +357,13 @@ export default function FullTabValueChart({
                   y={PADDING.top + plotHeight - 8}
                   textAnchor={estimatedEdge > 200 ? "end" : "start"}
                 >
-                  {t("estimated")}
+                  {history?.balanceHistoryFrom !== undefined
+                    ? t("estimatedUnavailable", {
+                        date: dayjs(history.balanceHistoryFrom).format(
+                          shownRange.key === "day" ? "HH:mm" : "MMM D",
+                        ),
+                      })
+                    : t("estimated")}
                 </text>
               </g>
             )}

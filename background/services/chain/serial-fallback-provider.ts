@@ -40,6 +40,8 @@ import {
 } from "./rpc/method-router"
 import FailoverExecutor, { RouteStep } from "./rpc/failover-executor"
 import RequestCache, { requestKey } from "./rpc/request-cache"
+import { isPrunedHistoryError } from "./rpc/log-query-errors"
+import { NoEndpointAvailableError } from "./rpc/endpoint"
 import {
   loggingObserver,
   performanceMetricsObserver,
@@ -82,6 +84,25 @@ function isMethodUnsupportedError(err: unknown): boolean {
 }
 
 /**
+ * Thrown by {@link SerialFallbackProvider.historicalCall} when every endpoint
+ * that answered said it doesn't keep state as old as the block asked for, so
+ * the call can't be served on this chain until one does.
+ */
+export class HistoricalStateUnavailableError extends Error {
+  constructor(
+    readonly chainID: string,
+    readonly blockTag: number,
+    /** The labels of the endpoints that said they don't keep the state. */
+    readonly endpoints: string[],
+  ) {
+    super(
+      `chain ${chainID}: no endpoint keeps state as old as block ${blockTag} (asked ${endpoints.join(", ")})`,
+    )
+    this.name = "HistoricalStateUnavailableError"
+  }
+}
+
+/**
  * The SerialFallbackProvider is an Ethers JsonRpcProvider that can fall back
  * through a series of endpoints in case earlier ones fail.
  *
@@ -95,6 +116,13 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
   #standardEndpoints: Endpoint[]
 
   #pools = new Map<PoolName, EndpointPool>()
+
+  /**
+   * The endpoint that last served a call at an old block, which is tried
+   * first for the next one. Endpoints differ in how much old state they
+   * keep, and usually only some keep all of it.
+   */
+  #historicalEndpoint: Endpoint | undefined
 
   private customProviderSupportedMethods: string[] = []
 
@@ -111,6 +139,60 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
    */
   get isDestroyed(): boolean {
     return this.#lifecycle.signal.aborted
+  }
+
+  /**
+   * Makes an `eth_call` at `blockTag`, which may be old enough that only
+   * some of this chain's endpoints keep the state it needs. Endpoints are
+   * tried one at a time, starting with whichever last served such a call,
+   * and the first answer wins.
+   *
+   * An endpoint saying it doesn't keep state that old doesn't end the call;
+   * the next endpoint is asked instead. Only if every endpoint that answered
+   * said so does this throw a {@link HistoricalStateUnavailableError}. If any
+   * endpoint failed for another reason, such as a rate limit or a timeout,
+   * that error is thrown instead, since the state may well be available once
+   * that endpoint can answer.
+   */
+  async historicalCall(
+    transaction: { to: string; data: string },
+    blockTag: number,
+  ): Promise<string> {
+    const historical = this.#historicalEndpoint
+    const candidates = [
+      ...(historical && !historical.isDisposed ? [historical] : []),
+      ...this.#standardEndpoints.filter((endpoint) => endpoint !== historical),
+    ].filter((endpoint) => endpoint.isAvailable)
+
+    const withoutState: string[] = []
+    let failure: unknown
+    for (const endpoint of candidates) {
+      try {
+        // One at a time, so that endpoints without the state aren't all
+        // asked at once when the first one has it.
+        // oxlint-disable-next-line no-await-in-loop
+        const result = await endpoint.send("eth_call", [
+          transaction,
+          utils.hexValue(blockTag),
+        ])
+        this.#historicalEndpoint = endpoint
+        return String(result)
+      } catch (error) {
+        if (isPrunedHistoryError(error)) {
+          withoutState.push(endpoint.label)
+        } else {
+          failure ??= error
+        }
+      }
+    }
+    if (failure === undefined && withoutState.length > 0) {
+      throw new HistoricalStateUnavailableError(
+        this.chainID,
+        blockTag,
+        withoutState,
+      )
+    }
+    throw failure ?? new NoEndpointAvailableError()
   }
 
   /**
