@@ -24,7 +24,7 @@ export type ThemePreference = "light" | "dark" | "system"
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = "dark"
 
 /** The span of history value charts show. */
-export type ChartRange = "day" | "week" | "month" | "quarter" | "year"
+export type ChartRange = "day" | "week" | "month" | "quarter" | "year" | "all"
 
 export const DEFAULT_CHART_RANGE: ChartRange = "month"
 

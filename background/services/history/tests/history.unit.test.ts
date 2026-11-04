@@ -1,6 +1,12 @@
 import { DAY, HOUR, MINUTE } from "../../../constants"
 import { bucketSizeForAge, compactableIndexes } from "../compaction"
-import { priceAt, seriesOf, valueAt, valueSeries } from "../series"
+import {
+  firstHeldTime,
+  priceAt,
+  seriesOf,
+  valueAt,
+  valueSeries,
+} from "../series"
 
 const NOW = Date.UTC(2026, 10, 3, 12)
 
@@ -191,5 +197,25 @@ describe("valueSeries", () => {
     expect(points).toEqual([{ time: 100, value: 10 }])
     expect(coverageStart).toBe(100)
     expect(estimatedUntil).toBeUndefined()
+  })
+})
+
+describe("firstHeldTime", () => {
+  it("finds the earliest balance that isn't zero across holdings", () => {
+    expect(
+      firstHeldTime([
+        // Empty on record until 30.
+        seriesOf([
+          { time: 10, value: 0 },
+          { time: 30, value: 5 },
+        ]),
+        seriesOf([{ time: 20, value: 1 }]),
+      ]),
+    ).toBe(20)
+  })
+
+  it("has nothing to say for holdings that were never held", () => {
+    expect(firstHeldTime([seriesOf([{ time: 10, value: 0 }])])).toBeUndefined()
+    expect(firstHeldTime([])).toBeUndefined()
   })
 })

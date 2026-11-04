@@ -12,7 +12,7 @@ import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slice
 import { useBackgroundDispatch } from "../../hooks"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
-import { RANGES, RangeKey, useChartRange } from "./chartRange"
+import { DAY, RANGES, RangeKey, useChartRange } from "./chartRange"
 
 const SAMPLES = 120
 const HEIGHT = 200
@@ -32,6 +32,7 @@ type History = AsyncThunkFulfillmentType<typeof fetchValueHistory> & {
 }
 
 const emptyHistory = (rangeKey: RangeKey): History => ({
+  from: Date.now() - DAY,
   points: [],
   coverageStart: undefined,
   estimatedUntil: undefined,
@@ -111,7 +112,7 @@ export default function FullTabValueChart({
             addresses,
             chainIDs,
             assetID,
-            from: to - range.span,
+            from: range.span === undefined ? "start" : to - range.span,
             to,
             samples: SAMPLES,
           }),
@@ -174,7 +175,8 @@ export default function FullTabValueChart({
   const plotWidth = Math.max(width - PADDING.left - PADDING.right, 0)
   const plotHeight = HEIGHT - PADDING.top - PADDING.bottom
   const to = points.length > 0 ? points[points.length - 1].time : Date.now()
-  const from = to - shownRange.span
+  const from = history?.from ?? to - (shownRange.span ?? DAY)
+  const span = to - from
 
   const geometry = useMemo(() => {
     if (points.length === 0 || plotWidth === 0) return null
@@ -280,7 +282,7 @@ export default function FullTabValueChart({
   const coverageCut =
     geometry &&
     coverageStart !== undefined &&
-    coverageStart > from + shownRange.span * 0.02
+    coverageStart > from + span * 0.02
       ? geometry.x(coverageStart)
       : undefined
 
@@ -388,7 +390,7 @@ export default function FullTabValueChart({
                 </text>
               </g>
             ))}
-            {[from, from + shownRange.span / 2, to].map((time, index) => (
+            {[from, from + span / 2, to].map((time, index) => (
               <text
                 key={time}
                 className="axis"
@@ -557,7 +559,7 @@ export default function FullTabValueChart({
           color: var(--error);
         }
         .ranges {
-          width: 300px;
+          width: 340px;
           --panel-switcher-border: transparent;
         }
         .plot {

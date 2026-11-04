@@ -19,6 +19,26 @@ export type Series = {
 /** The stored code for points reconstructed from transfers. */
 const RECONSTRUCTED_SOURCE = 2
 
+/**
+ * Returns when the given balance series were first held: the earliest point
+ * among them whose balance isn't zero. For a series whose recorded history
+ * starts with a balance, that's where its history starts. Before this
+ * time, every series was empty on record. Returns `undefined` if none of
+ * them has ever held anything.
+ */
+export function firstHeldTime(series: Series[]): number | undefined {
+  let earliest: number | undefined
+  series.forEach(({ times, values }) => {
+    for (let index = 0; index < times.length; index += 1) {
+      if (values[index] !== 0) {
+        earliest = Math.min(earliest ?? times[index], times[index])
+        return
+      }
+    }
+  })
+  return earliest
+}
+
 /** Builds a {@link Series} from a list of points sorted oldest first. */
 export function seriesOf(points: HistoryPoint[]): Series {
   return {
