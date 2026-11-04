@@ -153,6 +153,30 @@ describe("valueSeries", () => {
     expect(estimatedUntil).toBe(50)
   })
 
+  it("says which samples rely on balances reconstructed from transfers", () => {
+    const { points, reconstructedUntil, estimatedUntil } = valueSeries({
+      holdings: [
+        {
+          priceKey: "token",
+          balances: {
+            // Reconstructed back to 0 and 40, then backfilled from 60.
+            times: [0, 40, 60],
+            values: [1, 2, 3],
+            sources: [2, 2, 1],
+          },
+        },
+      ],
+      prices: new Map([["token", seriesOf([{ time: 0, value: 10 }])]]),
+      from: 0,
+      to: 100,
+      samples: 3,
+      priceTolerance: 0,
+    })
+    expect(points.map(({ value }) => value)).toEqual([10, 20, 30])
+    expect(reconstructedUntil).toBe(50)
+    expect(estimatedUntil).toBeUndefined()
+  })
+
   it("leaves out samples before any price", () => {
     const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [

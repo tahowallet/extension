@@ -132,6 +132,16 @@ export class BlockClock {
   }
 
   /**
+   * Returns when `block` was mined, as estimated from the chain's pace, without
+   * asking for the block itself. Precise enough to place a point in a
+   * history bucket.
+   */
+  async timeOf(block: number, now = Date.now()): Promise<number> {
+    const { latest, msPerBlock } = await this.pace(now)
+    return latest.timestamp * 1000 - (latest.number - block) * msPerBlock
+  }
+
+  /**
    * Returns the number of a block mined at or shortly before `time`, as
    * estimated from the chain's pace.
    */

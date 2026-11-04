@@ -4,7 +4,12 @@ import { compactableIndexes } from "./compaction"
 import { Series } from "./series"
 
 /** Where a point in a series came from. */
-export type PointSource = "live" | "backfill"
+/**
+ * Where a point in a series came from: recorded live, backfilled from the
+ * chain's past state or a price source, or, for token balances on networks
+ * whose endpoints keep no old state, reconstructed from token transfers.
+ */
+export type PointSource = "live" | "backfill" | "reconstructed"
 
 /** A price of an asset, in the main currency, at a given time, to record. */
 export type PriceRecord = {
@@ -85,6 +90,12 @@ export type BackfillState = {
    */
   notBefore?: number
   failures?: number
+  /**
+   * For reconstructing an account's token balances from transfers, the block
+   * reconstruction has reached back to, and each holding's balance as of
+   * that block, by holding key.
+   */
+  reconstruction?: { block: number; balances: Record<string, number> }
 }
 
 /**
@@ -119,10 +130,14 @@ type SeriesRecord = {
   sources: Uint8Array
 }
 
-const BACKFILL_SOURCE = 1
+/** How each {@link PointSource} is stored in a series' `sources`. */
+export const SOURCE_CODES: Record<PointSource, number> = {
+  live: 0,
+  backfill: 1,
+  reconstructed: 2,
+}
 
-const sourceCode = (source: PointSource) =>
-  source === "backfill" ? BACKFILL_SOURCE : 0
+const sourceCode = (source: PointSource) => SOURCE_CODES[source]
 
 /** The window within which live balances keep at most one point per series. */
 export const LIVE_BALANCE_SPACING = 5 * MINUTE
@@ -276,6 +291,7 @@ const holdingOf = (record: SeriesRecord): Holding => {
     trusted: record.trusted ?? false,
     times: record.times,
     values: record.values,
+    sources: record.sources,
     time: record.times[last] ?? 0,
     value: record.values[last] ?? 0,
   }
@@ -416,7 +432,7 @@ export class HistoryDatabase extends Dexie {
           }
           const current = { ...series, trusted: record.trusted }
           if (
-            series.sources[last] !== BACKFILL_SOURCE &&
+            series.sources[last] === SOURCE_CODES.live &&
             Math.floor(record.time / LIVE_BALANCE_SPACING) ===
               Math.floor(knownTime / LIVE_BALANCE_SPACING)
           ) {

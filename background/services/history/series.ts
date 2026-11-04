@@ -9,7 +9,15 @@ export type HistoryPoint = { time: number; value: number }
 export type Series = {
   times: ArrayLike<number>
   values: ArrayLike<number>
+  /**
+   * Where each point came from, as stored by the history database; see
+   * `SOURCE_CODES`. Optional, since only balance series charts read it.
+   */
+  sources?: ArrayLike<number>
 }
+
+/** The stored code for points reconstructed from transfers. */
+const RECONSTRUCTED_SOURCE = 2
 
 /** Builds a {@link Series} from a list of points sorted oldest first. */
 export function seriesOf(points: HistoryPoint[]): Series {
@@ -95,6 +103,11 @@ export type ValueSeries = {
    */
   estimatedUntil: number | undefined
   /**
+   * The last sample whose value relied on a balance reconstructed from token
+   * transfers; `undefined` if no sample did.
+   */
+  reconstructedUntil: number | undefined
+  /**
    * The earliest sample at which any holding had a valued balance, or
    * `undefined` if there was none.
    */
@@ -137,6 +150,7 @@ export function valueSeries({
   const totals = new Float64Array(sampleCount)
   const valued = new Uint8Array(sampleCount)
   const estimated = new Uint8Array(sampleCount)
+  const reconstructed = new Uint8Array(sampleCount)
 
   holdings.forEach(({ priceKey, balances }) => {
     const priceSeries = prices.get(priceKey)
@@ -167,6 +181,9 @@ export function valueSeries({
       }
       if (priceValue === undefined) return
       if (balance === -1) estimated[sample] = 1
+      if (balances.sources?.[Math.max(balance, 0)] === RECONSTRUCTED_SOURCE) {
+        reconstructed[sample] = 1
+      }
       totals[sample] += balances.values[Math.max(balance, 0)] * priceValue
       valued[sample] = 1
     })
@@ -175,11 +192,13 @@ export function valueSeries({
   const points: HistoryPoint[] = []
   let coverageStart: number | undefined
   let estimatedUntil: number | undefined
+  let reconstructedUntil: number | undefined
   sampleTimes.forEach((time, sample) => {
     if (valued[sample] === 0) return
     coverageStart ??= time
     if (estimated[sample] === 1) estimatedUntil = time
+    if (reconstructed[sample] === 1) reconstructedUntil = time
     points.push({ time, value: totals[sample] })
   })
-  return { points, coverageStart, estimatedUntil }
+  return { points, coverageStart, estimatedUntil, reconstructedUntil }
 }
