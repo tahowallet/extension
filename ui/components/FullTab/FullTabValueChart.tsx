@@ -12,19 +12,7 @@ import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slice
 import { useBackgroundDispatch } from "../../hooks"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
-
-const HOUR = 60 * 60 * 1000
-const DAY = 24 * HOUR
-
-const RANGES = [
-  { key: "day", span: DAY, format: "HH:mm" },
-  { key: "week", span: 7 * DAY, format: "MMM D" },
-  { key: "month", span: 30 * DAY, format: "MMM D" },
-  { key: "quarter", span: 90 * DAY, format: "MMM D" },
-  { key: "year", span: 365 * DAY, format: "MMM YYYY" },
-] as const
-
-type RangeKey = (typeof RANGES)[number]["key"]
+import { RANGES, RangeKey, useChartRange } from "./chartRange"
 
 const SAMPLES = 120
 const HEIGHT = 200
@@ -88,7 +76,7 @@ export default function FullTabValueChart({
 }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "fullTab.chart" })
   const dispatch = useBackgroundDispatch()
-  const [rangeKey, setRangeKey] = useState<RangeKey>("month")
+  const [rangeKey, setRangeKey] = useChartRange()
   const [history, setHistory] = useState<History | null>(null)
   const [loading, setLoading] = useState(false)
   const inFlight = useRef(false)
