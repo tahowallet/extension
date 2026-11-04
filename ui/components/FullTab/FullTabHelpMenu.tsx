@@ -126,13 +126,11 @@ export default function FullTabHelpMenu(): ReactElement {
           height: 36px;
           padding: 0 6px;
           border-radius: 18px;
-          background: var(--green-95);
           color: var(--green-20);
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
           transition:
-            background-color 0.2s ease,
             color 0.2s ease,
             gap 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
             padding 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -153,7 +151,6 @@ export default function FullTabHelpMenu(): ReactElement {
         .help_pill.open {
           gap: 8px;
           padding: 0 16px 0 6px;
-          background: var(--green-80);
           color: var(--text-strong);
         }
         .help_pill:hover .label,
@@ -165,7 +162,8 @@ export default function FullTabHelpMenu(): ReactElement {
         }
         @media (prefers-reduced-motion: reduce) {
           .help_pill,
-          .label {
+          .label,
+          .question {
             transition: none;
           }
         }
@@ -179,6 +177,13 @@ export default function FullTabHelpMenu(): ReactElement {
           background: var(--trophy-gold);
           color: var(--on-accent);
           font-weight: 700;
+          transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        /* The question mark spins once as the label slides out. */
+        .help_pill:hover .question,
+        .help_pill:focus-visible .question,
+        .help_pill.open .question {
+          transform: rotate(360deg);
         }
         .menu {
           position: absolute;

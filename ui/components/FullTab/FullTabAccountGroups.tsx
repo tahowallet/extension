@@ -142,8 +142,8 @@ function WalletIcon({ icon }: { icon: string }): ReactElement {
           flex-shrink: 0;
         }
         .wallet_icon_mask {
-          width: 12px;
-          height: 12px;
+          width: 16px;
+          height: 16px;
           mask-size: contain;
           mask-repeat: no-repeat;
           mask-position: center;
