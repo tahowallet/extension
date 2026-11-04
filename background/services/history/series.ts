@@ -2,31 +2,53 @@
 export type HistoryPoint = { time: number; value: number }
 
 /**
- * Returns the value at `time` of a series treated as a step function, which
- * is the value of the latest point at or before `time`. Returns `undefined`
- * if `time` is before the series begins.
- *
- * Note that `points` must be sorted oldest first.
+ * A series of measurements, as parallel lists of times and values sorted
+ * oldest first. Series are stored this way, rather than as a list of points,
+ * so that they can be kept in typed arrays.
  */
-export function valueAt(
-  points: HistoryPoint[],
-  time: number,
-): number | undefined {
-  // Binary search for the last point at or before `time`, which relies on
-  // points being sorted oldest first.
+export type Series = {
+  times: ArrayLike<number>
+  values: ArrayLike<number>
+}
+
+/** Builds a {@link Series} from a list of points sorted oldest first. */
+export function seriesOf(points: HistoryPoint[]): Series {
+  return {
+    times: points.map(({ time }) => time),
+    values: points.map(({ value }) => value),
+  }
+}
+
+/**
+ * Returns the index of the last point at or before `time` in a series sorted
+ * oldest first, or -1 if `time` is before the series begins.
+ */
+function indexAt({ times }: Series, time: number): number {
   let low = 0
-  let high = points.length - 1
-  let found: number | undefined
+  let high = times.length - 1
+  let found = -1
   while (low <= high) {
     const mid = Math.floor((low + high) / 2)
-    if (points[mid].time <= time) {
-      found = points[mid].value
+    if (times[mid] <= time) {
+      found = mid
       low = mid + 1
     } else {
       high = mid - 1
     }
   }
   return found
+}
+
+/**
+ * Returns the value at `time` of a series treated as a step function, which
+ * is the value of the latest point at or before `time`. Returns `undefined`
+ * if `time` is before the series begins.
+ *
+ * Note that the series must be sorted oldest first.
+ */
+export function valueAt(series: Series, time: number): number | undefined {
+  const index = indexAt(series, time)
+  return index === -1 ? undefined : series.values[index]
 }
 
 /**
@@ -37,21 +59,22 @@ export function valueAt(
  * neither price exists.
  */
 export function priceAt(
-  points: HistoryPoint[],
+  series: Series,
   time: number,
   tolerance: number,
 ): number | undefined {
-  const before = valueAt(points, time)
+  const before = valueAt(series, time)
   if (before !== undefined) return before
-  const first = points[0]
-  return first && first.time - time <= tolerance ? first.value : undefined
+  return series.times.length > 0 && series.times[0] - time <= tolerance
+    ? series.values[0]
+    : undefined
 }
 
 export type ValueSeriesInput = {
   /** Each holding's balance history, in the asset's units. */
-  holdings: { priceKey: string; balances: HistoryPoint[] }[]
+  holdings: { priceKey: string; balances: Series }[]
   /** Price histories in the main currency, by the holdings' price keys. */
-  prices: Map<string, HistoryPoint[]>
+  prices: Map<string, Series>
   from: number
   to: number
   /** How many points to sample, including both ends. */
@@ -75,11 +98,15 @@ export type ValueSeries = {
 /**
  * Samples the total value of a set of holdings over time. At each sample, the
  * total is the sum of each holding's balance at that time multiplied by its
- * asset's price at that time.
+ * asset's price at that time. Every series must be sorted oldest first.
  *
  * Holdings without a balance or a price at a sample add nothing to it, the
  * same way unpriced assets add nothing to the wallet's current totals.
  * Samples taken before any holding has a valued balance are left out.
+ *
+ * Each series is walked once alongside the samples, which are in time order,
+ * so the work grows with the number of points rather than with points times
+ * samples.
  */
 export function valueSeries({
   holdings,
@@ -89,34 +116,53 @@ export function valueSeries({
   samples,
   priceTolerance,
 }: ValueSeriesInput): ValueSeries {
-  const sortedHoldings = holdings.map(({ priceKey, balances }) => ({
-    prices: [...(prices.get(priceKey) ?? [])].sort((a, b) => a.time - b.time),
-    balances: [...balances].sort((a, b) => a.time - b.time),
-  }))
-
+  const sampleCount = Math.max(samples, 1)
   const step = samples > 1 ? (to - from) / (samples - 1) : 0
+  const sampleTimes = Array.from({ length: sampleCount }, (_, index) =>
+    Math.round(from + step * index),
+  )
+  const totals = new Float64Array(sampleCount)
+  const valued = new Uint8Array(sampleCount)
+
+  holdings.forEach(({ priceKey, balances }) => {
+    const priceSeries = prices.get(priceKey)
+    if (priceSeries === undefined || priceSeries.times.length === 0) return
+    // The index of the latest balance and price at or before each sample,
+    // advanced as the samples move forward.
+    let balance = -1
+    let price = -1
+    sampleTimes.forEach((time, sample) => {
+      while (
+        balance + 1 < balances.times.length &&
+        balances.times[balance + 1] <= time
+      ) {
+        balance += 1
+      }
+      while (
+        price + 1 < priceSeries.times.length &&
+        priceSeries.times[price + 1] <= time
+      ) {
+        price += 1
+      }
+      if (balance === -1) return
+      let priceValue: number | undefined
+      if (price !== -1) {
+        priceValue = priceSeries.values[price]
+      } else if (priceSeries.times[0] - time <= priceTolerance) {
+        priceValue = priceSeries.values[0]
+      }
+      if (priceValue === undefined) return
+      totals[sample] += balances.values[balance] * priceValue
+      valued[sample] = 1
+    })
+  })
+
   const points: HistoryPoint[] = []
   let coverageStart: number | undefined
-
-  for (let i = 0; i < Math.max(samples, 1); i += 1) {
-    const time = Math.round(from + step * i)
-    let total = 0
-    let valued = false
-
-    sortedHoldings.forEach((holding) => {
-      const balance = valueAt(holding.balances, time)
-      if (balance === undefined) return
-      const price = priceAt(holding.prices, time, priceTolerance)
-      if (price === undefined) return
-      total += balance * price
-      valued = true
-    })
-
-    if (valued) {
-      coverageStart ??= time
-      points.push({ time, value: total })
-    }
-  }
-
+  sampleTimes.forEach((time, sample) => {
+    if (valued[sample] === 0) return
+    coverageStart ??= time
+    points.push({ time, value: totals[sample] })
+  })
   return { points, coverageStart }
 }

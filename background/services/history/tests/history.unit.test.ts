@@ -1,6 +1,6 @@
 import { DAY, HOUR, MINUTE } from "../../../constants"
 import { bucketSizeForAge, compactableIndexes } from "../compaction"
-import { priceAt, valueAt, valueSeries } from "../series"
+import { priceAt, seriesOf, valueAt, valueSeries } from "../series"
 
 const NOW = Date.UTC(2026, 10, 3, 12)
 
@@ -45,22 +45,30 @@ describe("compactableIndexes", () => {
 })
 
 describe("valueAt and priceAt", () => {
-  const points = [
+  const series = seriesOf([
     { time: 10, value: 1 },
     { time: 20, value: 2 },
     { time: 30, value: 3 },
-  ]
+  ])
 
   it("treats a series as a step function", () => {
-    expect(valueAt(points, 5)).toBeUndefined()
-    expect(valueAt(points, 10)).toBe(1)
-    expect(valueAt(points, 25)).toBe(2)
-    expect(valueAt(points, 99)).toBe(3)
+    expect(valueAt(series, 5)).toBeUndefined()
+    expect(valueAt(series, 10)).toBe(1)
+    expect(valueAt(series, 25)).toBe(2)
+    expect(valueAt(series, 99)).toBe(3)
   })
 
   it("lets prices reach forward within a tolerance", () => {
-    expect(priceAt(points, 5, 5)).toBe(1)
-    expect(priceAt(points, 5, 4)).toBeUndefined()
+    expect(priceAt(series, 5, 5)).toBe(1)
+    expect(priceAt(series, 5, 4)).toBeUndefined()
+  })
+
+  it("reads typed arrays the same way", () => {
+    const typed = {
+      times: Float64Array.from([10, 20, 30]),
+      values: Float64Array.from([1, 2, 3]),
+    }
+    expect(valueAt(typed, 25)).toBe(2)
   })
 })
 
@@ -70,25 +78,25 @@ describe("valueSeries", () => {
       holdings: [
         {
           priceKey: "eth",
-          balances: [
+          balances: seriesOf([
             { time: 0, value: 1 },
             { time: 50, value: 2 },
-          ],
+          ]),
         },
-        { priceKey: "usdc", balances: [{ time: 25, value: 100 }] },
+        { priceKey: "usdc", balances: seriesOf([{ time: 25, value: 100 }]) },
         // This holding has no price, so it adds nothing, just as unpriced
         // assets add nothing to current totals.
-        { priceKey: "spam", balances: [{ time: 0, value: 1e9 }] },
+        { priceKey: "spam", balances: seriesOf([{ time: 0, value: 1e9 }]) },
       ],
       prices: new Map([
         [
           "eth",
-          [
+          seriesOf([
             { time: 0, value: 1000 },
             { time: 75, value: 2000 },
-          ],
+          ]),
         ],
-        ["usdc", [{ time: 0, value: 1 }]],
+        ["usdc", seriesOf([{ time: 0, value: 1 }])],
       ]),
       from: 0,
       to: 100,
@@ -108,8 +116,10 @@ describe("valueSeries", () => {
 
   it("leaves out samples before any valued balance", () => {
     const { points, coverageStart } = valueSeries({
-      holdings: [{ priceKey: "eth", balances: [{ time: 60, value: 1 }] }],
-      prices: new Map([["eth", [{ time: 0, value: 10 }]]]),
+      holdings: [
+        { priceKey: "eth", balances: seriesOf([{ time: 60, value: 1 }]) },
+      ],
+      prices: new Map([["eth", seriesOf([{ time: 0, value: 10 }])]]),
       from: 0,
       to: 100,
       samples: 3,

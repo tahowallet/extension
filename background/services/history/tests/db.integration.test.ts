@@ -19,8 +19,27 @@ const balance = (time: number, value: number): BalanceRecord => ({
   source: "live",
 })
 
+const price = (priceKey: string, time: number, value = 1) => ({
+  priceKey,
+  symbol: "ETH",
+  time,
+  value,
+  source: "live" as const,
+})
+
 describe("HistoryDatabase", () => {
   let db: HistoryDatabase
+
+  /** The test holding's balance series, as points. */
+  const balances = async () => {
+    const [holding] = await db.getHoldings([ADDRESS])
+    return holding === undefined
+      ? []
+      : Array.from(holding.times, (time, index) => ({
+          time,
+          value: holding.values[index],
+        }))
+  }
 
   beforeEach(() => {
     // oxlint-disable-next-line no-global-assign
@@ -34,16 +53,10 @@ describe("HistoryDatabase", () => {
     await db.addBalance(balance(NOW - 30 * MINUTE, 2))
     await db.addBalance(balance(NOW + 40 * MINUTE, 2))
 
-    const { points } = await db.getBalanceSeries(
-      holdingKeyFor(ADDRESS, ASSET_ID),
-      0,
-      NOW + HOUR,
-    )
-    expect(points.map(({ value }) => value)).toEqual([1, 2, 2])
+    expect((await balances()).map(({ value }) => value)).toEqual([1, 2, 2])
   })
 
   it("keeps one live point per five minutes for a balance that keeps changing", async () => {
-    const holdingKey = holdingKeyFor(ADDRESS, ASSET_ID)
     // A balance that grows every block, reported in batches.
     await db.addLiveBalances([balance(NOW, 1)])
     await db.addLiveBalances([balance(NOW + MINUTE, 1.1)])
@@ -53,10 +66,9 @@ describe("HistoryDatabase", () => {
     ])
     await db.addLiveBalances([balance(NOW + 6 * MINUTE, 1.4)])
 
-    const { points } = await db.getBalanceSeries(holdingKey, 0, NOW + HOUR)
     // The first five-minute window keeps only its latest value, and the next
     // window starts a new point.
-    expect(points).toEqual([
+    expect(await balances()).toEqual([
       { time: NOW + 3 * MINUTE, value: 1.3 },
       { time: NOW + 6 * MINUTE, value: 1.4 },
     ])
@@ -68,94 +80,7 @@ describe("HistoryDatabase", () => {
     await db.addBalances([{ ...balance(NOW, 1), source: "backfill" }])
     await db.addLiveBalances([balance(NOW + MINUTE, 2)])
 
-    const { points } = await db.getBalanceSeries(
-      holdingKeyFor(ADDRESS, ASSET_ID),
-      0,
-      NOW + HOUR,
-    )
-    expect(points.map(({ value }) => value)).toEqual([1, 2])
-  })
-
-  it("reads a series with its last point before the window", async () => {
-    await db.addBalances([
-      balance(NOW - 3 * DAY, 1),
-      balance(NOW - 2 * DAY, 2),
-      balance(NOW - HOUR, 3),
-    ])
-
-    const { points, trusted } = await db.getBalanceSeries(
-      holdingKeyFor(ADDRESS, ASSET_ID),
-      NOW - DAY,
-      NOW,
-    )
-    expect(points.map(({ value }) => value)).toEqual([2, 3])
-    expect(trusted).toBe(true)
-  })
-
-  it("compacts old points to their tiers", async () => {
-    const hourStart = Math.floor((NOW - 2 * DAY) / HOUR) * HOUR
-    await db.addBalances([
-      balance(hourStart + 5 * MINUTE, 1),
-      balance(hourStart + 50 * MINUTE, 2),
-      balance(NOW - MINUTE, 3),
-      balance(NOW - 2 * MINUTE, 4),
-    ])
-    await db.addPrices(
-      [hourStart + MINUTE, hourStart + 2 * MINUTE].map((time) => ({
-        priceKey: ASSET_ID,
-        symbol: "ETH",
-        time,
-        value: 2000,
-        source: "live" as const,
-      })),
-    )
-
-    expect(await db.compact(NOW)).toBe(3)
-    const { points } = await db.getBalanceSeries(
-      holdingKeyFor(ADDRESS, ASSET_ID),
-      0,
-      NOW,
-    )
-    // Two days back, one point is kept per hour; within the last day, one is
-    // kept per five minutes.
-    expect(points.map(({ value }) => value)).toEqual([2, 3])
-  })
-
-  it("lists holdings once each, with their latest record", async () => {
-    await db.addBalances([balance(NOW - DAY, 1), balance(NOW, 5)])
-
-    const holdings = await db.getHoldings([ADDRESS.toUpperCase()])
-    expect(holdings).toHaveLength(1)
-    expect(holdings[0].value).toBe(5)
-  })
-
-  it("keeps a holding's latest record when older history arrives", async () => {
-    await db.addBalance(balance(NOW, 5))
-    await db.addBalances([balance(NOW - 30 * DAY, 1)])
-
-    const [holding] = await db.getHoldings([ADDRESS])
-    expect(holding.value).toBe(5)
-    expect(holding.time).toBe(NOW)
-  })
-
-  it("finds price keys by symbol and times by series", async () => {
-    await db.addPrices(
-      ["1/base", "10/base", "1/base"].map((priceKey, index) => ({
-        priceKey,
-        symbol: "ETH",
-        time: NOW - index * HOUR,
-        value: 1,
-        source: "live" as const,
-      })),
-    )
-    expect((await db.getPriceKeysForSymbol("ETH")).sort()).toEqual([
-      "1/base",
-      "10/base",
-    ])
-    expect(await db.getPriceTimes("1/base", 0, NOW)).toEqual([
-      NOW - 2 * HOUR,
-      NOW,
-    ])
+    expect((await balances()).map(({ value }) => value)).toEqual([1, 2])
   })
 
   it("doesn't start a holding with a zero balance", async () => {
@@ -166,36 +91,95 @@ describe("HistoryDatabase", () => {
     // Once held, a drop back to zero is still recorded.
     await db.addLiveBalances([balance(NOW + HOUR, 3)])
     await db.addLiveBalances([balance(NOW + 2 * HOUR, 0)])
-    const { points } = await db.getBalanceSeries(
-      holdingKeyFor(ADDRESS, ASSET_ID),
-      0,
-      NOW + DAY,
-    )
-    expect(points.map(({ value }) => value)).toEqual([3, 0])
+    expect((await balances()).map(({ value }) => value)).toEqual([3, 0])
   })
 
-  it("builds the holdings table from existing history on upgrade", async () => {
-    db.close()
-    // Set up a version 1 database, as it existed before the holdings table.
-    const v1 = new Dexie("tally/history")
-    v1.version(1).stores({
-      prices: "++id,[priceKey+time],symbol,time",
-      balances: "++id,[holdingKey+time],[address+chainID],address,time",
-      backfill: "&key",
-    })
-    await v1.table("balances").bulkAdd([balance(NOW - DAY, 1), balance(NOW, 7)])
-    await v1.table("backfill").bulkPut([
-      { key: "price:1/base", reachedBack: NOW - DAY, unavailable: true },
-      { key: `balance:${holdingKeyFor(ADDRESS, ASSET_ID)}`, failures: 3 },
+  it("merges backfilled history into a series in time order", async () => {
+    await db.addBalance(balance(NOW, 5))
+    await db.addBalances([balance(NOW - 30 * DAY, 1), balance(NOW - DAY, 3)])
+
+    expect((await balances()).map(({ value }) => value)).toEqual([1, 3, 5])
+    // The latest balance is still the live one.
+    const [holding] = await db.getHoldings([ADDRESS.toUpperCase()])
+    expect(holding.value).toBe(5)
+    expect(holding.time).toBe(NOW)
+  })
+
+  it("compacts old points to their tiers", async () => {
+    const hourStart = Math.floor((NOW - 2 * DAY) / HOUR) * HOUR
+    await db.addBalances([
+      balance(hourStart + 5 * MINUTE, 1),
+      balance(hourStart + 50 * MINUTE, 2),
+      balance(NOW - MINUTE, 3),
+      balance(NOW - 2 * MINUTE, 4),
     ])
-    v1.close()
+    await db.addPrices([
+      price(ASSET_ID, hourStart + MINUTE),
+      price(ASSET_ID, hourStart + 2 * MINUTE),
+    ])
+
+    expect(await db.compact(NOW)).toBe(3)
+    // Two days back, one point is kept per hour; within the last day, one is
+    // kept per five minutes.
+    expect((await balances()).map(({ value }) => value)).toEqual([2, 3])
+    const prices = await db.getPriceSeries([ASSET_ID])
+    expect(Array.from(prices.get(ASSET_ID)?.times ?? [])).toEqual([
+      hourStart + 2 * MINUTE,
+    ])
+  })
+
+  it("compacts many series a page at a time", async () => {
+    // More series than fit on one compaction page, each with two points in
+    // the same hour two days back.
+    const hourStart = Math.floor((NOW - 2 * DAY) / HOUR) * HOUR
+    await db.addPrices(
+      Array.from({ length: 250 }, (_, index) => [
+        price(`1/0x${index}`, hourStart + MINUTE),
+        price(`1/0x${index}`, hourStart + 2 * MINUTE),
+      ]).flat(),
+    )
+
+    expect(await db.compact(NOW)).toBe(250)
+  })
+
+  it("reads price series in bulk and finds price keys by symbol", async () => {
+    await db.addPrices([
+      price("1/base", NOW - 2 * HOUR, 2_000),
+      price("10/base", NOW - HOUR),
+      price("1/base", NOW, 2_100),
+    ])
+
+    const prices = await db.getPriceSeries(["1/base", "137/base"])
+    expect([...prices.keys()]).toEqual(["1/base"])
+    expect(Array.from(prices.get("1/base")?.values ?? [])).toEqual([
+      2_000, 2_100,
+    ])
+
+    const bySymbol = await db.getPriceKeysBySymbol()
+    expect(bySymbol.get("ETH")?.sort()).toEqual(["1/base", "10/base"])
+  })
+
+  it("starts over from the unshipped version 2 layout", async () => {
+    db.close()
+    const v2 = new Dexie("tally/history")
+    v2.version(2).stores({
+      prices: "++id,[priceKey+time],[symbol+priceKey],time",
+      balances: "++id,[holdingKey+time],address,time",
+      backfill: "&key",
+      holdings: "&holdingKey,address",
+    })
+    await v2.table("balances").bulkAdd([balance(NOW - DAY, 1)])
+    await v2.table("backfill").put({ key: "price:1/base", failures: 3 })
+    v2.close()
 
     const upgraded = new HistoryDatabase()
-    const holdings = await upgraded.getHoldings([ADDRESS])
-    expect(holdings.map(({ value }) => value)).toEqual([7])
-    // Version 1's backfill bookkeeping doesn't carry over.
+    expect(await upgraded.getHoldings([ADDRESS])).toEqual([])
     expect(await upgraded.getBackfillState("price:1/base")).toEqual({
       key: "price:1/base",
     })
+    expect(upgraded.tables.map(({ name }) => name).sort()).toEqual([
+      "backfill",
+      "series",
+    ])
   })
 })
