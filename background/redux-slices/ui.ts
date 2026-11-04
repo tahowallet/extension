@@ -23,6 +23,11 @@ export type ThemePreference = "light" | "dark" | "system"
 
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = "dark"
 
+/** The span of history value charts show. */
+export type ChartRange = "day" | "week" | "month" | "quarter" | "year"
+
+export const DEFAULT_CHART_RANGE: ChartRange = "month"
+
 export const defaultSettings = {
   hideDust: false,
   defaultWallet: false,
@@ -35,6 +40,7 @@ export const defaultSettings = {
   useFlashbots: false,
   autoLockInterval: DEFAULT_AUTOLOCK_INTERVAL,
   theme: DEFAULT_THEME_PREFERENCE,
+  chartRange: DEFAULT_CHART_RANGE,
   campaigns: {},
 }
 
@@ -56,6 +62,8 @@ export type UIState = {
     useFlashbots: boolean
     autoLockInterval: UNIXTime
     theme: ThemePreference
+    /** The range last picked on any value chart, which every chart opens with. */
+    chartRange: ChartRange
   }
   snackbarMessage: string
   routeHistoryEntries?: Partial<Location>[]
@@ -122,6 +130,12 @@ const uiSlice = createSlice({
       { payload: theme }: { payload: ThemePreference },
     ): void => {
       immerState.settings.theme = theme
+    },
+    setChartRange: (
+      immerState,
+      { payload: chartRange }: { payload: ChartRange },
+    ): void => {
+      immerState.settings.chartRange = chartRange
     },
     toggleTestNetworks: (
       immerState,
@@ -273,6 +287,7 @@ export const {
   initializationLoadingTimeHitLimit,
   toggleHideDust,
   setThemePreference,
+  setChartRange,
   toggleTestNetworks,
   toggleShowUnverifiedAssets,
   toggleCollectAnalytics,
@@ -472,6 +487,11 @@ export const selectHideDust = createSelector(
 export const selectThemePreference = createSelector(
   selectSettings,
   (settings): ThemePreference => settings?.theme ?? DEFAULT_THEME_PREFERENCE,
+)
+
+export const selectChartRange = createSelector(
+  selectSettings,
+  (settings): ChartRange => settings?.chartRange ?? DEFAULT_CHART_RANGE,
 )
 
 export const selectAutoLockTimer = createSelector(
