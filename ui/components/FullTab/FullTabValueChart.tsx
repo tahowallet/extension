@@ -296,6 +296,12 @@ export default function FullTabValueChart({
           {hovered ? (
             <span className="when">
               {dayjs(hovered.time).format("MMM D, YYYY · HH:mm")}
+              {estimatedUntil !== undefined && hovered.time <= estimatedUntil
+                ? ` · ${t("estimatedPoint")}`
+                : reconstructedUntil !== undefined &&
+                    hovered.time <= reconstructedUntil
+                  ? ` · ${t("reconstructedPoint")}`
+                  : ""}
             </span>
           ) : (
             latest && (
@@ -414,9 +420,13 @@ export default function FullTabValueChart({
                   y={PADDING.top + plotHeight - 8}
                   textAnchor={estimatedEdge > 200 ? "end" : "start"}
                 >
-                  {history?.balanceHistoryFrom !== undefined
+                  {/* The date is where the estimates end, which is where the
+                      marker is; whether history is unavailable or still
+                      filling in only picks the wording. */}
+                  {history?.balanceHistoryFrom !== undefined &&
+                  estimatedUntil !== undefined
                     ? t("estimatedUnavailable", {
-                        date: dayjs(history.balanceHistoryFrom).format(
+                        date: dayjs(estimatedUntil).format(
                           shownRange.key === "day" ? "HH:mm" : "MMM D",
                         ),
                       })
