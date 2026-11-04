@@ -164,6 +164,9 @@ export default function FullTabValueChart({
 
   const points = useMemo(() => history?.points ?? [], [history])
   const reconstructedUntil = history?.reconstructedUntil
+  // Before this point, some holdings' values assume their earliest known
+  // balance, since their balance history doesn't reach back that far.
+  const estimatedUntil = history?.estimatedUntil
   // History is drawn on the range it was fetched for until history for the
   // newly selected range arrives.
   const shownRange =
@@ -195,22 +198,55 @@ export default function FullTabValueChart({
             `${i === 0 ? "M" : "L"}${cx.toFixed(1)},${cy.toFixed(1)}`,
         )
         .join("")
-    const line = pathOf(coords)
-    // Points that rely on token balances reconstructed from transfers are
-    // drawn dashed, and the solid line picks up where they end.
-    const reconstructedCount =
-      reconstructedUntil === undefined
+    const areaOf = (segment: number[][]) => {
+      if (segment.length === 0) return undefined
+      const baseline = PADDING.top + plotHeight
+      return `${pathOf(segment)}L${segment[segment.length - 1][0].toFixed(1)},${baseline}L${segment[0][0].toFixed(1)},${baseline}Z`
+    }
+    const countUntil = (until: number | undefined) =>
+      until === undefined
         ? 0
-        : points.filter(({ time }) => time <= reconstructedUntil).length
-    const dashedLine =
-      reconstructedCount > 0
-        ? pathOf(coords.slice(0, reconstructedCount + 1))
-        : undefined
-    const solidLine = pathOf(coords.slice(reconstructedCount))
-    const baseline = PADDING.top + plotHeight
-    const area = `${line}L${coords[coords.length - 1][0].toFixed(1)},${baseline}L${coords[0][0].toFixed(1)},${baseline}Z`
-    return { x, y, coords, area, ticks, solidLine, dashedLine }
-  }, [from, plotHeight, plotWidth, points, reconstructedUntil, to])
+        : points.filter(({ time }) => time <= until).length
+
+    // The line runs in up to three stretches, oldest first: values that
+    // assume some holdings' earliest known balances, values that rely on
+    // token balances reconstructed from transfers, and values from recorded
+    // balances. Each stretch ends on the first point of the next, so the
+    // line stays continuous.
+    const estimatedCount = countUntil(estimatedUntil)
+    const reconstructedCount = Math.max(
+      estimatedCount,
+      countUntil(reconstructedUntil),
+    )
+    const estimated =
+      estimatedCount > 0 ? coords.slice(0, estimatedCount + 1) : []
+    const reconstructed =
+      reconstructedCount > estimatedCount
+        ? coords.slice(estimatedCount, reconstructedCount + 1)
+        : []
+    const recorded = coords.slice(reconstructedCount)
+
+    return {
+      x,
+      y,
+      coords,
+      ticks,
+      estimatedLine: estimated.length > 0 ? pathOf(estimated) : undefined,
+      estimatedArea: areaOf(estimated),
+      reconstructedLine:
+        reconstructed.length > 0 ? pathOf(reconstructed) : undefined,
+      solidLine: pathOf(recorded),
+      area: areaOf(coords.slice(estimatedCount)),
+    }
+  }, [
+    estimatedUntil,
+    from,
+    plotHeight,
+    plotWidth,
+    points,
+    reconstructedUntil,
+    to,
+  ])
 
   const latest = points[points.length - 1]
   const first = points[0]
@@ -235,9 +271,6 @@ export default function FullTabValueChart({
     setHoverIndex(nearest)
   }
 
-  // Before this point, some holdings' values assume their earliest known
-  // balance, since their balance history doesn't reach back that far yet.
-  const estimatedUntil = history?.estimatedUntil
   const estimatedEdge =
     geometry && estimatedUntil !== undefined
       ? geometry.x(estimatedUntil)
@@ -319,6 +352,22 @@ export default function FullTabValueChart({
                   stopOpacity="0"
                 />
               </linearGradient>
+              {/* Diagonal stripes, under values that rely on estimated
+                  balances. */}
+              <pattern
+                id="value_estimated_fill"
+                width="6"
+                height="6"
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(45)"
+              >
+                <rect
+                  width="2"
+                  height="6"
+                  fill="var(--trophy-gold)"
+                  fillOpacity="0.22"
+                />
+              </pattern>
             </defs>
             {geometry.ticks.map((tick) => (
               <g key={tick}>
@@ -352,15 +401,6 @@ export default function FullTabValueChart({
             ))}
             {estimatedEdge !== undefined && (
               <g className="estimated">
-                <rect
-                  x={coverageCut ?? PADDING.left}
-                  y={PADDING.top}
-                  width={Math.max(
-                    estimatedEdge - (coverageCut ?? PADDING.left),
-                    0,
-                  )}
-                  height={plotHeight}
-                />
                 <line
                   x1={estimatedEdge}
                   x2={estimatedEdge}
@@ -403,9 +443,28 @@ export default function FullTabValueChart({
                 </text>
               </g>
             )}
-            <path className="area" d={geometry.area} fill="url(#value_fill)" />
-            {geometry.dashedLine !== undefined && (
-              <path className="line_reconstructed" d={geometry.dashedLine} />
+            {geometry.estimatedArea !== undefined && (
+              <path
+                className="area"
+                d={geometry.estimatedArea}
+                fill="url(#value_estimated_fill)"
+              />
+            )}
+            {geometry.area !== undefined && (
+              <path
+                className="area"
+                d={geometry.area}
+                fill="url(#value_fill)"
+              />
+            )}
+            {geometry.estimatedLine !== undefined && (
+              <path className="line_estimated" d={geometry.estimatedLine} />
+            )}
+            {geometry.reconstructedLine !== undefined && (
+              <path
+                className="line_reconstructed"
+                d={geometry.reconstructedLine}
+              />
             )}
             <path className="line" d={geometry.solidLine} pathLength={1} />
             {hovered && hoverIndex !== null && (
@@ -546,14 +605,23 @@ export default function FullTabValueChart({
           stroke-dashoffset: 1;
           animation: draw 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
+        .line_estimated,
         .line_reconstructed {
           fill: none;
           stroke: var(--trophy-gold);
           stroke-width: 2;
           stroke-linecap: round;
-          stroke-dasharray: 4 5;
+          stroke-linejoin: round;
           opacity: 0;
           animation: fade_in 0.5s ease 0.25s forwards;
+        }
+        /* Estimated values get short dashes over striped fill; values from
+           reconstructed balances get longer dashes over the usual fill. */
+        .line_estimated {
+          stroke-dasharray: 2 5;
+        }
+        .line_reconstructed {
+          stroke-dasharray: 7 5;
         }
         .area {
           opacity: 0;
@@ -568,10 +636,6 @@ export default function FullTabValueChart({
           to {
             opacity: 1;
           }
-        }
-        .estimated rect {
-          fill: var(--green-60);
-          opacity: 0.08;
         }
         .estimated line {
           stroke: var(--green-60);
