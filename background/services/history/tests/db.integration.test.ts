@@ -158,6 +158,22 @@ describe("HistoryDatabase", () => {
     ])
   })
 
+  it("doesn't start a holding with a zero balance", async () => {
+    // The wallet reports zero balances for tokens it tracks but nobody holds.
+    await db.addLiveBalances([balance(NOW, 0)])
+    expect(await db.getHoldings([ADDRESS])).toEqual([])
+
+    // Once held, a drop back to zero is still recorded.
+    await db.addLiveBalances([balance(NOW + HOUR, 3)])
+    await db.addLiveBalances([balance(NOW + 2 * HOUR, 0)])
+    const { points } = await db.getBalanceSeries(
+      holdingKeyFor(ADDRESS, ASSET_ID),
+      0,
+      NOW + DAY,
+    )
+    expect(points.map(({ value }) => value)).toEqual([3, 0])
+  })
+
   it("builds the holdings table from existing history on upgrade", async () => {
     db.close()
     // Set up a version 1 database, as it existed before the holdings table.

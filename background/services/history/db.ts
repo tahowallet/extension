@@ -210,7 +210,9 @@ export class HistoryDatabase extends Dexie {
       candidates.forEach((record, index) => {
         const known = latest[index]
         if (known === undefined) {
-          added.push(record)
+          // The wallet reports zero balances for every token it tracks, so
+          // a holding starts with its first balance that isn't zero.
+          if (record.value !== 0) added.push(record)
           return
         }
         if (
