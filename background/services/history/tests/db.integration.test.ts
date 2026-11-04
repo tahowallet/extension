@@ -76,6 +76,16 @@ describe("HistoryDatabase", () => {
     expect(holding.value).toBe(1.4)
   })
 
+  it("keeps whether a holding is trusted current without a new point", async () => {
+    // A token recorded before its token list loaded, then trusted.
+    await db.addLiveBalances([{ ...balance(NOW, 5), trusted: false }])
+    await db.addLiveBalances([balance(NOW + MINUTE, 5)])
+
+    const [holding] = await db.getHoldings([ADDRESS])
+    expect(holding.trusted).toBe(true)
+    expect(holding.times).toHaveLength(1)
+  })
+
   it("doesn't replace backfilled points with live ones", async () => {
     await db.addBalances([{ ...balance(NOW, 1), source: "backfill" }])
     await db.addLiveBalances([balance(NOW + MINUTE, 2)])

@@ -428,6 +428,12 @@ export class HistoryDatabase extends Dexie {
             record.time <= knownTime ||
             (record.value === knownValue && record.time - knownTime < HOUR)
           ) {
+            // No new point, but whether the asset is trusted can change, for
+            // example once a token list loads, and totals only count trusted
+            // holdings, so it's kept current regardless.
+            if (series.trusted !== record.trusted) {
+              updated.push({ ...series, trusted: record.trusted })
+            }
             return
           }
           const current = { ...series, trusted: record.trusted }
