@@ -1176,6 +1176,7 @@
       "historyBegins": "History begins {{date}}",
       "backfilling": "Filling in earlier history…",
       "estimated": "Estimated while balance history fills in",
+      "estimatedUnavailable": "Estimated: some balance history isn't available before {{date}}",
       "empty": "No history yet"
     }
   }

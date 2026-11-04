@@ -35,6 +35,7 @@ import { RateBudget } from "./budget"
 import {
   BalanceRead,
   BlockClock,
+  HistoryReader,
   CoinGeckoTarget,
   UnavailableError,
   fetchFeedPrice,
@@ -94,7 +95,7 @@ const IDLE_AFTER_SECONDS = 5 * 60
  * How long a backfill floor is respected before backfill tries to reach past
  * it again.
  */
-const FLOOR_RECHECK = 7 * DAY
+const FLOOR_RECHECK = DAY
 
 /**
  * Checks whether the user is away using the browser's idle detection. If the
@@ -196,6 +197,13 @@ export type ValueHistory = {
    * {@link valueSeries}.
    */
   estimatedUntil: number | undefined
+  /**
+   * The latest time before which some queried network's balance history
+   * isn't available at all, because none of its endpoints keep state that
+   * old; `undefined` if every network's history reaches the window's start.
+   * Values before it rely on estimates that backfill can't replace.
+   */
+  balanceHistoryFrom: number | undefined
   /** Whether backfill still has work to do for any of the queried series. */
   backfilling: boolean
 }
@@ -416,6 +424,21 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     return provider
   }
 
+  /**
+   * Returns a reader for a chain's past state. Calls at old blocks go through
+   * {@link SerialFallbackProvider.historicalCall}, which asks each of the
+   * chain's endpoints in turn, since often only some of them keep old state.
+   */
+  private static historyReader(
+    provider: NonNullable<ReturnType<ChainService["providerForNetwork"]>>,
+  ): HistoryReader {
+    return {
+      getBlock: (blockTag) => provider.getBlock(blockTag),
+      call: (transaction, blockTag) =>
+        provider.historicalCall(transaction, blockTag),
+    }
+  }
+
   private clockFor(network: EVMNetwork): BlockClock | undefined {
     const provider = this.readyProvider(network)
     if (!provider) return undefined
@@ -440,9 +463,10 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     now: number,
   ): Promise<void> {
     if (error instanceof UnavailableError) {
-      logger.debug(
-        `History backfill for ${state.key} reaches no further back than ${new Date(bucket.start + bucket.size).toISOString()}`,
-        error.message,
+      // Logged at info, since this stops backfill for the series until the
+      // floor is rechecked, and the reason matters for any chart that shows it.
+      logger.info(
+        `History backfill for ${state.key} reaches no further back than ${new Date(bucket.start + bucket.size).toISOString()}: ${error.message}`,
       )
       await this.db.putBackfillState({
         ...state,
@@ -459,7 +483,9 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       // Back off exponentially, up to a day.
       notBefore: now + Math.min(DAY, 2 ** failures * MINUTE),
     })
-    logger.debug("History backfill step failed", state.key, error)
+    logger.debug(
+      `History backfill step for ${state.key} failed ${failures} time(s) in a row: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 
   /**
@@ -570,7 +596,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         }),
       )
       const amounts = await snapshotBalances(
-        provider,
+        HistoryService.historyReader(provider),
         network.chainID,
         reads,
         block,
@@ -677,7 +703,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         )
         const block = await feedClock.blockAt(target.start, now)
         const value = await fetchFeedPrice(
-          feedProvider,
+          HistoryService.historyReader(feedProvider),
           feed.feedAddress,
           feedDecimals,
           block,
@@ -817,6 +843,29 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       )
     }
 
-    return { points, coverageStart, estimatedUntil, backfilling }
+    const now = Date.now()
+    const floors = await Promise.all(
+      [...new Set(holdings.map(({ chainID }) => chainID))].map(
+        async (chainID) =>
+          activeFloor(
+            await this.db.getBackfillState(`balances:${chainID}`),
+            now,
+          ),
+      ),
+    )
+    const balanceHistoryFrom = floors
+      .filter((floor): floor is number => floor !== undefined && floor > from)
+      .reduce<number | undefined>(
+        (latest, floor) => Math.max(latest ?? floor, floor),
+        undefined,
+      )
+
+    return {
+      points,
+      coverageStart,
+      estimatedUntil,
+      balanceHistoryFrom,
+      backfilling,
+    }
   }
 }
