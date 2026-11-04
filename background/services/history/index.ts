@@ -751,7 +751,11 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     const holdings = (await this.db.getHoldings(addresses)).filter(
       (holding) =>
         (chainIDs === undefined || chainIDs.includes(holding.chainID)) &&
-        (assetID === undefined ? holding.trusted : holding.assetID === assetID),
+        (assetID === undefined
+          ? holding.trusted
+          : holding.assetID === assetID) &&
+        // A holding that was already empty before the window adds nothing.
+        !(holding.value === 0 && holding.time <= from),
     )
     phase("holdings")
 
