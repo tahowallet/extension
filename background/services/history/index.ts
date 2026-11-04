@@ -386,13 +386,19 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   /**
    * Returns the price key whose history should be used to value an asset,
    * given the recorded price keys by symbol. Prices recorded for the asset's
-   * own id are preferred, then prices for any asset with the same symbol. If
-   * neither exists, the asset's id is used.
+   * own id are preferred, then, for trusted assets, prices for any asset with
+   * the same symbol. If neither exists, the asset's id is used.
+   *
+   * This matches how the wallet prices assets. An untrusted asset is only
+   * valued by prices recorded for it exactly, since anyone can deploy a
+   * token that borrows another's symbol, and borrowing that token's price
+   * would value it as if it were the real thing.
    */
   private static priceKeyFor(
-    { assetID, symbol }: HoldingInfo,
+    { assetID, symbol, trusted }: HoldingInfo,
     priceKeysBySymbol: Map<string, string[]>,
   ): string {
+    if (!trusted) return assetID
     const sameSymbol = priceKeysBySymbol.get(symbol) ?? []
     return sameSymbol.includes(assetID) ? assetID : (sameSymbol[0] ?? assetID)
   }
