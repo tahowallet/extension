@@ -1171,7 +1171,8 @@
         "week": "1W",
         "month": "1M",
         "quarter": "3M",
-        "year": "1Y"
+        "year": "1Y",
+        "all": "All"
       },
       "historyBegins": "History begins {{date}}",
       "backfilling": "Filling in earlier history…",

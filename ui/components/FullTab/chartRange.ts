@@ -6,7 +6,7 @@ import {
 import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 
 const HOUR = 60 * 60 * 1000
-const DAY = 24 * HOUR
+export const DAY = 24 * HOUR
 
 /** The ranges value charts offer, with how much history each one shows. */
 export const RANGES = [
@@ -15,9 +15,12 @@ export const RANGES = [
   { key: "month", span: 30 * DAY, format: "MMM D" },
   { key: "quarter", span: 90 * DAY, format: "MMM D" },
   { key: "year", span: 365 * DAY, format: "MMM YYYY" },
+  // Back to when the charted holdings were first held; the span is worked
+  // out with the history, so it isn't fixed here.
+  { key: "all", span: undefined, format: "MMM YYYY" },
 ] as const satisfies readonly {
   key: ChartRange
-  span: number
+  span: number | undefined
   format: string
 }[]
 

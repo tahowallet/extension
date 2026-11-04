@@ -29,7 +29,7 @@ import {
   getOrCreateDB,
   holdingKeyFor,
 } from "./db"
-import { HistoryPoint, Series, valueSeries } from "./series"
+import { firstHeldTime, HistoryPoint, Series, valueSeries } from "./series"
 import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
 import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
 import { balancesBefore } from "./reconstruction"
@@ -212,12 +212,19 @@ export type ValueHistoryQuery = {
    * trusted assets are included.
    */
   assetID?: string
-  from: number
+  /**
+   * When the window starts, or `"start"` for when the queried holdings were
+   * first held: their earliest balance that isn't zero, so that before it,
+   * every one of them was empty on record.
+   */
+  from: number | "start"
   to: number
   samples: number
 }
 
 export type ValueHistory = {
+  /** When the charted window starts, which a `"start"` query works out. */
+  from: number
   points: HistoryPoint[]
   coverageStart: number | undefined
   /**
@@ -959,7 +966,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * and whether backfill is still filling in the queried series.
    */
   async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
-    const { addresses, chainIDs, assetID, from, to, samples } = query
+    const { addresses, chainIDs, assetID, to, samples } = query
     const timings: Record<string, number> = {}
     let phaseStart = performance.now()
     const phase = (name: string) => {
@@ -974,14 +981,16 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       this.db.getHoldings(addresses),
       this.db.getPriceKeysBySymbol(),
     ])
-    const holdings = allHoldings.filter(
+    const queried = allHoldings.filter(
       (holding) =>
         (chainIDs === undefined || chainIDs.includes(holding.chainID)) &&
-        (assetID === undefined
-          ? holding.trusted
-          : holding.assetID === assetID) &&
-        // A holding that was already empty before the window adds nothing.
-        !(holding.value === 0 && holding.time <= from),
+        (assetID === undefined ? holding.trusted : holding.assetID === assetID),
+    )
+    const from =
+      query.from === "start" ? (firstHeldTime(queried) ?? to - DAY) : query.from
+    const holdings = queried.filter(
+      // A holding that was already empty before the window adds nothing.
+      (holding) => !(holding.value === 0 && holding.time <= from),
     )
     phase("holdings")
 
@@ -1044,6 +1053,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       )
 
     return {
+      from,
       points,
       coverageStart,
       estimatedUntil,
