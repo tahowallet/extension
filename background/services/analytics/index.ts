@@ -21,11 +21,20 @@ import SigningService, {
 import InternalSignerService from "../internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 import { snapshotAndReset } from "../../lib/perf-metrics"
+import { onEventLoopStall, STALL_THRESHOLD_MS } from "../../lib/stall-watch"
+import { MINUTE } from "../../constants"
 
 // Perf metrics are aggregated in memory and flushed at a cadence long enough
 // that a typical wallet session contributes at most a handful of events,
 // but short enough to produce multiple samples per day for active users.
 const PERF_METRICS_FLUSH_INTERVAL_MINUTES = 180
+
+/**
+ * How often, at most, background stalls are reported. Stalls between reports
+ * are summarized in the next one, so a struggling install sends one event
+ * every ten minutes rather than one per stall.
+ */
+export const STALL_REPORT_INTERVAL_MS = 10 * MINUTE
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -106,8 +115,22 @@ export default class AnalyticsService extends BaseService<Events> {
     )
   }
 
+  /** Stalls seen since the last report, if any. */
+  #stalls:
+    | { count: number; longestMs: number; totalMs: number; since: number }
+    | undefined
+
+  #lastStallReportAt = 0
+
+  #stallReportTimer: ReturnType<typeof setTimeout> | undefined
+
+  #stopWatchingStalls: (() => void) | undefined
+
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
+    this.#stopWatchingStalls = onEventLoopStall((durationMs) =>
+      this.recordStall(durationMs),
+    )
     const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
     let { isEnabled, hasDefaultOnBeenTurnedOn } =
@@ -145,6 +168,8 @@ export default class AnalyticsService extends BaseService<Events> {
   }
 
   protected override async internalStopService(): Promise<void> {
+    this.#stopWatchingStalls?.()
+    clearTimeout(this.#stallReportTimer)
     this.db.close()
 
     await super.internalStopService()
@@ -232,6 +257,56 @@ export default class AnalyticsService extends BaseService<Events> {
     } catch (error) {
       logger.debug("Perf metrics flush failed: ", error)
     }
+  }
+
+  /**
+   * Records a background stall of `durationMs`, reporting it right away if
+   * no stall has been reported in the last {@link STALL_REPORT_INTERVAL_MS},
+   * and otherwise once that interval has passed, together with any other
+   * stalls seen in the meantime.
+   */
+  private recordStall(durationMs: number, now = Date.now()): void {
+    const stalls = this.#stalls ?? {
+      count: 0,
+      longestMs: 0,
+      totalMs: 0,
+      since: now,
+    }
+    stalls.count += 1
+    stalls.longestMs = Math.max(stalls.longestMs, durationMs)
+    stalls.totalMs += durationMs
+    this.#stalls = stalls
+
+    const wait = this.#lastStallReportAt + STALL_REPORT_INTERVAL_MS - now
+    if (wait <= 0) {
+      this.reportStalls(now)
+    } else if (this.#stallReportTimer === undefined) {
+      this.#stallReportTimer = setTimeout(() => this.reportStalls(), wait)
+    }
+  }
+
+  /**
+   * Sends a {@link AnalyticsEvent.BACKGROUND_STALLED} event summarizing the
+   * stalls seen since the last report, if there were any.
+   */
+  private reportStalls(now = Date.now()): void {
+    clearTimeout(this.#stallReportTimer)
+    this.#stallReportTimer = undefined
+    const stalls = this.#stalls
+    if (stalls === undefined) return
+    this.#stalls = undefined
+    this.#lastStallReportAt = now
+
+    this.sendAnalyticsEvent(AnalyticsEvent.BACKGROUND_STALLED, {
+      stalls: stalls.count,
+      longestMs: Math.round(stalls.longestMs),
+      totalMs: Math.round(stalls.totalMs),
+      thresholdMs: STALL_THRESHOLD_MS,
+      windowStartedAt: stalls.since,
+      windowDurationMs: now - stalls.since,
+    }).catch((error) => {
+      logger.debug("Reporting background stalls failed: ", error)
+    })
   }
 
   async removeAnalyticsData(): Promise<void> {

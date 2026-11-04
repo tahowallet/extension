@@ -15,7 +15,7 @@ import {
   jest,
 } from "bun:test"
 import browser from "webextension-polyfill"
-import AnalyticsService from ".."
+import AnalyticsService, { STALL_REPORT_INTERVAL_MS } from ".."
 import { createAnalyticsService } from "../../../tests/factories"
 import PreferenceService from "../../preferences"
 import * as posthog from "../../../lib/posthog"
@@ -257,6 +257,43 @@ describe("AnalyticsService", () => {
 
       await analyticsService["flushPerfMetrics"]()
       expect(analyticsService.sendAnalyticsEvent).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("background stalls", () => {
+    let send: ReturnType<typeof jest.spyOn>
+
+    beforeEach(() => {
+      send = jest
+        .spyOn(analyticsService, "sendAnalyticsEvent")
+        .mockImplementation(() => Promise.resolve())
+    })
+
+    it("reports a stall right away, then at most once per interval", () => {
+      const start = Date.UTC(2026, 10, 4)
+      analyticsService["recordStall"](150, start)
+      expect(send).toHaveBeenCalledTimes(1)
+      expect(send).toHaveBeenLastCalledWith(
+        AnalyticsEvent.BACKGROUND_STALLED,
+        expect.objectContaining({ stalls: 1, longestMs: 150, totalMs: 150 }),
+      )
+
+      // Stalls within the interval wait for the next report.
+      analyticsService["recordStall"](120, start + 1_000)
+      analyticsService["recordStall"](400, start + 2_000)
+      expect(send).toHaveBeenCalledTimes(1)
+
+      analyticsService["reportStalls"](start + STALL_REPORT_INTERVAL_MS)
+      expect(send).toHaveBeenCalledTimes(2)
+      expect(send).toHaveBeenLastCalledWith(
+        AnalyticsEvent.BACKGROUND_STALLED,
+        expect.objectContaining({
+          stalls: 2,
+          longestMs: 400,
+          totalMs: 520,
+          thresholdMs: 100,
+        }),
+      )
     })
   })
 })

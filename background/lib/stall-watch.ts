@@ -49,9 +49,34 @@ export async function watchThunk<T>(
 }
 
 /**
- * Starts watching the service worker's event loop, logging a warning whenever
- * a check that should run every `intervalMs` runs at least `thresholdMs`
- * late. Returns a function that stops watching.
+ * How long, in ms, the background's event loop can go without a turn before
+ * it's considered stalled. Anything longer is noticeable in the UI, since UI
+ * dispatches wait on the background.
+ */
+export const STALL_THRESHOLD_MS = 100
+
+/** A listener for event loop stalls, given each stall's duration in ms. */
+export type StallListener = (durationMs: number) => void
+
+const stallListeners = new Set<StallListener>()
+
+/**
+ * Registers a listener that's called with the duration of each event loop
+ * stall {@link watchEventLoop} notices, for example to report stalls to
+ * analytics. Returns a function that removes the listener.
+ */
+export function onEventLoopStall(listener: StallListener): () => void {
+  stallListeners.add(listener)
+  return () => {
+    stallListeners.delete(listener)
+  }
+}
+
+/**
+ * Starts watching the service worker's event loop, logging a warning and
+ * notifying any {@link onEventLoopStall} listeners whenever a check that
+ * should run every `intervalMs` runs at least `thresholdMs` late. Returns a
+ * function that stops watching.
  *
  * While the event loop is blocked, nothing else in the background runs: UI
  * dispatches, port messages and alarms all wait. A blocked event loop
@@ -60,10 +85,12 @@ export async function watchThunk<T>(
  *
  * Note that the warning comes after the stall, from the first check that
  * manages to run; whatever was logged just before it is usually the cause.
+ * Checks run often enough that a stall at the threshold can't fall between
+ * two of them unnoticed.
  */
 export function watchEventLoop({
-  intervalMs = 1_000,
-  thresholdMs = 500,
+  intervalMs = 25,
+  thresholdMs = STALL_THRESHOLD_MS,
 }: { intervalMs?: number; thresholdMs?: number } = {}): () => void {
   let last = performance.now()
   const timer = setInterval(() => {
@@ -74,6 +101,7 @@ export function watchEventLoop({
       logger.warn(
         `Background event loop was blocked for about ${Math.round(late)}ms.`,
       )
+      stallListeners.forEach((listener) => listener(late))
     }
   }, intervalMs)
   return () => clearInterval(timer)

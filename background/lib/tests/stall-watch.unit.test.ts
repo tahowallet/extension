@@ -4,6 +4,7 @@ import logger from "../logger"
 import {
   HUNG_THUNK_MS,
   SLOW_THUNK_MS,
+  onEventLoopStall,
   watchEventLoop,
   watchThunk,
 } from "../stall-watch"
@@ -79,6 +80,30 @@ describe("watchEventLoop", () => {
     expect(warn).toHaveBeenCalledWith(
       "Background event loop was blocked for about 1000ms.",
     )
+    stop()
+  })
+
+  it("tells stall listeners how long the loop was blocked", () => {
+    jest.useFakeTimers()
+    spyOn(logger, "warn").mockImplementation(() => {})
+    let now = 0
+    spyOn(performance, "now").mockImplementation(() => now)
+    const stalls: number[] = []
+    const stopListening = onEventLoopStall((durationMs) =>
+      stalls.push(durationMs),
+    )
+
+    const stop = watchEventLoop({ intervalMs: 25, thresholdMs: 100 })
+    now = 30
+    jest.advanceTimersByTime(25)
+    now = 180
+    jest.advanceTimersByTime(25)
+    expect(stalls).toEqual([125])
+
+    stopListening()
+    now = 400
+    jest.advanceTimersByTime(25)
+    expect(stalls).toEqual([125])
     stop()
   })
 })

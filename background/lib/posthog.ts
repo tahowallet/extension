@@ -23,6 +23,10 @@ export enum AnalyticsEvent {
   // Aggregate performance counters flushed periodically from the chain
   // provider layer. Payload shape is defined by PerfMetricsSnapshot.
   PERF_METRICS_FLUSH = "Performance Metrics Flush",
+  // The background's event loop went longer than STALL_THRESHOLD_MS without
+  // a turn. Sent at most once per STALL_REPORT_INTERVAL_MS, summarizing the
+  // stalls since the last report.
+  BACKGROUND_STALLED = "Background Stalled",
 }
 
 export enum OneTimeAnalyticsEvent {
