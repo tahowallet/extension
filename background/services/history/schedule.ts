@@ -30,7 +30,11 @@ export function bucketAt(time: number, now: number): Bucket {
  * Checks whether any of `sortedTimes`, which must be sorted oldest first,
  * fall within `[from, to)`.
  */
-function anyWithin(sortedTimes: number[], from: number, to: number): boolean {
+function anyWithin(
+  sortedTimes: ArrayLike<number>,
+  from: number,
+  to: number,
+): boolean {
   let low = 0
   let high = sortedTimes.length
   // Binary search for the index of the first time at or after `from`.
@@ -58,11 +62,11 @@ function anyWithin(sortedTimes: number[], from: number, to: number): boolean {
  * before another week of older history.
  */
 export function missingBuckets(
-  times: number[],
+  times: ArrayLike<number>,
   now: number,
   { floor, limit = Infinity }: { floor?: number; limit?: number } = {},
 ): Bucket[] {
-  const sorted = [...times].sort((a, b) => a - b)
+  const sorted = Float64Array.from(times).sort()
   const earliest = Math.max(now - BACKFILL_HORIZON, floor ?? -Infinity)
   const missing: Bucket[] = []
 

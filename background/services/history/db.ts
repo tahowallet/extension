@@ -1,11 +1,13 @@
 import Dexie, { DexieOptions } from "dexie"
 import { HOUR, MINUTE } from "../../constants"
 import { compactableIndexes } from "./compaction"
-import { HistoryPoint } from "./series"
+import { Series } from "./series"
 
-/** A recorded price of an asset, in the main currency, at a given time. */
+/** Where a point in a series came from. */
+export type PointSource = "live" | "backfill"
+
+/** A price of an asset, in the main currency, at a given time, to record. */
 export type PriceRecord = {
-  id?: number
   /** The priced asset's full asset id. */
   priceKey: string
   /**
@@ -15,18 +17,14 @@ export type PriceRecord = {
   symbol: string
   time: number
   value: number
-  source: "live" | "backfill"
+  source: PointSource
 }
 
-/**
- * A recorded balance of an asset for an account, in the asset's units, at a
- * given time.
- */
-export type BalanceRecord = {
-  id?: number
+/** What identifies a holding: an account's balance of one asset. */
+export type HoldingInfo = {
   /**
-   * The key of the series this record belongs to, in the form
-   * `${address}|${assetID}`; see {@link holdingKeyFor}.
+   * The holding's key, in the form `${address}|${assetID}`; see
+   * {@link holdingKeyFor}.
    */
   holdingKey: string
   address: string
@@ -35,14 +33,33 @@ export type BalanceRecord = {
   assetID: string
   symbol: string
   /**
-   * Whether the asset was trusted when the balance was measured. Value totals
-   * across assets only count trusted assets.
+   * Whether the asset was trusted when the balance was last measured. Value
+   * totals across assets only count trusted assets.
    */
   trusted: boolean
+}
+
+/**
+ * A balance of an asset for an account, in the asset's units, at a given
+ * time, to record.
+ */
+export type BalanceRecord = HoldingInfo & {
   time: number
   value: number
-  source: "live" | "backfill"
+  source: PointSource
 }
+
+/**
+ * A holding as stored: its identifying information, its whole balance series,
+ * and its latest balance and when it was measured.
+ */
+export type Holding = HoldingInfo &
+  Series & {
+    /** When the latest balance was measured. */
+    time: number
+    /** The latest balance. */
+    value: number
+  }
 
 /**
  * Tracks the progress of backfill for a series, including how far back its
@@ -63,11 +80,6 @@ export type BackfillState = {
    */
   floorAt?: number
   /**
-   * Set when the source can't serve the series at all, in which case backfill
-   * doesn't attempt it.
-   */
-  unavailable?: boolean
-  /**
    * After a failure such as a rate limit, the time before which backfill
    * won't try the series again.
    */
@@ -75,37 +87,222 @@ export type BackfillState = {
   failures?: number
 }
 
-/** Extracts the times from a list of `[series+time]` compound index keys. */
-const timesOf = (keys: unknown[]): number[] =>
-  keys.flatMap((key) =>
-    Array.isArray(key) && typeof key[1] === "number" ? [key[1]] : [],
-  )
+/**
+ * A whole series as stored: one record per price or balance series, with its
+ * points held in typed arrays, oldest first.
+ *
+ * IndexedDB is slow at many small reads and fast at copying typed arrays, so
+ * keeping a series in one record means a chart reads a few hundred records
+ * instead of tens of thousands of points, and reading a record costs little
+ * more than reading one point would.
+ */
+type SeriesRecord = {
+  /** `balance:${holdingKey}` or `price:${priceKey}`. */
+  key: string
+  kind: "balance" | "price"
+  /** The account, for balance series; empty for price series. */
+  address: string
+  /** The network, for balance series; empty for price series. */
+  chainID: string
+  symbol: string
+  /** The holding's key, for balance series. */
+  holdingKey?: string
+  /** The asset's full asset id, for balance series. */
+  assetID?: string
+  /** Whether the asset was trusted when last measured, for balance series. */
+  trusted?: boolean
+  /** The price key, for price series. */
+  priceKey?: string
+  times: Float64Array
+  values: Float64Array
+  /** Each point's {@link PointSource}: 0 for live, 1 for backfill. */
+  sources: Uint8Array
+}
+
+const BACKFILL_SOURCE = 1
+
+const sourceCode = (source: PointSource) =>
+  source === "backfill" ? BACKFILL_SOURCE : 0
 
 /** The window within which live balances keep at most one point per series. */
 export const LIVE_BALANCE_SPACING = 5 * MINUTE
 
+/**
+ * How many series are read and rewritten in one transaction, by compaction
+ * and by large writes. Batches yield to other work between them, so a large
+ * history never holds up the background for long.
+ */
+const BATCH_SIZE = 100
+
 export const holdingKeyFor = (address: string, assetID: string): string =>
   `${address.toLowerCase()}|${assetID}`
 
+const balanceKey = (holdingKey: string) => `balance:${holdingKey}`
+const priceKeyOf = (priceKey: string) => `price:${priceKey}`
+
+/** Yields to other work in the background before continuing. */
+const yieldToOtherWork = () =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  })
+
+/**
+ * Calls `work` with `items` {@link BATCH_SIZE} at a time, yielding to other
+ * work between batches, and returns the sum of what each call returns.
+ */
+async function inBatches<T>(
+  items: T[],
+  work: (batch: T[]) => Promise<number>,
+): Promise<number> {
+  let total = 0
+  for (let start = 0; start < items.length; start += BATCH_SIZE) {
+    if (start > 0) {
+      // oxlint-disable-next-line no-await-in-loop
+      await yieldToOtherWork()
+    }
+    // oxlint-disable-next-line no-await-in-loop
+    total += await work(items.slice(start, start + BATCH_SIZE))
+  }
+  return total
+}
+
+/**
+ * Returns a copy of `record` with `points` merged into its series, keeping
+ * points sorted oldest first. A point at the same time as an existing one
+ * replaces it.
+ */
+function withPoints(
+  record: SeriesRecord,
+  points: { time: number; value: number; source: PointSource }[],
+): SeriesRecord {
+  // A single pass over both, already in time order, so that the usual case
+  // of appending a live point costs no more than copying the series.
+  const incoming = [...points].sort((a, b) => a.time - b.time)
+  const existing = record.times.length
+  const size = existing + incoming.length
+  const times = new Float64Array(size)
+  const values = new Float64Array(size)
+  const sources = new Uint8Array(size)
+  let count = 0
+  const push = (time: number, value: number, source: number) => {
+    if (count > 0 && times[count - 1] === time) {
+      values[count - 1] = value
+      sources[count - 1] = source
+    } else {
+      times[count] = time
+      values[count] = value
+      sources[count] = source
+      count += 1
+    }
+  }
+
+  let old = 0
+  let next = 0
+  while (old < existing || next < incoming.length) {
+    if (
+      next >= incoming.length ||
+      (old < existing && record.times[old] < incoming[next].time)
+    ) {
+      push(record.times[old], record.values[old], record.sources[old])
+      old += 1
+    } else {
+      // A new point replaces an existing one at the same time.
+      if (old < existing && record.times[old] === incoming[next].time) {
+        old += 1
+      }
+      const { time, value, source } = incoming[next]
+      push(time, value, sourceCode(source))
+      next += 1
+    }
+  }
+
+  return {
+    ...record,
+    times: times.slice(0, count),
+    values: values.slice(0, count),
+    sources: sources.slice(0, count),
+  }
+}
+
+/** Returns a copy of `record` without the points at the given indexes. */
+function withoutPoints(record: SeriesRecord, indexes: number[]): SeriesRecord {
+  const dropped = new Set(indexes)
+  const kept = (_: number, index: number) => !dropped.has(index)
+  return {
+    ...record,
+    times: record.times.filter(kept),
+    values: record.values.filter(kept),
+    sources: record.sources.filter(kept),
+  }
+}
+
+/** Returns a copy of `record` with its last point replaced. */
+function withLastPoint(
+  record: SeriesRecord,
+  { time, value, source }: { time: number; value: number; source: PointSource },
+): SeriesRecord {
+  const last = record.times.length - 1
+  const times = record.times.slice()
+  const values = record.values.slice()
+  const sources = record.sources.slice()
+  times[last] = time
+  values[last] = value
+  sources[last] = sourceCode(source)
+  return { ...record, times, values, sources }
+}
+
+const emptyBalanceSeries = (info: HoldingInfo): SeriesRecord => ({
+  key: balanceKey(info.holdingKey),
+  kind: "balance",
+  address: info.address.toLowerCase(),
+  chainID: info.chainID,
+  symbol: info.symbol,
+  holdingKey: info.holdingKey,
+  assetID: info.assetID,
+  trusted: info.trusted,
+  times: new Float64Array(0),
+  values: new Float64Array(0),
+  sources: new Uint8Array(0),
+})
+
+const holdingOf = (record: SeriesRecord): Holding => {
+  const last = record.times.length - 1
+  return {
+    holdingKey: record.holdingKey ?? "",
+    address: record.address,
+    chainID: record.chainID,
+    assetID: record.assetID ?? "",
+    symbol: record.symbol,
+    trusted: record.trusted ?? false,
+    times: record.times,
+    values: record.values,
+    time: record.times[last] ?? 0,
+    value: record.values[last] ?? 0,
+  }
+}
+
+/** Groups records by a key, keeping their order. */
+function groupBy<T>(records: T[], keyOf: (record: T) => string) {
+  const groups = new Map<string, T[]>()
+  records.forEach((record) => {
+    const key = keyOf(record)
+    const group = groups.get(key)
+    if (group) group.push(record)
+    else groups.set(key, [record])
+  })
+  return groups
+}
+
 /**
  * The HistoryDatabase stores compact, chartable history of prices and
- * balances. Each record is a single number for one series at one time, and
- * records are kept at decreasing resolution as they age, per the retention
- * tiers used by {@link compactableIndexes}.
+ * balances. Each price or balance series is a single record holding all of its
+ * points, which are kept at decreasing resolution as they age, per the
+ * retention tiers used by {@link compactableIndexes}.
  */
 export class HistoryDatabase extends Dexie {
-  private prices!: Dexie.Table<PriceRecord, number>
-
-  private balances!: Dexie.Table<BalanceRecord, number>
+  private series!: Dexie.Table<SeriesRecord, string>
 
   private backfill!: Dexie.Table<BackfillState, string>
-
-  /**
-   * Each holding's latest balance record, keyed by holding key. This table
-   * lets the database find an account's holdings without reading its whole
-   * balance history.
-   */
-  private holdings!: Dexie.Table<BalanceRecord, string>
 
   constructor(options?: DexieOptions) {
     super("tally/history", options)
@@ -114,63 +311,57 @@ export class HistoryDatabase extends Dexie {
       balances: "++id,[holdingKey+time],[address+chainID],address,time",
       backfill: "&key",
     })
-    this.version(2)
+    this.version(2).stores({
+      prices: "++id,[priceKey+time],[symbol+priceKey],time",
+      balances: "++id,[holdingKey+time],address,time",
+      backfill: "&key",
+      holdings: "&holdingKey,address",
+    })
+    // Version 3 keeps each series in a single record. History from earlier
+    // versions, which never shipped, is dropped rather than converted, and
+    // backfill fills it back in; dropping tables needs no work in the upgrade
+    // itself, so it can't hold up the background.
+    this.version(3)
       .stores({
-        prices: "++id,[priceKey+time],[symbol+priceKey],time",
-        balances: "++id,[holdingKey+time],address,time",
+        prices: null,
+        balances: null,
+        holdings: null,
         backfill: "&key",
-        holdings: "&holdingKey,address",
+        series: "&key,[kind+address],[kind+chainID],[kind+symbol]",
       })
-      .upgrade(async (transaction) => {
-        const latest = new Map<string, BalanceRecord>()
-        await transaction
-          .table<BalanceRecord, number>("balances")
-          .each((record) => {
-            const seen = latest.get(record.holdingKey)
-            if (!seen || seen.time < record.time) {
-              latest.set(record.holdingKey, record)
-            }
-          })
-        await transaction
-          .table<BalanceRecord, string>("holdings")
-          .bulkPut([...latest.values()])
-
-        // Version 1 backfill walked each series back a day at a time and
-        // kept per-series progress, failure backoffs, and "unavailable"
-        // marks that version 2 doesn't use. Its price marks reuse version
-        // 2's keys, so an old "unavailable" mark would stop a price series
-        // from ever being backfilled. Since progress is now read from the
-        // data itself, clearing the table and starting over loses nothing.
-        await transaction.table("backfill").clear()
-      })
-  }
-
-  async addPrices(records: PriceRecord[]): Promise<void> {
-    await this.prices.bulkAdd(records)
+      .upgrade((transaction) => transaction.table("backfill").clear())
   }
 
   /**
-   * Updates each holding's latest record in the holdings table from the
-   * passed records, ignoring any that are older than the stored record.
+   * Records prices, merging each into its asset's price series. A price at
+   * the same time as an existing one replaces it.
    */
-  private async noteHoldings(records: BalanceRecord[]): Promise<void> {
-    const latest = new Map<string, BalanceRecord>()
-    records.forEach((record) => {
-      const seen = latest.get(record.holdingKey)
-      if (!seen || seen.time < record.time)
-        latest.set(record.holdingKey, record)
-    })
-    const candidates = [...latest.values()]
-    const existing = await this.holdings.bulkGet(
-      candidates.map(({ holdingKey }) => holdingKey),
+  async addPrices(records: PriceRecord[]): Promise<void> {
+    if (records.length === 0) return
+    const byKey = groupBy(records, ({ priceKey }) => priceKey)
+    await inBatches([...byKey.keys()], async (keys) =>
+      this.transaction("rw", this.series, async () => {
+        const existing = await this.series.bulkGet(keys.map(priceKeyOf))
+        await this.series.bulkPut(
+          keys.map((priceKey, index) => {
+            const points = byKey.get(priceKey) ?? []
+            const record = existing[index] ?? {
+              key: priceKeyOf(priceKey),
+              kind: "price" as const,
+              address: "",
+              chainID: "",
+              symbol: points[0]?.symbol ?? "",
+              priceKey,
+              times: new Float64Array(0),
+              values: new Float64Array(0),
+              sources: new Uint8Array(0),
+            }
+            return withPoints(record, points)
+          }),
+        )
+        return keys.length
+      }),
     )
-    const newer = candidates.filter(
-      (record, index) =>
-        existing[index] === undefined || existing[index].time < record.time,
-    )
-    if (newer.length > 0) {
-      await this.holdings.bulkPut(newer.map(({ id: _, ...record }) => record))
-    }
   }
 
   /**
@@ -179,15 +370,16 @@ export class HistoryDatabase extends Dexie {
    * step functions, so a repeated value adds nothing but proof that the
    * balance held, and an hourly point is enough for that.
    *
+   * The wallet reports a zero balance for every token it tracks, held or not,
+   * so a holding only starts with its first balance that isn't zero. Once
+   * something has been held, zero balances are recorded like any other,
+   * since dropping to zero belongs on a chart.
+   *
    * A balance that changes every block, like an interest-bearing token's,
    * keeps one point per {@link LIVE_BALANCE_SPACING} window: if the latest
    * point is also live and falls in the same window, the new balance replaces
    * it. That way, the latest point is always current without storing a point
    * per block.
-   *
-   * The wallet reports all of an account's balances at once, and often, so
-   * the batch is checked against the holdings table and written in a single
-   * transaction rather than with a lookup and a write per balance.
    *
    * Returns the number of balances that were added or replaced.
    */
@@ -199,190 +391,128 @@ export class HistoryDatabase extends Dexie {
         latestInBatch.set(record.holdingKey, record)
       }
     })
-    const candidates = [...latestInBatch.values()]
-
-    return this.transaction("rw", this.balances, this.holdings, async () => {
-      const latest = await this.holdings.bulkGet(
-        candidates.map(({ holdingKey }) => holdingKey),
-      )
-      const added: BalanceRecord[] = []
-      const replaced: BalanceRecord[] = []
-      candidates.forEach((record, index) => {
-        const known = latest[index]
-        if (known === undefined) {
-          // The wallet reports zero balances for every token it tracks, so
-          // a holding starts with its first balance that isn't zero.
-          if (record.value !== 0) added.push(record)
-          return
-        }
-        if (
-          record.time <= known.time ||
-          (record.value === known.value && record.time - known.time < HOUR)
-        ) {
-          return
-        }
-        if (
-          known.id !== undefined &&
-          known.source === "live" &&
-          Math.floor(record.time / LIVE_BALANCE_SPACING) ===
-            Math.floor(known.time / LIVE_BALANCE_SPACING)
-        ) {
-          replaced.push({ ...record, id: known.id })
-        } else {
-          added.push(record)
-        }
-      })
-
-      const addedIDs =
-        added.length > 0
-          ? await this.balances.bulkAdd(
-              added.map(({ id: _, ...record }) => record),
-              { allKeys: true },
-            )
-          : []
-      if (replaced.length > 0) await this.balances.bulkPut(replaced)
-      // Holdings keep the id of their latest point so that a later balance
-      // in the same window can replace it.
-      await this.holdings.bulkPut([
-        ...added.map((record, index) => ({ ...record, id: addedIDs[index] })),
-        ...replaced,
-      ])
-      return added.length + replaced.length
-    })
+    return inBatches([...latestInBatch.values()], async (candidates) =>
+      this.transaction("rw", this.series, async () => {
+        const existing = await this.series.bulkGet(
+          candidates.map(({ holdingKey }) => balanceKey(holdingKey)),
+        )
+        const updated: SeriesRecord[] = []
+        candidates.forEach((record, index) => {
+          const series = existing[index]
+          const last = series === undefined ? -1 : series.times.length - 1
+          if (series === undefined || last < 0) {
+            if (record.value !== 0) {
+              updated.push(withPoints(emptyBalanceSeries(record), [record]))
+            }
+            return
+          }
+          const knownTime = series.times[last]
+          const knownValue = series.values[last]
+          if (
+            record.time <= knownTime ||
+            (record.value === knownValue && record.time - knownTime < HOUR)
+          ) {
+            return
+          }
+          const current = { ...series, trusted: record.trusted }
+          if (
+            series.sources[last] !== BACKFILL_SOURCE &&
+            Math.floor(record.time / LIVE_BALANCE_SPACING) ===
+              Math.floor(knownTime / LIVE_BALANCE_SPACING)
+          ) {
+            updated.push(withLastPoint(current, record))
+          } else {
+            updated.push(withPoints(current, [record]))
+          }
+        })
+        if (updated.length > 0) await this.series.bulkPut(updated)
+        return updated.length
+      }),
+    )
   }
 
   async addBalance(record: BalanceRecord): Promise<void> {
     await this.addLiveBalances([record])
   }
 
+  /**
+   * Records balances as given, merging each into its holding's series and
+   * creating the series if needed. Backfill uses this to fill in history,
+   * where zero balances are as meaningful as any other.
+   */
   async addBalances(records: BalanceRecord[]): Promise<void> {
-    await this.balances.bulkAdd(records)
-    await this.noteHoldings(records)
-  }
-
-  /**
-   * Returns a series' points between `from` and `to`, inclusive, plus the
-   * last point before `from`, so that a step function's value at `from` is
-   * known.
-   */
-  private async seriesPoints<T extends { time: number; value: number }>(
-    table: Dexie.Table<T, number>,
-    index: string,
-    key: string,
-    from: number,
-    to: number,
-  ): Promise<T[]> {
-    const [before, within] = await Promise.all([
-      table
-        .where(index)
-        .between([key, Dexie.minKey], [key, from], true, false)
-        .last(),
-      table.where(index).between([key, from], [key, to], true, true).toArray(),
-    ])
-    return before ? [before, ...within] : within
-  }
-
-  async getPriceSeries(
-    priceKey: string,
-    from: number,
-    to: number,
-  ): Promise<HistoryPoint[]> {
-    const points = await this.seriesPoints(
-      this.prices,
-      "[priceKey+time]",
-      priceKey,
-      from,
-      to,
-    )
-    return points.map(({ time, value }) => ({ time, value }))
-  }
-
-  /**
-   * Returns the price keys recorded for a symbol, which are used to value
-   * assets by symbol. Note that this reads only the index, not the prices
-   * themselves.
-   */
-  async getPriceKeysForSymbol(symbol: string): Promise<string[]> {
-    const keys = await this.prices
-      .where("[symbol+priceKey]")
-      .between([symbol, Dexie.minKey], [symbol, Dexie.maxKey])
-      .uniqueKeys()
-    return keys.flatMap((key) =>
-      Array.isArray(key) && typeof key[1] === "string" ? [key[1]] : [],
-    )
-  }
-
-  async getEarliestPriceTime(priceKey: string): Promise<number | undefined> {
-    const first = await this.prices
-      .where("[priceKey+time]")
-      .between([priceKey, Dexie.minKey], [priceKey, Dexie.maxKey])
-      .first()
-    return first?.time
-  }
-
-  async getPriceTimes(
-    priceKey: string,
-    from: number,
-    to: number,
-  ): Promise<number[]> {
-    return timesOf(
-      await this.prices
-        .where("[priceKey+time]")
-        .between([priceKey, from], [priceKey, to], true, true)
-        .keys(),
+    if (records.length === 0) return
+    const byHolding = groupBy(records, ({ holdingKey }) => holdingKey)
+    await inBatches([...byHolding.keys()], async (holdingKeys) =>
+      this.transaction("rw", this.series, async () => {
+        const existing = await this.series.bulkGet(holdingKeys.map(balanceKey))
+        await this.series.bulkPut(
+          holdingKeys.map((holdingKey, index) => {
+            const points = byHolding.get(holdingKey) ?? []
+            return withPoints(
+              existing[index] ?? emptyBalanceSeries(points[0]),
+              points,
+            )
+          }),
+        )
+        return holdingKeys.length
+      }),
     )
   }
 
   /**
-   * Returns the distinct holdings recorded for the given account addresses,
-   * each as its latest balance record.
+   * Returns the holdings recorded for the given account addresses, each with
+   * its whole balance series.
    */
-  async getHoldings(addresses: string[]): Promise<BalanceRecord[]> {
-    return this.holdings
-      .where("address")
-      .anyOf(addresses.map((address) => address.toLowerCase()))
+  async getHoldings(addresses: string[]): Promise<Holding[]> {
+    if (addresses.length === 0) return []
+    const records = await this.series
+      .where("[kind+address]")
+      .anyOf(addresses.map((address) => ["balance", address.toLowerCase()]))
       .toArray()
+    return records.map(holdingOf)
   }
 
-  async getBalanceSeries(
-    holdingKey: string,
-    from: number,
-    to: number,
-  ): Promise<{ points: HistoryPoint[]; trusted: boolean }> {
-    const records = await this.seriesPoints(
-      this.balances,
-      "[holdingKey+time]",
-      holdingKey,
-      from,
-      to,
-    )
-    return {
-      points: records.map(({ time, value }) => ({ time, value })),
-      trusted: records.some(({ trusted }) => trusted),
-    }
+  /**
+   * Returns the price series for the given price keys, by price key. Keys
+   * with no recorded prices are left out.
+   */
+  async getPriceSeries(priceKeys: string[]): Promise<Map<string, Series>> {
+    const records = await this.series.bulkGet(priceKeys.map(priceKeyOf))
+    const found = new Map<string, Series>()
+    records.forEach((record, index) => {
+      if (record !== undefined) {
+        found.set(priceKeys[index], {
+          times: record.times,
+          values: record.values,
+        })
+      }
+    })
+    return found
   }
 
-  async getEarliestBalanceTime(
-    holdingKey: string,
-  ): Promise<number | undefined> {
-    const first = await this.balances
-      .where("[holdingKey+time]")
-      .between([holdingKey, Dexie.minKey], [holdingKey, Dexie.maxKey])
-      .first()
-    return first?.time
-  }
-
-  async getBalanceTimes(
-    holdingKey: string,
-    from: number,
-    to: number,
-  ): Promise<number[]> {
-    return timesOf(
-      await this.balances
-        .where("[holdingKey+time]")
-        .between([holdingKey, from], [holdingKey, to], true, true)
-        .keys(),
-    )
+  /**
+   * Returns every recorded price key, grouped by the symbol it was recorded
+   * with, which is what valuing assets by symbol needs. Note that this reads
+   * only an index, not the prices themselves.
+   */
+  async getPriceKeysBySymbol(): Promise<Map<string, string[]>> {
+    const collection = this.series
+      .where("[kind+symbol]")
+      .between(["price", Dexie.minKey], ["price", Dexie.maxKey])
+    const [indexKeys, primaryKeys] = await Promise.all([
+      collection.keys(),
+      collection.primaryKeys(),
+    ])
+    const bySymbol = new Map<string, string[]>()
+    indexKeys.forEach((indexKey, position) => {
+      if (!Array.isArray(indexKey) || typeof indexKey[1] !== "string") return
+      const priceKey = String(primaryKeys[position]).slice("price:".length)
+      const keys = bySymbol.get(indexKey[1])
+      if (keys) keys.push(priceKey)
+      else bySymbol.set(indexKey[1], [priceKey])
+    })
+    return bySymbol
   }
 
   async getBackfillState(key: string): Promise<BackfillState> {
@@ -396,41 +526,36 @@ export class HistoryDatabase extends Dexie {
   /**
    * Thins every price and balance series down to its retention tiers as of
    * `now`, and returns the number of points dropped.
+   *
+   * Series are read and rewritten {@link BATCH_SIZE} at a time,
+   * with a pause for other background work between pages, so compacting a
+   * large history never holds up the background for long.
    */
   async compact(now: number): Promise<number> {
-    // Only the series index's keys and their records' ids are read, so that
-    // compaction never has to load whole records.
-    const compactTable = async (
-      table: Dexie.Table<{ time: number }, number>,
-      index: string,
-    ) => {
-      const collection = table.orderBy(index)
-      const [keys, ids] = await Promise.all([
-        collection.keys(),
-        collection.primaryKeys(),
-      ])
-      const bySeries = new Map<unknown, { id: number; time: number }[]>()
-      keys.forEach((key, position) => {
-        if (!Array.isArray(key) || typeof key[1] !== "number") return
-        const series = bySeries.get(key[0]) ?? []
-        series.push({ id: ids[position], time: key[1] })
-        bySeries.set(key[0], series)
-      })
-      const toDelete = [...bySeries.values()].flatMap((series) =>
-        compactableIndexes(
-          series.map(({ time }) => time),
-          now,
-        ).map((position) => series[position].id),
+    let dropped = 0
+    let after: string | undefined
+    for (;;) {
+      // oxlint-disable-next-line no-await-in-loop
+      const page = await (
+        after === undefined
+          ? this.series.orderBy(":id")
+          : this.series.where(":id").above(after)
       )
-      await table.bulkDelete(toDelete)
-      return toDelete.length
-    }
+        .limit(BATCH_SIZE)
+        .toArray()
+      if (page.length === 0) return dropped
+      after = page[page.length - 1].key
 
-    const [prices, balances] = await Promise.all([
-      compactTable(this.prices, "[priceKey+time]"),
-      compactTable(this.balances, "[holdingKey+time]"),
-    ])
-    return prices + balances
+      const thinned = page.flatMap((record) => {
+        const indexes = compactableIndexes(Array.from(record.times), now)
+        dropped += indexes.length
+        return indexes.length > 0 ? [withoutPoints(record, indexes)] : []
+      })
+      // oxlint-disable-next-line no-await-in-loop
+      if (thinned.length > 0) await this.series.bulkPut(thinned)
+      // oxlint-disable-next-line no-await-in-loop
+      await yieldToOtherWork()
+    }
   }
 }
 

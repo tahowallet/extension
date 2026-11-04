@@ -23,13 +23,14 @@ import {
 import { normalizeEVMAddress } from "../../lib/utils"
 import {
   BackfillState,
-  BalanceRecord,
+  Holding,
+  HoldingInfo,
   HistoryDatabase,
   getOrCreateDB,
   holdingKeyFor,
 } from "./db"
-import { HistoryPoint, valueSeries } from "./series"
-import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
+import { HistoryPoint, Series, valueSeries } from "./series"
+import { Bucket, missingBuckets } from "./schedule"
 import { RateBudget } from "./budget"
 import {
   BalanceRead,
@@ -107,6 +108,23 @@ async function isUserIdle(): Promise<boolean> {
   }
 }
 
+/** Returns a holding's identifying information, without its series. */
+const infoOf = ({
+  holdingKey,
+  address,
+  chainID,
+  assetID,
+  symbol,
+  trusted,
+}: HoldingInfo): HoldingInfo => ({
+  holdingKey,
+  address,
+  chainID,
+  assetID,
+  symbol,
+  trusted,
+})
+
 /**
  * Returns the contract address from a holding's full asset id, or
  * `undefined` if the asset is a base asset.
@@ -124,11 +142,11 @@ const activeFloor = (state: BackfillState, now: number) =>
     : undefined
 
 /**
- * Checks whether a backfill state is waiting out a failure or is marked as
- * unavailable, in which case its series shouldn't be attempted.
+ * Checks whether a backfill state is waiting out a failure, in which case its
+ * series shouldn't be attempted yet.
  */
 const isResting = (state: BackfillState, now: number) =>
-  state.unavailable === true || (state.notBefore ?? 0) > now
+  (state.notBefore ?? 0) > now
 
 /**
  * Returns the latest point in each of `buckets`, from points that may cover
@@ -310,16 +328,17 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   /**
-   * Returns the price key whose history should be used to value an asset.
-   * Prices recorded for the asset's own id are preferred, then prices for any
-   * asset with the same symbol. If neither exists, the asset's id is used.
+   * Returns the price key whose history should be used to value an asset,
+   * given the recorded price keys by symbol. Prices recorded for the asset's
+   * own id are preferred, then prices for any asset with the same symbol. If
+   * neither exists, the asset's id is used.
    */
-  private async priceKeyFor(assetID: string, symbol: string): Promise<string> {
-    if ((await this.db.getEarliestPriceTime(assetID)) !== undefined) {
-      return assetID
-    }
-    const [bySymbol] = await this.db.getPriceKeysForSymbol(symbol)
-    return bySymbol ?? assetID
+  private static priceKeyFor(
+    { assetID, symbol }: HoldingInfo,
+    priceKeysBySymbol: Map<string, string[]>,
+  ): string {
+    const sameSymbol = priceKeysBySymbol.get(symbol) ?? []
+    return sameSymbol.includes(assetID) ? assetID : (sameSymbol[0] ?? assetID)
   }
 
   /**
@@ -327,7 +346,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * asset's network isn't tracked or CoinGecko has no id for the asset.
    */
   private async coinGeckoTargetFor(
-    holding: BalanceRecord,
+    holding: HoldingInfo,
   ): Promise<CoinGeckoTarget | undefined> {
     const network = (await this.chainService.getTrackedNetworks()).find(
       ({ chainID }) => chainID === holding.chainID,
@@ -485,7 +504,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    */
   private async balanceStep(
     network: EVMNetwork,
-    holdings: BalanceRecord[],
+    holdings: Holding[],
     now: number,
     idle: boolean,
   ): Promise<void> {
@@ -498,31 +517,22 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
 
     const decimals = await this.decimalsByAsset()
     const floor = activeFloor(state, now)
-    const missing = (
-      await Promise.all(
-        holdings.map(async (holding) => {
-          const contractAddress = contractAddressOf(holding.assetID)
-          const holdingDecimals =
-            contractAddress === undefined
-              ? network.baseAsset.decimals
-              : decimals.get(contractAddress.toLowerCase())
-          if (holdingDecimals === undefined) return []
-          const times = await this.db.getBalanceTimes(
-            holding.holdingKey,
-            now - BACKFILL_HORIZON,
-            now,
-          )
-          return [
-            {
-              holding,
-              contractAddress,
-              holdingDecimals,
-              buckets: missingBuckets(times, now, { floor }),
-            },
-          ]
-        }),
-      )
-    ).flat()
+    const missing = holdings.flatMap((holding) => {
+      const contractAddress = contractAddressOf(holding.assetID)
+      const holdingDecimals =
+        contractAddress === undefined
+          ? network.baseAsset.decimals
+          : decimals.get(contractAddress.toLowerCase())
+      if (holdingDecimals === undefined) return []
+      return [
+        {
+          holding,
+          contractAddress,
+          holdingDecimals,
+          buckets: missingBuckets(holding.times, now, { floor }),
+        },
+      ]
+    })
 
     this.#pending.set(
       `balances:${network.chainID}`,
@@ -562,8 +572,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       )
       await this.db.addBalances(
         needing.map(({ holding, holdingDecimals }, index) => ({
-          ...holding,
-          id: undefined,
+          ...infoOf(holding),
           time: target.start,
           // A failed read means the token didn't exist yet or can't report
           // a balance; either way, nothing was held.
@@ -589,13 +598,14 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * the bucket is recorded as the series' floor.
    */
   private async priceStep(
-    holdings: BalanceRecord[],
+    holdings: Holding[],
     networks: EVMNetwork[],
     now: number,
     idle: boolean,
   ): Promise<void> {
-    const byAsset = new Map<string, BalanceRecord>()
-    holdings.forEach((holding) => byAsset.set(holding.assetID, holding))
+    const byAsset = new Map<string, HoldingInfo>()
+    holdings.forEach((holding) => byAsset.set(holding.assetID, infoOf(holding)))
+    const priceSeries = await this.db.getPriceSeries([...byAsset.keys()])
 
     const candidates = (
       await Promise.all(
@@ -603,11 +613,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
           const key = `price:${holding.assetID}`
           const state = await this.db.getBackfillState(key)
           if (isResting(state, now)) return []
-          const times = await this.db.getPriceTimes(
-            holding.assetID,
-            now - BACKFILL_HORIZON,
-            now,
-          )
+          const times = priceSeries.get(holding.assetID)?.times ?? []
           const buckets = missingBuckets(times, now, {
             floor: activeFloor(state, now),
           })
@@ -685,7 +691,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   private async savePrices(
-    holding: BalanceRecord,
+    holding: HoldingInfo,
     points: HistoryPoint[],
   ): Promise<void> {
     await this.db.addPrices(
@@ -748,7 +754,13 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       phaseStart = now
     }
 
-    const holdings = (await this.db.getHoldings(addresses)).filter(
+    // Each holding comes with its whole balance series, a record per
+    // holding, so there's nothing more to read for balances.
+    const [allHoldings, priceKeysBySymbol] = await Promise.all([
+      this.db.getHoldings(addresses),
+      this.db.getPriceKeysBySymbol(),
+    ])
+    const holdings = allHoldings.filter(
       (holding) =>
         (chainIDs === undefined || chainIDs.includes(holding.chainID)) &&
         (assetID === undefined
@@ -759,31 +771,19 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     )
     phase("holdings")
 
-    const series = await Promise.all(
-      holdings.map(async (holding) => {
-        const [balances, priceKey] = await Promise.all([
-          this.db.getBalanceSeries(holding.holdingKey, from, to),
-          this.priceKeyFor(holding.assetID, holding.symbol),
-        ])
-        return { holding, balances, priceKey }
-      }),
-    )
-    phase("balances")
-
-    const prices = new Map<string, HistoryPoint[]>()
-    await Promise.all(
-      [...new Set(series.map(({ priceKey }) => priceKey))].map(
-        async (priceKey) => {
-          prices.set(priceKey, await this.db.getPriceSeries(priceKey, from, to))
-        },
-      ),
-    )
+    const valued = holdings.map((holding) => ({
+      holding,
+      priceKey: HistoryService.priceKeyFor(holding, priceKeysBySymbol),
+    }))
+    const prices = await this.db.getPriceSeries([
+      ...new Set(valued.map(({ priceKey }) => priceKey)),
+    ])
     phase("prices")
 
     const { points, coverageStart } = valueSeries({
-      holdings: series.map(({ priceKey, balances }) => ({
+      holdings: valued.map(({ holding, priceKey }) => ({
         priceKey,
-        balances: balances.points,
+        balances: holding,
       })),
       prices,
       from,
@@ -795,24 +795,18 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
 
     // A series that no backfill tick has checked yet counts as still
     // backfilling.
-    const backfilling = series.some(
-      ({ holding }) =>
+    const backfilling = holdings.some(
+      (holding) =>
         (this.#pending.get(`balances:${holding.chainID}`) ?? true) ||
         (this.#pending.get(`price:${holding.assetID}`) ?? true),
     )
 
     const total = Object.values(timings).reduce((sum, ms) => sum + ms, 0)
     if (total >= SLOW_QUERY_MS) {
-      const balancePoints = series.reduce(
-        (sum, { balances }) => sum + balances.points.length,
-        0,
-      )
-      const pricePoints = [...prices.values()].reduce(
-        (sum, priceSeries) => sum + priceSeries.length,
-        0,
-      )
+      const pointCount = (series: Series[]) =>
+        series.reduce((sum, { times }) => sum + times.length, 0)
       logger.warn(
-        `Value history took ${total}ms for ${holdings.length} holdings, ${prices.size} price series, ${balancePoints} balance and ${pricePoints} price points.`,
+        `Value history took ${total}ms for ${holdings.length} holdings, ${prices.size} price series, ${pointCount(holdings)} balance and ${pointCount([...prices.values()])} price points.`,
         timings,
       )
     }
