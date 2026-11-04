@@ -36,6 +36,7 @@ const emptyHistory = (rangeKey: RangeKey): History => ({
   coverageStart: undefined,
   estimatedUntil: undefined,
   balanceHistoryFrom: undefined,
+  reconstructedUntil: undefined,
   backfilling: false,
   rangeKey,
 })
@@ -162,6 +163,7 @@ export default function FullTabValueChart({
   }, [])
 
   const points = useMemo(() => history?.points ?? [], [history])
+  const reconstructedUntil = history?.reconstructedUntil
   // History is drawn on the range it was fetched for until history for the
   // newly selected range arrives.
   const shownRange =
@@ -186,16 +188,29 @@ export default function FullTabValueChart({
       plotHeight -
       ((value - low) / (high - low || 1)) * plotHeight
     const coords = points.map(({ time, value }) => [x(time), y(value)])
-    const line = coords
-      .map(
-        ([cx, cy], i) =>
-          `${i === 0 ? "M" : "L"}${cx.toFixed(1)},${cy.toFixed(1)}`,
-      )
-      .join("")
+    const pathOf = (segment: number[][]) =>
+      segment
+        .map(
+          ([cx, cy], i) =>
+            `${i === 0 ? "M" : "L"}${cx.toFixed(1)},${cy.toFixed(1)}`,
+        )
+        .join("")
+    const line = pathOf(coords)
+    // Points that rely on token balances reconstructed from transfers are
+    // drawn dashed, and the solid line picks up where they end.
+    const reconstructedCount =
+      reconstructedUntil === undefined
+        ? 0
+        : points.filter(({ time }) => time <= reconstructedUntil).length
+    const dashedLine =
+      reconstructedCount > 0
+        ? pathOf(coords.slice(0, reconstructedCount + 1))
+        : undefined
+    const solidLine = pathOf(coords.slice(reconstructedCount))
     const baseline = PADDING.top + plotHeight
     const area = `${line}L${coords[coords.length - 1][0].toFixed(1)},${baseline}L${coords[0][0].toFixed(1)},${baseline}Z`
-    return { x, y, coords, line, area, ticks }
-  }, [from, plotHeight, plotWidth, points, to])
+    return { x, y, coords, area, ticks, solidLine, dashedLine }
+  }, [from, plotHeight, plotWidth, points, reconstructedUntil, to])
 
   const latest = points[points.length - 1]
   const first = points[0]
@@ -389,7 +404,10 @@ export default function FullTabValueChart({
               </g>
             )}
             <path className="area" d={geometry.area} fill="url(#value_fill)" />
-            <path className="line" d={geometry.line} pathLength={1} />
+            {geometry.dashedLine !== undefined && (
+              <path className="line_reconstructed" d={geometry.dashedLine} />
+            )}
+            <path className="line" d={geometry.solidLine} pathLength={1} />
             {hovered && hoverIndex !== null && (
               <g className="crosshair">
                 <line
@@ -527,6 +545,15 @@ export default function FullTabValueChart({
           stroke-dasharray: 1;
           stroke-dashoffset: 1;
           animation: draw 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .line_reconstructed {
+          fill: none;
+          stroke: var(--trophy-gold);
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-dasharray: 4 5;
+          opacity: 0;
+          animation: fade_in 0.5s ease 0.25s forwards;
         }
         .area {
           opacity: 0;

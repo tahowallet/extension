@@ -30,7 +30,13 @@ import {
   holdingKeyFor,
 } from "./db"
 import { HistoryPoint, Series, valueSeries } from "./series"
-import { Bucket, missingBuckets } from "./schedule"
+import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
+import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
+import { balancesBefore } from "./reconstruction"
+import {
+  LogHistoryUnavailableError,
+  LogScanPausedError,
+} from "../chain/rpc/log-query-errors"
 import { RateBudget } from "./budget"
 import {
   BalanceRead,
@@ -85,6 +91,13 @@ const SLOW_QUERY_MS = 1_000
 /** Backfill ticks that take at least this long log a warning. */
 const SLOW_TICK_MS = 5_000
 
+/**
+ * How many blocks one step of reconstructing token balances from transfers
+ * covers. Common endpoint caps on log query ranges are 10,000 blocks or
+ * more, and the log scan adapts to smaller ones.
+ */
+const RECONSTRUCTION_STEP_BLOCKS = 10_000
+
 /** The minimum spacing between recorded live prices for each asset. */
 const LIVE_PRICE_SPACING = 5 * MINUTE
 
@@ -107,6 +120,22 @@ async function isUserIdle(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * Returns a holding's balance at `time`: its latest point at or before it,
+ * or failing that its earliest point.
+ */
+const balanceNear = ({ times, values }: Holding, time: number): number => {
+  let found = 0
+  for (
+    let index = 0;
+    index < times.length && times[index] <= time;
+    index += 1
+  ) {
+    found = index
+  }
+  return values[found] ?? 0
 }
 
 /** Returns a holding's identifying information, without its series. */
@@ -204,6 +233,12 @@ export type ValueHistory = {
    * Values before it rely on estimates that backfill can't replace.
    */
   balanceHistoryFrom: number | undefined
+  /**
+   * The last point whose value relied on token balances reconstructed from
+   * transfers, on networks whose endpoints keep no old state; `undefined` if
+   * none did.
+   */
+  reconstructedUntil: number | undefined
   /** Whether backfill still has work to do for any of the queried series. */
   backfilling: boolean
 }
@@ -515,6 +550,14 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
             idle,
           ),
         ),
+        ...networks.map((network) =>
+          this.reconstructionStep(
+            network,
+            holdings.filter(({ chainID }) => chainID === network.chainID),
+            now,
+            idle,
+          ),
+        ),
         this.priceStep(holdings, networks, now, idle),
       ])
     } catch (error) {
@@ -619,6 +662,145 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       })
     } catch (error) {
       await this.recordFailure(state, error, target, now)
+    }
+  }
+
+  /**
+   * On a network where no endpoint keeps state older than the balance floor,
+   * reconstructs one account's token balances a step further back from its
+   * token transfers: the balance at the start of a step is the balance at
+   * its end, less the token's net transfers in between. Each step covers
+   * {@link RECONSTRUCTION_STEP_BLOCKS} blocks of one account, picking the
+   * account that has reached back least far, and records a point for each
+   * of its token holdings.
+   *
+   * Only tokens are reconstructed. Every token balance change shows up as a
+   * `Transfer` log, but base asset balances also move through gas fees and
+   * contract-internal transfers that logs don't show, so base assets stay
+   * estimated before the floor.
+   *
+   * Reconstruction stops at the backfill horizon, or where endpoints no
+   * longer keep logs, which becomes its floor.
+   */
+  private async reconstructionStep(
+    network: EVMNetwork,
+    holdings: Holding[],
+    now: number,
+    idle: boolean,
+  ): Promise<void> {
+    const balanceState = await this.db.getBackfillState(
+      `balances:${network.chainID}`,
+    )
+    const balanceFloor = activeFloor(balanceState, now)
+    if (balanceFloor === undefined) return
+    const tokens = holdings.filter(
+      ({ assetID }) => contractAddressOf(assetID) !== undefined,
+    )
+    if (tokens.length === 0) return
+
+    const clock = this.clockFor(network)
+    const provider = this.readyProvider(network)
+    if (!clock || !provider) return
+
+    // The account that has reached back least far goes next.
+    const accounts = await Promise.all(
+      [...new Set(tokens.map(({ address }) => address))].map(
+        async (address) => ({
+          address,
+          state: await this.db.getBackfillState(
+            `transfers:${network.chainID}:${address}`,
+          ),
+        }),
+      ),
+    )
+    const candidates = accounts.filter(
+      ({ state }) =>
+        !isResting(state, now) && activeFloor(state, now) === undefined,
+    )
+    const next = candidates.sort(
+      (a, b) =>
+        (b.state.reconstruction?.block ?? Infinity) -
+        (a.state.reconstruction?.block ?? Infinity),
+    )[0]
+    if (!next) return
+    const { address, state } = next
+    const accountTokens = tokens.filter((token) => token.address === address)
+
+    try {
+      const toBlock =
+        state.reconstruction?.block ?? (await clock.blockAt(balanceFloor, now))
+      if ((await clock.timeOf(toBlock, now)) < now - BACKFILL_HORIZON) return
+      if (
+        !this.budgetFor(`rpc:${network.chainID}`).take(READ_COST, now, idle)
+      ) {
+        return
+      }
+      const fromBlock = Math.max(0, toBlock - RECONSTRUCTION_STEP_BLOCKS)
+      const toTime = await clock.timeOf(toBlock, now)
+
+      // Balances as of `toBlock`: carried over from the last step, or, for
+      // the first step or a holding new since then, read from its series.
+      const balances = { ...state.reconstruction?.balances }
+      accountTokens.forEach((token) => {
+        balances[token.holdingKey] ??= balanceNear(token, toTime)
+      })
+
+      const { assetTransfers } = await getAssetTransfersViaLogs(
+        provider,
+        { address, network },
+        fromBlock + 1,
+        toBlock,
+      )
+      const decimals = await this.decimalsByAsset()
+      const reconstructed = accountTokens.flatMap((token) => {
+        const contractAddress = contractAddressOf(token.assetID)
+        const tokenDecimals =
+          contractAddress === undefined
+            ? undefined
+            : decimals.get(contractAddress.toLowerCase())
+        return contractAddress === undefined || tokenDecimals === undefined
+          ? []
+          : [{ token, contractAddress, decimals: tokenDecimals }]
+      })
+      const before = balancesBefore({
+        account: address,
+        tokens: reconstructed.map(({ token, contractAddress, ...rest }) => ({
+          holdingKey: token.holdingKey,
+          contractAddress,
+          ...rest,
+        })),
+        balancesAtEnd: balances,
+        transfers: assetTransfers,
+      })
+      Object.assign(balances, before)
+
+      const time = await clock.timeOf(fromBlock, now)
+      const points = reconstructed.map(({ token }) => ({
+        ...infoOf(token),
+        time,
+        value: before[token.holdingKey],
+        source: "reconstructed" as const,
+      }))
+      await this.db.addBalances(points)
+      await this.db.putBackfillState({
+        ...state,
+        reconstruction: { block: fromBlock, balances },
+        failures: 0,
+        notBefore: undefined,
+      })
+    } catch (error) {
+      if (error instanceof LogScanPausedError) return
+      const reachedTime = state.reconstruction
+        ? await clock.timeOf(state.reconstruction.block, now)
+        : balanceFloor
+      await this.recordFailure(
+        state,
+        error instanceof LogHistoryUnavailableError
+          ? new UnavailableError(`Logs are pruned: ${error.message}`)
+          : error,
+        { start: reachedTime, size: 0 },
+        now,
+      )
     }
   }
 
@@ -812,17 +994,18 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     ])
     phase("prices")
 
-    const { points, coverageStart, estimatedUntil } = valueSeries({
-      holdings: valued.map(({ holding, priceKey }) => ({
-        priceKey,
-        balances: holding,
-      })),
-      prices,
-      from,
-      to,
-      samples,
-      priceTolerance: DAY,
-    })
+    const { points, coverageStart, estimatedUntil, reconstructedUntil } =
+      valueSeries({
+        holdings: valued.map(({ holding, priceKey }) => ({
+          priceKey,
+          balances: holding,
+        })),
+        prices,
+        from,
+        to,
+        samples,
+        priceTolerance: DAY,
+      })
     phase("values")
 
     // A series that no backfill tick has checked yet counts as still
@@ -865,6 +1048,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       coverageStart,
       estimatedUntil,
       balanceHistoryFrom,
+      reconstructedUntil,
       backfilling,
     }
   }
