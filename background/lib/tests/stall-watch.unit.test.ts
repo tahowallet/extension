@@ -3,8 +3,11 @@ import { afterEach, describe, expect, it, jest, spyOn } from "bun:test"
 import logger from "../logger"
 import {
   HUNG_THUNK_MS,
+  recordActivity,
   SLOW_THUNK_MS,
+  Stall,
   onEventLoopStall,
+  trackActivity,
   watchEventLoop,
   watchThunk,
 } from "../stall-watch"
@@ -59,51 +62,84 @@ describe("watchThunk", () => {
 })
 
 describe("watchEventLoop", () => {
+  let now: number
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    now = 0
+    spyOn(performance, "now").mockImplementation(() => now)
+  })
+
   afterEach(() => {
     jest.useRealTimers()
     jest.restoreAllMocks()
   })
 
-  it("warns when a tick comes late", () => {
-    jest.useFakeTimers()
+  /** Lets one check run, `late` ms after it was due. */
+  const tick = (late = 0) => {
+    now += 25 + late
+    jest.advanceTimersByTime(25)
+  }
+
+  it("warns right away about a long stall, naming what was running", () => {
     const warn = spyOn(logger, "warn").mockImplementation(() => {})
-    let now = 0
-    spyOn(performance, "now").mockImplementation(() => now)
+    const stop = watchEventLoop({ intervalMs: 25, thresholdMs: 100 })
 
-    const stop = watchEventLoop({ intervalMs: 1_000, thresholdMs: 500 })
-    now = 1_100
-    jest.advanceTimersByTime(1_000)
-    expect(warn).not.toHaveBeenCalled()
-
-    now = 3_100
-    jest.advanceTimersByTime(1_000)
+    const done = trackActivity("thunk test/slow")
+    tick(300)
+    done()
     expect(warn).toHaveBeenCalledWith(
-      "Background event loop was blocked for about 1000ms.",
+      "Background event loop was blocked for about 300ms during thunk test/slow.",
+    )
+
+    tick(400)
+    expect(warn).toHaveBeenLastCalledWith(
+      "Background event loop was blocked for about 400ms, with no tracked work running.",
     )
     stop()
   })
 
-  it("tells stall listeners how long the loop was blocked", () => {
-    jest.useFakeTimers()
-    spyOn(logger, "warn").mockImplementation(() => {})
-    let now = 0
-    spyOn(performance, "now").mockImplementation(() => now)
-    const stalls: number[] = []
-    const stopListening = onEventLoopStall((durationMs) =>
-      stalls.push(durationMs),
-    )
-
+  it("summarizes shorter stalls once a minute instead", () => {
+    const warn = spyOn(logger, "warn").mockImplementation(() => {})
+    const info = spyOn(logger, "info").mockImplementation(() => {})
     const stop = watchEventLoop({ intervalMs: 25, thresholdMs: 100 })
-    now = 30
-    jest.advanceTimersByTime(25)
-    now = 180
-    jest.advanceTimersByTime(25)
-    expect(stalls).toEqual([125])
+
+    const startedAt = performance.now()
+    tick(120)
+    recordActivity("action ui/slow", startedAt)
+    tick(150)
+    tick(110)
+    expect(warn).not.toHaveBeenCalled()
+
+    jest.advanceTimersByTime(60_000)
+    expect(info).toHaveBeenCalledTimes(1)
+    const [message] = info.mock.calls[0] as [string]
+    expect(message).toContain("stalled 3 times")
+    expect(message).toContain("at most 150ms")
+    expect(message).toContain("action ui/slow ×1")
+    expect(message).toContain("2 with no tracked work running")
+
+    // A quiet minute logs nothing.
+    jest.advanceTimersByTime(60_000)
+    expect(info).toHaveBeenCalledTimes(1)
+    stop()
+  })
+
+  it("tells stall listeners about every stall", () => {
+    spyOn(logger, "warn").mockImplementation(() => {})
+    const stalls: Stall[] = []
+    const stopListening = onEventLoopStall((stall) => stalls.push(stall))
+    const stop = watchEventLoop({ intervalMs: 25, thresholdMs: 100 })
+
+    tick(5)
+    const done = trackActivity("alarm test")
+    tick(125)
+    done()
+    expect(stalls).toEqual([{ durationMs: 125, during: ["alarm test"] }])
 
     stopListening()
-    now = 400
-    jest.advanceTimersByTime(25)
-    expect(stalls).toEqual([125])
+    tick(200)
+    expect(stalls).toHaveLength(1)
     stop()
   })
 })

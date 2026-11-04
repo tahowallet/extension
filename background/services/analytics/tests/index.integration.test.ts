@@ -269,31 +269,39 @@ describe("AnalyticsService", () => {
         .mockImplementation(() => Promise.resolve())
     })
 
-    it("reports a stall right away, then at most once per interval", () => {
+    it("reports a window's stalls together once it closes", () => {
       const start = Date.UTC(2026, 10, 4)
-      analyticsService["recordStall"](150, start)
-      expect(send).toHaveBeenCalledTimes(1)
-      expect(send).toHaveBeenLastCalledWith(
-        AnalyticsEvent.BACKGROUND_STALLED,
-        expect.objectContaining({ stalls: 1, longestMs: 150, totalMs: 150 }),
+      analyticsService["recordStall"](
+        { durationMs: 150, during: ["thunk history/fetchValueHistory"] },
+        start,
       )
-
-      // Stalls within the interval wait for the next report.
-      analyticsService["recordStall"](120, start + 1_000)
-      analyticsService["recordStall"](400, start + 2_000)
-      expect(send).toHaveBeenCalledTimes(1)
+      analyticsService["recordStall"](
+        { durationMs: 400, during: ["thunk history/fetchValueHistory"] },
+        start + 1_000,
+      )
+      analyticsService["recordStall"]({ durationMs: 1_200, during: [] }, start)
+      // Nothing is sent while the window is open.
+      expect(send).not.toHaveBeenCalled()
 
       analyticsService["reportStalls"](start + STALL_REPORT_INTERVAL_MS)
-      expect(send).toHaveBeenCalledTimes(2)
+      expect(send).toHaveBeenCalledTimes(1)
       expect(send).toHaveBeenLastCalledWith(
         AnalyticsEvent.BACKGROUND_STALLED,
         expect.objectContaining({
-          stalls: 2,
-          longestMs: 400,
-          totalMs: 520,
+          stalls: 3,
+          longestMs: 1_200,
+          totalMs: 1_750,
+          durations: { under250Ms: 1, under1000Ms: 1, over1000Ms: 1 },
+          untracked: 1,
+          during: ["thunk history/fetchValueHistory ×2"],
           thresholdMs: 100,
+          windowDurationMs: STALL_REPORT_INTERVAL_MS,
         }),
       )
+
+      // A window without stalls sends nothing.
+      analyticsService["reportStalls"](start + 2 * STALL_REPORT_INTERVAL_MS)
+      expect(send).toHaveBeenCalledTimes(1)
     })
   })
 })

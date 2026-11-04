@@ -249,53 +249,42 @@ export default class ChainService extends BaseService<Events> {
           delayInMinutes: 1,
           periodInMinutes: 1,
         },
-        handler: () => {
-          this.handleQueuedTransactionAlarm()
-        },
+        handler: () => this.handleQueuedTransactionAlarm(),
       },
       historicAssetTransfers: {
         schedule: {
           periodInMinutes: 60,
         },
-        handler: () => {
-          this.assetTransferScanner.scanHistoricTransfers()
-        },
+        handler: () => this.assetTransferScanner.scanHistoricTransfers(),
         runAtStart: false,
       },
       recentIncomingAssetTransfers: {
         schedule: {
           periodInMinutes: 1.5,
         },
-        handler: () => {
+        handler: () =>
           this.scanRecentTransfers({
             incomingOnly: true,
             activeAccountsOnly: true,
-          })
-        },
+          }),
       },
       forceRecentAssetTransfers: {
         schedule: {
           periodInMinutes: (12 * HOUR) / MINUTE,
         },
-        handler: () => {
-          this.scanRecentTransfers()
-        },
+        handler: () => this.scanRecentTransfers(),
       },
       recentAssetTransfers: {
         schedule: {
           periodInMinutes: 15,
         },
-        handler: () => {
-          this.scanRecentTransfers({ activeAccountsOnly: true })
-        },
+        handler: () => this.scanRecentTransfers({ activeAccountsOnly: true }),
       },
       nftTransferLogs: {
         schedule: {
           periodInMinutes: 1,
         },
-        handler: () => {
-          void this.nftLogScanner.tick()
-        },
+        handler: () => this.nftLogScanner.tick(),
         runAtStart: false,
       },
       blockPrices: {

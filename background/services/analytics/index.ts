@@ -21,7 +21,12 @@ import SigningService, {
 import InternalSignerService from "../internal-signer"
 import { assertUnreachable } from "../../lib/utils/type-guards"
 import { snapshotAndReset } from "../../lib/perf-metrics"
-import { onEventLoopStall, STALL_THRESHOLD_MS } from "../../lib/stall-watch"
+import {
+  onEventLoopStall,
+  Stall,
+  STALL_THRESHOLD_MS,
+  topActivities,
+} from "../../lib/stall-watch"
 import { MINUTE } from "../../constants"
 
 // Perf metrics are aggregated in memory and flushed at a cadence long enough
@@ -30,11 +35,29 @@ import { MINUTE } from "../../constants"
 const PERF_METRICS_FLUSH_INTERVAL_MINUTES = 180
 
 /**
- * How often, at most, background stalls are reported. Stalls between reports
- * are summarized in the next one, so a struggling install sends one event
- * every ten minutes rather than one per stall.
+ * How long a background stall reporting window lasts. The first stall opens a
+ * window, and every stall in it is reported together when it closes, so an
+ * install that stalls often sends one event every ten minutes rather than one
+ * per stall.
  */
 export const STALL_REPORT_INTERVAL_MS = 10 * MINUTE
+
+/** How many of the most frequent activities a stall report names. */
+const STALL_REPORT_TOP_ACTIVITIES = 5
+
+/** The stalls seen in one reporting window. */
+type StallWindow = {
+  count: number
+  longestMs: number
+  totalMs: number
+  since: number
+  /** How many stalls fell in each duration range. */
+  durations: { under250Ms: number; under1000Ms: number; over1000Ms: number }
+  /** How many stalls had no tracked work running. */
+  untracked: number
+  /** How many stalls each tracked activity overlapped. */
+  during: Map<string, number>
+}
 
 const chainSpecificOneTimeEvents = [OneTimeAnalyticsEvent.CHAIN_ADDED]
 interface Events extends ServiceLifecycleEvents {
@@ -80,9 +103,7 @@ export default class AnalyticsService extends BaseService<Events> {
     super({
       flushPerfMetrics: {
         schedule: { periodInMinutes: PERF_METRICS_FLUSH_INTERVAL_MINUTES },
-        handler: () => {
-          this.flushPerfMetrics()
-        },
+        handler: () => this.flushPerfMetrics(),
       },
     })
 
@@ -115,12 +136,8 @@ export default class AnalyticsService extends BaseService<Events> {
     )
   }
 
-  /** Stalls seen since the last report, if any. */
-  #stalls:
-    | { count: number; longestMs: number; totalMs: number; since: number }
-    | undefined
-
-  #lastStallReportAt = 0
+  /** Stalls seen in the current reporting window, if any. */
+  #stalls: StallWindow | undefined
 
   #stallReportTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -128,8 +145,8 @@ export default class AnalyticsService extends BaseService<Events> {
 
   protected override async internalStartService(): Promise<void> {
     await super.internalStartService()
-    this.#stopWatchingStalls = onEventLoopStall((durationMs) =>
-      this.recordStall(durationMs),
+    this.#stopWatchingStalls = onEventLoopStall((stall) =>
+      this.recordStall(stall),
     )
     const { uuid, isNew } = await this.getOrCreateAnalyticsUUID()
 
@@ -260,34 +277,44 @@ export default class AnalyticsService extends BaseService<Events> {
   }
 
   /**
-   * Records a background stall of `durationMs`, reporting it right away if
-   * no stall has been reported in the last {@link STALL_REPORT_INTERVAL_MS},
-   * and otherwise once that interval has passed, together with any other
-   * stalls seen in the meantime.
+   * Records a background stall in the current reporting window. The first
+   * stall opens a window, and once {@link STALL_REPORT_INTERVAL_MS} has
+   * passed, every stall in it is reported together in a single event.
    */
-  private recordStall(durationMs: number, now = Date.now()): void {
-    const stalls = this.#stalls ?? {
-      count: 0,
-      longestMs: 0,
-      totalMs: 0,
-      since: now,
+  private recordStall({ durationMs, during }: Stall, now = Date.now()): void {
+    let stalls = this.#stalls
+    if (stalls === undefined) {
+      stalls = {
+        count: 0,
+        longestMs: 0,
+        totalMs: 0,
+        since: now,
+        durations: { under250Ms: 0, under1000Ms: 0, over1000Ms: 0 },
+        untracked: 0,
+        during: new Map(),
+      }
+      this.#stalls = stalls
+      this.#stallReportTimer = setTimeout(
+        () => this.reportStalls(),
+        STALL_REPORT_INTERVAL_MS,
+      )
     }
     stalls.count += 1
     stalls.longestMs = Math.max(stalls.longestMs, durationMs)
     stalls.totalMs += durationMs
-    this.#stalls = stalls
-
-    const wait = this.#lastStallReportAt + STALL_REPORT_INTERVAL_MS - now
-    if (wait <= 0) {
-      this.reportStalls(now)
-    } else if (this.#stallReportTimer === undefined) {
-      this.#stallReportTimer = setTimeout(() => this.reportStalls(), wait)
-    }
+    if (durationMs < 250) stalls.durations.under250Ms += 1
+    else if (durationMs < 1_000) stalls.durations.under1000Ms += 1
+    else stalls.durations.over1000Ms += 1
+    if (during.length === 0) stalls.untracked += 1
+    during.forEach((label) =>
+      stalls.during.set(label, (stalls.during.get(label) ?? 0) + 1),
+    )
   }
 
   /**
    * Sends a {@link AnalyticsEvent.BACKGROUND_STALLED} event summarizing the
-   * stalls seen since the last report, if there were any.
+   * stalls in the current reporting window, if there were any, and closes the
+   * window.
    */
   private reportStalls(now = Date.now()): void {
     clearTimeout(this.#stallReportTimer)
@@ -295,12 +322,17 @@ export default class AnalyticsService extends BaseService<Events> {
     const stalls = this.#stalls
     if (stalls === undefined) return
     this.#stalls = undefined
-    this.#lastStallReportAt = now
 
     this.sendAnalyticsEvent(AnalyticsEvent.BACKGROUND_STALLED, {
       stalls: stalls.count,
       longestMs: Math.round(stalls.longestMs),
       totalMs: Math.round(stalls.totalMs),
+      durations: stalls.durations,
+      // Stalls during which no tracked work was running.
+      untracked: stalls.untracked,
+      // The tracked work, such as thunks, alarms and slow actions, that was
+      // running during the most stalls, as "label ×count".
+      during: topActivities(stalls.during, STALL_REPORT_TOP_ACTIVITIES),
       thresholdMs: STALL_THRESHOLD_MS,
       windowStartedAt: stalls.since,
       windowDurationMs: now - stalls.since,

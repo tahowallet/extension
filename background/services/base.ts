@@ -1,6 +1,7 @@
 import Emittery from "emittery"
 import browser, { Alarms } from "webextension-polyfill"
 import type { Service, ServiceLifecycleEvents } from "./types"
+import { trackActivity } from "../lib/stall-watch"
 
 /**
  * An alarm schedule for use in the `browser.alarms` API.
@@ -36,7 +37,12 @@ type AlarmSchedule =
  */
 export type AlarmHandlerSchedule = {
   schedule: AlarmSchedule
-  handler: (alarm?: Alarms.Alarm) => void
+  /**
+   * Runs when the alarm fires. A handler that returns a promise is tracked as
+   * an activity until the promise settles, so event loop stalls during its
+   * work are attributed to the alarm.
+   */
+  handler: (alarm?: Alarms.Alarm) => void | Promise<unknown>
   runAtStart?: boolean
 }
 
@@ -152,7 +158,17 @@ export default abstract class BaseService<
    * named alarm, if available. Override for custom behavior.
    */
   protected handleAlarm(alarm: Alarms.Alarm): void {
-    this.alarmSchedules[alarm.name]?.handler(alarm)
+    const schedule = this.alarmSchedules[alarm.name]
+    if (schedule === undefined) return
+    const done = trackActivity(`alarm ${alarm.name}`)
+    const result = schedule.handler(alarm)
+    if (result instanceof Promise) {
+      result.finally(done).catch(() => {
+        // The handler's own failures are its to handle.
+      })
+    } else {
+      done()
+    }
   }
 
   private serviceState: "unstarted" | "starting" | "started" | "stopped" =

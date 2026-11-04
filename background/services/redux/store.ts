@@ -18,6 +18,7 @@ import { allAliases } from "../../redux-slices/utils"
 
 import { diff as deepDiff, patch } from "./differ"
 import logger from "../../lib/logger"
+import { recordActivity } from "../../lib/stall-watch"
 import { recordReduxDiff, recordReduxPersist } from "../../lib/perf-metrics"
 
 /**
@@ -99,6 +100,28 @@ const persistStore = debounce(persistStoreBsae, 50, {
   trailing: true,
   maxWait: 50,
 })
+
+/**
+ * How long, in ms, a synchronous dispatch has to take before it's recorded as
+ * an activity, for attributing event loop stalls to it.
+ */
+const SLOW_DISPATCH_MS = 20
+
+/**
+ * Times each dispatch's synchronous work, including reducers and every other
+ * middleware, and records slow ones as activities. Event loop stalls caused
+ * by expensive actions, or by expensive middleware such as development
+ * builds' state checks, then name the action.
+ */
+const timeDispatches: Middleware = () => (next) => (action) => {
+  const startedAt = performance.now()
+  const result = next(action)
+  if (performance.now() - startedAt >= SLOW_DISPATCH_MS) {
+    const { type } = action as { type?: unknown }
+    recordActivity(`action ${String(type)}`, startedAt)
+  }
+  return result
+}
 
 const reduxCache: Middleware = (store) => (next) => (action) => {
   const result = next(action)
@@ -183,6 +206,7 @@ export function initializeStore<ThunkArgType>(
       // Process aliases before all other middleware, and cache the redux store
       // after all middleware gets a chance to run.
       middleware.unshift(alias(allAliases))
+      middleware.unshift(timeDispatches)
       middleware.push(reduxCache)
 
       return middleware
@@ -216,8 +240,12 @@ export function initializeStore<ThunkArgType>(
     (lastState, newState, updateFn) => {
       if (lastState !== newState) {
         const diffStartedAt = Date.now()
+        const diffActivityStartedAt = performance.now()
         const diff = deepDiff(lastState, newState)
         const diffDuration = Date.now() - diffStartedAt
+        if (diffDuration >= SLOW_DISPATCH_MS) {
+          recordActivity("store diff for the UI", diffActivityStartedAt)
+        }
         recordReduxDiff(diffDuration)
         if (diffDuration >= SLOW_DIFF_MS) {
           logger.warn(`Diffing the store for the UI took ${diffDuration}ms.`)
