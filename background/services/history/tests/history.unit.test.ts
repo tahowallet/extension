@@ -74,7 +74,7 @@ describe("valueAt and priceAt", () => {
 
 describe("valueSeries", () => {
   it("sums each holding's balance times its price at each sample", () => {
-    const { points, coverageStart } = valueSeries({
+    const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
         {
           priceKey: "eth",
@@ -104,22 +104,61 @@ describe("valueSeries", () => {
       priceTolerance: 0,
     })
 
+    // The USDC holding's balance history begins at 25, so its balance is
+    // assumed back to 0, and that sample is estimated.
     expect(points).toEqual([
-      { time: 0, value: 1000 },
+      { time: 0, value: 1100 },
       { time: 25, value: 1100 },
       { time: 50, value: 2100 },
       { time: 75, value: 4100 },
       { time: 100, value: 4100 },
     ])
     expect(coverageStart).toBe(0)
+    expect(estimatedUntil).toBe(0)
   })
 
-  it("leaves out samples before any valued balance", () => {
-    const { points, coverageStart } = valueSeries({
+  it("assumes the earliest known balance before balance history begins", () => {
+    // Balance history for one holding only reaches back to 60, which would
+    // otherwise show as a jump in value there.
+    const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
-        { priceKey: "eth", balances: seriesOf([{ time: 60, value: 1 }]) },
+        {
+          priceKey: "eth",
+          balances: seriesOf([
+            { time: 60, value: 1 },
+            { time: 90, value: 2 },
+          ]),
+        },
       ],
-      prices: new Map([["eth", seriesOf([{ time: 0, value: 10 }])]]),
+      prices: new Map([
+        [
+          "eth",
+          seriesOf([
+            { time: 0, value: 10 },
+            { time: 40, value: 20 },
+          ]),
+        ],
+      ]),
+      from: 0,
+      to: 100,
+      samples: 3,
+      priceTolerance: 0,
+    })
+    expect(points).toEqual([
+      { time: 0, value: 10 },
+      { time: 50, value: 20 },
+      { time: 100, value: 40 },
+    ])
+    expect(coverageStart).toBe(0)
+    expect(estimatedUntil).toBe(50)
+  })
+
+  it("leaves out samples before any price", () => {
+    const { points, coverageStart, estimatedUntil } = valueSeries({
+      holdings: [
+        { priceKey: "eth", balances: seriesOf([{ time: 0, value: 1 }]) },
+      ],
+      prices: new Map([["eth", seriesOf([{ time: 60, value: 10 }])]]),
       from: 0,
       to: 100,
       samples: 3,
@@ -127,5 +166,6 @@ describe("valueSeries", () => {
     })
     expect(points).toEqual([{ time: 100, value: 10 }])
     expect(coverageStart).toBe(100)
+    expect(estimatedUntil).toBeUndefined()
   })
 })

@@ -34,6 +34,7 @@ type History = AsyncThunkFulfillmentType<typeof fetchValueHistory> & {
 const emptyHistory = (rangeKey: RangeKey): History => ({
   points: [],
   coverageStart: undefined,
+  estimatedUntil: undefined,
   backfilling: false,
   rangeKey,
 })
@@ -218,6 +219,14 @@ export default function FullTabValueChart({
     setHoverIndex(nearest)
   }
 
+  // Before this point, some holdings' values assume their earliest known
+  // balance, since their balance history doesn't reach back that far yet.
+  const estimatedUntil = history?.estimatedUntil
+  const estimatedEdge =
+    geometry && estimatedUntil !== undefined
+      ? geometry.x(estimatedUntil)
+      : undefined
+
   const coverageStart = history?.coverageStart
   const coverageCut =
     geometry &&
@@ -325,6 +334,32 @@ export default function FullTabValueChart({
                 {dayjs(time).format(shownRange.format)}
               </text>
             ))}
+            {estimatedEdge !== undefined && (
+              <g className="estimated">
+                <rect
+                  x={coverageCut ?? PADDING.left}
+                  y={PADDING.top}
+                  width={Math.max(
+                    estimatedEdge - (coverageCut ?? PADDING.left),
+                    0,
+                  )}
+                  height={plotHeight}
+                />
+                <line
+                  x1={estimatedEdge}
+                  x2={estimatedEdge}
+                  y1={PADDING.top}
+                  y2={PADDING.top + plotHeight}
+                />
+                <text
+                  x={Math.max(estimatedEdge - 8, 4)}
+                  y={PADDING.top + plotHeight - 8}
+                  textAnchor={estimatedEdge > 200 ? "end" : "start"}
+                >
+                  {t("estimated")}
+                </text>
+              </g>
+            )}
             {coverageCut !== undefined && (
               <g className="coverage">
                 <line
@@ -499,6 +534,18 @@ export default function FullTabValueChart({
           to {
             opacity: 1;
           }
+        }
+        .estimated rect {
+          fill: var(--green-60);
+          opacity: 0.08;
+        }
+        .estimated line {
+          stroke: var(--green-60);
+          stroke-dasharray: 3 3;
+        }
+        .estimated text {
+          fill: var(--green-40);
+          font-size: 11px;
         }
         .coverage line {
           stroke: var(--green-60);
