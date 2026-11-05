@@ -59,14 +59,26 @@ function setup(size: number, threshold = 5) {
     waits.push(ms)
   })
   const controller = new AbortController()
-  const request = (method = "eth_call"): RpcRequest => ({
+  const request = (
+    method = "eth_call",
+    params: unknown[] = [],
+  ): RpcRequest => ({
     chainID: "1",
     method,
-    params: [],
+    params,
     startedAt: 0,
   })
-  const send = (policy = standardFailurePolicy, method = "eth_call") =>
-    executor.sendWithFailover(request(method), pool, policy, controller.signal)
+  const send = (
+    policy = standardFailurePolicy,
+    method = "eth_call",
+    params: unknown[] = [],
+  ) =>
+    executor.sendWithFailover(
+      request(method, params),
+      pool,
+      policy,
+      controller.signal,
+    )
 
   const sendRoute = (method = "eth_call") =>
     executor.send(
@@ -249,6 +261,114 @@ describe("FailoverExecutor", () => {
 
     await expect(send()).rejects.toThrow("destroyed")
     expect(sends[0].called).toBe(false)
+  })
+
+  describe("with an endpoint that refuses log queries at any range", () => {
+    // The error dRPC's free plan returns for a 157-block log query on BSC.
+    const drpcFreePlan = () =>
+      Object.assign(new Error("processing response error"), {
+        body: '{"jsonrpc":"2.0","id":42,"error":{"code":35,"message":"ranges over 10000 blocks are not supported on free plan"}}',
+        error: {
+          code: 35,
+          message: "ranges over 10000 blocks are not supported on free plan",
+        },
+      })
+    const params = [
+      { fromBlock: "0x7dbe09a", toBlock: "0x7dbe136", topics: [null] },
+    ]
+    const getLogs = (send: ReturnType<typeof setup>["send"]) =>
+      send(standardFailurePolicy, "eth_getLogs", params)
+    const failureOf = (promise: Promise<unknown>) =>
+      promise.then(
+        () => undefined,
+        (error: unknown) => error,
+      )
+
+    it("moves on to the next endpoint without cooling it down", async () => {
+      const { send, sends, endpoints } = setup(2, 1)
+      sends[0].rejects(drpcFreePlan())
+
+      expect(await getLogs(send)).toMatchObject({ result: "endpoint 1" })
+      expect(endpoints[0].isAvailable).toBe(true)
+    })
+
+    it("doesn't ask it for log queries again while another can answer", async () => {
+      const { send, sends } = setup(2)
+      sends[0].rejects(drpcFreePlan())
+      await getLogs(send)
+      // The other endpoint now has an outage, which would normally send the
+      // request on to the one that refused.
+      sends[1].rejects(new Error("NETWORK_ERROR"))
+
+      expect(await failureOf(getLogs(send))).toMatchObject({
+        message: "NETWORK_ERROR",
+      })
+      expect(calls(sends[0], "eth_getLogs")).toBe(1)
+    })
+
+    it("still asks it for other methods", async () => {
+      const { send, sends } = setup(2)
+      sends[0].withArgs("eth_getLogs").rejects(drpcFreePlan())
+      await getLogs(send)
+      sends[1].rejects(new Error("NETWORK_ERROR"))
+
+      expect(await send()).toMatchObject({ result: "endpoint 0" })
+    })
+
+    it("asks every endpoint again when they all refused", async () => {
+      const { send, sends } = setup(2)
+      sends.forEach((stub) => stub.rejects(drpcFreePlan()))
+      await failureOf(getLogs(send))
+
+      expect(await failureOf(getLogs(send))).toMatchObject({
+        message: "processing response error",
+      })
+      expect(sends.map((stub) => calls(stub, "eth_getLogs"))).toEqual([2, 2])
+    })
+  })
+
+  describe("with an endpoint without eth_getLogs", () => {
+    // The error Rootstock's public node returns for any log query, shaped
+    // like the SERVER_ERROR Ethers raises for a JSON-RPC error.
+    const rootstockError = () =>
+      Object.assign(new Error("processing response error"), {
+        code: "SERVER_ERROR",
+        body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+        error: Object.assign(
+          new Error("the method eth_getLogs does not exist/is not available"),
+          { code: -32601 },
+        ),
+      })
+    const params = [
+      { fromBlock: "0x8f2b1d", toBlock: "0x8f3ea5", topics: [null] },
+    ]
+    const getLogs = (send: ReturnType<typeof setup>["send"]) =>
+      send(standardFailurePolicy, "eth_getLogs", params)
+
+    it("moves on to the next endpoint without cooling it down", async () => {
+      const { send, sends, endpoints } = setup(2, 1)
+      sends[0].rejects(rootstockError())
+
+      expect(await getLogs(send)).toMatchObject({ result: "endpoint 1" })
+      expect(endpoints[0].isAvailable).toBe(true)
+    })
+
+    it("doesn't ask it for log queries again while another can answer", async () => {
+      const { send, sends } = setup(2)
+      sends[0].rejects(rootstockError())
+      await getLogs(send)
+      // The other endpoint now has an outage, which would normally send the
+      // request on to the one without eth_getLogs.
+      sends[1].rejects(new Error("NETWORK_ERROR"))
+
+      expect(
+        await getLogs(send).then(
+          () => undefined,
+          (error: unknown) => error,
+        ),
+      ).toMatchObject({ message: "NETWORK_ERROR" })
+      expect(calls(sends[0], "eth_getLogs")).toBe(1)
+    })
   })
 
   describe("concurrency", () => {

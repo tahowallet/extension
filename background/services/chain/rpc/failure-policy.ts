@@ -2,21 +2,36 @@ import { getErrorType } from "../errors"
 import {
   isBlockRangeLimitError,
   isLogQueryRefusedError,
+  isLogRangeRefusal,
+  isMethodNotFoundError,
   isPrunedHistoryError,
+  logQueryBlockCount,
 } from "./log-query-errors"
 
-/** What a request should do after an attempt on an endpoint fails. */
+/**
+ * What a request should do after an attempt on an endpoint fails. A
+ * `tryNextEndpoint` step with `refusesMethod` set means the endpoint won't
+ * serve the method at all, so it isn't asked for that method again while
+ * other endpoints can be.
+ */
 export type NextStep =
   | { kind: "retrySameEndpoint"; delayMs: number }
-  | { kind: "tryNextEndpoint" }
+  | { kind: "tryNextEndpoint"; refusesMethod?: boolean }
   | { kind: "giveUp" }
 
 export type FailurePolicy = {
   /**
    * `attempt` counts attempts on the endpoint that just failed, starting at
-   * 1.
+   * 1. `params` are the request's parameters, for errors that can only be
+   * read against what was asked, such as a range complaint about an
+   * `eth_getLogs` filter.
    */
-  nextStepAfter(error: unknown, method: string, attempt: number): NextStep
+  nextStepAfter(
+    error: unknown,
+    method: string,
+    attempt: number,
+    params?: readonly unknown[],
+  ): NextStep
 }
 
 // Attempts on one endpoint before an invalid response moves on.
@@ -85,6 +100,34 @@ function refusesThisLogQuery(error: unknown, method: string): boolean {
 }
 
 /**
+ * Checks whether a log range complaint means this endpoint won't serve the
+ * query at any range, as when dRPC's free plan says a 157-block query is
+ * "over 10000 blocks". Narrowing the range on the same endpoint would only
+ * get the same refusal.
+ */
+function refusesLogQueriesAtAnyRange(
+  error: unknown,
+  method: string,
+  params: readonly unknown[],
+): boolean {
+  return (
+    method === "eth_getLogs" &&
+    isLogRangeRefusal(error, logQueryBlockCount(params))
+  )
+}
+
+/**
+ * Checks whether the endpoint doesn't serve log queries at all, as when
+ * Rootstock's public node answers -32601, "the method eth_getLogs does not
+ * exist/is not available". Note that other methods are left to the usual
+ * rules, since callers such as the `eth_simulateV1` probe read this error
+ * themselves.
+ */
+function lacksLogQueries(error: unknown, method: string): boolean {
+  return method === "eth_getLogs" && isMethodNotFoundError(error)
+}
+
+/**
  * True for errors that are the endpoint's fault, which count toward its
  * cooldown. Reverts, client errors and other errors about the request don't.
  */
@@ -92,7 +135,11 @@ export function indicatesEndpointFault(
   error: unknown,
   method: string,
 ): boolean {
-  if (refusesTheRequest(error) || refusesThisLogQuery(error, method)) {
+  if (
+    refusesTheRequest(error) ||
+    refusesThisLogQuery(error, method) ||
+    lacksLogQueries(error, method)
+  ) {
     return false
   }
   if (indicatesOutage(error, method)) {
@@ -113,7 +160,13 @@ export function indicatesEndpointFault(
  * moves on; any other 4xx is the request's fault everywhere, so it gives up.
  */
 export const standardFailurePolicy: FailurePolicy = {
-  nextStepAfter(error, method, attempt) {
+  nextStepAfter(error, method, attempt, params = []) {
+    if (
+      refusesLogQueriesAtAnyRange(error, method, params) ||
+      lacksLogQueries(error, method)
+    ) {
+      return { kind: "tryNextEndpoint", refusesMethod: true }
+    }
     // Another endpoint may keep older blocks, or serve the query at all.
     if (isPrunedHistoryError(error) || refusesThisLogQuery(error, method)) {
       return { kind: "tryNextEndpoint" }

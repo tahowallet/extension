@@ -96,6 +96,15 @@ export default class FailoverExecutor {
   // The endpoint each request last tried, for the context on its error.
   readonly #lastTried = new WeakMap<RpcRequest, Endpoint>()
 
+  /**
+   * The methods each endpoint has refused to serve at all, such as log queries
+   * on dRPC's free plan, which refuses them however narrow the range, or on
+   * Rootstock's public node, which answers that `eth_getLogs` doesn't exist.
+   * They aren't sent to that endpoint again this session while another
+   * endpoint in the pool can take them.
+   */
+  readonly #refusedMethods = new WeakMap<Endpoint, Set<string>>()
+
   constructor(
     private readonly observers: readonly RequestOutcomeObserver[] = [],
     private readonly wait: (
@@ -157,7 +166,9 @@ export default class FailoverExecutor {
   ): Promise<{ result: unknown; endpoint: Endpoint }> {
     const lastResort = onlyEndpointOf(pool)
     const endpoints =
-      lastResort === undefined ? pool.endpointsInTryOrder() : [lastResort]
+      lastResort === undefined
+        ? this.#withoutRefusals(pool.endpointsInTryOrder(), request.method)
+        : [lastResort]
     let lastError: unknown = new NoEndpointAvailableError()
     if (lastResort !== undefined) {
       logger.debug(
@@ -198,7 +209,15 @@ export default class FailoverExecutor {
           if (indicatesEndpointFault(error, request.method)) {
             pool.recordFailure(endpoint)
           }
-          const step = policy.nextStepAfter(error, request.method, attempt)
+          const step = policy.nextStepAfter(
+            error,
+            request.method,
+            attempt,
+            request.params,
+          )
+          if (step.kind === "tryNextEndpoint" && step.refusesMethod === true) {
+            this.#rememberRefusal(endpoint, request.method)
+          }
           this.#notify((observer) =>
             observer.onEndpointFailure?.(request, endpoint, error, step),
           )
@@ -225,6 +244,29 @@ export default class FailoverExecutor {
       )
     }
     throw lastError
+  }
+
+  /**
+   * Returns `endpoints` without those that refused `method`. If every one of
+   * them did, returns them all, so they're asked again and the caller still
+   * hears why the method fails.
+   */
+  #withoutRefusals(endpoints: Endpoint[], method: string): Endpoint[] {
+    const serving = endpoints.filter(
+      (endpoint) => !this.#refusedMethods.get(endpoint)?.has(method),
+    )
+    return serving.length === 0 ? endpoints : serving
+  }
+
+  #rememberRefusal(endpoint: Endpoint, method: string): void {
+    const refused = this.#refusedMethods.get(endpoint) ?? new Set<string>()
+    this.#refusedMethods.set(endpoint, refused)
+    if (!refused.has(method)) {
+      refused.add(method)
+      logger.debug(
+        `${endpoint.label}: refuses ${method} outright; not asking it again while another endpoint can answer.`,
+      )
+    }
   }
 
   #notify(call: (observer: RequestOutcomeObserver) => void): void {

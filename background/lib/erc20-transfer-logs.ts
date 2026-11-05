@@ -9,9 +9,12 @@ import type SerialFallbackProvider from "../services/chain/serial-fallback-provi
 import {
   advertisedBlockRangeLimit,
   earliestAvailableBlock,
+  isLogRangeRefusal,
+  isMethodNotFoundError,
   isPrunedHistoryError,
   LogHistoryUnavailableError,
   LogScanPausedError,
+  MINIMUM_LOG_BLOCK_RANGE,
   suggestedBlockRange,
 } from "../services/chain/rpc/log-query-errors"
 import { AdaptiveSize } from "./adaptive-size"
@@ -27,17 +30,7 @@ import { normalizeEVMAddress } from "./utils"
  */
 export const ERC20_TRANSFER_TOPIC = ERC20_INTERFACE.getEventTopic("Transfer")
 
-/**
- * The smallest block range this module halves down to when an endpoint
- * refuses a range without saying how wide a range it allows. Below twice
- * this many blocks the error propagates, as it's unlikely to be about the
- * range.
- *
- * Callers scan in 5000-block passes (see `BLOCKS_PER_TRANSFER_LOG_SCAN`), and
- * halving 5000 walks 2500, 1250, 625, 313, 157, which clears the 500- and
- * 1000-block caps common among public endpoints.
- */
-export const MINIMUM_LOG_BLOCK_RANGE = 100
+export { MINIMUM_LOG_BLOCK_RANGE }
 
 /** What a provider's endpoints have said about log queries this session. */
 type LogQueryLimits = {
@@ -95,7 +88,9 @@ export function learntEarliestLogBlock(
  * than its endpoints have advertised, or wider than one that previously timed
  * out, is fetched in chunks that fit. A refused range is retried at the width
  * the refusal names, or otherwise in halves down to
- * {@link MINIMUM_LOG_BLOCK_RANGE}. Rate limits are thrown rather than split.
+ * {@link MINIMUM_LOG_BLOCK_RANGE}. Rate limits, range complaints that mean no
+ * range would be served (see {@link isLogRangeRefusal}) and endpoints that
+ * don't serve `eth_getLogs` at all are thrown rather than split.
  * Chunks are fetched one at a time so a provider that is already refusing
  * requests isn't sent more of them.
  *
@@ -180,6 +175,13 @@ async function getLogsWithAdaptiveRange(
       return getLogsWithAdaptiveRange(provider, topics, fromBlock, toBlock)
     }
 
+    // The provider has already asked its other endpoints, and a narrower
+    // range would be refused the same way, as would any range by an endpoint
+    // without `eth_getLogs`. Note that the limit a refusal names isn't learned
+    // either, since learned limits narrow every endpoint.
+    if (isLogRangeRefusal(error, blockCount) || isMethodNotFoundError(error)) {
+      throw error
+    }
     const retrySize = limits.range.retrySizeAfter(error, blockCount, {
       advertised: advertisedBlockRangeLimit(error),
       suggested: suggestedBlockRange(error),
