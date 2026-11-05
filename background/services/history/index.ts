@@ -10,14 +10,12 @@ import {
   CHAINLINK_AGGREGATOR_INTERFACE,
 } from "../../lib/priceOracle"
 import { DAY, MINUTE, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
-import { FIAT_CURRENCIES_SYMBOL } from "../../constants/currencies"
 import type { AccountBalance } from "../../accounts"
 import type { PricePoint } from "../../assets"
-import { isFungibleAsset, isSmartContractFungibleAsset } from "../../assets"
+import { isSmartContractFungibleAsset } from "../../assets"
 import type { EVMNetwork } from "../../networks"
 import {
   getFullAssetID,
-  isNetworkBaseAsset,
   isTrustedAsset,
 } from "../../redux-slices/utils/asset-utils"
 import { normalizeEVMAddress } from "../../lib/utils"
@@ -29,6 +27,7 @@ import {
   getOrCreateDB,
   holdingKeyFor,
 } from "./db"
+import { livePriceRecord } from "./live"
 import { firstHeldTime, HistoryPoint, Series, valueSeries } from "./series"
 import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
 import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
@@ -316,34 +315,8 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
 
   private async recordPrices(pricePoints: PricePoint[]): Promise<void> {
     const records = pricePoints.flatMap((pricePoint) => {
-      const fiatIndex = pricePoint.pair.findIndex(({ symbol }) =>
-        FIAT_CURRENCIES_SYMBOL.includes(symbol),
-      )
-      if (fiatIndex === -1) return []
-      const fiat = pricePoint.pair[fiatIndex]
-      const asset = pricePoint.pair[1 - fiatIndex]
-      if (
-        !(isNetworkBaseAsset(asset) || isSmartContractFungibleAsset(asset)) ||
-        !isFungibleAsset(fiat)
-      ) {
-        return []
-      }
-      const assetUnits =
-        Number(pricePoint.amounts[1 - fiatIndex]) / 10 ** asset.decimals
-      const fiatUnits =
-        Number(pricePoint.amounts[fiatIndex]) / 10 ** fiat.decimals
-      if (!(assetUnits > 0) || !Number.isFinite(fiatUnits)) return []
-
-      return [
-        {
-          priceKey: getFullAssetID(asset),
-          symbol: asset.symbol,
-          // Price points carry UNIX seconds.
-          time: pricePoint.time * 1000,
-          value: fiatUnits / assetUnits,
-          source: "live" as const,
-        },
-      ]
+      const record = livePriceRecord(pricePoint)
+      return record === undefined ? [] : [record]
     })
     // Prices arrive every minute for every tracked asset, but history only
     // keeps one every few minutes per asset, which is all that compaction

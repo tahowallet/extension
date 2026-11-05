@@ -169,6 +169,114 @@ describe("HistoryDatabase", () => {
     expect(bySymbol.get("ETH")?.sort()).toEqual(["1/base", "10/base"])
   })
 
+  describe("with points dated in the future", () => {
+    // A live price whose milliseconds were taken for seconds, which dates it
+    // to around the year 58800.
+    const INFLATED = NOW * 1000
+
+    beforeEach(() => {
+      jest.spyOn(Date, "now").mockReturnValue(NOW)
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    /**
+     * Stores a series' points as given, without the checks that writes apply,
+     * as a history stored before those checks can hold them.
+     */
+    const storeRaw = async (key: string, times: number[], values: number[]) => {
+      const series = db.table("series")
+      const record = await series.get(key)
+      await series.put({
+        ...record,
+        times: Float64Array.from(times),
+        values: Float64Array.from(values),
+        sources: new Uint8Array(times.length),
+      })
+    }
+
+    it("drops prices dated well past now, but allows some clock skew", async () => {
+      await db.addPrices([
+        price(ASSET_ID, NOW - HOUR, 2_900),
+        price(ASSET_ID, NOW + 10 * MINUTE, 2_948),
+        price(ASSET_ID, INFLATED, 2_251),
+        price(ASSET_ID, NaN, 1),
+      ])
+
+      const prices = await db.getPriceSeries([ASSET_ID])
+      expect(Array.from(prices.get(ASSET_ID)?.times ?? [])).toEqual([
+        NOW - HOUR,
+        NOW + 10 * MINUTE,
+      ])
+    })
+
+    it("doesn't create a series from future prices alone", async () => {
+      await db.addPrices([price(ASSET_ID, INFLATED, 2_251)])
+
+      expect((await db.getPriceSeries([ASSET_ID])).size).toBe(0)
+    })
+
+    it("drops future balances, live or backfilled", async () => {
+      await db.addLiveBalances([balance(NOW - HOUR, 1)])
+      expect(await db.addLiveBalances([balance(INFLATED, 2)])).toBe(0)
+      await db.addBalances([{ ...balance(NOW + DAY, 3), source: "backfill" }])
+
+      expect(await balances()).toEqual([{ time: NOW - HOUR, value: 1 }])
+    })
+
+    it("cleans future points out of existing series when compacting", async () => {
+      // A history holding an inflated live price that was stored without the
+      // write check. It sorts last, after newer real prices.
+      await db.addPrices([
+        price(ASSET_ID, NOW - 2 * HOUR, 2_900),
+        price(ASSET_ID, NOW - HOUR, 2_948),
+      ])
+      await storeRaw(
+        `price:${ASSET_ID}`,
+        [NOW - 2 * HOUR, NOW - HOUR, INFLATED],
+        [2_900, 2_948, 2_251],
+      )
+      let prices = await db.getPriceSeries([ASSET_ID])
+      expect(
+        new Date(prices.get(ASSET_ID)?.times[2] ?? 0).getUTCFullYear(),
+      ).toBeGreaterThan(58000)
+
+      expect(await db.compact(NOW)).toBe(1)
+
+      prices = await db.getPriceSeries([ASSET_ID])
+      expect(Array.from(prices.get(ASSET_ID)?.times ?? [])).toEqual([
+        NOW - 2 * HOUR,
+        NOW - HOUR,
+      ])
+      expect(Array.from(prices.get(ASSET_ID)?.values ?? [])).toEqual([
+        2_900, 2_948,
+      ])
+    })
+
+    it("lets a holding's live balance move again once its future point is cleaned", async () => {
+      await db.addLiveBalances([balance(NOW - HOUR, 1)])
+      const [holding] = await db.getHoldings([ADDRESS])
+      await storeRaw(
+        `balance:${holding.holdingKey}`,
+        [NOW - HOUR, INFLATED],
+        [1, 7],
+      )
+
+      // While the future point is latest, no live balance is newer.
+      expect(await db.addLiveBalances([balance(NOW, 2)])).toBe(0)
+
+      await db.compact(NOW)
+      expect(await db.addLiveBalances([balance(NOW, 2)])).toBe(1)
+      const [current] = await db.getHoldings([ADDRESS])
+      expect({ time: current.time, value: current.value }).toEqual({
+        time: NOW,
+        value: 2,
+      })
+    })
+  })
+
   it("starts over from the unshipped version 2 layout", async () => {
     db.close()
     const v2 = new Dexie("tally/history")
