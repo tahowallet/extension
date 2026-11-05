@@ -50,6 +50,7 @@ import { assertUnreachable, isDefined } from "../../lib/utils/type-guards"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import { TESTNET_TAHO } from "../../services/island"
 import { convertFixedPoint } from "../../lib/fixed-point"
+import { isListedChain } from "../listed-chains"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -265,6 +266,27 @@ const computeCombinedAssetAmountsData = (
 }
 
 const getAccountState = (state: RootState) => state.account
+
+const getListedNetworks = (state: RootState) => state.networks.evmNetworks
+
+/**
+ * Returns whether a chain's balances count toward the portfolio overview:
+ * the chain must be in the network list, and not a test network.
+ *
+ * Accounts data can outlive the network it belongs to. A custom network
+ * removed by an older version, for example, can leave its balances behind.
+ * Those balances are priced like any other, so a removed mainnet fork would
+ * add its fake ETH to the total under a network the user can no longer see.
+ *
+ * @param chainID The chain whose balances are being totalled.
+ * @param listedNetworks The network list, as kept in `state.networks`.
+ */
+const countsTowardOverview = (
+  chainID: string,
+  listedNetworks: RootState["networks"]["evmNetworks"],
+): boolean =>
+  !TEST_NETWORK_BY_CHAIN_ID.has(chainID) &&
+  isListedChain(listedNetworks, chainID)
 
 const getCurrentAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
@@ -765,14 +787,21 @@ export const selectAccountTotalsForOverview = createSelector(
   selectAssetEntities,
   getPricesState,
   selectMainCurrencySymbol,
-  (accountsState, assetEntities, pricesState, mainCurrencySymbol) => {
+  getListedNetworks,
+  (
+    accountsState,
+    assetEntities,
+    pricesState,
+    mainCurrencySymbol,
+    listedNetworks,
+  ) => {
     const accountsTotal: AccountTotalList = {}
 
     Object.entries(accountsState.accountsData.evm)
       .filter(
         ([chainID, accounts]) =>
           typeof accounts !== "undefined" &&
-          !TEST_NETWORK_BY_CHAIN_ID.has(chainID),
+          countsTowardOverview(chainID, listedNetworks),
       )
       .forEach(([chainID, accounts]) =>
         Object.entries(accounts).forEach(([address, accountData]) => {
@@ -868,9 +897,10 @@ export const getAllNetworks = createSelector(getAccountState, (account) =>
 
 export const getNetworkCountForOverview = createSelector(
   getAccountState,
-  (account) =>
-    Object.keys(account.accountsData.evm).filter(
-      (chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID),
+  getListedNetworks,
+  (account, listedNetworks) =>
+    Object.keys(account.accountsData.evm).filter((chainID) =>
+      countsTowardOverview(chainID, listedNetworks),
     ).length,
 )
 
