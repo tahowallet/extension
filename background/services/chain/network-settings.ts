@@ -56,9 +56,26 @@ export default class NetworkSettings {
     )
   }
 
-  async refreshSupportedNetworks(): Promise<void> {
-    this.#supportedNetworks = await this.db.getAllEVMNetworks()
-    this.onSupportedNetworksChanged(this.#supportedNetworks)
+  #refreshes: Promise<void> = Promise.resolve()
+
+  /**
+   * Reloads the network list from the database and reports it.
+   *
+   * Every report is the complete list, built-in and custom networks alike,
+   * and listeners rely on that: redux drops every chain's data that a report
+   * leaves out. Refreshes therefore run one at a time, so that reports go out
+   * in the order their reads were made. Run side by side, a read made before
+   * a custom network was added could be reported after the read that saw it,
+   * and the newly added network would be dropped.
+   */
+  refreshSupportedNetworks(): Promise<void> {
+    const refresh = this.#refreshes.then(async () => {
+      this.#supportedNetworks = await this.db.getAllEVMNetworks()
+      this.onSupportedNetworksChanged(this.#supportedNetworks)
+    })
+    // A failed refresh shouldn't stop the next one from running.
+    this.#refreshes = refresh.catch(() => {})
+    return refresh
   }
 
   async loadMethodSpecificEndpoints(): Promise<void> {
