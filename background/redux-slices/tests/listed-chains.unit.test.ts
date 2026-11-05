@@ -16,6 +16,10 @@ import {
   networkReachabilityChanged,
   setEVMNetworks,
 } from "../networks"
+import {
+  getNetworkCountForOverview,
+  selectAccountTotalsForOverview,
+} from "../selectors"
 
 const ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 
@@ -57,6 +61,16 @@ const stateWithFork = (): RootState =>
     updateAccountBalance({
       balances: [forkBaseBalance()],
       addressOnNetwork: { address: ADDRESS, network: FORK },
+    }),
+    updateAccountBalance({
+      balances: [
+        createAccountBalance({
+          address: ADDRESS,
+          network: ETHEREUM,
+          assetAmount: { asset: ETHEREUM.baseAsset, amount: 1n },
+        }),
+      ],
+      addressOnNetwork: { address: ADDRESS, network: ETHEREUM },
     }),
   )
 
@@ -135,5 +149,41 @@ describe("Writes for chains missing from the network list", () => {
     expect(state.account.accountsData.evm[FORK.chainID]).toEqual({
       [ADDRESS]: "loading",
     })
+  })
+})
+
+describe("Portfolio overview", () => {
+  /**
+   * Returns state whose accounts data still holds the fork after the fork
+   * has left the network list, as an install that removed it with an older
+   * version can.
+   */
+  const stateWithLeftoverFork = (): RootState => {
+    const state = stateWithFork()
+    return {
+      ...state,
+      networks: {
+        ...state.networks,
+        evmNetworks: { [ETHEREUM.chainID]: ETHEREUM },
+      },
+    }
+  }
+
+  it("counts listed networks", () => {
+    const state = stateWithFork()
+
+    expect(
+      Object.keys(selectAccountTotalsForOverview(state)[ADDRESS].totals),
+    ).toEqual([ETHEREUM.chainID, FORK.chainID])
+    expect(getNetworkCountForOverview(state)).toBe(2)
+  })
+
+  it("leaves out networks missing from the list", () => {
+    const state = stateWithLeftoverFork()
+
+    expect(
+      Object.keys(selectAccountTotalsForOverview(state)[ADDRESS].totals),
+    ).toEqual([ETHEREUM.chainID])
+    expect(getNetworkCountForOverview(state)).toBe(1)
   })
 })

@@ -4,27 +4,33 @@ import type { AnyEVMBlock } from "../networks"
 import { loadAccount, updateAccountBalance } from "./accounts"
 import { blockSeen, networkReachabilityChanged } from "./networks"
 
+/** The network list the background last reported, keyed by chain ID. */
+type ListedNetworks = { [chainID: string]: unknown }
+
 /**
  * The slice of state the guard reads: the network list the background last
  * reported.
  */
 type ListedNetworksState = {
-  networks?: { evmNetworks?: { [chainID: string]: unknown } }
+  networks?: { evmNetworks?: ListedNetworks }
 }
 
 /**
- * Returns whether the network list in the given state includes the chain.
+ * Returns whether the network list includes the chain.
  *
  * Note that an empty list counts as including every chain: the list is empty
  * only before the background has reported it for the first time, as on a
  * fresh install, and nothing can be judged unlisted until then.
+ *
+ * @param evmNetworks The network list, as kept in `state.networks`.
+ * @param chainID The chain to look for.
  */
 export function isListedChain(
-  state: ListedNetworksState | undefined,
+  evmNetworks: ListedNetworks | undefined,
   chainID: string,
 ): boolean {
-  const evmNetworks = state?.networks?.evmNetworks ?? {}
-  return Object.keys(evmNetworks).length === 0 || chainID in evmNetworks
+  const listed = evmNetworks ?? {}
+  return Object.keys(listed).length === 0 || chainID in listed
 }
 
 /**
@@ -51,7 +57,8 @@ export function withoutUnlistedChainWrites<A extends Action>(
   state: ListedNetworksState | undefined,
   action: A,
 ): A | undefined {
-  const isListed = (chainID: string) => isListedChain(state, chainID)
+  const isListed = (chainID: string) =>
+    isListedChain(state?.networks?.evmNetworks, chainID)
 
   if (loadAccount.match(action)) {
     const { payload }: { payload: AddressOnNetwork } = action

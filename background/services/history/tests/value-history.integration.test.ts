@@ -8,11 +8,14 @@ import { HistoryDatabase, holdingKeyFor } from "../db"
 const NOW = Date.UTC(2026, 10, 5, 12)
 const ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const TOKEN = "0x1111111111111111111111111111111111111111"
+/** A custom network the user has removed, like a Tenderly mainnet fork. */
+const REMOVED_CHAIN_ID = "73571"
 
 /** A history service over `db`, with just enough of the services it reads. */
 function serviceFor(db: HistoryDatabase, cachedAssets: AnyAsset[]) {
   const chainService = {
     getTrackedNetworks: async () => [ETHEREUM, SEPOLIA],
+    getSupportedNetworks: () => [ETHEREUM, SEPOLIA],
   }
   const indexingService = {
     getCachedAssets: (network: EVMNetwork) =>
@@ -52,6 +55,7 @@ describe("HistoryService.getValueHistory", () => {
     await db.addBalances([
       holding(ETHEREUM.chainID, `${ETHEREUM.chainID}/${TOKEN}`, "TKN"),
       holding(SEPOLIA.chainID, `${SEPOLIA.chainID}/base`, "ETH"),
+      holding(REMOVED_CHAIN_ID, `${REMOVED_CHAIN_ID}/base`, "ETH"),
     ])
     await db.addPrices(
       [
@@ -104,6 +108,15 @@ describe("HistoryService.getValueHistory", () => {
     ])
 
     expect(await latestValue(service)).toBeUndefined()
+  })
+
+  it("leaves out holdings on networks no longer in the list", async () => {
+    const service = serviceFor(db, [])
+
+    // The removed fork's ETH would be valued by symbol, at mainnet ETH's
+    // price, if it counted at all.
+    expect(await latestValue(service)).toBeUndefined()
+    expect(await latestValue(service, [REMOVED_CHAIN_ID])).toBeUndefined()
   })
 
   it("charts a test network when asked for it", async () => {

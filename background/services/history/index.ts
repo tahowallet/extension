@@ -1002,11 +1002,18 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       this.db.getHoldings(addresses),
       this.db.getPriceKeysBySymbol(),
     ])
+    // History can outlive its network: a custom network removed by an older
+    // version leaves its series behind, and they would otherwise be valued
+    // like any other, adding a removed mainnet fork's fake ETH to the chart.
+    const supportedChainIDs = new Set(
+      this.chainService.getSupportedNetworks().map(({ chainID }) => chainID),
+    )
     const trusted = await this.trustResolver()
     const queried = allHoldings
       .map((holding) => ({ ...holding, trusted: trusted(holding) }))
       .filter(
         (holding) =>
+          supportedChainIDs.has(holding.chainID) &&
           // Test networks only count when a chart asks for them by network or
           // asset, as the wallet's own totals leave them out.
           (chainIDs === undefined
