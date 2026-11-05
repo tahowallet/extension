@@ -12,6 +12,7 @@ import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slice
 import { useBackgroundDispatch } from "../../hooks"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
+import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
 import { DAY, RANGES, RangeKey, useChartRange } from "./chartRange"
 
 const SAMPLES = 120
@@ -357,9 +358,18 @@ export default function FullTabValueChart({
     <section className="chart_card" aria-label={label}>
       <div className="header">
         <div className="readout" aria-live="polite">
-          <span className="value">
-            {shown ? formatValue(shown.value) : "—"}
-          </span>
+          {/* Before the first answer, a placeholder holds the value's place.
+              Once history is in but empty, the plot says why, so there's no
+              value to show at all. */}
+          {history === null ? (
+            <SharedSkeletonLoader
+              width={180}
+              height={34}
+              style={{ margin: "2px 0" }}
+            />
+          ) : (
+            shown && <span className="value">{formatValue(shown.value)}</span>
+          )}
           {hovered ? (
             <span className="when">
               <span className="time">
@@ -601,7 +611,7 @@ export default function FullTabValueChart({
           display: flex;
           flex-direction: column;
           gap: 2px;
-          min-height: 52px;
+          min-height: 54px;
         }
         .value {
           font-size: 28px;
