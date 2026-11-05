@@ -351,6 +351,40 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     )
   }
 
+  /**
+   * Returns the chain IDs that the history database holds history for. See
+   * {@link HistoryDatabase.getChainIDsWithData}.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    return this.db.getChainIDsWithData()
+  }
+
+  /**
+   * Removes what is kept for a chain that has left the network list: its
+   * stored history, and the clocks, rate budgets, batch sizes and backfill
+   * progress held for it in memory. Returns the number of rows deleted.
+   *
+   * @param chainID The chain whose history to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    this.#clocks.delete(chainID)
+    this.#multicallSizes.delete(chainID)
+    this.#budgets.delete(`rpc:${chainID}`)
+    const assetPrefix = `${chainID}/`
+    ;[...this.#pending.keys()]
+      .filter(
+        (key) =>
+          key === `balances:${chainID}` ||
+          key.startsWith(`price:${assetPrefix}`),
+      )
+      .forEach((key) => this.#pending.delete(key))
+    ;[...this.#lastLivePriceAt.keys()]
+      .filter((priceKey) => priceKey.startsWith(assetPrefix))
+      .forEach((priceKey) => this.#lastLivePriceAt.delete(priceKey))
+
+    return this.db.removeChainData(chainID)
+  }
+
   private async compact(): Promise<void> {
     try {
       const dropped = await this.db.compact(Date.now())

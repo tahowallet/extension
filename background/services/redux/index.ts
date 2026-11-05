@@ -74,6 +74,7 @@ import {
   networkReachabilityReset,
   setEVMNetworks,
 } from "../../redux-slices/networks"
+import { chainIsDroppedBy } from "../../redux-slices/utils/network-list"
 import {
   initializationLoadingTimeHitLimit,
   emitter as uiSliceEmitter,
@@ -459,6 +460,73 @@ export default class ReduxService extends BaseService<never> {
     ]
 
     await Promise.all(servicesToBeStarted)
+
+    // Every service has loaded the network list by now, so leftovers of
+    // networks removed by older versions can be told from live data. Not
+    // awaited: the sweep yields as it goes and shouldn't hold up startup.
+    this.removeUnlistedChainData().catch((error) =>
+      logger.error("Failed to remove data for unlisted networks", error),
+    )
+  }
+
+  /**
+   * Removes what the chain, indexing, history and NFT services keep for
+   * chains that have left the network list, from their databases and from
+   * memory, and returns the number of rows deleted.
+   *
+   * Runs when a custom network is removed and once at every startup. The
+   * startup run sweeps data that older versions left behind when a network
+   * was removed. A removed mainnet fork, for example, can leave thousands of
+   * blocks and transactions, along with history that keeps being charted and
+   * NFTs that are loaded back into the wallet at each restart.
+   *
+   * Note that what counts as having left the list is decided as redux decides
+   * it. Built-in networks are never swept, and nothing is swept if the list
+   * is partial, as {@link chainIsDroppedBy} explains. A network that is merely
+   * unreachable is still in the list, so it is never swept either.
+   *
+   * @param chainIDs The chains to consider. Defaults to every chain the
+   *        services hold data for.
+   */
+  async removeUnlistedChainData(chainIDs?: string[]): Promise<number> {
+    const isDropped = chainIsDroppedBy(this.chainService.getSupportedNetworks())
+    const candidates =
+      chainIDs ??
+      (
+        await Promise.all([
+          this.chainService.getChainIDsWithData(),
+          this.indexingService.getChainIDsWithData(),
+          this.historyService.getChainIDsWithData(),
+          this.nftsService.getChainIDsWithData(),
+        ])
+      ).flatMap((held) => [...held])
+    const dropped = [...new Set(candidates)].filter(isDropped)
+
+    let deleted = 0
+    // One chain and service at a time, as each deletes in batches that yield
+    // to other work, and running them side by side would undo that.
+    // oxlint-disable no-await-in-loop
+    for (const chainID of dropped) {
+      deleted += await this.chainService.removeChainData(chainID)
+      deleted += await this.indexingService.removeChainData(chainID)
+      deleted += await this.historyService.removeChainData(chainID)
+      deleted += await this.nftsService.removeChainData(chainID)
+    }
+    // oxlint-enable no-await-in-loop
+
+    if (dropped.length > 0) {
+      logger.info("Removed data for networks no longer in the list", {
+        chainIDs: dropped,
+        deleted,
+      })
+      // Services that loaded the dropped chains' data into redux before it
+      // was deleted, like the NFT service at startup, would otherwise leave
+      // it there until the list next changes.
+      this.store.dispatch(
+        setEVMNetworks(this.chainService.getSupportedNetworks()),
+      )
+    }
+    return deleted
   }
 
   protected override async internalStopService(): Promise<void> {
@@ -1973,6 +2041,11 @@ export default class ReduxService extends BaseService<never> {
     // Connected dApps
     await this.providerBridgeService.revokePermissionsForChain(chainID)
     await this.chainService.removeCustomChain(chainID)
+    // Not awaited, so the settings page needn't wait on deleting what may be
+    // thousands of rows.
+    this.removeUnlistedChainData([chainID]).catch((error) =>
+      logger.error("Failed to remove data for removed network", chainID, error),
+    )
   }
 
   async updateNetworkSettings(
