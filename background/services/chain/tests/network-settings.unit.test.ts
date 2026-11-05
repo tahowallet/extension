@@ -55,6 +55,45 @@ describe("NetworkSettings", () => {
     expect(changes).toEqual([[ETHEREUM, POLYGON]])
   })
 
+  it("reports overlapping refreshes in the order their reads were made", async () => {
+    const { settings, db, changes } = harness()
+    // The first read is slow and sees the list before a network was added.
+    // The second sees the network.
+    let finishFirstRead: (networks: EVMNetwork[]) => void = () => {}
+    db.getAllEVMNetworks
+      .onFirstCall()
+      .returns(
+        new Promise<EVMNetwork[]>((resolve) => {
+          finishFirstRead = resolve
+        }),
+      )
+      .onSecondCall()
+      .resolves([ETHEREUM, POLYGON])
+
+    const first = settings.refreshSupportedNetworks()
+    const second = settings.refreshSupportedNetworks()
+    finishFirstRead([ETHEREUM])
+    await Promise.all([first, second])
+
+    expect(changes).toEqual([[ETHEREUM], [ETHEREUM, POLYGON]])
+    expect(settings.supportedNetworks()).toEqual([ETHEREUM, POLYGON])
+  })
+
+  it("keeps refreshing after a refresh fails", async () => {
+    const { settings, db, changes } = harness()
+    db.getAllEVMNetworks.onFirstCall().rejects(new Error("closed"))
+
+    const failure = await settings.refreshSupportedNetworks().then(
+      () => undefined,
+      (error: Error) => error.message,
+    )
+    await settings.refreshSupportedNetworks()
+
+    expect(failure).toBe("closed")
+
+    expect(changes).toEqual([[ETHEREUM, POLYGON]])
+  })
+
   it("loads, sets, and clears method-specific endpoints", async () => {
     const { settings, db, provider } = harness()
     await settings.loadMethodSpecificEndpoints()
