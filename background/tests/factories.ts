@@ -635,7 +635,8 @@ export const createPricePoint = (
   const pricePoint: PricePoint = {
     pair: [asset, USD],
     amounts: [10n ** BigInt(decimals), BigInt(Math.trunc(1e10 * price))],
-    time: Math.trunc(Date.now() / 1e3),
+    // In milliseconds, as the wallet's price sources stamp price points.
+    time: Date.now(),
   }
 
   return flip ? flipPricePoint(pricePoint) : pricePoint

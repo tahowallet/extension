@@ -315,8 +315,10 @@ export class IndexingDatabase extends Dexie {
         })
       }
     }
-    // Price points carry UNIX seconds.
-    await prune(this.prices, "time", Math.floor(before / 1000))
+    // Price points carry milliseconds despite their UNIXTime type, as
+    // PricePoint notes. Note that a cutoff in seconds would keep every row,
+    // since every stored time is a thousand times larger.
+    await prune(this.prices, "time", before)
     await prune(this.balances, "retrievedAt", before)
     return dropped
   }

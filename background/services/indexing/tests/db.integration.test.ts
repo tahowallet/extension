@@ -26,10 +26,11 @@ describe("IndexingDatabase.pruneMeasurements", () => {
     await Promise.all(
       Array.from({ length: 12 }, (_, index) =>
         db.savePriceMeasurement(
-          // Price points carry UNIX seconds.
+          // Price points carry milliseconds, as the wallet's sources stamp
+          // them with Date.now().
           {
             ...createPricePoint(ETH),
-            time: Math.floor((NOW - (index < 8 ? 10 : 1) * DAY) / 1000),
+            time: NOW - (index < 8 ? 10 : 1) * DAY,
           },
           NOW,
           "coingecko",

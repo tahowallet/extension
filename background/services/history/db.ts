@@ -143,6 +143,54 @@ const sourceCode = (source: PointSource) => SOURCE_CODES[source]
 export const LIVE_BALANCE_SPACING = 5 * MINUTE
 
 /**
+ * How far past the present a point may be dated and still be recorded. Block
+ * timestamps and the clocks of price sources can run a little ahead of the
+ * wallet's own clock, so some slack is allowed. A point dated further ahead
+ * than that has its time in the wrong unit, such as milliseconds multiplied
+ * by a thousand, which dates a price from late 2026 to around the year 58800.
+ *
+ * Note that such a point would sort last in its series forever, so it would
+ * stand in for the series' latest point: a holding's latest balance would
+ * stop changing, since no live balance is newer, and live prices would
+ * never follow it.
+ */
+export const FUTURE_TOLERANCE = HOUR
+
+/**
+ * Returns the given points without those dated more than
+ * {@link FUTURE_TOLERANCE} after `now`, or with times that aren't finite.
+ *
+ * @param points The points to filter.
+ * @param now The present, in milliseconds.
+ */
+function withoutFuturePoints<T extends { time: number }>(
+  points: T[],
+  now: number,
+): T[] {
+  return points.filter(
+    ({ time }) => Number.isFinite(time) && time <= now + FUTURE_TOLERANCE,
+  )
+}
+
+/**
+ * Returns the indexes of a series' points dated more than
+ * {@link FUTURE_TOLERANCE} after `now`, or with times that aren't finite.
+ *
+ * @param times The series' point times.
+ * @param now The present, in milliseconds.
+ */
+function futureIndexes(times: ArrayLike<number>, now: number): number[] {
+  const indexes: number[] = []
+  for (let index = 0; index < times.length; index += 1) {
+    const time = times[index]
+    if (!(Number.isFinite(time) && time <= now + FUTURE_TOLERANCE)) {
+      indexes.push(index)
+    }
+  }
+  return indexes
+}
+
+/**
  * How many series are read and rewritten in one transaction, by compaction
  * and by large writes. Batches yield to other work between them, so a large
  * history never holds up the background for long.
@@ -351,10 +399,14 @@ export class HistoryDatabase extends Dexie {
   /**
    * Records prices, merging each into its asset's price series. A price at
    * the same time as an existing one replaces it.
+   *
+   * Note that prices dated more than {@link FUTURE_TOLERANCE} ahead of now
+   * are dropped, since their times can only be in the wrong unit.
    */
   async addPrices(records: PriceRecord[]): Promise<void> {
-    if (records.length === 0) return
-    const byKey = groupBy(records, ({ priceKey }) => priceKey)
+    const kept = withoutFuturePoints(records, Date.now())
+    if (kept.length === 0) return
+    const byKey = groupBy(kept, ({ priceKey }) => priceKey)
     await inBatches([...byKey.keys()], async (keys) =>
       this.transaction("rw", this.series, async () => {
         const existing = await this.series.bulkGet(keys.map(priceKeyOf))
@@ -397,11 +449,14 @@ export class HistoryDatabase extends Dexie {
    * it. That way, the latest point is always current without storing a point
    * per block.
    *
+   * Balances dated more than {@link FUTURE_TOLERANCE} ahead of now are
+   * dropped, as {@link addPrices} drops prices.
+   *
    * Returns the number of balances that were added or replaced.
    */
   async addLiveBalances(records: BalanceRecord[]): Promise<number> {
     const latestInBatch = new Map<string, BalanceRecord>()
-    records.forEach((record) => {
+    withoutFuturePoints(records, Date.now()).forEach((record) => {
       const seen = latestInBatch.get(record.holdingKey)
       if (!seen || seen.time < record.time) {
         latestInBatch.set(record.holdingKey, record)
@@ -460,11 +515,14 @@ export class HistoryDatabase extends Dexie {
   /**
    * Records balances as given, merging each into its holding's series and
    * creating the series if needed. Backfill uses this to fill in history,
-   * where zero balances are as meaningful as any other.
+   * where zero balances are as meaningful as any other. Balances dated more
+   * than {@link FUTURE_TOLERANCE} ahead of now are dropped, as
+   * {@link addPrices} drops prices.
    */
   async addBalances(records: BalanceRecord[]): Promise<void> {
-    if (records.length === 0) return
-    const byHolding = groupBy(records, ({ holdingKey }) => holdingKey)
+    const kept = withoutFuturePoints(records, Date.now())
+    if (kept.length === 0) return
+    const byHolding = groupBy(kept, ({ holdingKey }) => holdingKey)
     await inBatches([...byHolding.keys()], async (holdingKeys) =>
       this.transaction("rw", this.series, async () => {
         const existing = await this.series.bulkGet(holdingKeys.map(balanceKey))
@@ -549,6 +607,13 @@ export class HistoryDatabase extends Dexie {
    * Thins every price and balance series down to its retention tiers as of
    * `now`, and returns the number of points dropped.
    *
+   * Points dated more than {@link FUTURE_TOLERANCE} after `now` are dropped
+   * too. Writes refuse such points, but a history can still hold some that
+   * were stored without that check, for example live prices whose
+   * milliseconds were taken for seconds. Such a point sorts last forever and
+   * stands in for its series' latest point, so dropping it here lets the
+   * series move again.
+   *
    * Series are read and rewritten {@link BATCH_SIZE} at a time,
    * with a pause for other background work between pages, so compacting a
    * large history never holds up the background for long.
@@ -569,7 +634,12 @@ export class HistoryDatabase extends Dexie {
       after = page[page.length - 1].key
 
       const thinned = page.flatMap((record) => {
-        const indexes = compactableIndexes(Array.from(record.times), now)
+        const indexes = [
+          ...new Set([
+            ...futureIndexes(record.times, now),
+            ...compactableIndexes(Array.from(record.times), now),
+          ]),
+        ]
         dropped += indexes.length
         return indexes.length > 0 ? [withoutPoints(record, indexes)] : []
       })
