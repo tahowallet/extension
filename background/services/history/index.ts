@@ -246,6 +246,11 @@ export type ValueHistory = {
    * none did.
    */
   reconstructedUntil: number | undefined
+  /**
+   * Stretches whose values rely mostly on prices that weren't recorded,
+   * typically while the wallet wasn't running; see {@link valueSeries}.
+   */
+  unrecorded: { from: number; to: number }[]
   /** Whether backfill still has work to do for any of the queried series. */
   backfilling: boolean
 }
@@ -1009,18 +1014,23 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     ])
     phase("prices")
 
-    const { points, coverageStart, estimatedUntil, reconstructedUntil } =
-      valueSeries({
-        holdings: valued.map(({ holding, priceKey }) => ({
-          priceKey,
-          balances: holding,
-        })),
-        prices,
-        from,
-        to,
-        samples,
-        priceTolerance: DAY,
-      })
+    const {
+      points,
+      coverageStart,
+      estimatedUntil,
+      reconstructedUntil,
+      unrecorded,
+    } = valueSeries({
+      holdings: valued.map(({ holding, priceKey }) => ({
+        priceKey,
+        balances: holding,
+      })),
+      prices,
+      from,
+      to,
+      samples,
+      priceTolerance: DAY,
+    })
     phase("values")
 
     // A series that no backfill tick has checked yet counts as still
@@ -1065,6 +1075,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       estimatedUntil,
       balanceHistoryFrom,
       reconstructedUntil,
+      unrecorded,
       backfilling,
     }
   }

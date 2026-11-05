@@ -1,3 +1,5 @@
+import { expectedSpacingForAge } from "./compaction"
+
 /** A point in a series of measurements. */
 export type HistoryPoint = { time: number; value: number }
 
@@ -15,6 +17,13 @@ export type Series = {
    */
   sources?: ArrayLike<number>
 }
+
+/**
+ * How many times history's expected spacing at a sample's age a price can be
+ * before the sample counts as unrecorded: twice, so a single missed point
+ * doesn't count, but a wallet that wasn't running does.
+ */
+const STALE_SPACINGS = 2
 
 /** The stored code for points reconstructed from transfers. */
 const RECONSTRUCTED_SOURCE = 2
@@ -128,6 +137,13 @@ export type ValueSeries = {
    */
   reconstructedUntil: number | undefined
   /**
+   * Stretches of samples whose value relies mostly on prices much older than
+   * history should have at that age, typically because the wallet wasn't
+   * running to record them and backfill hasn't caught up. A chart can hold
+   * the last value through them, but shouldn't present it as recorded.
+   */
+  unrecorded: { from: number; to: number }[]
+  /**
    * The earliest sample at which any holding had a valued balance, or
    * `undefined` if there was none.
    */
@@ -171,6 +187,9 @@ export function valueSeries({
   const valued = new Uint8Array(sampleCount)
   const estimated = new Uint8Array(sampleCount)
   const reconstructed = new Uint8Array(sampleCount)
+  // How much of each sample's value relies on prices older than history
+  // should have at that age.
+  const staleValue = new Float64Array(sampleCount)
 
   holdings.forEach(({ priceKey, balances }) => {
     const priceSeries = prices.get(priceKey)
@@ -204,8 +223,13 @@ export function valueSeries({
       if (balances.sources?.[Math.max(balance, 0)] === RECONSTRUCTED_SOURCE) {
         reconstructed[sample] = 1
       }
-      totals[sample] += balances.values[Math.max(balance, 0)] * priceValue
+      const value = balances.values[Math.max(balance, 0)] * priceValue
+      totals[sample] += value
       valued[sample] = 1
+      const priceAge = time - priceSeries.times[Math.max(price, 0)]
+      if (priceAge > STALE_SPACINGS * expectedSpacingForAge(to - time)) {
+        staleValue[sample] += Math.abs(value)
+      }
     })
   })
 
@@ -213,12 +237,28 @@ export function valueSeries({
   let coverageStart: number | undefined
   let estimatedUntil: number | undefined
   let reconstructedUntil: number | undefined
+  const unrecorded: { from: number; to: number }[] = []
   sampleTimes.forEach((time, sample) => {
     if (valued[sample] === 0) return
     coverageStart ??= time
     if (estimated[sample] === 1) estimatedUntil = time
     if (reconstructed[sample] === 1) reconstructedUntil = time
     points.push({ time, value: totals[sample] })
+    if (staleValue[sample] > Math.abs(totals[sample]) / 2) {
+      // Extend the current stretch if this sample follows it directly.
+      const current = unrecorded[unrecorded.length - 1]
+      if (current !== undefined && current.to === sampleTimes[sample - 1]) {
+        current.to = time
+      } else {
+        unrecorded.push({ from: time, to: time })
+      }
+    }
   })
-  return { points, coverageStart, estimatedUntil, reconstructedUntil }
+  return {
+    points,
+    coverageStart,
+    estimatedUntil,
+    reconstructedUntil,
+    unrecorded,
+  }
 }

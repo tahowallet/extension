@@ -14,6 +14,8 @@ import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import { DAY, RANGES, RangeKey, useChartRange } from "./chartRange"
 
+/** About half the width of the unrecorded label, for keeping it in the plot. */
+const UNRECORDED_LABEL_HALF_WIDTH = 75
 const SAMPLES = 120
 const HEIGHT = 200
 const PADDING = { top: 12, right: 64, bottom: 24, left: 0 }
@@ -38,6 +40,7 @@ const emptyHistory = (rangeKey: RangeKey): History => ({
   estimatedUntil: undefined,
   balanceHistoryFrom: undefined,
   reconstructedUntil: undefined,
+  unrecorded: [],
   backfilling: false,
   rangeKey,
 })
@@ -168,6 +171,9 @@ export default function FullTabValueChart({
   // Before this point, some holdings' values assume their earliest known
   // balance, since their balance history doesn't reach back that far.
   const estimatedUntil = history?.estimatedUntil
+  const unrecorded = useMemo(() => history?.unrecorded ?? [], [history])
+  const isUnrecorded = (time: number) =>
+    unrecorded.some((stretch) => time >= stretch.from && time <= stretch.to)
   // History is drawn on the range it was fetched for until history for the
   // newly selected range arrives.
   const shownRange =
@@ -226,7 +232,33 @@ export default function FullTabValueChart({
       reconstructedCount > estimatedCount
         ? coords.slice(estimatedCount, reconstructedCount + 1)
         : []
-    const recorded = coords.slice(reconstructedCount)
+    // Recorded values run solid, except where they rely on prices that
+    // weren't recorded, such as while the wallet wasn't running. Those
+    // stretches are drawn apart, from the last recorded point before them to
+    // the first after, so the line stays continuous.
+    const solidPieces: number[][][] = [[]]
+    const unrecordedPieces: number[][][] = []
+    let inGap = false
+    for (let index = reconstructedCount; index < points.length; index += 1) {
+      const point = coords[index]
+      const { time } = points[index]
+      const unrecordedPoint = unrecorded.some(
+        (stretch) => time >= stretch.from && time <= stretch.to,
+      )
+      if (unrecordedPoint && !inGap) {
+        unrecordedPieces.push(index > 0 ? [coords[index - 1], point] : [point])
+        inGap = true
+      } else if (unrecordedPoint) {
+        unrecordedPieces[unrecordedPieces.length - 1].push(point)
+      } else {
+        if (inGap) {
+          unrecordedPieces[unrecordedPieces.length - 1].push(point)
+          solidPieces.push([])
+          inGap = false
+        }
+        solidPieces[solidPieces.length - 1].push(point)
+      }
+    }
 
     return {
       x,
@@ -237,7 +269,35 @@ export default function FullTabValueChart({
       estimatedArea: areaOf(estimated),
       reconstructedLine:
         reconstructed.length > 0 ? pathOf(reconstructed) : undefined,
-      solidLine: pathOf(recorded),
+      solidLine: solidPieces
+        .filter((piece) => piece.length > 1)
+        .map(pathOf)
+        .join(""),
+      unrecordedLine:
+        unrecordedPieces.length > 0
+          ? unrecordedPieces.map(pathOf).join("")
+          : undefined,
+      unrecordedLabel:
+        unrecordedPieces.length > 0
+          ? (() => {
+              // Label the longest stretch, in its middle, just off its line:
+              // below it in the plot's upper half, above it in the lower.
+              const longest = unrecordedPieces.reduce((a, b) =>
+                b[b.length - 1][0] - b[0][0] > a[a.length - 1][0] - a[0][0]
+                  ? b
+                  : a,
+              )
+              const lineY =
+                longest.reduce((sum, [, cy]) => sum + cy, 0) / longest.length
+              return {
+                x: (longest[0][0] + longest[longest.length - 1][0]) / 2,
+                y:
+                  lineY < PADDING.top + plotHeight / 2
+                    ? lineY + 18
+                    : lineY - 10,
+              }
+            })()
+          : undefined,
       area: areaOf(coords.slice(estimatedCount)),
     }
   }, [
@@ -248,6 +308,7 @@ export default function FullTabValueChart({
     points,
     reconstructedUntil,
     to,
+    unrecorded,
   ])
 
   const latest = points[points.length - 1]
@@ -298,10 +359,12 @@ export default function FullTabValueChart({
               {dayjs(hovered.time).format("MMM D, YYYY · HH:mm")}
               {estimatedUntil !== undefined && hovered.time <= estimatedUntil
                 ? ` · ${t("estimatedPoint")}`
-                : reconstructedUntil !== undefined &&
-                    hovered.time <= reconstructedUntil
-                  ? ` · ${t("reconstructedPoint")}`
-                  : ""}
+                : isUnrecorded(hovered.time)
+                  ? ` · ${t("unrecordedPoint")}`
+                  : reconstructedUntil !== undefined &&
+                      hovered.time <= reconstructedUntil
+                    ? ` · ${t("reconstructedPoint")}`
+                    : ""}
             </span>
           ) : (
             latest && (
@@ -479,6 +542,30 @@ export default function FullTabValueChart({
               />
             )}
             <path className="line" d={geometry.solidLine} pathLength={1} />
+            {geometry.unrecordedLine !== undefined && (
+              <g className="unrecorded">
+                <path d={geometry.unrecordedLine} />
+                {geometry.unrecordedLabel !== undefined && (
+                  <text
+                    // Centred on the stretch, but kept inside the plot so it
+                    // doesn't run into the axis labels.
+                    x={Math.min(
+                      Math.max(
+                        geometry.unrecordedLabel.x,
+                        PADDING.left + UNRECORDED_LABEL_HALF_WIDTH,
+                      ),
+                      PADDING.left + plotWidth - UNRECORDED_LABEL_HALF_WIDTH,
+                    )}
+                    y={geometry.unrecordedLabel.y}
+                    textAnchor="middle"
+                  >
+                    {history?.backfilling
+                      ? t("unrecordedFilling")
+                      : t("unrecorded")}
+                  </text>
+                )}
+              </g>
+            )}
             {hovered && hoverIndex !== null && (
               <g className="crosshair">
                 <line
@@ -631,6 +718,19 @@ export default function FullTabValueChart({
            reconstructed balances get longer dashes over the usual fill. */
         .line_estimated {
           stroke-dasharray: 2 5;
+        }
+        /* Values held over a stretch nobody recorded, in gray dots, so a flat
+           line there doesn't read as a quiet market. */
+        .unrecorded path {
+          fill: none;
+          stroke: var(--green-40);
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-dasharray: 0.5 5;
+        }
+        .unrecorded text {
+          fill: var(--green-40);
+          font-size: 11px;
         }
         .line_reconstructed {
           stroke-dasharray: 7 5;
