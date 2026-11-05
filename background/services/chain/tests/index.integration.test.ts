@@ -586,6 +586,27 @@ describe("ChainService", () => {
       expect(firstProvider.isDestroyed).toBe(true)
       expect(secondProvider.isDestroyed).toBe(false)
     })
+
+    it("does not re-track accounts on a removed chain", async () => {
+      const network = await chainService.addCustomChain(CUSTOM_CHAIN)
+      const { address } = createAddressOnNetwork()
+      await chainService.addAccountToTrack({ address, network })
+
+      await chainService.removeCustomChain(CUSTOM_CHAIN.chainId)
+
+      // A popup that still shows the removed chain as selected reports
+      // activity on it. Tracking the account again would have the next
+      // startup load the chain's accounts back into redux.
+      await chainService.markAccountActivity({ address, network })
+      await chainService.addAccountToTrack({ address, network })
+
+      expect(
+        (await chainService.getAccountsToTrack()).filter(
+          (account) => account.network.chainID === CUSTOM_CHAIN.chainId,
+        ),
+      ).toEqual([])
+      expect(chainService.isSupportedChain(CUSTOM_CHAIN.chainId)).toBe(false)
+    })
   })
 
   describe("setRpcEndpointsForChain", () => {
