@@ -1,7 +1,12 @@
 import { IDBFactory } from "fake-indexeddb"
 import sinon from "sinon"
 import ChainService from ".."
-import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
+import {
+  DEFAULT_NETWORKS,
+  ETHEREUM,
+  OPTIMISM,
+  POLYGON,
+} from "../../../constants"
 import {
   AnyEVMTransaction,
   EVMNetwork,
@@ -54,6 +59,33 @@ describe("ChainService", () => {
           .getWatchedNetworks()
           .filter(({ chainID }) => chainID === ETHEREUM.chainID),
       ).toHaveLength(1)
+    })
+
+    it("reports only complete network lists while starting up", async () => {
+      // Redux drops every chain's data that a reported list leaves out, so a
+      // list reported before the custom networks were read would erase them.
+      await chainService.addCustomChain({
+        chainName: "Tenderly Mainnet Fork",
+        chainId: "73571",
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://fork.example.com"],
+        blockExplorerUrl: "https://forkscan.example.com",
+      })
+      await chainService.stopService()
+
+      chainService = await createChainService()
+      const reported: string[][] = []
+      chainService.emitter.on("supportedNetworks", (networks) => {
+        reported.push(networks.map(({ chainID }) => chainID).sort())
+      })
+      await chainService.startService()
+
+      const complete = [
+        ...DEFAULT_NETWORKS.map(({ chainID }) => chainID),
+        "73571",
+      ].sort()
+      expect(reported.length).toBeGreaterThan(0)
+      reported.forEach((chainIDs) => expect(chainIDs).toEqual(complete))
     })
 
     it("should initialize persisted data in the correct order", async () => {
