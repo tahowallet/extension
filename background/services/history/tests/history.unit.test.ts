@@ -183,6 +183,36 @@ describe("valueSeries", () => {
     expect(estimatedUntil).toBeUndefined()
   })
 
+  it("finds stretches whose prices weren't recorded", () => {
+    // Prices at the start of a day and an hour before its end, with nothing
+    // between, as when the wallet wasn't running.
+    const to = NOW
+    const from = to - DAY
+    const { unrecorded } = valueSeries({
+      holdings: [
+        { priceKey: "eth", balances: seriesOf([{ time: from, value: 1 }]) },
+      ],
+      prices: new Map([
+        [
+          "eth",
+          seriesOf([
+            { time: from, value: 2000 },
+            { time: to - HOUR, value: 2100 },
+          ]),
+        ],
+      ]),
+      from,
+      to,
+      samples: 5,
+      priceTolerance: 0,
+    })
+    // Every six hours: the first and last samples have recent prices, while
+    // the three between rely on one from hours before.
+    expect(unrecorded).toEqual([
+      { from: from + 6 * HOUR, to: from + 18 * HOUR },
+    ])
+  })
+
   it("leaves out samples before any price", () => {
     const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
