@@ -1207,12 +1207,10 @@
       "historyBegins": "History begins {{date}}",
       "backfilling": "Filling in earlier history…",
       "estimated": "Estimated while balance history fills in",
-      "estimatedUnavailable": "Estimated: some balance history isn't available before {{date}}",
-      "estimatedPoint": "estimated",
-      "reconstructedPoint": "rebuilt from token transfers",
-      "unrecorded": "Nothing recorded",
-      "unrecordedFilling": "Not recorded yet; filling in",
-      "unrecordedPoint": "not recorded",
+      "estimatedUnavailable": "Estimated, since some balance history isn't available before {{date}}",
+      "reconstructed": "Rebuilt from token transfers",
+      "unrecorded": "Nothing was recorded at this time",
+      "unrecordedFilling": "Not recorded yet, still filling in",
       "empty": "No history yet"
     }
   }

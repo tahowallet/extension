@@ -14,8 +14,6 @@ import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 import SharedLoadingSpinner from "../Shared/SharedLoadingSpinner"
 import { DAY, RANGES, RangeKey, useChartRange } from "./chartRange"
 
-/** About half the width of the unrecorded label, for keeping it in the plot. */
-const UNRECORDED_LABEL_HALF_WIDTH = 75
 const SAMPLES = 120
 const HEIGHT = 200
 const PADDING = { top: 12, right: 64, bottom: 24, left: 0 }
@@ -277,27 +275,6 @@ export default function FullTabValueChart({
         unrecordedPieces.length > 0
           ? unrecordedPieces.map(pathOf).join("")
           : undefined,
-      unrecordedLabel:
-        unrecordedPieces.length > 0
-          ? (() => {
-              // Label the longest stretch, in its middle, just off its line:
-              // below it in the plot's upper half, above it in the lower.
-              const longest = unrecordedPieces.reduce((a, b) =>
-                b[b.length - 1][0] - b[0][0] > a[a.length - 1][0] - a[0][0]
-                  ? b
-                  : a,
-              )
-              const lineY =
-                longest.reduce((sum, [, cy]) => sum + cy, 0) / longest.length
-              return {
-                x: (longest[0][0] + longest[longest.length - 1][0]) / 2,
-                y:
-                  lineY < PADDING.top + plotHeight / 2
-                    ? lineY + 18
-                    : lineY - 10,
-              }
-            })()
-          : undefined,
       area: areaOf(coords.slice(estimatedCount)),
     }
   }, [
@@ -317,6 +294,35 @@ export default function FullTabValueChart({
   const changeRatio = first && first.value !== 0 ? change / first.value : 0
   const hovered = hoverIndex !== null ? points[hoverIndex] : undefined
   const shown = hovered ?? latest
+
+  // Explains what the hovered value rests on when it isn't simply recorded,
+  // such as an estimate or a balance held over an unrecorded stretch. The plot
+  // marks these stretches by their line alone, so the readout explains them.
+  const hoveredNote = (() => {
+    if (!hovered) return undefined
+    if (estimatedUntil !== undefined && hovered.time <= estimatedUntil) {
+      // The date is where the estimates end, which is where the marker is.
+      // Whether history is unavailable or still filling in only picks the
+      // wording.
+      return history?.balanceHistoryFrom !== undefined
+        ? t("estimatedUnavailable", {
+            date: dayjs(estimatedUntil).format(
+              shownRange.key === "day" ? "HH:mm" : "MMM D",
+            ),
+          })
+        : t("estimated")
+    }
+    if (isUnrecorded(hovered.time)) {
+      return history?.backfilling ? t("unrecordedFilling") : t("unrecorded")
+    }
+    if (
+      reconstructedUntil !== undefined &&
+      hovered.time <= reconstructedUntil
+    ) {
+      return t("reconstructed")
+    }
+    return undefined
+  })()
 
   const onPointerMove = (event: React.PointerEvent<SVGRectElement>) => {
     if (!geometry) return
@@ -356,15 +362,11 @@ export default function FullTabValueChart({
           </span>
           {hovered ? (
             <span className="when">
-              {dayjs(hovered.time).format("MMM D, YYYY · HH:mm")}
-              {estimatedUntil !== undefined && hovered.time <= estimatedUntil
-                ? ` · ${t("estimatedPoint")}`
-                : isUnrecorded(hovered.time)
-                  ? ` · ${t("unrecordedPoint")}`
-                  : reconstructedUntil !== undefined &&
-                      hovered.time <= reconstructedUntil
-                    ? ` · ${t("reconstructedPoint")}`
-                    : ""}
+              <span className="time">
+                {dayjs(hovered.time).format("MMM D, YYYY · HH:mm")}
+                {hoveredNote !== undefined && " · "}
+              </span>
+              {hoveredNote}
             </span>
           ) : (
             latest && (
@@ -478,23 +480,6 @@ export default function FullTabValueChart({
                   y1={PADDING.top}
                   y2={PADDING.top + plotHeight}
                 />
-                <text
-                  x={Math.max(estimatedEdge - 8, 4)}
-                  y={PADDING.top + plotHeight - 8}
-                  textAnchor={estimatedEdge > 200 ? "end" : "start"}
-                >
-                  {/* The date is where the estimates end, which is where the
-                      marker is; whether history is unavailable or still
-                      filling in only picks the wording. */}
-                  {history?.balanceHistoryFrom !== undefined &&
-                  estimatedUntil !== undefined
-                    ? t("estimatedUnavailable", {
-                        date: dayjs(estimatedUntil).format(
-                          shownRange.key === "day" ? "HH:mm" : "MMM D",
-                        ),
-                      })
-                    : t("estimated")}
-                </text>
               </g>
             )}
             {coverageCut !== undefined && (
@@ -543,28 +528,7 @@ export default function FullTabValueChart({
             )}
             <path className="line" d={geometry.solidLine} pathLength={1} />
             {geometry.unrecordedLine !== undefined && (
-              <g className="unrecorded">
-                <path d={geometry.unrecordedLine} />
-                {geometry.unrecordedLabel !== undefined && (
-                  <text
-                    // Centred on the stretch, but kept inside the plot so it
-                    // doesn't run into the axis labels.
-                    x={Math.min(
-                      Math.max(
-                        geometry.unrecordedLabel.x,
-                        PADDING.left + UNRECORDED_LABEL_HALF_WIDTH,
-                      ),
-                      PADDING.left + plotWidth - UNRECORDED_LABEL_HALF_WIDTH,
-                    )}
-                    y={geometry.unrecordedLabel.y}
-                    textAnchor="middle"
-                  >
-                    {history?.backfilling
-                      ? t("unrecordedFilling")
-                      : t("unrecorded")}
-                  </text>
-                )}
-              </g>
+              <path className="unrecorded" d={geometry.unrecordedLine} />
             )}
             {hovered && hoverIndex !== null && (
               <g className="crosshair">
@@ -632,6 +596,8 @@ export default function FullTabValueChart({
           flex-wrap: wrap;
         }
         .readout {
+          flex: 1 1 0;
+          min-width: 0;
           display: flex;
           flex-direction: column;
           gap: 2px;
@@ -649,15 +615,36 @@ export default function FullTabValueChart({
           color: var(--green-40);
           font-variant-numeric: tabular-nums;
         }
+        /* The time stays whole, and a long explanation after it wraps into
+           the space above the plot rather than pushing the plot down under
+           the pointer. */
+        .when {
+          height: 18px;
+          line-height: 18px;
+        }
+        .time {
+          white-space: nowrap;
+        }
         .change.up {
           color: var(--success);
         }
         .change.down {
           color: var(--error);
         }
+        /* The switcher fills its container and lays its tabs out from the
+           left after an indent. The container therefore shrinks to fit the
+           tabs and sits at the right, and the indent and the last tab's
+           trailing margin are dropped so "All" ends where the plot does. */
         .ranges {
-          width: 340px;
+          margin-left: auto;
+          margin-right: ${PADDING.right}px;
           --panel-switcher-border: transparent;
+        }
+        .ranges :global(ul) {
+          padding-left: 0;
+        }
+        .ranges :global(li:last-child .option) {
+          margin-right: 0;
         }
         .plot {
           position: relative;
@@ -721,16 +708,12 @@ export default function FullTabValueChart({
         }
         /* Values held over a stretch nobody recorded, in gray dots, so a flat
            line there doesn't read as a quiet market. */
-        .unrecorded path {
+        .unrecorded {
           fill: none;
           stroke: var(--green-40);
           stroke-width: 2;
           stroke-linecap: round;
           stroke-dasharray: 0.5 5;
-        }
-        .unrecorded text {
-          fill: var(--green-40);
-          font-size: 11px;
         }
         .line_reconstructed {
           stroke-dasharray: 7 5;
@@ -752,10 +735,6 @@ export default function FullTabValueChart({
         .estimated line {
           stroke: var(--green-60);
           stroke-dasharray: 3 3;
-        }
-        .estimated text {
-          fill: var(--green-40);
-          font-size: 11px;
         }
         .coverage line {
           stroke: var(--green-60);
