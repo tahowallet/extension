@@ -13,6 +13,7 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner, ControlCompatibility } from "../services/signing"
+import { chainIsDroppedBy, setEVMNetworks } from "./utils/network-list"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -373,6 +374,18 @@ const accountSlice = createSlice({
     ) => {
       immerState.controlCompatibility = payload
     },
+  },
+  extraReducers: (builder) => {
+    // Drops accounts on chains that have left the network list. See
+    // chainIsDroppedBy for which chains those are.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      Object.keys(immerState.accountsData.evm)
+        .filter(isDropped)
+        .forEach((chainID) => {
+          delete immerState.accountsData.evm[chainID]
+        })
+    })
   },
 })
 

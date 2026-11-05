@@ -5,6 +5,7 @@ import { fromFixedPointNumber } from "../lib/fixed-point"
 import { normalizeEVMAddress } from "../lib/utils"
 import { NFT, NFTCollection, TransferredNFT } from "../nfts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { chainIsDroppedBy, setEVMNetworks } from "./utils/network-list"
 
 export type NFTCached = {
   chainID: string
@@ -353,6 +354,17 @@ const NFTsSlice = createSlice({
     updateSortType: (immerState, { payload: type }: { payload: SortType }) => {
       immerState.filters.type = type
     },
+  },
+  extraReducers: (builder) => {
+    // Drops NFTs on chains that have left the network list.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      Object.keys(immerState.nfts)
+        .filter(isDropped)
+        .forEach((chainID) => {
+          delete immerState.nfts[chainID]
+        })
+    })
   },
 })
 

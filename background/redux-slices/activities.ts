@@ -13,6 +13,7 @@ import { Transaction } from "../services/chain/db"
 import type { EnrichedEVMTransaction } from "../services/enrichment"
 import type { HexString } from "../types"
 import { createBackgroundAsyncThunk } from "./utils"
+import { chainIsDroppedBy, setEVMNetworks } from "./utils/network-list"
 import {
   sortActivities,
   getActivity,
@@ -179,6 +180,19 @@ const activitiesSlice = createSlice({
         )
       })
     },
+  },
+  extraReducers: (builder) => {
+    // Drops activity on chains that have left the network list.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      Object.values(immerState.activities).forEach((activitiesByChain) => {
+        Object.keys(activitiesByChain)
+          .filter(isDropped)
+          .forEach((chainID) => {
+            delete activitiesByChain[chainID]
+          })
+      })
+    })
   },
 })
 
