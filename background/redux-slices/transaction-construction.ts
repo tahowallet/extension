@@ -25,6 +25,7 @@ import {
 } from "../services/enrichment"
 
 import { createBackgroundAsyncThunk } from "./utils"
+import { chainIsDroppedBy, setEVMNetworks } from "./utils/network-list"
 import { SignOperation } from "./signing"
 
 export const enum TransactionConstructionStatus {
@@ -354,6 +355,15 @@ const transactionSlice = createSlice({
     builder.addCase(updateTransactionData.pending, (immerState) => {
       immerState.status = TransactionConstructionStatus.Pending
       immerState.signedTransaction = undefined
+    })
+    // Drops fee estimates for chains that have left the network list.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      Object.keys(immerState.estimatedFeesPerGas)
+        .filter(isDropped)
+        .forEach((chainID) => {
+          delete immerState.estimatedFeesPerGas[chainID]
+        })
     })
   },
 })

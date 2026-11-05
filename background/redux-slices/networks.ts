@@ -12,6 +12,9 @@ import { removeChainBalances } from "./accounts"
 import { selectCurrentNetwork } from "./selectors/uiSelectors"
 import { setSelectedNetwork } from "./ui"
 import { createBackgroundAsyncThunk } from "./utils"
+import { setEVMNetworks } from "./utils/network-list"
+
+export { setEVMNetworks }
 
 type NetworkState = {
   blockHeight: number | null
@@ -100,10 +103,11 @@ const networksSlice = createSlice({
     networkReachabilityReset: (immerState) => {
       immerState.unreachableNetworks = {}
     },
-    /**
-     * Receives all supported networks as the payload
-     */
-    setEVMNetworks: (immerState, { payload }: { payload: EVMNetwork[] }) => {
+  },
+  extraReducers: (builder) => {
+    // Replaces the network list with the payload, which holds every
+    // supported network.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
       const chainIds = payload.map((network) => network.chainID)
 
       payload.forEach((network) => {
@@ -118,7 +122,7 @@ const networksSlice = createSlice({
           delete immerState.unreachableNetworks[chainID]
         }
       })
-    },
+    })
   },
 })
 
@@ -126,7 +130,6 @@ export const {
   blockSeen,
   networkReachabilityChanged,
   networkReachabilityReset,
-  setEVMNetworks,
 } = networksSlice.actions
 
 export default networksSlice.reducer
