@@ -17,6 +17,11 @@ import { removeAssetReferences, updateAccountBalance } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { getAssetEntityID, isBaseAssetForNetwork } from "./utils/asset-utils"
 import { getProvider } from "./utils/contract-utils"
+import {
+  chainIDOfKey,
+  chainIsDroppedBy,
+  setEVMNetworks,
+} from "./utils/network-list"
 
 export type SingleAssetState = AnyAsset
 
@@ -125,6 +130,18 @@ const assetsSlice = createSlice({
       assetsAdapter.upsertMany(
         immerState,
         payload.balances.map((b) => b.assetAmount.asset),
+      )
+    })
+    // Drops assets on chains that have left the network list, such as a
+    // removed network's base asset and the tokens discovered on it.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      assetsAdapter.removeMany(
+        immerState,
+        immerState.ids.filter((id) => {
+          const chainID = chainIDOfKey(String(id))
+          return chainID !== undefined && isDropped(chainID)
+        }),
       )
     })
   },

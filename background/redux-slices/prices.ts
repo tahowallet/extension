@@ -16,6 +16,11 @@ import {
   isSameAsset,
   isTrustedAsset,
 } from "./utils/asset-utils"
+import {
+  chainIDOfKey,
+  chainIsDroppedBy,
+  setEVMNetworks,
+} from "./utils/network-list"
 
 type AssetPricesMap = {
   [currencySymbol: string]: PricePoint
@@ -69,6 +74,18 @@ const pricesSlice = createSlice({
         })
       })
     },
+  },
+  extraReducers: (builder) => {
+    // Drops prices for assets on chains that have left the network list.
+    builder.addCase(setEVMNetworks, (immerState, { payload }) => {
+      const isDropped = chainIsDroppedBy(payload)
+      Object.keys(immerState).forEach((assetID) => {
+        const chainID = chainIDOfKey(assetID)
+        if (chainID !== undefined && isDropped(chainID)) {
+          Reflect.deleteProperty(immerState, assetID)
+        }
+      })
+    })
   },
 })
 
