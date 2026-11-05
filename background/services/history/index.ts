@@ -9,7 +9,7 @@ import {
   BASE_ASSET_USD_FEEDS,
   CHAINLINK_AGGREGATOR_INTERFACE,
 } from "../../lib/priceOracle"
-import { DAY, MINUTE } from "../../constants"
+import { DAY, MINUTE, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { FIAT_CURRENCIES_SYMBOL } from "../../constants/currencies"
 import type { AccountBalance } from "../../accounts"
 import type { PricePoint } from "../../assets"
@@ -389,6 +389,35 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   /**
+   * Returns a function that says whether a holding's asset is trusted right
+   * now, the way the wallet decides it: base assets, assets on token lists,
+   * and assets the user has verified. The answer comes from the indexing
+   * service's current asset data rather than from the balance records, whose
+   * copies of an asset can lack the metadata that makes it trusted, such as
+   * a verification made after the balance was recorded. Holdings on networks
+   * whose assets aren't loaded yet fall back to what was recorded.
+   */
+  private async trustResolver(): Promise<(holding: Holding) => boolean> {
+    const networks = await this.chainService.getTrackedNetworks()
+    const trustedIDs = new Set<string>()
+    const loadedChains = new Set<string>()
+    networks.forEach((network) => {
+      const assets = this.indexingService.getCachedAssets(network)
+      if (assets.length > 0) loadedChains.add(network.chainID)
+      assets.forEach((asset) => {
+        if (isSmartContractFungibleAsset(asset) && isTrustedAsset(asset)) {
+          trustedIDs.add(getFullAssetID(asset).toLowerCase())
+        }
+      })
+    })
+    return (holding) =>
+      holding.assetID.endsWith("/base") ||
+      (loadedChains.has(holding.chainID)
+        ? trustedIDs.has(holding.assetID.toLowerCase())
+        : holding.trusted)
+  }
+
+  /**
    * Returns the price key whose history should be used to value an asset,
    * given the recorded price keys by symbol. Prices recorded for the asset's
    * own id are preferred, then, for trusted assets, prices for any asset with
@@ -554,9 +583,17 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     try {
       const idle = await isUserIdle()
       const accounts = await this.chainService.getAccountsToTrack()
+      const trusted = await this.trustResolver()
+      // Test networks are left out, as they are of the wallet's totals. Their
+      // history isn't worth the requests it would take to backfill.
       const holdings = (
         await this.db.getHoldings(accounts.map(({ address }) => address))
-      ).filter(({ trusted }) => trusted)
+      )
+        .map((holding) => ({ ...holding, trusted: trusted(holding) }))
+        .filter(
+          (holding) =>
+            holding.trusted && !TEST_NETWORK_BY_CHAIN_ID.has(holding.chainID),
+        )
       const networks = await this.chainService.getTrackedNetworks()
 
       await Promise.all([
@@ -992,11 +1029,20 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       this.db.getHoldings(addresses),
       this.db.getPriceKeysBySymbol(),
     ])
-    const queried = allHoldings.filter(
-      (holding) =>
-        (chainIDs === undefined || chainIDs.includes(holding.chainID)) &&
-        (assetID === undefined ? holding.trusted : holding.assetID === assetID),
-    )
+    const trusted = await this.trustResolver()
+    const queried = allHoldings
+      .map((holding) => ({ ...holding, trusted: trusted(holding) }))
+      .filter(
+        (holding) =>
+          // Test networks only count when a chart asks for them by network or
+          // asset, as the wallet's own totals leave them out.
+          (chainIDs === undefined
+            ? !TEST_NETWORK_BY_CHAIN_ID.has(holding.chainID)
+            : chainIDs.includes(holding.chainID)) &&
+          (assetID === undefined
+            ? holding.trusted
+            : holding.assetID === assetID),
+      )
     const from =
       query.from === "start" ? (firstHeldTime(queried) ?? to - DAY) : query.from
     const holdings = queried.filter(
