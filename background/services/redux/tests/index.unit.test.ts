@@ -1,7 +1,13 @@
 import Emittery from "emittery"
 import { PermissionRequest } from "@tallyho/provider-bridge-shared"
 import ReduxService from ".."
-import { ETHEREUM, POLYGON } from "../../../constants"
+import {
+  ARBITRUM_NOVA,
+  DEFAULT_NETWORKS,
+  ETHEREUM,
+  POLYGON,
+} from "../../../constants"
+import { setEVMNetworks } from "../../../redux-slices/networks"
 import { emitter as dappEmitter } from "../../../redux-slices/dapp"
 import { emitter as uiEmitter } from "../../../redux-slices/ui"
 import { AnalyticsEvent } from "../../../lib/posthog"
@@ -104,6 +110,70 @@ describe("ReduxService", () => {
         AnalyticsEvent.DAPP_CONNECTED,
         { origin, chainId: ETHEREUM.chainID },
       )
+    })
+  })
+
+  describe("removeUnlistedChainData", () => {
+    const FORK_CHAIN_ID = "73571"
+    const CUSTOM = { ...POLYGON, name: "Still Listed", chainID: "558" }
+
+    /**
+     * Returns a stand-in for the services the sweep uses, where every service
+     * holds data for mainnet, a listed custom network, a built-in network
+     * missing from the list, and a removed fork.
+     */
+    const serviceWith = (listed = [...DEFAULT_NETWORKS, CUSTOM]) => {
+      const held = () =>
+        Promise.resolve(
+          new Set([
+            ETHEREUM.chainID,
+            CUSTOM.chainID,
+            ARBITRUM_NOVA.chainID,
+            FORK_CHAIN_ID,
+          ]),
+        )
+      const removers = Array.from({ length: 4 }, () =>
+        jest.fn((_: string) => Promise.resolve(1)),
+      )
+      const [chain, indexing, history, nfts] = removers.map(
+        (removeChainData) => ({ getChainIDsWithData: held, removeChainData }),
+      )
+      const dispatch = jest.fn()
+      const service = {
+        chainService: { ...chain, getSupportedNetworks: () => listed },
+        indexingService: indexing,
+        historyService: history,
+        nftsService: nfts,
+        store: { dispatch },
+      }
+      return { service, removers, dispatch }
+    }
+
+    it("removes every service's data for chains missing from the list", async () => {
+      const { service, removers, dispatch } = serviceWith()
+
+      const deleted =
+        await ReduxService.prototype.removeUnlistedChainData.call(service)
+
+      // Built-in networks stay, listed or not, as does a listed custom
+      // network, whether or not its endpoints answer.
+      removers.forEach((remover) =>
+        expect(remover.mock.calls).toEqual([[FORK_CHAIN_ID]]),
+      )
+      expect(deleted).toBe(4)
+      // Redux is pruned again, for data loaded before it was deleted.
+      expect(dispatch).toHaveBeenCalledWith(
+        setEVMNetworks([...DEFAULT_NETWORKS, CUSTOM]),
+      )
+    })
+
+    it("removes nothing by a partial list", async () => {
+      const { service, removers, dispatch } = serviceWith([ETHEREUM])
+
+      await ReduxService.prototype.removeUnlistedChainData.call(service)
+
+      removers.forEach((remover) => expect(remover).not.toHaveBeenCalled())
+      expect(dispatch).not.toHaveBeenCalled()
     })
   })
 })

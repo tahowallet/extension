@@ -1233,6 +1233,31 @@ export default class ChainService extends BaseService<Events> {
     }
   }
 
+  /**
+   * Returns the chain IDs that the chain database holds rows for, as found by
+   * {@link ChainDatabase.getChainIDsWithData}.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    return this.db.getChainIDsWithData()
+  }
+
+  /**
+   * Removes what is kept for a chain that has left the network list: its
+   * rows in the chain database, and the nonces and activity times held for
+   * it in memory. Returns the number of rows deleted.
+   *
+   * Note that this is for chains that are no longer supported. The caller
+   * decides which those are, and it leaves built-in networks alone.
+   *
+   * @param chainID The chain whose data to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    const decimalChainID = toDecimalChainID(chainID)
+    delete this.nonceAllocator.highestKnownNonce[decimalChainID]
+    delete this.lastUserActivityOnNetwork[decimalChainID]
+    return this.db.removeChainData(decimalChainID)
+  }
+
   async updateSupportedNetworks(): Promise<void> {
     await this.networkSettings.refreshSupportedNetworks()
   }

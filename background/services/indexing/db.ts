@@ -14,6 +14,7 @@ import {
 import type { DeepWriteable } from "../../types"
 import { fixPolygonWETHIssue, polygonTokenListURL } from "./token-list-edit"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { deleteInBatches } from "../../lib/dexie-batches"
 
 /*
  * IndexedPricePoint extends PricePoint to expose each asset's ID directly for
@@ -376,6 +377,52 @@ export class IndexingDatabase extends Dexie {
         .anyOf(networks.map((network) => network.chainID))
         .toArray()
     ).filter((asset) => asset?.metadata?.removed !== true)
+  }
+
+  /**
+   * Returns the chain IDs of the tokens this database tracks or keeps
+   * custom metadata for, read from their indexes.
+   *
+   * Note that raw balances and prices aren't covered: they are pruned by age
+   * within days, whatever chain they belong to.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    const chainIDs = await Promise.all([
+      this.customAssets.orderBy("homeNetwork.chainID").uniqueKeys(),
+      this.assetsToTrack.orderBy("homeNetwork.chainID").uniqueKeys(),
+    ])
+    return new Set(
+      chainIDs
+        .flat()
+        .filter((chainID): chainID is string => typeof chainID === "string"),
+    )
+  }
+
+  /**
+   * Removes a chain's tracked tokens and custom token metadata, in bounded
+   * batches, and returns the number of rows deleted.
+   *
+   * A removed network's tokens would otherwise be checked for balances on a
+   * chain no provider serves, and loaded back into the wallet's assets.
+   *
+   * @param chainID The chain whose tokens to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    const customAssets = await deleteInBatches(
+      this.customAssets,
+      await this.customAssets
+        .where("homeNetwork.chainID")
+        .equals(chainID)
+        .primaryKeys(),
+    )
+    const assetsToTrack = await deleteInBatches(
+      this.assetsToTrack,
+      await this.assetsToTrack
+        .where("homeNetwork.chainID")
+        .equals(chainID)
+        .primaryKeys(),
+    )
+    return customAssets + assetsToTrack
   }
 
   async getRemovedCustomAssetsByNetworks(

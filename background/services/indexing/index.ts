@@ -280,6 +280,26 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
+   * Returns the chain IDs that the indexing database holds tokens for. See
+   * {@link IndexingDatabase.getChainIDsWithData}.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    return this.db.getChainIDsWithData()
+  }
+
+  /**
+   * Removes what is kept for a chain that has left the network list: its
+   * tracked tokens and custom token metadata, and its cached assets. Returns
+   * the number of rows deleted.
+   *
+   * @param chainID The chain whose data to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    delete this.cachedAssets[chainID]
+    return this.db.removeChainData(chainID)
+  }
+
+  /**
    * Retrieves the latest balance of the specified asset for the specified
    * account on the specified network.
    *

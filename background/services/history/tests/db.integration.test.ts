@@ -301,3 +301,61 @@ describe("HistoryDatabase", () => {
     ])
   })
 })
+
+describe("HistoryDatabase chain data removal", () => {
+  const FORK_CHAIN_ID = "73571"
+  let db: HistoryDatabase
+
+  const holding = (chainID: string): BalanceRecord => ({
+    ...balance(NOW - HOUR, 10),
+    holdingKey: holdingKeyFor(ADDRESS, `${chainID}/base`),
+    chainID,
+    assetID: `${chainID}/base`,
+  })
+
+  /** Stores a balance series, price series and backfill state per chain. */
+  const storeHistoryFor = async (chainID: string) => {
+    await db.addBalances([holding(chainID)])
+    await db.addPrices([price(`${chainID}/base`, NOW - HOUR, 3000)])
+    await db.putBackfillState({ key: `balances:${chainID}`, floor: NOW })
+    await db.putBackfillState({ key: `transfers:${chainID}:${ADDRESS}` })
+    await db.putBackfillState({ key: `price:${chainID}/base`, failures: 1 })
+  }
+
+  beforeEach(async () => {
+    // oxlint-disable-next-line no-global-assign
+    indexedDB = new IDBFactory()
+    db = new HistoryDatabase()
+    await storeHistoryFor("1")
+    await storeHistoryFor(FORK_CHAIN_ID)
+    // A chain whose ID starts like the fork's must survive its removal.
+    await storeHistoryFor(`${FORK_CHAIN_ID}0`)
+  })
+
+  afterEach(() => db.close())
+
+  it("finds every chain it holds history for", async () => {
+    expect(await db.getChainIDsWithData()).toEqual(
+      new Set(["1", FORK_CHAIN_ID, `${FORK_CHAIN_ID}0`]),
+    )
+  })
+
+  it("removes a chain's series and backfill state, and nothing else", async () => {
+    // A balance series, a price series, and three backfill states.
+    expect(await db.removeChainData(FORK_CHAIN_ID)).toBe(5)
+
+    expect(await db.getChainIDsWithData()).toEqual(
+      new Set(["1", `${FORK_CHAIN_ID}0`]),
+    )
+    expect(
+      (await db.getHoldings([ADDRESS])).map(({ chainID }) => chainID).sort(),
+    ).toEqual(["1", `${FORK_CHAIN_ID}0`])
+    expect(await db.getBackfillState(`balances:${FORK_CHAIN_ID}`)).toEqual({
+      key: `balances:${FORK_CHAIN_ID}`,
+    })
+    expect(await db.getBackfillState("balances:1")).toEqual({
+      key: "balances:1",
+      floor: NOW,
+    })
+  })
+})

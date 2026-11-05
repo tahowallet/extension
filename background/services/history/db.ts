@@ -2,6 +2,7 @@ import Dexie, { DexieOptions } from "dexie"
 import { HOUR, MINUTE } from "../../constants"
 import { compactableIndexes } from "./compaction"
 import { Series } from "./series"
+import { deleteInBatches } from "../../lib/dexie-batches"
 
 /** Where a point in a series came from. */
 /**
@@ -593,6 +594,74 @@ export class HistoryDatabase extends Dexie {
       else bySymbol.set(indexKey[1], [priceKey])
     })
     return bySymbol
+  }
+
+  /**
+   * Returns the chain IDs this database holds history for: those of balance
+   * series, read from their index, and those that price series and backfill
+   * state are keyed under, read from their keys.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    const [balanceKeys, priceKeys, backfillKeys] = await Promise.all([
+      this.series
+        .where("[kind+chainID]")
+        .between(["balance", Dexie.minKey], ["balance", Dexie.maxKey])
+        .keys(),
+      this.series.where(":id").startsWith("price:").primaryKeys(),
+      this.backfill.toCollection().primaryKeys(),
+    ])
+    const chainIDs = [
+      ...balanceKeys.map((key) => (Array.isArray(key) ? key[1] : undefined)),
+      // price:${chainID}/${asset}
+      ...priceKeys.map((key) => /^price:([^/]+)\//.exec(key)?.[1]),
+      // balances:${chainID}, transfers:${chainID}:${address}, and
+      // price:${chainID}/${asset}
+      ...backfillKeys.map(
+        (key) => /^(?:balances:|transfers:|price:)([^/:]+)/.exec(key)?.[1],
+      ),
+    ]
+    return new Set(
+      chainIDs.filter(
+        (chainID): chainID is string =>
+          typeof chainID === "string" && chainID !== "",
+      ),
+    )
+  }
+
+  /**
+   * Removes a chain's history: its balance series, the price series of its
+   * assets, and its backfill state. Rows are deleted in bounded batches,
+   * yielding between them, and the number deleted is returned.
+   *
+   * A removed network's history would otherwise keep being valued, priced by
+   * symbol like any other, and its backfill state would keep its series
+   * looking unfinished.
+   *
+   * @param chainID The chain whose history to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    const [balanceSeries, priceSeries, backfill] = await Promise.all([
+      this.series
+        .where("[kind+chainID]")
+        .equals(["balance", chainID])
+        .primaryKeys(),
+      this.series.where(":id").startsWith(`price:${chainID}/`).primaryKeys(),
+      Promise.all([
+        this.backfill.where(":id").equals(`balances:${chainID}`).primaryKeys(),
+        this.backfill
+          .where(":id")
+          .startsWith(`transfers:${chainID}:`)
+          .primaryKeys(),
+        this.backfill
+          .where(":id")
+          .startsWith(`price:${chainID}/`)
+          .primaryKeys(),
+      ]),
+    ])
+    return (
+      (await deleteInBatches(this.series, [...balanceSeries, ...priceSeries])) +
+      (await deleteInBatches(this.backfill, backfill.flat()))
+    )
   }
 
   async getBackfillState(key: string): Promise<BackfillState> {
