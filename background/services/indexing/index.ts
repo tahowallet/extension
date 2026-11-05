@@ -550,6 +550,12 @@ export default class IndexingService extends BaseService<Events> {
         smartContractAssets?.map(({ contractAddress }) => contractAddress),
       )
 
+    if (!this.chainService.isSupportedChain(addressNetwork.network.chainID)) {
+      // The network was removed while the lookup was in flight. Tracking or
+      // storing what it found would bring the network's data back.
+      return []
+    }
+
     const listedAssetByAddress = keyAssetsByAddress(smartContractAssets ?? [])
 
     const removedCustomAssets = await this.db.getRemovedCustomAssetsByNetworks([
