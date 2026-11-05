@@ -1,4 +1,4 @@
-import { combineReducers } from "redux"
+import { AnyAction, combineReducers } from "redux"
 
 import accountsReducer from "./accounts"
 import assetsReducer from "./assets"
@@ -16,6 +16,7 @@ import signingReducer from "./signing"
 import earnReducer from "./earn"
 import nftsReducer from "./nfts"
 import pricesReducer from "./prices"
+import { withoutUnlistedChainWrites } from "./listed-chains"
 // The history slice keeps no state, but it is imported here so that its
 // background thunks are registered as aliases.
 import "./history"
@@ -39,6 +40,22 @@ const mainReducer = combineReducers({
   prices: pricesReducer,
 })
 
-export default mainReducer
-
 export type RootState = ReturnType<typeof mainReducer>
+
+/**
+ * Reduces actions like the combined slice reducers do, except that writes for
+ * chains missing from the network list are dropped first. See
+ * {@link withoutUnlistedChainWrites} for why.
+ */
+const rootReducer = (
+  state: RootState | undefined,
+  action: AnyAction,
+): RootState => {
+  const listedAction = withoutUnlistedChainWrites(state, action)
+  if (listedAction === undefined && state !== undefined) {
+    return state
+  }
+  return mainReducer(state, listedAction ?? action)
+}
+
+export default rootReducer

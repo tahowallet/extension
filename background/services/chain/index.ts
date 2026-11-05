@@ -15,6 +15,7 @@ import {
   RpcEndpoint,
   sameChainID,
   sameNetwork,
+  toDecimalChainID,
 } from "../../networks"
 import {
   AnyAssetAmount,
@@ -221,6 +222,33 @@ export default class ChainService extends BaseService<Events> {
   getSupportedNetworks(): EVMNetwork[] {
     return this.networkSettings.supportedNetworks()
   }
+
+  /**
+   * Returns whether the chain is one Taho currently knows about, i.e. one
+   * that is built in or a custom network the user hasn't removed.
+   *
+   * Work that started before a network was removed can finish after it: a
+   * balance load, a token lookup, a popup reporting activity on the network
+   * it still shows as selected. Results for a chain that fails this check
+   * are dropped rather than stored or emitted, so they can't bring the
+   * removed network's data back.
+   *
+   * Note that a chain stops counting as supported as soon as its removal
+   * starts, not once the network list catches up: the chain's stored rows
+   * are deleted before the list is reloaded, and a write landing in between
+   * would otherwise slip through.
+   *
+   * @param chainID The chain to check.
+   */
+  isSupportedChain(chainID: string): boolean {
+    return (
+      !this.chainIDsBeingRemoved.has(toDecimalChainID(chainID)) &&
+      this.networkSettings.networkFor(chainID) !== undefined
+    )
+  }
+
+  /** Chains whose removal has started but not yet finished. */
+  private chainIDsBeingRemoved = new Set<string>()
 
   /** Chains being tracked, in the order tracking started. */
   private trackedChainIDs: string[] = []
@@ -760,6 +788,8 @@ export default class ChainService extends BaseService<Events> {
     const allTrackedAddresses = new Set(
       trackedAccounts.map((account) => account.address),
     )
+    // The network may have been removed while the balance was in flight.
+    const isStillSupported = this.isSupportedChain(network.chainID)
 
     const accountBalance: AccountBalance = {
       address: normalizedAddress,
@@ -773,8 +803,8 @@ export default class ChainService extends BaseService<Events> {
       retrievedAt: Date.now(),
     }
 
-    // Don't emit or save if the account isn't tracked
-    if (allTrackedAddresses.has(normalizedAddress)) {
+    // Don't emit or save if the account or its network isn't tracked
+    if (isStillSupported && allTrackedAddresses.has(normalizedAddress)) {
       this.emitter.emit("accountsWithBalances", {
         balances: [accountBalance],
         addressOnNetwork: {
@@ -792,6 +822,14 @@ export default class ChainService extends BaseService<Events> {
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     if (!isProbablyEVMAddress(addressNetwork.address)) {
       logger.warn("Refusing to track invalid address", addressNetwork)
+      return
+    }
+    if (!this.isSupportedChain(addressNetwork.network.chainID)) {
+      // Tracking it would only bring a removed network's data back.
+      logger.warn("Refusing to track address on unknown network", {
+        address: addressNetwork.address,
+        chainID: addressNetwork.network.chainID,
+      })
       return
     }
 
@@ -950,6 +988,12 @@ export default class ChainService extends BaseService<Events> {
     address,
     network,
   }: AddressOnNetwork): Promise<void> {
+    // A stale popup can report activity on a network that has since been
+    // removed. There is nothing left to track there.
+    if (!this.isSupportedChain(network.chainID)) {
+      return
+    }
+
     // If we find ourselves having untracked this account for some reason and
     // there's activity on it, track it.
     if (
@@ -1174,12 +1218,19 @@ export default class ChainService extends BaseService<Events> {
   }
 
   async removeCustomChain(chainID: string): Promise<void> {
+    const decimalChainID = toDecimalChainID(chainID)
+    this.chainIDsBeingRemoved.add(decimalChainID)
+
     this.trackedChainIDs = this.trackedChainIDs.filter(
       (tracked) => !sameChainID(tracked, chainID),
     )
     this.networkWatcher.stopWatchingNetwork(chainID)
 
-    await this.networkSettings.removeCustomChain(chainID)
+    try {
+      await this.networkSettings.removeCustomChain(chainID)
+    } finally {
+      this.chainIDsBeingRemoved.delete(decimalChainID)
+    }
   }
 
   async updateSupportedNetworks(): Promise<void> {
