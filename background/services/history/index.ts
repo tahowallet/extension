@@ -27,7 +27,7 @@ import {
   getOrCreateDB,
   holdingKeyFor,
 } from "./db"
-import { livePriceRecord } from "../indexing/history/live"
+import { livePriceMeasurement } from "../indexing/history/live"
 import {
   firstHeldTime,
   HistoryPoint,
@@ -324,8 +324,18 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
 
   private async recordPrices(pricePoints: PricePoint[]): Promise<void> {
     const records = pricePoints.flatMap((pricePoint) => {
-      const record = livePriceRecord(pricePoint)
-      return record === undefined ? [] : [record]
+      const measurement = livePriceMeasurement(pricePoint)
+      return measurement === undefined
+        ? []
+        : [
+            {
+              priceKey: measurement.assetID,
+              symbol: measurement.symbol,
+              time: measurement.time,
+              value: measurement.value,
+              source: measurement.origin,
+            },
+          ]
     })
     // Prices arrive every minute for every tracked asset, but history only
     // keeps one every few minutes per asset, which is all that compaction
@@ -363,7 +373,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   private async compact(): Promise<void> {
     try {
       const dropped = await this.db.compact(Date.now())
-      await this.indexingService.pruneRawHistory(Date.now() - 7 * DAY)
+      await this.indexingService.compactHistory(Date.now())
       logger.debug("History compacted", { dropped })
     } catch (error) {
       logger.warn("History compaction failed", error)
@@ -802,7 +812,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       const before = balancesBefore({
         account: address,
         tokens: reconstructed.map(({ token, contractAddress, ...rest }) => ({
-          holdingKey: token.holdingKey,
+          key: token.holdingKey,
           contractAddress,
           ...rest,
         })),
@@ -1050,7 +1060,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       unrecorded,
     } = valueSeries({
       holdings: valued.map(({ holding, priceKey }) => ({
-        priceKey,
+        priceAssetID: priceKey,
         balances: holding,
       })),
       prices,

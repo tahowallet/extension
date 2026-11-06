@@ -83,16 +83,19 @@ describe("valueSeries", () => {
     const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
         {
-          priceKey: "eth",
+          priceAssetID: "eth",
           balances: seriesOf([
             { time: 0, value: 1 },
             { time: 50, value: 2 },
           ]),
         },
-        { priceKey: "usdc", balances: seriesOf([{ time: 25, value: 100 }]) },
+        {
+          priceAssetID: "usdc",
+          balances: seriesOf([{ time: 25, value: 100 }]),
+        },
         // This holding has no price, so it adds nothing, just as unpriced
         // assets add nothing to current totals.
-        { priceKey: "spam", balances: seriesOf([{ time: 0, value: 1e9 }]) },
+        { priceAssetID: "spam", balances: seriesOf([{ time: 0, value: 1e9 }]) },
       ],
       prices: new Map([
         [
@@ -129,7 +132,7 @@ describe("valueSeries", () => {
     const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
         {
-          priceKey: "eth",
+          priceAssetID: "eth",
           balances: seriesOf([
             { time: 60, value: 1 },
             { time: 90, value: 2 },
@@ -163,12 +166,12 @@ describe("valueSeries", () => {
     const { points, reconstructedUntil, estimatedUntil } = valueSeries({
       holdings: [
         {
-          priceKey: "token",
+          priceAssetID: "token",
           balances: {
             // Reconstructed back to 0 and 40, then backfilled from 60.
             times: [0, 40, 60],
             values: [1, 2, 3],
-            sources: [2, 2, 1],
+            origins: [2, 2, 1],
           },
         },
       ],
@@ -190,7 +193,7 @@ describe("valueSeries", () => {
     const from = to - DAY
     const { unrecorded } = valueSeries({
       holdings: [
-        { priceKey: "eth", balances: seriesOf([{ time: from, value: 1 }]) },
+        { priceAssetID: "eth", balances: seriesOf([{ time: from, value: 1 }]) },
       ],
       prices: new Map([
         [
@@ -216,7 +219,7 @@ describe("valueSeries", () => {
   it("leaves out samples before any price", () => {
     const { points, coverageStart, estimatedUntil } = valueSeries({
       holdings: [
-        { priceKey: "eth", balances: seriesOf([{ time: 0, value: 1 }]) },
+        { priceAssetID: "eth", balances: seriesOf([{ time: 0, value: 1 }]) },
       ],
       prices: new Map([["eth", seriesOf([{ time: 60, value: 10 }])]]),
       from: 0,

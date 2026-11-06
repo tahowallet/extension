@@ -2,9 +2,9 @@ import type { AssetTransfer } from "../../../assets"
 import { isSmartContractFungibleAsset } from "../../../assets"
 import { sameEVMAddress } from "../../../lib/utils"
 
-/** A token holding whose balance is being reconstructed. */
+/** A token balance series being reconstructed. */
 export type ReconstructedToken = {
-  holdingKey: string
+  key: string
   /** The token's contract address. */
   contractAddress: string
   decimals: number
@@ -13,7 +13,7 @@ export type ReconstructedToken = {
 /**
  * Given an account's token balances at the end of a span of blocks and every
  * token transfer to or from the account within that span, returns the
- * balances at the start of the span, by holding key. Each balance is its
+ * balances at the start of the span, by balance series key. Each balance is its
  * balance at the end, less the token's net transfers in between.
  *
  * Transfers of tokens not in \`tokens\` are ignored, as are a token's
@@ -22,7 +22,7 @@ export type ReconstructedToken = {
  * found and zero is returned for it instead.
  *
  * @param balancesAtEnd Each token's balance at the end of the span, in the
- *        token's units, by holding key.
+ *        token's units, by balance series key.
  */
 export function balancesBefore({
   account,
@@ -46,10 +46,10 @@ export function balancesBefore({
   })
 
   return Object.fromEntries(
-    tokens.map(({ holdingKey, contractAddress, decimals }) => {
+    tokens.map(({ key, contractAddress, decimals }) => {
       const net = netByContract.get(contractAddress.toLowerCase()) ?? 0n
-      const atEnd = balancesAtEnd[holdingKey] ?? 0
-      return [holdingKey, Math.max(0, atEnd - Number(net) / 10 ** decimals)]
+      const atEnd = balancesAtEnd[key] ?? 0
+      return [key, Math.max(0, atEnd - Number(net) / 10 ** decimals)]
     }),
   )
 }

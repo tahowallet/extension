@@ -35,6 +35,8 @@ import PreferenceService from "../preferences"
 import ChainService from "../chain"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
+import { livePriceMeasurement } from "./history/live"
+import { LIVE_PRICE_SPACING } from "./history/records"
 import BaseService from "../base"
 import type { EnrichedEVMTransaction } from "../enrichment/types"
 import {
@@ -47,6 +49,7 @@ import {
   isUnverifiedAsset,
   isTrustedAsset,
   isSameAsset,
+  FullAssetID,
 } from "../../redux-slices/utils/asset-utils"
 
 // Transactions seen within this many blocks of the chain tip will schedule a
@@ -270,29 +273,12 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Prunes raw price and balance measurements older than `before`, a UNIX
-   * time in milliseconds, and returns the number of measurements dropped.
-   * Each call drops a limited number of rows; see
-   * {@link IndexingDatabase.pruneMeasurements}.
+   * Thins the price and balance history down to its retention tiers as of
+   * `now`, and returns the number of points dropped; see
+   * {@link IndexingDatabase.compactHistory}.
    */
-  async pruneRawHistory(before: number): Promise<number> {
-    return this.db.pruneMeasurements(before)
-  }
-
-  /**
-   * Retrieves the latest balance of the specified asset for the specified
-   * account on the specified network.
-   *
-   * @param account The account that owns the given asset.
-   * @param network The network on which the balance is being checked.
-   * @param asset The asset whose balance is being checked.
-   */
-  async getLatestAccountBalance(
-    account: string,
-    network: EVMNetwork,
-    asset: FungibleAsset,
-  ): Promise<AccountBalance | null> {
-    return this.db.getLatestAccountBalance(account, network, asset)
+  async compactHistory(now: number): Promise<number> {
+    return this.db.compactHistory(now)
   }
 
   /**
@@ -472,6 +458,12 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   private async connectChainServiceEvents(): Promise<void> {
+    // Base asset balances come from the chain service rather than from token
+    // balance lookups, so they're recorded as the chain service reports them.
+    this.chainService.emitter.on("accountsWithBalances", ({ balances }) => {
+      void this.recordBalances(balances)
+    })
+
     // listen for assetTransfers, and if we find them, track those tokens
     // TODO update for NFTs
     this.chainService.emitter.on(
@@ -611,7 +603,9 @@ export default class IndexingService extends BaseService<Events> {
       [],
     )
 
-    await this.db.addBalances(accountBalances)
+    // History is written in the background, so balances reach the rest of
+    // the wallet without waiting on it.
+    void this.recordBalances(accountBalances)
     this.emitter.emit("accountsWithBalances", {
       balances: accountBalances,
       addressOnNetwork: addressNetwork,
@@ -812,6 +806,49 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
+   * The time of the latest recorded live price for each asset, used to space
+   * live prices out by {@link LIVE_PRICE_SPACING}.
+   */
+  #lastLivePriceAt = new Map<FullAssetID, number>()
+
+  /**
+   * Records the given price points in each asset's price history, keeping at
+   * most one price per asset every {@link LIVE_PRICE_SPACING}. Points that
+   * don't price an asset in fiat are left out; see
+   * {@link livePriceMeasurement}.
+   */
+  private async recordPrices(pricePoints: PricePoint[]): Promise<void> {
+    const measurements = pricePoints.flatMap((pricePoint) => {
+      const measurement = livePriceMeasurement(pricePoint)
+      return measurement === undefined ? [] : [measurement]
+    })
+    // Prices arrive every minute for every tracked asset, but history only
+    // keeps one every few minutes per asset, which is all that compaction
+    // would keep anyway.
+    const kept = measurements.filter(({ assetID, time }) => {
+      const last = this.#lastLivePriceAt.get(assetID)
+      if (last !== undefined && time - last < LIVE_PRICE_SPACING) return false
+      this.#lastLivePriceAt.set(assetID, time)
+      return true
+    })
+    try {
+      if (kept.length > 0) await this.db.savePriceMeasurements(kept)
+    } catch (error) {
+      logger.error("Error saving price history", error)
+    }
+  }
+
+  /** Records the given account balances in each balance series' history. */
+  private async recordBalances(balances: AccountBalance[]): Promise<void> {
+    if (balances.length === 0) return
+    try {
+      await this.db.addBalances(balances)
+    } catch (error) {
+      logger.error("Error saving balance history", error)
+    }
+  }
+
+  /**
    * Loads prices for base network assets
    */
   private async getBaseAssetsPrices() {
@@ -848,21 +885,9 @@ export default class IndexingService extends BaseService<Events> {
         }
       }
 
-      // kick off db writes and event emission, don't wait for the promises to
-      // settle
-      const measuredAt = Date.now()
-      basicPrices.forEach((pricePoint) => {
-        this.db
-          .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
-          .catch((err) =>
-            logger.error(
-              "Error saving price point",
-              err,
-              pricePoint,
-              measuredAt,
-            ),
-          )
-      })
+      // Kick off history writes and event emission without waiting for the
+      // writes to settle.
+      void this.recordPrices(basicPrices)
       this.emitter.emit("prices", basicPrices)
     } catch (error) {
       logger.error("Error getting base asset prices", error)
@@ -908,8 +933,6 @@ export default class IndexingService extends BaseService<Events> {
           ({ activeAssetsByAddress }) =>
             Object.keys(activeAssetsByAddress).length > 0,
         )
-
-      const measuredAt = Date.now()
 
       const priceResults = await Promise.allSettled(
         activeAssetsByNetwork.map(
@@ -960,17 +983,7 @@ export default class IndexingService extends BaseService<Events> {
         .map(([contractAddress, unitPricePoint]) => {
           const asset = allActiveAssetsByAddress[contractAddress.toLowerCase()]
           if (asset) {
-            const pricePoint = getPricePoint(asset, unitPricePoint)
-            this.db
-              .savePriceMeasurement(pricePoint, measuredAt, "coingecko")
-              .catch(() =>
-                logger.error(
-                  "Error saving price point",
-                  pricePoint,
-                  measuredAt,
-                ),
-              )
-            return pricePoint
+            return getPricePoint(asset, unitPricePoint)
           }
           logger.warn(
             "Discarding price from unknown asset",
@@ -981,6 +994,7 @@ export default class IndexingService extends BaseService<Events> {
         })
         .filter((pricePoint): pricePoint is PricePoint => pricePoint !== null)
 
+      void this.recordPrices(pricePoints)
       this.emitter.emit("prices", pricePoints)
     } catch (err) {
       logger.error(

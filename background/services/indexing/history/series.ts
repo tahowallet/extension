@@ -12,10 +12,10 @@ export type Series = {
   times: ArrayLike<number>
   values: ArrayLike<number>
   /**
-   * Where each point came from, as stored by the history database; see
-   * `SOURCE_CODES`. Optional, since only balance series charts read it.
+   * How each point was obtained, as stored by the indexing database; see
+   * `ORIGIN_CODES`. Optional, since only balance series charts read it.
    */
-  sources?: ArrayLike<number>
+  origins?: ArrayLike<number>
 }
 
 /**
@@ -26,7 +26,7 @@ export type Series = {
 const STALE_SPACINGS = 2
 
 /** The stored code for points reconstructed from transfers. */
-const RECONSTRUCTED_SOURCE = 2
+const RECONSTRUCTED_ORIGIN = 2
 
 /**
  * Returns when the given balance series were first held: the earliest point
@@ -109,8 +109,9 @@ export function priceAt(
 
 export type ValueSeriesInput = {
   /** Each holding's balance history, in the asset's units. */
-  holdings: { priceKey: string; balances: Series }[]
-  /** Price histories in the main currency, by the holdings' price keys. */
+  holdings: { priceAssetID: string; balances: Series }[]
+  /** Price histories in the main currency, by the full asset id of the
+   * asset each holding is priced by. */
   prices: Map<string, Series>
   from: number
   to: number
@@ -191,8 +192,8 @@ export function valueSeries({
   // should have at that age.
   const staleValue = new Float64Array(sampleCount)
 
-  holdings.forEach(({ priceKey, balances }) => {
-    const priceSeries = prices.get(priceKey)
+  holdings.forEach(({ priceAssetID, balances }) => {
+    const priceSeries = prices.get(priceAssetID)
     if (priceSeries === undefined || priceSeries.times.length === 0) return
     if (balances.times.length === 0) return
     // The index of the latest balance and price at or before each sample,
@@ -220,7 +221,7 @@ export function valueSeries({
       }
       if (priceValue === undefined) return
       if (balance === -1) estimated[sample] = 1
-      if (balances.sources?.[Math.max(balance, 0)] === RECONSTRUCTED_SOURCE) {
+      if (balances.origins?.[Math.max(balance, 0)] === RECONSTRUCTED_ORIGIN) {
         reconstructed[sample] = 1
       }
       const value = balances.values[Math.max(balance, 0)] * priceValue
