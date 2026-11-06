@@ -24,9 +24,15 @@ import { recordReduxDiff, recordReduxPersist } from "../../lib/perf-metrics"
 /**
  * How long, in ms, diffing the store for the UI can take before it's logged
  * as slow. Diffing is synchronous, so nothing else in the background runs
- * while it does.
+ * while it does. Encoding the store to persist it is held to the same
+ * threshold for the same reason.
  */
 const SLOW_DIFF_MS = 200
+/**
+ * How long, in ms, a synchronous dispatch has to take before it's recorded as
+ * an activity, for attributing event loop stalls to it.
+ */
+const SLOW_DISPATCH_MS = 20
 /**
  * How long, in ms, a dispatched thunk's reply can wait for pending store
  * updates to reach the UI before the wait is logged as slow.
@@ -77,13 +83,31 @@ async function persistStoreBsae<T>(state: T) {
   persistInFlight = true
   try {
     const startedAt = Date.now()
+    const encodeActivityStartedAt = performance.now()
     // Browser extension storage supports JSON natively, despite that we have
     // to stringify to preserve BigInts
     const encoded = encodeJSON(state)
+    const encodeDuration = Date.now() - startedAt
+    // Encoding is synchronous and covers the whole state, so a slow encode
+    // stalls the background like a slow diff does.
+    if (encodeDuration >= SLOW_DISPATCH_MS) {
+      recordActivity("store persist", encodeActivityStartedAt)
+    }
+
+    const writeStartedAt = Date.now()
     await browser.storage.local.set({
       state: encoded,
       version: REDUX_STATE_VERSION,
     })
+    const writeDuration = Date.now() - writeStartedAt
+
+    if (encodeDuration >= SLOW_DIFF_MS) {
+      logger.warn(
+        `Encoding the store to persist it took ${encodeDuration}ms for ` +
+          `${encoded.length} characters, and writing it took ` +
+          `${writeDuration}ms.`,
+      )
+    }
     recordReduxPersist(Date.now() - startedAt, encoded.length)
   } finally {
     persistInFlight = false
@@ -100,12 +124,6 @@ const persistStore = debounce(persistStoreBsae, 50, {
   trailing: true,
   maxWait: 50,
 })
-
-/**
- * How long, in ms, a synchronous dispatch has to take before it's recorded as
- * an activity, for attributing event loop stalls to it.
- */
-const SLOW_DISPATCH_MS = 20
 
 /**
  * Times each dispatch's synchronous work, including reducers and every other
