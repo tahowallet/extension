@@ -26,7 +26,7 @@ describe("Signing Service Unit", () => {
       await ledgerService.startService()
       const deriveAddressStub = sandbox
         .stub(ledgerService, "deriveAddress")
-        .callsFake(async () => "")
+        .callsFake(async () => "0x")
 
       signingService = await createSigningService({
         ledgerService: Promise.resolve(ledgerService),
@@ -46,7 +46,7 @@ describe("Signing Service Unit", () => {
       const internalSignerService = await createInternalSignerService()
       const deriveAddressStub = sandbox
         .stub(internalSignerService, "deriveAddress")
-        .callsFake(async () => "")
+        .callsFake(async () => "0x")
 
       signingService = await createSigningService({
         internalSignerService: Promise.resolve(internalSignerService),

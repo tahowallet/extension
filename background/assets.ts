@@ -208,7 +208,7 @@ export type AssetTransfer = {
   from: HexString
   to: HexString
   dataSource: "boar" | "local"
-  txHash: string
+  txHash: HexString
 }
 
 /**

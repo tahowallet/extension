@@ -10,7 +10,7 @@ import type {
   EVMNetwork,
 } from "../../networks"
 import { sameChainID, toDecimalChainID } from "../../networks"
-import type { UNIXTime } from "../../types"
+import type { HexString, UNIXTime } from "../../types"
 import type { ChainDatabase } from "./db"
 import type { NetworkReachabilityState } from "./network-reachability"
 import { networkWatchMachine } from "./network-watch-machine"
@@ -53,7 +53,7 @@ export default class NetworkWatcher {
 
   readonly #watches = new Map<string, NetworkWatch>()
 
-  #accounts: { address: string; chainID: string }[] = []
+  #accounts: { address: HexString; chainID: string }[] = []
 
   readonly #now: () => number
 
@@ -141,7 +141,7 @@ export default class NetworkWatcher {
     this.#accounts.push({ address, chainID: network.chainID })
   }
 
-  watchedAccounts(): { address: string; chainID: string }[] {
+  watchedAccounts(): { address: HexString; chainID: string }[] {
     return this.#accounts
   }
 

@@ -7,6 +7,8 @@ import InternalSignerService, {
   SignerInternalTypes,
 } from ".."
 import { ETHEREUM } from "../../../constants"
+import type { HexString } from "../../../types"
+import { toHexString } from "../../../lib/utils/hex"
 import logger from "../../../lib/logger"
 import {
   mockLocalStorage,
@@ -174,7 +176,7 @@ describe("InternalSignerService when uninitialized", () => {
 
 describe("InternalSignerService when initialized", () => {
   let service: InternalSignerService
-  let address: string
+  let address: HexString
 
   beforeEach(async () => {
     mockAlarms()
@@ -183,7 +185,7 @@ describe("InternalSignerService when initialized", () => {
     service = await startInternalSignerService()
     await service.unlock(testPassword)
     service.emitter.on("address", (emittedAddress) => {
-      address = emittedAddress
+      address = toHexString(emittedAddress)
     })
     const { mnemonic } = await service.generateNewKeyring(
       SignerInternalTypes.mnemonicBIP39S256,
@@ -371,7 +373,7 @@ describe("InternalSignerService when saving keyrings", () => {
 
 describe("InternalSignerService when autolocking", () => {
   let service: InternalSignerService
-  let address: string
+  let address: HexString
   let callAutolockHandler: (timeSinceInitialMock: number) => void
 
   beforeEach(async () => {
@@ -396,7 +398,7 @@ describe("InternalSignerService when autolocking", () => {
     service = await startInternalSignerService()
     await service.unlock(testPassword)
     service.emitter.on("address", (emittedAddress) => {
-      address = emittedAddress
+      address = toHexString(emittedAddress)
     })
     const { mnemonic } = await service.generateNewKeyring(
       SignerInternalTypes.mnemonicBIP39S256,

@@ -1,6 +1,7 @@
 import PreferenceService from ".."
 import { POLYGON } from "../../../constants"
 import DEFAULT_PREFERENCES from "../defaults"
+import type { AddressOnNetwork } from "../../../accounts"
 
 describe("Preference Service Integration", () => {
   let preferenceService: PreferenceService
@@ -20,7 +21,7 @@ describe("Preference Service Integration", () => {
       expect(await preferenceService.getSelectedAccount()).toEqual(
         DEFAULT_PREFERENCES.selectedAccount,
       )
-      const newAccount = {
+      const newAccount: AddressOnNetwork = {
         address: "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
         network: POLYGON,
       }

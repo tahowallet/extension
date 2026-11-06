@@ -4,6 +4,7 @@ import { SmartContractFungibleAsset } from "../../assets"
 import { WEBSITE_ORIGIN } from "../../constants/website"
 import { ARBITRUM_SEPOLIA } from "../../constants"
 import type { NormalizedEVMAddress } from "../../types"
+import { toHexString } from "../../lib/utils/hex"
 
 export const ISLAND_NETWORK = ARBITRUM_SEPOLIA // TODO: change once we move to Arbitrum One
 
@@ -14,8 +15,9 @@ export const TESTNET_TAHO: SmartContractFungibleAsset = {
   name: "Taho",
   symbol: "TAHO",
   decimals: 18,
-  contractAddress:
+  contractAddress: toHexString(
     process.env.TESTNET_TAHO_ADDRESS ?? ethers.constants.AddressZero,
+  ),
   homeNetwork: ISLAND_NETWORK,
   metadata: {
     tokenLists: [],

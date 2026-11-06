@@ -21,7 +21,8 @@ import { displayAssetAmount } from "../../../../../utils/amounts"
 type TransferSummaryBaseProps = {
   title?: string
   assetAmount: AnyAssetAmount & AssetDecimalAmount
-  recipientAddress: HexString
+  // "-" when a transaction has no recipient (contract deployment).
+  recipientAddress: HexString | "-"
   recipientName?: string | undefined
 }
 

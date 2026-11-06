@@ -11,7 +11,7 @@ import {
 import { validateAddEthereumChainParameter } from "../../provider-bridge/utils"
 import { ETHEREUM, POLYGON } from "../../../constants"
 import { SignTypedDataRequest } from "../../../utils/signing"
-import type { EIP712TypedData } from "../../../types"
+import type { EIP712DomainType, EIP712TypedData } from "../../../types"
 
 const TEST_ADDRESS = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 
@@ -156,7 +156,7 @@ describe("Internal Ethereum Provider Service", () => {
 
       const primaryType = "Request"
 
-      const domain = {
+      const domain: EIP712DomainType = {
         name: "EIP-712 Test",
         version: "1",
         chainId: "1",

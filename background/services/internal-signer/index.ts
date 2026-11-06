@@ -5,6 +5,7 @@ import HDKeyring, { SerializedHDKeyring } from "@tallyho/hd-keyring"
 import { arrayify } from "ethers/lib/utils"
 import { Wallet } from "ethers"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
+import { unsafeHexString } from "../../lib/utils/hex"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import {
   getEncryptedVaults,
@@ -25,10 +26,12 @@ import BaseService from "../base"
 import { FORK } from "../../constants"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { FeatureFlags, isEnabled } from "../../features"
+import type { SparkSigner } from "@buildonspark/spark-sdk"
 import type { AddressOnNetwork } from "../../accounts"
 import logger from "../../lib/logger"
 import PreferenceService from "../preferences"
 import { DEFAULT_AUTOLOCK_INTERVAL } from "../preferences/defaults"
+import { createGatedSparkSigner } from "./spark-signer"
 
 export enum SignerInternalTypes {
   mnemonicBIP39S128 = "mnemonic#bip39:128",
@@ -52,12 +55,12 @@ export type Keyring = {
   type: SignerInternalTypes
   id: string
   path: string | null
-  addresses: string[]
+  addresses: HexString[]
 }
 export type PrivateKey = Keyring & {
   type: SignerInternalTypes.singleSECP
   path: null
-  addresses: [string]
+  addresses: [HexString]
 }
 
 export type KeyringAccountSigner = {
@@ -122,7 +125,7 @@ interface Events extends ServiceLifecycleEvents {
       [signerId: string]: { source: SignerImportSource }
     }
   }
-  address: string
+  address: HexString
   vaultMigrationCompleted:
     | { newVaultVersion: VaultVersion }
     | { errorMessage: string }
@@ -163,6 +166,13 @@ export default class InternalSignerService extends BaseService<Events> {
   #signerMetadata: { [signerId: string]: { source: SignerImportSource } } = {}
 
   #hiddenAccounts: { [address: HexString]: boolean } = {}
+
+  /**
+   * Spark SDK signers holding keys derived from a keyring's recovery phrase,
+   * keyed by `<keyringID>:<accountNumber>`. Like the keyrings themselves,
+   * they exist only while unlocked; `lock` clears them.
+   */
+  #sparkSigners = new Map<string, Promise<SparkSigner>>()
 
   /**
    * The last time an internal signer took an action that required the service to be
@@ -351,6 +361,7 @@ export default class InternalSignerService extends BaseService<Events> {
     this.#keyrings = []
     this.#signerMetadata = {}
     this.#privateKeys = []
+    this.#sparkSigners.clear()
     this.emitter.emit("locked", true)
     this.#emitInternalSigners()
   }
@@ -484,7 +495,7 @@ export default class InternalSignerService extends BaseService<Events> {
     mnemonic: string,
     source: SignerImportSource,
     path?: string,
-  ): string {
+  ): HexString {
     const newKeyring = path
       ? new HDKeyring({ mnemonic, path })
       : new HDKeyring({ mnemonic })
@@ -493,10 +504,10 @@ export default class InternalSignerService extends BaseService<Events> {
 
     if (existingKeyring) {
       const [address] = existingKeyring.getAddressesSync()
-      return address
+      return unsafeHexString(address)
     }
     this.#keyrings.push(newKeyring)
-    const [address] = newKeyring.addAddressesSync(1)
+    const [address] = newKeyring.addAddressesSync(1).map(unsafeHexString)
 
     // If address was previously imported as a private key then remove it
     if (this.#findPrivateKey(address)) {
@@ -513,7 +524,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param privateKey - string
    * @returns string - address of imported or existing account
    */
-  #importPrivateKey(privateKey: string): string {
+  #importPrivateKey(privateKey: string): HexString {
     const newWallet = new Wallet(privateKey)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
@@ -534,7 +545,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * @param password - string
    * @returns string - address of imported or existing account
    */
-  async #importJSON(jsonFile: string, password: string): Promise<string> {
+  async #importJSON(jsonFile: string, password: string): Promise<HexString> {
     const newWallet = await Wallet.fromEncryptedJson(jsonFile, password)
     const normalizedAddress = normalizeEVMAddress(newWallet.address)
 
@@ -553,7 +564,7 @@ export default class InternalSignerService extends BaseService<Events> {
    * Return the source of a given address' signer if it exists. If an
    * address does not have a internal signer associated with it - returns null.
    */
-  getSignerSourceForAddress(address: string): SignerImportSource | null {
+  getSignerSourceForAddress(address: HexString): SignerImportSource | null {
     const signerWithType = this.#findSigner(address)
 
     if (!signerWithType) return null
@@ -570,6 +581,61 @@ export default class InternalSignerService extends BaseService<Events> {
    * Return an array of keyring representations that can safely be stored and
    * used outside the extension.
    */
+  /**
+   * Get a Spark signer for an account derived from a keyring's recovery
+   * phrase. The recovery phrase and derived keys stay inside this service:
+   * the returned signer is a lock-gated proxy that forwards to the real
+   * signer only while this service is unlocked, and refuses the SDK's
+   * seed-handling methods. Spark's own background signing (e.g. claiming
+   * incoming transfers) deliberately does not count as user activity, so it
+   * cannot hold off auto-lock.
+   */
+  async getSparkSigner({
+    keyringID,
+    accountNumber,
+  }: {
+    keyringID: string
+    accountNumber: number
+  }): Promise<SparkSigner> {
+    this.requireUnlocked()
+    const key = `${keyringID}:${accountNumber}`
+
+    if (!this.#sparkSigners.has(key)) {
+      const keyring = this.#keyrings.find(({ id }) => id === keyringID)
+      if (!keyring) {
+        throw new Error(`Keyring ${keyringID} is not available.`)
+      }
+
+      const signerPromise = (async () => {
+        const { mnemonic } = await keyring.serialize()
+        const { DefaultSparkSigner } = await import("@buildonspark/spark-sdk")
+        const signer = new DefaultSparkSigner()
+        await signer.createSparkWalletFromSeed(
+          await signer.mnemonicToSeed(mnemonic),
+          accountNumber,
+        )
+        return signer
+      })()
+      this.#sparkSigners.set(key, signerPromise)
+      signerPromise.catch(() => this.#sparkSigners.delete(key))
+    }
+
+    const signerPromise = this.#sparkSigners.get(key)
+    // Wait for derivation so failures surface here, not on first use.
+    let resolved: SparkSigner | undefined = await signerPromise
+    // If the service locked while deriving, the map was cleared.
+    if (this.#sparkSigners.get(key) !== signerPromise) {
+      resolved = undefined
+      this.requireUnlocked()
+    }
+
+    return createGatedSparkSigner(() =>
+      !this.locked() && this.#sparkSigners.get(key) === signerPromise
+        ? resolved
+        : undefined,
+    )
+  }
+
   getKeyrings(): Keyring[] {
     this.requireUnlocked()
 
@@ -581,6 +647,7 @@ export default class InternalSignerService extends BaseService<Events> {
       addresses: [
         ...kr
           .getAddressesSync()
+          .map(unsafeHexString)
           .filter((address) => !this.#hiddenAccounts[address]),
       ],
       id: kr.id,
@@ -619,12 +686,12 @@ export default class InternalSignerService extends BaseService<Events> {
       throw new Error("Keyring not found.")
     }
 
-    const keyringAddresses = keyring.getAddressesSync()
+    const keyringAddresses = keyring.getAddressesSync().map(unsafeHexString)
 
     // If There are any hidden addresses, show those first before adding new ones.
     const newAddress =
       keyringAddresses.find((address) => this.#hiddenAccounts[address]) ??
-      keyring.addAddressesSync(1)[0]
+      unsafeHexString(keyring.addAddressesSync(1)[0])
 
     this.#hiddenAccounts[newAddress] = false
 
@@ -658,7 +725,9 @@ export default class InternalSignerService extends BaseService<Events> {
     if (keyringSigner === null && privateKeySigner === null) return
 
     if (keyringSigner !== null) {
-      const keyringAddresses = await keyringSigner.getAddresses()
+      const keyringAddresses = (await keyringSigner.getAddresses()).map(
+        unsafeHexString,
+      )
 
       if (
         keyringAddresses.every(
@@ -874,6 +943,9 @@ export default class InternalSignerService extends BaseService<Events> {
       s,
       v,
     } = tx
+    // Ethers' transaction parser returns hex hashes and addresses.
+    const hexFrom = unsafeHexString(from)
+    const hexTo = to === undefined ? undefined : unsafeHexString(to)
 
     if (
       typeof maxPriorityFeePerGas === "undefined" ||
@@ -882,8 +954,8 @@ export default class InternalSignerService extends BaseService<Events> {
     ) {
       const signedTx = {
         hash,
-        from,
-        to,
+        from: hexFrom,
+        to: hexTo,
         nonce,
         input: data,
         value: value.toBigInt(),
@@ -906,8 +978,8 @@ export default class InternalSignerService extends BaseService<Events> {
     // TODO move this to a helper function
     const signedTx: SignedTransaction = {
       hash,
-      from,
-      to,
+      from: hexFrom,
+      to: hexTo,
       nonce,
       input: data,
       value: value.toBigInt(),

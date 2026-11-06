@@ -9,6 +9,7 @@ import React, { ReactElement } from "react"
 import { setNewSelectedAccount } from "@tallyho/tally-background/redux-slices/ui"
 import { useHistory } from "react-router-dom"
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { isHexString } from "@tallyho/tally-background/lib/utils/hex"
 import { useTranslation } from "react-i18next"
 import { selectLedgerDeviceByAddresses } from "@tallyho/tally-background/redux-slices/selectors/ledgerSelectors"
 
@@ -133,7 +134,9 @@ export default function AccountItemRemovalConfirm({
               if (sameEVMAddress(selectedAddress, address)) {
                 const newAddress = Object.keys(
                   accountsData.evm[network.chainID],
-                ).find((accountAddress) => accountAddress !== address)
+                )
+                  .filter(isHexString)
+                  .find((accountAddress) => accountAddress !== address)
                 if (newAddress) {
                   dispatch(
                     setNewSelectedAccount({

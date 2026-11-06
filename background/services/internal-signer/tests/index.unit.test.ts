@@ -4,6 +4,7 @@ import InternalSignerService, {
   SignerSourceTypes,
 } from ".."
 import { ETHEREUM } from "../../../constants"
+import type { HexString } from "../../../types"
 import {
   createInternalSignerService,
   createTransactionRequest,
@@ -11,7 +12,7 @@ import {
 } from "../../../tests/factories"
 import { mockLocalStorage, restoreLocalStorage } from "../../../tests/utils"
 
-const HD_WALLET_MOCK = {
+const HD_WALLET_MOCK: { mnemonic: string; addresses: HexString[] } = {
   mnemonic:
     "input pulp truth gain expire kick castle voyage firm fee degree draft",
   addresses: [
@@ -19,7 +20,7 @@ const HD_WALLET_MOCK = {
     "0xbfab971fdadcfebb1086dadf3e68d6edee81a6cf",
   ],
 }
-const PK_WALLET_MOCK = {
+const PK_WALLET_MOCK: { address: HexString; privateKey: HexString } = {
   address: "0x0cf98fd79eaf6d27679dc1a328621b5791bd874e",
   privateKey:
     "0x252da775ac59bf1e3a3c2b3b2633e29f8b8236dc3054b7ce9d019c79166ccf14",

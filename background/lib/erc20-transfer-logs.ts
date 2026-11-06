@@ -17,6 +17,8 @@ import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
 import { parseERC721TransferLog } from "./erc721"
 import logger from "./logger"
 import { normalizeEVMAddress } from "./utils"
+import { unsafeHexString } from "./utils/hex"
+import type { HexString } from "../types"
 
 /**
  * The topic hash of the standard ERC-20
@@ -191,10 +193,39 @@ async function getLogsWithAdaptiveRange(
 }
 
 /**
- * Convert an ethers log into the Taho {@link EVMLog} shape understood by
+ * An ethers log with its hex fields typed as {@link HexString}.
+ */
+type HexLog = Omit<
+  Log,
+  "address" | "data" | "topics" | "transactionHash" | "blockHash"
+> & {
+  address: HexString
+  data: HexString
+  topics: HexString[]
+  transactionHash: HexString
+  blockHash: HexString
+}
+
+/**
+ * Type an ethers log's hex fields as {@link HexString}; ethers' formatter
+ * already guarantees they are hex.
+ */
+function hexLogFromEthersLog(log: Log): HexLog {
+  return {
+    ...log,
+    address: unsafeHexString(log.address),
+    data: unsafeHexString(log.data),
+    topics: log.topics.map(unsafeHexString),
+    transactionHash: unsafeHexString(log.transactionHash),
+    blockHash: unsafeHexString(log.blockHash),
+  }
+}
+
+/**
+ * Convert a log into the Taho {@link EVMLog} shape understood by
  * {@link parseLogsForERC20Transfers}.
  */
-function evmLogFromEthersLog({ address, data, topics }: Log): EVMLog {
+function evmLogFromEthersLog({ address, data, topics }: HexLog): EVMLog {
   return { contractAddress: address, data, topics }
 }
 
@@ -209,7 +240,7 @@ async function getTransferLogs(
   fromBlock: number,
   toBlock: number,
   incomingOnly: boolean,
-): Promise<Log[]> {
+): Promise<HexLog[]> {
   // Indexed address topics are 32-byte left-padded; normalize first so casing
   // can't trip up providers that compare topics as raw strings.
   const paddedAddress = utils.hexZeroPad(normalizeEVMAddress(address), 32)
@@ -247,14 +278,16 @@ async function getTransferLogs(
 
   // De-duplicate by the unique (transaction hash, log index) pair.
   const seenLogIds = new Set<string>()
-  return [...incomingLogs, ...outgoingLogs].filter((log) => {
-    const logId = `${log.transactionHash}-${log.logIndex}`
-    if (seenLogIds.has(logId)) {
-      return false
-    }
-    seenLogIds.add(logId)
-    return true
-  })
+  return [...incomingLogs, ...outgoingLogs]
+    .filter((log) => {
+      const logId = `${log.transactionHash}-${log.logIndex}`
+      if (seenLogIds.has(logId)) {
+        return false
+      }
+      seenLogIds.add(logId)
+      return true
+    })
+    .map(hexLogFromEthersLog)
 }
 
 /**

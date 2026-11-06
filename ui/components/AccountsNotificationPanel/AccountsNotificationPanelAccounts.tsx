@@ -405,12 +405,14 @@ export default function AccountsNotificationPanelAccounts({
     selectCurrentNetworkAccountTotalsByCategory,
   )
 
-  const [pendingSelectedAddress, setPendingSelectedAddress] = useState("")
+  const [pendingSelectedAddress, setPendingSelectedAddress] = useState<
+    HexString | ""
+  >("")
 
   const selectedAccountAddress =
     useBackgroundSelector(selectCurrentAccount).address
 
-  const updateCurrentAccount = (address: string) => {
+  const updateCurrentAccount = (address: HexString) => {
     dispatch(clearSignature())
     setPendingSelectedAddress(address)
     dispatch(

@@ -1,5 +1,6 @@
 import type { HexString, UNIXTime } from "../../types"
 import { normalizeAddressOnNetwork } from "../../lib/utils"
+import { isHexString } from "../../lib/utils/hex"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -371,7 +372,7 @@ export default class NameService extends BaseService<Events> {
       const [, , , erc721Address, nftID] = avatarUri.split(/[:/]/)
       if (
         provider !== undefined &&
-        erc721Address !== undefined &&
+        isHexString(erc721Address) &&
         nftID !== undefined
       ) {
         const metadata = await getTokenMetadata(

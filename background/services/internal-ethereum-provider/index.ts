@@ -10,6 +10,7 @@ import { hexlify, toUtf8Bytes, _TypedDataEncoder } from "ethers/lib/utils"
 import { normalizeHexAddress } from "@tallyho/hd-keyring"
 
 import logger from "../../lib/logger"
+import { isHexString, toHexString, unsafeHexString } from "../../lib/utils/hex"
 
 import BaseService from "../base"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -193,7 +194,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
   ) =>
     this.signTypedData({
       account: {
-        address: params[0] as string,
+        address: toHexString(params[0] as string),
         network: await this.getCurrentOrDefaultNetworkForOrigin(origin),
       },
       typedData: JSON.parse(params[1] as string),
@@ -576,9 +577,9 @@ export default class InternalEthereumProviderService extends BaseService<Events>
     },
     origin: string,
   ) {
-    const hexInput = input.match(/^0x[0-9A-Fa-f]*$/)
+    const hexInput = isHexString(input)
       ? input
-      : hexlify(toUtf8Bytes(input))
+      : unsafeHexString(hexlify(toUtf8Bytes(input)))
     const typeAndData = parseSigningData(input)
     const currentNetwork =
       await this.getCurrentOrDefaultNetworkForOrigin(origin)
@@ -587,7 +588,7 @@ export default class InternalEthereumProviderService extends BaseService<Events>
       this.emitter.emit("signDataRequest", {
         payload: {
           account: {
-            address: account,
+            address: toHexString(account),
             network: currentNetwork,
           },
           rawSigningData: hexInput,

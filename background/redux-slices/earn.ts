@@ -44,7 +44,7 @@ export type AvailableVault = {
   userDeposited: bigint
   totalDeposited: bigint
   yearnVault: HexString
-  asset: AnyAsset & { contractAddress: string; decimals: number }
+  asset: AnyAsset & { contractAddress: HexString; decimals: number }
   pendingRewards: bigint
   poolStartTime: number
   poolEndTime: number

@@ -11,13 +11,17 @@ import type {
 } from "../../../services/enrichment"
 import { encodeExecTransaction } from "../../../services/enrichment/safe"
 import { getActivityDetails } from "../activities-utils"
+import type { HexString } from "../../../types"
+import { toHexString } from "../../../lib/utils/hex"
 
 const EXECUTOR = "0x2222222222222222222222222222222222222222"
-const SAFE = utils.getAddress("0x1111111111111111111111111111111111111111")
+const SAFE = toHexString(
+  utils.getAddress("0x1111111111111111111111111111111111111111"),
+)
 const RECIPIENT = "0x4444444444444444444444444444444444444444"
 const ZERO = "0x0000000000000000000000000000000000000000"
 
-const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
+const enrichedAddress = (address: HexString): EnrichedAddressOnNetwork => ({
   address,
   network: ETHEREUM,
   annotation: {
@@ -47,7 +51,7 @@ const safeOutflow: AssetTransfer = {
   },
 }
 
-const transaction = (input: string): EnrichedEVMTransaction => ({
+const transaction = (input: HexString): EnrichedEVMTransaction => ({
   ...createAnyEVMTransaction({
     network: ETHEREUM,
     from: EXECUTOR,

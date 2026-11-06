@@ -1,15 +1,29 @@
 import type { Log } from "@ethersproject/abstract-provider"
 import { BigNumber, constants, utils } from "ethers"
 
-import { ERC721_TRANSFER_TOPIC } from "../../../erc721"
+import type { HexString } from "../../../../types"
+import {
+  ERC721_TRANSFER_TOPIC,
+  type ERC721TransferLogFields,
+} from "../../../erc721"
+import { toHexString } from "../../../utils/hex"
 
-export const ACCOUNT = "0x1111111111111111111111111111111111111111"
-export const OTHER = "0x2222222222222222222222222222222222222222"
-export const COLLECTION = "0x4444444444444444444444444444444444444444"
-export const OTHER_COLLECTION = "0x5555555555555555555555555555555555555555"
-export const ZERO = constants.AddressZero
+export const ACCOUNT: HexString = "0x1111111111111111111111111111111111111111"
+export const OTHER: HexString = "0x2222222222222222222222222222222222222222"
+export const COLLECTION: HexString =
+  "0x4444444444444444444444444444444444444444"
+export const OTHER_COLLECTION: HexString =
+  "0x5555555555555555555555555555555555555555"
+export const ZERO = toHexString(constants.AddressZero)
 
-const padded = (value: string) => utils.hexZeroPad(value, 32)
+/** An ethers `Log` whose hex fields are typed as `HexString`. */
+export type ERC721TestLog = Omit<
+  Log,
+  "address" | "data" | "topics" | "transactionHash"
+> &
+  ERC721TransferLogFields & { data: HexString }
+
+const padded = (value: string) => toHexString(utils.hexZeroPad(value, 32))
 
 /** An ERC-721 `Transfer` log: four topics, no data. */
 export function erc721TransferLog({
@@ -21,19 +35,19 @@ export function erc721TransferLog({
   logIndex = 0,
   txHash = `0x${blockNumber.toString(16)}${logIndex.toString(16)}`,
 }: {
-  from: string
-  to: string
+  from: HexString
+  to: HexString
   tokenId: bigint
-  contractAddress?: string
+  contractAddress?: HexString
   blockNumber?: number
   logIndex?: number
-  txHash?: string
-}): Log {
+  txHash?: HexString
+}): ERC721TestLog {
   return {
     address: contractAddress,
     data: "0x",
     topics: [
-      ERC721_TRANSFER_TOPIC,
+      toHexString(ERC721_TRANSFER_TOPIC),
       padded(from),
       padded(to),
       padded(BigNumber.from(tokenId).toHexString()),

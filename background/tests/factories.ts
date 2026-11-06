@@ -55,8 +55,9 @@ import {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "../services/chain"
-import type { EIP712TypedData } from "../types"
+import type { EIP712TypedData, HexString } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
+import { unsafeHexString } from "../lib/utils/hex"
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 
 // A stand-in for SerialFallbackProvider so the chain service doesn't reach a
@@ -110,8 +111,8 @@ export class MockSerialFallbackProvider {
 export const createMockProvider = (): SerialFallbackProvider =>
   new MockSerialFallbackProvider() as unknown as SerialFallbackProvider
 
-const createRandom0xHash = () =>
-  keccak256(Buffer.from(Math.random().toString()))
+const createRandom0xHash = (): HexString =>
+  unsafeHexString(keccak256(Buffer.from(Math.random().toString())))
 
 export const createRandomAddress = () =>
   normalizeEVMAddress(Wallet.createRandom().address)
@@ -632,5 +633,5 @@ export const createPricePoint = (
   return flip ? flipPricePoint(pricePoint) : pricePoint
 }
 
-export const createArrayWith0xHash = (length: number): string[] =>
+export const createArrayWith0xHash = (length: number): HexString[] =>
   Array.from({ length }).map(() => createRandom0xHash())

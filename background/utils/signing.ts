@@ -51,7 +51,7 @@ export type MessageSigningRequest<
   T extends MessageSigningData = MessageSigningData,
 > = T & {
   account: AddressOnNetwork
-  rawSigningData: string
+  rawSigningData: HexString
 }
 
 export type SigningDataType = "eip191" | "eip4361"

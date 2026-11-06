@@ -4,6 +4,7 @@ import type {
 } from "@ethersproject/providers"
 import { SECOND } from "../../constants"
 import logger from "../../lib/logger"
+import { unsafeHexString } from "../../lib/utils/hex"
 import type { AnyEVMTransaction, EVMNetwork } from "../../networks"
 import type { HexString, UNIXTime } from "../../types"
 import type { ChainDatabase, Transaction } from "./db"
@@ -265,7 +266,9 @@ export default class TransactionTracker {
     transaction: AnyEVMTransaction,
     firstSeen: UNIXTime = Date.now(),
   ): void {
-    this.enqueueLookup(network, transaction.hash, firstSeen)
+    // Tracked transactions' hashes come from ethers or the chain's RPC.
+    const hash = unsafeHexString(transaction.hash)
+    this.enqueueLookup(network, hash, firstSeen)
 
     const provider = this.dependencies.providerFor(network)
     const key = `${network.chainID}:${transaction.hash}`
@@ -289,7 +292,7 @@ export default class TransactionTracker {
           error,
         ),
       )
-      this.dequeueLookup(network, transaction.hash)
+      this.dequeueLookup(network, hash)
     })
   }
 

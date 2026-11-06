@@ -2,12 +2,15 @@ import { ETHEREUM } from "../../../constants"
 import { createSmartContractAsset } from "../../../tests/factories"
 import { AssetTransfer, EnrichedAddressOnNetwork } from "../types"
 import { getAssetTransfersForAddress, getERC20LogsForAddresses } from "../utils"
+import type { ERC20TransferLog } from "../../../lib/erc20"
+import type { HexString } from "../../../types"
+import { toHexString } from "../../../lib/utils/hex"
 
 const USER = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const OTHER = "0x9eef87f4c08d8934cb2a3309df4dec5635338115"
 const THIRD = "0x22f9dcf4647084d6c31b2765f6910cd85c178c18"
 
-const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
+const enrichedAddress = (address: HexString): EnrichedAddressOnNetwork => ({
   address,
   network: ETHEREUM,
   annotation: {
@@ -24,8 +27,8 @@ const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
 })
 
 const transfer = (
-  sender: string,
-  recipient: string,
+  sender: HexString,
+  recipient: HexString,
   symbol: string,
   localizedDecimalAmount: string,
 ): AssetTransfer => ({
@@ -47,7 +50,12 @@ describe("getAssetTransfersForAddress", () => {
     const transfers = getAssetTransfersForAddress(
       [
         transfer(USER, OTHER, "USDC", "100"),
-        transfer(OTHER, USER.toUpperCase().replace("0X", "0x"), "DAI", "99"),
+        transfer(
+          OTHER,
+          toHexString(USER.toUpperCase().replace("0X", "0x")),
+          "DAI",
+          "99",
+        ),
       ],
       USER,
     )
@@ -101,7 +109,7 @@ describe("getERC20LogsForAddresses", () => {
   // Placeholder addresses; the checksummed form mixes case.
   const LOWER = "0xabcdef0123456789abcdef0123456789abcdef01"
   const CHECKSUMMED = "0xABcdEF0123456789aBcdEf0123456789aBCDEF01"
-  const log = {
+  const log: ERC20TransferLog = {
     contractAddress: "0x5555555555555555555555555555555555555555",
     amount: 1n,
     senderAddress: LOWER,

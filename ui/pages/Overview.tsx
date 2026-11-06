@@ -15,6 +15,7 @@ import AccountList from "../components/Overview/AccountList"
 import NFTsPortfolioOverview from "../components/Overview/NFTsPortfolioOverview"
 import AbilitiesHeader from "../components/Overview/AbilitiesHeader"
 import CorePage from "../components/Core/CorePage"
+import SparkOverviewSection from "../components/Spark/SparkOverviewSection"
 
 export default function Overview(): ReactElement {
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
@@ -45,6 +46,7 @@ export default function Overview(): ReactElement {
           accountsTotal={accountsTotal}
           networksCount={networksCount}
         />
+        <SparkOverviewSection />
         <NFTsPortfolioOverview />
         <OverviewAssetsTable
           assets={combinedData.assets}

@@ -9,13 +9,14 @@ import type {
   ContractInteraction,
   EnrichedAddressOnNetwork,
 } from "@tallyho/tally-background/services/enrichment"
+import type { HexString } from "@tallyho/tally-background/types"
 import { renderWithProviders } from "../../../../../tests/test-utils"
 import SimulationPanel from "../SimulationPanel"
 
 const USER = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const POOL = "0x9eef87f4c08d8934cb2a3309df4dec5635338115"
 
-const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
+const enrichedAddress = (address: HexString): EnrichedAddressOnNetwork => ({
   address,
   network: ETHEREUM,
   annotation: {
@@ -31,7 +32,7 @@ const enrichedAddress = (address: string): EnrichedAddressOnNetwork => ({
   },
 })
 
-const transfer = (sender: string, recipient: string): AssetTransfer => ({
+const transfer = (sender: HexString, recipient: HexString): AssetTransfer => ({
   type: "asset-transfer",
   timestamp: 0,
   blockTimestamp: undefined,

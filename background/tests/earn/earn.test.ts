@@ -59,7 +59,7 @@ describe("Earn", () => {
   })
 
   describe("getPoolAPR", () => {
-    const asset = {
+    const asset: Parameters<typeof getPoolAPR>[0]["asset"] = {
       contractAddress: "0x0",
       decimals: 18,
       name: "Uniswap",

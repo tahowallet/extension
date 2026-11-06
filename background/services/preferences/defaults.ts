@@ -1,6 +1,15 @@
 import { ETHEREUM, MINUTE, USD } from "../../constants"
+import type { HexString } from "../../types"
 
 export const DEFAULT_AUTOLOCK_INTERVAL = 60 * MINUTE
+
+/**
+ * The selected address before any account exists. It is deliberately empty
+ * (falsy) rather than a real hex address; typing the selected address as
+ * `HexString | ""` would ripple through every consumer of the selected
+ * account, so this single placeholder is typed as a `HexString`.
+ */
+export const NO_SELECTED_ADDRESS = "" as HexString
 
 const defaultPreferences = {
   tokenLists: {
@@ -23,7 +32,7 @@ const defaultPreferences = {
   currency: USD,
   defaultWallet: false,
   selectedAccount: {
-    address: "",
+    address: NO_SELECTED_ADDRESS,
     network: ETHEREUM,
   },
   accountSignersSettings: [],

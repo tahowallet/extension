@@ -1,5 +1,6 @@
 import type { EVMNetwork } from "../../networks"
 import type ChainService from "../chain"
+import { isHexString } from "../../lib/utils/hex"
 import type { PartialTransactionRequestWithFrom } from "./types"
 import { isSafeExecTransactionCalldata, interpretSafeExecution } from "./safe"
 import {
@@ -32,10 +33,18 @@ export default async function simulateSignatureRequest(
   transaction: PartialTransactionRequestWithFrom,
 ): Promise<SimulationResult | undefined> {
   const call: SimulationCall = { from: transaction.from }
-  if (typeof transaction.to === "string") {
+  // A non-hex recipient or calldata can't be simulated faithfully; omitting
+  // either would simulate a different call (e.g. a contract deployment).
+  if (
+    (typeof transaction.to === "string" && !isHexString(transaction.to)) ||
+    (typeof transaction.input === "string" && !isHexString(transaction.input))
+  ) {
+    return undefined
+  }
+  if (isHexString(transaction.to)) {
     call.to = transaction.to
   }
-  if (typeof transaction.input === "string" && transaction.input !== "0x") {
+  if (isHexString(transaction.input) && transaction.input !== "0x") {
     call.input = transaction.input
   }
   if (typeof transaction.value === "bigint") {

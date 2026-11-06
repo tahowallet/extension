@@ -13,7 +13,7 @@ import {
   createBlockPrices,
   createChainService,
 } from "../../../tests/factories"
-import type { UNIXTime } from "../../../types"
+import type { HexString, UNIXTime } from "../../../types"
 import {
   EnrichedEIP1559TransactionSignatureRequest,
   EnrichedLegacyTransactionSignatureRequest,
@@ -276,8 +276,8 @@ describe("Chain Service", () => {
       const NUMBER_OF_TX = 100
       const PRIORITY_MAX_COUNT = 25
       let chainServiceExternalized: ChainServiceExternalized
-      let hashesForFirstAccount: string[]
-      let hashesForSecondAccount: string[]
+      let hashesForFirstAccount: HexString[]
+      let hashesForSecondAccount: HexString[]
       let transactionsToRetrieve: PriorityQueuedTxToRetrieve[]
 
       beforeEach(() => {

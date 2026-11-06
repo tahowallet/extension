@@ -3,6 +3,7 @@ import type { EVMLog, EVMNetwork } from "../../networks"
 import type { HexString } from "../../types"
 import type ChainService from "../chain"
 import logger from "../../lib/logger"
+import { unsafeHexString } from "../../lib/utils/hex"
 
 type SimulateV1Log = {
   address: HexString
@@ -41,7 +42,7 @@ export type SimulationResult =
   | { status: "reverted"; revertReason?: string; safeAddress?: HexString }
 
 export function toHexQuantity(value: bigint | number): HexString {
-  return utils.hexValue(BigNumber.from(value))
+  return unsafeHexString(utils.hexValue(BigNumber.from(value)))
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   sameEVMAddress,
   wait,
 } from "../../lib/utils"
+import { isHexString, toHexString, unsafeHexString } from "../../lib/utils/hex"
 
 import {
   BaseService,
@@ -213,6 +214,15 @@ import {
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 import CampaignService from "../campaign"
+import SparkService from "../spark"
+import type { SparkSendRequest } from "../spark/types"
+import {
+  sparkAccountsUpdated,
+  sparkActivityUpdated,
+  sparkBalanceUpdated,
+  sparkWalletStatusUpdated,
+} from "../../redux-slices/spark"
+import type { SparkNetworkType } from "../../networks"
 import { DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 export default class ReduxService extends BaseService<never> {
@@ -286,6 +296,8 @@ export default class ReduxService extends BaseService<never> {
       notificationsService,
     )
 
+    const sparkService = SparkService.create(internalSignerService)
+
     const savedReduxState = readAndMigrateState()
 
     return new this(
@@ -307,6 +319,7 @@ export default class ReduxService extends BaseService<never> {
       await abilitiesService,
       await notificationsService,
       await campaignService,
+      await sparkService,
     )
   }
 
@@ -404,6 +417,12 @@ export default class ReduxService extends BaseService<never> {
      * A promise to the Campaign service which takes care of managing current and upcoming campaigns
      */
     private campaignService: CampaignService,
+
+    /**
+     * The Spark service, which tracks Spark (Bitcoin layer 2) accounts
+     * derived from internal-signer recovery phrases.
+     */
+    private sparkService: SparkService,
   ) {
     super({
       initialLoadWaitExpired: {
@@ -443,6 +462,7 @@ export default class ReduxService extends BaseService<never> {
       this.abilitiesService.startService(),
       this.notificationsService.startService(),
       this.campaignService.startService(),
+      this.sparkService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -467,6 +487,7 @@ export default class ReduxService extends BaseService<never> {
       this.abilitiesService.stopService(),
       this.notificationsService.stopService(),
       this.campaignService.stopService(),
+      this.sparkService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -490,6 +511,7 @@ export default class ReduxService extends BaseService<never> {
     this.connectNFTsService()
     this.connectNotificationsService()
     this.connectCampaignService()
+    this.connectSparkService()
 
     await this.connectChainService()
 
@@ -505,6 +527,64 @@ export default class ReduxService extends BaseService<never> {
     // producer. Reachability comes from per-provider trackers that start over
     // with every service worker, so nothing they said last time still holds.
     this.store.dispatch(networkReachabilityReset())
+  }
+
+  connectSparkService(): void {
+    this.sparkService.emitter.on("accounts", (accounts) => {
+      this.store.dispatch(sparkAccountsUpdated(accounts))
+    })
+    this.sparkService.emitter.on("balance", (balance) => {
+      this.store.dispatch(sparkBalanceUpdated(balance))
+    })
+    this.sparkService.emitter.on("activity", (activity) => {
+      this.store.dispatch(sparkActivityUpdated(activity))
+    })
+    this.sparkService.emitter.on("walletStatus", (status) => {
+      this.store.dispatch(sparkWalletStatusUpdated(status))
+    })
+  }
+
+  async addSparkAccount(params: {
+    networkType: SparkNetworkType
+    keyringID?: string
+  }): ReturnType<SparkService["addAccount"]> {
+    return this.sparkService.addAccount(params)
+  }
+
+  async removeSparkAccount(accountID: string): Promise<void> {
+    return this.sparkService.removeAccount(accountID)
+  }
+
+  async refreshSparkAccount(accountID: string): Promise<void> {
+    return this.sparkService.refreshAccount(accountID)
+  }
+
+  async getSparkDepositAddress(accountID: string): Promise<string> {
+    return this.sparkService.getDepositAddress(accountID)
+  }
+
+  async createSparkLightningInvoice(
+    accountID: string,
+    amountSats: number,
+    memo?: string,
+  ): ReturnType<SparkService["createLightningInvoice"]> {
+    return this.sparkService.createLightningInvoice(accountID, amountSats, memo)
+  }
+
+  async estimateSparkLightningFee(
+    accountID: string,
+    invoice: string,
+    amountSats?: number,
+  ): Promise<number> {
+    return this.sparkService.estimateLightningFee(
+      accountID,
+      invoice,
+      amountSats,
+    )
+  }
+
+  async sendSpark(request: SparkSendRequest): ReturnType<SparkService["send"]> {
+    return this.sparkService.send(request)
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -567,7 +647,7 @@ export default class ReduxService extends BaseService<never> {
   async importLedgerAccounts(
     accounts: Array<{
       path: string
-      address: string
+      address: HexString
     }>,
   ): Promise<void> {
     const trackedNetworks = await this.chainService.getTrackedNetworks()
@@ -603,7 +683,7 @@ export default class ReduxService extends BaseService<never> {
   async deriveLedgerAddress(
     deviceID: string,
     derivationPath: string,
-  ): Promise<string> {
+  ): Promise<HexString> {
     return this.signingService.deriveAddress({
       type: "ledger",
       deviceID,
@@ -641,7 +721,7 @@ export default class ReduxService extends BaseService<never> {
     activitiesToEnrich.forEach(async (txHash) => {
       const transaction = await this.chainService.getTransaction(
         addressNetwork.network,
-        txHash,
+        toHexString(txHash),
       )
       const enrichedTransaction =
         await this.enrichmentService.enrichTransaction(transaction, 2)
@@ -1359,7 +1439,8 @@ export default class ReduxService extends BaseService<never> {
     this.providerBridgeService.emitter.on(
       "setClaimReferrer",
       async (referral: string) => {
-        const isAddress = isProbablyEVMAddress(referral)
+        const isAddress =
+          isHexString(referral) && isProbablyEVMAddress(referral)
         const network = ETHEREUM
         const ensName = isAddress
           ? (
@@ -1674,7 +1755,7 @@ export default class ReduxService extends BaseService<never> {
       },
     )
     this.abilitiesService.emitter.on("deleteAbilities", (address) => {
-      this.store.dispatch(deleteAbilitiesForAccount(address))
+      this.store.dispatch(deleteAbilitiesForAccount(toHexString(address)))
     })
     this.abilitiesService.emitter.on("updatedAbility", (ability) => {
       this.store.dispatch(updateAbility(ability))
@@ -1709,7 +1790,9 @@ export default class ReduxService extends BaseService<never> {
     return this.internalSignerService.exportPrivateKey(address)
   }
 
-  async importSigner(signerRaw: SignerImportMetadata): Promise<string | null> {
+  async importSigner(
+    signerRaw: SignerImportMetadata,
+  ): Promise<HexString | null> {
     return this.internalSignerService.importSigner(signerRaw)
   }
 
@@ -1717,7 +1800,7 @@ export default class ReduxService extends BaseService<never> {
     const addressNetwork = this.store.getState().ui.selectedAccount
     const transaction = await this.chainService.getTransaction(
       addressNetwork.network,
-      txHash,
+      toHexString(txHash),
     )
     const enrichedTransaction = await this.enrichmentService.enrichTransaction(
       transaction,

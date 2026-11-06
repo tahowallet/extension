@@ -64,7 +64,7 @@ describe("Assets selectors", () => {
 
     test("should retrieve the correct price point for an asset that shares a symbol with other assets across networks", () => {
       /* same symbol, network, different contract address */
-      const similarAsset = {
+      const similarAsset: SmartContractFungibleAsset = {
         ...asset,
         contractAddress: "0xf4d2888d29d722226fafa5d9b24f9164c092421e",
       }

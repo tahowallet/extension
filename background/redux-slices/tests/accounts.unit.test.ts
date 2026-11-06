@@ -15,7 +15,7 @@ import { getFullAssetID } from "../utils/asset-utils"
 import { determineAssetDisplayAndVerify } from "../selectors"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
-const ACCOUNT_MOCK = {
+const ACCOUNT_MOCK: AccountData = {
   address: ADDRESS_MOCK,
   network: ETHEREUM,
   balances: {},

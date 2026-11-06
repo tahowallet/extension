@@ -5,6 +5,7 @@ import { NETWORKS_SUPPORTING_NFTS } from "../../nfts"
 import { POAP_COLLECTION_ID } from "../poap"
 import { getNFTCollections, getNFTs, getNFTsTransfers } from "../nfts"
 import type NFTIndexer from "../nft-indexer"
+import type { AddressOnNetwork } from "../../accounts"
 
 const ADDRESS = "0x1111111111111111111111111111111111111111"
 const COLLECTION_ID = "erc721:137:0x4444444444444444444444444444444444444444"
@@ -15,7 +16,7 @@ const stubIndexer = () => ({
   getNFTsTransfers: sinon.stub().resolves([]),
 })
 
-const accounts = [
+const accounts: AddressOnNetwork[] = [
   { address: ADDRESS, network: POLYGON },
   { address: ADDRESS, network: ROOTSTOCK },
 ]

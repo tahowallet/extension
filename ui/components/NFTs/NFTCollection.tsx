@@ -8,6 +8,7 @@ import {
 } from "@tallyho/tally-background/redux-slices/nfts"
 import classNames from "classnames"
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { isHexString } from "@tallyho/tally-background/lib/utils/hex"
 import NFTItem from "./NFTItem"
 import { useBackgroundDispatch, useIntersectionObserver } from "../../hooks"
 import SharedSkeletonLoader from "../Shared/SharedSkeletonLoader"
@@ -27,27 +28,29 @@ export default function NFTCollection(props: {
   const [isUpdating, setIsUpdating] = useState(false) // update on already loaded collection
   const [wasUpdated, setWasUpdated] = useState(false) // to fetch NFTs data only once during the component lifespan
 
-  const fetchCollection = useCallback(
-    () =>
-      dispatch(
-        fetchNFTsFromCollection({
-          collectionID: id,
-          account: { address: owner, network },
-        }),
-      ),
-    [id, owner, network, dispatch],
-  )
+  const fetchCollection = useCallback(async () => {
+    // Collection owners are stored normalized, so this only skips malformed
+    // data.
+    if (!isHexString(owner)) return
+    await dispatch(
+      fetchNFTsFromCollection({
+        collectionID: id,
+        account: { address: owner, network },
+      }),
+    )
+  }, [id, owner, network, dispatch])
 
-  const fetchMore = useCallback(
-    () =>
-      dispatch(
-        fetchMoreNFTsFromCollection({
-          collectionID: id,
-          account: { address: owner, network },
-        }),
-      ),
-    [id, owner, network, dispatch],
-  )
+  const fetchMore = useCallback(async () => {
+    // Collection owners are stored normalized, so this only skips malformed
+    // data.
+    if (!isHexString(owner)) return
+    await dispatch(
+      fetchMoreNFTsFromCollection({
+        collectionID: id,
+        account: { address: owner, network },
+      }),
+    )
+  }, [id, owner, network, dispatch])
 
   const intersectionCallback = useCallback<IntersectionObserverCallback>(
     ([element]) => {

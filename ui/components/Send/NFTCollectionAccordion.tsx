@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
+import { isHexString } from "@tallyho/tally-background/lib/utils/hex"
 import {
   NFTCollectionCached,
   fetchNFTsFromCollection,
@@ -33,12 +34,19 @@ export default function NFTCollectionAccordion({
 
   useEffect(() => {
     if (isExpanded) {
+      const owner = collection.owner
+      // Collection owners are stored normalized, so this only skips malformed
+      // data.
+      if (!isHexString(owner)) {
+        setIsLoading(false)
+        return
+      }
       setIsLoading(true)
       dispatch(
         fetchNFTsFromCollection({
           collectionID: collection.id,
           account: {
-            address: collection.owner,
+            address: owner,
             network: NETWORK_BY_CHAIN_ID[collection.chainID],
           },
         }),

@@ -25,6 +25,7 @@ import SettingsCustomNetworks from "../pages/Settings/SettingsCustomNetworks"
 import NewCustomNetworkRequest from "../pages/NewCustomNetworkRequest"
 import SettingsAddCustomAsset from "../pages/Settings/SettingsAddCustomAsset"
 import CorePage from "../components/Core/CorePage"
+import SparkAccountPage from "../pages/Spark/SparkAccountPage"
 
 // The internal signer screens also appear inside other pages, so their routes
 // supply the page frame.
@@ -87,6 +88,11 @@ const pageList: PageList[] = [
   {
     path: "/personal-sign",
     Component: PersonalSign,
+    persistOnClose: true,
+  },
+  {
+    path: "/spark/account",
+    Component: SparkAccountPage,
     persistOnClose: true,
   },
   {

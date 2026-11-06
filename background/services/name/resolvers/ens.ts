@@ -11,6 +11,7 @@ import {
   POLYGON,
 } from "../../../constants"
 import { sameNetwork } from "../../../networks"
+import { unsafeHexString } from "../../../lib/utils/hex"
 import { NameResolver } from "../name-resolver"
 
 const ENS_SUPPORTED_NETWORKS = [
@@ -61,7 +62,8 @@ export default function ensResolverFor(
       }
 
       return {
-        address,
+        // Ethers returns a checksummed address from `getAddress`.
+        address: unsafeHexString(address),
         network,
       }
     },

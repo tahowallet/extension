@@ -4,6 +4,7 @@ import React, { ReactElement, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
+import { HexString } from "@tallyho/tally-background/types"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedSecretText from "../Shared/SharedSecretText"
 import CopyToClipboard from "./CopyToClipboard"
@@ -39,7 +40,7 @@ function MnemonicList(props: {
 export default function RevealMnemonic({
   address,
 }: {
-  address: string
+  address: HexString
 }): ReactElement {
   const { t } = useTranslation("translation", {
     keyPrefix: "accounts.accountItem.showMnemonic",

@@ -16,6 +16,7 @@ import type { EVMNetwork } from "../../networks"
 import { ERC721_INTERFACE, ERC721_INTERFACE_ID } from "../erc721"
 import logger from "../logger"
 import { normalizeEVMAddress, truncateAddress } from "../utils"
+import { toHexString, unsafeHexString } from "../utils/hex"
 import { batchCalls, CallProvider, CallResult } from "./batch-calls"
 import {
   erc721CollectionID,
@@ -158,8 +159,10 @@ export default class NFTIndexer {
     const owners = await batchCalls(
       provider,
       tokens.map(({ contract, tokenId }) => ({
-        target: contract,
-        callData: ERC721_INTERFACE.encodeFunctionData("ownerOf", [tokenId]),
+        target: toHexString(contract),
+        callData: unsafeHexString(
+          ERC721_INTERFACE.encodeFunctionData("ownerOf", [tokenId]),
+        ),
       })),
     )
 
@@ -229,18 +232,24 @@ export default class NFTIndexer {
       provider,
       unknown.flatMap((contract) => [
         {
-          target: contract,
-          callData: ERC721_INTERFACE.encodeFunctionData("supportsInterface", [
-            ERC721_INTERFACE_ID,
-          ]),
+          target: toHexString(contract),
+          callData: unsafeHexString(
+            ERC721_INTERFACE.encodeFunctionData("supportsInterface", [
+              ERC721_INTERFACE_ID,
+            ]),
+          ),
         },
         {
-          target: contract,
-          callData: ERC721_INTERFACE.encodeFunctionData("name"),
+          target: toHexString(contract),
+          callData: unsafeHexString(
+            ERC721_INTERFACE.encodeFunctionData("name"),
+          ),
         },
         {
-          target: contract,
-          callData: ERC721_INTERFACE.encodeFunctionData("symbol"),
+          target: toHexString(contract),
+          callData: unsafeHexString(
+            ERC721_INTERFACE.encodeFunctionData("symbol"),
+          ),
         },
       ]),
     )
@@ -322,8 +331,10 @@ export default class NFTIndexer {
     const uris = await batchCalls(
       provider,
       due.map(({ token: { contract, tokenId } }) => ({
-        target: contract,
-        callData: ERC721_INTERFACE.encodeFunctionData("tokenURI", [tokenId]),
+        target: toHexString(contract),
+        callData: unsafeHexString(
+          ERC721_INTERFACE.encodeFunctionData("tokenURI", [tokenId]),
+        ),
       })),
     )
 

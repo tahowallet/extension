@@ -20,6 +20,7 @@ import {
 } from "../lib/0x-swap-types"
 import { ERC20_ABI } from "../lib/erc20"
 import logger from "../lib/logger"
+import { unsafeHexString } from "../lib/utils/hex"
 import { getUSDPriceForTokens } from "../lib/priceOracle"
 import { getPricePoint } from "../lib/prices"
 import { PricesState, selectAssetPricePoint } from "./prices"
@@ -117,7 +118,7 @@ export const fetchSwapQuote = createBackgroundAsyncThunk(
     { dispatch },
   ): Promise<LiquidSwapQuote | SwapLookupFailure> => {
     const signer = getProvider().getSigner()
-    const tradeAddress = await signer.getAddress()
+    const tradeAddress = unsafeHexString(await signer.getAddress())
 
     const apiData = await getQuote({
       ...quoteRequest,
@@ -164,7 +165,7 @@ export const fetchSwapPrice = createBackgroundAsyncThunk(
     | undefined
   > => {
     const signer = getProvider().getSigner()
-    const taker = await signer.getAddress()
+    const taker = unsafeHexString(await signer.getAddress())
     const { prices } = getState() as {
       prices: PricesState
     }

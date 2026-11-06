@@ -4,6 +4,7 @@ import type { EIP712TypedData, HexString } from "../../types"
 import type ChainService from "../chain"
 import { isProbablyEVMAddress, sameEVMAddress } from "../../lib/utils"
 import logger from "../../lib/logger"
+import { isHexString, unsafeHexString } from "../../lib/utils/hex"
 import {
   type SimulateV1CallResult,
   type SimulationResult,
@@ -116,14 +117,13 @@ export function parseSafeTxTypedData(
   const nonce = toBigInt(message.nonce)
 
   if (
-    typeof to !== "string" ||
+    !isHexString(to) ||
     !isProbablyEVMAddress(to) ||
-    typeof gasToken !== "string" ||
+    !isHexString(gasToken) ||
     !isProbablyEVMAddress(gasToken) ||
-    typeof refundReceiver !== "string" ||
+    !isHexString(refundReceiver) ||
     !isProbablyEVMAddress(refundReceiver) ||
-    (data !== undefined &&
-      (typeof data !== "string" || !utils.isHexString(data))) ||
+    (data !== undefined && !isHexString(data)) ||
     value === undefined ||
     (operation !== 0n && operation !== 1n) ||
     safeTxGas === undefined ||
@@ -142,7 +142,7 @@ export function parseSafeTxTypedData(
     params: {
       to,
       value,
-      data: typeof data === "string" ? data : "0x",
+      data: isHexString(data) ? data : "0x",
       operation: Number(operation),
       safeTxGas,
       baseGas,
@@ -179,7 +179,7 @@ export function getExecutedSafeAddress(transaction: {
   to?: string | null
   input?: string | null
 }): HexString | undefined {
-  return typeof transaction.to === "string" &&
+  return isHexString(transaction.to) &&
     isSafeExecTransactionCalldata(transaction.input)
     ? transaction.to
     : undefined
@@ -199,18 +199,20 @@ export function encodeExecTransaction(
   params: SafeTransactionParams,
   signatures: HexString,
 ): HexString {
-  return SAFE_INTERFACE.encodeFunctionData("execTransaction", [
-    params.to,
-    params.value,
-    params.data,
-    params.operation,
-    params.safeTxGas,
-    params.baseGas,
-    params.gasPrice,
-    params.gasToken,
-    params.refundReceiver,
-    signatures,
-  ])
+  return unsafeHexString(
+    SAFE_INTERFACE.encodeFunctionData("execTransaction", [
+      params.to,
+      params.value,
+      params.data,
+      params.operation,
+      params.safeTxGas,
+      params.baseGas,
+      params.gasPrice,
+      params.gasToken,
+      params.refundReceiver,
+      signatures,
+    ]),
+  )
 }
 
 async function callSafe(
@@ -242,7 +244,7 @@ export async function findThresholdSlot(
   safeAddress: HexString,
 ): Promise<HexString | undefined> {
   const slots = THRESHOLD_SLOT_CANDIDATES.map((slot) =>
-    utils.hexZeroPad(utils.hexlify(slot), 32),
+    unsafeHexString(utils.hexZeroPad(utils.hexlify(slot), 32)),
   )
   const [[threshold], ...slotValues] = await Promise.all([
     callSafe(chainService, network, safeAddress, "getThreshold"),
@@ -363,7 +365,9 @@ export async function simulatePendingSafeTransaction(
     },
     {
       [safeAddress]: {
-        stateDiff: { [thresholdSlot]: utils.hexZeroPad("0x01", 32) },
+        stateDiff: {
+          [thresholdSlot]: unsafeHexString(utils.hexZeroPad("0x01", 32)),
+        },
       },
     },
   )

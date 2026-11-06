@@ -9,8 +9,12 @@ import { AccountSignerWithId } from "../signing"
 import { AccountSignerSettings } from "../ui"
 import { AccountState, addAddressNetwork } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
+import { unsafeHexString } from "../lib/utils/hex"
 import type { UNIXTime } from "../types"
-import { DEFAULT_AUTOLOCK_INTERVAL } from "../services/preferences/defaults"
+import {
+  DEFAULT_AUTOLOCK_INTERVAL,
+  NO_SELECTED_ADDRESS,
+} from "../services/preferences/defaults"
 import type { RootState } from "."
 import {
   CampaignIds,
@@ -96,7 +100,7 @@ export const emitter = new Emittery<Events>()
 export const initialState: UIState = {
   showingActivityDetailID: null,
   selectedAccount: {
-    address: "",
+    address: NO_SELECTED_ADDRESS,
     network: ETHEREUM,
   },
   initializationLoadingTimeExpired: false,
@@ -402,7 +406,9 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     // Add any accounts on the currently selected network to the newly
     // selected network - if those accounts don't yet exist on it.
     Object.keys(account.accountsData.evm[currentlySelectedChainID]).forEach(
-      (address) => {
+      (key) => {
+        // Object.keys widens the record's HexString keys to string.
+        const address = unsafeHexString(key)
         if (!account.accountsData.evm[network.chainID]?.[address]) {
           dispatch(addAddressNetwork({ address, network }))
         }

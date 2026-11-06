@@ -14,6 +14,7 @@ import {
   parseSafeTxTypedData,
   simulatePendingSafeTransaction,
 } from "../safe"
+import { toHexString } from "../../../lib/utils/hex"
 
 const SAFE = "0x1111111111111111111111111111111111111111"
 const OWNER_A = "0x2222222222222222222222222222222222222222"
@@ -40,7 +41,7 @@ const params: SafeTransactionParams = {
   refundReceiver: ZERO,
 }
 
-const slot = (n: number) => utils.hexZeroPad(utils.hexlify(n), 32)
+const slot = (n: number) => toHexString(utils.hexZeroPad(utils.hexlify(n), 32))
 const word = (n: number) => utils.hexZeroPad(utils.hexlify(n), 32)
 
 const safeTxTypedData = (
@@ -171,7 +172,7 @@ describe("Safe transactions", () => {
 
   describe("interpretSafeExecution", () => {
     const returning = (success: boolean) =>
-      SAFE_ABI.encodeFunctionResult("execTransaction", [success])
+      toHexString(SAFE_ABI.encodeFunctionResult("execTransaction", [success]))
 
     it("reports success with the Safe attached", () => {
       expect(

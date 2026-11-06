@@ -37,6 +37,7 @@ import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/red
 import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
+import type { HexString } from "@tallyho/tally-background/types"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import NetworkUnreachableWarning from "../components/Shared/NetworkUnreachableWarning"
@@ -90,7 +91,7 @@ export default function Send(): ReactElement {
   }, [currentAccount.network.baseAsset.symbol])
 
   const [destinationAddress, setDestinationAddress] = useState<
-    string | undefined
+    HexString | undefined
   >(undefined)
   const [amount, setAmount] = useState("")
 

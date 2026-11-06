@@ -26,6 +26,7 @@ import openConnectedLedgerTransport from "./transport"
 import { ethersTransactionFromTransactionRequest } from "../chain/utils"
 import { ETHEREUM } from "../../constants"
 import { normalizeEVMAddress } from "../../lib/utils"
+import { unsafeHexString } from "../../lib/utils/hex"
 import type { AddressOnNetwork } from "../../accounts"
 
 enum LedgerType {
@@ -701,7 +702,7 @@ export default class LedgerService extends BaseService<Events> {
     })
   }
 
-  async saveAddress(path: HexString, address: string): Promise<void> {
+  async saveAddress(path: string, address: HexString): Promise<void> {
     const currentLedger = this.#currentLedger
     if (currentLedger === null) {
       throw new Error("No Ledger id is set!")
@@ -789,8 +790,9 @@ export default class LedgerService extends BaseService<Events> {
 
         const signedTx = {
           hash: tx.hash,
-          from: tx.from,
-          to: tx.to,
+          // Ethers' transaction parser returns checksummed addresses.
+          from: unsafeHexString(tx.from),
+          to: tx.to === undefined ? undefined : unsafeHexString(tx.to),
           nonce: tx.nonce,
           input: tx.data,
           value: tx.value.toBigInt(),

@@ -1,6 +1,7 @@
 import { BigNumber, ethers, utils } from "ethers"
 
 import logger from "../logger"
+import { toHexString } from "../utils/hex"
 import { getTokenBalances, parseLogsForERC20Transfers } from "../erc20"
 import { createAddressOnNetwork } from "../../tests/factories"
 import {
@@ -10,7 +11,9 @@ import {
   TRANSFER_IN,
 } from "./fixtures/erc721/transfer-logs"
 
-const amountData = utils.hexZeroPad(BigNumber.from(7).toHexString(), 32)
+const amountData = toHexString(
+  utils.hexZeroPad(BigNumber.from(7).toHexString(), 32),
+)
 
 describe("parseLogsForERC20Transfers", () => {
   it("parses a three-topic Transfer log", () => {
@@ -26,8 +29,8 @@ describe("parseLogsForERC20Transfers", () => {
       {
         contractAddress: COLLECTION,
         amount: 7n,
-        senderAddress: utils.getAddress(OTHER),
-        recipientAddress: utils.getAddress(ACCOUNT),
+        senderAddress: toHexString(utils.getAddress(OTHER)),
+        recipientAddress: toHexString(utils.getAddress(ACCOUNT)),
       },
     ])
   })

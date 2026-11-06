@@ -4,6 +4,7 @@ import { MATIC, POLYGON } from "@tallyho/tally-background/constants"
 import { SmartContractFungibleAsset } from "@tallyho/tally-background/assets"
 import { getFullAssetID } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import { initialState as uiInitialState } from "@tallyho/tally-background/redux-slices/ui"
+import type { AccountData } from "@tallyho/tally-background/redux-slices/accounts"
 import { createAccountData } from "@tallyho/tally-background/tests/factories"
 import SingleAsset from "../SingleAsset"
 import { renderWithProviders } from "../../tests/test-utils"
@@ -29,8 +30,15 @@ const WMATIC: SmartContractFungibleAsset = {
 const renderSingleAsset = (
   asset: typeof MATIC | SmartContractFungibleAsset,
   amount: bigint,
-) =>
-  renderWithProviders(
+) => {
+  const balances: AccountData["balances"] = {}
+  balances[getFullAssetID(asset)] = {
+    amount,
+    retrievedAt: Date.now(),
+    dataSource: "generic-rpc",
+  }
+
+  return renderWithProviders(
     <MemoryRouter initialEntries={[{ pathname: "/singleAsset", state: asset }]}>
       <Route path="/singleAsset" component={SingleAsset} />
     </MemoryRouter>,
@@ -43,13 +51,7 @@ const renderSingleAsset = (
                 [TEST_ADDRESS]: createAccountData({
                   address: TEST_ADDRESS,
                   network: POLYGON,
-                  balances: {
-                    [getFullAssetID(asset)]: {
-                      amount,
-                      retrievedAt: Date.now(),
-                      dataSource: "generic-rpc",
-                    },
-                  },
+                  balances,
                 }),
               },
             },
@@ -66,6 +68,7 @@ const renderSingleAsset = (
       },
     },
   )
+}
 
 describe("SingleAsset", () => {
   // MATIC on Polygon (like ETH on Optimism) is a network base asset that also

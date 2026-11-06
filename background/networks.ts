@@ -14,7 +14,7 @@ import type {
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
-export type NetworkFamily = "EVM"
+export type NetworkFamily = "EVM" | "SPARK"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
@@ -76,6 +76,32 @@ export type EVMNetwork = Network & {
    * WETH. Known for built-in networks.
    */
   wrappedBaseAssetAddress?: HexString
+}
+
+/**
+ * The Spark networks the Spark SDK can talk to. Mirrors the SDK's
+ * `NetworkType` for the subset Taho supports.
+ */
+export type SparkNetworkType = "MAINNET" | "REGTEST"
+
+/**
+ * A Spark network: a Bitcoin layer 2 operated by a set of signing operators.
+ * Spark has no numeric chain ID, so `chainID` is a stable string
+ * (`spark-mainnet`, `spark-regtest`) that never collides with an EVM chain ID.
+ */
+export type SparkNetwork = Network & {
+  chainID: `spark-${Lowercase<SparkNetworkType>}`
+  family: "SPARK"
+  sparkNetworkType: SparkNetworkType
+  /**
+   * Base URL of a Spark block explorer for this network; transfers and
+   * addresses are linked relative to it.
+   */
+  blockExplorerURL: string
+  /**
+   * Query parameter value the explorer uses to select this network.
+   */
+  blockExplorerNetworkParam: string
 }
 
 /**

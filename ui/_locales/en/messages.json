@@ -1139,5 +1139,76 @@
     "swap": "Swap",
     "earn": "Earn",
     "settings": "Settings"
+  },
+  "spark": {
+    "title": "Bitcoin on Spark",
+    "empty": "No Spark accounts yet. Add one to hold bitcoin on Spark, send over Lightning and receive from any bitcoin wallet.",
+    "network": "Spark network",
+    "mainnet": "Mainnet",
+    "regtest": "Regtest (test bitcoin)",
+    "addAccount": "Add Spark account",
+    "needsRecoveryPhrase": "Spark accounts are derived from a recovery phrase. Create or import a wallet with a recovery phrase first.",
+    "unknownAccount": "This Spark account is no longer available.",
+    "tabs": {
+      "assets": "Assets",
+      "activity": "Activity",
+      "receive": "Receive",
+      "send": "Send"
+    },
+    "available": "available",
+    "incoming": "incoming",
+    "lockedNotice": "Taho is locked. Showing the last known balance; unlock to refresh, receive or send.",
+    "connecting": "Connecting to Spark…",
+    "connectionError": "Couldn't connect to Spark",
+    "noBalanceYet": "No balance loaded yet. Unlock Taho to load it.",
+    "noTokens": "No Spark tokens.",
+    "viewToken": "View token ↗",
+    "noActivity": "No activity yet.",
+    "viewOnExplorer": "Explorer ↗",
+    "activity": {
+      "incoming": "Received",
+      "outgoing": "Sent",
+      "pending": "Pending"
+    },
+    "kind": {
+      "spark": "Spark",
+      "lightning": "Lightning",
+      "deposit": "Bitcoin deposit",
+      "withdrawal": "Bitcoin withdrawal",
+      "other": "Other"
+    },
+    "copy": "Copy",
+    "copied": "Copied!",
+    "amountSats": "Amount (sats)",
+    "invalidAmount": "Enter a whole number of sats greater than zero.",
+    "unlockToUse": "Unlock Taho to use this.",
+    "receive": {
+      "spark": "Spark",
+      "lightning": "Lightning",
+      "bitcoin": "Bitcoin",
+      "createInvoice": "Create invoice",
+      "newInvoice": "New invoice",
+      "showDepositAddress": "Show deposit address",
+      "depositHint": "Send bitcoin from any wallet. It's credited to this Spark account after 3 confirmations."
+    },
+    "send": {
+      "destination": "Spark address or Lightning invoice",
+      "amountOptional": "Amount (sats, only for invoices without an amount)",
+      "available": "Available: {{amount}}",
+      "review": "Review",
+      "invalidDestination": "Enter a Spark address or a Lightning invoice.",
+      "wrongNetwork": "That's a Spark {{network}} address; this account is on a different Spark network.",
+      "insufficientFunds": "That's more than this account can send right now.",
+      "confirmTitle": "Confirm send",
+      "to": "To",
+      "amount": "Amount",
+      "estimatedFee": "Estimated fee",
+      "maxFee": "max",
+      "irreversible": "Spark payments are final once sent.",
+      "back": "Back",
+      "confirm": "Send now",
+      "sent": "Sent!",
+      "another": "Send another"
+    }
   }
 }

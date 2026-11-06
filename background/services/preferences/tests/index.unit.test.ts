@@ -16,7 +16,9 @@ describe("Preference Service Unit", () => {
   describe("addOrEditNameInAddressBook", () => {
     it("should emit an addressBookEntryModified event when called", async () => {
       const spy = jest.spyOn(preferenceService.emitter, "emit")
-      const nameToAdd = {
+      const nameToAdd: Parameters<
+        PreferenceService["addOrEditNameInAddressBook"]
+      >[0] = {
         network: ETHEREUM,
         name: "foo",
         address: "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",

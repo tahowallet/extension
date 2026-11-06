@@ -24,6 +24,7 @@
     "watch": "webpack --mode=development --watch"
   },
   "dependencies": {
+    "@buildonspark/spark-sdk": "0.15.0",
     "@ethersproject/abstract-provider": "5.7.0",
     "@ethersproject/abstract-signer": "5.7.0",
     "@ethersproject/networks": "5.7.1",
@@ -37,6 +38,7 @@
     "@ledgerhq/hw-transport": "6.31.13",
     "@ledgerhq/hw-transport-webusb": "6.29.13",
     "@redux-devtools/remote": "^0.7.4",
+    "@scure/base": "^1.2.4",
     "@tallyho/hd-keyring": "0.5.0",
     "@tallyho/provider-bridge-shared": "0.0.1",
     "@tallyho/window-provider": "0.0.1",

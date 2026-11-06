@@ -4,21 +4,26 @@ import {
   batchCalls,
   CALLS_PER_MULTICALL,
   CallProvider,
+  ContractCall,
   forgetMulticallDeployments,
 } from "../batch-calls"
+import type { HexString } from "../../../types"
+import { toHexString } from "../../utils/hex"
 
 const MULTICALL = new ethers.utils.Interface(MULTICALL_ABI)
-const TARGET = "0x4444444444444444444444444444444444444444"
+const TARGET: HexString = "0x4444444444444444444444444444444444444444"
 
 const revert = () =>
   Object.assign(new Error("execution reverted"), {
     code: ethers.errors.CALL_EXCEPTION,
   })
 
-const calls = (count: number) =>
+const calls = (count: number): ContractCall[] =>
   Array.from({ length: count }, (_, index) => ({
     target: TARGET,
-    callData: ethers.utils.hexZeroPad(ethers.utils.hexlify(index), 4),
+    callData: toHexString(
+      ethers.utils.hexZeroPad(ethers.utils.hexlify(index), 4),
+    ),
   }))
 
 function stubProvider({

@@ -138,7 +138,7 @@ export function parseERC20Tx(
  * Information bundle from an ostensible ERC20 transfer log using Taho types.
  */
 export type ERC20TransferLog = {
-  contractAddress: string
+  contractAddress: HexString
   amount: bigint
   senderAddress: HexString
   recipientAddress: HexString

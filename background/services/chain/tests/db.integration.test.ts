@@ -1,4 +1,5 @@
 import Dexie from "dexie"
+import type { AddressOnNetwork } from "../../../accounts"
 import { IDBFactory } from "fake-indexeddb"
 import * as sinon from "sinon"
 import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
@@ -515,7 +516,7 @@ describe("Chain Database", () => {
         blockExplorerURL: "https://someurl.com",
       })
 
-      const addressNetwork = {
+      const addressNetwork: AddressOnNetwork = {
         address: "0x208e94d5661a73360d9387d3ca169e5c130090cd",
         network: originalNetwork,
       }

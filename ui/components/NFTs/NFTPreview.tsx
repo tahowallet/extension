@@ -1,5 +1,6 @@
 import { NETWORK_BY_CHAIN_ID } from "@tallyho/tally-background/constants"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
+import { isHexString } from "@tallyho/tally-background/lib/utils/hex"
 import {
   refetchNFTsFromCollection,
   NFTWithCollection,
@@ -55,7 +56,9 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
   const dispatch = useBackgroundDispatch()
 
   const ownerName = useBackgroundSelector((state) =>
-    getAccountNameOnChain(state, { address: owner, network }),
+    isHexString(owner)
+      ? getAccountNameOnChain(state, { address: owner, network })
+      : undefined,
   )
 
   // Chrome seems to have problems when elements with backdrop style are rendered initially
@@ -77,16 +80,15 @@ export default function NFTPreview(props: NFTWithCollection): ReactElement {
     keyPrefix: "nfts",
   })
 
-  const refetchNFTs = useCallback(
-    () =>
-      dispatch(
-        refetchNFTsFromCollection({
-          collectionID,
-          account: { address: owner, network },
-        }),
-      ),
-    [collectionID, owner, network, dispatch],
-  )
+  const refetchNFTs = useCallback(async () => {
+    if (!isHexString(owner)) return
+    await dispatch(
+      refetchNFTsFromCollection({
+        collectionID,
+        account: { address: owner, network },
+      }),
+    )
+  }, [collectionID, owner, network, dispatch])
 
   const totalCount = totalNftCount ?? supply
   const displayedTotalCount =

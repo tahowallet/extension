@@ -26,6 +26,7 @@ import {
 import { FeatureFlags, isEnabled } from "../../../features"
 import { FORK } from "../../../constants"
 import type { PartialTransactionRequestWithFrom } from "../../enrichment"
+import { toOptionalHexString, unsafeHexString } from "../../../lib/utils/hex"
 
 /**
  * Parse a block as returned by a polling provider.
@@ -135,9 +136,9 @@ function eip1559TransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest,
 ): Partial<EIP1559TransactionRequest> {
   return {
-    to: transaction.to,
+    to: toOptionalHexString(transaction.to),
     input: transaction.data?.toString() ?? null,
-    from: transaction.from,
+    from: toOptionalHexString(transaction.from),
     type: transaction.type as KnownTxTypes,
     nonce:
       typeof transaction.nonce !== "undefined"
@@ -167,9 +168,9 @@ function legacyEVMTransactionRequestFromEthersTransactionRequest(
   transaction: EthersTransactionRequest,
 ): Partial<LegacyEVMTransactionRequest> {
   return {
-    to: transaction.to,
+    to: toOptionalHexString(transaction.to),
     input: transaction.data?.toString() ?? null,
-    from: transaction.from,
+    from: toOptionalHexString(transaction.from),
     type: transaction.type as 0,
     nonce:
       typeof transaction.nonce !== "undefined"
@@ -290,10 +291,11 @@ export function enrichTransactionWithReceipt(
      * into account L1 rollup fees.
      */
     gasPrice: receipt.effectiveGasPrice?.toBigInt() ?? transaction.gasPrice,
+    // Ethers' formatter guarantees receipt log fields are hex.
     logs: receipt.logs.map(({ address, data, topics }) => ({
-      contractAddress: address,
-      data,
-      topics,
+      contractAddress: unsafeHexString(address),
+      data: unsafeHexString(data),
+      topics: topics.map(unsafeHexString),
     })),
     status:
       receipt.status ??
@@ -324,10 +326,13 @@ export function transactionFromEthersTransaction(
     throw new Error(`Unknown transaction type ${tx.type}`)
   }
 
+  const to = tx.to ?? undefined
+
   const newTx = {
     hash: tx.hash,
-    from: tx.from,
-    to: tx.to ?? undefined,
+    // Ethers' formatter returns checksummed addresses.
+    from: unsafeHexString(tx.from),
+    to: to === undefined ? undefined : unsafeHexString(to),
     nonce: parseInt(tx.nonce.toString(), 10),
     gasLimit: tx.gasLimit.toBigInt(),
     gasPrice: tx.gasPrice ? tx.gasPrice.toBigInt() : null,

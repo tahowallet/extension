@@ -3,6 +3,7 @@ import _ from "lodash"
 
 import type { HexString } from "../../types"
 import logger from "../logger"
+import { unsafeHexString } from "../utils/hex"
 import { MULTICALL_ABI, MULTICALL_CONTRACT_ADDRESS } from "../multicall"
 
 /** One read-only contract call. */
@@ -80,7 +81,10 @@ async function callOneByOne(
   return Promise.all(
     calls.map(({ target, callData }) =>
       provider.call({ to: target, data: callData }).then(
-        (returnData): CallResult => ({ success: true, returnData }),
+        (returnData): CallResult => ({
+          success: true,
+          returnData: unsafeHexString(returnData),
+        }),
         (error): CallResult | undefined =>
           isRevert(error) ? { success: false, returnData: "0x" } : undefined,
       ),

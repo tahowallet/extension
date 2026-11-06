@@ -17,6 +17,7 @@ import {
   MockSerialFallbackProvider,
 } from "../../../tests/factories"
 import { ChainDatabase } from "../db"
+import { toHexString } from "../../../lib/utils/hex"
 import { BOAR_RPC_URLS } from "../../../lib/boar"
 import SerialFallbackProvider from "../serial-fallback-provider"
 
@@ -195,7 +196,7 @@ describe("ChainService", () => {
     expect(
       await chainServiceExternalized.getTransaction(
         POLYGON,
-        validOptimismEVMTransaction.hash,
+        toHexString(validOptimismEVMTransaction.hash),
       ),
     ).toBeTruthy()
   })

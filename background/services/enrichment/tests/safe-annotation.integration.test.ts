@@ -14,6 +14,10 @@ import resolveTransactionAnnotation, {
   annotationsFromLogs,
 } from "../transactions"
 import { encodeExecTransaction } from "../safe"
+import type { EVMLog } from "../../../networks"
+import type { SmartContractFungibleAsset } from "../../../assets"
+import type { HexString } from "../../../types"
+import { toHexString } from "../../../lib/utils/hex"
 
 const SAFE = "0x1111111111111111111111111111111111111111"
 const OWNER = "0x2222222222222222222222222222222222222222"
@@ -30,13 +34,13 @@ const SAFE_ABI = new utils.Interface([
   "function nonce() view returns (uint256)",
 ])
 
-const topicFor = (address: string) => utils.hexZeroPad(address, 32)
+const topicFor = (address: string) => toHexString(utils.hexZeroPad(address, 32))
 
 // What eth_simulateV1's traceTransfers emits for 1 ETH leaving the Safe.
-const NATIVE_TRANSFER_LOG = {
+const NATIVE_TRANSFER_LOG: EVMLog = {
   contractAddress: NATIVE,
   topics: [TRANSFER_TOPIC, topicFor(SAFE), topicFor(RECIPIENT)],
-  data: utils.hexZeroPad(utils.hexlify(10n ** 18n), 32),
+  data: toHexString(utils.hexZeroPad(utils.hexlify(10n ** 18n), 32)),
 }
 
 const safeTx = (nonce: bigint, chainID?: string): SafeTypedDataTransaction => ({
@@ -123,10 +127,10 @@ describe("Safe transaction enrichment", () => {
 
   describe("annotationsFromLogs with untracked tokens", () => {
     const TOKEN = "0x5555555555555555555555555555555555555555"
-    const tokenTransferLog = {
+    const tokenTransferLog: EVMLog = {
       contractAddress: TOKEN,
       topics: [TRANSFER_TOPIC, topicFor(SAFE), topicFor(RECIPIENT)],
-      data: utils.hexZeroPad(utils.hexlify(42n), 32),
+      data: toHexString(utils.hexZeroPad(utils.hexlify(42n), 32)),
     }
 
     it("looks up untracked tokens only when asked, and flags them", async () => {
@@ -189,7 +193,7 @@ describe("Safe transaction enrichment", () => {
             decimals: 0,
           })
 
-        const token = {
+        const token: SmartContractFungibleAsset = {
           contractAddress: TOKEN,
           homeNetwork: ETHEREUM,
           symbol: "MYST",
@@ -268,13 +272,13 @@ describe("Safe transaction enrichment", () => {
   describe("resolveTransactionAnnotation for a mined Safe execution", () => {
     const TOKEN = "0x5555555555555555555555555555555555555555"
     // Checksummed, as stored transactions carry it.
-    const CHECKSUMMED_SAFE = utils.getAddress(SAFE)
-    const tokenTransferLog = {
+    const CHECKSUMMED_SAFE = toHexString(utils.getAddress(SAFE))
+    const tokenTransferLog: EVMLog = {
       contractAddress: TOKEN,
       topics: [TRANSFER_TOPIC, topicFor(SAFE), topicFor(RECIPIENT)],
-      data: utils.hexZeroPad(utils.hexlify(42n), 32),
+      data: toHexString(utils.hexZeroPad(utils.hexlify(42n), 32)),
     }
-    const minedTransaction = (input: string, to: string) =>
+    const minedTransaction = (input: HexString, to: HexString) =>
       ({
         ...createAnyEVMTransaction({
           network: ETHEREUM,

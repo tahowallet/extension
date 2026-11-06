@@ -46,7 +46,7 @@ export type Events = {
   }
   importLedgerAccounts: Array<{
     path: string
-    address: string
+    address: HexString
   }>
   connectLedger: {
     resolve: (address: string) => void
@@ -174,7 +174,7 @@ const ledgerSlice = createSlice({
       {
         payload: { deviceID, path, address },
       }: {
-        payload: { deviceID: string; path: string; address: string }
+        payload: { deviceID: string; path: string; address: HexString }
       },
     ) => {
       const device = immerState.devices[deviceID]
@@ -265,7 +265,12 @@ export const fetchBalance = createBackgroundAsyncThunk(
       path,
       address,
       network,
-    }: { deviceID: string; path: string; address: string; network: EVMNetwork },
+    }: {
+      deviceID: string
+      path: string
+      address: HexString
+      network: EVMNetwork
+    },
     { dispatch, extra: { main } },
   ) => {
     dispatch(ledgerSlice.actions.setFetchingBalance({ deviceID, path }))
@@ -290,7 +295,7 @@ export const importLedgerAccounts = createBackgroundAsyncThunk(
     {
       accounts,
     }: {
-      accounts: Array<{ path: string; address: string }>
+      accounts: Array<{ path: string; address: HexString }>
     },
     { extra: { main } },
   ) => {

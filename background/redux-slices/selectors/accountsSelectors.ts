@@ -50,6 +50,7 @@ import { assertUnreachable, isDefined } from "../../lib/utils/type-guards"
 import { PricesState, selectAssetPricePoint } from "../prices"
 import { TESTNET_TAHO } from "../../services/island"
 import { convertFixedPoint } from "../../lib/fixed-point"
+import { unsafeHexString } from "../../lib/utils/hex"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -564,7 +565,9 @@ function getNetworkAccountTotalsByCategory(
 
   return Object.entries(accounts.accountsData.evm[network.chainID] ?? {})
     .filter(([, accountData]) => typeof accountData !== "undefined")
-    .map(([address, accountData]): AccountTotal => {
+    .map(([key, accountData]): AccountTotal => {
+      // Object.entries widens the record's HexString keys to string.
+      const address = unsafeHexString(key)
       const shortenedAddress = truncateAddress(address)
 
       const accountSigner = accountSignersByAddress[address]

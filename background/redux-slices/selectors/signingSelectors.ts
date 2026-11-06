@@ -8,6 +8,7 @@ import {
 import { LedgerAccountSigner } from "../../services/ledger"
 import { AccountSigner, ReadOnlyAccountSigner } from "../../services/signing"
 import type { HexString } from "../../types"
+import { unsafeHexString } from "../../lib/utils/hex"
 import {
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,
@@ -64,7 +65,8 @@ export const selectAccountSignersByAddress = createSelector(
           allAccountsSeen.add(address)
 
           return [
-            address,
+            // Object.entries widens the record's HexString keys to string.
+            unsafeHexString(address),
             {
               type: "keyring",
               keyringID: keyring.id,
@@ -86,7 +88,8 @@ export const selectAccountSignersByAddress = createSelector(
           allAccountsSeen.add(address)
 
           return [
-            address,
+            // Object.entries widens the record's HexString keys to string.
+            unsafeHexString(address),
             {
               type: "private-key",
               walletID: wallet.id,

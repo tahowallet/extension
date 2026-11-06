@@ -30,7 +30,7 @@ export const WRAPPED_ASSET_INTERFACE = new ethers.utils.Interface(
 )
 
 export type WrappedAssetDepositLog = {
-  contractAddress: string
+  contractAddress: HexString
   amount: bigint
   senderAddress: HexString
   recipientAddress: HexString

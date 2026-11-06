@@ -1,5 +1,6 @@
 import { TransactionResponse } from "@ethersproject/providers"
 import { UnsignedTransaction } from "ethers/lib/utils"
+import { toHexString, unsafeHexString } from "../../lib/utils/hex"
 import logger from "../../lib/logger"
 import type { HexString, NormalizedEVMAddress, UNIXTime } from "../../types"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -98,7 +99,10 @@ interface Events extends ServiceLifecycleEvents {
     nftTransfers: ERC721Transfer[]
   }
   block: AnyEVMBlock
-  transaction: { forAccounts: string[]; transaction: AnyEVMTransaction }
+  transaction: {
+    forAccounts: NormalizedEVMAddress[]
+    transaction: AnyEVMTransaction
+  }
   blockPrices: { blockPrices: BlockPrices; network: EVMNetwork }
   customChainAdded: ValidatedAddEthereumChainParameter
   /**
@@ -160,7 +164,7 @@ export default class ChainService extends BaseService<Events> {
   }
 
   /** Accounts whose pending transactions are being watched. */
-  getWatchedAccounts(): { address: string; chainID: string }[] {
+  getWatchedAccounts(): { address: HexString; chainID: string }[] {
     return [...this.networkWatcher.watchedAccounts()]
   }
 
@@ -345,7 +349,8 @@ export default class ChainService extends BaseService<Events> {
       providerFor: (network) => this.providerForNetworkOrThrow(network),
       nonceAllocator: this.nonceAllocator,
       transactionTracker: this.transactionTracker,
-      onSent: (hash) => this.emitter.emit("transactionSend", hash),
+      onSent: (hash) =>
+        this.emitter.emit("transactionSend", unsafeHexString(hash)),
       onSendFailed: () => this.emitter.emit("transactionSendFailure"),
     })
 
@@ -468,7 +473,7 @@ export default class ChainService extends BaseService<Events> {
                     )
                     this.transactionTracker.enqueueLookup(
                       network,
-                      hash,
+                      toHexString(hash),
                       firstSeen,
                       0,
                       missingSince,

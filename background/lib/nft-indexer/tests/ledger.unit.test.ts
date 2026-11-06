@@ -10,6 +10,7 @@ import {
   SELF_TRANSFER,
   TRANSFER_IN,
   TRANSFER_OUT,
+  type ERC721TestLog,
 } from "../../tests/fixtures/erc721/transfer-logs"
 import {
   erc721CollectionID,
@@ -17,11 +18,12 @@ import {
   ledgerEntryFor,
   parseERC721CollectionID,
 } from "../ledger"
-import type { Log } from "@ethersproject/abstract-provider"
+import type { AddressOnNetwork } from "../../../accounts"
+import type { HexString } from "../../../types"
 
-const account = { address: ACCOUNT, network: ETHEREUM }
+const account: AddressOnNetwork = { address: ACCOUNT, network: ETHEREUM }
 
-const entries = (logs: Log[]) =>
+const entries = (logs: ERC721TestLog[]) =>
   logs.map((log) => {
     const transfer = parseERC721TransferLog(log, ETHEREUM)
     if (transfer === undefined) {
@@ -30,7 +32,7 @@ const entries = (logs: Log[]) =>
     return ledgerEntryFor(account, transfer)
   })
 
-const held = (logs: Log[]) =>
+const held = (logs: ERC721TestLog[]) =>
   heldByLedger(entries(logs), ACCOUNT)
     .map(({ contract, tokenId }) => `${contract}:${tokenId}`)
     .sort()
@@ -68,7 +70,7 @@ describe("heldByLedger", () => {
   })
 })
 
-const shouted = (hex: string) => `0x${hex.slice(2).toUpperCase()}`
+const shouted = (hex: string): HexString => `0x${hex.slice(2).toUpperCase()}`
 
 describe("ledgerEntryFor", () => {
   it("gives a transfer the same ID whichever source found it", () => {

@@ -19,6 +19,7 @@ import {
   SELF_TRANSFER,
   TRANSFER_IN,
 } from "./fixtures/erc721/transfer-logs"
+import { toHexString } from "../utils/hex"
 
 const ACCOUNT_ADDRESS = "0x1111111111111111111111111111111111111111"
 const COUNTERPARTY_ADDRESS = "0x2222222222222222222222222222222222222222"
@@ -610,7 +611,9 @@ describe("getAssetTransfersViaLogs", () => {
         to: COUNTERPARTY_ADDRESS,
         tokenId: 1n,
       })
-      other.topics[0] = utils.id("Approval(address,address,uint256)")
+      other.topics[0] = toHexString(
+        utils.id("Approval(address,address,uint256)"),
+      )
       getLogs.mockResolvedValueOnce([other])
       getLogs.mockResolvedValueOnce([])
 

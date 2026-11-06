@@ -21,6 +21,7 @@ import {
   USD,
 } from "../../constants"
 import { getPrices, getTokenPrices, getPricePoint } from "../../lib/prices"
+import { SPARK_BTC } from "../../constants/spark"
 
 import {
   getUSDPriceForBaseAsset,
@@ -650,7 +651,7 @@ export default class IndexingService extends BaseService<Events> {
     this.emitter.emit("removeAssetData", asset)
   }
 
-  async removeDiscoveryTxHash(address: string): Promise<void> {
+  async removeDiscoveryTxHash(address: HexString): Promise<void> {
     const customAssets = await this.db.getAllCustomAssets()
 
     customAssets
@@ -808,7 +809,12 @@ export default class IndexingService extends BaseService<Events> {
     try {
       // TODO include user-preferred currencies
       // get the prices of ETH and BTC vs major currencies
-      const baseAssets = await this.chainService.getNetworkBaseAssets()
+      // Spark accounts hold bitcoin outside the chain service's networks;
+      // price it alongside the EVM base assets.
+      const baseAssets = [
+        ...(await this.chainService.getNetworkBaseAssets()),
+        SPARK_BTC,
+      ]
       let basicPrices = await getPrices(baseAssets, FIAT_CURRENCIES)
 
       // Fall back to on-chain price feeds.

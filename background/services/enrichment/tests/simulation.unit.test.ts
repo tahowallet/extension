@@ -4,8 +4,13 @@ import { createTransactionRequest } from "../../../tests/factories"
 import ChainService from "../../chain"
 import simulateSignatureRequest from "../simulation"
 import { encodeExecTransaction } from "../safe"
+import type { HexString } from "../../../types"
 
-const TRANSFER_LOG = {
+const TRANSFER_LOG: {
+  address: HexString
+  topics: HexString[]
+  data: HexString
+} = {
   address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   topics: [
     "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",

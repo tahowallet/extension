@@ -17,6 +17,7 @@ import {
 import type SerialFallbackProvider from "../services/chain/serial-fallback-provider"
 import { AddressOnNetwork } from "../accounts"
 import { FeatureFlags, isEnabled } from "../features"
+import { isHexString, toHexString, toOptionalHexString } from "./utils/hex"
 import type { ERC721Transfer, ScannedTransfers } from "../nfts"
 
 // We can't use destructuring because webpack has to replace all instances of
@@ -47,9 +48,10 @@ function erc721TransferFrom(
   if (
     transfer.category !== "erc721" ||
     !tokenId ||
-    !contractAddress ||
-    !transfer.from ||
-    !transfer.to
+    !isHexString(contractAddress) ||
+    !isHexString(transfer.from) ||
+    !isHexString(transfer.to) ||
+    !isHexString(transfer.hash)
   ) {
     return undefined
   }
@@ -357,7 +359,7 @@ export async function getTokenBalances(
         }
         return {
           smartContract: {
-            contractAddress: tokenBalance.contractAddress,
+            contractAddress: toHexString(tokenBalance.contractAddress),
             homeNetwork: addressOnNetwork.network,
           },
           amount: BigInt(balance),
@@ -431,8 +433,8 @@ export function transactionFromBoarWebsocketTransaction(
 
   return {
     hash: tx.hash,
-    to: tx.to,
-    from: tx.from,
+    to: toOptionalHexString(tx.to),
+    from: toHexString(tx.from),
     gasLimit: BigInt(tx.gas),
     gasPrice: BigInt(tx.gasPrice),
     maxFeePerGas: tx.maxFeePerGas ? BigInt(tx.maxFeePerGas) : null,

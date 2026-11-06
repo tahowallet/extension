@@ -8,6 +8,7 @@ import { AccountSignerSettings } from "../../ui"
 import { AccountSignerWithId } from "../../signing"
 import { NETWORK_BY_CHAIN_ID } from "../../constants"
 import type { UNIXTime } from "../../types"
+import { isHexString } from "../../lib/utils/hex"
 
 type SignerRecordId = `${AccountSignerWithId["type"]}/${string}`
 
@@ -160,7 +161,7 @@ export class PreferenceDatabase extends Dexie {
           .toCollection()
           .modify(
             (storedPreferences: Preferences & { currentAddress?: string }) => {
-              if (storedPreferences.currentAddress) {
+              if (isHexString(storedPreferences.currentAddress)) {
                 // oxlint-disable-next-line no-param-reassign
                 storedPreferences.selectedAccount = {
                   network: DEFAULT_PREFERENCES.selectedAccount.network,

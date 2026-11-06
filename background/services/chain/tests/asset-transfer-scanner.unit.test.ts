@@ -290,9 +290,12 @@ describe("AssetTransferScanner", () => {
   })
 
   it("records and emits what it found, and queues lookups for new transactions", async () => {
-    const transfers = Array.from({ length: 28 }, (_, index) => ({
-      txHash: `0x${index}`,
-    }))
+    const transfers = Array.from(
+      { length: 28 },
+      (_, index): Partial<AssetTransfer> => ({
+        txHash: `0x${index}`,
+      }),
+    )
     const { scanner, db, emitted, enqueued } = harness({
       supportsAlchemy: true,
       transfers,
@@ -318,7 +321,9 @@ describe("AssetTransferScanner", () => {
   })
 
   it("emits ERC-721 transfers apart, without queueing their transactions", async () => {
-    const nftTransfers = [{ txHash: "0xnft", tokenId: "7" }]
+    const nftTransfers: Partial<ERC721Transfer>[] = [
+      { txHash: "0xnft", tokenId: "7" },
+    ]
     const { scanner, emitted, emittedNFTs, enqueued } = harness({
       supportsAlchemy: false,
       nftTransfers,

@@ -20,7 +20,6 @@ import {
   setSnackbarMessage,
 } from "@tallyho/tally-background/redux-slices/ui"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
-import type { HexString } from "@tallyho/tally-background/types"
 import React, { FormEventHandler, ReactElement, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import { useHistory } from "react-router-dom"
@@ -116,7 +115,7 @@ export default function SettingsAddCustomAsset(): ReactElement {
   const requestIdRef = useRef(0)
 
   const handleTokenInfoChange = async (
-    addressLike: HexString,
+    addressLike: string,
     network: EVMNetwork,
   ) => {
     requestIdRef.current += 1

@@ -10,6 +10,7 @@ import { createDB, ChainDatabase } from "../db"
 import NonceAllocator from "../nonce-allocator"
 import type SerialFallbackProvider from "../serial-fallback-provider"
 import TransactionTracker from "../transaction-tracker"
+import { toHexString } from "../../../lib/utils/hex"
 
 const T0 = 1_800_000_000_000
 const BASE: EVMNetwork = { ...OPTIMISM, name: "Base", chainID: "8453" }
@@ -89,7 +90,7 @@ function harness() {
     tracker.lookUp(
       {
         network: transaction.network,
-        hash: transaction.hash,
+        hash: toHexString(transaction.hash),
         firstSeen: T0,
         missingSince,
       },
