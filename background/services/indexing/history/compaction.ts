@@ -1,4 +1,4 @@
-import { DAY, HOUR, MINUTE } from "../../constants"
+import { DAY, HOUR, MINUTE } from "../../../constants"
 
 /**
  * Retention tiers describe how finely history is kept as it ages, following

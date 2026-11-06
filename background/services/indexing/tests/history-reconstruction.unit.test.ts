@@ -1,6 +1,6 @@
 import { ETHEREUM } from "../../../constants"
 import type { AssetTransfer, SmartContractFungibleAsset } from "../../../assets"
-import { balancesBefore } from "../reconstruction"
+import { balancesBefore } from "../history/reconstruction"
 
 const ACCOUNT = "0x1111111111111111111111111111111111111111"
 const OTHER = "0x2222222222222222222222222222222222222222"

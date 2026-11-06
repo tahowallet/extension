@@ -1,15 +1,15 @@
 import { fetchJson } from "@ethersproject/web"
-import { HistoricalStateUnavailableError } from "../chain/serial-fallback-provider"
+import { HistoricalStateUnavailableError } from "../../chain/serial-fallback-provider"
 import { utils } from "ethers"
-import { MINUTE } from "../../constants"
-import { AdaptiveSize } from "../../lib/adaptive-size"
-import { ERC20_INTERFACE } from "../../lib/erc20"
+import { MINUTE } from "../../../constants"
+import { AdaptiveSize } from "../../../lib/adaptive-size"
+import { ERC20_INTERFACE } from "../../../lib/erc20"
 import {
   CHAIN_SPECIFIC_MULTICALL_CONTRACT_ADDRESSES,
   MULTICALL_ABI,
   MULTICALL_CONTRACT_ADDRESS,
-} from "../../lib/multicall"
-import { CHAINLINK_AGGREGATOR_INTERFACE } from "../../lib/priceOracle"
+} from "../../../lib/multicall"
+import { CHAINLINK_AGGREGATOR_INTERFACE } from "../../../lib/priceOracle"
 import { HistoryPoint } from "./series"
 
 const COINGECKO_API_ROOT = "https://api.coingecko.com/api/v3"

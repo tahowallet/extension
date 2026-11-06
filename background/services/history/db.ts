@@ -1,7 +1,7 @@
 import Dexie, { DexieOptions } from "dexie"
 import { HOUR, MINUTE } from "../../constants"
-import { compactableIndexes } from "./compaction"
-import { Series } from "./series"
+import { compactableIndexes } from "../indexing/history/compaction"
+import { Series } from "../indexing/history/series"
 
 /** Where a point in a series came from. */
 /**

@@ -1,6 +1,6 @@
-import type { AssetTransfer } from "../../assets"
-import { isSmartContractFungibleAsset } from "../../assets"
-import { sameEVMAddress } from "../../lib/utils"
+import type { AssetTransfer } from "../../../assets"
+import { isSmartContractFungibleAsset } from "../../../assets"
+import { sameEVMAddress } from "../../../lib/utils"
 
 /** A token holding whose balance is being reconstructed. */
 export type ReconstructedToken = {

@@ -27,16 +27,25 @@ import {
   getOrCreateDB,
   holdingKeyFor,
 } from "./db"
-import { livePriceRecord } from "./live"
-import { firstHeldTime, HistoryPoint, Series, valueSeries } from "./series"
-import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
+import { livePriceRecord } from "../indexing/history/live"
+import {
+  firstHeldTime,
+  HistoryPoint,
+  Series,
+  valueSeries,
+} from "../indexing/history/series"
+import {
+  BACKFILL_HORIZON,
+  Bucket,
+  missingBuckets,
+} from "../indexing/history/schedule"
 import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
-import { balancesBefore } from "./reconstruction"
+import { balancesBefore } from "../indexing/history/reconstruction"
 import {
   LogHistoryUnavailableError,
   LogScanPausedError,
 } from "../chain/rpc/log-query-errors"
-import { RateBudget } from "./budget"
+import { RateBudget } from "../indexing/history/budget"
 import {
   BalanceRead,
   BlockClock,
@@ -47,7 +56,7 @@ import {
   fetchPriceHistory,
   multicallSizeFor,
   snapshotBalances,
-} from "./sources"
+} from "../indexing/history/sources"
 
 /**
  * How far back CoinGecko's public API serves prices. This is set a day short

@@ -1,4 +1,4 @@
-import { DAY, HOUR } from "../../constants"
+import { DAY, HOUR } from "../../../constants"
 import { expectedSpacingForAge } from "./compaction"
 
 /** How far back backfill reaches, currently two years. */

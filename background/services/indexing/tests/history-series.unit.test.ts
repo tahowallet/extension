@@ -1,12 +1,12 @@
 import { DAY, HOUR, MINUTE } from "../../../constants"
-import { bucketSizeForAge, compactableIndexes } from "../compaction"
+import { bucketSizeForAge, compactableIndexes } from "../history/compaction"
 import {
   firstHeldTime,
   priceAt,
   seriesOf,
   valueAt,
   valueSeries,
-} from "../series"
+} from "../history/series"
 
 const NOW = Date.UTC(2026, 10, 3, 12)
 
