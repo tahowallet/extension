@@ -1,4 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
+import { sparkNetworkByChainID } from "../constants/spark"
 import Emittery from "emittery"
 import type { AddressOnNetwork } from "../accounts"
 import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
@@ -44,6 +45,13 @@ export const defaultSettings = {
 
 export type UIState = {
   selectedAccount: AddressOnNetwork
+  /**
+   * Chain ID of the Spark network picked in the network selector, if the
+   * user is looking at Spark rather than an EVM network. `selectedAccount`
+   * stays on its EVM network meanwhile, so EVM-only code keeps a valid
+   * account; choosing an EVM network clears this.
+   */
+  selectedSparkChainID?: string | null
   showingActivityDetailID: string | null
   initializationLoadingTimeExpired: boolean
   shownDismissableItems?: DismissableItem[]
@@ -126,6 +134,12 @@ const uiSlice = createSlice({
       { payload: theme }: { payload: ThemePreference },
     ): void => {
       immerState.settings.theme = theme
+    },
+    setSelectedSparkNetwork: (
+      immerState,
+      { payload: chainID }: { payload: string | null },
+    ): void => {
+      immerState.selectedSparkChainID = chainID
     },
     toggleTestNetworks: (
       immerState,
@@ -285,6 +299,7 @@ export const {
   toggleHideBanners,
   toggleNotifications,
   setSelectedAccount,
+  setSelectedSparkNetwork,
   setSnackbarMessage,
   setDefaultWallet,
   setShownDismissableItems,
@@ -403,6 +418,7 @@ export const setSelectedNetwork = createBackgroundAsyncThunk(
     const { ui, account } = state
     const currentlySelectedChainID = ui.selectedAccount.network.chainID
     emitter.emit("newSelectedNetwork", network)
+    dispatch(uiSlice.actions.setSelectedSparkNetwork(null))
     // Add any accounts on the currently selected network to the newly
     // selected network - if those accounts don't yet exist on it.
     Object.keys(account.accountsData.evm[currentlySelectedChainID]).forEach(
@@ -508,6 +524,14 @@ export const selectSlippageTolerance = createSelector(
 export const selectInitializationTimeExpired = createSelector(
   selectUI,
   (ui) => ui.initializationLoadingTimeExpired,
+)
+
+export const selectSelectedSparkNetwork = createSelector(
+  (state: { ui: UIState }) => state.ui.selectedSparkChainID,
+  (chainID) =>
+    chainID === null || chainID === undefined
+      ? undefined
+      : sparkNetworkByChainID(chainID),
 )
 
 export const selectShowTestNetworks = createSelector(

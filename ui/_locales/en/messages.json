@@ -409,7 +409,8 @@
           "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
-          "createNew": "Create new wallet"
+          "createNew": "Create new wallet",
+          "spark": "Bitcoin (Spark)"
         },
         "importSeed": {
           "title": "Import secret recovery phrase",
@@ -448,6 +449,20 @@
           "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Taho",
           "submit": "Preview Taho",
           "tip": "You can upgrade a read-only wallet later."
+        },
+        "spark": {
+          "title": "Bitcoin on Spark",
+          "subtitle": "Hold bitcoin on Spark, a Bitcoin layer 2. Send over Lightning and receive from any bitcoin wallet.",
+          "recoveryPhrase": "Recovery phrase",
+          "phraseLabel": "Recovery phrase {{index}} ({{address}})",
+          "network": "Network",
+          "networks": {
+            "MAINNET": "Spark mainnet",
+            "REGTEST": "Spark regtest (test bitcoin)"
+          },
+          "submit": "Add Spark account",
+          "needsRecoveryPhrase": "Spark accounts are derived from a recovery phrase. Create or import a wallet with a recovery phrase first.",
+          "tip": "No new secret to back up: Spark keys come from the recovery phrase you choose, the same way other Spark wallets derive them."
         }
       },
       "newWalletIntro": {
@@ -566,7 +581,9 @@
     "avalanche": "Mainnet C-Chain",
     "connected": "Connected",
     "disconnected": "Disconnected",
-    "newNetwork": "new"
+    "newNetwork": "new",
+    "bitcoinL2": "Bitcoin L2",
+    "bitcoinL2Testnet": "Bitcoin L2 (regtest)"
   },
   "readOnly": "Read-only",
   "readOnlyNotice": "Read-only mode",
@@ -1142,12 +1159,6 @@
   },
   "spark": {
     "title": "Bitcoin on Spark",
-    "empty": "No Spark accounts yet. Add one to hold bitcoin on Spark, send over Lightning and receive from any bitcoin wallet.",
-    "network": "Spark network",
-    "mainnet": "Mainnet",
-    "regtest": "Regtest (test bitcoin)",
-    "addAccount": "Add Spark account",
-    "needsRecoveryPhrase": "Spark accounts are derived from a recovery phrase. Create or import a wallet with a recovery phrase first.",
     "unknownAccount": "This Spark account is no longer available.",
     "tabs": {
       "assets": "Assets",
@@ -1209,6 +1220,12 @@
       "confirm": "Send now",
       "sent": "Sent!",
       "another": "Send another"
+    },
+    "home": {
+      "emptyTitle": "No {{network}} account yet",
+      "emptyBody": "Add a Spark account from one of your recovery phrases to hold bitcoin on Spark.",
+      "add": "Add Spark account",
+      "account": "Spark account"
     }
   }
 }

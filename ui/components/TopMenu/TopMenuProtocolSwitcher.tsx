@@ -1,6 +1,7 @@
 import React, { ReactElement } from "react"
 import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
+import { selectSelectedSparkNetwork } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../../hooks"
 import NetworkUnreachableWarning from "../Shared/NetworkUnreachableWarning"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
@@ -12,8 +13,13 @@ type Props = {
 export default function TopMenuProtocolSwitcher({
   onClick,
 }: Props): ReactElement {
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const isUnreachable = useBackgroundSelector(selectIsCurrentNetworkUnreachable)
+  const currentEVMNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const selectedSparkNetwork = useBackgroundSelector(selectSelectedSparkNetwork)
+  const currentNetwork = selectedSparkNetwork ?? currentEVMNetwork
+  // Reachability is tracked for EVM RPC endpoints only.
+  const isUnreachable =
+    useBackgroundSelector(selectIsCurrentNetworkUnreachable) &&
+    selectedSparkNetwork === undefined
 
   return (
     <div className="switcher_wrap">

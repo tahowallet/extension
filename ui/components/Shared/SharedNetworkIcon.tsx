@@ -1,4 +1,4 @@
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork } from "@tallyho/tally-background/networks"
 import React, { ReactElement, useState, useEffect } from "react"
 import {
   getNetworkIcon,
@@ -7,7 +7,7 @@ import {
 } from "../../utils/networks"
 
 export default function SharedNetworkIcon(props: {
-  network: EVMNetwork
+  network: AnyNetwork
   size: number
   hasBackground?: boolean
   backgroundOpacity?: number

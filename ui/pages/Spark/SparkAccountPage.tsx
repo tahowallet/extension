@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect } from "react"
+import React, { ReactElement, useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import {
@@ -10,6 +10,7 @@ import {
 import { refreshSparkAccount } from "@tallyho/tally-background/redux-slices/spark"
 import { sparkExplorerAddressURL } from "@tallyho/tally-background/constants/spark"
 import type { RootState } from "@tallyho/tally-background/redux-slices"
+import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
   useAreInternalSignersUnlocked,
   useBackgroundDispatch,
@@ -19,6 +20,7 @@ import {
 import CorePage from "../../components/Core/CorePage"
 import SharedPageHeader from "../../components/Shared/SharedPageHeader"
 import SharedLink from "../../components/Shared/SharedLink"
+import SharedButton from "../../components/Shared/SharedButton"
 import {
   formatBTC,
   formatSats,
@@ -30,10 +32,19 @@ import SparkActivity from "./SparkActivity"
 import SparkReceive from "./SparkReceive"
 import SparkSend from "./SparkSend"
 
-export default function SparkAccountPage(): ReactElement {
+/**
+ * A Spark account's balance, assets, activity, receive and send. Rendered
+ * both on its own page (from the portfolio) and as the wallet home when a
+ * Spark network is selected in the network selector.
+ */
+export function SparkAccountView({
+  accountID,
+  renderHeader,
+}: {
+  accountID: string
+  renderHeader?: (account: SparkAccount) => ReactElement
+}): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "spark" })
-  const location = useLocation<{ accountID?: string } | undefined>()
-  const accountID = location.state?.accountID ?? ""
   const dispatch = useBackgroundDispatch()
   const isUnlocked = useAreInternalSignersUnlocked(false)
 
@@ -47,6 +58,7 @@ export default function SparkAccountPage(): ReactElement {
     selectSparkWalletStatus(state, accountID),
   )
   const btcPrice = useBackgroundSelector(selectBitcoinMainCurrencyPrice)
+  const [action, setAction] = useState<"receive" | "send" | undefined>()
 
   useEffect(() => {
     if (account && isUnlocked) {
@@ -67,27 +79,12 @@ export default function SparkAccountPage(): ReactElement {
             name: t("tabs.activity"),
             panelElement: () => <SparkActivity account={account} />,
           },
-          {
-            name: t("tabs.receive"),
-            panelElement: () => <SparkReceive account={account} />,
-          },
-          {
-            name: t("tabs.send"),
-            panelElement: () => (
-              <SparkSend account={account} balance={balance} />
-            ),
-          },
         ]
       : [{ name: "", panelElement: () => <p>{t("unknownAccount")}</p> }],
   )
 
   if (!account) {
-    return (
-      <CorePage hasTabBar>
-        <SharedPageHeader backPath="/portfolio">{t("title")}</SharedPageHeader>
-        {panels}
-      </CorePage>
-    )
+    return panels
   }
 
   const isMainnet = account.network.sparkNetworkType === "MAINNET"
@@ -97,11 +94,9 @@ export default function SparkAccountPage(): ReactElement {
       : undefined
 
   return (
-    <CorePage hasTabBar>
+    <>
       <div className="page">
-        <SharedPageHeader withoutBackText backPath="/portfolio">
-          {account.network.name} #{account.accountNumber}
-        </SharedPageHeader>
+        {renderHeader?.(account)}
         <div className="summary" data-testid="spark-balance">
           <div className="btc">
             {balance ? formatBTC(balance.owned) : "—"} <span>BTC</span>
@@ -132,8 +127,28 @@ export default function SparkAccountPage(): ReactElement {
               {t("connectionError")}: {walletStatus.error}
             </div>
           )}
+          <div className="actions">
+            {(["receive", "send"] as const).map((option) => (
+              <SharedButton
+                key={option}
+                type={action === option ? "primary" : "secondary"}
+                size="small"
+                iconSmall={option === "receive" ? "receive" : "send"}
+                iconPosition="left"
+                onClick={() =>
+                  setAction((current) =>
+                    current === option ? undefined : option,
+                  )
+                }
+              >
+                {t(`tabs.${option}`)}
+              </SharedButton>
+            ))}
+          </div>
         </div>
-        {panels}
+        {action === "receive" && <SparkReceive account={account} />}
+        {action === "send" && <SparkSend account={account} balance={balance} />}
+        {action === undefined && panels}
       </div>
       <style jsx>{`
         .page {
@@ -161,6 +176,11 @@ export default function SparkAccountPage(): ReactElement {
           color: var(--green-40);
           font-size: 14px;
         }
+        .actions {
+          display: flex;
+          gap: 8px;
+          margin-top: 8px;
+        }
         .notice {
           color: var(--attention);
           font-size: 14px;
@@ -170,6 +190,28 @@ export default function SparkAccountPage(): ReactElement {
           color: var(--error);
         }
       `}</style>
+    </>
+  )
+}
+
+export default function SparkAccountPage(): ReactElement {
+  const { t } = useTranslation("translation", { keyPrefix: "spark" })
+  const location = useLocation<{ accountID?: string } | undefined>()
+  const accountID = location.state?.accountID ?? ""
+
+  return (
+    <CorePage hasTabBar>
+      <SparkAccountView
+        accountID={accountID}
+        renderHeader={(account) => (
+          <SharedPageHeader withoutBackText backPath="/portfolio">
+            {account.network.name} #{account.accountNumber}
+          </SharedPageHeader>
+        )}
+      />
+      {accountID === "" && (
+        <SharedPageHeader backPath="/portfolio">{t("title")}</SharedPageHeader>
+      )}
     </CorePage>
   )
 }

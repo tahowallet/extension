@@ -9,6 +9,7 @@ const OnboardingRoutes = {
   IMPORT_PRIVATE_KEY: "/onboarding/import-private-key",
   NEW_SEED: "/onboarding/new-seed",
   VIEW_ONLY_WALLET: "/onboarding/view-only-wallet",
+  SPARK: "/onboarding/spark",
   ONBOARDING_COMPLETE: "/onboarding/done",
 } as const
 

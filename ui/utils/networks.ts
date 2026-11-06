@@ -1,5 +1,5 @@
 import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork, EVMNetwork } from "@tallyho/tally-background/networks"
 import { blockExplorer } from "./constants"
 
 // From chainlist.org
@@ -86,7 +86,12 @@ export const NETWORK_COLORS_FALLBACK = [
   "#EA7E30",
 ]
 
-export function getNetworkIconFallbackColor(network: EVMNetwork): string {
+const SPARK_NETWORK_ICON = "./images/networks/spark.svg"
+
+export function getNetworkIconFallbackColor(network: AnyNetwork): string {
+  if (network.family === "SPARK") {
+    return "#f7931a"
+  }
   return NETWORK_COLORS_FALLBACK[
     Number.parseInt(network.chainID, 10) % NETWORK_COLORS_FALLBACK.length
   ]
@@ -96,7 +101,10 @@ export function getNetworkIconName(network: EVMNetwork): string {
   return network.name.replaceAll(" ", "").toLowerCase()
 }
 
-export const getNetworkIconSquared = (network: EVMNetwork): string => {
+export const getNetworkIconSquared = (network: AnyNetwork): string => {
+  if (network.family === "SPARK") {
+    return SPARK_NETWORK_ICON
+  }
   if (isBuiltInNetwork(network)) {
     const iconName = getNetworkIconName(network)
 
@@ -106,7 +114,10 @@ export const getNetworkIconSquared = (network: EVMNetwork): string => {
   return network.iconUrl ?? ""
 }
 
-export const getNetworkIcon = (network: EVMNetwork): string => {
+export const getNetworkIcon = (network: AnyNetwork): string => {
+  if (network.family === "SPARK") {
+    return SPARK_NETWORK_ICON
+  }
   if (isBuiltInNetwork(network)) {
     const iconName = getNetworkIconName(network)
 

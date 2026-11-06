@@ -14,7 +14,10 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
+import {
+  selectSelectedSparkNetwork,
+  selectShowUnverifiedAssets,
+} from "@tallyho/tally-background/redux-slices/ui"
 import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
@@ -38,6 +41,7 @@ import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
 import MezoWalletCampaignBanner from "../components/Wallet/Banner/WalletCampaignBanner"
 import CorePage from "../components/Core/CorePage"
+import SparkWalletHome from "../components/Spark/SparkWalletHome"
 
 dayjs.extend(isBetween)
 
@@ -53,6 +57,7 @@ export default function Wallet(): ReactElement {
   const claimState = useBackgroundSelector((state) => state.claim)
   const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
   const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
+  const selectedSparkNetwork = useBackgroundSelector(selectSelectedSparkNetwork)
   const activeCampaigns = useBackgroundSelector(selectCampaigns)
 
   useEffect(() => {
@@ -128,6 +133,14 @@ export default function Wallet(): ReactElement {
     }
 
     return <MezoWalletCampaignBanner state={campaign.state} />
+  }
+
+  if (selectedSparkNetwork) {
+    return (
+      <CorePage hasTopBar hasTabBar>
+        <SparkWalletHome network={selectedSparkNetwork} />
+      </CorePage>
+    )
   }
 
   return (

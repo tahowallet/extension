@@ -49,10 +49,12 @@ export type NetworkSpecific = {
 }
 
 /**
- * A smart contract on any network that tracks smart contracts via a hex
- * contract address.
+ * A smart contract on an EVM network, tracked via its hex contract address.
+ * Narrower than `NetworkSpecific`: hex contract addresses only exist on EVM
+ * networks, so a smart contract can never live on e.g. a Spark network.
  */
 export type SmartContract = NetworkSpecific & {
+  homeNetwork: EVMNetwork
   contractAddress: HexString
 }
 
@@ -129,7 +131,7 @@ export const ALCHEMY_CAPABILITY_NAMESPACE = "alchemy_"
 /**
  * Union type that allows narrowing to particular network subtypes.
  */
-export type AnyNetwork = EVMNetwork
+export type AnyNetwork = EVMNetwork | SparkNetwork
 
 /**
  * An EVM-style block identifier, including difficulty, block height, and

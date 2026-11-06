@@ -1,20 +1,13 @@
-import React, { ReactElement, useState } from "react"
+import React, { ReactElement } from "react"
 import { useHistory } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import {
   selectBitcoinMainCurrencyPrice,
   selectSparkAccounts,
 } from "@tallyho/tally-background/redux-slices/selectors"
-import { selectInternalSignerStatus } from "@tallyho/tally-background/redux-slices/selectors/internalSignerSelectors"
-import {
-  addSparkAccount,
-  SparkResult,
-} from "@tallyho/tally-background/redux-slices/spark"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
-import type { SparkNetworkType } from "@tallyho/tally-background/networks"
 import { RootState } from "@tallyho/tally-background/redux-slices"
-import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
-import SharedButton from "../Shared/SharedButton"
+import { useBackgroundSelector } from "../../hooks"
 import { formatBTC, satsToBTCNumber, shortenSparkAddress } from "./format"
 
 function SparkAccountRow({
@@ -113,46 +106,22 @@ function SparkAccountRow({
 
 /**
  * The Spark (Bitcoin layer 2) section of the portfolio overview: lists Spark
- * accounts with their balances and offers adding one.
+ * accounts with their balances. Accounts are added through onboarding's
+ * Add wallet flow, not here. Hidden until there is a Spark account.
  */
-export default function SparkOverviewSection(): ReactElement {
+export default function SparkOverviewSection(): ReactElement | null {
   const { t } = useTranslation("translation", { keyPrefix: "spark" })
-  const history = useHistory()
-  const dispatch = useBackgroundDispatch()
   const accounts = useBackgroundSelector(selectSparkAccounts)
   const btcPrice = useBackgroundSelector(selectBitcoinMainCurrencyPrice)
-  const signerStatus = useBackgroundSelector(selectInternalSignerStatus)
-  const hasKeyring = useBackgroundSelector(
-    (state: RootState) => state.internalSigner.keyrings.length > 0,
-  )
-  const [networkType, setNetworkType] = useState<SparkNetworkType>("MAINNET")
-  const [isAdding, setIsAdding] = useState(false)
-  const [error, setError] = useState<string | undefined>()
 
-  const add = async () => {
-    if (signerStatus !== "unlocked") {
-      history.push("/internal-signer/unlock")
-      return
-    }
-    setIsAdding(true)
-    setError(undefined)
-    const result = (await dispatch(
-      addSparkAccount({ networkType }),
-    )) as unknown as SparkResult<SparkAccount>
-    setIsAdding(false)
-    if (result.ok) {
-      history.push("/spark/account", { accountID: result.value.id })
-    } else {
-      setError(result.error)
-    }
+  if (accounts.length === 0) {
+    return null
   }
 
   return (
     <section className="spark_section" data-testid="spark-overview">
       <header>
-        <span>
-          {t("title")} ({accounts.length})
-        </span>
+        {t("title")} ({accounts.length})
       </header>
       {accounts.map((account) => (
         <SparkAccountRow
@@ -161,37 +130,6 @@ export default function SparkOverviewSection(): ReactElement {
           btcPrice={btcPrice}
         />
       ))}
-      {accounts.length === 0 && <p className="empty">{t("empty")}</p>}
-      <div className="add_row">
-        <select
-          aria-label={t("network")}
-          value={networkType}
-          onChange={(event) =>
-            setNetworkType(event.target.value as SparkNetworkType)
-          }
-        >
-          <option value="MAINNET">{t("mainnet")}</option>
-          <option value="REGTEST">{t("regtest")}</option>
-        </select>
-        <SharedButton
-          type="secondary"
-          size="small"
-          iconSmall="add"
-          onClick={add}
-          isLoading={isAdding}
-          isDisabled={signerStatus === "unlocked" && !hasKeyring}
-        >
-          {t("addAccount")}
-        </SharedButton>
-      </div>
-      {signerStatus === "unlocked" && !hasKeyring && (
-        <p className="hint">{t("needsRecoveryPhrase")}</p>
-      )}
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
       <style jsx>{`
         .spark_section {
           display: flex;
@@ -202,31 +140,6 @@ export default function SparkOverviewSection(): ReactElement {
           color: var(--green-40);
           font-size: 16px;
           font-weight: 500;
-        }
-        .add_row {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-          justify-content: flex-end;
-        }
-        select {
-          background: var(--green-95);
-          color: var(--green-20);
-          border: 1px solid var(--green-60);
-          border-radius: 4px;
-          padding: 4px 8px;
-        }
-        .empty,
-        .hint {
-          color: var(--green-40);
-          font-size: 14px;
-          margin: 0;
-        }
-        .error {
-          color: var(--error);
-          font-size: 14px;
-          margin: 0;
-          overflow-wrap: anywhere;
         }
       `}</style>
     </section>

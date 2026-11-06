@@ -11,7 +11,16 @@ import {
   isBuiltInNetwork,
   TEST_NETWORK_BY_CHAIN_ID,
 } from "@tallyho/tally-background/constants"
-import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
+import {
+  AnyNetwork,
+  EVMNetwork,
+  SparkNetwork,
+  sameNetwork,
+} from "@tallyho/tally-background/networks"
+import {
+  SPARK_MAINNET,
+  SPARK_REGTEST,
+} from "@tallyho/tally-background/constants/spark"
 import {
   selectProductionEVMNetworks,
   selectTestnetNetworks,
@@ -23,15 +32,30 @@ import TopMenuProtocolListItem from "./TopMenuProtocolListItem"
 import { productionNetworkDescription } from "./TopMenuProtocolList"
 
 type Props = {
-  currentNetwork: EVMNetwork | undefined
+  currentNetwork: AnyNetwork | undefined
   onNetworkChange: (network: EVMNetwork) => void
+  /**
+   * When given, Spark networks are listed too: Spark mainnet with the
+   * production networks, Spark regtest with the testnets. Pickers that only
+   * make sense for EVM networks (e.g. a dapp's network) leave this out.
+   */
+  onSparkNetworkChange?: (network: SparkNetwork) => void
 }
 
 export default function SelectNetworkMenuContent({
   currentNetwork,
   onNetworkChange,
+  onSparkNetworkChange,
 }: Props): ReactElement {
   const { t } = useTranslation()
+  const sparkInfo = (network: AnyNetwork): string | undefined => {
+    if (network.family !== "SPARK") {
+      return undefined
+    }
+    return network.sparkNetworkType === "MAINNET"
+      ? t("protocol.bitcoinL2")
+      : t("protocol.bitcoinL2Testnet")
+  }
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   const productionNetworks = useBackgroundSelector(selectProductionEVMNetworks)
   const testnetNetworks = useBackgroundSelector(selectTestnetNetworks)
@@ -50,19 +74,25 @@ export default function SelectNetworkMenuContent({
     filteredTestNetworks,
     filteredNetworks,
   } = useMemo(() => {
-    const builtinNetworks = productionNetworks.filter(isBuiltInNetwork)
+    const builtinNetworks: AnyNetwork[] = [
+      ...productionNetworks.filter(isBuiltInNetwork),
+      ...(onSparkNetworkChange ? [SPARK_MAINNET] : []),
+    ]
     const customNetworks = productionNetworks.filter(
       (network) => !isBuiltInNetwork(network),
     )
-    const testNetworks = showTestNetworks
-      ? [...TEST_NETWORK_BY_CHAIN_ID].flatMap(
-          (chainId) =>
-            testnetNetworks.find((network) => network.chainID === chainId) ??
-            [],
-        )
+    const testNetworks: AnyNetwork[] = showTestNetworks
+      ? [
+          ...[...TEST_NETWORK_BY_CHAIN_ID].flatMap(
+            (chainId) =>
+              testnetNetworks.find((network) => network.chainID === chainId) ??
+              [],
+          ),
+          ...(onSparkNetworkChange ? [SPARK_REGTEST] : []),
+        ]
       : []
 
-    const filterBySearchTerm = (networks: EVMNetwork[]) =>
+    const filterBySearchTerm = <N extends AnyNetwork>(networks: N[]) =>
       searchTerm.trim() === ""
         ? networks
         : networks.filter((network) =>
@@ -80,7 +110,24 @@ export default function SelectNetworkMenuContent({
       // Combined list for keyboard navigation index tracking
       filteredNetworks: [...builtin, ...custom, ...test],
     }
-  }, [productionNetworks, testnetNetworks, showTestNetworks, searchTerm])
+  }, [
+    productionNetworks,
+    testnetNetworks,
+    showTestNetworks,
+    searchTerm,
+    onSparkNetworkChange,
+  ])
+
+  const selectNetwork = useCallback(
+    (network: AnyNetwork) => {
+      if (network.family === "SPARK") {
+        onSparkNetworkChange?.(network)
+      } else {
+        onNetworkChange(network)
+      }
+    },
+    [onNetworkChange, onSparkNetworkChange],
+  )
 
   // Reset selection when search results change
   useEffect(() => {
@@ -120,14 +167,14 @@ export default function SelectNetworkMenuContent({
         case "Enter":
           event.preventDefault()
           if (filteredNetworks[selectedIndex]) {
-            onNetworkChange(filteredNetworks[selectedIndex])
+            selectNetwork(filteredNetworks[selectedIndex])
           }
           break
         default:
           break
       }
     },
-    [filteredNetworks, selectedIndex, onNetworkChange],
+    [filteredNetworks, selectedIndex, selectNetwork],
   )
 
   return (
@@ -160,9 +207,10 @@ export default function SelectNetworkMenuContent({
             isHighlighted={index === selectedIndex}
             info={
               productionNetworkDescription[network.chainID] ??
+              sparkInfo(network) ??
               t("protocol.compatibleChain")
             }
-            onSelect={onNetworkChange}
+            onSelect={selectNetwork}
             onMouseMove={() => setSelectedIndex(index)}
             isDisabled={false}
             isUnreachable={unreachableNetworks[network.chainID] === true}
@@ -188,7 +236,7 @@ export default function SelectNetworkMenuContent({
                   }
                   isHighlighted={globalIndex === selectedIndex}
                   info={t("protocol.compatibleChain")}
-                  onSelect={onNetworkChange}
+                  onSelect={selectNetwork}
                   onMouseMove={() => setSelectedIndex(globalIndex)}
                   isDisabled={false}
                   isUnreachable={unreachableNetworks[network.chainID] === true}
@@ -219,8 +267,8 @@ export default function SelectNetworkMenuContent({
                     sameNetwork(currentNetwork, network)
                   }
                   isHighlighted={globalIndex === selectedIndex}
-                  info={t("protocol.compatibleChain")}
-                  onSelect={onNetworkChange}
+                  info={sparkInfo(network) ?? t("protocol.compatibleChain")}
+                  onSelect={selectNetwork}
                   onMouseMove={() => setSelectedIndex(globalIndex)}
                   isDisabled={false}
                   isUnreachable={unreachableNetworks[network.chainID] === true}

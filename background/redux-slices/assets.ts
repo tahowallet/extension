@@ -11,7 +11,7 @@ import {
 } from "../assets"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { EVMNetwork, sameNetwork } from "../networks"
+import { AnyNetwork, EVMNetwork, sameNetwork } from "../networks"
 import { NormalizedEVMAddress } from "../types"
 import { removeAssetReferences, updateAccountBalance } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
@@ -61,7 +61,7 @@ const assetsSlice = createSlice({
 
       if (loadingScope === "network") {
         // Determine which networks are being fully replaced.
-        const networksToReset = newAssets.reduce<EVMNetwork[]>(
+        const networksToReset = newAssets.reduce<AnyNetwork[]>(
           (uniqueNetworks, asset) => {
             const lastNetwork = uniqueNetworks.at(-1)
             return "homeNetwork" in asset &&

@@ -1,18 +1,18 @@
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import classNames from "classnames"
-import { EVMNetwork, sameNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork, sameNetwork } from "@tallyho/tally-background/networks"
 import { MEZO_TESTNET } from "@tallyho/tally-background/constants"
 import NetworkUnreachableWarning from "../Shared/NetworkUnreachableWarning"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 
-type Props = {
+type Props<N extends AnyNetwork> = {
   info: string
-  network: EVMNetwork
+  network: N
   isSelected?: boolean
   isHighlighted?: boolean
   isDisabled?: boolean
-  onSelect: (network: EVMNetwork) => void
+  onSelect: (network: N) => void
   onMouseMove?: () => void
   showSelectedText?: boolean
   /**
@@ -23,14 +23,16 @@ type Props = {
   isUnreachable?: boolean
 }
 
-const isFeaturedNetwork = (network: EVMNetwork) => {
+const isFeaturedNetwork = (network: AnyNetwork) => {
   if (sameNetwork(network, MEZO_TESTNET)) {
     return Date.now() < new Date("2025-04-17").getTime()
   }
   return false
 }
 
-export default function TopMenuProtocolListItem(props: Props): ReactElement {
+export default function TopMenuProtocolListItem<N extends AnyNetwork>(
+  props: Props<N>,
+): ReactElement {
   const { t } = useTranslation()
   const {
     info,
