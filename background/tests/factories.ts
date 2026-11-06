@@ -96,6 +96,10 @@ export class MockSerialFallbackProvider {
     return !this.isDestroyed
   }
 
+  refusesEverywhere(_method: string): boolean {
+    return false
+  }
+
   subscriptionDataSource = "generic-rpc"
 
   dataSourceFor() {

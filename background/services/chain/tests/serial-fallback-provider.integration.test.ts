@@ -362,3 +362,77 @@ describe("Serial Fallback Provider", () => {
     })
   })
 })
+
+describe("Serial Fallback Provider on endpoints without eth_getLogs", () => {
+  // The error Rootstock's public nodes return for any log query, shaped like
+  // the SERVER_ERROR Ethers raises for a JSON-RPC error.
+  const rootstockError = () =>
+    Object.assign(new Error("processing response error"), {
+      code: "SERVER_ERROR",
+      body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+      error: Object.assign(
+        new Error("the method eth_getLogs does not exist/is not available"),
+        { code: -32601 },
+      ),
+    })
+  const filter = [{ fromBlock: "0x8f2b1d", toBlock: "0x8f3ea5" }]
+
+  afterEach(() => sandbox.restore())
+
+  // Two endpoints, as Rootstock has, each answering `eth_getLogs` per
+  // `answers` and anything else with "success".
+  const providerWith = (...answers: (() => Promise<unknown>)[]) => {
+    const stubs = answers.map((answer) => {
+      const transport = new JsonRpcProvider("fake-rpc-url")
+      const stub = sandbox
+        .stub(transport, "send")
+        .callsFake(async (method: string) =>
+          method === "eth_getLogs" ? answer() : "success",
+        )
+      return { transport, stub }
+    })
+    const provider = new SerialFallbackProvider(
+      "30",
+      stubs.map(({ transport }) => ({
+        kind: "standard" as const,
+        createTransport: () => transport,
+      })),
+    )
+    return { provider, stubs: stubs.map(({ stub }) => stub) }
+  }
+
+  it("refuses eth_getLogs everywhere once every endpoint has refused it", async () => {
+    const { provider, stubs } = providerWith(
+      async () => Promise.reject(rootstockError()),
+      async () => Promise.reject(rootstockError()),
+    )
+    expect(provider.refusesEverywhere("eth_getLogs")).toBe(false)
+
+    const failure = await provider.send("eth_getLogs", filter).then(
+      () => undefined,
+      (error: unknown) => error,
+    )
+
+    expect(failure).toMatchObject({ message: "processing response error" })
+    expect(stubs.map((stub) => callsFor(stub, "eth_getLogs").length)).toEqual([
+      1, 1,
+    ])
+    expect(provider.refusesEverywhere("eth_getLogs")).toBe(true)
+    expect(provider.refusesEverywhere("eth_getBalance")).toBe(false)
+    // Neither endpoint is at fault, so other methods carry on.
+    expect(provider.canServeNow("eth_getBalance")).toBe(true)
+    provider.destroy()
+  })
+
+  it("doesn't refuse eth_getLogs while another endpoint serves it", async () => {
+    const { provider } = providerWith(
+      async () => Promise.reject(rootstockError()),
+      async () => [],
+    )
+
+    expect(await provider.send("eth_getLogs", filter)).toEqual([])
+
+    expect(provider.refusesEverywhere("eth_getLogs")).toBe(false)
+    provider.destroy()
+  })
+})

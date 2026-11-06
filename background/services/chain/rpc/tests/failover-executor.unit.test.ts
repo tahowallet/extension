@@ -6,6 +6,7 @@ import Endpoint from "../endpoint"
 import EndpointPool from "../endpoint-pool"
 import FailoverExecutor, {
   NoEndpointAvailableError,
+  REFUSAL_RETRY_MS,
   RequestOutcomeObserver,
   RpcRequest,
 } from "../failover-executor"
@@ -55,9 +56,13 @@ function setup(size: number, threshold = 5) {
     onAllEndpointsFailed: () => events.push("all failed"),
   }
   const waits: number[] = []
-  const executor = new FailoverExecutor([observer], async (ms) => {
-    waits.push(ms)
-  })
+  const executor = new FailoverExecutor(
+    [observer],
+    async (ms) => {
+      waits.push(ms)
+    },
+    () => clock.now(),
+  )
   const controller = new AbortController()
   const request = (
     method = "eth_call",
@@ -368,6 +373,25 @@ describe("FailoverExecutor", () => {
         ),
       ).toMatchObject({ message: "NETWORK_ERROR" })
       expect(calls(sends[0], "eth_getLogs")).toBe(1)
+    })
+
+    it("asks it again a day after it refused", async () => {
+      const { send, sends, clock } = setup(2)
+      sends[0].rejects(rootstockError())
+      await getLogs(send)
+
+      // Within the day, log queries go straight to the other endpoint.
+      clock.increment(REFUSAL_RETRY_MS - 1)
+      await getLogs(send)
+      expect(calls(sends[0], "eth_getLogs")).toBe(1)
+
+      // Once it has passed, the endpoint is eligible again, in case it now
+      // serves log queries, and answers when the other one has an outage.
+      sends[0].resolves("endpoint 0")
+      sends[1].rejects(new Error("NETWORK_ERROR"))
+      clock.increment(1)
+      expect(await getLogs(send)).toMatchObject({ result: "endpoint 0" })
+      expect(calls(sends[0], "eth_getLogs")).toBe(2)
     })
   })
 

@@ -131,6 +131,7 @@ function boarProvider({ firstBlock }: { firstBlock: number }) {
     supportsAlchemyMethods: true,
     reachability: "reachable",
     canServeNow: () => true,
+    refusesEverywhere: () => false,
     send,
     getLogs,
     call,

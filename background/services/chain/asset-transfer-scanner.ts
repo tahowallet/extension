@@ -54,6 +54,8 @@ export type AssetTransferScannerDependencies = {
   supportsAlchemyMethods: (network: EVMNetwork) => boolean
   /** Whether a network has an endpoint for the method that isn't cooling. */
   canServeNow: (network: EVMNetwork, method: string) => boolean
+  /** Whether every endpoint for the method has refused it within a day. */
+  refusesEverywhere: (network: EVMNetwork, method: string) => boolean
   enqueueTransactionLookup: (
     network: EVMNetwork,
     hash: HexString,
@@ -103,9 +105,42 @@ function logScanFailure(
  * lookup.
  */
 export default class AssetTransferScanner {
+  // Chains whose endpoints all refuse log queries, so they've been told so.
+  private readonly chainsRefusingLogs = new Set<string>()
+
   constructor(
     private readonly dependencies: AssetTransferScannerDependencies,
   ) {}
+
+  /**
+   * Checks whether a network's transfers can only come from log queries that
+   * every one of its endpoints refuses, as on Rootstock, whose public nodes
+   * answer that `eth_getLogs` doesn't exist. Asking again would only fail
+   * every account the same way on every scan, so scans skip the network and
+   * this is logged once.
+   *
+   * Note that this lifts once the network has an endpoint that hasn't
+   * refused, such as a custom RPC added for it, or a day after its endpoints
+   * refused, when they're asked again.
+   */
+  private refusesLogScans({ network }: AddressOnNetwork): boolean {
+    const { supportsAlchemyMethods, refusesEverywhere } = this.dependencies
+    const { chainID } = network
+    if (
+      supportsAlchemyMethods(network) ||
+      !refusesEverywhere(network, "eth_getLogs")
+    ) {
+      this.chainsRefusingLogs.delete(chainID)
+      return false
+    }
+    if (!this.chainsRefusingLogs.has(chainID)) {
+      this.chainsRefusingLogs.add(chainID)
+      logger.info(
+        `chain ${chainID}: every endpoint refuses eth_getLogs, so asset transfers aren't scanned until its endpoints change or a day passes.`,
+      )
+    }
+    return true
+  }
 
   /** Scans recent blocks for every tracked account. */
   async scanRecentTransfers({
@@ -139,9 +174,14 @@ export default class AssetTransferScanner {
 
   /**
    * Whether the network has an endpoint that can look up transfers now.
-   * When every endpoint is cooling down, a scan would only pile up failures.
+   * When every endpoint is cooling down, or refuses the log queries a scan
+   * needs (see {@link refusesLogScans}), a scan would only pile up failures.
    */
-  private canScanNow({ network }: AddressOnNetwork, kind: string): boolean {
+  private canScanNow(addressNetwork: AddressOnNetwork, kind: string): boolean {
+    if (this.refusesLogScans(addressNetwork)) {
+      return false
+    }
+    const { network } = addressNetwork
     const { supportsAlchemyMethods, canServeNow } = this.dependencies
     const canScan =
       (supportsAlchemyMethods(network) &&
@@ -183,7 +223,14 @@ export default class AssetTransferScanner {
         incomingOnly,
       })
     } catch (error) {
-      logScanFailure("recent", addressNetwork, { startBlock, endBlock }, error)
+      if (!this.refusesLogScans(addressNetwork)) {
+        logScanFailure(
+          "recent",
+          addressNetwork,
+          { startBlock, endBlock },
+          error,
+        )
+      }
     }
   }
 
@@ -222,7 +269,9 @@ export default class AssetTransferScanner {
 
       await this.scanBlocks(addressNetwork, range.startBlock, range.endBlock)
     } catch (error) {
-      logScanFailure("historic", addressNetwork, range, error)
+      if (!this.refusesLogScans(addressNetwork)) {
+        logScanFailure("historic", addressNetwork, range, error)
+      }
     }
   }
 
