@@ -5,7 +5,7 @@ import {
   ContractReader,
   getUSDPriceForBaseAsset,
 } from "../../../lib/priceOracle"
-import { livePriceRecord, millisecondsOf } from "../history/live"
+import { livePriceMeasurement, millisecondsOf } from "../history/live"
 
 const NOW = Date.UTC(2026, 10, 5, 12)
 
@@ -31,16 +31,16 @@ describe("millisecondsOf", () => {
   })
 })
 
-describe("livePriceRecord", () => {
+describe("livePriceMeasurement", () => {
   it("dates a price point stamped with Date.now() to its own time", () => {
-    const record = livePriceRecord(ethPrice(2948, NOW))
+    const record = livePriceMeasurement(ethPrice(2948, NOW))
 
     expect(record).toMatchObject({
-      priceKey: "1/base",
+      assetID: "1/base",
       symbol: "ETH",
       time: NOW,
       value: 2948,
-      source: "live",
+      origin: "live",
     })
     // Taking these milliseconds for seconds would date the price a thousand
     // times too late, past the year 58000.
@@ -48,7 +48,7 @@ describe("livePriceRecord", () => {
   })
 
   it("dates a price point timed in seconds", () => {
-    expect(livePriceRecord(ethPrice(2948, NOW / 1000))?.time).toBe(NOW)
+    expect(livePriceMeasurement(ethPrice(2948, NOW / 1000))?.time).toBe(NOW)
   })
 
   it("dates the Chainlink feed's live price to now", async () => {
@@ -74,9 +74,9 @@ describe("livePriceRecord", () => {
       ETHEREUM,
       () => provider as typeof provider & ContractReader,
     )
-    const record = pricePoint && livePriceRecord(pricePoint)
+    const record = pricePoint && livePriceMeasurement(pricePoint)
 
-    expect(record?.priceKey).toBe("1/base")
+    expect(record?.assetID).toBe("1/base")
     expect(record?.value).toBeCloseTo(2948)
     expect(record?.time).toBeGreaterThanOrEqual(before)
     expect(record?.time).toBeLessThanOrEqual(Date.now())
@@ -84,7 +84,7 @@ describe("livePriceRecord", () => {
 
   it("skips pairs without a fiat currency", () => {
     expect(
-      livePriceRecord({ pair: [ETH, ETH], amounts: [1n, 1n], time: NOW }),
+      livePriceMeasurement({ pair: [ETH, ETH], amounts: [1n, 1n], time: NOW }),
     ).toBeUndefined()
   })
 })

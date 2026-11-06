@@ -30,7 +30,7 @@ const transfer = (
   }
 }
 
-const tokens = [{ holdingKey: "token", contractAddress: TOKEN, decimals: 6 }]
+const tokens = [{ key: "token", contractAddress: TOKEN, decimals: 6 }]
 
 describe("balancesBefore", () => {
   it("takes a span's net transfers back off its ending balance", () => {

@@ -5,7 +5,7 @@ import {
   getFullAssetID,
   isNetworkBaseAsset,
 } from "../../../redux-slices/utils/asset-utils"
-import type { PriceRecord } from "../../history/db"
+import type { PriceMeasurement } from "./records"
 
 /**
  * The smallest time read as milliseconds rather than seconds. As
@@ -32,18 +32,18 @@ export function millisecondsOf(time: number): number {
 }
 
 /**
- * Returns the live price record for a price point between an asset and a
+ * Returns the live price measurement for a price point between an asset and a
  * fiat currency, or `undefined` if the point doesn't price a fungible asset
  * in fiat or its amounts don't make a price.
  *
- * For example, a point pricing 1 ETH at 2,948 USD becomes a record of ETH's
- * price key with a value of 2948, timed in milliseconds.
+ * For example, a point pricing 1 ETH at 2,948 USD becomes a measurement for
+ * ETH's full asset id with a value of 2948, timed in milliseconds.
  *
  * @param pricePoint The price point, as the wallet's price sources emit it.
  */
-export function livePriceRecord(
+export function livePriceMeasurement(
   pricePoint: PricePoint,
-): PriceRecord | undefined {
+): PriceMeasurement | undefined {
   const fiatIndex = pricePoint.pair.findIndex(({ symbol }) =>
     FIAT_CURRENCIES_SYMBOL.includes(symbol),
   )
@@ -62,10 +62,10 @@ export function livePriceRecord(
   if (!(assetUnits > 0) || !Number.isFinite(fiatUnits)) return undefined
 
   return {
-    priceKey: getFullAssetID(asset),
+    assetID: getFullAssetID(asset),
     symbol: asset.symbol,
     time: millisecondsOf(pricePoint.time),
     value: fiatUnits / assetUnits,
-    source: "live",
+    origin: "live",
   }
 }

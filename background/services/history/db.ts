@@ -339,7 +339,7 @@ const holdingOf = (record: SeriesRecord): Holding => {
     trusted: record.trusted ?? false,
     times: record.times,
     values: record.values,
-    sources: record.sources,
+    origins: record.sources,
     time: record.times[last] ?? 0,
     value: record.values[last] ?? 0,
   }
