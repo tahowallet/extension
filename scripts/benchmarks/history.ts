@@ -1,6 +1,6 @@
 /* oxlint-disable no-console */
 /**
- * Benchmarks the history service's chart queries and write paths in Chromium,
+ * Benchmarks the indexing service's history queries and writes in Chromium,
  * against real IndexedDB, at several numbers of held tokens. Reports how long
  * each operation took and the longest the event loop went without a turn
  * while it ran, against targets of under 500ms to load a chart's data and no
@@ -40,7 +40,7 @@ if (!build.success) {
 }
 fs.writeFileSync(
   path.join(directory, "index.html"),
-  // The history service imports webextension-polyfill, which only loads
+  // The indexing service imports webextension-polyfill, which only loads
   // where it looks like an extension.
   `<script>
     window.process = { env: {} }

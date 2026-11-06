@@ -2,8 +2,8 @@ import React from "react"
 import { AnyAction, configureStore } from "@reduxjs/toolkit"
 import { fireEvent, waitFor } from "@testing-library/react"
 import rootReducer from "@tallyho/tally-background/redux-slices"
-import { fetchValueHistory } from "@tallyho/tally-background/redux-slices/history"
-import type { ValueHistory } from "@tallyho/tally-background/services/history"
+import { fetchValueHistory } from "@tallyho/tally-background/redux-slices/accounts"
+import type { ValueHistory } from "@tallyho/tally-background/services/indexing"
 import { renderWithProviders } from "../../../tests/test-utils"
 import FullTabValueChart from "../FullTabValueChart"
 
@@ -27,7 +27,7 @@ const history: ValueHistory = {
 
 /**
  * Returns a store that answers history requests with the given history, the
- * way the background's history service answers them through webext-redux.
+ * way the background's indexing service answers them through webext-redux.
  */
 const storeWithHistory = (answer: ValueHistory) =>
   configureStore({

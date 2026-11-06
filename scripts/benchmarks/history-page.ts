@@ -1,18 +1,20 @@
 /**
  * The page side of the history benchmark; see `history.ts`, which bundles this
- * file and runs it in Chromium. It seeds a history database with a given
- * number of held tokens, then times the history service's chart queries and
- * write paths, and the longest the event loop went without a turn during each.
+ * file and runs it in Chromium. It seeds the indexing database with a given
+ * number of held tokens, then times the indexing service's chart queries and
+ * history write paths, and the longest the event loop went without a turn
+ * during each.
  */
 import Dexie from "dexie"
 import { DAY, HOUR, MINUTE } from "../../background/constants"
+import { IndexingDatabase } from "../../background/services/indexing/db"
 import {
-  BalanceRecord,
-  HistoryDatabase,
-  PriceRecord,
-  holdingKeyFor,
-} from "../../background/services/history/db"
-import HistoryService from "../../background/services/history"
+  BalanceMeasurement,
+  PriceMeasurement,
+  balanceSeriesKeyFor,
+} from "../../background/services/indexing/history/records"
+import IndexingService from "../../background/services/indexing"
+import type { FullAssetID } from "../../background/redux-slices/utils/asset-utils"
 
 const WEEK = 7 * DAY
 
@@ -62,8 +64,8 @@ async function measure(work: () => Promise<unknown>) {
 }
 
 async function run({ holdings, accounts, chains }: Scenario) {
-  await Dexie.delete("tally/history")
-  const db = new HistoryDatabase()
+  await Dexie.delete("tally/indexing")
+  const db = new IndexingDatabase()
   const now = Date.now()
   const addresses = Array.from(
     { length: accounts },
@@ -76,7 +78,7 @@ async function run({ holdings, accounts, chains }: Scenario) {
   // price series, which is the most series a chart can have to read.
   const held = Array.from({ length: holdings }, (_, index) => {
     const chainID = String(index % chains)
-    const assetID = `${chainID}/0x${index.toString(16).padStart(40, "0")}`
+    const assetID: FullAssetID = `${chainID}/0x${index.toString(16).padStart(40, "0")}`
     const address = addresses[index % accounts]
     return { address, chainID, assetID, symbol: `T${index}` }
   })
@@ -84,40 +86,46 @@ async function run({ holdings, accounts, chains }: Scenario) {
   const seedStart = performance.now()
   for (let start = 0; start < held.length; start += 50) {
     const batch = held.slice(start, start + 50)
-    const balances: BalanceRecord[] = batch.flatMap(
+    const balances: BalanceMeasurement[] = batch.flatMap(
       ({ address, chainID, assetID, symbol }) =>
         balanceTimes.map((time, index) => ({
-          holdingKey: holdingKeyFor(address, assetID),
+          key: balanceSeriesKeyFor(address, assetID),
           address,
           chainID,
           assetID,
           symbol,
           trusted: true,
-          time,
+          retrievedAt: time,
           value: 1 + (index % 7),
-          source: "backfill" as const,
+          origin: "backfill" as const,
         })),
     )
-    const prices: PriceRecord[] = batch.flatMap(({ assetID, symbol }) =>
+    const prices: PriceMeasurement[] = batch.flatMap(({ assetID, symbol }) =>
       priceTimes.map((time, index) => ({
-        priceKey: assetID,
+        assetID,
         symbol,
         time,
         value: 1 + (index % 11),
-        source: "backfill" as const,
+        origin: "backfill" as const,
       })),
     )
     // oxlint-disable-next-line no-await-in-loop
-    await db.addBalances(balances)
+    await db.addBalanceMeasurements(balances)
     // oxlint-disable-next-line no-await-in-loop
-    await db.addPrices(prices)
+    await db.savePriceMeasurements(prices)
   }
   const seedMs = Math.round(performance.now() - seedStart)
 
-  // The service only needs its database for value history; the other
-  // services are never called here.
-  // oxlint-disable-next-line typescript/no-explicit-any
-  const service = new (HistoryService as any)(db, {}, {}) as HistoryService
+  // Value history only needs the service's database and the networks it
+  // tracks; with none tracked, every balance series keeps the trust it was
+  // recorded with. The other services are never called here.
+  const chainService = { getTrackedNetworks: async () => [] }
+  // oxlint-disable-next-line typescript/no-explicit-any, typescript/no-unsafe-type-assertion
+  const service = new (IndexingService as any)(
+    db,
+    {},
+    chainService,
+  ) as IndexingService
   const chart = (span: number, query: Partial<{ chainIDs: string[] }> = {}) =>
     service.getValueHistory({
       addresses,
@@ -137,36 +145,36 @@ async function run({ holdings, accounts, chains }: Scenario) {
     chart(30 * DAY, { chainIDs: ["0"] }),
   )
   results["live balance report, every holding"] = await measure(() =>
-    db.addLiveBalances(
+    db.addLiveBalanceMeasurements(
       held.map(({ address, chainID, assetID, symbol }, index) => ({
-        holdingKey: holdingKeyFor(address, assetID),
+        key: balanceSeriesKeyFor(address, assetID),
         address,
         chainID,
         assetID,
         symbol,
         trusted: true,
-        time: now + MINUTE,
+        retrievedAt: now + MINUTE,
         value: 100 + index,
-        source: "live" as const,
+        origin: "live" as const,
       })),
     ),
   )
   results["live prices, every asset"] = await measure(() =>
-    db.addPrices(
+    db.savePriceMeasurements(
       held.map(({ assetID, symbol }) => ({
-        priceKey: assetID,
+        assetID,
         symbol,
         time: now + MINUTE,
         value: 5,
-        source: "live" as const,
+        origin: "live" as const,
       })),
     ),
   )
   results["backfill tick reads"] = await measure(async () => {
-    const all = await db.getHoldings(addresses)
+    const all = await db.getBalanceSeries(addresses)
     await db.getPriceSeries(all.map(({ assetID }) => assetID))
   })
-  results.compaction = await measure(() => db.compact(now + 2 * DAY))
+  results.compaction = await measure(() => db.compactHistory(now + 2 * DAY))
 
   db.close()
   return { holdings, accounts, chains, seedMs, results }

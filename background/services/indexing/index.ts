@@ -1,3 +1,4 @@
+import { Dexie } from "dexie"
 import logger from "../../lib/logger"
 import type { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
@@ -36,7 +37,14 @@ import ChainService from "../chain"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import { livePriceMeasurement } from "./history/live"
-import { LIVE_PRICE_SPACING } from "./history/records"
+import { BalanceSeriesInfo, LIVE_PRICE_SPACING } from "./history/records"
+import { HistoryBackfill } from "./history/backfill"
+import {
+  ValueHistory,
+  ValueHistoryQuery,
+  trustResolverFor,
+  valueHistory,
+} from "./history/value-history"
 import BaseService from "../base"
 import type { EnrichedEVMTransaction } from "../enrichment/types"
 import {
@@ -51,6 +59,8 @@ import {
   isSameAsset,
   FullAssetID,
 } from "../../redux-slices/utils/asset-utils"
+
+export type { ValueHistory, ValueHistoryQuery }
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -129,6 +139,11 @@ function allowVerifyAssetByManualImport(
  * Today, the service periodically polls for price and token balance
  * changes for all tracked tokens and accounts, as well as up to date
  * token metadata. Relevant prices and balances are emitted as events.
+ *
+ * It also keeps chartable history of those prices and balances, along with
+ * the base asset balances the chain service reports. History is thinned as it
+ * ages, and what the wallet missed is slowly backfilled, newest first, out to
+ * two years; see {@link HistoryBackfill}.
  */
 export default class IndexingService extends BaseService<Events> {
   #activeAccountBalanceAlarm: NodeJS.Timer | null = null
@@ -199,13 +214,44 @@ export default class IndexingService extends BaseService<Events> {
         },
         handler: () => this.scheduleUpdateAssetsPrices(),
       },
+      historyCompaction: {
+        schedule: { delayInMinutes: 5, periodInMinutes: 60 },
+        handler: () => {
+          void this.compactHistory()
+        },
+      },
+      historyBackfill: {
+        schedule: { delayInMinutes: 2, periodInMinutes: 1 },
+        handler: () => {
+          void this.historyBackfill.tick()
+        },
+      },
+    })
+    this.historyBackfill = new HistoryBackfill({
+      db,
+      chainService,
+      trustResolver: () => this.trustResolver(),
+      getAssetsToTrack: () => this.getAssetsToTrack(),
     })
   }
+
+  /**
+   * Backfills the price and balance history the wallet didn't record live;
+   * see {@link HistoryBackfill}.
+   */
+  private historyBackfill: HistoryBackfill
 
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
 
     this.connectChainServiceEvents()
+
+    // History used to be kept in a database of its own, which never shipped.
+    // Deleting a database that doesn't exist does nothing, so this is cheap
+    // once it's gone.
+    void Dexie.delete("tally/history").catch((error) =>
+      logger.warn("Couldn't delete the old history database", error),
+    )
 
     // Kick off token list fetching in the background
     const tokenListLoad = this.fetchAndCacheTokenLists()
@@ -273,12 +319,43 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
-   * Thins the price and balance history down to its retention tiers as of
-   * `now`, and returns the number of points dropped; see
+   * Returns the value over time of the queried accounts' balances, sampled at
+   * `samples` points across the queried span, along with when coverage starts
+   * and whether backfill is still filling in the queried series.
+   */
+  async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
+    return valueHistory(query, {
+      db: this.db,
+      trustResolver: () => this.trustResolver(),
+      isBackfillPending: (key) => this.historyBackfill.isPending(key),
+    })
+  }
+
+  /**
+   * Returns a function that says whether a balance series' asset is trusted
+   * right now, judged from the assets this service currently knows on each
+   * tracked network; see {@link trustResolverFor}.
+   */
+  private async trustResolver(): Promise<
+    (series: BalanceSeriesInfo) => boolean
+  > {
+    return trustResolverFor(
+      await this.chainService.getTrackedNetworks(),
+      (network) => this.getCachedAssets(network),
+    )
+  }
+
+  /**
+   * Thins the price and balance history down to its retention tiers; see
    * {@link IndexingDatabase.compactHistory}.
    */
-  async compactHistory(now: number): Promise<number> {
-    return this.db.compactHistory(now)
+  private async compactHistory(): Promise<void> {
+    try {
+      const dropped = await this.db.compactHistory(Date.now())
+      logger.debug("History compacted", { dropped })
+    } catch (error) {
+      logger.warn("History compaction failed", error)
+    }
   }
 
   /**

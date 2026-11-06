@@ -217,7 +217,7 @@ import {
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 import CampaignService from "../campaign"
-import HistoryService, { ValueHistory, ValueHistoryQuery } from "../history"
+import type { ValueHistory, ValueHistoryQuery } from "../indexing"
 import { DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 export default class ReduxService extends BaseService<never> {
@@ -292,8 +292,6 @@ export default class ReduxService extends BaseService<never> {
       notificationsService,
     )
 
-    const historyService = HistoryService.create(chainService, indexingService)
-
     const savedReduxState = readAndMigrateState()
 
     return new this(
@@ -315,7 +313,6 @@ export default class ReduxService extends BaseService<never> {
       await abilitiesService,
       await notificationsService,
       await campaignService,
-      await historyService,
     )
   }
 
@@ -413,12 +410,6 @@ export default class ReduxService extends BaseService<never> {
      * A promise to the Campaign service which takes care of managing current and upcoming campaigns
      */
     private campaignService: CampaignService,
-
-    /**
-     * A promise to the History service, which keeps chartable history of
-     * prices and balances.
-     */
-    private historyService: HistoryService,
   ) {
     super({
       initialLoadWaitExpired: {
@@ -458,7 +449,6 @@ export default class ReduxService extends BaseService<never> {
       this.abilitiesService.startService(),
       this.notificationsService.startService(),
       this.campaignService.startService(),
-      this.historyService.startService(),
     ]
 
     await Promise.all(servicesToBeStarted)
@@ -483,7 +473,6 @@ export default class ReduxService extends BaseService<never> {
       this.abilitiesService.stopService(),
       this.notificationsService.stopService(),
       this.campaignService.stopService(),
-      this.historyService.stopService(),
     ]
 
     await Promise.all(servicesToBeStopped)
@@ -1912,7 +1901,7 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
-    return this.historyService.getValueHistory(query)
+    return this.indexingService.getValueHistory(query)
   }
 
   async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {
