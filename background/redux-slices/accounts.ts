@@ -13,6 +13,7 @@ import {
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
 import { AccountSigner, ControlCompatibility } from "../services/signing"
+import type { ValueHistory, ValueHistoryQuery } from "../services/indexing"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -462,4 +463,19 @@ export const removeAccount = createBackgroundAsyncThunk(
 
     await main.removeAccount(normalizedAddress, signer, lastAddressInAccount)
   },
+)
+
+/**
+ * Async thunk whose dispatch promise resolves to the value over time of the
+ * queried accounts' balances, as computed by the indexing service.
+ *
+ * Note that history isn't kept in the redux store; instead, each chart
+ * requests the span it is currently showing.
+ */
+export const fetchValueHistory = createBackgroundAsyncThunk(
+  "account/fetchValueHistory",
+  async (
+    query: ValueHistoryQuery,
+    { extra: { main } },
+  ): Promise<ValueHistory> => main.getValueHistory(query),
 )

@@ -7,7 +7,7 @@ import React, {
 } from "react"
 import dayjs from "dayjs"
 import { useTranslation } from "react-i18next"
-import { fetchValueHistory } from "@tallyho/tally-background/redux-slices/history"
+import { fetchValueHistory } from "@tallyho/tally-background/redux-slices/accounts"
 import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { useBackgroundDispatch } from "../../hooks"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"

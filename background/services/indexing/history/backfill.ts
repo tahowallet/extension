@@ -1,51 +1,30 @@
 import browser from "webextension-polyfill"
-import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
-import BaseService from "../base"
-import ChainService from "../chain"
-import IndexingService from "../indexing"
-import logger from "../../lib/logger"
-import { AdaptiveSize } from "../../lib/adaptive-size"
+import type ChainService from "../../chain"
+import type { IndexingDatabase } from "../db"
+import logger from "../../../lib/logger"
+import { AdaptiveSize } from "../../../lib/adaptive-size"
 import {
   BASE_ASSET_USD_FEEDS,
   CHAINLINK_AGGREGATOR_INTERFACE,
-} from "../../lib/priceOracle"
-import { DAY, MINUTE, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
-import type { AccountBalance } from "../../accounts"
-import type { PricePoint } from "../../assets"
-import { isSmartContractFungibleAsset } from "../../assets"
-import type { EVMNetwork } from "../../networks"
-import {
-  getFullAssetID,
-  isTrustedAsset,
-} from "../../redux-slices/utils/asset-utils"
-import { normalizeEVMAddress } from "../../lib/utils"
-import {
-  BackfillState,
-  Holding,
-  HoldingInfo,
-  HistoryDatabase,
-  getOrCreateDB,
-  holdingKeyFor,
-} from "./db"
-import { livePriceMeasurement } from "../indexing/history/live"
-import {
-  firstHeldTime,
-  HistoryPoint,
-  Series,
-  valueSeries,
-} from "../indexing/history/series"
-import {
-  BACKFILL_HORIZON,
-  Bucket,
-  missingBuckets,
-} from "../indexing/history/schedule"
-import { getAssetTransfersViaLogs } from "../../lib/erc20-transfer-logs"
-import { balancesBefore } from "../indexing/history/reconstruction"
+} from "../../../lib/priceOracle"
+import { DAY, MINUTE, TEST_NETWORK_BY_CHAIN_ID } from "../../../constants"
+import type { SmartContractFungibleAsset } from "../../../assets"
+import type { EVMNetwork } from "../../../networks"
+import { getAssetTransfersViaLogs } from "../../../lib/erc20-transfer-logs"
 import {
   LogHistoryUnavailableError,
   LogScanPausedError,
-} from "../chain/rpc/log-query-errors"
-import { RateBudget } from "../indexing/history/budget"
+} from "../../chain/rpc/log-query-errors"
+import {
+  BackfillState,
+  BalanceSeries,
+  BalanceSeriesInfo,
+  balanceSeriesInfoOf,
+} from "./records"
+import { HistoryPoint } from "./series"
+import { BACKFILL_HORIZON, Bucket, missingBuckets } from "./schedule"
+import { balancesBefore } from "./reconstruction"
+import { RateBudget } from "./budget"
 import {
   BalanceRead,
   BlockClock,
@@ -56,7 +35,7 @@ import {
   fetchPriceHistory,
   multicallSizeFor,
   snapshotBalances,
-} from "../indexing/history/sources"
+} from "./sources"
 
 /**
  * How far back CoinGecko's public API serves prices. This is set a day short
@@ -90,12 +69,6 @@ const READ_COST = 2
 const COINGECKO_RATES = { active: 0.5, idle: 2 }
 const COINGECKO_BURST = 2
 
-/**
- * Value history queries that take at least this long log a warning with
- * their per-phase timings.
- */
-const SLOW_QUERY_MS = 1_000
-
 /** Backfill ticks that take at least this long log a warning. */
 const SLOW_TICK_MS = 5_000
 
@@ -105,9 +78,6 @@ const SLOW_TICK_MS = 5_000
  * more, and the log scan adapts to smaller ones.
  */
 const RECONSTRUCTION_STEP_BLOCKS = 10_000
-
-/** The minimum spacing between recorded live prices for each asset. */
-const LIVE_PRICE_SPACING = 5 * MINUTE
 
 /** Seconds without input after which Chrome reports the user idle. */
 const IDLE_AFTER_SECONDS = 5 * 60
@@ -131,10 +101,13 @@ async function isUserIdle(): Promise<boolean> {
 }
 
 /**
- * Returns a holding's balance at `time`: its latest point at or before it,
- * or failing that its earliest point.
+ * Returns a series' balance at `time`: its latest point at or before it, or
+ * failing that its earliest point.
  */
-const balanceNear = ({ times, values }: Holding, time: number): number => {
+const balanceNear = (
+  { times, values }: BalanceSeries,
+  time: number,
+): number => {
   let found = 0
   for (
     let index = 0;
@@ -146,26 +119,9 @@ const balanceNear = ({ times, values }: Holding, time: number): number => {
   return values[found] ?? 0
 }
 
-/** Returns a holding's identifying information, without its series. */
-const infoOf = ({
-  holdingKey,
-  address,
-  chainID,
-  assetID,
-  symbol,
-  trusted,
-}: HoldingInfo): HoldingInfo => ({
-  holdingKey,
-  address,
-  chainID,
-  assetID,
-  symbol,
-  trusted,
-})
-
 /**
- * Returns the contract address from a holding's full asset id, or
- * `undefined` if the asset is a base asset.
+ * Returns the contract address from a full asset id, or `undefined` if the
+ * asset is a base asset.
  */
 const contractAddressOf = (assetID: string): string | undefined =>
   assetID.endsWith("/base") ? undefined : assetID.split("/")[1]
@@ -174,7 +130,10 @@ const contractAddressOf = (assetID: string): string | undefined =>
  * Returns a backfill state's floor, or `undefined` if it has none or the
  * floor is older than {@link FLOOR_RECHECK} and should be looked past again.
  */
-const activeFloor = (state: BackfillState, now: number) =>
+export const activeFloor = (
+  state: BackfillState,
+  now: number,
+): number | undefined =>
   state.floor !== undefined && now - (state.floorAt ?? 0) < FLOOR_RECHECK
     ? state.floor
     : undefined
@@ -206,250 +165,40 @@ function latestPerBucket(
   return [...latest.values()]
 }
 
+type Provider = NonNullable<ReturnType<ChainService["providerForNetwork"]>>
+
 /**
- * A query for value history: the accounts whose holdings should be valued,
- * optionally limited to some networks or to one asset, over a span of time
- * sampled at `samples` points.
+ * Returns a reader for a chain's past state. Calls at old blocks go through
+ * {@link SerialFallbackProvider.historicalCall}, which asks each of the
+ * chain's endpoints in turn, since often only some of them keep old state.
  */
-export type ValueHistoryQuery = {
-  addresses: string[]
-  /** Limits the query to these networks. If absent, all are included. */
-  chainIDs?: string[]
-  /**
-   * Limits the query to the asset with this full asset id. If absent, all
-   * trusted assets are included.
-   */
-  assetID?: string
-  /**
-   * When the window starts, or `"start"` for when the queried holdings were
-   * first held: their earliest balance that isn't zero, so that before it,
-   * every one of them was empty on record.
-   */
-  from: number | "start"
-  to: number
-  samples: number
-}
+const historyReader = (provider: Provider): HistoryReader => ({
+  getBlock: (blockTag) => provider.getBlock(blockTag),
+  call: (transaction, blockTag) =>
+    provider.historicalCall(transaction, blockTag),
+})
 
-export type ValueHistory = {
-  /** When the charted window starts, which a `"start"` query works out. */
-  from: number
-  points: HistoryPoint[]
-  coverageStart: number | undefined
+/** What backfill reads from and writes to. */
+export type HistoryBackfillSources = {
+  db: IndexingDatabase
+  chainService: ChainService
   /**
-   * The last point whose value assumed some holding's earliest known balance,
-   * because its balance history doesn't reach back that far yet; see
-   * {@link valueSeries}.
+   * Returns a function that says whether a balance series' asset is trusted
+   * right now; only trusted assets are backfilled.
    */
-  estimatedUntil: number | undefined
-  /**
-   * The latest time before which some queried network's balance history
-   * isn't available at all, because none of its endpoints keep state that
-   * old; `undefined` if every network's history reaches the window's start.
-   * Values before it rely on estimates that backfill can't replace.
-   */
-  balanceHistoryFrom: number | undefined
-  /**
-   * The last point whose value relied on token balances reconstructed from
-   * transfers, on networks whose endpoints keep no old state; `undefined` if
-   * none did.
-   */
-  reconstructedUntil: number | undefined
-  /**
-   * Stretches whose values rely mostly on prices that weren't recorded,
-   * typically while the wallet wasn't running; see {@link valueSeries}.
-   */
-  unrecorded: { from: number; to: number }[]
-  /** Whether backfill still has work to do for any of the queried series. */
-  backfilling: boolean
+  trustResolver: () => Promise<(series: BalanceSeriesInfo) => boolean>
+  getAssetsToTrack: () => Promise<SmartContractFungibleAsset[]>
 }
 
 /**
- * The HistoryService keeps chartable history of prices and balances. It
- * records the prices and balances the wallet already fetches, thins them as
- * they age, and slowly backfills and infills what it missed, newest first,
- * out to two years.
+ * Slowly backfills and infills the price and balance history that the wallet
+ * didn't record live, newest first, out to two years.
  *
  * Each chain and CoinGecko get a small budget of requests per minute, which
  * is larger while the user is away. As a result, backfill trickles along
  * beside the wallet's own traffic during the day and catches up overnight.
  */
-export default class HistoryService extends BaseService<ServiceLifecycleEvents> {
-  static create: ServiceCreatorFunction<
-    ServiceLifecycleEvents,
-    HistoryService,
-    [Promise<ChainService>, Promise<IndexingService>]
-  > = async (chainService, indexingService) =>
-    new this(await getOrCreateDB(), await chainService, await indexingService)
-
-  private constructor(
-    private db: HistoryDatabase,
-    private chainService: ChainService,
-    private indexingService: IndexingService,
-  ) {
-    super({
-      historyCompaction: {
-        schedule: { delayInMinutes: 5, periodInMinutes: 60 },
-        handler: () => {
-          void this.compact()
-        },
-      },
-      historyBackfill: {
-        schedule: { delayInMinutes: 2, periodInMinutes: 1 },
-        handler: () => {
-          void this.backfillTick()
-        },
-      },
-    })
-  }
-
-  protected override async internalStartService(): Promise<void> {
-    await super.internalStartService()
-
-    this.indexingService.emitter.on("prices", (pricePoints) => {
-      void this.recordPrices(pricePoints)
-    })
-    this.indexingService.emitter.on("accountsWithBalances", ({ balances }) => {
-      void this.recordBalances(balances)
-    })
-    this.chainService.emitter.on("accountsWithBalances", ({ balances }) => {
-      void this.recordBalances(balances)
-    })
-  }
-
-  /**
-   * The time of the latest recorded live price for each price key, used to
-   * space live prices out by {@link LIVE_PRICE_SPACING}.
-   */
-  #lastLivePriceAt = new Map<string, number>()
-
-  private async recordPrices(pricePoints: PricePoint[]): Promise<void> {
-    const records = pricePoints.flatMap((pricePoint) => {
-      const measurement = livePriceMeasurement(pricePoint)
-      return measurement === undefined
-        ? []
-        : [
-            {
-              priceKey: measurement.assetID,
-              symbol: measurement.symbol,
-              time: measurement.time,
-              value: measurement.value,
-              source: measurement.origin,
-            },
-          ]
-    })
-    // Prices arrive every minute for every tracked asset, but history only
-    // keeps one every few minutes per asset, which is all that compaction
-    // would keep anyway.
-    const kept = records.filter(({ priceKey, time }) => {
-      const last = this.#lastLivePriceAt.get(priceKey)
-      if (last !== undefined && time - last < LIVE_PRICE_SPACING) return false
-      this.#lastLivePriceAt.set(priceKey, time)
-      return true
-    })
-    if (kept.length > 0) await this.db.addPrices(kept)
-  }
-
-  private async recordBalances(balances: AccountBalance[]): Promise<void> {
-    if (balances.length === 0) return
-    await this.db.addLiveBalances(
-      balances.map(({ address, network, assetAmount, retrievedAt }) => {
-        const { asset, amount } = assetAmount
-        const assetID = getFullAssetID(asset)
-        return {
-          holdingKey: holdingKeyFor(address, assetID),
-          address: normalizeEVMAddress(address),
-          chainID: network.chainID,
-          assetID,
-          symbol: asset.symbol,
-          trusted: isTrustedAsset(asset),
-          time: retrievedAt,
-          value: Number(amount) / 10 ** asset.decimals,
-          source: "live" as const,
-        }
-      }),
-    )
-  }
-
-  private async compact(): Promise<void> {
-    try {
-      const dropped = await this.db.compact(Date.now())
-      await this.indexingService.compactHistory(Date.now())
-      logger.debug("History compacted", { dropped })
-    } catch (error) {
-      logger.warn("History compaction failed", error)
-    }
-  }
-
-  /**
-   * Returns a function that says whether a holding's asset is trusted right
-   * now, the way the wallet decides it: base assets, assets on token lists,
-   * and assets the user has verified. The answer comes from the indexing
-   * service's current asset data rather than from the balance records, whose
-   * copies of an asset can lack the metadata that makes it trusted, such as
-   * a verification made after the balance was recorded. Holdings on networks
-   * whose assets aren't loaded yet fall back to what was recorded.
-   */
-  private async trustResolver(): Promise<(holding: Holding) => boolean> {
-    const networks = await this.chainService.getTrackedNetworks()
-    const trustedIDs = new Set<string>()
-    const loadedChains = new Set<string>()
-    networks.forEach((network) => {
-      const assets = this.indexingService.getCachedAssets(network)
-      if (assets.length > 0) loadedChains.add(network.chainID)
-      assets.forEach((asset) => {
-        if (isSmartContractFungibleAsset(asset) && isTrustedAsset(asset)) {
-          trustedIDs.add(getFullAssetID(asset).toLowerCase())
-        }
-      })
-    })
-    return (holding) =>
-      holding.assetID.endsWith("/base") ||
-      (loadedChains.has(holding.chainID)
-        ? trustedIDs.has(holding.assetID.toLowerCase())
-        : holding.trusted)
-  }
-
-  /**
-   * Returns the price key whose history should be used to value an asset,
-   * given the recorded price keys by symbol. Prices recorded for the asset's
-   * own id are preferred, then, for trusted assets, prices for any asset with
-   * the same symbol. If neither exists, the asset's id is used.
-   *
-   * This matches how the wallet prices assets. An untrusted asset is only
-   * valued by prices recorded for it exactly, since anyone can deploy a
-   * token that borrows another's symbol, and borrowing that token's price
-   * would value it as if it were the real thing.
-   */
-  private static priceKeyFor(
-    { assetID, symbol, trusted }: HoldingInfo,
-    priceKeysBySymbol: Map<string, string[]>,
-  ): string {
-    if (!trusted) return assetID
-    const sameSymbol = priceKeysBySymbol.get(symbol) ?? []
-    return sameSymbol.includes(assetID) ? assetID : (sameSymbol[0] ?? assetID)
-  }
-
-  /**
-   * Returns how CoinGecko identifies a held asset, or `undefined` if the
-   * asset's network isn't tracked or CoinGecko has no id for the asset.
-   */
-  private async coinGeckoTargetFor(
-    holding: HoldingInfo,
-  ): Promise<CoinGeckoTarget | undefined> {
-    const network = (await this.chainService.getTrackedNetworks()).find(
-      ({ chainID }) => chainID === holding.chainID,
-    )
-    if (!network) return undefined
-    if (holding.assetID.endsWith("/base")) {
-      const coinID = network.baseAsset.metadata?.coinGeckoID
-      return coinID ? { coinID } : undefined
-    }
-    const [, contractAddress] = holding.assetID.split("/")
-    return network.coingeckoPlatformID && contractAddress
-      ? { platformID: network.coingeckoPlatformID, contractAddress }
-      : undefined
-  }
-
+export class HistoryBackfill {
   #clocks = new Map<string, BlockClock>()
 
   #multicallSizes = new Map<string, AdaptiveSize>()
@@ -461,12 +210,22 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   #ticking = false
 
   /**
-   * Whether each series still has backfill work, as of the last tick that
-   * checked it, keyed by `balances:${chainID}` or `price:${assetID}`. Charts
-   * read this rather than working it out from two years of a series'
-   * history.
+   * Whether each source of history still has backfill work, as of the last
+   * tick that checked it, keyed by backfill state key. Charts read this
+   * rather than working it out from two years of a series' history.
    */
   #pending = new Map<string, boolean>()
+
+  constructor(private sources: HistoryBackfillSources) {}
+
+  /**
+   * Checks whether the given backfill state key still has work to do, as of
+   * the last tick that checked it. A key that no tick has checked yet counts
+   * as still backfilling.
+   */
+  isPending(key: string): boolean {
+    return this.#pending.get(key) ?? true
+  }
 
   private budgetFor(source: string): RateBudget {
     let budget = this.#budgets.get(source)
@@ -486,8 +245,8 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * calls. In those cases, backfill waits rather than adding to the pile of
    * refused requests.
    */
-  private readyProvider(network: EVMNetwork) {
-    const provider = this.chainService.providerForNetwork(network)
+  private readyProvider(network: EVMNetwork): Provider | undefined {
+    const provider = this.sources.chainService.providerForNetwork(network)
     if (
       !provider ||
       provider.reachability === "unreachable" ||
@@ -496,21 +255,6 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       return undefined
     }
     return provider
-  }
-
-  /**
-   * Returns a reader for a chain's past state. Calls at old blocks go through
-   * {@link SerialFallbackProvider.historicalCall}, which asks each of the
-   * chain's endpoints in turn, since often only some of them keep old state.
-   */
-  private static historyReader(
-    provider: NonNullable<ReturnType<ChainService["providerForNetwork"]>>,
-  ): HistoryReader {
-    return {
-      getBlock: (blockTag) => provider.getBlock(blockTag),
-      call: (transaction, blockTag) =>
-        provider.historicalCall(transaction, blockTag),
-    }
   }
 
   private clockFor(network: EVMNetwork): BlockClock | undefined {
@@ -525,10 +269,31 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   /**
+   * Returns how CoinGecko identifies an asset, or `undefined` if the asset's
+   * network isn't tracked or CoinGecko has no id for the asset.
+   */
+  private async coinGeckoTargetFor(
+    info: BalanceSeriesInfo,
+  ): Promise<CoinGeckoTarget | undefined> {
+    const network = (await this.sources.chainService.getTrackedNetworks()).find(
+      ({ chainID }) => chainID === info.chainID,
+    )
+    if (!network) return undefined
+    if (info.assetID.endsWith("/base")) {
+      const coinID = network.baseAsset.metadata?.coinGeckoID
+      return coinID ? { coinID } : undefined
+    }
+    const [, contractAddress] = info.assetID.split("/")
+    return network.coingeckoPlatformID && contractAddress
+      ? { platformID: network.coingeckoPlatformID, contractAddress }
+      : undefined
+  }
+
+  /**
    * Records a failed backfill step for the given state. If the source has
    * nothing as old as `bucket`, signaled by an {@link UnavailableError}, the
-   * end of the bucket is recorded as the series' floor. Any other failure
-   * backs the series off exponentially.
+   * end of the bucket is recorded as the state's floor. Any other failure
+   * backs the source off exponentially.
    */
   private async recordFailure(
     state: BackfillState,
@@ -537,12 +302,12 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
     now: number,
   ): Promise<void> {
     if (error instanceof UnavailableError) {
-      // Logged at info, since this stops backfill for the series until the
+      // Logged at info, since this stops backfill for the source until the
       // floor is rechecked, and the reason matters for any chart that shows it.
       logger.info(
         `History backfill for ${state.key} reaches no further back than ${new Date(bucket.start + bucket.size).toISOString()}: ${error.message}`,
       )
-      await this.db.putBackfillState({
+      await this.sources.db.putBackfillState({
         ...state,
         floor: bucket.start + bucket.size,
         floorAt: now,
@@ -551,7 +316,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       return
     }
     const failures = (state.failures ?? 0) + 1
-    await this.db.putBackfillState({
+    await this.sources.db.putBackfillState({
       ...state,
       failures,
       // Back off exponentially, up to a day.
@@ -568,25 +333,26 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * missing history first, so the recent past fills in before backfill
    * reaches further back. Does nothing if a previous tick is still running.
    */
-  async backfillTick(now = Date.now()): Promise<void> {
+  async tick(now = Date.now()): Promise<void> {
     if (this.#ticking) return
     this.#ticking = true
     const startedAt = performance.now()
     try {
+      const { chainService, db } = this.sources
       const idle = await isUserIdle()
-      const accounts = await this.chainService.getAccountsToTrack()
-      const trusted = await this.trustResolver()
+      const accounts = await chainService.getAccountsToTrack()
+      const trusted = await this.sources.trustResolver()
       // Test networks are left out, as they are of the wallet's totals. Their
       // history isn't worth the requests it would take to backfill.
       const holdings = (
-        await this.db.getHoldings(accounts.map(({ address }) => address))
+        await db.getBalanceSeries(accounts.map(({ address }) => address))
       )
-        .map((holding) => ({ ...holding, trusted: trusted(holding) }))
+        .map((series) => ({ ...series, trusted: trusted(series) }))
         .filter(
-          (holding) =>
-            holding.trusted && !TEST_NETWORK_BY_CHAIN_ID.has(holding.chainID),
+          (series) =>
+            series.trusted && !TEST_NETWORK_BY_CHAIN_ID.has(series.chainID),
         )
-      const networks = await this.chainService.getTrackedNetworks()
+      const networks = await chainService.getTrackedNetworks()
 
       await Promise.all([
         ...networks.map((network) =>
@@ -619,19 +385,20 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   /**
-   * Fills the newest bucket that any of a network's holdings is missing, with
-   * a snapshot of every holding missing that bucket. A snapshot costs one
-   * block lookup and, size limits permitting, one multicall, however many
-   * accounts and tokens there are.
+   * Fills the newest bucket that any of a network's balance series is
+   * missing, with a snapshot of every series missing that bucket. A snapshot
+   * costs one block lookup and, size limits permitting, one multicall,
+   * however many accounts and tokens there are.
    */
   private async balanceStep(
     network: EVMNetwork,
-    holdings: Holding[],
+    holdings: BalanceSeries[],
     now: number,
     idle: boolean,
   ): Promise<void> {
     if (holdings.length === 0) return
-    const state = await this.db.getBackfillState(`balances:${network.chainID}`)
+    const { db } = this.sources
+    const state = await db.getBackfillState(`balances:${network.chainID}`)
     if (isResting(state, now)) return
     const clock = this.clockFor(network)
     const provider = this.readyProvider(network)
@@ -686,23 +453,23 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         }),
       )
       const amounts = await snapshotBalances(
-        HistoryService.historyReader(provider),
+        historyReader(provider),
         network.chainID,
         reads,
         block,
         size,
       )
-      await this.db.addBalances(
+      await db.addBalanceMeasurements(
         needing.map(({ holding, holdingDecimals }, index) => ({
-          ...infoOf(holding),
-          time: target.start,
+          ...balanceSeriesInfoOf(holding),
+          retrievedAt: target.start,
           // A failed read means the token didn't exist yet or can't report
           // a balance; either way, nothing was held.
           value: Number(amounts[index] ?? 0n) / 10 ** holdingDecimals,
-          source: "backfill" as const,
+          origin: "backfill" as const,
         })),
       )
-      await this.db.putBackfillState({
+      await db.putBackfillState({
         ...state,
         failures: 0,
         notBefore: undefined,
@@ -719,7 +486,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * its end, less the token's net transfers in between. Each step covers
    * {@link RECONSTRUCTION_STEP_BLOCKS} blocks of one account, picking the
    * account that has reached back least far, and records a point for each
-   * of its token holdings.
+   * of its token balance series.
    *
    * Only tokens are reconstructed. Every token balance change shows up as a
    * `Transfer` log, but base asset balances also move through gas fees and
@@ -731,11 +498,12 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    */
   private async reconstructionStep(
     network: EVMNetwork,
-    holdings: Holding[],
+    holdings: BalanceSeries[],
     now: number,
     idle: boolean,
   ): Promise<void> {
-    const balanceState = await this.db.getBackfillState(
+    const { db } = this.sources
+    const balanceState = await db.getBackfillState(
       `balances:${network.chainID}`,
     )
     const balanceFloor = activeFloor(balanceState, now)
@@ -754,7 +522,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       [...new Set(tokens.map(({ address }) => address))].map(
         async (address) => ({
           address,
-          state: await this.db.getBackfillState(
+          state: await db.getBackfillState(
             `transfers:${network.chainID}:${address}`,
           ),
         }),
@@ -786,10 +554,10 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       const toTime = await clock.timeOf(toBlock, now)
 
       // Balances as of `toBlock`: carried over from the last step, or, for
-      // the first step or a holding new since then, read from its series.
+      // the first step or a series new since then, read from its points.
       const balances = { ...state.reconstruction?.balances }
       accountTokens.forEach((token) => {
-        balances[token.holdingKey] ??= balanceNear(token, toTime)
+        balances[token.key] ??= balanceNear(token, toTime)
       })
 
       const { assetTransfers } = await getAssetTransfersViaLogs(
@@ -812,7 +580,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       const before = balancesBefore({
         account: address,
         tokens: reconstructed.map(({ token, contractAddress, ...rest }) => ({
-          key: token.holdingKey,
+          key: token.key,
           contractAddress,
           ...rest,
         })),
@@ -822,14 +590,15 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       Object.assign(balances, before)
 
       const time = await clock.timeOf(fromBlock, now)
-      const points = reconstructed.map(({ token }) => ({
-        ...infoOf(token),
-        time,
-        value: before[token.holdingKey],
-        source: "reconstructed" as const,
-      }))
-      await this.db.addBalances(points)
-      await this.db.putBackfillState({
+      await db.addBalanceMeasurements(
+        reconstructed.map(({ token }) => ({
+          ...balanceSeriesInfoOf(token),
+          retrievedAt: time,
+          value: before[token.key],
+          origin: "reconstructed" as const,
+        })),
+      )
+      await db.putBackfillState({
         ...state,
         reconstruction: { block: fromBlock, balances },
         failures: 0,
@@ -856,23 +625,28 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * CoinGecko knows the asset and the bucket is within its reach, prices come
    * from CoinGecko a window at a time. Otherwise, base assets fall back to
    * their Chainlink feed, one bucket at a time. If neither source applies,
-   * the bucket is recorded as the series' floor.
+   * the bucket is recorded as the state's floor.
    */
   private async priceStep(
-    holdings: Holding[],
+    holdings: BalanceSeries[],
     networks: EVMNetwork[],
     now: number,
     idle: boolean,
   ): Promise<void> {
-    const byAsset = new Map<string, HoldingInfo>()
-    holdings.forEach((holding) => byAsset.set(holding.assetID, infoOf(holding)))
-    const priceSeries = await this.db.getPriceSeries([...byAsset.keys()])
+    const { db } = this.sources
+    const byAsset = new Map<string, BalanceSeriesInfo>()
+    holdings.forEach((holding) =>
+      byAsset.set(holding.assetID, balanceSeriesInfoOf(holding)),
+    )
+    const priceSeries = await db.getPriceSeries(
+      [...byAsset.values()].map(({ assetID }) => assetID),
+    )
 
     const candidates = (
       await Promise.all(
         [...byAsset.values()].map(async (holding) => {
           const key = `price:${holding.assetID}`
-          const state = await this.db.getBackfillState(key)
+          const state = await db.getBackfillState(key)
           if (isResting(state, now)) return []
           const times = priceSeries.get(holding.assetID)?.times ?? []
           const buckets = missingBuckets(times, now, {
@@ -932,7 +706,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
         )
         const block = await feedClock.blockAt(target.start, now)
         const value = await fetchFeedPrice(
-          HistoryService.historyReader(feedProvider),
+          historyReader(feedProvider),
           feed.feedAddress,
           feedDecimals,
           block,
@@ -941,7 +715,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
       } else {
         throw new UnavailableError(`No price source reaches ${target.start}`)
       }
-      await this.db.putBackfillState({
+      await db.putBackfillState({
         ...state,
         failures: 0,
         notBefore: undefined,
@@ -952,16 +726,16 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
   }
 
   private async savePrices(
-    holding: HoldingInfo,
+    { assetID, symbol }: BalanceSeriesInfo,
     points: HistoryPoint[],
   ): Promise<void> {
-    await this.db.addPrices(
+    await this.sources.db.savePriceMeasurements(
       points.map(({ time, value }) => ({
-        priceKey: holding.assetID,
-        symbol: holding.symbol,
+        assetID,
+        symbol,
         time,
         value,
-        source: "backfill" as const,
+        origin: "backfill" as const,
       })),
     )
   }
@@ -971,7 +745,7 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
    * once and cached.
    */
   private async feedDecimalsFor(
-    provider: NonNullable<ReturnType<ChainService["providerForNetwork"]>>,
+    provider: Provider,
     feedAddress: string,
   ): Promise<number> {
     let decimals = this.#feedDecimals.get(feedAddress)
@@ -991,130 +765,12 @@ export default class HistoryService extends BaseService<ServiceLifecycleEvents> 
 
   /** Returns tracked tokens' decimals, keyed by lowercased contract address. */
   private async decimalsByAsset(): Promise<Map<string, number>> {
-    const assets = await this.indexingService.getAssetsToTrack()
+    const assets = await this.sources.getAssetsToTrack()
     return new Map(
       assets.map(({ contractAddress, decimals }) => [
         contractAddress.toLowerCase(),
         decimals,
       ]),
     )
-  }
-
-  /**
-   * Returns the value over time of the queried accounts' holdings, sampled at
-   * `samples` points across the queried span, along with when coverage starts
-   * and whether backfill is still filling in the queried series.
-   */
-  async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
-    const { addresses, chainIDs, assetID, to, samples } = query
-    const timings: Record<string, number> = {}
-    let phaseStart = performance.now()
-    const phase = (name: string) => {
-      const now = performance.now()
-      timings[name] = Math.round(now - phaseStart)
-      phaseStart = now
-    }
-
-    // Each holding comes with its whole balance series, a record per
-    // holding, so there's nothing more to read for balances.
-    const [allHoldings, priceKeysBySymbol] = await Promise.all([
-      this.db.getHoldings(addresses),
-      this.db.getPriceKeysBySymbol(),
-    ])
-    const trusted = await this.trustResolver()
-    const queried = allHoldings
-      .map((holding) => ({ ...holding, trusted: trusted(holding) }))
-      .filter(
-        (holding) =>
-          // Test networks only count when a chart asks for them by network or
-          // asset, as the wallet's own totals leave them out.
-          (chainIDs === undefined
-            ? !TEST_NETWORK_BY_CHAIN_ID.has(holding.chainID)
-            : chainIDs.includes(holding.chainID)) &&
-          (assetID === undefined
-            ? holding.trusted
-            : holding.assetID === assetID),
-      )
-    const from =
-      query.from === "start" ? (firstHeldTime(queried) ?? to - DAY) : query.from
-    const holdings = queried.filter(
-      // A holding that was already empty before the window adds nothing.
-      (holding) => !(holding.value === 0 && holding.time <= from),
-    )
-    phase("holdings")
-
-    const valued = holdings.map((holding) => ({
-      holding,
-      priceKey: HistoryService.priceKeyFor(holding, priceKeysBySymbol),
-    }))
-    const prices = await this.db.getPriceSeries([
-      ...new Set(valued.map(({ priceKey }) => priceKey)),
-    ])
-    phase("prices")
-
-    const {
-      points,
-      coverageStart,
-      estimatedUntil,
-      reconstructedUntil,
-      unrecorded,
-    } = valueSeries({
-      holdings: valued.map(({ holding, priceKey }) => ({
-        priceAssetID: priceKey,
-        balances: holding,
-      })),
-      prices,
-      from,
-      to,
-      samples,
-      priceTolerance: DAY,
-    })
-    phase("values")
-
-    // A series that no backfill tick has checked yet counts as still
-    // backfilling.
-    const backfilling = holdings.some(
-      (holding) =>
-        (this.#pending.get(`balances:${holding.chainID}`) ?? true) ||
-        (this.#pending.get(`price:${holding.assetID}`) ?? true),
-    )
-
-    const total = Object.values(timings).reduce((sum, ms) => sum + ms, 0)
-    if (total >= SLOW_QUERY_MS) {
-      const pointCount = (series: Series[]) =>
-        series.reduce((sum, { times }) => sum + times.length, 0)
-      logger.warn(
-        `Value history took ${total}ms for ${holdings.length} holdings, ${prices.size} price series, ${pointCount(holdings)} balance and ${pointCount([...prices.values()])} price points.`,
-        timings,
-      )
-    }
-
-    const now = Date.now()
-    const floors = await Promise.all(
-      [...new Set(holdings.map(({ chainID }) => chainID))].map(
-        async (chainID) =>
-          activeFloor(
-            await this.db.getBackfillState(`balances:${chainID}`),
-            now,
-          ),
-      ),
-    )
-    const balanceHistoryFrom = floors
-      .filter((floor): floor is number => floor !== undefined && floor > from)
-      .reduce<number | undefined>(
-        (latest, floor) => Math.max(latest ?? floor, floor),
-        undefined,
-      )
-
-    return {
-      from,
-      points,
-      coverageStart,
-      estimatedUntil,
-      balanceHistoryFrom,
-      reconstructedUntil,
-      unrecorded,
-      backfilling,
-    }
   }
 }
