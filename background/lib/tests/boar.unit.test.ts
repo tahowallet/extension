@@ -13,7 +13,7 @@ const COLLECTION = "0x4444444444444444444444444444444444444444"
 
 const erc20Transfer = {
   asset: "USDC",
-  hash: "0xerc20",
+  hash: `0x${"20".repeat(32)}`,
   blockNum: "0x10",
   category: "erc20",
   from: OTHER,
@@ -24,7 +24,7 @@ const erc20Transfer = {
 
 const erc721Transfer = {
   asset: "PUNK",
-  hash: "0xerc721",
+  hash: `0x${"72".repeat(32)}`,
   blockNum: "0x20",
   uniqueId: "0xerc721:log:5",
   category: "erc721",
@@ -58,7 +58,9 @@ describe("getAssetTransfers", () => {
       [{ category: string[] }],
     ]
     expect(category).not.toContain("erc721")
-    expect(assetTransfers.map(({ txHash }) => txHash)).toEqual(["0xerc20"])
+    expect(assetTransfers.map(({ txHash }) => txHash)).toEqual([
+      `0x${"20".repeat(32)}`,
+    ])
     expect(nftTransfers).toEqual([])
   })
 
@@ -82,7 +84,9 @@ describe("getAssetTransfers", () => {
       [{ category: string[] }],
     ]
     expect(category).toContain("erc721")
-    expect(assetTransfers.map(({ txHash }) => txHash)).toEqual(["0xerc20"])
+    expect(assetTransfers.map(({ txHash }) => txHash)).toEqual([
+      `0x${"20".repeat(32)}`,
+    ])
     expect(nftTransfers).toEqual([
       {
         network: ETHEREUM,
@@ -90,7 +94,7 @@ describe("getAssetTransfers", () => {
         tokenId: "10",
         from: OTHER,
         to: ACCOUNT,
-        txHash: "0xerc721",
+        txHash: `0x${"72".repeat(32)}`,
         blockNumber: 32,
         logIndex: 5,
       },

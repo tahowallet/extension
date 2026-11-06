@@ -6,7 +6,8 @@ import {
   selectCampaigns,
   selectCurrentAccountActivities,
   selectCurrentAccountBalances,
-  selectCurrentNetwork,
+  selectCurrentAnyAccount,
+  selectCurrentAnyNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { checkAlreadyClaimed } from "@tallyho/tally-background/redux-slices/claim"
 
@@ -14,10 +15,7 @@ import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import { NETWORKS_SUPPORTING_NFTS } from "@tallyho/tally-background/nfts"
-import {
-  selectSelectedSparkNetwork,
-  selectShowUnverifiedAssets,
-} from "@tallyho/tally-background/redux-slices/ui"
+import { selectShowUnverifiedAssets } from "@tallyho/tally-background/redux-slices/ui"
 import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
 import { CompleteAssetAmount } from "@tallyho/tally-background/redux-slices/accounts"
 import { SwappableAsset } from "@tallyho/tally-background/assets"
@@ -41,7 +39,7 @@ import PortalBanner from "../components/Wallet/Banner/PortalBanner"
 import WalletSubspaceLink from "../components/Wallet/WalletSubscapeLink"
 import MezoWalletCampaignBanner from "../components/Wallet/Banner/WalletCampaignBanner"
 import CorePage from "../components/Core/CorePage"
-import SparkWalletHome from "../components/Spark/SparkWalletHome"
+import WalletNoAccountOnNetwork from "../components/Wallet/WalletNoAccountOnNetwork"
 
 dayjs.extend(isBetween)
 
@@ -55,9 +53,11 @@ export default function Wallet(): ReactElement {
   //  accountLoading, hasWalletErrorCode
   const accountData = useBackgroundSelector(selectCurrentAccountBalances)
   const claimState = useBackgroundSelector((state) => state.claim)
-  const selectedNetwork = useBackgroundSelector(selectCurrentNetwork)
+  // The network and account being shown, of any network family.
+  const selectedNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
+  const selectedAccount = useBackgroundSelector(selectCurrentAnyAccount)
+  const isEVMNetwork = selectedNetwork.family === "EVM"
   const showUnverifiedAssets = useBackgroundSelector(selectShowUnverifiedAssets)
-  const selectedSparkNetwork = useBackgroundSelector(selectSelectedSparkNetwork)
   const activeCampaigns = useBackgroundSelector(selectCampaigns)
 
   useEffect(() => {
@@ -135,10 +135,10 @@ export default function Wallet(): ReactElement {
     return <MezoWalletCampaignBanner state={campaign.state} />
   }
 
-  if (selectedSparkNetwork) {
+  if (selectedAccount === undefined) {
     return (
       <CorePage hasTopBar hasTabBar>
-        <SparkWalletHome network={selectedSparkNetwork} />
+        <WalletNoAccountOnNetwork network={selectedNetwork} />
       </CorePage>
     )
   }
@@ -148,14 +148,14 @@ export default function Wallet(): ReactElement {
       <div className="page_content">
         {isEnabled(FeatureFlags.SHOW_ISLAND_UI) && <WalletSubspaceLink />}
         <WalletAnalyticsNotificationBanner />
-        {isCurrentNetworkUnreachable && (
+        {isCurrentNetworkUnreachable && isEVMNetwork && (
           <NetworkUnreachableBanner network={selectedNetwork} />
         )}
         <div className="section">
           <WalletAccountBalanceControl
             balance={totalMainCurrencyValue}
             initializationLoadingTimeExpired={initializationLoadingTimeExpired}
-            isNetworkUnreachable={isCurrentNetworkUnreachable}
+            isNetworkUnreachable={isCurrentNetworkUnreachable && isEVMNetwork}
           />
         </div>
         {isEnabled(FeatureFlags.SUPPORT_ACHIEVEMENTS_BANNER) && (
@@ -191,27 +191,29 @@ export default function Wallet(): ReactElement {
                     initializationLoadingTimeExpired
                   }
                 />
-                <div
-                  className={classNames("add_custom_asset", {
-                    line: showHiddenAssets,
-                  })}
-                >
-                  <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
-                  <SharedButton
-                    size="medium"
-                    onClick={() => history.push("/settings/add-custom-asset")}
-                    type="tertiary"
+                {isEVMNetwork && (
+                  <div
+                    className={classNames("add_custom_asset", {
+                      line: showHiddenAssets,
+                    })}
                   >
-                    <SharedIcon
-                      width={16}
-                      height={16}
-                      style={{ marginRight: 4 }}
-                      icon="icons/s/add.svg"
-                      color="currentColor"
-                    />
-                    {t("wallet.activities.addCustomAssetAction")}
-                  </SharedButton>
-                </div>
+                    <span>{t("wallet.activities.addCustomAssetPrompt")}</span>
+                    <SharedButton
+                      size="medium"
+                      onClick={() => history.push("/settings/add-custom-asset")}
+                      type="tertiary"
+                    >
+                      <SharedIcon
+                        width={16}
+                        height={16}
+                        style={{ marginRight: 4 }}
+                        icon="icons/s/add.svg"
+                        color="currentColor"
+                      />
+                      {t("wallet.activities.addCustomAssetAction")}
+                    </SharedButton>
+                  </div>
+                )}
                 {showHiddenAssets && (
                   <WalletHiddenAssets
                     assetAmounts={

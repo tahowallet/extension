@@ -1,11 +1,11 @@
 import React, { ReactElement, useState } from "react"
 import { useTranslation } from "react-i18next"
 import type {
-  SparkAccount,
-  SparkBalance,
   SparkSendRequest,
   SparkSendResult,
 } from "@tallyho/tally-background/services/spark/types"
+import { selectCurrentSparkAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import type { RootState } from "@tallyho/tally-background/redux-slices"
 import {
   estimateSparkLightningFee,
   sendSpark,
@@ -19,15 +19,12 @@ import { sparkExplorerTransferURL } from "@tallyho/tally-background/constants/sp
 import {
   useAreInternalSignersUnlocked,
   useBackgroundDispatch,
+  useBackgroundSelector,
 } from "../../hooks"
-import SharedButton from "../../components/Shared/SharedButton"
-import SharedInput from "../../components/Shared/SharedInput"
-import SharedLink from "../../components/Shared/SharedLink"
-import {
-  formatSats,
-  parseSats,
-  shortenSparkAddress,
-} from "../../components/Spark/format"
+import SharedButton from "../Shared/SharedButton"
+import SharedInput from "../Shared/SharedInput"
+import SharedLink from "../Shared/SharedLink"
+import { formatSats, parseSats, shortenSparkAddress } from "./format"
 
 type Draft =
   | { kind: "spark"; request: SparkSendRequest & { kind: "spark" } }
@@ -50,13 +47,7 @@ function looksLikeLightningInvoice(input: string): boolean {
  * invoice. Shows a confirmation step before anything is sent: the Spark SDK
  * has no dry run, so the send in the confirmation step is final.
  */
-export default function SparkSend({
-  account,
-  balance,
-}: {
-  account: SparkAccount
-  balance: SparkBalance | undefined
-}): ReactElement {
+export default function SparkSendForm(): ReactElement | null {
   const { t } = useTranslation("translation", { keyPrefix: "spark" })
   const dispatch = useBackgroundDispatch()
   const isUnlocked = useAreInternalSignersUnlocked(false)
@@ -66,6 +57,14 @@ export default function SparkSend({
   const [sent, setSent] = useState<SparkSendResult | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [isLoading, setIsLoading] = useState(false)
+  const account = useBackgroundSelector(selectCurrentSparkAccount)
+  const balance = useBackgroundSelector((state: RootState) =>
+    account ? state.spark.balances[account.id] : undefined,
+  )
+
+  if (!account) {
+    return null
+  }
 
   const networkType = account.network.sparkNetworkType
   const available = balance?.available ?? 0n
@@ -253,20 +252,25 @@ export default function SparkSend({
         </div>
       ) : (
         <div className="form">
-          <SharedInput
-            label={t("send.destination")}
-            value={destination}
-            onChange={(value) => setDestination(value ?? "")}
-          />
-          <SharedInput
-            label={
-              looksLikeLightningInvoice(destination)
-                ? t("send.amountOptional")
-                : t("amountSats")
-            }
-            value={amount}
-            onChange={(value) => setAmount(value ?? "")}
-          />
+          {/* SharedInput floats its label against the nearest positioned box. */}
+          <div className="input_wrap">
+            <SharedInput
+              label={t("send.destination")}
+              value={destination}
+              onChange={(value) => setDestination(value ?? "")}
+            />
+          </div>
+          <div className="input_wrap">
+            <SharedInput
+              label={
+                looksLikeLightningInvoice(destination)
+                  ? t("send.amountOptional")
+                  : t("amountSats")
+              }
+              value={amount}
+              onChange={(value) => setAmount(value ?? "")}
+            />
+          </div>
           <p className="hint">
             {t("send.available", { amount: formatSats(available) })}
           </p>
@@ -293,6 +297,10 @@ export default function SparkSend({
           flex-direction: column;
           gap: 12px;
           padding-top: 12px;
+        }
+        .input_wrap {
+          position: relative;
+          margin-top: 8px;
         }
         .form,
         .confirm {

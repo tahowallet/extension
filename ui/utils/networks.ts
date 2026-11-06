@@ -1,5 +1,9 @@
 import { isBuiltInNetwork } from "@tallyho/tally-background/constants"
 import { AnyNetwork, EVMNetwork } from "@tallyho/tally-background/networks"
+import {
+  sparkExplorerAddressURL,
+  sparkExplorerTransferURL,
+} from "@tallyho/tally-background/constants/spark"
 import { blockExplorer } from "./constants"
 
 // From chainlist.org
@@ -130,3 +134,38 @@ export const getNetworkIcon = (network: AnyNetwork): string => {
 export const getBlockExplorerURL = (network: EVMNetwork): string | undefined =>
   network.blockExplorerURL ??
   (isBuiltInNetwork(network) ? blockExplorer[network.chainID].url : undefined)
+
+/**
+ * Explorer page for an address on any network family.
+ */
+export function getAddressExplorerURL(
+  network: AnyNetwork,
+  address: string,
+): string | undefined {
+  if (network.family === "SPARK") {
+    return sparkExplorerAddressURL(network, address)
+  }
+  const base = getBlockExplorerURL(network)
+  return base && `${base}/address/${address}`
+}
+
+/**
+ * Explorer page for a transaction (EVM) or transfer (Spark).
+ */
+export function getTransactionExplorerURL(
+  network: AnyNetwork,
+  hash: string,
+): string | undefined {
+  if (network.family === "SPARK") {
+    return sparkExplorerTransferURL(network, hash)
+  }
+  const base = getBlockExplorerURL(network)
+  return base && `${base}/tx/${hash}`
+}
+
+export function getExplorerTitle(network: AnyNetwork): string | undefined {
+  if (network.family === "SPARK") {
+    return "Sparkscan"
+  }
+  return blockExplorer[network.chainID]?.title
+}

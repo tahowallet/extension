@@ -12,7 +12,11 @@ import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { shuffle } from "lodash"
 import { selectEVMNetworks } from "@tallyho/tally-background/redux-slices/selectors/networks"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork } from "@tallyho/tally-background/networks"
+import {
+  SPARK_MAINNET,
+  SPARK_NETWORKS,
+} from "@tallyho/tally-background/constants/spark"
 import { useBackgroundSelector } from "../../hooks"
 
 const NETWORK_DEFAULT_COLORS = {
@@ -23,6 +27,7 @@ const NETWORK_DEFAULT_COLORS = {
   [AVALANCHE.chainID]: "#E84142",
   [BINANCE_SMART_CHAIN.chainID]: "#F3BA2F",
   [ROOTSTOCK.chainID]: "#F18C30",
+  [SPARK_MAINNET.chainID]: "#F7931A",
 }
 
 const NETWORK_COLORS = shuffle([
@@ -73,13 +78,13 @@ export default function NetworksChart({
 }): ReactElement {
   const { t } = useTranslation()
 
-  const EVMNetworks = useBackgroundSelector(selectEVMNetworks).reduce(
-    (acc: { [chainID: string]: EVMNetwork }, network) => {
-      acc[network.chainID] = network
-      return acc
-    },
-    {},
-  )
+  const networksByChainID = [
+    ...useBackgroundSelector(selectEVMNetworks),
+    ...SPARK_NETWORKS,
+  ].reduce((acc: { [chainID: string]: AnyNetwork }, network) => {
+    acc[network.chainID] = network
+    return acc
+  }, {})
   const availableColors = [...NETWORK_COLORS]
   const percents = getNetworksPercents(accountsTotal).map((percent) => {
     if (NETWORK_DEFAULT_COLORS[percent.chainID]) {
@@ -125,7 +130,7 @@ export default function NetworksChart({
                 className="chains_legend_dot"
                 style={{ backgroundColor: color }}
               />
-              {EVMNetworks[chainID]?.name || `Network ${i}`}({percent}%)
+              {networksByChainID[chainID]?.name || `Network ${i}`}({percent}%)
             </div>
           ))}
         </div>

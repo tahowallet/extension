@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useRef, useState } from "react"
 import dayjs from "dayjs"
 import {
-  sameEVMAddress,
+  sameAccountAddress,
   truncateAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
@@ -22,7 +22,7 @@ function isSendActivity(
   activityInitiatorAddress: string,
 ): boolean {
   return activity.type === "asset-transfer"
-    ? sameEVMAddress(activity.sender?.address, activityInitiatorAddress)
+    ? sameAccountAddress(activity.sender?.address, activityInitiatorAddress)
     : true
 }
 

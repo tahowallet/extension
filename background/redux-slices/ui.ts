@@ -1,5 +1,4 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit"
-import { sparkNetworkByChainID } from "../constants/spark"
 import Emittery from "emittery"
 import type { AddressOnNetwork } from "../accounts"
 import { ETHEREUM, TEST_NETWORK_BY_CHAIN_ID } from "../constants"
@@ -524,14 +523,6 @@ export const selectSlippageTolerance = createSelector(
 export const selectInitializationTimeExpired = createSelector(
   selectUI,
   (ui) => ui.initializationLoadingTimeExpired,
-)
-
-export const selectSelectedSparkNetwork = createSelector(
-  (state: { ui: UIState }) => state.ui.selectedSparkChainID,
-  (chainID) =>
-    chainID === null || chainID === undefined
-      ? undefined
-      : sparkNetworkByChainID(chainID),
 )
 
 export const selectShowTestNetworks = createSelector(

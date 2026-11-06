@@ -14,6 +14,7 @@ import {
   sparkNetworkByChainID,
 } from "../../constants/spark"
 import type { SparkNetworkType } from "../../networks"
+import type { SparkAddress } from "../../types"
 import type {
   SparkAccount,
   SparkActivityItem,
@@ -92,6 +93,7 @@ function activityKind(sdkType: string): SparkActivityKind {
 export function toActivityItem(
   accountID: string,
   transfer: WalletTransfer,
+  addressForIdentity?: (identityPublicKey: string) => SparkAddress | undefined,
 ): SparkActivityItem {
   const direction =
     transfer.transferDirection === "OUTGOING" ? "outgoing" : "incoming"
@@ -99,6 +101,11 @@ export function toActivityItem(
     direction === "outgoing"
       ? transfer.valueSentByWallet
       : transfer.valueReceivedByWallet
+
+  const counterpartyIdentityPublicKey =
+    direction === "outgoing"
+      ? transfer.receiverIdentityPublicKey
+      : transfer.senderIdentityPublicKey
 
   return {
     id: transfer.id,
@@ -108,10 +115,8 @@ export function toActivityItem(
     sdkType: transfer.type,
     status: transfer.status,
     amountSats: BigInt(amount ?? transfer.totalValue ?? 0),
-    counterpartyIdentityPublicKey:
-      direction === "outgoing"
-        ? transfer.receiverIdentityPublicKey
-        : transfer.senderIdentityPublicKey,
+    counterpartyIdentityPublicKey,
+    counterpartyAddress: addressForIdentity?.(counterpartyIdentityPublicKey),
     createdAt: transfer.createdTime?.getTime(),
   }
 }
@@ -607,11 +612,28 @@ export default class SparkService extends BaseService<Events> {
     const { transfers } = await this.#sdkCall("Fetching Spark activity", () =>
       wallet.getTransfers(ACTIVITY_PAGE_SIZE),
     )
+    const account = this.#accountFor(accountID)
+    const { encodeSparkAddress } = await import("@buildonspark/spark-sdk")
+    const addressForIdentity = (identityPublicKey: string) => {
+      try {
+        return toSparkAddress(
+          encodeSparkAddress({
+            identityPublicKey,
+            network: account.network.sparkNetworkType,
+          }),
+          account.network.sparkNetworkType,
+        )
+      } catch {
+        return undefined
+      }
+    }
     this.emitter.emit("activity", {
       accountID,
       items: transfers
         .filter(isUserFacingTransfer)
-        .map((transfer) => toActivityItem(accountID, transfer)),
+        .map((transfer) =>
+          toActivityItem(accountID, transfer, addressForIdentity),
+        ),
     })
   }
 

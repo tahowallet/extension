@@ -2,11 +2,10 @@ import React, { ReactElement, useState } from "react"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { useTranslation } from "react-i18next"
 import {
-  selectSelectedSparkNetwork,
   setSelectedNetwork,
   setSelectedSparkNetwork,
 } from "@tallyho/tally-background/redux-slices/ui"
-import { selectCurrentNetwork } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAnyNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import TopMenuProtocolSwitcher from "./TopMenuProtocolSwitcher"
 import TopMenuProfileButton from "./TopMenuProfileButton"
 
@@ -26,9 +25,7 @@ export default function TopMenu(): ReactElement {
   const [isBonusProgramOpen, setIsBonusProgramOpen] = useState(false)
 
   const dispatch = useBackgroundDispatch()
-  const currentEVMNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const selectedSparkNetwork = useBackgroundSelector(selectSelectedSparkNetwork)
-  const currentNetwork = selectedSparkNetwork ?? currentEVMNetwork
+  const currentNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
 
   return (
     <>

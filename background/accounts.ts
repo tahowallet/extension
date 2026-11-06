@@ -1,6 +1,11 @@
 import type { AnyAssetAmount, SmartContractFungibleAsset } from "./assets"
-import { EVMNetwork, NetworkBaseAsset } from "./networks"
-import type { HexString } from "./types"
+import type {
+  AnyNetwork,
+  EVMNetwork,
+  NetworkBaseAsset,
+  SparkNetwork,
+} from "./networks"
+import type { HexString, SparkAddress } from "./types"
 
 /**
  * An account balance at a particular time and block height, on a particular
@@ -36,11 +41,39 @@ export type AccountBalance = {
 }
 
 /**
- * An address on a particular network. That's it. That's the comment.
+ * The address format a network family uses: hex for EVM networks, bech32m
+ * Spark addresses for Spark networks.
  */
-export type AddressOnNetwork = {
-  address: HexString
-  network: EVMNetwork
+export type AddressFor<N extends AnyNetwork> = N extends SparkNetwork
+  ? SparkAddress
+  : HexString
+
+/**
+ * An address on a particular network. That's it. That's the comment.
+ *
+ * Defaults to EVM networks, which is what the bulk of the codebase (chain
+ * service, signers, dapp provider) handles; code that handles any network
+ * family uses `AnyAddressOnNetwork` and narrows with `isEVMAddressOnNetwork`.
+ */
+export type AddressOnNetwork<N extends AnyNetwork = EVMNetwork> = {
+  address: AddressFor<N>
+  network: N
+}
+
+export type EVMAddressOnNetwork = AddressOnNetwork<EVMNetwork>
+export type SparkAddressOnNetwork = AddressOnNetwork<SparkNetwork>
+export type AnyAddressOnNetwork = EVMAddressOnNetwork | SparkAddressOnNetwork
+
+export function isEVMAddressOnNetwork(
+  addressOnNetwork: AnyAddressOnNetwork,
+): addressOnNetwork is EVMAddressOnNetwork {
+  return addressOnNetwork.network.family === "EVM"
+}
+
+export function isSparkAddressOnNetwork(
+  addressOnNetwork: AnyAddressOnNetwork,
+): addressOnNetwork is SparkAddressOnNetwork {
+  return addressOnNetwork.network.family === "SPARK"
 }
 
 /**

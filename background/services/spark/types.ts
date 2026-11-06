@@ -61,6 +61,11 @@ export type SparkActivityItem = {
   status: string
   amountSats: bigint
   counterpartyIdentityPublicKey: string
+  /**
+   * The counterparty's Spark address on this account's network, derived from
+   * its identity public key.
+   */
+  counterpartyAddress?: SparkAddress
   createdAt: UNIXTime | undefined
 }
 

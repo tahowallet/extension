@@ -1,8 +1,8 @@
 import React, { ReactElement, useCallback, useEffect, useState } from "react"
 import { setShowingActivityDetail } from "@tallyho/tally-background/redux-slices/ui"
 import {
-  selectCurrentAccount,
-  selectCurrentNetwork,
+  selectCurrentAnyAccount,
+  selectCurrentAnyNetwork,
   selectShowingActivityDetail,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
@@ -12,8 +12,11 @@ import { useBackgroundDispatch, useBackgroundSelector } from "../../hooks"
 import SharedSlideUpMenu from "../Shared/SharedSlideUpMenu"
 import WalletActivityDetails from "./WalletActivityDetails"
 import WalletActivityListItem from "./WalletActivityListItem"
-import { blockExplorer } from "../../utils/constants"
-import { getBlockExplorerURL } from "../../utils/networks"
+import {
+  getAddressExplorerURL,
+  getExplorerTitle,
+  getTransactionExplorerURL,
+} from "../../utils/networks"
 import SharedButton from "../Shared/SharedButton"
 
 type Props = {
@@ -36,10 +39,9 @@ export default function WalletActivityList({
   const [instantlyHideActivityDetails, setInstantlyHideActivityDetails] =
     useState(true)
 
-  const network = useBackgroundSelector(selectCurrentNetwork)
-  const blockExplorerURL = getBlockExplorerURL(network)
-  // Only the built-in explorer map carries a display name for the explorer.
-  const blockExplorerTitle = blockExplorer[network.chainID]?.title
+  const network = useBackgroundSelector(selectCurrentAnyNetwork)
+  // Only known explorers carry a display name.
+  const blockExplorerTitle = getExplorerTitle(network)
 
   useEffect(() => {
     setInstantlyHideActivityDetails(true)
@@ -47,20 +49,33 @@ export default function WalletActivityList({
   }, [dispatch])
 
   const activityInitiatorAddress =
-    useBackgroundSelector(selectCurrentAccount).address
+    useBackgroundSelector(selectCurrentAnyAccount)?.address ?? ""
+  const blockExplorerURL = getAddressExplorerURL(
+    network,
+    activityInitiatorAddress,
+  )
 
   const openExplorer = useCallback(() => {
-    window
-      .open(`${blockExplorerURL}/address/${activityInitiatorAddress}`, "_blank")
-      ?.focus()
-  }, [blockExplorerURL, activityInitiatorAddress])
+    if (blockExplorerURL) {
+      window.open(blockExplorerURL, "_blank")?.focus()
+    }
+  }, [blockExplorerURL])
 
   const handleOpen = useCallback(
     (activityItem: Activity) => {
+      // Activity details are built from EVM transaction data; other network
+      // families link to their explorer's view of the transfer instead.
+      if (network.family !== "EVM") {
+        const url = getTransactionExplorerURL(network, activityItem.hash)
+        if (url) {
+          window.open(url, "_blank")?.focus()
+        }
+        return
+      }
       setInstantlyHideActivityDetails(false)
       dispatch(setShowingActivityDetail(activityItem.hash))
     },
-    [dispatch],
+    [dispatch, network],
   )
 
   const handleClose = useCallback(() => {

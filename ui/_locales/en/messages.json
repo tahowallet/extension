@@ -1035,6 +1035,11 @@
         "titleVerified": "Asset verified by you",
         "description": "Be aware of scam and spam assets, only interact with assets you trust."
       }
+    },
+    "noAccountOnNetwork": {
+      "title": "No {{network}} account yet",
+      "body": "Add an account on this network to see its balance and activity.",
+      "add": "Add account"
     }
   },
   "dAppConnect": {
@@ -1158,36 +1163,11 @@
     "settings": "Settings"
   },
   "spark": {
-    "title": "Bitcoin on Spark",
-    "unknownAccount": "This Spark account is no longer available.",
     "tabs": {
-      "assets": "Assets",
-      "activity": "Activity",
       "receive": "Receive",
       "send": "Send"
     },
-    "available": "available",
-    "incoming": "incoming",
-    "lockedNotice": "Taho is locked. Showing the last known balance; unlock to refresh, receive or send.",
-    "connecting": "Connecting to Spark…",
-    "connectionError": "Couldn't connect to Spark",
-    "noBalanceYet": "No balance loaded yet. Unlock Taho to load it.",
-    "noTokens": "No Spark tokens.",
-    "viewToken": "View token ↗",
-    "noActivity": "No activity yet.",
     "viewOnExplorer": "Explorer ↗",
-    "activity": {
-      "incoming": "Received",
-      "outgoing": "Sent",
-      "pending": "Pending"
-    },
-    "kind": {
-      "spark": "Spark",
-      "lightning": "Lightning",
-      "deposit": "Bitcoin deposit",
-      "withdrawal": "Bitcoin withdrawal",
-      "other": "Other"
-    },
     "copy": "Copy",
     "copied": "Copied!",
     "amountSats": "Amount (sats)",
@@ -1220,12 +1200,6 @@
       "confirm": "Send now",
       "sent": "Sent!",
       "another": "Send another"
-    },
-    "home": {
-      "emptyTitle": "No {{network}} account yet",
-      "emptyBody": "Add a Spark account from one of your recovery phrases to hold bitcoin on Spark.",
-      "add": "Add Spark account",
-      "account": "Spark account"
     }
   }
 }

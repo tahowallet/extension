@@ -40,7 +40,7 @@ import {
   selectSourcesByAddress,
 } from "./internalSignerSelectors"
 import { AddressOnNetwork } from "../../accounts"
-import { EVMNetwork, sameNetwork } from "../../networks"
+import { EVMNetwork, SparkNetwork, sameNetwork } from "../../networks"
 import { NETWORK_BY_CHAIN_ID, TEST_NETWORK_BY_CHAIN_ID } from "../../constants"
 import { DOGGO } from "../../constants/assets"
 import { FeatureFlags, isEnabled } from "../../features"
@@ -51,6 +51,10 @@ import { PricesState, selectAssetPricePoint } from "../prices"
 import { TESTNET_TAHO } from "../../services/island"
 import { convertFixedPoint } from "../../lib/fixed-point"
 import { unsafeHexString } from "../../lib/utils/hex"
+import {
+  selectCurrentSparkAccount,
+  selectSparkAccountAssetAmounts,
+} from "./sparkSelectors"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -265,6 +269,9 @@ const computeCombinedAssetAmountsData = (
   }
 }
 
+const isTestSparkNetwork = (network: SparkNetwork): boolean =>
+  network.sparkNetworkType !== "MAINNET"
+
 const getAccountState = (state: RootState) => state.account
 const getCurrentAccountState = (state: RootState) => {
   const { address, network } = state.ui.selectedAccount
@@ -282,8 +289,12 @@ export const getPricesState = (state: RootState): PricesState => state.prices
 const selectCombinedAssets = createSelector(
   getAccountState,
   selectAssetEntities,
-  (account, assetEntities) => {
-    const allAssetAmounts = Object.keys(account.accountsData.evm)
+  selectSparkAccountAssetAmounts,
+  (account, assetEntities, sparkAccountAssetAmounts) => {
+    const sparkAssetAmounts = sparkAccountAssetAmounts
+      .filter(({ account: { network } }) => !isTestSparkNetwork(network))
+      .flatMap(({ assetAmounts }) => assetAmounts)
+    const evmAssetAmounts = Object.keys(account.accountsData.evm)
       .filter((chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID))
       .flatMap((chainID) =>
         Object.values(account.accountsData.evm[chainID])
@@ -297,6 +308,7 @@ const selectCombinedAssets = createSelector(
           })
           .filter((x): x is AnyAssetAmount => x !== undefined),
       )
+    const allAssetAmounts = [...evmAssetAmounts, ...sparkAssetAmounts]
 
     // Combine balances for trusted assets, grouping by symbol.
     return Object.values(
@@ -407,6 +419,9 @@ export const selectCurrentAccountBalanceRetrievedAt = createSelector(
 
 export const selectCurrentAccountBalances = createSelector(
   getCurrentAccountState,
+  selectCurrentSparkAccount,
+  selectSparkAccountAssetAmounts,
+  (state: RootState) => state.ui.selectedSparkChainID,
   selectAssetEntities,
   getPricesState,
   selectHideDust,
@@ -414,17 +429,34 @@ export const selectCurrentAccountBalances = createSelector(
   selectMainCurrencySymbol,
   (
     currentAccount,
+    currentSparkAccount,
+    sparkAccountAssetAmounts,
+    selectedSparkChainID,
     assetEntities,
     prices,
     hideDust,
     showUnverifiedAssets,
     mainCurrencySymbol,
   ) => {
-    if (typeof currentAccount === "undefined" || currentAccount === "loading") {
-      return undefined
+    let assetAmounts: AnyAssetAmount[]
+    if (selectedSparkChainID) {
+      // A Spark network is picked: describe its account the same way.
+      if (!currentSparkAccount) {
+        return undefined
+      }
+      assetAmounts =
+        sparkAccountAssetAmounts.find(
+          ({ account }) => account.id === currentSparkAccount.id,
+        )?.assetAmounts ?? []
+    } else {
+      if (
+        typeof currentAccount === "undefined" ||
+        currentAccount === "loading"
+      ) {
+        return undefined
+      }
+      assetAmounts = hydrateBalances(currentAccount.balances, assetEntities)
     }
-
-    const assetAmounts = hydrateBalances(currentAccount.balances, assetEntities)
 
     const {
       allAssetAmounts,
@@ -519,12 +551,26 @@ const getTotalBalance = (
   prices: PricesState,
   mainCurrencySymbol: string,
 ) =>
-  Object.entries(accountBalances)
-    .map(([assetID, balance]) => {
+  getAssetAmountsTotal(
+    Object.entries(accountBalances).flatMap(([assetID, balance]) => {
       const asset = assetEntities[assetID]
-      if (!asset) return 0
+      return asset ? [{ asset, amount: balance.amount }] : []
+    }),
+    prices,
+    mainCurrencySymbol,
+  )
 
-      const assetAmount = { asset, amount: balance.amount }
+/**
+ * Total main-currency value of a list of asset amounts, for any kind of
+ * account.
+ */
+function getAssetAmountsTotal(
+  assetAmounts: AnyAssetAmount[],
+  prices: PricesState,
+  mainCurrencySymbol: string,
+): number {
+  return assetAmounts
+    .map((assetAmount) => {
       const assetPricePoint = selectAssetPricePoint(
         prices,
         assetAmount.asset,
@@ -550,6 +596,7 @@ const getTotalBalance = (
       )
     })
     .reduce((total, assetBalance) => total + assetBalance, 0)
+}
 
 function getNetworkAccountTotalsByCategory(
   state: RootState,
@@ -665,8 +712,26 @@ export const selectAccountTotalsForOverview = createSelector(
   selectAssetEntities,
   getPricesState,
   selectMainCurrencySymbol,
-  (accountsState, assetEntities, pricesState, mainCurrencySymbol) => {
+  selectSparkAccountAssetAmounts,
+  (
+    accountsState,
+    assetEntities,
+    pricesState,
+    mainCurrencySymbol,
+    sparkAccountAssetAmounts,
+  ) => {
     const accountsTotal: AccountTotalList = {}
+
+    sparkAccountAssetAmounts
+      .filter(({ account: { network } }) => !isTestSparkNetwork(network))
+      .forEach(({ account, assetAmounts }) => {
+        accountsTotal[account.address] ??= {
+          shortenedAddress: truncateAddress(account.address),
+          totals: {},
+        }
+        accountsTotal[account.address].totals[account.network.chainID] =
+          getAssetAmountsTotal(assetAmounts, pricesState, mainCurrencySymbol)
+      })
 
     Object.entries(accountsState.accountsData.evm)
       .filter(
@@ -768,10 +833,17 @@ export const getAllNetworks = createSelector(getAccountState, (account) =>
 
 export const getNetworkCountForOverview = createSelector(
   getAccountState,
-  (account) =>
+  selectSparkAccountAssetAmounts,
+  (account, sparkAccountAssetAmounts) =>
     Object.keys(account.accountsData.evm).filter(
       (chainID) => !TEST_NETWORK_BY_CHAIN_ID.has(chainID),
-    ).length,
+    ).length +
+    new Set(
+      sparkAccountAssetAmounts
+        .map(({ account: { network } }) => network)
+        .filter((network) => !isTestSparkNetwork(network))
+        .map(({ chainID }) => chainID),
+    ).size,
 )
 
 export const getTotalBalanceForOverview = createSelector(

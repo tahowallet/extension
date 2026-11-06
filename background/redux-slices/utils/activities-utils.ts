@@ -14,7 +14,7 @@ import {
   getSender,
 } from "../../services/enrichment/utils"
 import { getExecutedSafeAddress } from "../../services/enrichment/safe"
-import type { HexString } from "../../types"
+import type { HexString, SparkAddress } from "../../types"
 import type { FixedPointNumber } from "../../lib/fixed-point"
 
 enum TxStatus {
@@ -28,8 +28,8 @@ export type Activity = {
   status?: number
   type?: string
   to?: string
-  recipient: { address?: HexString; name?: string }
-  sender: { address?: HexString; name?: string }
+  recipient: { address?: HexString | SparkAddress; name?: string }
+  sender: { address?: HexString | SparkAddress; name?: string }
   from: string
   blockHeight: number | null
   value: string

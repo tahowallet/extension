@@ -2,7 +2,7 @@ import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
 import {
   selectCurrentAccountSigner,
-  selectCurrentNetwork,
+  selectCurrentAnyNetwork,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useHistory } from "react-router-dom"
@@ -27,7 +27,7 @@ function ActionButtons(props: ActionButtonsProps): ReactElement {
   })
   const { onReceive } = props
   const history = useHistory()
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
 
   return (
     <div className="action_buttons_wrap">
@@ -147,6 +147,12 @@ export default function WalletAccountBalanceControl(
   const hasSavedSeed = true
 
   const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  const currentNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
+  // The signer belongs to the selected EVM account; accounts on other network
+  // families (Spark) are always derived from a recovery phrase.
+  const isReadOnly =
+    currentNetwork.family === "EVM" &&
+    currentAccountSigner === ReadOnlyAccountSigner
 
   const handleClick = useCallback(() => {
     setOpenReceiveMenu((currentlyOpen) => !currentlyOpen)
@@ -202,7 +208,7 @@ export default function WalletAccountBalanceControl(
           style={{ marginBottom: 10 }}
         >
           <ReadOnlyNotice />
-          {currentAccountSigner !== ReadOnlyAccountSigner &&
+          {!isReadOnly &&
             (hasSavedSeed ? (
               <ActionButtons onReceive={handleClick} />
             ) : (

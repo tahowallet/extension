@@ -1,9 +1,9 @@
-import type { HexString } from "@tallyho/tally-background/types"
+import type { HexString, SparkAddress } from "@tallyho/tally-background/types"
 import {
   Activity,
   INFINITE_VALUE,
 } from "@tallyho/tally-background/redux-slices/activities"
-import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { sameAccountAddress } from "@tallyho/tally-background/lib/utils"
 import { useTranslation } from "react-i18next"
 import { TransactionAnnotation } from "@tallyho/tally-background/services/enrichment"
 
@@ -13,7 +13,7 @@ function isReceiveActivity(
 ): boolean {
   return (
     activity.type === "asset-transfer" &&
-    sameEVMAddress(activity.recipient?.address, activityInitiatorAddress)
+    sameAccountAddress(activity.recipient?.address, activityInitiatorAddress)
   )
 }
 
@@ -28,7 +28,7 @@ type ActivityViewDetails = {
   icon: ActivityIconType
   label: string
   recipient: {
-    address?: HexString
+    address?: HexString | SparkAddress
     name?: string
   }
   assetLogoURL?: string

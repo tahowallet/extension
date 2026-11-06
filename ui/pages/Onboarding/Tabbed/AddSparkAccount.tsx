@@ -8,8 +8,8 @@ import {
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import type { SparkNetworkType } from "@tallyho/tally-background/networks"
 import type { RootState } from "@tallyho/tally-background/redux-slices"
+import { selectCurrentSparkNetwork } from "@tallyho/tally-background/redux-slices/selectors"
 import {
-  selectSelectedSparkNetwork,
   selectShowTestNetworks,
   setSelectedSparkNetwork,
 } from "@tallyho/tally-background/redux-slices/ui"
@@ -42,7 +42,7 @@ export default function AddSparkAccount(): ReactElement {
     (state: RootState) => state.internalSigner.keyrings,
   )
   const [keyringID, setKeyringID] = useState<string | undefined>()
-  const selectedSparkNetwork = useBackgroundSelector(selectSelectedSparkNetwork)
+  const selectedSparkNetwork = useBackgroundSelector(selectCurrentSparkNetwork)
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
   // Follow the network selector: the Spark network the user is looking at,
   // and regtest only for users who have test networks turned on.

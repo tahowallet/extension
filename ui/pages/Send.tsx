@@ -11,6 +11,7 @@ import {
   selectCurrentAccountBalances,
   selectCurrentAccountNFTs,
   selectCurrentAccountSigner,
+  selectCurrentAnyNetwork,
   selectCurrentNetwork,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
@@ -42,6 +43,7 @@ import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import NetworkUnreachableWarning from "../components/Shared/NetworkUnreachableWarning"
 import SharedButton from "../components/Shared/SharedButton"
+import SparkSendForm from "../components/Spark/SparkSendForm"
 import {
   useAddressOrNameValidation,
   useBackgroundDispatch,
@@ -57,6 +59,7 @@ export default function Send(): ReactElement {
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
   const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
+  const currentAnyNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
   // Stop the send here rather than letting the user fill out the whole form and
   // meet the same block on the signing screen.
   const isNetworkUnreachable = useBackgroundSelector(
@@ -209,112 +212,118 @@ export default function Send(): ReactElement {
           <div className="title">{t("wallet.sendAsset")}</div>
           <ReadOnlyNotice isLite />
         </h1>
-        <div className="form">
-          <div className="form_input">
-            <SharedAssetInput
-              currentNetwork={currentNetwork}
-              label={t("wallet.assetAmount")}
-              onAssetSelect={handleAssetSelect}
-              assetsAndAmounts={fungibleAssetAmounts}
-              onAmountChange={(value, errorMessage) => {
-                setAmount(value)
-                if (errorMessage) {
-                  setHasError(true)
-                } else {
-                  setHasError(false)
+        {currentAnyNetwork.family === "SPARK" ? (
+          // Spark payments (Spark address or Lightning invoice, no gas, no
+          // signing screen) don't fit the EVM transaction form yet.
+          <SparkSendForm />
+        ) : (
+          <div className="form">
+            <div className="form_input">
+              <SharedAssetInput
+                currentNetwork={currentNetwork}
+                label={t("wallet.assetAmount")}
+                onAssetSelect={handleAssetSelect}
+                assetsAndAmounts={fungibleAssetAmounts}
+                onAmountChange={(value, errorMessage) => {
+                  setAmount(value)
+                  if (errorMessage) {
+                    setHasError(true)
+                  } else {
+                    setHasError(false)
+                  }
+                }}
+                onSelectNFT={(nft) => {
+                  setSelectedNFT(nft)
+                  setAssetType("nft")
+                }}
+                selectedAsset={selectedAsset ?? undefined}
+                selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
+                amount={amount}
+                showMaxButton={assetType !== "nft"}
+                NFTCollections={
+                  isEnabled(FeatureFlags.SUPPORT_NFT_SEND)
+                    ? nftCollections
+                    : undefined
                 }
-              }}
-              onSelectNFT={(nft) => {
-                setSelectedNFT(nft)
-                setAssetType("nft")
-              }}
-              selectedAsset={selectedAsset ?? undefined}
-              selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
-              amount={amount}
-              showMaxButton={assetType !== "nft"}
-              NFTCollections={
-                isEnabled(FeatureFlags.SUPPORT_NFT_SEND)
-                  ? nftCollections
-                  : undefined
-              }
-            />
-            {assetType === "token" && !hasError && (
-              <div className="value">
-                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
-              </div>
-            )}
-          </div>
-          <div className="form_input send_to_field">
-            <label htmlFor="send_address">{t("wallet.sendTo")}</label>
-            <input
-              id="send_address"
-              type="text"
-              placeholder="0x..."
-              spellCheck={false}
-              onChange={(event) => handleAddressChange(event.target.value)}
-              className={classNames({
-                error: addressErrorMessage !== undefined,
-                resolved_address: resolvedNameToAddress,
-              })}
-            />
-            {addressIsValidating && (
-              <p className="validating">
-                <SharedLoadingSpinner />
-              </p>
-            )}
-            {resolvedNameToAddress && (
-              <button
-                type="button"
-                className="address"
-                onClick={() => copyAddress()}
-              >
-                <SharedIcon
-                  icon="icons/s/copy.svg"
-                  width={14}
-                  color="var(--green-60)"
-                />
-                {destinationAddress}
-              </button>
-            )}
-            {addressErrorMessage !== undefined && (
-              <p
-                className="error"
-                title="Note: UNS temporarily disabled for security reasons."
-              >
-                ⚠️ {addressErrorMessage}
-              </p>
-            )}
-          </div>
-          <div className="send_footer standard_width_padded">
-            {/*
-             * A disabled button with no explanation is its own kind of dead
-             * end; this page is not the wallet view, so the banner is not on
-             * screen to account for it.
-             */}
-            {isNetworkUnreachable && (
-              <NetworkUnreachableWarning
-                chainID={currentNetwork.chainID}
-                tooltipVerticalPosition="top"
               />
-            )}
-            <SharedButton
-              type="primary"
-              size="large"
-              isDisabled={
-                currentAccountSigner === ReadOnlyAccountSigner ||
-                (assetType === "token" && Number(amount) === 0) ||
-                destinationAddress === undefined ||
-                hasError ||
-                isNetworkUnreachable
-              }
-              onClick={sendTransactionRequest}
-              isFormSubmit
-              isLoading={isSendingTransactionRequest}
-            >
-              {t("wallet.sendButton")}
-            </SharedButton>
+              {assetType === "token" && !hasError && (
+                <div className="value">
+                  ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+                </div>
+              )}
+            </div>
+            <div className="form_input send_to_field">
+              <label htmlFor="send_address">{t("wallet.sendTo")}</label>
+              <input
+                id="send_address"
+                type="text"
+                placeholder="0x..."
+                spellCheck={false}
+                onChange={(event) => handleAddressChange(event.target.value)}
+                className={classNames({
+                  error: addressErrorMessage !== undefined,
+                  resolved_address: resolvedNameToAddress,
+                })}
+              />
+              {addressIsValidating && (
+                <p className="validating">
+                  <SharedLoadingSpinner />
+                </p>
+              )}
+              {resolvedNameToAddress && (
+                <button
+                  type="button"
+                  className="address"
+                  onClick={() => copyAddress()}
+                >
+                  <SharedIcon
+                    icon="icons/s/copy.svg"
+                    width={14}
+                    color="var(--green-60)"
+                  />
+                  {destinationAddress}
+                </button>
+              )}
+              {addressErrorMessage !== undefined && (
+                <p
+                  className="error"
+                  title="Note: UNS temporarily disabled for security reasons."
+                >
+                  ⚠️ {addressErrorMessage}
+                </p>
+              )}
+            </div>
+            <div className="send_footer standard_width_padded">
+              {/*
+               * A disabled button with no explanation is its own kind of dead
+               * end; this page is not the wallet view, so the banner is not on
+               * screen to account for it.
+               */}
+              {isNetworkUnreachable && (
+                <NetworkUnreachableWarning
+                  chainID={currentNetwork.chainID}
+                  tooltipVerticalPosition="top"
+                />
+              )}
+              <SharedButton
+                type="primary"
+                size="large"
+                isDisabled={
+                  currentAccountSigner === ReadOnlyAccountSigner ||
+                  (assetType === "token" && Number(amount) === 0) ||
+                  destinationAddress === undefined ||
+                  hasError ||
+                  isNetworkUnreachable
+                }
+                onClick={sendTransactionRequest}
+                isFormSubmit
+                isLoading={isSendingTransactionRequest}
+              >
+                {t("wallet.sendButton")}
+              </SharedButton>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <style jsx>
         {`

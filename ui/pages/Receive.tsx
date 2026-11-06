@@ -1,20 +1,25 @@
-import React, { ReactElement } from "react"
+import React, { ReactElement, useState } from "react"
 import { useDispatch } from "react-redux"
 import { useTranslation } from "react-i18next"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
+import { selectCurrentAnyAccount } from "@tallyho/tally-background/redux-slices/selectors"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import QRCode from "react-qr-code"
 import { useBackgroundSelector } from "../hooks"
 import SharedButton from "../components/Shared/SharedButton"
+import SparkReceiveOptions from "../components/Spark/SparkReceiveOptions"
 
 export default function Receive(): ReactElement | null {
   const { t } = useTranslation()
   const dispatch = useDispatch()
 
-  const currentAccount: { address: string } =
-    useBackgroundSelector(selectCurrentAccount)
+  const currentAccount = useBackgroundSelector(selectCurrentAnyAccount)
+  // What to receive with: the account address by default; networks with
+  // other request kinds (e.g. Spark's Lightning invoices) can swap it out.
+  const [requestValue, setRequestValue] = useState<string | undefined>()
 
   if (!currentAccount) return null
+
+  const value = requestValue ?? currentAccount.address
 
   return (
     <section>
@@ -23,22 +28,22 @@ export default function Receive(): ReactElement | null {
         {t("wallet.receiveAddress")}
       </h1>
       <div className="qr_code">
-        <QRCode value={currentAccount.address} size={128} />
+        <QRCode value={value} size={128} />
       </div>
+      {currentAccount.network.family === "SPARK" && (
+        <SparkReceiveOptions onRequestChange={setRequestValue} />
+      )}
       <div className="copy_wrap">
         <SharedButton
           iconMedium="copy"
           size="medium"
           type="primary"
           onClick={() => {
-            navigator.clipboard.writeText(currentAccount.address)
+            navigator.clipboard.writeText(value)
             dispatch(setSnackbarMessage("Copied!"))
           }}
         >
-          {`${currentAccount.address.slice(
-            0,
-            7,
-          )}...${currentAccount.address.slice(-6)}`}
+          {`${value.slice(0, 7)}...${value.slice(-6)}`}
         </SharedButton>
       </div>
       <style jsx>

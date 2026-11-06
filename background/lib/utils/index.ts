@@ -1,6 +1,7 @@
 import { BigNumber, ethers, utils } from "ethers"
 import { normalizeHexAddress, toChecksumAddress } from "@tallyho/hd-keyring"
 import type { NormalizedEVMAddress, UNIXTime } from "../../types"
+import { isHexString } from "./hex"
 import type { AddressOnNetwork } from "../../accounts"
 
 export function isValidChecksumAddress(
@@ -100,6 +101,24 @@ export function sameEVMAddress(
     return false
   }
   return normalizeHexAddress(address1) === normalizeHexAddress(address2)
+}
+
+/**
+ * Compare two account addresses of any network family: EVM addresses are
+ * compared normalized (case-insensitively), other formats (e.g. Spark
+ * addresses, which are canonically lowercase) exactly after lowercasing.
+ */
+export function sameAccountAddress(
+  address1: string | undefined | null,
+  address2: string | undefined | null,
+): boolean {
+  if (!address1 || !address2) {
+    return false
+  }
+  if (isHexString(address1) && isHexString(address2)) {
+    return sameEVMAddress(address1, address2)
+  }
+  return address1.toLowerCase() === address2.toLowerCase()
 }
 
 export function gweiToWei(value: number | bigint): bigint {
