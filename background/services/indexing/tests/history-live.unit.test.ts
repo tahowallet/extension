@@ -5,7 +5,7 @@ import {
   ContractReader,
   getUSDPriceForBaseAsset,
 } from "../../../lib/priceOracle"
-import { livePriceRecord, millisecondsOf } from "../live"
+import { livePriceRecord, millisecondsOf } from "../history/live"
 
 const NOW = Date.UTC(2026, 10, 5, 12)
 

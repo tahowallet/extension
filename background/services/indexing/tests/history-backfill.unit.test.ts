@@ -3,15 +3,19 @@ import { utils } from "ethers"
 
 import { DAY, HOUR, MINUTE } from "../../../constants"
 import { MULTICALL_ABI } from "../../../lib/multicall"
-import { RateBudget } from "../budget"
-import { BACKFILL_HORIZON, BACKFILL_SETTLE, missingBuckets } from "../schedule"
+import { RateBudget } from "../history/budget"
+import {
+  BACKFILL_HORIZON,
+  BACKFILL_SETTLE,
+  missingBuckets,
+} from "../history/schedule"
 import {
   BlockClock,
   HistoryReader,
   UnavailableError,
   multicallSizeFor,
   snapshotBalances,
-} from "../sources"
+} from "../history/sources"
 
 const NOW = Date.UTC(2026, 10, 3, 12)
 const WEEK = 7 * DAY

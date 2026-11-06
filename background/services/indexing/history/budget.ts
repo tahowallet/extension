@@ -1,4 +1,4 @@
-import { MINUTE } from "../../constants"
+import { MINUTE } from "../../../constants"
 
 /**
  * The number of calls per minute a {@link RateBudget} allows while the user

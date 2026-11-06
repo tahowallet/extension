@@ -1,11 +1,11 @@
-import { FIAT_CURRENCIES_SYMBOL } from "../../constants/currencies"
-import type { PricePoint } from "../../assets"
-import { isFungibleAsset, isSmartContractFungibleAsset } from "../../assets"
+import { FIAT_CURRENCIES_SYMBOL } from "../../../constants/currencies"
+import type { PricePoint } from "../../../assets"
+import { isFungibleAsset, isSmartContractFungibleAsset } from "../../../assets"
 import {
   getFullAssetID,
   isNetworkBaseAsset,
-} from "../../redux-slices/utils/asset-utils"
-import type { PriceRecord } from "./db"
+} from "../../../redux-slices/utils/asset-utils"
+import type { PriceRecord } from "../../history/db"
 
 /**
  * The smallest time read as milliseconds rather than seconds. As
