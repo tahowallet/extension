@@ -303,6 +303,7 @@ export default function FullTabAsset(): ReactElement {
           chainIDs={[network.chainID]}
           assetID={getFullAssetID(asset)}
           label={`${asset.symbol} · ${t("fullTab.table.value")}`}
+          currentValue={assetAmount.mainCurrencyAmount}
         />
       )}
       <div className="stats">

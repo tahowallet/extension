@@ -874,17 +874,25 @@ export const getNetworkCountForOverview = createSelector(
     ).length,
 )
 
-export const getTotalBalanceForOverview = createSelector(
+/**
+ * Selects the total balance of every account on every network, in the main
+ * currency, as a number. {@link getTotalBalanceForOverview} formats the same
+ * number for display, so anything shown beside it, such as the full-tab value
+ * chart's latest point, can use exactly the number displayed.
+ */
+export const selectTotalBalanceValueForOverview = createSelector(
   selectAccountTotalsForOverview,
-  selectMainCurrencySymbol,
-  (accountsTotal, currencySymbol) =>
-    formatCurrencyAmount(
-      currencySymbol,
-      Object.values(accountsTotal).reduce(
-        (total, { totals }) =>
-          Object.values(totals).reduce((sum, balance) => sum + balance) + total,
-        0,
-      ),
-      2,
+  (accountsTotal) =>
+    Object.values(accountsTotal).reduce(
+      (total, { totals }) =>
+        Object.values(totals).reduce((sum, balance) => sum + balance) + total,
+      0,
     ),
+)
+
+export const getTotalBalanceForOverview = createSelector(
+  selectTotalBalanceValueForOverview,
+  selectMainCurrencySymbol,
+  (totalBalance, currencySymbol) =>
+    formatCurrencyAmount(currencySymbol, totalBalance, 2),
 )

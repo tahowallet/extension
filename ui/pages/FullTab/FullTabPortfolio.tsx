@@ -7,6 +7,7 @@ import {
   getTotalBalanceForOverview,
   selectAccountAndTimestampedActivities,
   selectAccountTotalsForOverview,
+  selectTotalBalanceValueForOverview,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { selectInitializationTimeExpired } from "@tallyho/tally-background/redux-slices/ui"
 import { useBackgroundSelector } from "../../hooks"
@@ -26,6 +27,7 @@ export default function FullTabPortfolio(): ReactElement {
   const { t } = useTranslation()
   const accountsTotal = useBackgroundSelector(selectAccountTotalsForOverview)
   const balance = useBackgroundSelector(getTotalBalanceForOverview)
+  const balanceValue = useBackgroundSelector(selectTotalBalanceValueForOverview)
   const networksCount = useBackgroundSelector(getNetworkCountForOverview)
   const accountsCount = useBackgroundSelector(getAddressCount)
   const addresses = useBackgroundSelector(getAllAddresses)
@@ -58,6 +60,7 @@ export default function FullTabPortfolio(): ReactElement {
           <FullTabValueChart
             addresses={addresses}
             label={t("overview.totalBalanceEverywhere")}
+            currentValue={balanceValue}
           />
         </div>
         <div className="card padded">

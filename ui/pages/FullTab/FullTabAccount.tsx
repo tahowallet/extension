@@ -94,6 +94,7 @@ export default function FullTabAccount(): ReactElement {
       <FullTabValueChart
         addresses={[address]}
         label={t("wallet.totalAccountBalance")}
+        currentValue={total}
       />
       <div className="views">
         <SharedPanelSwitcher

@@ -25,6 +25,15 @@ type Props = {
   assetID?: string
   /** A label naming what the chart totals, used for screen readers. */
   label: string
+  /**
+   * The value the page shows for what the chart totals, in the main currency.
+   * If given, it replaces the latest point's value, keeping that point's
+   * time, so the chart ends on the number shown beside it. History records
+   * live prices at most every five minutes per asset and the chart reloads
+   * once a minute, so its latest point can otherwise trail the wallet's
+   * total by tens of dollars on a $155K wallet.
+   */
+  currentValue?: number
 }
 
 type History = AsyncThunkFulfillmentType<typeof fetchValueHistory> & {
@@ -79,6 +88,7 @@ export default function FullTabValueChart({
   chainIDs,
   assetID,
   label,
+  currentValue,
 }: Props): ReactElement {
   const { t } = useTranslation("translation", { keyPrefix: "fullTab.chart" })
   const dispatch = useBackgroundDispatch()
@@ -165,7 +175,12 @@ export default function FullTabValueChart({
     return () => observer.disconnect()
   }, [])
 
-  const points = useMemo(() => history?.points ?? [], [history])
+  const points = useMemo(() => {
+    const recorded = history?.points ?? []
+    if (currentValue === undefined || recorded.length === 0) return recorded
+    const last = recorded[recorded.length - 1]
+    return [...recorded.slice(0, -1), { ...last, value: currentValue }]
+  }, [history, currentValue])
   const reconstructedUntil = history?.reconstructedUntil
   // Before this point, some holdings' values assume their earliest known
   // balance, since their balance history doesn't reach back that far.
