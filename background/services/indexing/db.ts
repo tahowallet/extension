@@ -42,6 +42,13 @@ import { seriesFromMeasurements } from "./history/upgrade"
  */
 const BATCH_SIZE = 100
 
+/**
+ * How many series compaction reads and rewrites at a time. Compaction rewrites
+ * nearly every series it reads, which costs more per series than a write that
+ * appends a point, so its pages are smaller to keep each one under 20ms.
+ */
+const COMPACTION_PAGE_SIZE = 30
+
 /** Yields to other work in the background before continuing. */
 const yieldToOtherWork = () =>
   new Promise<void>((resolve) => {
@@ -283,13 +290,17 @@ export class IndexingDatabase extends Dexie {
     const kept = measurements.filter(({ time }) => isRecordableTime(time, now))
     if (kept.length === 0) return
     const byAssetID = groupBy(kept, ({ assetID }) => assetID)
+    const ids = await this.seriesIDsFor(this.prices)
     await inBatches([...byAssetID.keys()], async (assetIDs) =>
       this.transaction("rw", this.prices, async () => {
         const existing = await this.seriesByKey(
           this.prices,
+          ids,
           assetIDs.map(priceSeriesKeyFor),
         )
-        await this.prices.bulkPut(
+        await this.putSeries(
+          this.prices,
+          ids,
           assetIDs.map((assetID) => {
             const points = byAssetID.get(assetID) ?? []
             const record =
@@ -338,10 +349,12 @@ export class IndexingDatabase extends Dexie {
         latestInBatch.set(measurement.key, measurement)
       }
     })
+    const ids = await this.seriesIDsFor(this.balances)
     return inBatches([...latestInBatch.values()], async (candidates) =>
       this.transaction("rw", this.balances, async () => {
         const existing = await this.seriesByKey(
           this.balances,
+          ids,
           candidates.map(({ key }) => key),
         )
         const updated = candidates.flatMap((measurement) => {
@@ -351,7 +364,9 @@ export class IndexingDatabase extends Dexie {
           )
           return series === undefined ? [] : [series]
         })
-        if (updated.length > 0) await this.balances.bulkPut(updated)
+        if (updated.length > 0) {
+          await this.putSeries(this.balances, ids, updated)
+        }
         return updated.length
       }),
     )
@@ -373,10 +388,13 @@ export class IndexingDatabase extends Dexie {
     )
     if (kept.length === 0) return
     const byKey = groupBy(kept, ({ key }) => key)
+    const ids = await this.seriesIDsFor(this.balances)
     await inBatches([...byKey.keys()], async (keys) =>
       this.transaction("rw", this.balances, async () => {
-        const existing = await this.seriesByKey(this.balances, keys)
-        await this.balances.bulkPut(
+        const existing = await this.seriesByKey(this.balances, ids, keys)
+        await this.putSeries(
+          this.balances,
+          ids,
           keys.map((key) => {
             const points = byKey.get(key) ?? []
             return withPoints(
@@ -418,6 +436,7 @@ export class IndexingDatabase extends Dexie {
   ): Promise<Map<FullAssetID, Series>> {
     const records = await this.seriesByKey(
       this.prices,
+      await this.seriesIDsFor(this.prices),
       assetIDs.map(priceSeriesKeyFor),
     )
     const found = new Map<FullAssetID, Series>()
@@ -497,9 +516,9 @@ export class IndexingDatabase extends Dexie {
    * stands in for its series' latest point, so dropping it here lets the
    * series move again.
    *
-   * Series are read and rewritten {@link BATCH_SIZE} at a time, with a pause
-   * for other background work between pages, so compacting a large history
-   * never holds up the background for long.
+   * Series are read and rewritten {@link COMPACTION_PAGE_SIZE} at a time, with
+   * a pause for other background work between pages, so compacting a large
+   * history never holds up the background for long.
    */
   async compactHistory(now: number): Promise<number> {
     let dropped = 0
@@ -514,7 +533,7 @@ export class IndexingDatabase extends Dexie {
             ? table.orderBy(":id")
             : table.where(":id").above(after)
         )
-          .limit(BATCH_SIZE)
+          .limit(COMPACTION_PAGE_SIZE)
           .toArray()) as (SeriesRecord | BackfillRecord)[] & { id?: number }[]
         if (page.length === 0) return
         after = page[page.length - 1].id
@@ -537,19 +556,72 @@ export class IndexingDatabase extends Dexie {
   }
 
   /**
+   * Each table's record ids by key, loaded once from the `key` index and kept
+   * current by {@link putSeries}. Records keep numeric ids, since Dexie can't
+   * change a table's primary key, and reading a chart's hundreds of series by
+   * id is much faster than walking the `key` index for them.
+   *
+   * Note that every series write waits for its table's ids before it starts,
+   * so the ids are read before any write this class makes and stay complete.
+   */
+  #seriesIDs = new Map<string, Promise<Map<string, number>>>()
+
+  private seriesIDsFor(
+    table: Dexie.Table<SeriesRecord | BackfillRecord, number>,
+  ): Promise<Map<string, number>> {
+    let ids = this.#seriesIDs.get(table.name)
+    if (ids === undefined) {
+      const collection = table.orderBy("key")
+      ids = Promise.all([collection.keys(), collection.primaryKeys()]).then(
+        ([keys, primaryKeys]) =>
+          new Map(
+            keys.flatMap((key, index) =>
+              typeof key === "string" ? [[key, primaryKeys[index]]] : [],
+            ),
+          ),
+      )
+      this.#seriesIDs.set(table.name, ids)
+    }
+    return ids
+  }
+
+  /**
    * Returns the series stored in `table` under the given keys, by key, with
    * their ids, so that writing one back replaces it.
+   *
+   * @param ids The table's record ids by key; see {@link seriesIDsFor}.
    */
   private async seriesByKey<T extends SeriesRecord>(
     table: Dexie.Table<T | BackfillRecord, number>,
+    ids: Map<string, number>,
     keys: string[],
   ): Promise<Map<string, T>> {
-    const records = await table.where("key").anyOf(keys).toArray()
+    const records = await table.bulkGet(
+      keys.flatMap((key) => {
+        const id = ids.get(key)
+        return id === undefined ? [] : [id]
+      }),
+    )
     const byKey = new Map<string, T>()
     records.forEach((record) => {
-      if (record.kind !== "backfill") byKey.set(record.key, record)
+      if (record !== undefined && record.kind !== "backfill") {
+        byKey.set(record.key, record)
+      }
     })
     return byKey
+  }
+
+  /**
+   * Stores series, replacing those read with their ids and adding the rest,
+   * and records the ids of added series in `ids`.
+   */
+  private async putSeries<T extends SeriesRecord>(
+    table: Dexie.Table<T | BackfillRecord, number>,
+    ids: Map<string, number>,
+    records: T[],
+  ): Promise<void> {
+    const stored = await table.bulkPut(records, { allKeys: true })
+    records.forEach((record, index) => ids.set(record.key, stored[index]))
   }
 
   /**
