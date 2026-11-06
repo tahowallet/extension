@@ -24,6 +24,14 @@ import {
 import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import ImportForm from "./ImportForm"
+import type { AccountFamily } from "../../../components/Onboarding/OnboardingAccountFamilyTabs"
+import SparkNetworkChoice from "../../../components/Onboarding/SparkNetworkChoice"
+import type { SparkNetworkType } from "@tallyho/tally-background/networks"
+import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
+import {
+  importSparkAccount,
+  SparkResult,
+} from "@tallyho/tally-background/redux-slices/spark"
 
 type Props = {
   nextPage: string
@@ -40,6 +48,9 @@ export default function ImportSeed(props: Props): ReactElement {
     selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
   )
   const [isImporting, setIsImporting] = useState(false)
+  const [accountFamily, setAccountFamily] = useState<AccountFamily>("evm")
+  const [sparkNetworkType, setSparkNetworkType] =
+    useState<SparkNetworkType>("MAINNET")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importSeed",
@@ -67,6 +78,24 @@ export default function ImportSeed(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
 
+      if (accountFamily === "bitcoin") {
+        const result = (await dispatch(
+          importSparkAccount({
+            mnemonic: plainRecoveryPhrase,
+            source: SignerImportSource.import,
+            networkType: sparkNetworkType,
+          }),
+        )) as unknown as SparkResult<SparkAccount>
+        if (result.ok) {
+          await dispatch(sendEvent(OneTimeAnalyticsEvent.ONBOARDING_FINISHED))
+          history.push(nextPage)
+        } else {
+          setErrorMessage(result.error)
+          setIsImporting(false)
+        }
+        return
+      }
+
       const { success } = (await dispatch(
         importSigner({
           type: SignerSourceTypes.keyring,
@@ -85,7 +114,16 @@ export default function ImportSeed(props: Props): ReactElement {
     } else {
       setErrorMessage(t("errors.invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path, t, history, nextPage])
+  }, [
+    dispatch,
+    recoveryPhrase,
+    path,
+    t,
+    history,
+    nextPage,
+    accountFamily,
+    sparkNetworkType,
+  ])
 
   if (!areInternalSignersUnlocked)
     return (
@@ -103,16 +141,25 @@ export default function ImportSeed(props: Props): ReactElement {
         title={t("title")}
         subtitle={t("subtitle")}
         illustration="doggo_import.svg"
+        accountFamily={accountFamily}
+        onAccountFamilyChange={setAccountFamily}
       >
         <>
-          {isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH) && (
-            <div className="select_wrapper">
-              <OnboardingDerivationPathSelect
-                defaultPath={DefaultPathIndex.bip44}
-                onChange={setPath}
-              />
-            </div>
+          {accountFamily === "bitcoin" && (
+            <SparkNetworkChoice
+              value={sparkNetworkType}
+              onChange={setSparkNetworkType}
+            />
           )}
+          {accountFamily === "evm" &&
+            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH) && (
+              <div className="select_wrapper">
+                <OnboardingDerivationPathSelect
+                  defaultPath={DefaultPathIndex.bip44}
+                  onChange={setPath}
+                />
+              </div>
+            )}
           <SharedSeedInput
             onChange={onInputChange}
             label={t("inputLabel")}

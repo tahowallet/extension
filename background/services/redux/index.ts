@@ -203,7 +203,12 @@ import {
   isBaseAssetForNetwork,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
-import { SignerImportMetadata, SignerInternalTypes } from "../internal-signer"
+import {
+  SignerImportMetadata,
+  SignerImportSource,
+  SignerInternalTypes,
+  SignerSourceTypes,
+} from "../internal-signer"
 import { getPricePoint, getTokenPrices } from "../../lib/prices"
 import { flashbotsEndpointConfig } from "../chain/rpc/endpoint-configs"
 import { AnalyticsPreferences, DismissableItem } from "../preferences"
@@ -549,6 +554,43 @@ export default class ReduxService extends BaseService<never> {
     keyringID?: string
   }): ReturnType<SparkService["addAccount"]> {
     return this.sparkService.addAccount(params)
+  }
+
+  /**
+   * Import a recovery phrase as an internal-signer keyring (or find it if it
+   * is already imported) and add a Spark account derived from it. Used by
+   * onboarding's Bitcoin tab, alongside `importSigner` for EVM.
+   */
+  async importSparkAccount({
+    mnemonic,
+    source,
+    networkType,
+  }: {
+    mnemonic: string
+    source: SignerImportSource
+    networkType: SparkNetworkType
+  }): ReturnType<SparkService["addAccount"]> {
+    const address = await this.internalSignerService.importSigner({
+      type: SignerSourceTypes.keyring,
+      mnemonic,
+      source,
+    })
+    const keyringID = this.internalSignerService
+      .getKeyrings()
+      .find(
+        ({ addresses }) => address !== null && addresses.includes(address),
+      )?.id
+    if (keyringID === undefined) {
+      throw new Error("Importing the recovery phrase failed.")
+    }
+    const existing = this.sparkService
+      .getAccounts()
+      .find(
+        (account) =>
+          account.keyringID === keyringID &&
+          account.network.sparkNetworkType === networkType,
+      )
+    return existing ?? this.sparkService.addAccount({ keyringID, networkType })
   }
 
   async removeSparkAccount(accountID: string): Promise<void> {

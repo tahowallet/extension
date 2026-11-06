@@ -9,6 +9,8 @@ import type {
   SparkSendResult,
 } from "../services/spark/types"
 import type { SparkNetworkType } from "../networks"
+import type { SignerImportSource } from "../services/internal-signer"
+import { setSelectedSparkNetwork } from "./ui"
 
 export type SparkWalletStatus =
   | "connecting"
@@ -122,6 +124,25 @@ export const addSparkAccount = createBackgroundAsyncThunk(
     { extra: { main } },
   ): Promise<SparkResult<SparkAccount>> =>
     asSparkResult(() => main.addSparkAccount(params)),
+)
+
+export const importSparkAccount = createBackgroundAsyncThunk(
+  "spark/importAccount",
+  async (
+    params: {
+      mnemonic: string
+      source: SignerImportSource
+      networkType: SparkNetworkType
+    },
+    { extra: { main }, dispatch },
+  ): Promise<SparkResult<SparkAccount>> => {
+    const result = await asSparkResult(() => main.importSparkAccount(params))
+    if (result.ok) {
+      // Show the new account: switch the network selector to its network.
+      dispatch(setSelectedSparkNetwork(result.value.network.chainID))
+    }
+    return result
+  },
 )
 
 export const removeSparkAccount = createBackgroundAsyncThunk(

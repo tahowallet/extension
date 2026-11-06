@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next"
 import type { AnyNetwork } from "@tallyho/tally-background/networks"
 import SharedButton from "../Shared/SharedButton"
 import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
-import OnboardingRoutes, {
-  ONBOARDING_ROOT,
-} from "../../pages/Onboarding/Tabbed/Routes"
+import { ONBOARDING_ROOT } from "../../pages/Onboarding/Tabbed/Routes"
 
 /**
  * Shown in place of the wallet when the selected network has no account yet
@@ -20,10 +18,6 @@ export default function WalletNoAccountOnNetwork({
   const { t } = useTranslation("translation", {
     keyPrefix: "wallet.noAccountOnNetwork",
   })
-  const onboardingPath =
-    network.family === "SPARK"
-      ? OnboardingRoutes.SPARK
-      : OnboardingRoutes.ADD_WALLET
 
   return (
     <section data-testid="wallet_no_account_on_network">
@@ -33,11 +27,9 @@ export default function WalletNoAccountOnNetwork({
       <SharedButton
         type="primary"
         size="large"
-        onClick={() =>
-          window.open(
-            `${ONBOARDING_ROOT}${onboardingPath.replace(/^\/onboarding/, "")}`,
-          )
-        }
+        // Same entry as the accounts panel's Add Wallet: onboarding opens
+        // on its add-wallet options, which offer EVM and Bitcoin accounts.
+        onClick={() => window.open(ONBOARDING_ROOT)}
       >
         {t("add")}
       </SharedButton>

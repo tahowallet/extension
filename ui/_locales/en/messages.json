@@ -409,8 +409,7 @@
           "importPrivateKey": "Import private key",
           "ledger": "Connect to Ledger",
           "readOnly": "Read-only address",
-          "createNew": "Create new wallet",
-          "spark": "Bitcoin (Spark)"
+          "createNew": "Create new wallet"
         },
         "importSeed": {
           "title": "Import secret recovery phrase",
@@ -449,20 +448,6 @@
           "subtitle": "Add an Ethereum address or ENS name to view an existing wallet in Taho",
           "submit": "Preview Taho",
           "tip": "You can upgrade a read-only wallet later."
-        },
-        "spark": {
-          "title": "Bitcoin on Spark",
-          "subtitle": "Hold bitcoin on Spark, a Bitcoin layer 2. Send over Lightning and receive from any bitcoin wallet.",
-          "recoveryPhrase": "Recovery phrase",
-          "phraseLabel": "Recovery phrase {{index}} ({{address}})",
-          "network": "Network",
-          "networks": {
-            "MAINNET": "Spark mainnet",
-            "REGTEST": "Spark regtest (test bitcoin)"
-          },
-          "submit": "Add Spark account",
-          "needsRecoveryPhrase": "Spark accounts are derived from a recovery phrase. Create or import a wallet with a recovery phrase first.",
-          "tip": "No new secret to back up: Spark keys come from the recovery phrase you choose, the same way other Spark wallets derive them."
         }
       },
       "newWalletIntro": {
@@ -496,6 +481,16 @@
         "titleExisting": "Account added to Taho!",
         "subtitle": "For faster access we recommend pinning Taho to your browser",
         "animationAlt": "Pin the wallet"
+      },
+      "accountFamily": {
+        "evm": "EVM",
+        "bitcoin": "Bitcoin",
+        "sparkNetwork": "Spark network",
+        "sparkNetworks": {
+          "MAINNET": "Spark mainnet",
+          "REGTEST": "Spark regtest"
+        },
+        "bitcoinNeedsRecoveryPhrase": "Bitcoin accounts on Spark are derived from a recovery phrase. Import a recovery phrase or create a new wallet to add one."
       }
     },
     "setPassword": {

@@ -19,7 +19,6 @@ import NewSeed, { NewSeedRoutes } from "./NewSeed"
 import InfoIntro from "./Intro"
 import ViewOnlyWallet from "./ViewOnlyWallet"
 import Ledger from "./Ledger/Ledger"
-import AddSparkAccount from "./AddSparkAccount"
 import OnboardingRoutes from "./Routes"
 import RouteBasedContent from "../../../components/Onboarding/RouteBasedContent"
 import { useIsOnboarding } from "../../../hooks"
@@ -198,9 +197,6 @@ export default function Root(): ReactElement {
         </Route>
         <Route path={OnboardingRoutes.VIEW_ONLY_WALLET}>
           <ViewOnlyWallet />
-        </Route>
-        <Route path={OnboardingRoutes.SPARK}>
-          <AddSparkAccount />
         </Route>
         <Route path={OnboardingRoutes.ONBOARDING_COMPLETE}>
           <Done />

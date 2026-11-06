@@ -91,13 +91,6 @@ export default function AddWalletOptions(): JSX.Element {
         isAvailable: isLedgerSupported,
       },
       {
-        id: "spark",
-        label: t("options.spark"),
-        icon: "add_wallet/import.svg",
-        url: OnboardingRoutes.SPARK,
-        isAvailable: true,
-      },
-      {
         id: "viewOnly",
         label: t("options.readOnly"),
         icon: "add_wallet/preview.svg",
