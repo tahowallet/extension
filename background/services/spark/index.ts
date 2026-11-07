@@ -309,6 +309,10 @@ export default class SparkService extends BaseService<Events> {
 
   async refreshAccount(accountID: string): Promise<void> {
     const wallet = await this.#walletFor(accountID)
+    // Deposits from the Bitcoin main chain only count once claimed.
+    await this.#claimStaticDeposits(accountID, wallet).catch((error) =>
+      logger.warn(`Claiming Spark deposits for ${accountID} failed`, error),
+    )
     await Promise.all([
       this.#emitBalance(accountID, wallet),
       this.#emitActivity(accountID, wallet),
@@ -589,6 +593,48 @@ export default class SparkService extends BaseService<Events> {
     await Promise.all(
       [...this.#wallets.keys()].map((id) => this.#disconnect(id)),
     )
+  }
+
+  /**
+   * Claim on-chain deposits to the account's static (reusable) deposit
+   * address into its Spark balance. Spark's service provider quotes the
+   * credit for each deposit once it has three confirmations; its fee is the
+   * difference from the deposited amount. Deposits without a quote yet are
+   * left for the next refresh.
+   */
+  async #claimStaticDeposits(
+    accountID: string,
+    wallet: SparkWallet,
+  ): Promise<void> {
+    const depositAddress = await wallet.getStaticDepositAddress()
+    const unclaimed = await wallet.getUtxosForDepositAddress(
+      depositAddress,
+      100,
+      0,
+      true,
+    )
+    for (const { txid, vout } of unclaimed) {
+      let quote
+      try {
+        quote = await wallet.getClaimStaticDepositQuote(txid, vout)
+      } catch {
+        // Not claimable yet, typically too few confirmations.
+        continue
+      }
+      if (quote.creditAmountSats > 0) {
+        await this.#sdkCall("Claiming a bitcoin deposit", () =>
+          wallet.claimStaticDeposit({
+            transactionId: txid,
+            outputIndex: vout,
+            creditAmountSats: quote.creditAmountSats,
+            sspSignature: quote.signature,
+          }),
+        )
+        logger.info(
+          `Claimed ${quote.creditAmountSats} sats deposited in ${txid} for ${accountID}`,
+        )
+      }
+    }
   }
 
   async #emitBalance(accountID: string, wallet: SparkWallet): Promise<void> {
