@@ -8,6 +8,7 @@ import { Middleware, configureStore, isPlain } from "@reduxjs/toolkit"
 import { debounce } from "lodash"
 
 import { devToolsEnhancer } from "@redux-devtools/remote"
+import { SECOND } from "../../constants"
 import { decodeJSON, encodeJSON } from "../../lib/utils"
 import {
   REDUX_STATE_VERSION,
@@ -82,10 +83,27 @@ async function persistStoreBsae<T>(state: T) {
   }
 }
 
-// Debounced storage persistence to avoid excessive JSON serialization.
-const persistStore = debounce(persistStoreBsae, 50, {
+/**
+ * The longest the store waits before persisting a change, and so the most
+ * often it persists while changes keep coming. Each persist encodes the whole
+ * store, which on a wallet with 11 accounts across 12 networks is 4 MB and
+ * took about 18ms to encode in testing. Persisting every 50ms, a burst of
+ * balance refreshes, 132 of them 10ms apart, persisted 27 times, spending 38%
+ * of the burst's time encoding and writing 108 MB to storage. Persisting at
+ * most once a second, it persists twice.
+ *
+ * Note that a change is lost only if the background stops within this long
+ * of it, as when the browser quits or the extension updates right after a
+ * setting changes. An idle service worker isn't stopped until it has had no
+ * events for 30 seconds, so idling never loses one. Most of what's persisted
+ * is a cache the services refill at startup anyway, such as balances.
+ */
+const PERSIST_INTERVAL_MS = SECOND
+
+/** Persists the store at most once every {@link PERSIST_INTERVAL_MS}. */
+const persistStore = debounce(persistStoreBsae, PERSIST_INTERVAL_MS, {
   trailing: true,
-  maxWait: 50,
+  maxWait: PERSIST_INTERVAL_MS,
 })
 
 const reduxCache: Middleware = (store) => (next) => (action) => {
