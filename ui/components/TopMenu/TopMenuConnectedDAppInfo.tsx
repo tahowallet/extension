@@ -253,8 +253,6 @@ export default function TopMenuConnectedDAppInfo(props: {
     >
       <SharedSlideUpMenu
         isOpen={isNetworkSelectorOpen}
-        isScrollable
-        style={{ display: "flex", flexDirection: "column" }}
         close={() => {
           setIsNetworkSelectorOpen(false)
         }}
