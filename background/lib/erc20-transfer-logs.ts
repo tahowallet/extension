@@ -9,10 +9,15 @@ import type SerialFallbackProvider from "../services/chain/serial-fallback-provi
 import {
   advertisedBlockRangeLimit,
   earliestAvailableBlock,
+  isLogRangeRefusal,
+  isMethodNotFoundError,
   isPrunedHistoryError,
   LogHistoryUnavailableError,
+  LogScanPausedError,
+  MINIMUM_LOG_BLOCK_RANGE,
   suggestedBlockRange,
 } from "../services/chain/rpc/log-query-errors"
+import { AdaptiveSize } from "./adaptive-size"
 import { ERC20_INTERFACE, parseLogsForERC20Transfers } from "./erc20"
 import { parseERC721TransferLog } from "./erc721"
 import logger from "./logger"
@@ -25,22 +30,15 @@ import { normalizeEVMAddress } from "./utils"
  */
 export const ERC20_TRANSFER_TOPIC = ERC20_INTERFACE.getEventTopic("Transfer")
 
-/**
- * The smallest block range this module halves down to when an endpoint
- * refuses a range without saying how wide a range it allows. Below twice
- * this many blocks the error propagates, as it's unlikely to be about the
- * range.
- *
- * Callers scan in 5000-block passes (see `BLOCKS_PER_TRANSFER_LOG_SCAN`), and
- * halving 5000 walks 2500, 1250, 625, 313, 157, which clears the 500- and
- * 1000-block caps common among public endpoints.
- */
-export const MINIMUM_LOG_BLOCK_RANGE = 100
+export { MINIMUM_LOG_BLOCK_RANGE }
 
 /** What a provider's endpoints have said about log queries this session. */
 type LogQueryLimits = {
-  /** The widest range they advertised. */
-  maxBlockRange?: number
+  /**
+   * The widest block range the endpoints accept, whether advertised or
+   * learned from failures.
+   */
+  range: AdaptiveSize
   /** The earliest block they still keep logs for. */
   earliestBlock?: number
 }
@@ -50,7 +48,13 @@ const limitsByProvider = new WeakMap<object, LogQueryLimits>()
 function limitsFor(provider: SerialFallbackProvider): LogQueryLimits {
   let limits = limitsByProvider.get(provider)
   if (limits === undefined) {
-    limits = {}
+    limits = {
+      range: new AdaptiveSize(
+        `chain ${provider.chainID}: eth_getLogs`,
+        "blocks",
+        MINIMUM_LOG_BLOCK_RANGE,
+      ),
+    }
     limitsByProvider.set(provider, limits)
   }
   return limits
@@ -63,7 +67,7 @@ function limitsFor(provider: SerialFallbackProvider): LogQueryLimits {
 export function learntMaxBlockRange(
   provider: SerialFallbackProvider,
 ): number | undefined {
-  return limitsByProvider.get(provider)?.maxBlockRange
+  return limitsByProvider.get(provider)?.range.max
 }
 
 /**
@@ -80,12 +84,18 @@ export function learntEarliestLogBlock(
  * Fetch logs matching the passed topics between `fromBlock` and `toBlock`
  * (both inclusive), adapting to providers that reject wide ranges.
  *
- * A range wider than the provider's endpoints have advertised is fetched in
- * chunks of that size. When an endpoint refuses a range and says how wide a
- * range it allows, or suggests one, the range is fetched in chunks of that
- * size, and an advertised limit is kept for later scans. Otherwise the range
- * is halved, down to {@link MINIMUM_LOG_BLOCK_RANGE}. Chunks are fetched one
- * at a time so a provider already refusing requests isn't sent more.
+ * The range is sized by the provider's {@link AdaptiveSize}. A range wider
+ * than its endpoints have advertised, or wider than one that previously timed
+ * out, is fetched in chunks that fit. A refused range is retried at the width
+ * the refusal names, or otherwise in halves down to
+ * {@link MINIMUM_LOG_BLOCK_RANGE}. Rate limits, range complaints that mean no
+ * range would be served (see {@link isLogRangeRefusal}) and endpoints that
+ * don't serve `eth_getLogs` at all are thrown rather than split.
+ * Chunks are fetched one at a time so a provider that is already refusing
+ * requests isn't sent more of them.
+ *
+ * Before each request, if the chain can't take log queries right now, the
+ * scan stops with a {@link LogScanPausedError}.
  *
  * Pruned history works the same way: the earliest block an endpoint keeps is
  * remembered, the range starts there, and a range entirely before it throws
@@ -98,6 +108,13 @@ async function getLogsWithAdaptiveRange(
   fromBlock: number,
   toBlock: number,
 ): Promise<Log[]> {
+  if (
+    provider.reachability === "unreachable" ||
+    !provider.canServeNow("eth_getLogs")
+  ) {
+    throw new LogScanPausedError(provider.chainID)
+  }
+
   const limits = limitsFor(provider)
   const { earliestBlock } = limits
   if (earliestBlock !== undefined && fromBlock < earliestBlock) {
@@ -138,8 +155,8 @@ async function getLogsWithAdaptiveRange(
     return logs
   }
 
-  if (limits.maxBlockRange !== undefined && blockCount > limits.maxBlockRange) {
-    return inChunksOf(limits.maxBlockRange)
+  if (limits.range.max !== undefined && !limits.range.fits(blockCount)) {
+    return inChunksOf(limits.range.max)
   }
 
   try {
@@ -158,35 +175,21 @@ async function getLogsWithAdaptiveRange(
       return getLogsWithAdaptiveRange(provider, topics, fromBlock, toBlock)
     }
 
-    const advertised = advertisedBlockRangeLimit(error)
-    if (advertised !== undefined && advertised < blockCount) {
-      if (
-        limits.maxBlockRange === undefined ||
-        advertised < limits.maxBlockRange
-      ) {
-        limits.maxBlockRange = advertised
-        logger.debug(
-          `chain ${provider.chainID}: eth_getLogs allows at most ${advertised} blocks; using that from now on.`,
-        )
-      }
-      return inChunksOf(advertised)
-    }
-
-    const suggested = suggestedBlockRange(error)
-    if (suggested !== undefined && suggested < blockCount) {
-      return inChunksOf(suggested)
-    }
-
-    // Only split while both halves would stay at or above the minimum chunk
-    // size; below that, treat the error as a real failure.
-    if (blockCount < MINIMUM_LOG_BLOCK_RANGE * 2) {
+    // The provider has already asked its other endpoints, and a narrower
+    // range would be refused the same way, as would any range by an endpoint
+    // without `eth_getLogs`. Note that the limit a refusal names isn't learned
+    // either, since learned limits narrow every endpoint.
+    if (isLogRangeRefusal(error, blockCount) || isMethodNotFoundError(error)) {
       throw error
     }
-
-    logger.debug(
-      `chain ${provider.chainID}: eth_getLogs failed for blocks ${fromBlock} to ${toBlock}; halving the range.`,
-    )
-    return inChunksOf(Math.ceil(blockCount / 2))
+    const retrySize = limits.range.retrySizeAfter(error, blockCount, {
+      advertised: advertisedBlockRangeLimit(error),
+      suggested: suggestedBlockRange(error),
+    })
+    if (retrySize === undefined) {
+      throw error
+    }
+    return inChunksOf(retrySize)
   }
 }
 

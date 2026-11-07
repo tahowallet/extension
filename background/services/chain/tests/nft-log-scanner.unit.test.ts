@@ -58,6 +58,7 @@ function harness({
         supportsAlchemyMethods: alchemyNetworks.includes(network),
         reachability: "reachable",
         canServeNow: sinon.stub().returns(true),
+        refusesEverywhere: sinon.stub().returns(false),
       },
     ]),
   )
@@ -466,6 +467,37 @@ describe("NFTLogScanner", () => {
 
       await scanner.tick()
       expect(ranges()[2]).toEqual(ranges()[1])
+    })
+
+    it("stops scanning a chain whose endpoints all refuse eth_getLogs, saying so once", async () => {
+      const warn = sandbox.stub(logger, "warn")
+      const info = sandbox.stub(logger, "info")
+      const { scanner, providers, lookups } = harness({ alchemyNetworks: [] })
+      const provider = providers.get(ETHEREUM.chainID)!
+      lookups.viaLogs.callsFake(async () => {
+        provider.refusesEverywhere.withArgs("eth_getLogs").returns(true)
+        // The error Rootstock's public node returns for any log query.
+        throw Object.assign(new Error("processing response error"), {
+          body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+        })
+      })
+
+      await scanner.tick()
+      await scanner.tick()
+
+      expect(lookups.viaLogs.callCount).toBe(1)
+      expect(warn.called).toBe(false)
+      expect(info.args).toEqual([
+        [
+          "chain 1: every endpoint refuses eth_getLogs, so NFT transfers aren't scanned until its endpoints change or a day passes.",
+        ],
+      ])
+
+      // An endpoint that hasn't refused, such as a custom RPC, lifts it.
+      provider.refusesEverywhere.withArgs("eth_getLogs").returns(false)
+      lookups.viaLogs.resolves([])
+      await scanner.tick()
+      expect(lookups.viaLogs.callCount).toBeGreaterThan(1)
     })
   })
 

@@ -398,6 +398,27 @@ export default class SerialFallbackProvider extends JsonRpcProvider {
     )
   }
 
+  /**
+   * Checks whether every endpoint a method routes to has refused to serve it
+   * at all within the last day, as Rootstock's public nodes refuse
+   * `eth_getLogs`.
+   * Background work checks this to stop asking for the method on this chain.
+   *
+   * Note that refusals are remembered per endpoint, so new endpoints, such as
+   * a custom RPC added for the chain, lift this until they refuse too. So
+   * does a day passing, after which the endpoints are asked again.
+   */
+  refusesEverywhere(method: string): boolean {
+    const endpoints = this.routeFor(method).flatMap(({ pool }) => [
+      ...pool.endpoints,
+    ])
+    return (
+      !this.isDestroyed &&
+      endpoints.length > 0 &&
+      endpoints.every((endpoint) => this.#executor.refuses(endpoint, method))
+    )
+  }
+
   /** @deprecated Use {@link supportsAlchemyMethods}. */
   get supportsAlchemy(): boolean {
     return this.supportsAlchemyMethods

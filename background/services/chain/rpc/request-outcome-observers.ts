@@ -114,7 +114,9 @@ function describeStep(step: NextStep): string {
     case "retrySameEndpoint":
       return `retrying in ${Math.round(step.delayMs)} ms`
     case "tryNextEndpoint":
-      return "trying the next endpoint"
+      return step.refusesMethod === true
+        ? "trying the next endpoint, since this one refuses the method outright"
+        : "trying the next endpoint"
     default:
       return "not retrying, since the error is about the request"
   }

@@ -257,3 +257,103 @@ describe("log queries an endpoint refuses outright", () => {
     ).not.toBe("tryNextEndpoint")
   })
 })
+
+describe("log range complaints that mean an endpoint won't serve the query", () => {
+  // The error dRPC's free plan returns for a 157-block log query on BSC.
+  const drpcFreePlan = Object.assign(new Error("processing response error"), {
+    body: '{"jsonrpc":"2.0","id":42,"error":{"code":35,"message":"ranges over 10000 blocks are not supported on free plan"}}',
+    error: {
+      code: 35,
+      message: "ranges over 10000 blocks are not supported on free plan",
+    },
+  })
+  const range = (fromBlock: string, toBlock: string) => [
+    { fromBlock, toBlock, topics: [null] },
+  ]
+
+  it("moves on from dRPC's free plan refusing 157 blocks, and says it refuses the method", () => {
+    expect(
+      standardFailurePolicy.nextStepAfter(
+        drpcFreePlan,
+        "eth_getLogs",
+        1,
+        range("0x7dbe09a", "0x7dbe136"),
+      ),
+    ).toEqual({ kind: "tryNextEndpoint", refusesMethod: true })
+    expect(indicatesEndpointFault(drpcFreePlan, "eth_getLogs")).toBe(false)
+  })
+
+  it("gives the range back to the caller when it was over the limit", () => {
+    expect(
+      kindOf(
+        standardFailurePolicy.nextStepAfter(
+          drpcFreePlan,
+          "eth_getLogs",
+          1,
+          range("0x0", "0x4e20"),
+        ),
+      ),
+    ).toBe("giveUp")
+  })
+
+  it("leaves a range complaint alone when the request's range isn't known", () => {
+    expect(
+      kindOf(
+        standardFailurePolicy.nextStepAfter(drpcFreePlan, "eth_getLogs", 1),
+      ),
+    ).toBe("giveUp")
+  })
+
+  it("leaves other methods alone", () => {
+    expect(
+      kindOf(
+        standardFailurePolicy.nextStepAfter(
+          drpcFreePlan,
+          "eth_call",
+          1,
+          range("0x7dbe09a", "0x7dbe136"),
+        ),
+      ),
+    ).toBe("giveUp")
+  })
+})
+
+describe("endpoints without eth_getLogs", () => {
+  // The error Rootstock's public node returns for any log query, shaped like
+  // the SERVER_ERROR Ethers raises for a JSON-RPC error.
+  const rootstockError = Object.assign(new Error("processing response error"), {
+    code: "SERVER_ERROR",
+    body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+    error: Object.assign(
+      new Error("the method eth_getLogs does not exist/is not available"),
+      { code: -32601 },
+    ),
+  })
+
+  it("moves on from Rootstock's -32601, and says it refuses the method", () => {
+    expect(
+      standardFailurePolicy.nextStepAfter(rootstockError, "eth_getLogs", 1, [
+        { fromBlock: "0x8f2b1d", toBlock: "0x8f3ea5", topics: [null] },
+      ]),
+    ).toEqual({ kind: "tryNextEndpoint", refusesMethod: true })
+    expect(indicatesEndpointFault(rootstockError, "eth_getLogs")).toBe(false)
+  })
+
+  it("moves on whatever the request's range", () => {
+    expect(
+      standardFailurePolicy.nextStepAfter(rootstockError, "eth_getLogs", 1),
+    ).toEqual({ kind: "tryNextEndpoint", refusesMethod: true })
+  })
+
+  it("leaves other methods alone", () => {
+    expect(
+      kindOf(
+        standardFailurePolicy.nextStepAfter(
+          rootstockError,
+          "eth_simulateV1",
+          1,
+        ),
+      ),
+    ).toBe("giveUp")
+  })
+})

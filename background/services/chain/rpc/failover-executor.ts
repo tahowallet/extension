@@ -1,3 +1,4 @@
+import { DAY } from "../../../constants"
 import logger from "../../../lib/logger"
 import { NoEndpointAvailableError } from "./endpoint"
 import type Endpoint from "./endpoint"
@@ -74,6 +75,14 @@ const abortable = (ms: number, signal: AbortSignal) =>
   })
 
 /**
+ * How long an endpoint's refusal of a method is remembered. A day keeps a
+ * chain whose endpoints don't serve logs at all, such as Rootstock's public
+ * node, from being asked on every scan, while still noticing within a day
+ * when a provider starts serving them, as a plan upgrade or new node would.
+ */
+export const REFUSAL_RETRY_MS = DAY
+
+/**
  * A pool's only endpoint, if it's cooling down. Failing every request
  * outright until it recovers would leave the pool's methods with nowhere to
  * go, so it's tried anyway.
@@ -96,12 +105,23 @@ export default class FailoverExecutor {
   // The endpoint each request last tried, for the context on its error.
   readonly #lastTried = new WeakMap<RpcRequest, Endpoint>()
 
+  /**
+   * The methods each endpoint has refused to serve at all, such as log queries
+   * on dRPC's free plan, which refuses them however narrow the range, or on
+   * Rootstock's public node, which answers that `eth_getLogs` doesn't exist.
+   * They aren't sent to that endpoint again while another endpoint in the
+   * pool can take them, until {@link REFUSAL_RETRY_MS} has passed since the
+   * refusal. Each method maps to when it was refused.
+   */
+  readonly #refusedMethods = new WeakMap<Endpoint, Map<string, number>>()
+
   constructor(
     private readonly observers: readonly RequestOutcomeObserver[] = [],
     private readonly wait: (
       ms: number,
       signal: AbortSignal,
     ) => Promise<void> = abortable,
+    private readonly now: () => number = Date.now,
   ) {}
 
   /**
@@ -157,7 +177,9 @@ export default class FailoverExecutor {
   ): Promise<{ result: unknown; endpoint: Endpoint }> {
     const lastResort = onlyEndpointOf(pool)
     const endpoints =
-      lastResort === undefined ? pool.endpointsInTryOrder() : [lastResort]
+      lastResort === undefined
+        ? this.#withoutRefusals(pool.endpointsInTryOrder(), request.method)
+        : [lastResort]
     let lastError: unknown = new NoEndpointAvailableError()
     if (lastResort !== undefined) {
       logger.debug(
@@ -198,7 +220,15 @@ export default class FailoverExecutor {
           if (indicatesEndpointFault(error, request.method)) {
             pool.recordFailure(endpoint)
           }
-          const step = policy.nextStepAfter(error, request.method, attempt)
+          const step = policy.nextStepAfter(
+            error,
+            request.method,
+            attempt,
+            request.params,
+          )
+          if (step.kind === "tryNextEndpoint" && step.refusesMethod === true) {
+            this.#rememberRefusal(endpoint, request.method)
+          }
           this.#notify((observer) =>
             observer.onEndpointFailure?.(request, endpoint, error, step),
           )
@@ -225,6 +255,40 @@ export default class FailoverExecutor {
       )
     }
     throw lastError
+  }
+
+  /**
+   * Returns `endpoints` without those that refused `method`. If every one of
+   * them did, returns them all, so they're asked again and the caller still
+   * hears why the method fails.
+   */
+  #withoutRefusals(endpoints: Endpoint[], method: string): Endpoint[] {
+    const serving = endpoints.filter(
+      (endpoint) => !this.refuses(endpoint, method),
+    )
+    return serving.length === 0 ? endpoints : serving
+  }
+
+  /**
+   * Checks whether `endpoint` has refused to serve `method` at all within
+   * the last {@link REFUSAL_RETRY_MS}. Note that once that has passed, the
+   * endpoint is asked again, and a fresh refusal starts the wait over.
+   */
+  refuses(endpoint: Endpoint, method: string): boolean {
+    const refusedAt = this.#refusedMethods.get(endpoint)?.get(method)
+    return refusedAt !== undefined && this.now() - refusedAt < REFUSAL_RETRY_MS
+  }
+
+  #rememberRefusal(endpoint: Endpoint, method: string): void {
+    const refused =
+      this.#refusedMethods.get(endpoint) ?? new Map<string, number>()
+    this.#refusedMethods.set(endpoint, refused)
+    if (!this.refuses(endpoint, method)) {
+      logger.debug(
+        `${endpoint.label}: refuses ${method} outright; not asking it again for a day while another endpoint can answer.`,
+      )
+    }
+    refused.set(method, this.now())
   }
 
   #notify(call: (observer: RequestOutcomeObserver) => void): void {

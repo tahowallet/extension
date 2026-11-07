@@ -4,7 +4,10 @@ import { BigNumber, utils } from "ethers"
 import { AddressOnNetwork } from "../../accounts"
 import { ETHEREUM } from "../../constants"
 import type SerialFallbackProvider from "../../services/chain/serial-fallback-provider"
-import { LogHistoryUnavailableError } from "../../services/chain/rpc/log-query-errors"
+import {
+  LogHistoryUnavailableError,
+  LogScanPausedError,
+} from "../../services/chain/rpc/log-query-errors"
 import {
   ERC20_TRANSFER_TOPIC,
   getAssetTransfersViaLogs,
@@ -62,7 +65,11 @@ const stubProvider = () => {
 
   return {
     getLogs,
-    provider: { getLogs } as unknown as SerialFallbackProvider,
+    provider: {
+      getLogs,
+      reachability: "reachable",
+      canServeNow: () => true,
+    } as unknown as SerialFallbackProvider,
   }
 }
 
@@ -241,7 +248,8 @@ describe("getAssetTransfersViaLogs", () => {
 
   it("stops halving once a half would fall below the minimum range", async () => {
     const { getLogs, provider } = stubProvider()
-    getLogs.mockRejectedValue(new Error("block range too wide"))
+    // An error that doesn't say what went wrong may still be about the range.
+    getLogs.mockRejectedValue(new Error("bad response"))
 
     // A range exactly twice the minimum splits once, then each half is too
     // small to split again.
@@ -253,7 +261,7 @@ describe("getAssetTransfersViaLogs", () => {
         MINIMUM_LOG_BLOCK_RANGE * 2 - 1,
         true,
       ),
-    ).rejects.toThrow("block range too wide")
+    ).rejects.toThrow("bad response")
 
     // The full range, then the first half; the second half is never reached
     // because the first one's failure propagates.
@@ -265,6 +273,119 @@ describe("getAssetTransfersViaLogs", () => {
         toBlock: MINIMUM_LOG_BLOCK_RANGE - 1,
       }),
     )
+  })
+
+  describe("with endpoints that refuse log queries at any range", () => {
+    // The error dRPC's free plan returns for a log query, which the provider
+    // passes on once every endpoint has refused it.
+    const DRPC_FREE_PLAN_ERROR = Object.assign(
+      new Error("processing response error"),
+      {
+        body: '{"jsonrpc":"2.0","id":42,"error":{"code":35,"message":"ranges over 10000 blocks are not supported on free plan"}}',
+        error: {
+          code: 35,
+          message: "ranges over 10000 blocks are not supported on free plan",
+        },
+      },
+    )
+
+    const failureOf = (promise: Promise<unknown>) =>
+      promise.then(
+        () => undefined,
+        (error: unknown) => error,
+      )
+
+    it("doesn't narrow a range already within the advertised limit", async () => {
+      const { getLogs, provider } = stubProvider()
+      getLogs.mockRejectedValue(DRPC_FREE_PLAN_ERROR)
+
+      expect(
+        await failureOf(
+          getAssetTransfersViaLogs(
+            provider,
+            ADDRESS_ON_NETWORK,
+            0,
+            4_999,
+            true,
+          ),
+        ),
+      ).toBe(DRPC_FREE_PLAN_ERROR)
+      expect(getLogs).toHaveBeenCalledTimes(1)
+      expect(learntMaxBlockRange(provider)).toBeUndefined()
+    })
+
+    it("doesn't narrow to an advertised limit below the minimum", async () => {
+      const { getLogs, provider } = stubProvider()
+      const error = new Error(
+        "You can make eth_getLogs requests with up to a 10 block range",
+      )
+      getLogs.mockRejectedValue(error)
+
+      expect(
+        await failureOf(
+          getAssetTransfersViaLogs(
+            provider,
+            ADDRESS_ON_NETWORK,
+            0,
+            4_999,
+            true,
+          ),
+        ),
+      ).toBe(error)
+      expect(getLogs).toHaveBeenCalledTimes(1)
+      expect(learntMaxBlockRange(provider)).toBeUndefined()
+    })
+
+    it("doesn't halve a range complaint below the minimum", async () => {
+      const { getLogs, provider } = stubProvider()
+      const error = new Error("block range too wide")
+      getLogs.mockRejectedValue(error)
+
+      expect(
+        await failureOf(
+          getAssetTransfersViaLogs(
+            provider,
+            ADDRESS_ON_NETWORK,
+            0,
+            MINIMUM_LOG_BLOCK_RANGE * 2 - 2,
+            true,
+          ),
+        ),
+      ).toBe(error)
+      expect(getLogs).toHaveBeenCalledTimes(1)
+    })
+
+    it("doesn't narrow a range for endpoints without eth_getLogs", async () => {
+      const { getLogs, provider } = stubProvider()
+      // The error Rootstock's public node returns for any log query, shaped
+      // like the SERVER_ERROR Ethers raises for a JSON-RPC error.
+      const rootstockError = Object.assign(
+        new Error("processing response error"),
+        {
+          code: "SERVER_ERROR",
+          body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+          error: Object.assign(
+            new Error("the method eth_getLogs does not exist/is not available"),
+            { code: -32601 },
+          ),
+        },
+      )
+      getLogs.mockRejectedValue(rootstockError)
+
+      expect(
+        await failureOf(
+          getAssetTransfersViaLogs(
+            provider,
+            ADDRESS_ON_NETWORK,
+            9_382_941,
+            9_387_941,
+            true,
+          ),
+        ),
+      ).toBe(rootstockError)
+      expect(getLogs).toHaveBeenCalledTimes(1)
+      expect(learntMaxBlockRange(provider)).toBeUndefined()
+    })
   })
 
   describe("with an endpoint that advertises its widest range", () => {
@@ -644,5 +765,64 @@ describe("getERC721TransfersViaLogs", () => {
       SELF_TRANSFER.transactionHash,
       BURN.transactionHash,
     ])
+  })
+})
+
+describe("getAssetTransfersViaLogs under strain", () => {
+  const timeout = () =>
+    Promise.reject(Object.assign(new Error("timeout"), { code: "TIMEOUT" }))
+
+  it("starts later scans at the width a timeout forced", async () => {
+    const { getLogs, provider } = stubProvider()
+    const ranges: number[] = []
+    getLogs.mockImplementation(
+      ({ fromBlock, toBlock }: { fromBlock: number; toBlock: number }) => {
+        const count = toBlock - fromBlock + 1
+        ranges.push(count)
+        return count > 5_000 ? timeout() : Promise.resolve([])
+      },
+    )
+
+    await getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true)
+    ranges.length = 0
+    await getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true)
+
+    // The second scan goes straight to the halved width.
+    expect(ranges).toEqual([5_000, 5_000])
+  })
+
+  it("doesn't split a rate-limited query into more queries", async () => {
+    const { getLogs, provider } = stubProvider()
+    getLogs.mockRejectedValue(
+      Object.assign(new Error("Too Many Requests"), { status: 429 }),
+    )
+
+    await expect(
+      getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 9_999, true),
+    ).rejects.toThrow("Too Many Requests")
+    expect(getLogs).toHaveBeenCalledTimes(1)
+  })
+
+  it("stops a scan once the chain can't take log queries", async () => {
+    const { getLogs } = stubProvider()
+    let reachable = true
+    const provider = {
+      chainID: "1",
+      getLogs,
+      get reachability() {
+        return reachable ? "reachable" : "unreachable"
+      },
+      canServeNow: () => reachable,
+    } as unknown as SerialFallbackProvider
+    getLogs.mockImplementation(() => {
+      // The first failure takes the chain down with it.
+      reachable = false
+      return timeout()
+    })
+
+    await expect(
+      getAssetTransfersViaLogs(provider, ADDRESS_ON_NETWORK, 0, 99_999, true),
+    ).rejects.toBeInstanceOf(LogScanPausedError)
+    expect(getLogs).toHaveBeenCalledTimes(1)
   })
 })

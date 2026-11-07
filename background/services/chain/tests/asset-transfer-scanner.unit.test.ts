@@ -23,9 +23,11 @@ function harness({
   transfers = [],
   nftTransfers = [],
   savedHashes = [],
+  refusedMethods = [],
 }: {
   supportsAlchemy: boolean
   servableMethods?: string[]
+  refusedMethods?: string[]
   blockHeight?: number
   oldestLookup?: bigint | null
   transfers?: Partial<AssetTransfer>[]
@@ -50,6 +52,7 @@ function harness({
     createAddressOnNetwork({ network: ETHEREUM }),
   ]
   const accountsToTrack = sinon.stub().resolves(accounts)
+  const refused = new Set(refusedMethods)
   const scanner = new AssetTransferScanner({
     db: db as unknown as ChainDatabase,
     assetData: assetData as unknown as AssetDataHelper,
@@ -58,6 +61,7 @@ function harness({
     isSupported: () => true,
     supportsAlchemyMethods: () => supportsAlchemy,
     canServeNow: (_, method) => servableMethods.includes(method),
+    refusesEverywhere: (_, method) => refused.has(method),
     enqueueTransactionLookup: (_, hash, __, priority) =>
       enqueued.push([hash, priority]),
     emitAssetTransfers: (_, assetTransfers) => emitted.push(assetTransfers),
@@ -77,6 +81,7 @@ function harness({
     accounts,
     accountsToTrack,
     range,
+    refused,
   }
 }
 
@@ -289,6 +294,77 @@ describe("AssetTransferScanner", () => {
     })
   })
 
+  describe("when every endpoint refuses eth_getLogs", () => {
+    // The error Rootstock's public node returns for any log query, shaped
+    // like the SERVER_ERROR Ethers raises for a JSON-RPC error.
+    const rootstockError = () =>
+      Object.assign(new Error("processing response error"), {
+        code: "SERVER_ERROR",
+        body: '{"jsonrpc":"2.0","id":42,"error":{"code":-32601,"message":"the method eth_getLogs does not exist/is not available"}}',
+        error: Object.assign(
+          new Error("the method eth_getLogs does not exist/is not available"),
+          { code: -32601 },
+        ),
+      })
+
+    // A chain whose endpoints are each asked once, then all refuse.
+    const refusingHarness = () => {
+      const scan = harness({ supportsAlchemy: false, oldestLookup: 800_000n })
+      scan.assetData.getAssetTransfers.callsFake(async () => {
+        scan.refused.add("eth_getLogs")
+        throw rootstockError()
+      })
+      return scan
+    }
+
+    it("stops scanning the chain, saying so once at info level", async () => {
+      const warn = sinon.stub(logger, "warn")
+      const info = sinon.stub(logger, "info")
+      const { scanner, assetData } = refusingHarness()
+
+      await scanner.scanHistoricTransfers()
+      await scanner.scanHistoricTransfers()
+      await scanner.scanRecentTransfers()
+
+      // Both accounts were scanning when the endpoints refused.
+      expect(assetData.getAssetTransfers.callCount).toBe(2)
+      expect(warn.called).toBe(false)
+      expect(info.args).toEqual([
+        [
+          "chain 1: every endpoint refuses eth_getLogs, so asset transfers aren't scanned until its endpoints change or a day passes.",
+        ],
+      ])
+    })
+
+    it("scans again once an endpoint that hasn't refused is added", async () => {
+      sinon.stub(logger, "info")
+      const { scanner, assetData, refused } = refusingHarness()
+      await scanner.scanHistoricTransfers()
+      assetData.getAssetTransfers.resolves({
+        assetTransfers: [],
+        nftTransfers: [],
+      })
+
+      refused.clear()
+      await scanner.scanHistoricTransfers()
+
+      expect(assetData.getAssetTransfers.callCount).toBe(4)
+    })
+
+    it("still scans with Alchemy's transfer lookups", async () => {
+      const { scanner, assetData } = harness({
+        supportsAlchemy: true,
+        refusedMethods: ["eth_getLogs"],
+      })
+
+      await scanner.scanHistoricTransfersFor(
+        createAddressOnNetwork({ network: ETHEREUM }),
+      )
+
+      expect(assetData.getAssetTransfers.calledOnce).toBe(true)
+    })
+  })
+
   it("records and emits what it found, and queues lookups for new transactions", async () => {
     const transfers = Array.from({ length: 28 }, (_, index) => ({
       txHash: `0x${index}`,
@@ -315,6 +391,26 @@ describe("AssetTransferScanner", () => {
     expect(enqueued.find(([hash]) => hash === "0x25")).toEqual(["0x25", 0])
     expect(enqueued.find(([hash]) => hash === "0x26")).toEqual(["0x26", 1])
     expect(enqueued.at(-1)).toEqual(["0x27", 1])
+  })
+
+  it("records only the blocks a lookup covered", async () => {
+    const { scanner, db, assetData } = harness({ supportsAlchemy: true })
+    assetData.getAssetTransfers.resolves({
+      assetTransfers: [],
+      nftTransfers: [],
+      coveredFromBlock: 15,
+    })
+
+    await scanner.scanBlocks(
+      createAddressOnNetwork({ network: ETHEREUM }),
+      0n,
+      20n,
+    )
+
+    // The rest is left for a later historic scan.
+    expect(db.recordAccountAssetTransferLookup.firstCall.args.slice(1)).toEqual(
+      [15n, 20n],
+    )
   })
 
   it("emits ERC-721 transfers apart, without queueing their transactions", async () => {

@@ -361,6 +361,8 @@ export default class ChainService extends BaseService<Events> {
         this.providerForNetwork(network)?.supportsAlchemyMethods ?? false,
       canServeNow: (network, method) =>
         this.providerForNetwork(network)?.canServeNow(method) ?? false,
+      refusesEverywhere: (network, method) =>
+        this.providerForNetwork(network)?.refusesEverywhere(method) ?? false,
       enqueueTransactionLookup: (network, hash, firstSeen, priority) =>
         this.enqueueTransactionLookup(network, hash, firstSeen, priority),
       emitAssetTransfers: (addressNetwork, assetTransfers) =>

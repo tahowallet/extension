@@ -210,6 +210,35 @@ describe("SubscriptionManager", () => {
     expect(third.transports[0]._subscribe.callCount).toBe(2)
   })
 
+  it("doesn't send an endpoint a kind of subscription it refused again", async () => {
+    const first = endpointOf(true)
+    const refusing = endpointOf(true)
+    const manager = new SubscriptionManager(first.endpoint)
+    await manager.subscribe("refused", ["a"], () => {})
+    await manager.subscribe("refused", ["b"], () => {})
+    await manager.subscribe("kept", [], () => {})
+    refusing.endpoint.transport
+    refusing.transports[0]._subscribe.withArgs("refused").rejects(
+      Object.assign(new Error("Invalid params"), {
+        code: -32602,
+        body: "unknown variant `alchemy_pendingTransactions`",
+      }),
+    )
+
+    await manager.moveTo(refusing.endpoint)
+    await manager.moveTo(first.endpoint)
+    await manager.moveTo(refusing.endpoint)
+
+    const refusedCalls = refusing.transports.flatMap(({ _subscribe }) =>
+      _subscribe.getCalls().filter(({ args }) => args[0] === "refused"),
+    )
+    // Asked once, on the first move; skipped for the second subscription
+    // and on the move back.
+    expect(refusedCalls).toHaveLength(1)
+    const latest = refusing.transports[refusing.transports.length - 1]
+    expect(latest._subscribe.calledWith("kept")).toBe(true)
+  })
+
   it("keeps moving after a move that throws", async () => {
     const first = endpointOf()
     const broken = endpointOf()

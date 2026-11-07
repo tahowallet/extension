@@ -131,6 +131,9 @@ export default class NFTLogScanner {
 
   private readonly firstTransferFailures = new Map<string, number>()
 
+  // Chains whose endpoints all refuse log queries, so they've been told so.
+  private readonly chainsRefusingLogs = new Set<string>()
+
   constructor(private readonly dependencies: NFTLogScannerDependencies) {}
 
   private get lookups(): NFTLogScanLookups {
@@ -188,6 +191,31 @@ export default class NFTLogScanner {
   }
 
   /**
+   * Checks whether every endpoint on the provider's chain refuses log
+   * queries, as Rootstock's public nodes answer that `eth_getLogs` doesn't
+   * exist. Asking again would only fail the same step on every tick, so ticks
+   * skip the chain and this is logged once.
+   *
+   * Note that this lifts once the chain has an endpoint that hasn't refused,
+   * such as a custom RPC added for it, or a day after its endpoints refused,
+   * when they're asked again.
+   */
+  private refusesLogScans(provider: SerialFallbackProvider): boolean {
+    const { chainID } = provider
+    if (!provider.refusesEverywhere("eth_getLogs")) {
+      this.chainsRefusingLogs.delete(chainID)
+      return false
+    }
+    if (!this.chainsRefusingLogs.has(chainID)) {
+      this.chainsRefusingLogs.add(chainID)
+      logger.info(
+        `chain ${chainID}: every endpoint refuses eth_getLogs, so NFT transfers aren't scanned until its endpoints change or a day passes.`,
+      )
+    }
+    return true
+  }
+
+  /**
    * Takes up to {@link NFT_LOG_SCAN_STEPS_PER_TICK} steps on one chain, one
    * account at a time in turn, then reports what they found and keeps the
    * cursors. At most one account's scan starts per tick.
@@ -198,7 +226,8 @@ export default class NFTLogScanner {
     const provider = providerFor(network)
     if (
       provider === undefined ||
-      !NFTLogScanner.isServing(provider, "eth_getLogs")
+      !NFTLogScanner.isServing(provider, "eth_getLogs") ||
+      this.refusesLogScans(provider)
     ) {
       return
     }
@@ -306,6 +335,9 @@ export default class NFTLogScanner {
           pending: withoutBlocksBefore(cursor.pending, error.earliestBlock),
         }
         return true
+      }
+      if (this.refusesLogScans(provider)) {
+        return false
       }
       logger.warn(
         `chain ${cursor.chainID}: couldn't scan blocks ${stepFrom} to ${range.toBlock} for NFT transfers; trying again later.`,
