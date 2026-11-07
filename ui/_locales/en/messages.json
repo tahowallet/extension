@@ -854,7 +854,17 @@
       "nonceAlreadyUsed": "This Safe transaction's nonce has already been used, so it can never execute."
     },
     "gasErrorCopied": "Error details copied to clipboard",
-    "copyError": "Copy error"
+    "copyError": "Copy error",
+    "spark": {
+      "paymentType": "Payment",
+      "sparkTransfer": "Spark transfer",
+      "lightning": "Lightning payment",
+      "noFee": "None (free on Spark)",
+      "maxFee": "Maximum fee",
+      "memo": "Invoice description",
+      "total": "Total",
+      "insufficientFunds": "Not enough spendable BTC for this payment and its fee"
+    }
   },
   "addNewChain": {
     "subtitle": "Wants to add a custom network to Taho",
@@ -1032,7 +1042,8 @@
       "title": "No {{network}} account yet",
       "body": "Add an account on this network to see its balance and activity.",
       "add": "Add account"
-    }
+    },
+    "sparkDestinationPlaceholder": "Spark address or Lightning invoice"
   },
   "dAppConnect": {
     "defaultConnectionPopover": {

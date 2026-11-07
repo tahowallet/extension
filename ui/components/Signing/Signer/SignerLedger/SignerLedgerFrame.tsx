@@ -1,3 +1,5 @@
+import { isEVMAddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { NO_SELECTED_ADDRESS } from "@tallyho/tally-background/services/preferences/defaults"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
 import React, { ReactElement, useCallback, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -51,7 +53,13 @@ export default function SignerLedgerFrame<
   }, [dispatch, rejectActionCreator])
 
   const [isSlideUpOpen, setIsSlideUpOpen] = useState(false)
-  const ledgerState = useSigningLedgerState(signingAddress.address, signer)
+  // Ledger accounts are EVM accounts; other families never reach this frame.
+  const ledgerState = useSigningLedgerState(
+    isEVMAddressOnNetwork(signingAddress)
+      ? signingAddress.address
+      : NO_SELECTED_ADDRESS,
+    signer,
+  )
   // The Ethereum app requires blind signing for calldata it can't decode,
   // which without resolutions is all of it, and for hashed EIP-712 messages,
   // but never for personal messages.

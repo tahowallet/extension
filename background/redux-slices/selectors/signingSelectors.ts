@@ -13,7 +13,8 @@ import {
   selectKeyringsByAddresses,
   selectPrivateKeyWalletsByAddress,
 } from "./internalSignerSelectors"
-import { selectCurrentAccount } from "./uiSelectors"
+import { selectCurrentAccount, selectCurrentAnyAccount } from "./uiSelectors"
+import { AnyAddressOnNetwork, isSparkAddressOnNetwork } from "../../accounts"
 
 // FIXME: This has a duplicate in `accountSelectors.ts`, but importing causes a dependency cycle
 const getAllAddresses = createSelector(
@@ -123,3 +124,38 @@ export const selectCurrentAccountSigner = createSelector(
   (signingAccounts, selectedAccount) =>
     signingAccounts[selectedAccount.address],
 )
+
+/**
+ * The signer for an account on any network family. Spark accounts are
+ * always derived from an internal-signer keyring's recovery phrase.
+ */
+export const selectSignerForAccount = createSelector(
+  selectAccountSignersByAddress,
+  (state: RootState) => state.spark.accounts,
+  (_: RootState, account: AnyAddressOnNetwork) => account,
+  (signingAccounts, sparkAccounts, account): AccountSigner | undefined => {
+    if (isSparkAddressOnNetwork(account)) {
+      const sparkAccount = Object.values(sparkAccounts).find(
+        ({ address, network }) =>
+          address === account.address &&
+          network.chainID === account.network.chainID,
+      )
+      return sparkAccount
+        ? { type: "keyring", keyringID: sparkAccount.keyringID }
+        : undefined
+    }
+    return signingAccounts[account.address]
+  },
+)
+
+/**
+ * The signer for the account being shown, on any network family.
+ */
+export const selectCurrentAnyAccountSigner = (
+  state: RootState,
+): AccountSigner | undefined => {
+  const account = selectCurrentAnyAccount(state)
+  return account === undefined
+    ? undefined
+    : selectSignerForAccount(state, account)
+}

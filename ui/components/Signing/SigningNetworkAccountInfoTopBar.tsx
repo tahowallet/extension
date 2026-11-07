@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react"
-import { AccountTotal } from "@tallyho/tally-background/redux-slices/selectors"
+import { AccountSummary } from "@tallyho/tally-background/redux-slices/selectors"
 import { useTranslation } from "react-i18next"
 import NetworkUnreachableWarning from "../Shared/NetworkUnreachableWarning"
 import SharedCurrentAccountInformation from "../Shared/SharedCurrentAccountInformation"
@@ -7,7 +7,7 @@ import SharedNetworkIcon from "../Shared/SharedNetworkIcon"
 import useShouldBlockSigning from "./Signer/useShouldBlockSigning"
 
 type Props = {
-  accountTotal: AccountTotal
+  accountTotal: AccountSummary
 }
 
 export default function SigningNetworkAccountInfoTopBar({

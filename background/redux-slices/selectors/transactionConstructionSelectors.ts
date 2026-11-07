@@ -2,7 +2,12 @@ import { createSelector } from "@reduxjs/toolkit"
 import { PricePoint } from "../../assets"
 import { getPricesState, selectCurrentNetwork } from "."
 import { NetworksState } from "../networks"
-import { LegacyEVMTransactionRequest } from "../../networks"
+import {
+  AnyTransactionRequest,
+  isSparkTransactionRequest,
+  LegacyEVMTransactionRequest,
+} from "../../networks"
+import type { EnrichedEVMTransactionRequest } from "../../services/enrichment"
 import { ROOTSTOCK } from "../../constants/networks"
 import {
   TransactionConstruction,
@@ -12,10 +17,32 @@ import { selectMainCurrencySymbol } from "./uiSelectors"
 import { selectUnreachableNetworks } from "./networks"
 import { selectAssetPricePoint } from "../prices"
 
-export const selectTransactionNetwork = createSelector(
+/**
+ * The transaction awaiting signature, on any network family; what the
+ * signing screen shows.
+ */
+export const selectPendingTransactionRequest = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.transactionRequest?.network,
-  (network) => network,
+    state.transactionConstruction.transactionRequest,
+  (transactionRequest): AnyTransactionRequest | undefined => transactionRequest,
+)
+
+/**
+ * The pending transaction if it is an EVM one. Gas, nonce and simulation
+ * machinery only applies to EVM transactions, so it reads this.
+ */
+const selectEVMTransactionRequest = createSelector(
+  selectPendingTransactionRequest,
+  (transactionRequest): EnrichedEVMTransactionRequest | undefined =>
+    transactionRequest === undefined ||
+    isSparkTransactionRequest(transactionRequest)
+      ? undefined
+      : transactionRequest,
+)
+
+export const selectTransactionNetwork = createSelector(
+  selectEVMTransactionRequest,
+  (transactionRequest) => transactionRequest?.network,
 )
 
 export const selectDefaultNetworkFeeSettings = createSelector(
@@ -24,11 +51,13 @@ export const selectDefaultNetworkFeeSettings = createSelector(
   (state: { networks: NetworksState }) => state.networks,
   selectCurrentNetwork,
   selectTransactionNetwork,
+  selectEVMTransactionRequest,
   (
     transactionConstruction,
     networks,
     selectedNetwork,
     transactionNetwork,
+    evmTransactionRequest,
   ): NetworkFeeSettings => {
     const currentNetwork = transactionNetwork || selectedNetwork
     const selectedFeesPerGas =
@@ -38,15 +67,13 @@ export const selectDefaultNetworkFeeSettings = createSelector(
     return {
       feeType: transactionConstruction.feeTypeSelected,
       gasLimit: undefined,
-      suggestedGasLimit: transactionConstruction.transactionRequest?.gasLimit,
+      suggestedGasLimit: evmTransactionRequest?.gasLimit,
       values: {
         maxFeePerGas: selectedFeesPerGas?.maxFeePerGas ?? 0n,
         maxPriorityFeePerGas: selectedFeesPerGas?.maxPriorityFeePerGas ?? 0n,
         gasPrice:
           currentNetwork.chainID === ROOTSTOCK.chainID
-            ? (
-                transactionConstruction.transactionRequest as LegacyEVMTransactionRequest
-              )?.gasPrice
+            ? (evmTransactionRequest as LegacyEVMTransactionRequest)?.gasPrice
             : (selectedFeesPerGas?.price ?? 0n),
         baseFeePerGas:
           networks.blockInfo[currentNetwork.chainID]?.baseFeePerGas ??
@@ -99,11 +126,8 @@ export const selectTransactionMainCurrencyPricePoint = createSelector(
     ),
 )
 
-export const selectTransactionData = createSelector(
-  (state: { transactionConstruction: TransactionConstruction }) =>
-    state.transactionConstruction.transactionRequest,
-  (transactionRequestData) => transactionRequestData,
-)
+/** The pending EVM transaction, for gas and fee settings UI. */
+export const selectTransactionData = selectEVMTransactionRequest
 
 export const selectIsTransactionPendingSignature = createSelector(
   (state: { transactionConstruction: TransactionConstruction }) =>
@@ -149,9 +173,14 @@ export const selectIsSigningNetworkUnreachable = createSelector(
 )
 
 export const selectHasInsufficientFunds = createSelector(
-  selectTransactionData,
-  (transactionDetails) =>
-    !!transactionDetails?.annotation?.warnings?.includes("insufficient-funds"),
+  selectPendingTransactionRequest,
+  (transactionRequest) =>
+    transactionRequest !== undefined &&
+    (isSparkTransactionRequest(transactionRequest)
+      ? !!transactionRequest.warnings?.includes("insufficient-funds")
+      : !!transactionRequest.annotation?.warnings?.includes(
+          "insufficient-funds",
+        )),
 )
 
 export const selectTransactionLikelyFails = createSelector(

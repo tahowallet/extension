@@ -61,6 +61,14 @@ export type NormalizedEVMAddress = Opaque<
  */
 export type SparkAddress = `spark1${string}` | `sparkrt1${string}`
 
+/**
+ * A BOLT-11 Lightning invoice for a Bitcoin network Taho's Spark accounts can
+ * pay (`lnbc…` on mainnet, `lnbcrt…` on regtest). Tagged by prefix like the
+ * address types; convert untrusted strings with `toLightningInvoice` from
+ * `lib/lightning-invoice`, which also checks the checksum and expiry.
+ */
+export type LightningInvoice = `lnbc${string}` | `lnbcrt${string}`
+
 /*
  * Named type for a number measuring time in seconds since the Unix Epoch,
  * January 1st, 1970 UTC.

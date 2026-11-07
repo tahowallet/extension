@@ -13,7 +13,7 @@ import {
   fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork } from "@tallyho/tally-background/networks"
 import { getAssetEntityID } from "@tallyho/tally-background/redux-slices/utils/asset-utils"
 import {
   NFTCached,
@@ -59,7 +59,7 @@ const symbolPriority = Object.fromEntries(
   ]),
 )
 interface SelectAssetMenuContentProps<AssetType extends AnyAsset> {
-  currentNetwork: EVMNetwork
+  currentNetwork: AnyNetwork
   assets: AnyAssetWithOptionalAmount<AssetType>[]
   nfts: NFTCollectionCached[]
   setSelectedAssetAndClose: (
@@ -362,7 +362,7 @@ function SelectAssetMenuContent<T extends AnyAsset>(
 
 interface SelectedAssetButtonProps {
   asset: Asset
-  network: EVMNetwork
+  network: AnyNetwork
   isDisabled: boolean
   toggleIsAssetMenuOpen?: () => void
   selectedNFT?: NFTCached
@@ -454,7 +454,7 @@ function SelectedAssetButton(props: SelectedAssetButtonProps): ReactElement {
 }
 
 interface SharedAssetInputProps<AssetType extends AnyAsset> {
-  currentNetwork: EVMNetwork
+  currentNetwork: AnyNetwork
   assetsAndAmounts?: AnyAssetWithOptionalAmount<AssetType>[]
   label?: string
   selectedAsset: AssetType | undefined

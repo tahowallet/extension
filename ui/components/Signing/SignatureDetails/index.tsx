@@ -19,7 +19,16 @@ import {
   SignTypedDataRequest,
 } from "@tallyho/tally-background/utils/signing"
 import { AccountSigner } from "@tallyho/tally-background/services/signing"
-import type { AddressOnNetwork } from "@tallyho/tally-background/accounts"
+import type { AnyAddressOnNetwork } from "@tallyho/tally-background/accounts"
+import {
+  isSparkTransactionRequest,
+  SparkTransactionRequest,
+} from "@tallyho/tally-background/networks"
+import {
+  rejectTransactionSignature as rejectSparkTransaction,
+  signSparkTransaction,
+} from "@tallyho/tally-background/redux-slices/transaction-construction"
+import SparkTransactionSignatureDetails from "./TransactionSignatureDetails/SparkTransactionSignatureDetails"
 import { AnyAction } from "redux"
 import TransactionSignatureDetails from "./TransactionSignatureDetails"
 import MessageDataSignatureDetails from "./DataSignatureDetails/MessageDataSignatureDetails"
@@ -33,7 +42,7 @@ import TypedDataSignatureDetails from "./DataSignatureDetails/TypedDataSignature
  */
 export type ResolvedSignatureDetails = {
   signer: AccountSigner
-  signingAddress: AddressOnNetwork
+  signingAddress: AnyAddressOnNetwork
   renderedSigningData: ReactElement
   /**
    * A string that represents what signing this data will achieve. Some
@@ -72,6 +81,23 @@ export function resolveTransactionSignatureDetails({
     redirectToActivityPage: annotation?.type === "asset-swap",
   }
 }
+export function resolveSparkTransactionSignatureDetails({
+  request,
+  accountSigner,
+}: SignOperation<SparkTransactionRequest>): ResolvedSignatureDetails {
+  return {
+    signer: accountSigner,
+    signingAddress: { address: request.from, network: request.network },
+    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
+    renderedSigningData: (
+      <SparkTransactionSignatureDetails transactionRequest={request} />
+    ),
+    signActionCreator: () => signSparkTransaction(request),
+    rejectActionCreator: rejectSparkTransaction,
+    redirectToActivityPage: true,
+  }
+}
+
 export function resolveDataSignatureDetails({
   request,
   accountSigner,
@@ -116,6 +142,9 @@ export function resolveSignatureDetails<T extends SignOperationType>({
   }
   if ("typedData" in request) {
     return resolveTypedDataSignatureDetails({ request, accountSigner })
+  }
+  if (isSparkTransactionRequest(request)) {
+    return resolveSparkTransactionSignatureDetails({ request, accountSigner })
   }
   return resolveTransactionSignatureDetails({ request, accountSigner })
 }

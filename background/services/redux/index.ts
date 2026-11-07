@@ -31,6 +31,8 @@ import {
 
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
+  isSparkTransactionRequest,
+  SparkTransactionRequest,
   EVMNetwork,
   RpcEndpoint,
   SignedTransaction,
@@ -220,7 +222,17 @@ import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 import CampaignService from "../campaign"
 import SparkService from "../spark"
-import type { SparkSendRequest } from "../spark/types"
+import type { SparkAddressOnNetwork } from "../../accounts"
+import { toSparkAddress } from "../../lib/spark-address"
+import {
+  decodeLightningInvoice,
+  isLightningInvoice,
+  looksLikeLightningInvoice,
+} from "../../lib/lightning-invoice"
+
+// Pay at most this much over the Lightning fee estimate, so a small routing
+// change doesn't fail the payment but a large one can't surprise the user.
+const LIGHTNING_FEE_BUFFER_SATS = 10n
 import {
   sparkAccountsUpdated,
   sparkActivityUpdated,
@@ -625,8 +637,105 @@ export default class ReduxService extends BaseService<never> {
     )
   }
 
-  async sendSpark(request: SparkSendRequest): ReturnType<SparkService["send"]> {
-    return this.sparkService.send(request)
+  /**
+   * Build a Spark payment for the signing screen: validate the destination
+   * against the paying account's network, take the amount from Lightning
+   * invoices that carry one, estimate fees and check the spendable balance.
+   * Nothing is sent; see `sendSparkTransaction`.
+   */
+  async prepareSparkTransaction({
+    from,
+    to,
+    value,
+  }: {
+    from: SparkAddressOnNetwork
+    to: string
+    value: bigint
+  }): Promise<SparkTransactionRequest> {
+    const account = this.sparkService
+      .getAccounts()
+      .find(
+        ({ address, network }) =>
+          address === from.address && sameNetwork(network, from.network),
+      )
+    if (!account) {
+      throw new Error("Unknown Spark account.")
+    }
+    const networkType = account.network.sparkNetworkType
+
+    let request: SparkTransactionRequest
+    if (looksLikeLightningInvoice(to)) {
+      const invoice = decodeLightningInvoice(to, { network: networkType })
+      const amount = invoice.amountSats ?? value
+      const estimatedFee = BigInt(
+        await this.sparkService.estimateLightningFee(
+          account.id,
+          invoice.invoice,
+          invoice.amountSats === undefined ? Number(amount) : undefined,
+        ),
+      )
+      request = {
+        network: account.network,
+        from: account.address,
+        to: invoice.invoice,
+        sparkAccountID: account.id,
+        value: amount,
+        estimatedFee,
+        maxFee: estimatedFee + LIGHTNING_FEE_BUFFER_SATS,
+        memo: invoice.description,
+      }
+    } else {
+      request = {
+        network: account.network,
+        from: account.address,
+        to: toSparkAddress(to, networkType),
+        sparkAccountID: account.id,
+        value,
+        // Spark-to-Spark transfers carry no fee.
+        estimatedFee: 0n,
+        maxFee: 0n,
+      }
+    }
+
+    if (request.value <= 0n) {
+      throw new Error("Enter an amount to send.")
+    }
+    // Like EVM transactions, an unaffordable payment still reaches the
+    // signing screen, with a warning that blocks signing.
+    const available =
+      this.store.getState().spark.balances[account.id]?.available ?? 0n
+    if (request.value + request.maxFee > available) {
+      request.warnings = ["insufficient-funds"]
+    }
+    return request
+  }
+
+  /**
+   * Sign and send a Spark payment the user confirmed on the signing screen.
+   */
+  async sendSparkTransaction(
+    request: SparkTransactionRequest,
+  ): ReturnType<SparkService["send"]> {
+    if (isLightningInvoice(request.to)) {
+      const invoice = decodeLightningInvoice(request.to, {
+        network: request.network.sparkNetworkType,
+      })
+      return this.sparkService.send({
+        kind: "lightning",
+        accountID: request.sparkAccountID,
+        invoice: invoice.invoice,
+        maxFeeSats: Number(request.maxFee),
+        // Only zero-amount invoices take an amount from the payer.
+        amountSats:
+          invoice.amountSats === undefined ? Number(request.value) : undefined,
+      })
+    }
+    return this.sparkService.send({
+      kind: "spark",
+      accountID: request.sparkAccountID,
+      receiverSparkAddress: request.to,
+      amountSats: Number(request.value),
+    })
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -968,7 +1077,11 @@ export default class ReduxService extends BaseService<never> {
         if (network.chainID === OPTIMISM.chainID) {
           const { transactionRequest: currentTransactionRequest } =
             this.store.getState().transactionConstruction
-          if (currentTransactionRequest?.network.chainID === OPTIMISM.chainID) {
+          if (
+            currentTransactionRequest !== undefined &&
+            !isSparkTransactionRequest(currentTransactionRequest) &&
+            currentTransactionRequest.network.chainID === OPTIMISM.chainID
+          ) {
             // If there is a currently pending transaction request on Optimism,
             // we need to update its L1 rollup fee as well as the current estimated fees per gas
             const estimatedRollupFee =

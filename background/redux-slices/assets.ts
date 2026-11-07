@@ -1,7 +1,13 @@
 import { createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit"
 import { ethers } from "ethers"
 import type { RootState } from "."
-import { AddressOnNetwork } from "../accounts"
+import {
+  AddressOnNetwork,
+  AnyAddressOnNetwork,
+  isSparkAddressOnNetwork,
+} from "../accounts"
+import { isHexString } from "../lib/utils/hex"
+import { sparkTransactionRequested } from "./transaction-construction"
 import {
   AnyAsset,
   AnyAssetAmount,
@@ -11,8 +17,8 @@ import {
 } from "../assets"
 import { ERC20_INTERFACE } from "../lib/erc20"
 import logger from "../lib/logger"
-import { AnyNetwork, EVMNetwork, sameNetwork } from "../networks"
-import { NormalizedEVMAddress } from "../types"
+import { AnyNetwork, EVMNetwork, SparkNetwork, sameNetwork } from "../networks"
+import { LightningInvoice, NormalizedEVMAddress } from "../types"
 import { removeAssetReferences, updateAccountBalance } from "./accounts"
 import { createBackgroundAsyncThunk } from "./utils"
 import { getAssetEntityID, isBaseAssetForNetwork } from "./utils/asset-utils"
@@ -210,21 +216,57 @@ export const removeAssetData = createBackgroundAsyncThunk(
  */
 export const transferAsset = createBackgroundAsyncThunk(
   "assets/transferAsset",
-  async ({
-    fromAddressNetwork: { address: fromAddress, network: fromNetwork },
-    toAddressNetwork: { address: toAddress, network: toNetwork },
-    assetAmount,
-    gasLimit,
-    nonce,
-  }: {
-    fromAddressNetwork: AddressOnNetwork
-    toAddressNetwork: AddressOnNetwork
-    assetAmount: AnyAssetAmount
-    gasLimit?: bigint
-    nonce?: number
-  }) => {
-    if (!sameNetwork(fromNetwork, toNetwork)) {
+  async (
+    {
+      fromAddressNetwork,
+      toAddressNetwork,
+      assetAmount,
+      gasLimit,
+      nonce,
+    }: {
+      fromAddressNetwork: AnyAddressOnNetwork
+      /**
+       * The recipient. On Spark networks this may be a Lightning invoice,
+       * paid from the Spark balance.
+       */
+      toAddressNetwork:
+        | AnyAddressOnNetwork
+        | { address: LightningInvoice; network: SparkNetwork }
+      assetAmount: AnyAssetAmount
+      gasLimit?: bigint
+      nonce?: number
+    },
+    { dispatch, extra: { main } },
+  ): Promise<{ success: boolean; errorMessage?: string } | undefined> => {
+    if (!sameNetwork(fromAddressNetwork.network, toAddressNetwork.network)) {
       throw new Error("Only same-network transfers are supported for now.")
+    }
+
+    if (isSparkAddressOnNetwork(fromAddressNetwork)) {
+      // Spark payments are built in the background and land on the same
+      // signing screen as EVM transactions, via transaction construction.
+      try {
+        const request = await main.prepareSparkTransaction({
+          from: fromAddressNetwork,
+          to: toAddressNetwork.address,
+          value: assetAmount.amount,
+        })
+        dispatch(sparkTransactionRequested(request))
+        return { success: true }
+      } catch (error) {
+        // Reported as a result: rejections lose their message on the way
+        // to the popup.
+        return {
+          success: false,
+          errorMessage: error instanceof Error ? error.message : String(error),
+        }
+      }
+    }
+
+    const { address: fromAddress, network: fromNetwork } = fromAddressNetwork
+    const toAddress = toAddressNetwork.address
+    if (!isHexString(toAddress)) {
+      throw new Error("EVM transfers need a hex recipient address.")
     }
 
     const provider = getProvider()

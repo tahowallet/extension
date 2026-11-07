@@ -1,9 +1,10 @@
 import React, { ReactElement } from "react"
 import {
-  getAccountTotal,
-  selectCurrentAccountSigner,
+  getAccountSummary,
+  selectCurrentAnyAccountSigner,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import { SignOperationType } from "@tallyho/tally-background/redux-slices/signing"
+import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { useBackgroundSelector } from "../../hooks"
 import {
   ResolvedSignatureDetails,
@@ -34,7 +35,7 @@ function SigningLoaded<T extends SignOperationType>({
   const { signingAddress, renderedSigningData } = signatureDetails
 
   const signerAccountTotal = useBackgroundSelector((state) =>
-    getAccountTotal(state, signingAddress),
+    getAccountSummary(state, signingAddress),
   )
 
   return (
@@ -104,7 +105,10 @@ type SigningProps<T extends SignOperationType> = {
 export default function Signing<T extends SignOperationType>({
   request,
 }: SigningProps<T>): ReactElement {
-  const accountSigner = useBackgroundSelector(selectCurrentAccountSigner)
+  // An account Taho has no signer for is treated as read-only.
+  const accountSigner =
+    useBackgroundSelector(selectCurrentAnyAccountSigner) ??
+    ReadOnlyAccountSigner
   const signatureDetails = useResolvedSignatureDetails(
     request === undefined
       ? undefined

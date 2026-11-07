@@ -4,7 +4,7 @@ import {
   AnyAssetAmount,
   isSmartContractFungibleAsset,
 } from "@tallyho/tally-background/assets"
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork } from "@tallyho/tally-background/networks"
 import { ROOTSTOCK } from "@tallyho/tally-background/constants"
 import { truncateAddress } from "@tallyho/tally-background/lib/utils"
 import classNames from "classnames"
@@ -34,7 +34,7 @@ export function hasAmounts<T extends AnyAsset>(
 }
 
 interface Props<T extends AnyAsset> {
-  currentNetwork: EVMNetwork
+  currentNetwork: AnyNetwork
   assetAndAmount: AnyAssetWithOptionalAmount<T>
   onClick?: (asset: T) => void
   isSelected?: boolean
@@ -62,9 +62,13 @@ export default function SharedAssetItem<T extends AnyAsset>(
   }
 
   useEffect(() => {
-    const baseLink = getBlockExplorerURL(currentNetwork)
     // Only smart contract assets have a token page to link to; network base
     // assets can carry a contract address of their own without being tokens.
+    // Smart contracts only exist on EVM networks.
+    const baseLink =
+      currentNetwork.family === "EVM"
+        ? getBlockExplorerURL(currentNetwork)
+        : undefined
     if (isSmartContractFungibleAsset(asset) && baseLink) {
       const contractBase =
         currentNetwork.chainID === ROOTSTOCK.chainID ? "address" : "token"

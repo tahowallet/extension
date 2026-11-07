@@ -56,6 +56,7 @@
     "ethers": "5.7.2",
     "immer": "^9.0.1",
     "jsondiffpatch": "^0.4.1",
+    "light-bolt11-decoder": "^3.2.0",
     "lodash": "^4.17.21",
     "sinon": "^14.0.0",
     "siwe": "^1.1.0",

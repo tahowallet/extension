@@ -11,7 +11,11 @@ import { AssetTransfer } from "@tallyho/tally-background/services/enrichment"
 import React, { ReactElement } from "react"
 import { useTranslation } from "react-i18next"
 import { AnyAssetAmount } from "@tallyho/tally-background/assets"
-import type { HexString } from "@tallyho/tally-background/types"
+import type {
+  HexString,
+  LightningInvoice,
+  SparkAddress,
+} from "@tallyho/tally-background/types"
 import SigningDataTransactionSummaryBody from "./TransactionSignatureSummaryBody"
 import { TransactionSignatureSummaryProps } from "./TransactionSignatureSummaryProps"
 import { useBackgroundSelector } from "../../../../../hooks"
@@ -22,7 +26,7 @@ type TransferSummaryBaseProps = {
   title?: string
   assetAmount: AnyAssetAmount & AssetDecimalAmount
   // "-" when a transaction has no recipient (contract deployment).
-  recipientAddress: HexString | "-"
+  recipientAddress: HexString | SparkAddress | LightningInvoice | "-"
   recipientName?: string | undefined
 }
 

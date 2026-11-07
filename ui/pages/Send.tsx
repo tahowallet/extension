@@ -7,12 +7,11 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import {
-  selectCurrentAccount,
   selectCurrentAccountBalances,
   selectCurrentAccountNFTs,
-  selectCurrentAccountSigner,
+  selectCurrentAnyAccount,
+  selectCurrentAnyAccountSigner,
   selectCurrentAnyNetwork,
-  selectCurrentNetwork,
   selectMainCurrencySymbol,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import {
@@ -21,6 +20,7 @@ import {
 } from "@tallyho/tally-background/assets"
 import {
   convertFixedPointNumber,
+  fixedPointNumberToString,
   parseToFixedPointNumber,
 } from "@tallyho/tally-background/lib/fixed-point"
 import { transferAsset } from "@tallyho/tally-background/redux-slices/assets"
@@ -35,20 +35,21 @@ import classNames from "classnames"
 import { ReadOnlyAccountSigner } from "@tallyho/tally-background/services/signing"
 import { setSnackbarMessage } from "@tallyho/tally-background/redux-slices/ui"
 import { selectIsCurrentNetworkUnreachable } from "@tallyho/tally-background/redux-slices/selectors/networks"
-import { sameEVMAddress } from "@tallyho/tally-background/lib/utils"
+import { sameAccountAddress } from "@tallyho/tally-background/lib/utils"
+import { isEVMAddressOnNetwork } from "@tallyho/tally-background/accounts"
+import { isHexString } from "@tallyho/tally-background/lib/utils/hex"
+import { AsyncThunkFulfillmentType } from "@tallyho/tally-background/redux-slices/utils"
 import { FeatureFlags, isEnabled } from "@tallyho/tally-background/features"
 import { NFTCached } from "@tallyho/tally-background/redux-slices/nfts"
-import type { HexString } from "@tallyho/tally-background/types"
 import SharedAssetInput from "../components/Shared/SharedAssetInput"
 import SharedBackButton from "../components/Shared/SharedBackButton"
 import NetworkUnreachableWarning from "../components/Shared/NetworkUnreachableWarning"
 import SharedButton from "../components/Shared/SharedButton"
-import SparkSendForm from "../components/Spark/SparkSendForm"
+import { useBackgroundDispatch, useBackgroundSelector } from "../hooks"
 import {
-  useAddressOrNameValidation,
-  useBackgroundDispatch,
-  useBackgroundSelector,
-} from "../hooks"
+  PaymentDestination,
+  useDestinationValidation,
+} from "../hooks/validation-hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import SharedIcon from "../components/Shared/SharedIcon"
@@ -58,18 +59,21 @@ export default function Send(): ReactElement {
   const { t } = useTranslation()
   const isMounted = useRef(false)
   const location = useLocation<FungibleAsset>()
-  const currentNetwork = useBackgroundSelector(selectCurrentNetwork)
-  const currentAnyNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
+  // The network and account being shown, of any network family.
+  const currentNetwork = useBackgroundSelector(selectCurrentAnyNetwork)
   // Stop the send here rather than letting the user fill out the whole form and
-  // meet the same block on the signing screen.
-  const isNetworkUnreachable = useBackgroundSelector(
-    selectIsCurrentNetworkUnreachable,
+  // meet the same block on the signing screen. Reachability is tracked for
+  // EVM RPC endpoints only.
+  const isNetworkUnreachable =
+    useBackgroundSelector(selectIsCurrentNetworkUnreachable) &&
+    currentNetwork.family === "EVM"
+  const currentAccount = useBackgroundSelector(selectCurrentAnyAccount)
+  const currentAccountSigner = useBackgroundSelector(
+    selectCurrentAnyAccountSigner,
   )
-  const currentAccount = useBackgroundSelector(selectCurrentAccount)
-  const currentAccountSigner = useBackgroundSelector(selectCurrentAccountSigner)
 
   const [selectedAsset, setSelectedAsset] = useState<FungibleAsset>(
-    location.state ?? currentAccount.network.baseAsset,
+    location.state ?? currentNetwork.baseAsset,
   )
 
   const [assetType, setAssetType] = useState<"token" | "nft">("token")
@@ -86,16 +90,17 @@ export default function Send(): ReactElement {
     if (!isMounted.current) {
       isMounted.current = true
     } else {
-      setSelectedAsset(currentAccount.network.baseAsset)
+      setSelectedAsset(currentNetwork.baseAsset)
     }
     // This disable is here because we don't necessarily have equality-by-reference
     // due to how we persist the ui redux slice with webext-redux.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAccount.network.baseAsset.symbol])
+  }, [currentNetwork.baseAsset.symbol])
 
   const [destinationAddress, setDestinationAddress] = useState<
-    HexString | undefined
+    PaymentDestination["address"] | undefined
   >(undefined)
+  const [sendErrorMessage, setSendErrorMessage] = useState<string | undefined>()
   const [amount, setAmount] = useState("")
 
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
@@ -152,25 +157,52 @@ export default function Send(): ReactElement {
   const assetAmount = assetAmountFromForm()
 
   const sendTransactionRequest = useCallback(async () => {
-    if (assetAmount === undefined || destinationAddress === undefined) {
+    if (
+      assetAmount === undefined ||
+      destinationAddress === undefined ||
+      currentAccount === undefined
+    ) {
       return
     }
 
+    // Pair the destination with the account's network family; the
+    // validator only produces destinations of the current family.
+    let toAddressNetwork: Parameters<
+      typeof transferAsset
+    >[0]["toAddressNetwork"]
+    if (isEVMAddressOnNetwork(currentAccount)) {
+      if (!isHexString(destinationAddress)) return
+      toAddressNetwork = {
+        address: destinationAddress,
+        network: currentAccount.network,
+      }
+    } else {
+      if (isHexString(destinationAddress)) return
+      toAddressNetwork = {
+        address: destinationAddress,
+        network: currentAccount.network,
+      }
+    }
+
+    setSendErrorMessage(undefined)
+    let result: AsyncThunkFulfillmentType<typeof transferAsset> | undefined
     try {
       setIsSendingTransactionRequest(true)
 
-      await dispatch(
+      result = (await dispatch(
         transferAsset({
           fromAddressNetwork: currentAccount,
-          toAddressNetwork: {
-            address: destinationAddress,
-            network: currentAccount.network,
-          },
+          toAddressNetwork,
           assetAmount,
         }),
-      )
+      )) as unknown as AsyncThunkFulfillmentType<typeof transferAsset>
     } finally {
       setIsSendingTransactionRequest(false)
+    }
+
+    if (result?.success === false) {
+      setSendErrorMessage(result.errorMessage)
+      return
     }
 
     history.push("/singleAsset", assetAmount.asset)
@@ -190,8 +222,22 @@ export default function Send(): ReactElement {
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
-  } = useAddressOrNameValidation((value) =>
-    setDestinationAddress(value?.address),
+  } = useDestinationValidation(
+    useCallback(
+      (value: PaymentDestination | undefined) => {
+        setDestinationAddress(value?.address)
+        // Lightning invoices may fix the amount; fill it in for the user.
+        if (value?.amount !== undefined) {
+          setAmount(
+            fixedPointNumberToString({
+              amount: value.amount,
+              decimals: currentNetwork.baseAsset.decimals,
+            }),
+          )
+        }
+      },
+      [currentNetwork.baseAsset.decimals],
+    ),
   )
 
   // True if the user input a valid name (ENS, address book, etc) that we
@@ -199,7 +245,7 @@ export default function Send(): ReactElement {
   const resolvedNameToAddress =
     addressErrorMessage === undefined &&
     destinationAddress !== undefined &&
-    !sameEVMAddress(destinationAddress, userAddressValue)
+    !sameAccountAddress(destinationAddress, userAddressValue)
 
   return (
     <CorePage hasTopBar hasTabBar>
@@ -212,118 +258,122 @@ export default function Send(): ReactElement {
           <div className="title">{t("wallet.sendAsset")}</div>
           <ReadOnlyNotice isLite />
         </h1>
-        {currentAnyNetwork.family === "SPARK" ? (
-          // Spark payments (Spark address or Lightning invoice, no gas, no
-          // signing screen) don't fit the EVM transaction form yet.
-          <SparkSendForm />
-        ) : (
-          <div className="form">
-            <div className="form_input">
-              <SharedAssetInput
-                currentNetwork={currentNetwork}
-                label={t("wallet.assetAmount")}
-                onAssetSelect={handleAssetSelect}
-                assetsAndAmounts={fungibleAssetAmounts}
-                onAmountChange={(value, errorMessage) => {
-                  setAmount(value)
-                  if (errorMessage) {
-                    setHasError(true)
-                  } else {
-                    setHasError(false)
-                  }
-                }}
-                onSelectNFT={(nft) => {
-                  setSelectedNFT(nft)
-                  setAssetType("nft")
-                }}
-                selectedAsset={selectedAsset ?? undefined}
-                selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
-                amount={amount}
-                showMaxButton={assetType !== "nft"}
-                NFTCollections={
-                  isEnabled(FeatureFlags.SUPPORT_NFT_SEND)
-                    ? nftCollections
-                    : undefined
+        <div className="form">
+          <div className="form_input">
+            <SharedAssetInput
+              currentNetwork={currentNetwork}
+              label={t("wallet.assetAmount")}
+              onAssetSelect={handleAssetSelect}
+              assetsAndAmounts={fungibleAssetAmounts}
+              onAmountChange={(value, errorMessage) => {
+                setAmount(value)
+                if (errorMessage) {
+                  setHasError(true)
+                } else {
+                  setHasError(false)
                 }
-              />
-              {assetType === "token" && !hasError && (
-                <div className="value">
-                  ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
-                </div>
-              )}
-            </div>
-            <div className="form_input send_to_field">
-              <label htmlFor="send_address">{t("wallet.sendTo")}</label>
-              <input
-                id="send_address"
-                type="text"
-                placeholder="0x..."
-                spellCheck={false}
-                onChange={(event) => handleAddressChange(event.target.value)}
-                className={classNames({
-                  error: addressErrorMessage !== undefined,
-                  resolved_address: resolvedNameToAddress,
-                })}
-              />
-              {addressIsValidating && (
-                <p className="validating">
-                  <SharedLoadingSpinner />
-                </p>
-              )}
-              {resolvedNameToAddress && (
-                <button
-                  type="button"
-                  className="address"
-                  onClick={() => copyAddress()}
-                >
-                  <SharedIcon
-                    icon="icons/s/copy.svg"
-                    width={14}
-                    color="var(--green-60)"
-                  />
-                  {destinationAddress}
-                </button>
-              )}
-              {addressErrorMessage !== undefined && (
-                <p
-                  className="error"
-                  title="Note: UNS temporarily disabled for security reasons."
-                >
-                  ⚠️ {addressErrorMessage}
-                </p>
-              )}
-            </div>
-            <div className="send_footer standard_width_padded">
-              {/*
-               * A disabled button with no explanation is its own kind of dead
-               * end; this page is not the wallet view, so the banner is not on
-               * screen to account for it.
-               */}
-              {isNetworkUnreachable && (
-                <NetworkUnreachableWarning
-                  chainID={currentNetwork.chainID}
-                  tooltipVerticalPosition="top"
-                />
-              )}
-              <SharedButton
-                type="primary"
-                size="large"
-                isDisabled={
-                  currentAccountSigner === ReadOnlyAccountSigner ||
-                  (assetType === "token" && Number(amount) === 0) ||
-                  destinationAddress === undefined ||
-                  hasError ||
-                  isNetworkUnreachable
-                }
-                onClick={sendTransactionRequest}
-                isFormSubmit
-                isLoading={isSendingTransactionRequest}
-              >
-                {t("wallet.sendButton")}
-              </SharedButton>
-            </div>
+              }}
+              onSelectNFT={(nft) => {
+                setSelectedNFT(nft)
+                setAssetType("nft")
+              }}
+              selectedAsset={selectedAsset ?? undefined}
+              selectedNFT={(assetType === "nft" && selectedNFT) || undefined}
+              amount={amount}
+              showMaxButton={assetType !== "nft"}
+              NFTCollections={
+                isEnabled(FeatureFlags.SUPPORT_NFT_SEND) &&
+                currentNetwork.family === "EVM"
+                  ? nftCollections
+                  : undefined
+              }
+            />
+            {assetType === "token" && !hasError && (
+              <div className="value">
+                ${assetAmount?.localizedMainCurrencyAmount ?? "-"}
+              </div>
+            )}
           </div>
-        )}
+          <div className="form_input send_to_field">
+            <label htmlFor="send_address">{t("wallet.sendTo")}</label>
+            <input
+              id="send_address"
+              type="text"
+              placeholder={
+                currentNetwork.family === "SPARK"
+                  ? t("wallet.sparkDestinationPlaceholder")
+                  : "0x..."
+              }
+              spellCheck={false}
+              onChange={(event) => handleAddressChange(event.target.value)}
+              className={classNames({
+                error: addressErrorMessage !== undefined,
+                resolved_address: resolvedNameToAddress,
+              })}
+            />
+            {addressIsValidating && (
+              <p className="validating">
+                <SharedLoadingSpinner />
+              </p>
+            )}
+            {resolvedNameToAddress && (
+              <button
+                type="button"
+                className="address"
+                onClick={() => copyAddress()}
+              >
+                <SharedIcon
+                  icon="icons/s/copy.svg"
+                  width={14}
+                  color="var(--green-60)"
+                />
+                {destinationAddress}
+              </button>
+            )}
+            {addressErrorMessage !== undefined && (
+              <p
+                className="error"
+                title="Note: UNS temporarily disabled for security reasons."
+              >
+                ⚠️ {addressErrorMessage}
+              </p>
+            )}
+          </div>
+          {sendErrorMessage !== undefined && (
+            <p className="send_error" role="alert">
+              ⚠️ {sendErrorMessage}
+            </p>
+          )}
+          <div className="send_footer standard_width_padded">
+            {/*
+             * A disabled button with no explanation is its own kind of dead
+             * end; this page is not the wallet view, so the banner is not on
+             * screen to account for it.
+             */}
+            {isNetworkUnreachable && (
+              <NetworkUnreachableWarning
+                chainID={currentNetwork.chainID}
+                tooltipVerticalPosition="top"
+              />
+            )}
+            <SharedButton
+              type="primary"
+              size="large"
+              isDisabled={
+                currentAccountSigner === ReadOnlyAccountSigner ||
+                (assetType === "token" && Number(amount) === 0) ||
+                destinationAddress === undefined ||
+                hasError ||
+                isNetworkUnreachable
+              }
+              onClick={sendTransactionRequest}
+              isFormSubmit
+              isLoading={isSendingTransactionRequest}
+            >
+              {t("wallet.sendButton")}
+            </SharedButton>
+          </div>
+        </div>
       </div>
       <style jsx>
         {`
@@ -454,6 +504,13 @@ export default function Send(): ReactElement {
             margin-bottom: 22px;
             margin-right: 15px;
             align-self: flex-end;
+          }
+          .send_error {
+            color: var(--error);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 8px 0 0;
+            overflow-wrap: anywhere;
           }
           .send_footer {
             display: flex;

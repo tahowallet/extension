@@ -7,8 +7,19 @@ import {
   isMixedCaseAddress,
 } from "@tallyho/tally-background/lib/utils"
 import { resolveNameOnNetwork } from "@tallyho/tally-background/redux-slices/accounts"
-import { selectCurrentAccount } from "@tallyho/tally-background/redux-slices/selectors"
-import type { HexString } from "@tallyho/tally-background/types"
+import {
+  selectCurrentAccount,
+  selectCurrentAnyNetwork,
+} from "@tallyho/tally-background/redux-slices/selectors"
+import type {
+  HexString,
+  LightningInvoice,
+  SparkAddress,
+} from "@tallyho/tally-background/types"
+import {
+  SparkDestinationError,
+  validateSparkDestination,
+} from "@tallyho/tally-background/lib/spark-destination"
 import { useRef, useState, useCallback } from "react"
 import { useBackgroundDispatch, useBackgroundSelector } from "./redux-hooks"
 
@@ -206,4 +217,74 @@ export const useAddressOrNameValidation: AsyncValidationHook<
     isValidating,
     handleInputChange,
   }
+}
+
+/**
+ * A destination a payment can be sent to from the account being shown, on
+ * any network family: an EVM address (with the name it was resolved from,
+ * if any), a Spark address, or a Lightning invoice (which may fix the
+ * amount).
+ */
+export type PaymentDestination =
+  | { address: HexString; name?: string; amount?: undefined }
+  | {
+      address: SparkAddress | LightningInvoice
+      name?: string
+      /** Set when a Lightning invoice fixes the amount, in base units. */
+      amount?: bigint
+    }
+
+const SPARK_DESTINATION_ERRORS: Record<SparkDestinationError, string> = {
+  "not-a-destination": "Enter a Spark address or a Lightning invoice",
+  "wrong-network": "That's for a different Bitcoin network than this account",
+  "expired-invoice": "This Lightning invoice has expired",
+  "invalid-invoice": "This Lightning invoice isn't valid",
+}
+
+/**
+ * Validates payment destinations for the current account's network family:
+ * EVM addresses and names (see `useAddressOrNameValidation`), or Spark
+ * addresses and Lightning invoices for the account's Spark network.
+ */
+export const useDestinationValidation: AsyncValidationHook<
+  PaymentDestination | undefined
+> = (onValidChange) => {
+  const network = useBackgroundSelector(selectCurrentAnyNetwork)
+  const evmValidation = useAddressOrNameValidation(onValidChange)
+  const [sparkRawValue, setSparkRawValue] = useState("")
+  const [sparkErrorMessage, setSparkErrorMessage] = useState<
+    string | undefined
+  >()
+
+  const handleSparkInputChange = useCallback(
+    async (newValue: string) => {
+      setSparkRawValue(newValue)
+      setSparkErrorMessage(undefined)
+      if (network.family !== "SPARK" || newValue.trim() === "") {
+        onValidChange(undefined)
+        return
+      }
+      const result = validateSparkDestination(
+        newValue,
+        network.sparkNetworkType,
+      )
+      if (result.ok) {
+        onValidChange(result.destination)
+      } else {
+        onValidChange(undefined)
+        setSparkErrorMessage(SPARK_DESTINATION_ERRORS[result.error])
+      }
+    },
+    [network, onValidChange],
+  )
+
+  if (network.family === "SPARK") {
+    return {
+      rawValue: sparkRawValue,
+      errorMessage: sparkErrorMessage,
+      isValidating: false,
+      handleInputChange: handleSparkInputChange,
+    }
+  }
+  return evmValidation
 }

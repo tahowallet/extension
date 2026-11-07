@@ -55,6 +55,7 @@ import {
   selectCurrentSparkAccount,
   selectSparkAccountAssetAmounts,
 } from "./sparkSelectors"
+import { AnyAddressOnNetwork, isSparkAddressOnNetwork } from "../../accounts"
 
 // TODO What actual precision do we want here? Probably more than 2
 // TODO decimals? Maybe it's configurable?
@@ -860,3 +861,34 @@ export const getTotalBalanceForOverview = createSelector(
       2,
     ),
 )
+
+/**
+ * What the UI shows to identify an account on any network family: its
+ * address, network, short form and name.
+ */
+export type AccountSummary = AnyAddressOnNetwork & {
+  shortenedAddress: string
+  name?: string
+  avatarURL?: string
+}
+
+export const getAccountSummary = (
+  state: RootState,
+  account: AnyAddressOnNetwork,
+): AccountSummary | undefined => {
+  if (isSparkAddressOnNetwork(account)) {
+    const sparkAccount = Object.values(state.spark.accounts).find(
+      ({ address, network }) =>
+        address === account.address &&
+        network.chainID === account.network.chainID,
+    )
+    return sparkAccount
+      ? {
+          ...account,
+          shortenedAddress: truncateAddress(account.address),
+          name: `${sparkAccount.network.name} #${sparkAccount.accountNumber}`,
+        }
+      : undefined
+  }
+  return getAccountTotal(state, account)
+}

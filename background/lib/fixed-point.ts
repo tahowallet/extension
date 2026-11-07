@@ -230,7 +230,7 @@ export function fromFixedPoint(
 ): number {
   const fixedPointDesiredDecimalsAmount =
     fixedPoint /
-    10n ** BigInt(Math.max(1, fixedPointDecimals - desiredDecimals))
+    10n ** BigInt(Math.max(0, fixedPointDecimals - desiredDecimals))
 
   return (
     Number(fixedPointDesiredDecimalsAmount) /

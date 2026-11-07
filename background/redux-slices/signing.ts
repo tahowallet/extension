@@ -9,6 +9,7 @@ import { AccountSigner } from "../services/signing"
 import {
   EIP1559TransactionRequest,
   LegacyEVMTransactionRequest,
+  SparkTransactionRequest,
 } from "../networks"
 
 /**
@@ -20,6 +21,7 @@ export type SignOperationType =
   | SignTypedDataRequest
   | EIP1559TransactionRequest
   | LegacyEVMTransactionRequest
+  | SparkTransactionRequest
 
 /**
  * A request for a signing operation carrying the AccountSigner whose signature

@@ -1,3 +1,4 @@
+import { isSparkTransactionRequest } from "@tallyho/tally-background/networks"
 import {
   fixedPointNumberToString,
   multiplyFixedPointNumbers,
@@ -157,7 +158,7 @@ export default function SignerLedgerSigning<T extends SignOperationType>({
   request,
   isArbitraryDataSigningRequired,
   displayDetails,
-}: SignerLedgerSigningProps<T>): ReactElement {
+}: SignerLedgerSigningProps<T>): ReactElement | null {
   if ("signingData" in request) {
     const message =
       typeof request.signingData === "string"
@@ -174,6 +175,11 @@ export default function SignerLedgerSigning<T extends SignOperationType>({
 
   if ("typedData" in request) {
     return <SignerLedgerSigningTypedData typedData={request.typedData} />
+  }
+
+  // Spark accounts come from recovery phrases; Ledger never signs for them.
+  if (isSparkTransactionRequest(request)) {
+    return null
   }
 
   return (

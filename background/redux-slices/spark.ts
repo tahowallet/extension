@@ -186,27 +186,3 @@ export const createSparkLightningInvoice = createBackgroundAsyncThunk(
       main.createSparkLightningInvoice(accountID, amountSats, memo),
     ),
 )
-
-export const estimateSparkLightningFee = createBackgroundAsyncThunk(
-  "spark/estimateLightningFee",
-  async (
-    {
-      accountID,
-      invoice,
-      amountSats,
-    }: { accountID: string; invoice: string; amountSats?: number },
-    { extra: { main } },
-  ): Promise<SparkResult<number>> =>
-    asSparkResult(() =>
-      main.estimateSparkLightningFee(accountID, invoice, amountSats),
-    ),
-)
-
-export const sendSpark = createBackgroundAsyncThunk(
-  "spark/send",
-  async (
-    request: SparkSendRequest,
-    { extra: { main } },
-  ): Promise<SparkResult<SparkSendResult>> =>
-    asSparkResult(() => main.sendSpark(request)),
-)

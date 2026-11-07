@@ -1,6 +1,11 @@
 import { TransactionRequest as EthersTransactionRequest } from "@ethersproject/abstract-provider"
 import { Slip44CoinType } from "./constants/coin-types"
-import type { HexString, UNIXTime } from "./types"
+import type {
+  HexString,
+  LightningInvoice,
+  SparkAddress,
+  UNIXTime,
+} from "./types"
 import type { CoinGeckoAsset, FungibleAsset } from "./assets"
 import type {
   EnrichedEIP1559TransactionRequest,
@@ -290,6 +295,50 @@ export type TransactionRequest =
   | LegacyEVMTransactionRequest
 
 export type TransactionRequestWithNonce = TransactionRequest & { nonce: number }
+
+/**
+ * A payment from a Spark account, awaiting the user's signature: the Spark
+ * counterpart of an EVM transaction request, shown on the same signing
+ * screen. Amounts are in satoshis.
+ */
+export type SparkTransactionRequest = {
+  network: SparkNetwork
+  from: SparkAddress
+  /** A Spark address, or a Lightning invoice paid from the Spark balance. */
+  to: SparkAddress | LightningInvoice
+  /** The Spark account paying, which determines the signing keys. */
+  sparkAccountID: string
+  /** Amount the recipient receives. */
+  value: bigint
+  /**
+   * Expected fee on top of `value`: nothing for Spark-to-Spark transfers,
+   * the routing fee estimate for Lightning payments.
+   */
+  estimatedFee: bigint
+  /** The most the payment may spend on fees before failing. */
+  maxFee: bigint
+  /** The invoice's description, when paying a Lightning invoice. */
+  memo?: string
+  /**
+   * Problems found while preparing the payment, shown on the signing screen
+   * like an EVM transaction's annotation warnings; signing is blocked while
+   * there are any.
+   */
+  warnings?: "insufficient-funds"[]
+}
+
+/**
+ * A transaction request on any network family.
+ */
+export type AnyTransactionRequest =
+  | EnrichedEVMTransactionRequest
+  | SparkTransactionRequest
+
+export function isSparkTransactionRequest(
+  request: object,
+): request is SparkTransactionRequest {
+  return "sparkAccountID" in request
+}
 
 /**
  * EVM log metadata, including the contract address that generated the log, the

@@ -18,6 +18,8 @@ import {
   LegacyEVMTransactionRequest,
   SignedTransaction,
   TransactionRequest,
+  isSparkTransactionRequest,
+  SparkTransactionRequest,
 } from "../networks"
 import {
   EnrichedEVMTransactionSignatureRequest,
@@ -54,7 +56,8 @@ export enum NetworkFeeTypeChosen {
 }
 export type TransactionConstruction = {
   status: TransactionConstructionStatus
-  transactionRequest?: EnrichedEVMTransactionRequest
+  /** The transaction awaiting signature, on any network family. */
+  transactionRequest?: EnrichedEVMTransactionRequest | SparkTransactionRequest
   signedTransaction?: SignedTransaction
   broadcastOnSign?: boolean
   transactionLikelyFails: boolean
@@ -168,6 +171,14 @@ const transactionSlice = createSlice({
   name: "transaction-construction",
   initialState,
   reducers: {
+    sparkTransactionRequested: (
+      immerState,
+      { payload }: { payload: SparkTransactionRequest },
+    ) => {
+      immerState.status = TransactionConstructionStatus.Loaded
+      immerState.transactionRequest = payload
+      immerState.transactionLikelyFails = false
+    },
     transactionRequest: (
       state,
       {
@@ -257,6 +268,7 @@ const transactionSlice = createSlice({
       const { estimatedRollupFee, estimatedRollupGwei } = payload
       if (
         immerState.transactionRequest?.network.chainID === OPTIMISM.chainID &&
+        !isSparkTransactionRequest(immerState.transactionRequest) &&
         !isEIP1559TransactionRequest(immerState.transactionRequest)
       ) {
         immerState.transactionRequest.estimatedRollupFee = estimatedRollupFee
@@ -359,6 +371,7 @@ const transactionSlice = createSlice({
 })
 
 export const {
+  sparkTransactionRequested,
   transactionRequest,
   clearTransactionState,
   transactionLikelyFails,
@@ -392,6 +405,35 @@ export const transactionSigned = createBackgroundAsyncThunk(
 
     if (transactionConstruction.broadcastOnSign ?? false) {
       await dispatch(broadcastSignedTransaction(transaction))
+    }
+  },
+)
+
+/**
+ * Send a Spark payment the user confirmed on the signing screen. Spark
+ * payments are signed and submitted in one step, so there is no separate
+ * broadcast; the request is cleared either way.
+ */
+export const signSparkTransaction = createBackgroundAsyncThunk(
+  "transaction-construction/sign-spark",
+  async (
+    request: SparkTransactionRequest,
+    { dispatch, extra: { main } },
+  ): Promise<{ success: boolean; errorMessage?: string }> => {
+    try {
+      await main.sendSparkTransaction(request)
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      }
+    } finally {
+      dispatch(
+        transactionSlice.actions.clearTransactionState(
+          TransactionConstructionStatus.Idle,
+        ),
+      )
     }
   },
 )

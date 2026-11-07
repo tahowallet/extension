@@ -1,4 +1,4 @@
-import { EVMNetwork } from "@tallyho/tally-background/networks"
+import { AnyNetwork } from "@tallyho/tally-background/networks"
 import React, { ReactElement } from "react"
 import SharedAssetIcon from "./SharedAssetIcon"
 import SharedNetworkIcon from "./SharedNetworkIcon"
@@ -7,7 +7,7 @@ type Props = {
   size: "small" | "medium" | "large" | number
   logoURL: string
   symbol: string
-  network?: EVMNetwork
+  network?: AnyNetwork
 }
 
 const SIZE_MAP = { small: 32, medium: 40, large: 48 }
