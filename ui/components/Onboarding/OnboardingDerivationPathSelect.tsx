@@ -7,7 +7,10 @@ import React, {
   useState,
 } from "react"
 import { useTranslation } from "react-i18next"
+import { SPARK_DEFAULT_DERIVATION_PATHS } from "@tallyho/tally-background/constants/spark"
+import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { I18nKey } from "../../_locales/i18n"
+import { useBackgroundSelector } from "../../hooks"
 import SharedButton from "../Shared/SharedButton"
 import SharedInput from "../Shared/SharedInput"
 import SharedModal from "../Shared/SharedModal"
@@ -57,6 +60,22 @@ const defaultDerivationPaths: Record<DefaultPathIndex, DerivationPath> = {
   },
 }
 
+// Spark (Bitcoin layer 2) accounts, derived by the Spark SDK from the same
+// recovery phrase. Regtest is only offered when test networks are shown.
+const sparkDerivationPaths: {
+  mainnet: DerivationPath
+  regtest: DerivationPath
+} = {
+  mainnet: {
+    value: SPARK_DEFAULT_DERIVATION_PATHS.MAINNET,
+    label: "ledger.derivationPaths.spark",
+  },
+  regtest: {
+    value: SPARK_DEFAULT_DERIVATION_PATHS.REGTEST,
+    label: "ledger.derivationPaths.sparkRegtest",
+  },
+}
+
 const initialCustomPath = {
   coinType: "0",
   account: "0",
@@ -67,19 +86,39 @@ const initialCustomPath = {
 export default function OnboardingDerivationPathSelect({
   onChange,
   defaultPath,
+  includeEVMAlternatives = true,
+  includeSpark = false,
 }: {
   onChange: (path: string) => void
   defaultPath?: DefaultPathIndex
+  /**
+   * Offer EVM paths besides the default one, and custom paths. When false,
+   * the only EVM option is the default path.
+   */
+  includeEVMAlternatives?: boolean
+  /** Offer Bitcoin-on-Spark accounts alongside the EVM paths. */
+  includeSpark?: boolean
 }): ReactElement {
   const { t, i18n } = useTranslation("translation", { keyPrefix: "onboarding" })
+  const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
 
   const defaultPaths: Option[] = useMemo(
     () =>
-      Object.values(defaultDerivationPaths).map((path) => ({
+      [
+        ...(includeEVMAlternatives
+          ? Object.values(defaultDerivationPaths)
+          : [defaultDerivationPaths[defaultPath ?? DefaultPathIndex.bip44]]),
+        ...(includeSpark
+          ? [
+              sparkDerivationPaths.mainnet,
+              ...(showTestNetworks ? [sparkDerivationPaths.regtest] : []),
+            ]
+          : []),
+      ].map((path) => ({
         ...path,
         label: i18n.t(path.label),
       })),
-    [i18n],
+    [i18n, includeEVMAlternatives, includeSpark, showTestNetworks, defaultPath],
   )
 
   const [derivationPaths, setDerivationPaths] = useState<Option[]>([])
@@ -87,9 +126,14 @@ export default function OnboardingDerivationPathSelect({
   const [modalStep, setModalStep] = useState(0)
   const [customPath, setCustomPath] = useState(initialCustomPath)
   const [customPathLabel, setCustomPathLabel] = useState("")
-  const [defaultIndex, setDefaultIndex] = useState<number | undefined>(
-    defaultPath,
-  )
+  const [customIndex, setCustomIndex] = useState<number | undefined>()
+  const defaultIndex =
+    customIndex ??
+    (defaultPath === undefined
+      ? undefined
+      : defaultPaths.findIndex(
+          ({ value }) => value === defaultDerivationPaths[defaultPath].value,
+        ))
 
   // Reset value to display placeholder after adding a custom path
   const customPathValue = customPath.isReset
@@ -115,8 +159,8 @@ export default function OnboardingDerivationPathSelect({
 
     setModalStep(0)
     onChange(customPathValue)
-    // Change active index of the Select with custom option
-    setDefaultIndex(derivationPaths.length)
+    // Select the custom option, which is appended after all the others.
+    setCustomIndex(defaultPaths.length + derivationPaths.length)
 
     // TODO It might be considered to save the custom path to the local db
     setDerivationPaths([
@@ -218,8 +262,8 @@ export default function OnboardingDerivationPathSelect({
         options={derivationPathOptions}
         onChange={onChange}
         defaultIndex={defaultIndex}
-        triggerLabel={t("addCustomPath")}
-        onTrigger={() => setModalStep(1)}
+        triggerLabel={includeEVMAlternatives ? t("addCustomPath") : undefined}
+        onTrigger={includeEVMAlternatives ? () => setModalStep(1) : undefined}
         showValue
         showOptionValue
         placement="top"

@@ -27,11 +27,10 @@ import NewSeedIntro from "./NewSeed/NewSeedIntro"
 import NewSeedReview from "./NewSeed/NewSeedReview"
 import NewSeedVerify from "./NewSeed/NewSeedVerify"
 import OnboardingRoutes from "./Routes"
-import OnboardingAccountFamilyTabs, {
-  AccountFamily,
-} from "../../../components/Onboarding/OnboardingAccountFamilyTabs"
-import SparkNetworkChoice from "../../../components/Onboarding/SparkNetworkChoice"
-import type { SparkNetworkType } from "@tallyho/tally-background/networks"
+import OnboardingDerivationPathSelect, {
+  DefaultPathIndex,
+} from "../../../components/Onboarding/OnboardingDerivationPathSelect"
+import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
   importSparkAccount,
@@ -74,9 +73,13 @@ export const NewSeedRoutes = {
 
 export default function NewSeed(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  const [accountFamily, setAccountFamily] = useState<AccountFamily>("evm")
-  const [sparkNetworkType, setSparkNetworkType] =
-    useState<SparkNetworkType>("MAINNET")
+  // Which account to add from the new phrase: the default EVM path, or a
+  // Bitcoin account on Spark.
+  const [accountPath, setAccountPath] = useState<string | undefined>()
+  const sparkNetworkType =
+    accountPath === undefined
+      ? undefined
+      : sparkNetworkForDerivationPath(accountPath)
   const mnemonic = useBackgroundSelector(
     (state) => state.internalSigner.keyringToVerify?.mnemonic,
   )
@@ -98,7 +101,7 @@ export default function NewSeed(): ReactElement {
   }
 
   const onVerifySuccess = async (verifiedMnemonic: string[]) => {
-    if (accountFamily === "bitcoin") {
+    if (sparkNetworkType) {
       const result = (await dispatch(
         importSparkAccount({
           mnemonic: verifiedMnemonic.join(" "),
@@ -142,16 +145,12 @@ export default function NewSeed(): ReactElement {
       <Route path={NewSeedRoutes.START} exact>
         <StepContainer step={0}>
           <div style={{ width: 356, margin: "24px auto 0" }}>
-            <OnboardingAccountFamilyTabs
-              family={accountFamily}
-              onChange={setAccountFamily}
+            <OnboardingDerivationPathSelect
+              defaultPath={DefaultPathIndex.bip44}
+              onChange={setAccountPath}
+              includeEVMAlternatives={false}
+              includeSpark
             />
-            {accountFamily === "bitcoin" && (
-              <SparkNetworkChoice
-                value={sparkNetworkType}
-                onChange={setSparkNetworkType}
-              />
-            )}
           </div>
           <NewSeedIntro onAccept={showNewSeedPhrase} />
         </StepContainer>

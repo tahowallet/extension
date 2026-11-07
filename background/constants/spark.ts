@@ -100,3 +100,35 @@ export const SPARK_DEFAULT_ACCOUNT_NUMBER: Record<SparkNetworkType, number> = {
   MAINNET: 1,
   REGTEST: 0,
 }
+
+/**
+ * BIP-32 purpose the Spark SDK derives Spark keys under; an account's keys
+ * live at `m/8797555'/<accountNumber>'/<0..4>'`.
+ */
+export const SPARK_DERIVATION_PURPOSE = 8797555
+
+export function sparkAccountDerivationPath(accountNumber: number): string {
+  return `m/${SPARK_DERIVATION_PURPOSE}'/${accountNumber}'`
+}
+
+/**
+ * The derivation path of the first Spark account per network, as offered in
+ * onboarding's derivation path dropdown next to the EVM paths.
+ */
+export const SPARK_DEFAULT_DERIVATION_PATHS: Record<SparkNetworkType, string> =
+  {
+    MAINNET: sparkAccountDerivationPath(SPARK_DEFAULT_ACCOUNT_NUMBER.MAINNET),
+    REGTEST: sparkAccountDerivationPath(SPARK_DEFAULT_ACCOUNT_NUMBER.REGTEST),
+  }
+
+/**
+ * The Spark network a derivation path from the dropdown stands for, or
+ * undefined for EVM paths.
+ */
+export function sparkNetworkForDerivationPath(
+  path: string,
+): SparkNetworkType | undefined {
+  return (
+    Object.keys(SPARK_DEFAULT_DERIVATION_PATHS) as SparkNetworkType[]
+  ).find((network) => SPARK_DEFAULT_DERIVATION_PATHS[network] === path)
+}

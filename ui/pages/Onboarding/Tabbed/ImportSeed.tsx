@@ -24,9 +24,7 @@ import {
 import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import ImportForm from "./ImportForm"
-import type { AccountFamily } from "../../../components/Onboarding/OnboardingAccountFamilyTabs"
-import SparkNetworkChoice from "../../../components/Onboarding/SparkNetworkChoice"
-import type { SparkNetworkType } from "@tallyho/tally-background/networks"
+import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
   importSparkAccount,
@@ -48,9 +46,6 @@ export default function ImportSeed(props: Props): ReactElement {
     selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
   )
   const [isImporting, setIsImporting] = useState(false)
-  const [accountFamily, setAccountFamily] = useState<AccountFamily>("evm")
-  const [sparkNetworkType, setSparkNetworkType] =
-    useState<SparkNetworkType>("MAINNET")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importSeed",
@@ -78,7 +73,10 @@ export default function ImportSeed(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
 
-      if (accountFamily === "bitcoin") {
+      // A Spark path in the dropdown means a Bitcoin account on Spark,
+      // derived by the Spark SDK from the same phrase.
+      const sparkNetworkType = sparkNetworkForDerivationPath(path)
+      if (sparkNetworkType) {
         const result = (await dispatch(
           importSparkAccount({
             mnemonic: plainRecoveryPhrase,
@@ -114,16 +112,7 @@ export default function ImportSeed(props: Props): ReactElement {
     } else {
       setErrorMessage(t("errors.invalidPhraseError"))
     }
-  }, [
-    dispatch,
-    recoveryPhrase,
-    path,
-    t,
-    history,
-    nextPage,
-    accountFamily,
-    sparkNetworkType,
-  ])
+  }, [dispatch, recoveryPhrase, path, t, history, nextPage])
 
   if (!areInternalSignersUnlocked)
     return (
@@ -141,25 +130,22 @@ export default function ImportSeed(props: Props): ReactElement {
         title={t("title")}
         subtitle={t("subtitle")}
         illustration="doggo_import.svg"
-        accountFamily={accountFamily}
-        onAccountFamilyChange={setAccountFamily}
       >
         <>
-          {accountFamily === "bitcoin" && (
-            <SparkNetworkChoice
-              value={sparkNetworkType}
-              onChange={setSparkNetworkType}
+          {/*
+           * Always shown so Bitcoin accounts are reachable; other EVM paths
+           * and custom paths stay behind the feature flag.
+           */}
+          <div className="select_wrapper">
+            <OnboardingDerivationPathSelect
+              defaultPath={DefaultPathIndex.bip44}
+              onChange={setPath}
+              includeEVMAlternatives={isEnabled(
+                FeatureFlags.SHOW_IMPORT_DERIVATION_PATH,
+              )}
+              includeSpark
             />
-          )}
-          {accountFamily === "evm" &&
-            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH) && (
-              <div className="select_wrapper">
-                <OnboardingDerivationPathSelect
-                  defaultPath={DefaultPathIndex.bip44}
-                  onChange={setPath}
-                />
-              </div>
-            )}
+          </div>
           <SharedSeedInput
             onChange={onInputChange}
             label={t("inputLabel")}
@@ -172,11 +158,7 @@ export default function ImportSeed(props: Props): ReactElement {
                 width: "100%",
                 boxSizing: "border-box",
               }}
-              size={
-                isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
-                  ? "large"
-                  : "medium"
-              }
+              size="large"
               type="primary"
               isDisabled={!recoveryPhrase || isImporting}
               onClick={importWallet}
@@ -202,16 +184,8 @@ export default function ImportSeed(props: Props): ReactElement {
           width: 100%;
           display: flex;
           flex-direction: column;
-          margin-top: ${
-            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
-              ? "24px"
-              : "48px"
-          };
-          margin-bottom: ${
-            isEnabled(FeatureFlags.SHOW_IMPORT_DERIVATION_PATH)
-              ? "16px"
-              : "24px"
-          };
+          margin-top: 24px;
+          margin-bottom: 16px;
         }
         .help_button {
           width: 320px;
