@@ -8,6 +8,7 @@ import React, {
 } from "react"
 import { useTranslation } from "react-i18next"
 import { SPARK_DEFAULT_DERIVATION_PATHS } from "@tallyho/tally-background/constants/spark"
+import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import { selectShowTestNetworks } from "@tallyho/tally-background/redux-slices/ui"
 import { I18nKey } from "../../_locales/i18n"
 import { useBackgroundSelector } from "../../hooks"
@@ -87,7 +88,7 @@ export default function OnboardingDerivationPathSelect({
   onChange,
   defaultPath,
   includeEVMAlternatives = true,
-  includeSpark = false,
+  networkFamily = "EVM",
 }: {
   onChange: (path: string) => void
   defaultPath?: DefaultPathIndex
@@ -96,29 +97,33 @@ export default function OnboardingDerivationPathSelect({
    * the only EVM option is the default path.
    */
   includeEVMAlternatives?: boolean
-  /** Offer Bitcoin-on-Spark accounts alongside the EVM paths. */
-  includeSpark?: boolean
+  /** Which network family's derivation paths to offer. */
+  networkFamily?: NetworkFamily
 }): ReactElement {
   const { t, i18n } = useTranslation("translation", { keyPrefix: "onboarding" })
   const showTestNetworks = useBackgroundSelector(selectShowTestNetworks)
 
   const defaultPaths: Option[] = useMemo(
     () =>
-      [
-        ...(includeEVMAlternatives
+      (networkFamily === "SPARK"
+        ? [
+            sparkDerivationPaths.mainnet,
+            ...(showTestNetworks ? [sparkDerivationPaths.regtest] : []),
+          ]
+        : includeEVMAlternatives
           ? Object.values(defaultDerivationPaths)
-          : [defaultDerivationPaths[defaultPath ?? DefaultPathIndex.bip44]]),
-        ...(includeSpark
-          ? [
-              sparkDerivationPaths.mainnet,
-              ...(showTestNetworks ? [sparkDerivationPaths.regtest] : []),
-            ]
-          : []),
-      ].map((path) => ({
+          : [defaultDerivationPaths[defaultPath ?? DefaultPathIndex.bip44]]
+      ).map((path) => ({
         ...path,
         label: i18n.t(path.label),
       })),
-    [i18n, includeEVMAlternatives, includeSpark, showTestNetworks, defaultPath],
+    [
+      i18n,
+      includeEVMAlternatives,
+      networkFamily,
+      showTestNetworks,
+      defaultPath,
+    ],
   )
 
   const [derivationPaths, setDerivationPaths] = useState<Option[]>([])
@@ -129,7 +134,7 @@ export default function OnboardingDerivationPathSelect({
   const [customIndex, setCustomIndex] = useState<number | undefined>()
   const defaultIndex =
     customIndex ??
-    (defaultPath === undefined
+    (defaultPath === undefined || networkFamily !== "EVM"
       ? undefined
       : defaultPaths.findIndex(
           ({ value }) => value === defaultDerivationPaths[defaultPath].value,
@@ -262,8 +267,16 @@ export default function OnboardingDerivationPathSelect({
         options={derivationPathOptions}
         onChange={onChange}
         defaultIndex={defaultIndex}
-        triggerLabel={includeEVMAlternatives ? t("addCustomPath") : undefined}
-        onTrigger={includeEVMAlternatives ? () => setModalStep(1) : undefined}
+        triggerLabel={
+          networkFamily === "EVM" && includeEVMAlternatives
+            ? t("addCustomPath")
+            : undefined
+        }
+        onTrigger={
+          networkFamily === "EVM" && includeEVMAlternatives
+            ? () => setModalStep(1)
+            : undefined
+        }
         showValue
         showOptionValue
         placement="top"

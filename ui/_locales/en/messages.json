@@ -526,7 +526,12 @@
     "addDerivationPath": "Add derivation path",
     "pathLabel": "Label",
     "customPath": "Custom path",
-    "addCustomPath": "Add custom path"
+    "addCustomPath": "Add custom path",
+    "networkFamily": {
+      "label": "Network",
+      "EVM": "Ethereum & EVM chains",
+      "SPARK": "Bitcoin (Spark)"
+    }
   },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",

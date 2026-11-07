@@ -31,6 +31,8 @@ import OnboardingDerivationPathSelect, {
   DefaultPathIndex,
 } from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
+import OnboardingNetworkFamilySelect from "../../../components/Onboarding/OnboardingNetworkFamilySelect"
+import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
   importSparkAccount,
@@ -73,13 +75,15 @@ export const NewSeedRoutes = {
 
 export default function NewSeed(): ReactElement {
   const dispatch = useBackgroundDispatch()
-  // Which account to add from the new phrase: the default EVM path, or a
-  // Bitcoin account on Spark.
+  // Which accounts to add from the new phrase: a network family, then one
+  // of its derivation paths.
+  const [networkFamily, setNetworkFamily] = useState<NetworkFamily>("EVM")
   const [accountPath, setAccountPath] = useState<string | undefined>()
   const sparkNetworkType =
-    accountPath === undefined
-      ? undefined
-      : sparkNetworkForDerivationPath(accountPath)
+    networkFamily === "SPARK"
+      ? ((accountPath && sparkNetworkForDerivationPath(accountPath)) ??
+        "MAINNET")
+      : undefined
   const mnemonic = useBackgroundSelector(
     (state) => state.internalSigner.keyringToVerify?.mnemonic,
   )
@@ -144,12 +148,25 @@ export default function NewSeed(): ReactElement {
     <Switch>
       <Route path={NewSeedRoutes.START} exact>
         <StepContainer step={0}>
-          <div style={{ width: 356, margin: "24px auto 0" }}>
+          <div
+            style={{
+              width: 356,
+              margin: "24px auto 0",
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+            }}
+          >
+            <OnboardingNetworkFamilySelect
+              value={networkFamily}
+              onChange={setNetworkFamily}
+            />
             <OnboardingDerivationPathSelect
+              key={networkFamily}
+              networkFamily={networkFamily}
               defaultPath={DefaultPathIndex.bip44}
               onChange={setAccountPath}
               includeEVMAlternatives={false}
-              includeSpark
             />
           </div>
           <NewSeedIntro onAccept={showNewSeedPhrase} />

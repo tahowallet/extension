@@ -25,6 +25,8 @@ import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import ImportForm from "./ImportForm"
 import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
+import OnboardingNetworkFamilySelect from "../../../components/Onboarding/OnboardingNetworkFamilySelect"
+import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
   importSparkAccount,
@@ -46,6 +48,7 @@ export default function ImportSeed(props: Props): ReactElement {
     selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
   )
   const [isImporting, setIsImporting] = useState(false)
+  const [networkFamily, setNetworkFamily] = useState<NetworkFamily>("EVM")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importSeed",
@@ -73,10 +76,11 @@ export default function ImportSeed(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
 
-      // A Spark path in the dropdown means a Bitcoin account on Spark,
-      // derived by the Spark SDK from the same phrase.
-      const sparkNetworkType = sparkNetworkForDerivationPath(path)
-      if (sparkNetworkType) {
+      if (networkFamily === "SPARK") {
+        // Bitcoin on Spark: the Spark SDK derives the account from the same
+        // phrase at the chosen Spark path.
+        const sparkNetworkType =
+          sparkNetworkForDerivationPath(path) ?? "MAINNET"
         const result = (await dispatch(
           importSparkAccount({
             mnemonic: plainRecoveryPhrase,
@@ -112,7 +116,7 @@ export default function ImportSeed(props: Props): ReactElement {
     } else {
       setErrorMessage(t("errors.invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path, t, history, nextPage])
+  }, [dispatch, recoveryPhrase, path, t, history, nextPage, networkFamily])
 
   if (!areInternalSignersUnlocked)
     return (
@@ -132,18 +136,25 @@ export default function ImportSeed(props: Props): ReactElement {
         illustration="doggo_import.svg"
       >
         <>
+          <div className="select_wrapper">
+            <OnboardingNetworkFamilySelect
+              value={networkFamily}
+              onChange={setNetworkFamily}
+            />
+          </div>
           {/*
-           * Always shown so Bitcoin accounts are reachable; other EVM paths
-           * and custom paths stay behind the feature flag.
+           * Other EVM paths and custom paths stay behind the feature flag.
+           * Remounted per family so the path resets to that family's default.
            */}
           <div className="select_wrapper">
             <OnboardingDerivationPathSelect
+              key={networkFamily}
+              networkFamily={networkFamily}
               defaultPath={DefaultPathIndex.bip44}
               onChange={setPath}
               includeEVMAlternatives={isEnabled(
                 FeatureFlags.SHOW_IMPORT_DERIVATION_PATH,
               )}
-              includeSpark
             />
           </div>
           <SharedSeedInput
