@@ -42,6 +42,7 @@ import {
   AccountType,
   deleteAccount,
   loadAccount,
+  setControlCompatibility,
   updateAccountBalance,
   updateAccountName,
   updateENSAvatar,
@@ -263,6 +264,7 @@ export default class ReduxService extends BaseService<never> {
       internalSignerService,
       ledgerService,
       chainService,
+      nameService,
     )
 
     const analyticsService = AnalyticsService.create(
@@ -1009,6 +1011,10 @@ export default class ReduxService extends BaseService<never> {
     this.ledgerService.emitter.on("address", ({ address }) =>
       this.signingService.addTrackedAddress(address, "ledger"),
     )
+
+    this.signingService.emitter.on("controlCompatibility", (compatibility) => {
+      this.store.dispatch(setControlCompatibility(compatibility))
+    })
   }
 
   async connectLedgerService(): Promise<void> {
@@ -1893,6 +1899,21 @@ export default class ReduxService extends BaseService<never> {
     } catch (error) {
       logger.info("Error looking up Ethereum address: ", error)
       return undefined
+    }
+  }
+
+  async isControlCompatible(
+    objectOnNetwork: AddressOnNetwork | NameOnNetwork,
+    otherNetwork: EVMNetwork,
+  ): Promise<boolean> {
+    try {
+      return await this.signingService.isControlCompatible(
+        objectOnNetwork,
+        otherNetwork,
+      )
+    } catch (error) {
+      logger.info("Error checking control compatibility: ", error)
+      return false
     }
   }
 

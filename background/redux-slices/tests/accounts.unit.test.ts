@@ -1,6 +1,8 @@
 import type { AccountBalance } from "../../accounts"
+import type { HexString } from "../../types"
+import { normalizeEVMAddress } from "../../lib/utils"
 import { SmartContractFungibleAsset } from "../../assets"
-import { ETH, ETHEREUM } from "../../constants"
+import { ETH, ETHEREUM, OPTIMISM } from "../../constants"
 import {
   createCompleteAssetAmount,
   createNetworkBaseAsset,
@@ -9,10 +11,18 @@ import {
 import reducer, {
   AccountData,
   AccountState,
+  initialState,
+  setControlCompatibility,
   updateAccountBalance,
 } from "../accounts"
 import { getFullAssetID } from "../utils/asset-utils"
-import { determineAssetDisplayAndVerify } from "../selectors"
+import {
+  determineAssetDisplayAndVerify,
+  selectIsAddressControlCompatible,
+} from "../selectors"
+import type { RootState } from ".."
+import type { ControlCompatibility } from "../../services/signing"
+import to39 from "../migrations/to-39"
 
 const ADDRESS_MOCK = "0x208e94d5661a73360d9387d3ca169e5c130090cd"
 const ACCOUNT_MOCK = {
@@ -44,6 +54,7 @@ describe("Accounts redux slice", () => {
     beforeEach(() => {
       state = {
         accountsData: { evm: {} },
+        controlCompatibility: {},
       }
     })
 
@@ -420,6 +431,111 @@ describe("Utilities", () => {
         )
 
         expect(displayAsset).toBe(false)
+      })
+    })
+  })
+})
+
+describe("Control compatibility", () => {
+  const OTHER_ADDRESS = normalizeEVMAddress(
+    "0x0000000000000000000000000000000000000001",
+  )
+  const compatibility: ControlCompatibility = {
+    [normalizeEVMAddress(ADDRESS_MOCK)]: {
+      [ETHEREUM.chainID]: [OPTIMISM.chainID],
+      [OPTIMISM.chainID]: [],
+    },
+  }
+
+  describe("setControlCompatibility", () => {
+    it("replaces the map wholesale", () => {
+      const state = reducer(
+        { ...initialState, controlCompatibility: compatibility },
+        setControlCompatibility({
+          [OTHER_ADDRESS]: {
+            [ETHEREUM.chainID]: [],
+          },
+        }),
+      )
+
+      expect(state.controlCompatibility).toEqual({
+        [OTHER_ADDRESS]: {
+          [ETHEREUM.chainID]: [],
+        },
+      })
+    })
+  })
+
+  describe("selectIsAddressControlCompatible", () => {
+    const stateWith = (map: ControlCompatibility): RootState =>
+      ({
+        account: { ...initialState, controlCompatibility: map },
+      }) as unknown as RootState
+
+    it("treats the same network as compatible without any entry", () => {
+      expect(
+        selectIsAddressControlCompatible(
+          stateWith({}),
+          { address: ADDRESS_MOCK, network: ETHEREUM },
+          ETHEREUM,
+        ),
+      ).toBe(true)
+    })
+
+    it("reads a compatible pair from the map", () => {
+      expect(
+        selectIsAddressControlCompatible(
+          stateWith(compatibility),
+          { address: ADDRESS_MOCK, network: ETHEREUM },
+          OPTIMISM,
+        ),
+      ).toBe(true)
+    })
+
+    it("matches the address regardless of casing", () => {
+      expect(
+        selectIsAddressControlCompatible(
+          stateWith(compatibility),
+          {
+            address: `0x${ADDRESS_MOCK.slice(2).toUpperCase()}` as HexString,
+            network: ETHEREUM,
+          },
+          OPTIMISM,
+        ),
+      ).toBe(true)
+    })
+
+    it("is false for a pair that is missing from the map", () => {
+      expect(
+        selectIsAddressControlCompatible(
+          stateWith({}),
+          { address: ADDRESS_MOCK, network: ETHEREUM },
+          OPTIMISM,
+        ),
+      ).toBe(false)
+    })
+
+    it("is false for a pair the map lists as incompatible", () => {
+      expect(
+        selectIsAddressControlCompatible(
+          stateWith(compatibility),
+          { address: ADDRESS_MOCK, network: OPTIMISM },
+          ETHEREUM,
+        ),
+      ).toBe(false)
+    })
+  })
+
+  describe("migration to 39", () => {
+    it("gives the map to state that predates it, keeping the rest of the slice", () => {
+      const migrated = to39({
+        account: { accountsData: { evm: {} } },
+        ui: {},
+      })
+
+      expect(migrated.account).toEqual({
+        accountsData: { evm: {} },
+        controlCompatibility: {},
       })
     })
   })

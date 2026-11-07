@@ -3,7 +3,8 @@ import InternalSignerService, {
   SignerImportSource,
   SignerSourceTypes,
 } from ".."
-import { ETHEREUM } from "../../../constants"
+import { ETHEREUM, POLYGON, ROOTSTOCK } from "../../../constants"
+import type { Network } from "../../../networks"
 import {
   createInternalSignerService,
   createTransactionRequest,
@@ -280,6 +281,31 @@ describe("InternalSignerService", () => {
 
       expect(exportMnemonic()).rejects.toThrowError(errorMessage)
       expect(exportPrivateKey()).rejects.toThrowError(errorMessage)
+    })
+  })
+
+  describe("transaction compatibility", () => {
+    it("should be compatible across networks sharing an address format", () => {
+      expect(
+        internalSignerService.isTransactionCompatible(ETHEREUM, ROOTSTOCK),
+      ).toBe(true)
+      expect(
+        internalSignerService.isTransactionCompatible(ETHEREUM, POLYGON),
+      ).toBe(true)
+    })
+
+    it("should not be compatible with a network of a different family", () => {
+      const otherFamilyNetwork = {
+        ...ETHEREUM,
+        family: "BTC",
+      } as unknown as Network
+
+      expect(
+        internalSignerService.isTransactionCompatible(
+          ETHEREUM,
+          otherFamilyNetwork,
+        ),
+      ).toBe(false)
     })
   })
 })

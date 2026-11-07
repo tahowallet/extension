@@ -14,6 +14,8 @@ import {
 import {
   isEIP1559TransactionRequest,
   isKnownTxType,
+  Network,
+  sameAddressFormat,
   SignedTransaction,
   TransactionRequestWithNonce,
 } from "../../networks"
@@ -719,6 +721,16 @@ export default class LedgerService extends BaseService<Events> {
     return ledgerAccount
   }
 
+  /**
+   * Returns true if Ledger accounts can sign transactions for both networks
+   * from the same key material. Switching Ledger apps is acceptable, so any two
+   * networks with the same address format qualify. See RFB 5.
+   */
+  // oxlint-disable-next-line class-methods-use-this
+  isTransactionCompatible(network: Network, otherNetwork: Network): boolean {
+    return sameAddressFormat(network, otherNetwork)
+  }
+
   async signTransaction(
     transactionRequest: TransactionRequestWithNonce,
     { deviceID, path: derivationPath }: LedgerAccountSigner,
@@ -898,13 +910,7 @@ export default class LedgerService extends BaseService<Events> {
     hexDataToSign: HexString,
     { deviceID, path: derivationPath }: LedgerAccountSigner,
   ): Promise<string> {
-    // Currently the service assumes the Eth app, which requires a network that
-    // uses the same derivation path as Ethereum, or one that starts with the
-    // same components.
-    if (
-      network.derivationPath !== ETHEREUM.derivationPath &&
-      !network.derivationPath?.startsWith(ETHEREUM.derivationPath ?? "")
-    ) {
+    if (!this.isTransactionCompatible(ETHEREUM, network)) {
       throw new Error("Unsupported network for Ledger signing")
     }
 

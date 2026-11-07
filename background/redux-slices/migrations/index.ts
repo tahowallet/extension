@@ -35,12 +35,13 @@ import to35 from "./to-35"
 import to36 from "./to-36"
 import to37 from "./to-37"
 import to38 from "./to-38"
+import to39 from "./to-39"
 
 /**
  * The version of persisted Redux state the extension is expecting. Any previous
  * state without this version, or with a lower version, ought to be migrated.
  */
-export const REDUX_STATE_VERSION = 38
+export const REDUX_STATE_VERSION = 39
 
 /**
  * Common type for all migration functions.
@@ -88,6 +89,7 @@ const allMigrations: { [targetVersion: string]: Migration } = {
   36: to36,
   37: to37,
   38: to38,
+  39: to39,
 }
 
 /**

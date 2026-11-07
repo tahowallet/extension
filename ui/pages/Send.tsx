@@ -47,6 +47,7 @@ import {
   useBackgroundSelector,
 } from "../hooks"
 import SharedLoadingSpinner from "../components/Shared/SharedLoadingSpinner"
+import SharedWarningMessage from "../components/Shared/SharedWarningMessage"
 import ReadOnlyNotice from "../components/Shared/ReadOnlyNotice"
 import SharedIcon from "../components/Shared/SharedIcon"
 import CorePage from "../components/Core/CorePage"
@@ -92,6 +93,11 @@ export default function Send(): ReactElement {
   const [destinationAddress, setDestinationAddress] = useState<
     string | undefined
   >(undefined)
+  // Set when the recipient name only resolved on Ethereum mainnet and isn't
+  // known to be control-compatible with the current network. Sending is still
+  // allowed; the user is warned instead. See RFB 5.
+  const [isRecipientNotControlCompatible, setIsRecipientNotControlCompatible] =
+    useState(false)
   const [amount, setAmount] = useState("")
 
   const [isSendingTransactionRequest, setIsSendingTransactionRequest] =
@@ -186,9 +192,10 @@ export default function Send(): ReactElement {
     errorMessage: addressErrorMessage,
     isValidating: addressIsValidating,
     handleInputChange: handleAddressChange,
-  } = useAddressOrNameValidation((value) =>
-    setDestinationAddress(value?.address),
-  )
+  } = useAddressOrNameValidation((value) => {
+    setDestinationAddress(value?.address)
+    setIsRecipientNotControlCompatible(value?.controlCompatible === false)
+  })
 
   // True if the user input a valid name (ENS, address book, etc) that we
   // resolved to an address.
@@ -196,6 +203,9 @@ export default function Send(): ReactElement {
     addressErrorMessage === undefined &&
     destinationAddress !== undefined &&
     !sameEVMAddress(destinationAddress, userAddressValue)
+
+  const showControlWarning =
+    resolvedNameToAddress && isRecipientNotControlCompatible
 
   return (
     <CorePage hasTopBar hasTabBar>
@@ -274,6 +284,15 @@ export default function Send(): ReactElement {
                 />
                 {destinationAddress}
               </button>
+            )}
+            {showControlWarning && (
+              <div className="control_warning">
+                <SharedWarningMessage
+                  text={t("wallet.sendToNameOnEthereumWarning", {
+                    network: currentNetwork.name,
+                  })}
+                />
+              </div>
             )}
             {addressErrorMessage !== undefined && (
               <p
@@ -438,6 +457,11 @@ export default function Send(): ReactElement {
           }
           input#send_address ~ .address:hover > :global(.icon) {
             background-color: var(--gold-80);
+          }
+          .control_warning {
+            align-self: stretch;
+            margin-top: 4px;
+            margin-bottom: 5px;
           }
           input#send_address ~ .validating {
             margin-top: -50px;

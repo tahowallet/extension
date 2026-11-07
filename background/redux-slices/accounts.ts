@@ -12,7 +12,7 @@ import {
 } from "./utils/asset-utils"
 import { DomainName, HexString, URI } from "../types"
 import { normalizeEVMAddress } from "../lib/utils"
-import { AccountSigner } from "../services/signing"
+import { AccountSigner, ControlCompatibility } from "../services/signing"
 
 /**
  * The set of available UI account types. These may or may not map 1-to-1 to
@@ -86,6 +86,8 @@ export type AccountState = {
   accountsData: {
     evm: AccountsByChainID
   }
+  // Computed by the signing service; see RFB 5.
+  controlCompatibility: ControlCompatibility
 }
 
 // Utility type, wrapped in CompleteAssetAmount<T>.
@@ -106,6 +108,7 @@ export type CompleteSmartContractFungibleAssetAmount =
 
 export const initialState: AccountState = {
   accountsData: { evm: {} },
+  controlCompatibility: {},
 }
 
 function normalizeBalance(balance: AccountBalance): NormalizedBalance {
@@ -364,6 +367,12 @@ const accountSlice = createSlice({
     ) => {
       delete immerState.accountsData.evm[chainID]
     },
+    setControlCompatibility: (
+      immerState,
+      { payload }: { payload: ControlCompatibility },
+    ) => {
+      immerState.controlCompatibility = payload
+    },
   },
 })
 
@@ -375,6 +384,7 @@ export const {
   updateENSAvatar,
   removeAssetReferences,
   removeChainBalances,
+  setControlCompatibility,
 } = accountSlice.actions
 
 export default accountSlice.reducer
@@ -387,6 +397,26 @@ export const resolveNameOnNetwork = createBackgroundAsyncThunk(
   "account/resolveNameOnNetwork",
   async (nameOnNetwork: NameOnNetwork, { extra: { main } }) =>
     main.resolveNameOnNetwork(nameOnNetwork),
+)
+
+/**
+ * Async thunk whose dispatch promise resolves to true if the given address or
+ * name is known to be control-compatible with `otherNetwork`, and false
+ * otherwise, including when compatibility isn't known. Meant for one-off
+ * checks, like a Send recipient; see RFB 5.
+ */
+export const checkControlCompatibility = createBackgroundAsyncThunk(
+  "account/checkControlCompatibility",
+  async (
+    {
+      objectOnNetwork,
+      otherNetwork,
+    }: {
+      objectOnNetwork: AddressOnNetwork | NameOnNetwork
+      otherNetwork: EVMNetwork
+    },
+    { extra: { main } },
+  ) => main.isControlCompatible(objectOnNetwork, otherNetwork),
 )
 
 /**

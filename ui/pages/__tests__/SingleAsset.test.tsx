@@ -37,6 +37,7 @@ const renderSingleAsset = (
     {
       preloadedState: {
         account: {
+          controlCompatibility: {},
           accountsData: {
             evm: {
               [POLYGON.chainID]: {

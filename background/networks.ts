@@ -406,6 +406,19 @@ export function sameNetwork(
 }
 
 /**
+ * Tests whether two networks represent addresses in the same format, which is
+ * a prerequisite for an address to be control-compatible across them (see RFB
+ * 5). All currently supported networks are EVM networks, so this compares
+ * network families.
+ */
+export function sameAddressFormat(
+  network1: Network,
+  network2: Network,
+): boolean {
+  return network1.family === network2.family
+}
+
+/**
  * Returns a 0x-prefixed hexadecimal representation of a number or string chainID
  * while also handling cases where an already hexlified chainID is passed in.
  */

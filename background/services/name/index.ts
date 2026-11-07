@@ -1,5 +1,5 @@
 import type { HexString, UNIXTime } from "../../types"
-import { normalizeAddressOnNetwork } from "../../lib/utils"
+import { normalizeAddressOnNetwork, sameEVMAddress } from "../../lib/utils"
 import { getTokenMetadata } from "../../lib/erc721"
 import { storageGatewayURL } from "../../lib/storage-gateway"
 
@@ -8,6 +8,7 @@ import BaseService from "../base"
 import ChainService from "../chain"
 import logger from "../../lib/logger"
 import type { AddressOnNetwork, NameOnNetwork } from "../../accounts"
+import type { EVMNetwork } from "../../networks"
 import { SECOND } from "../../constants"
 
 import { NameResolver } from "./name-resolver"
@@ -158,6 +159,54 @@ export default class NameService extends BaseService<Events> {
         )
       }
     })
+  }
+
+  /**
+   * Returns true if the name resolves to the same address on both networks
+   * through a name system whose records share an owner across networks, which
+   * is currently only ENS. This is the name service condition for control
+   * compatibility; see RFB 5.
+   */
+  async isNameOwnershipCompatible(
+    nameOnNetwork: NameOnNetwork,
+    otherNetwork: EVMNetwork,
+  ): Promise<boolean> {
+    const otherNameOnNetwork: NameOnNetwork = {
+      name: nameOnNetwork.name,
+      network: otherNetwork,
+    }
+
+    const ownershipSpanningResolvers = this.resolvers.filter(
+      (resolver) =>
+        resolver.recordOwnershipSpansNetworks === true &&
+        resolver.canAttemptAddressResolution(nameOnNetwork) &&
+        resolver.canAttemptAddressResolution(otherNameOnNetwork),
+    )
+
+    const compatibilities = await Promise.all(
+      ownershipSpanningResolvers.map(async (resolver) => {
+        const [resolvedOnNetwork, resolvedOnOtherNetwork] = await Promise.all(
+          [nameOnNetwork, otherNameOnNetwork].map(async (name) => {
+            try {
+              return await resolver.lookUpAddressForName(name)
+            } catch (error) {
+              return undefined
+            }
+          }),
+        )
+
+        return (
+          resolvedOnNetwork !== undefined &&
+          resolvedOnOtherNetwork !== undefined &&
+          sameEVMAddress(
+            resolvedOnNetwork.address,
+            resolvedOnOtherNetwork.address,
+          )
+        )
+      }),
+    )
+
+    return compatibilities.some((compatible) => compatible)
   }
 
   async lookUpEthereumAddress(

@@ -29,6 +29,7 @@ const renderRequest = (request: PermissionRequest) =>
     {
       preloadedState: {
         account: {
+          controlCompatibility: {},
           accountsData: {
             evm: {
               [ETHEREUM.chainID]: {

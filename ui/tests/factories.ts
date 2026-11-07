@@ -25,6 +25,7 @@ export const createAccountState = (
     },
   },
   ...overrides,
+  controlCompatibility: overrides.controlCompatibility ?? {},
 })
 
 export const createAbility = (overrides: Partial<Ability> = {}): Ability => ({
