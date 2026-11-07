@@ -30,7 +30,7 @@ export default function Receive(): ReactElement | null {
       <div className="qr_code">
         <QRCode value={value} size={128} />
       </div>
-      {currentAccount.network.family === "SPARK" && (
+      {currentAccount.network.family === "spark" && (
         <SparkReceiveOptions onRequestChange={setRequestValue} />
       )}
       <div className="copy_wrap">

@@ -176,7 +176,19 @@ export function isProbablyEVMAddress(str: string): boolean {
 }
 
 /** Shorten an address to its "0x" and four characters, and its last `tailLength`. */
+/**
+ * Abbreviate an address for display. Hex addresses keep `0x` plus four
+ * digits; bech32-style addresses (Spark, bitcoin) keep their whole
+ * human-readable prefix and separator plus four characters, the usual way
+ * bitcoin wallets abbreviate them, e.g. `sparkrt1pgss…5z7t`.
+ */
 export function truncateAddress(address: string, tailLength = 5): string {
+  const bech32Separator = address.startsWith("0x")
+    ? -1
+    : address.lastIndexOf("1", 16)
+  if (bech32Separator > 0) {
+    return `${address.slice(0, bech32Separator + 5)}…${address.slice(-4)}`
+  }
   return `${address.slice(0, 6)}…${address.slice(-tailLength)}`
 }
 

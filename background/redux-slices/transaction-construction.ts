@@ -93,7 +93,7 @@ export const initialState: TransactionConstruction = {
 
 export type Events = {
   updateTransaction: EnrichedEVMTransactionSignatureRequest
-  requestSignature: SignOperation<TransactionRequest>
+  requestSignature: SignOperation<TransactionRequest | SparkTransactionRequest>
   signatureRejected: never
   broadcastSignedTransaction: SignedTransaction
 }
@@ -152,14 +152,24 @@ export const updateTransactionData = createBackgroundAsyncThunk(
   },
 )
 
+/**
+ * Sign the pending transaction with the account's signer, on any network
+ * family. EVM transactions are signed and then broadcast; Spark payments are
+ * signed and submitted in one step.
+ */
 export const signTransaction = createBackgroundAsyncThunk(
   "transaction-construction/sign",
   async (
     request: SignOperation<
-      EIP1559TransactionRequest | LegacyEVMTransactionRequest
+      | EIP1559TransactionRequest
+      | LegacyEVMTransactionRequest
+      | SparkTransactionRequest
     >,
   ) => {
-    if (isEnabled(FeatureFlags.USE_MAINNET_FORK)) {
+    if (
+      isEnabled(FeatureFlags.USE_MAINNET_FORK) &&
+      !isSparkTransactionRequest(request.request)
+    ) {
       request.request.chainID = FORK.chainID
     }
 
@@ -405,35 +415,6 @@ export const transactionSigned = createBackgroundAsyncThunk(
 
     if (transactionConstruction.broadcastOnSign ?? false) {
       await dispatch(broadcastSignedTransaction(transaction))
-    }
-  },
-)
-
-/**
- * Send a Spark payment the user confirmed on the signing screen. Spark
- * payments are signed and submitted in one step, so there is no separate
- * broadcast; the request is cleared either way.
- */
-export const signSparkTransaction = createBackgroundAsyncThunk(
-  "transaction-construction/sign-spark",
-  async (
-    request: SparkTransactionRequest,
-    { dispatch, extra: { main } },
-  ): Promise<{ success: boolean; errorMessage?: string }> => {
-    try {
-      await main.sendSparkTransaction(request)
-      return { success: true }
-    } catch (error) {
-      return {
-        success: false,
-        errorMessage: error instanceof Error ? error.message : String(error),
-      }
-    } finally {
-      dispatch(
-        transactionSlice.actions.clearTransactionState(
-          TransactionConstructionStatus.Idle,
-        ),
-      )
     }
   },
 )

@@ -1,6 +1,6 @@
 import {
   selectCurrentAccount,
-  selectCurrentAccountTotal,
+  selectCurrentAccountSummary,
 } from "@tallyho/tally-background/redux-slices/selectors"
 import React, { ReactElement, useState, useRef } from "react"
 import { useBackgroundSelector } from "../../hooks"
@@ -13,10 +13,18 @@ const TOOLTIP_DELAY = 500
 export default function TopMenuProfileButton(props: {
   onClick?: () => void
 }): ReactElement {
-  const { name, avatarURL, address, accountType } =
-    useBackgroundSelector(selectCurrentAccountTotal) ?? {}
+  // The account being shown, on any network family: the same summary the
+  // signing screen's account bar uses.
+  const summary = useBackgroundSelector(selectCurrentAccountSummary)
+  const { name, avatarURL, address, accountType } = summary ?? {}
 
-  const { truncatedAddress } = useBackgroundSelector(selectCurrentAccount) ?? {}
+  // EVM accounts keep the menu's compact `0x1234a` form.
+  const evmTruncatedAddress =
+    useBackgroundSelector(selectCurrentAccount)?.truncatedAddress
+  const truncatedAddress =
+    summary?.network.family === "spark"
+      ? summary.shortenedAddress
+      : evmTruncatedAddress
 
   const [shouldDisplayTooltip, setShouldDisplayTooltip] = useState(false)
   const timerRef = useRef<number | undefined>(undefined)

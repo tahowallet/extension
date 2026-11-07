@@ -4,7 +4,7 @@ import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import SharedPanelSwitcher from "../Shared/SharedPanelSwitcher"
 
 // Tab order; Bitcoin accounts are on Spark, Taho's only Bitcoin family.
-const FAMILIES: NetworkFamily[] = ["EVM", "SPARK"]
+const FAMILIES: NetworkFamily[] = ["EVM", "spark"]
 
 /**
  * EVM | Bitcoin tabs for the add-account steps, using the same panel

@@ -80,7 +80,7 @@ export default function NewSeed(): ReactElement {
   const [networkFamily, setNetworkFamily] = useState<NetworkFamily>("EVM")
   const [accountPath, setAccountPath] = useState<string | undefined>()
   const sparkNetworkType =
-    networkFamily === "SPARK"
+    networkFamily === "spark"
       ? ((accountPath && sparkNetworkForDerivationPath(accountPath)) ??
         "MAINNET")
       : undefined

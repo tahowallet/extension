@@ -48,7 +48,7 @@ export default function ImportPrivateKeyForm(props: Props): ReactElement {
         accountFamily={accountFamily}
         onAccountFamilyChange={setAccountFamily}
       >
-        {accountFamily === "SPARK" ? (
+        {accountFamily === "spark" ? (
           <OnboardingBitcoinNeedsRecoveryPhrase />
         ) : (
           <>

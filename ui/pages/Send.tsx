@@ -300,7 +300,7 @@ export default function Send(): ReactElement {
               id="send_address"
               type="text"
               placeholder={
-                currentNetwork.family === "SPARK"
+                currentNetwork.family === "spark"
                   ? t("wallet.sparkDestinationPlaceholder")
                   : "0x..."
               }

@@ -75,7 +75,7 @@ export default function ImportSeed(props: Props): ReactElement {
     } else if (isValidMnemonic(plainRecoveryPhrase)) {
       setIsImporting(true)
 
-      if (networkFamily === "SPARK") {
+      if (networkFamily === "spark") {
         // Bitcoin on Spark: the Spark SDK derives the account from the same
         // phrase at the chosen Spark path.
         const sparkNetworkType =

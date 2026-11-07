@@ -148,7 +148,7 @@ function isUserFacingTransfer(transfer: WalletTransfer): boolean {
  * persists them for display while locked.
  *
  * Spark accounts live alongside, not inside, the EVM account model: they have
- * their own address type (`SparkAddress`), network family (`"SPARK"`) and
+ * their own address type (`SparkAddress`), network family (`"spark"`) and
  * Redux slice, so none of the EVM-only machinery (chain service, EIP-1193
  * provider, EVM signers) ever sees them.
  */

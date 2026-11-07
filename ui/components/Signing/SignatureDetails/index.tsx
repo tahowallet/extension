@@ -24,10 +24,6 @@ import {
   isSparkTransactionRequest,
   SparkTransactionRequest,
 } from "@tallyho/tally-background/networks"
-import {
-  rejectTransactionSignature as rejectSparkTransaction,
-  signSparkTransaction,
-} from "@tallyho/tally-background/redux-slices/transaction-construction"
 import SparkTransactionSignatureDetails from "./TransactionSignatureDetails/SparkTransactionSignatureDetails"
 import { AnyAction } from "redux"
 import TransactionSignatureDetails from "./TransactionSignatureDetails"
@@ -64,37 +60,39 @@ export type ResolvedSignatureDetails = {
 export function resolveTransactionSignatureDetails({
   request,
   accountSigner,
-}: SignOperation<TransactionRequest>): ResolvedSignatureDetails {
+}: SignOperation<
+  TransactionRequest | SparkTransactionRequest
+>): ResolvedSignatureDetails {
+  const shared = {
+    signer: accountSigner,
+    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
+    signActionCreator: () => signTransaction({ request, accountSigner }),
+    rejectActionCreator: rejectTransactionSignature,
+  } as const
+
+  // Signing is the same for every network family; only the presentation of
+  // the transaction differs.
+  if (isSparkTransactionRequest(request)) {
+    return {
+      ...shared,
+      signingAddress: { address: request.from, network: request.network },
+      renderedSigningData: (
+        <SparkTransactionSignatureDetails transactionRequest={request} />
+      ),
+      redirectToActivityPage: true,
+    }
+  }
+
   const annotation = isEnrichedEVMTransactionRequest(request)
     ? request.annotation
     : undefined
-
   return {
-    signer: accountSigner,
+    ...shared,
     signingAddress: { address: request.from, network: request.network },
-    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
     renderedSigningData: (
       <TransactionSignatureDetails transactionRequest={request} />
     ),
-    signActionCreator: () => signTransaction({ request, accountSigner }),
-    rejectActionCreator: rejectTransactionSignature,
     redirectToActivityPage: annotation?.type === "asset-swap",
-  }
-}
-export function resolveSparkTransactionSignatureDetails({
-  request,
-  accountSigner,
-}: SignOperation<SparkTransactionRequest>): ResolvedSignatureDetails {
-  return {
-    signer: accountSigner,
-    signingAddress: { address: request.from, network: request.network },
-    signingActionLabelI18nKey: "signTransaction.confirmButtonLabel",
-    renderedSigningData: (
-      <SparkTransactionSignatureDetails transactionRequest={request} />
-    ),
-    signActionCreator: () => signSparkTransaction(request),
-    rejectActionCreator: rejectSparkTransaction,
-    redirectToActivityPage: true,
   }
 }
 
@@ -142,9 +140,6 @@ export function resolveSignatureDetails<T extends SignOperationType>({
   }
   if ("typedData" in request) {
     return resolveTypedDataSignatureDetails({ request, accountSigner })
-  }
-  if (isSparkTransactionRequest(request)) {
-    return resolveSparkTransactionSignatureDetails({ request, accountSigner })
   }
   return resolveTransactionSignatureDetails({ request, accountSigner })
 }

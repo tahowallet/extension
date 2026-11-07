@@ -93,7 +93,7 @@ export const NETWORK_COLORS_FALLBACK = [
 const SPARK_NETWORK_ICON = "./images/networks/spark.svg"
 
 export function getNetworkIconFallbackColor(network: AnyNetwork): string {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return "#f7931a"
   }
   return NETWORK_COLORS_FALLBACK[
@@ -106,7 +106,7 @@ export function getNetworkIconName(network: EVMNetwork): string {
 }
 
 export const getNetworkIconSquared = (network: AnyNetwork): string => {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return SPARK_NETWORK_ICON
   }
   if (isBuiltInNetwork(network)) {
@@ -119,7 +119,7 @@ export const getNetworkIconSquared = (network: AnyNetwork): string => {
 }
 
 export const getNetworkIcon = (network: AnyNetwork): string => {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return SPARK_NETWORK_ICON
   }
   if (isBuiltInNetwork(network)) {
@@ -142,7 +142,7 @@ export function getAddressExplorerURL(
   network: AnyNetwork,
   address: string,
 ): string | undefined {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return sparkExplorerAddressURL(network, address)
   }
   const base = getBlockExplorerURL(network)
@@ -156,7 +156,7 @@ export function getTransactionExplorerURL(
   network: AnyNetwork,
   hash: string,
 ): string | undefined {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return sparkExplorerTransferURL(network, hash)
   }
   const base = getBlockExplorerURL(network)
@@ -164,7 +164,7 @@ export function getTransactionExplorerURL(
 }
 
 export function getExplorerTitle(network: AnyNetwork): string | undefined {
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return "Sparkscan"
   }
   return blockExplorer[network.chainID]?.title

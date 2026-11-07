@@ -105,7 +105,7 @@ export default function OnboardingDerivationPathSelect({
 
   const defaultPaths: Option[] = useMemo(
     () =>
-      (networkFamily === "SPARK"
+      (networkFamily === "spark"
         ? [
             sparkDerivationPaths.mainnet,
             ...(showTestNetworks ? [sparkDerivationPaths.regtest] : []),

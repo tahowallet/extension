@@ -49,7 +49,7 @@ export default function SelectNetworkMenuContent({
 }: Props): ReactElement {
   const { t } = useTranslation()
   const sparkInfo = (network: AnyNetwork): string | undefined => {
-    if (network.family !== "SPARK") {
+    if (network.family !== "spark") {
       return undefined
     }
     return network.sparkNetworkType === "MAINNET"
@@ -120,7 +120,7 @@ export default function SelectNetworkMenuContent({
 
   const selectNetwork = useCallback(
     (network: AnyNetwork) => {
-      if (network.family === "SPARK") {
+      if (network.family === "spark") {
         onSparkNetworkChange?.(network)
       } else {
         onNetworkChange(network)

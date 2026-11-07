@@ -164,11 +164,7 @@ export default function SparkTransactionSignatureDetails({
   return (
     <>
       <div className="standard_width">
-        <TransferSummaryBase
-          assetAmount={assetAmount}
-          recipientAddress={to}
-          recipientName={isLightning ? memo : undefined}
-        />
+        <TransferSummaryBase assetAmount={assetAmount} recipientAddress={to} />
       </div>
       {panels}
     </>

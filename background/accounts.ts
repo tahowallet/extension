@@ -73,7 +73,7 @@ export function isEVMAddressOnNetwork(
 export function isSparkAddressOnNetwork(
   addressOnNetwork: AnyAddressOnNetwork,
 ): addressOnNetwork is SparkAddressOnNetwork {
-  return addressOnNetwork.network.family === "SPARK"
+  return addressOnNetwork.network.family === "spark"
 }
 
 /**

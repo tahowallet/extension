@@ -26,6 +26,7 @@ import {
 } from "../../assets"
 import {
   selectCurrentAccount,
+  selectCurrentAnyAccount,
   selectCurrentNetwork,
   selectMainCurrencySymbol,
 } from "./uiSelectors"
@@ -870,6 +871,7 @@ export type AccountSummary = AnyAddressOnNetwork & {
   shortenedAddress: string
   name?: string
   avatarURL?: string
+  accountType?: AccountType
 }
 
 export const getAccountSummary = (
@@ -887,8 +889,18 @@ export const getAccountSummary = (
           ...account,
           shortenedAddress: truncateAddress(account.address),
           name: `${sparkAccount.network.name} #${sparkAccount.accountNumber}`,
+          // Spark accounts are derived from an internal recovery phrase.
+          accountType: AccountType.Internal,
         }
       : undefined
   }
   return getAccountTotal(state, account)
+}
+
+/** The summary of the account being shown, on any network family. */
+export const selectCurrentAccountSummary = (
+  state: RootState,
+): AccountSummary | undefined => {
+  const account = selectCurrentAnyAccount(state)
+  return account === undefined ? undefined : getAccountSummary(state, account)
 }

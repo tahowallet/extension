@@ -19,7 +19,7 @@ import type {
  * Each supported network family is generally incompatible with others from a
  * transaction, consensus, and/or wire format perspective.
  */
-export type NetworkFamily = "EVM" | "SPARK"
+export type NetworkFamily = "EVM" | "spark"
 
 // Should be structurally compatible with FungibleAsset or much code will
 // likely explode.
@@ -98,7 +98,7 @@ export type SparkNetworkType = "MAINNET" | "REGTEST"
  */
 export type SparkNetwork = Network & {
   chainID: `spark-${Lowercase<SparkNetworkType>}`
-  family: "SPARK"
+  family: "spark"
   sparkNetworkType: SparkNetworkType
   /**
    * Base URL of a Spark block explorer for this network; transfers and

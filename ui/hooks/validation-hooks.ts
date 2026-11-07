@@ -260,7 +260,7 @@ export const useDestinationValidation: AsyncValidationHook<
     async (newValue: string) => {
       setSparkRawValue(newValue)
       setSparkErrorMessage(undefined)
-      if (network.family !== "SPARK" || newValue.trim() === "") {
+      if (network.family !== "spark" || newValue.trim() === "") {
         onValidChange(undefined)
         return
       }
@@ -278,7 +278,7 @@ export const useDestinationValidation: AsyncValidationHook<
     [network, onValidChange],
   )
 
-  if (network.family === "SPARK") {
+  if (network.family === "spark") {
     return {
       rawValue: sparkRawValue,
       errorMessage: sparkErrorMessage,

@@ -1031,6 +1031,26 @@ export default class ReduxService extends BaseService<never> {
     transactionConstructionSliceEmitter.on(
       "requestSignature",
       async ({ request, accountSigner }) => {
+        if (isSparkTransactionRequest(request)) {
+          // Spark payments are signed with the internal signer's Spark keys
+          // and submitted in one step; there is nothing to broadcast after.
+          try {
+            await this.sendSparkTransaction(request)
+            this.store.dispatch(setSnackbarMessage("Payment sent"))
+          } catch (exception) {
+            logger.error("Error sending Spark payment", exception)
+            this.store.dispatch(
+              setSnackbarMessage(
+                `Payment failed: ${exception instanceof Error ? exception.message : String(exception)}`,
+              ),
+            )
+          } finally {
+            this.store.dispatch(
+              clearTransactionState(TransactionConstructionStatus.Idle),
+            )
+          }
+          return
+        }
         try {
           const signedTransactionResult =
             await this.signingService.signTransaction(request, accountSigner)

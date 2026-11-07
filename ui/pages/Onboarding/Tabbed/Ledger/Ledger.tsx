@@ -59,7 +59,7 @@ export default function Ledger(): ReactElement {
           />
         </div>
       )}
-      {accountFamily === "SPARK" && <OnboardingBitcoinNeedsRecoveryPhrase />}
+      {accountFamily === "spark" && <OnboardingBitcoinNeedsRecoveryPhrase />}
       {accountFamily === "EVM" &&
         (phase === "1-prepare" || connectionError) && (
           <LedgerPrepare
