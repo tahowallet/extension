@@ -25,7 +25,6 @@ import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
 import ImportForm from "./ImportForm"
 import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
-import OnboardingNetworkFamilySelect from "../../../components/Onboarding/OnboardingNetworkFamilySelect"
 import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
@@ -134,14 +133,10 @@ export default function ImportSeed(props: Props): ReactElement {
         title={t("title")}
         subtitle={t("subtitle")}
         illustration="doggo_import.svg"
+        accountFamily={networkFamily}
+        onAccountFamilyChange={setNetworkFamily}
       >
         <>
-          <div className="select_wrapper">
-            <OnboardingNetworkFamilySelect
-              value={networkFamily}
-              onChange={setNetworkFamily}
-            />
-          </div>
           {/*
            * Other EVM paths and custom paths stay behind the feature flag.
            * Remounted per family so the path resets to that family's default.

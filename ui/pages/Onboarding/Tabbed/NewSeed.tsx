@@ -31,7 +31,7 @@ import OnboardingDerivationPathSelect, {
   DefaultPathIndex,
 } from "../../../components/Onboarding/OnboardingDerivationPathSelect"
 import { sparkNetworkForDerivationPath } from "@tallyho/tally-background/constants/spark"
-import OnboardingNetworkFamilySelect from "../../../components/Onboarding/OnboardingNetworkFamilySelect"
+import OnboardingAccountFamilyTabs from "../../../components/Onboarding/OnboardingAccountFamilyTabs"
 import type { NetworkFamily } from "@tallyho/tally-background/networks"
 import type { SparkAccount } from "@tallyho/tally-background/services/spark/types"
 import {
@@ -157,8 +157,8 @@ export default function NewSeed(): ReactElement {
               gap: 24,
             }}
           >
-            <OnboardingNetworkFamilySelect
-              value={networkFamily}
+            <OnboardingAccountFamilyTabs
+              family={networkFamily}
               onChange={setNetworkFamily}
             />
             <OnboardingDerivationPathSelect

@@ -4,6 +4,8 @@ import { Redirect, useHistory } from "react-router-dom"
 import SharedPanelSwitcher from "../../../components/Shared/SharedPanelSwitcher"
 import { useAreInternalSignersUnlocked } from "../../../hooks"
 import ImportForm from "./ImportForm"
+import type { NetworkFamily } from "@tallyho/tally-background/networks"
+import OnboardingBitcoinNeedsRecoveryPhrase from "../../../components/Onboarding/OnboardingBitcoinNeedsRecoveryPhrase"
 import ImportPrivateKey from "./ImportPrivateKey"
 import ImportPrivateKeyJSON from "./ImportPrivateKeyJSON"
 import OnboardingRoutes from "./Routes"
@@ -19,6 +21,7 @@ export default function ImportPrivateKeyForm(props: Props): ReactElement {
 
   const [isImporting, setIsImporting] = useState(false)
   const [panelNumber, setPanelNumber] = useState(0)
+  const [accountFamily, setAccountFamily] = useState<NetworkFamily>("EVM")
 
   const { t } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importPrivateKey",
@@ -42,29 +45,35 @@ export default function ImportPrivateKeyForm(props: Props): ReactElement {
         title={t("title")}
         subtitle={t("subtitle")}
         illustration="doggo_private_key.svg"
+        accountFamily={accountFamily}
+        onAccountFamilyChange={setAccountFamily}
       >
-        <>
-          <div className="panel_wrapper">
-            <SharedPanelSwitcher
-              setPanelNumber={setPanelNumber}
-              panelNumber={panelNumber}
-              panelNames={[t("privateKey"), t("json")]}
-            />
-          </div>
-          {panelNumber === 0 ? (
-            <ImportPrivateKey
-              setIsImporting={setIsImporting}
-              finalize={finalize}
-            />
-          ) : null}
-          {panelNumber === 1 ? (
-            <ImportPrivateKeyJSON
-              setIsImporting={setIsImporting}
-              isImporting={isImporting}
-              finalize={finalize}
-            />
-          ) : null}
-        </>
+        {accountFamily === "SPARK" ? (
+          <OnboardingBitcoinNeedsRecoveryPhrase />
+        ) : (
+          <>
+            <div className="panel_wrapper">
+              <SharedPanelSwitcher
+                setPanelNumber={setPanelNumber}
+                panelNumber={panelNumber}
+                panelNames={[t("privateKey"), t("json")]}
+              />
+            </div>
+            {panelNumber === 0 ? (
+              <ImportPrivateKey
+                setIsImporting={setIsImporting}
+                finalize={finalize}
+              />
+            ) : null}
+            {panelNumber === 1 ? (
+              <ImportPrivateKeyJSON
+                setIsImporting={setIsImporting}
+                isImporting={isImporting}
+                finalize={finalize}
+              />
+            ) : null}
+          </>
+        )}
       </ImportForm>
       <style jsx>{`
         .panel_wrapper {

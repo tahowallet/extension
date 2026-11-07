@@ -1,14 +1,29 @@
 import React, { ReactElement } from "react"
+import type { NetworkFamily } from "@tallyho/tally-background/networks"
+import OnboardingAccountFamilyTabs from "../../../components/Onboarding/OnboardingAccountFamilyTabs"
 
 type Props = {
   illustration: string
   title: string
   subtitle: string
   children: ReactElement
+  /**
+   * When given, EVM | Bitcoin tabs are shown above the form; the children
+   * render the form for the selected kind of account.
+   */
+  accountFamily?: NetworkFamily
+  onAccountFamilyChange?: (family: NetworkFamily) => void
 }
 
 export default function ImportForm(props: Props): ReactElement {
-  const { children, title, subtitle, illustration } = props
+  const {
+    children,
+    title,
+    subtitle,
+    illustration,
+    accountFamily,
+    onAccountFamilyChange,
+  } = props
   return (
     <>
       <div className="centered fade_in">
@@ -23,6 +38,12 @@ export default function ImportForm(props: Props): ReactElement {
             <h1 className="serif_header">{title}</h1>
             <div className="info">{subtitle}</div>
           </div>
+          {accountFamily && onAccountFamilyChange && (
+            <OnboardingAccountFamilyTabs
+              family={accountFamily}
+              onChange={onAccountFamilyChange}
+            />
+          )}
           {children}
         </form>
       </div>

@@ -240,8 +240,8 @@
       "ledgerLegacy": "Ledger Legacy",
       "rsk": "Rootstock",
       "rskTestnet": "Rootstock Testnet",
-      "spark": "Bitcoin on Spark",
-      "sparkRegtest": "Bitcoin on Spark (regtest)"
+      "spark": "Spark",
+      "sparkRegtest": "Spark regtest"
     }
   },
   "networkFees": {
@@ -483,6 +483,11 @@
         "titleExisting": "Account added to Taho!",
         "subtitle": "For faster access we recommend pinning Taho to your browser",
         "animationAlt": "Pin the wallet"
+      },
+      "accountFamily": {
+        "evm": "EVM",
+        "bitcoin": "Bitcoin",
+        "bitcoinNeedsRecoveryPhrase": "Bitcoin accounts on Spark are derived from a recovery phrase. Import a recovery phrase or create a new wallet to add one."
       }
     },
     "setPassword": {
@@ -526,12 +531,7 @@
     "addDerivationPath": "Add derivation path",
     "pathLabel": "Label",
     "customPath": "Custom path",
-    "addCustomPath": "Add custom path",
-    "networkFamily": {
-      "label": "Network",
-      "EVM": "Ethereum & EVM chains",
-      "SPARK": "Bitcoin (Spark)"
-    }
+    "addCustomPath": "Add custom path"
   },
   "overview": {
     "totalBalanceEverywhere": "Total balance on all accounts",
