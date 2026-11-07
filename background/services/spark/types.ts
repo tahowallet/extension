@@ -77,26 +77,10 @@ export type SparkLightningInvoice = {
   createdAt: UNIXTime
 }
 
-export type SparkSendRequest =
-  | {
-      kind: "spark"
-      accountID: string
-      receiverSparkAddress: SparkAddress
-      amountSats: number
-    }
-  | {
-      kind: "lightning"
-      accountID: string
-      invoice: string
-      maxFeeSats: number
-      /** Only for zero-amount invoices. */
-      amountSats?: number
-    }
-
 export type SparkSendResult = {
   accountID: string
   id: string
-  kind: SparkSendRequest["kind"]
+  kind: "spark" | "lightning"
   status: string
 }
 

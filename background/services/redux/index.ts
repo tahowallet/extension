@@ -286,10 +286,13 @@ export default class ReduxService extends BaseService<never> {
 
     const ledgerService = LedgerService.create()
 
+    const sparkService = SparkService.create(internalSignerService)
+
     const signingService = SigningService.create(
       internalSignerService,
       ledgerService,
       chainService,
+      sparkService,
     )
 
     const analyticsService = AnalyticsService.create(
@@ -312,8 +315,6 @@ export default class ReduxService extends BaseService<never> {
       enrichmentService,
       notificationsService,
     )
-
-    const sparkService = SparkService.create(internalSignerService)
 
     const savedReduxState = readAndMigrateState()
 
@@ -683,6 +684,7 @@ export default class ReduxService extends BaseService<never> {
         estimatedFee,
         maxFee: estimatedFee + LIGHTNING_FEE_BUFFER_SATS,
         memo: invoice.description,
+        amountFromInvoice: invoice.amountSats !== undefined,
       }
     } else {
       request = {
@@ -708,34 +710,6 @@ export default class ReduxService extends BaseService<never> {
       request.warnings = ["insufficient-funds"]
     }
     return request
-  }
-
-  /**
-   * Sign and send a Spark payment the user confirmed on the signing screen.
-   */
-  async sendSparkTransaction(
-    request: SparkTransactionRequest,
-  ): ReturnType<SparkService["send"]> {
-    if (isLightningInvoice(request.to)) {
-      const invoice = decodeLightningInvoice(request.to, {
-        network: request.network.sparkNetworkType,
-      })
-      return this.sparkService.send({
-        kind: "lightning",
-        accountID: request.sparkAccountID,
-        invoice: invoice.invoice,
-        maxFeeSats: Number(request.maxFee),
-        // Only zero-amount invoices take an amount from the payer.
-        amountSats:
-          invoice.amountSats === undefined ? Number(request.value) : undefined,
-      })
-    }
-    return this.sparkService.send({
-      kind: "spark",
-      accountID: request.sparkAccountID,
-      receiverSparkAddress: request.to,
-      amountSats: Number(request.value),
-    })
   }
 
   async addAccount(addressNetwork: AddressOnNetwork): Promise<void> {
@@ -1032,10 +1006,11 @@ export default class ReduxService extends BaseService<never> {
       "requestSignature",
       async ({ request, accountSigner }) => {
         if (isSparkTransactionRequest(request)) {
-          // Spark payments are signed with the internal signer's Spark keys
-          // and submitted in one step; there is nothing to broadcast after.
+          // The signing service routes Spark payments to the Spark signer,
+          // which signs and submits them in one step: there is nothing to
+          // broadcast after.
           try {
-            await this.sendSparkTransaction(request)
+            await this.signingService.signTransaction(request, accountSigner)
             this.store.dispatch(setSnackbarMessage("Payment sent"))
           } catch (exception) {
             logger.error("Error sending Spark payment", exception)

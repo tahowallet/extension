@@ -1,3 +1,9 @@
+import type SparkService from "../spark"
+import type { SparkSendResult } from "../spark/types"
+import {
+  isSparkTransactionRequest,
+  SparkTransactionRequest,
+} from "../../networks"
 import { StatusCodes, TransportStatusError } from "@ledgerhq/errors"
 import InternalSignerService, {
   KeyringAccountSigner,
@@ -99,18 +105,26 @@ export default class SigningService extends BaseService<Events> {
       Promise<InternalSignerService>,
       Promise<LedgerService>,
       Promise<ChainService>,
+      Promise<SparkService>,
     ]
-  > = async (internalSignerService, ledgerService, chainService) =>
+  > = async (
+    internalSignerService,
+    ledgerService,
+    chainService,
+    sparkService,
+  ) =>
     new this(
       await internalSignerService,
       await ledgerService,
       await chainService,
+      await sparkService,
     )
 
   private constructor(
     private internalSignerService: InternalSignerService,
     private ledgerService: LedgerService,
     private chainService: ChainService,
+    private sparkService: SparkService,
   ) {
     super()
   }
@@ -196,10 +210,28 @@ export default class SigningService extends BaseService<Events> {
     await this.ledgerService.refreshConnectedLedger()
   }
 
+  /**
+   * Sign a transaction with the signer for its account, on any network
+   * family. EVM transactions are nonce-populated and signed by the internal
+   * signer or a hardware wallet; Spark payments are signed by the Spark
+   * signer, which submits them as it signs.
+   */
   async signTransaction(
     transactionRequest: TransactionRequest,
     accountSigner: AccountSigner,
-  ): Promise<SignedTransaction> {
+  ): Promise<SignedTransaction>
+  async signTransaction(
+    transactionRequest: SparkTransactionRequest,
+    accountSigner: AccountSigner,
+  ): Promise<SparkSendResult>
+  async signTransaction(
+    transactionRequest: TransactionRequest | SparkTransactionRequest,
+    accountSigner: AccountSigner,
+  ): Promise<SignedTransaction | SparkSendResult> {
+    if (isSparkTransactionRequest(transactionRequest)) {
+      return this.signSparkTransaction(transactionRequest, accountSigner)
+    }
+
     const transactionWithNonce =
       await this.chainService.populateEVMTransactionNonce(transactionRequest)
 
@@ -224,6 +256,31 @@ export default class SigningService extends BaseService<Events> {
       this.chainService.releaseEVMTransactionNonce(transactionWithNonce)
 
       throw err
+    }
+  }
+
+  /**
+   * Route a Spark payment to the Spark signer. Spark keys are derived from
+   * internal-signer recovery phrases, so only keyring accounts can sign; the
+   * Spark service signs through the internal signer's lock-gated Spark keys.
+   *
+   * `signingTxResponse` is not emitted: its listeners expect a signed EVM
+   * transaction.
+   */
+  private async signSparkTransaction(
+    transactionRequest: SparkTransactionRequest,
+    accountSigner: AccountSigner,
+  ): Promise<SparkSendResult> {
+    switch (accountSigner.type) {
+      case "keyring":
+        return this.sparkService.send(transactionRequest)
+      case "private-key":
+      case "ledger":
+        throw new Error("Spark payments need a recovery-phrase account.")
+      case "read-only":
+        throw new Error("Read-only signers cannot sign.")
+      default:
+        return assertUnreachable(accountSigner)
     }
   }
 

@@ -13,7 +13,8 @@ import {
   SPARK_NETWORKS_BY_TYPE,
   sparkNetworkByChainID,
 } from "../../constants/spark"
-import type { SparkNetworkType } from "../../networks"
+import type { SparkNetworkType, SparkTransactionRequest } from "../../networks"
+import { isLightningInvoice } from "../../lib/lightning-invoice"
 import type { SparkAddress } from "../../types"
 import type {
   SparkAccount,
@@ -21,7 +22,6 @@ import type {
   SparkActivityKind,
   SparkBalance,
   SparkLightningInvoice,
-  SparkSendRequest,
   SparkSendResult,
   SparkServiceErrorCode,
 } from "./types"
@@ -357,39 +357,31 @@ export default class SparkService extends BaseService<Events> {
   }
 
   /**
-   * Send sats. The Spark SDK has no dry-run mode: this moves funds
-   * immediately, so callers must confirm with the user first.
+   * Sign and submit a Spark payment the user confirmed on the signing
+   * screen. The Spark SDK has no dry-run mode: this moves funds immediately.
+   * Called by the signing service, which routes transactions to signers.
    */
-  async send(request: SparkSendRequest): Promise<SparkSendResult> {
-    const account = this.#accountFor(request.accountID)
-    const wallet = await this.#walletFor(request.accountID)
+  async send(request: SparkTransactionRequest): Promise<SparkSendResult> {
+    const account = this.#accountFor(request.sparkAccountID)
+    if (account.address !== request.from) {
+      throw new SparkServiceError(
+        "unknown-account",
+        "The payment's sender doesn't match its Spark account.",
+      )
+    }
+    const wallet = await this.#walletFor(account.id)
 
     let result: SparkSendResult
-    if (request.kind === "spark") {
-      // Re-validate against this account's network: a regtest address must
-      // never receive a mainnet transfer or vice versa.
-      const receiverSparkAddress = toSparkAddress(
-        request.receiverSparkAddress,
-        account.network.sparkNetworkType,
-      )
-      const transfer = await this.#sdkCall("Sending on Spark", () =>
-        wallet.transfer({
-          receiverSparkAddress,
-          amountSats: request.amountSats,
-        }),
-      )
-      result = {
-        accountID: account.id,
-        id: transfer.id,
-        kind: "spark",
-        status: transfer.status,
-      }
-    } else {
+    if (isLightningInvoice(request.to)) {
+      const invoice = request.to
       const payment = await this.#sdkCall("Paying the Lightning invoice", () =>
         wallet.payLightningInvoice({
-          invoice: request.invoice,
-          maxFeeSats: request.maxFeeSats,
-          amountSatsToSend: request.amountSats,
+          invoice,
+          maxFeeSats: Number(request.maxFee),
+          // Only zero-amount invoices take an amount from the payer.
+          amountSatsToSend: request.amountFromInvoice
+            ? undefined
+            : Number(request.value),
           preferSpark: true,
         }),
       )
@@ -398,6 +390,25 @@ export default class SparkService extends BaseService<Events> {
         id: payment.id,
         kind: "lightning",
         status: String(payment.status),
+      }
+    } else {
+      // Re-validate against this account's network: a regtest address must
+      // never receive a mainnet transfer or vice versa.
+      const receiverSparkAddress = toSparkAddress(
+        request.to,
+        account.network.sparkNetworkType,
+      )
+      const transfer = await this.#sdkCall("Sending on Spark", () =>
+        wallet.transfer({
+          receiverSparkAddress,
+          amountSats: Number(request.value),
+        }),
+      )
+      result = {
+        accountID: account.id,
+        id: transfer.id,
+        kind: "spark",
+        status: transfer.status,
       }
     }
 

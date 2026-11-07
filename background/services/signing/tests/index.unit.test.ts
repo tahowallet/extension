@@ -5,6 +5,19 @@ import {
   createSigningService,
 } from "../../../tests/factories"
 import SigningService from "../index"
+import SparkService from "../../spark"
+import { SPARK_REGTEST } from "../../../constants/spark"
+import type { SparkTransactionRequest } from "../../../networks"
+
+const SPARK_REQUEST: SparkTransactionRequest = {
+  network: SPARK_REGTEST,
+  from: "sparkrt1pgssy6vty7krpze82ecm8j39gd35v35aqjjmhftc4culawsavkyh564u2uv8v0",
+  to: "sparkrt1pgssya57xvd3avs5eqhdnpelmpaf9e6mlhvwzdtcx2hua26c0dfmglezf65z7t",
+  sparkAccountID: "spark-regtest:keyring-1:0",
+  value: 1000n,
+  estimatedFee: 0n,
+  maxFee: 0n,
+}
 
 describe("Signing Service Unit", () => {
   let signingService: SigningService
@@ -67,6 +80,52 @@ describe("Signing Service Unit", () => {
           type: "read-only",
         }),
       ).rejects.toBeTruthy()
+    })
+  })
+
+  describe("signTransaction for Spark payments", () => {
+    const withSparkService = async () => {
+      const internalSignerService = createInternalSignerService()
+      const sparkService = await SparkService.create(internalSignerService)
+      const sendStub = sandbox
+        .stub(sparkService, "send")
+        .callsFake(async () => ({
+          accountID: SPARK_REQUEST.sparkAccountID,
+          id: "transfer-id",
+          kind: "spark",
+          status: "TRANSFER_STATUS_COMPLETED",
+        }))
+      signingService = await createSigningService({
+        internalSignerService,
+        sparkService: Promise.resolve(sparkService),
+      })
+      await signingService.startService()
+      return sendStub
+    }
+
+    it("routes keyring accounts to the Spark signer", async () => {
+      const sendStub = await withSparkService()
+      const result = await signingService.signTransaction(SPARK_REQUEST, {
+        type: "keyring",
+        keyringID: "keyring-1",
+      })
+      expect(sendStub.calledOnceWith(SPARK_REQUEST)).toBe(true)
+      expect(result.id).toBe("transfer-id")
+    })
+
+    it("refuses signers that can't hold Spark keys", async () => {
+      const sendStub = await withSparkService()
+      await expect(
+        signingService.signTransaction(SPARK_REQUEST, {
+          type: "ledger",
+          deviceID: "foo",
+          path: "bar",
+        }),
+      ).rejects.toThrow(/recovery-phrase/)
+      await expect(
+        signingService.signTransaction(SPARK_REQUEST, { type: "read-only" }),
+      ).rejects.toThrow(/Read-only/)
+      expect(sendStub.called).toBe(false)
     })
   })
 })

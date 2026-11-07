@@ -50,6 +50,7 @@ import {
   SigningService,
 } from "../services"
 import AbilitiesService from "../services/abilities"
+import SparkService from "../services/spark"
 import {
   ChainServiceDependencies,
   PriorityQueuedTxToRetrieve,
@@ -183,6 +184,7 @@ type CreateSigningServiceOverrides = {
   internalSignerService?: Promise<InternalSignerService>
   ledgerService?: Promise<LedgerService>
   chainService?: Promise<ChainService>
+  sparkService?: Promise<SparkService>
 }
 
 type CreateAbilitiesServiceOverrides = {
@@ -202,12 +204,16 @@ type CreateInternalEthereumProviderServiceOverrides = {
 
 export const createSigningService = async (
   overrides: CreateSigningServiceOverrides = {},
-): Promise<SigningService> =>
-  SigningService.create(
-    overrides.internalSignerService ?? createInternalSignerService(),
+): Promise<SigningService> => {
+  const internalSignerService =
+    overrides.internalSignerService ?? createInternalSignerService()
+  return SigningService.create(
+    internalSignerService,
     overrides.ledgerService ?? createLedgerService(),
     overrides.chainService ?? createChainService(),
+    overrides.sparkService ?? SparkService.create(internalSignerService),
   )
+}
 
 export async function createAnalyticsService(overrides?: {
   preferenceService?: Promise<PreferenceService>

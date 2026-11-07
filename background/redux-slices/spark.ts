@@ -5,8 +5,6 @@ import type {
   SparkActivityItem,
   SparkBalance,
   SparkLightningInvoice,
-  SparkSendRequest,
-  SparkSendResult,
 } from "../services/spark/types"
 import type { SparkNetworkType } from "../networks"
 import type { SignerImportSource } from "../services/internal-signer"

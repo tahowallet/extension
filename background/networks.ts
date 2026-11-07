@@ -320,6 +320,11 @@ export type SparkTransactionRequest = {
   /** The invoice's description, when paying a Lightning invoice. */
   memo?: string
   /**
+   * Set when a Lightning invoice fixes the amount, so paying it must not
+   * pass one; zero-amount invoices are paid `value`.
+   */
+  amountFromInvoice?: boolean
+  /**
    * Problems found while preparing the payment, shown on the signing screen
    * like an EVM transaction's annotation warnings; signing is blocked while
    * there are any.
