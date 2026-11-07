@@ -3,8 +3,10 @@ import { MemoryRouter, Route } from "react-router-dom"
 import { act, fireEvent, waitFor } from "@testing-library/react"
 import { ETHEREUM, POLYGON } from "@tallyho/tally-background/constants"
 import type { EVMNetwork } from "@tallyho/tally-background/networks"
+import { normalizeEVMAddress } from "@tallyho/tally-background/lib/utils"
 import { initialState as uiInitialState } from "@tallyho/tally-background/redux-slices/ui"
 import { createAccountData } from "@tallyho/tally-background/tests/factories"
+import type { AddressBookEntry } from "@tallyho/tally-background/redux-slices/address-book"
 import Send from "../Send"
 import { renderWithProviders } from "../../tests/test-utils"
 import { TEST_ADDRESS } from "../../tests/factories"
@@ -38,13 +40,21 @@ const RESOLVED_ADDRESS = "0x000000000000000000000000000000000000dEaD"
 const RAW_ADDRESS = "0x1111111111111111111111111111111111111111"
 const WARNING = /isn't known to be controlled by the same person/
 
-const renderSend = (network: EVMNetwork) =>
+const BROTHER_ADDRESS = normalizeEVMAddress(
+  "0x2222222222222222222222222222222222222222",
+)
+
+const renderSend = (
+  network: EVMNetwork,
+  addressBookEntries: AddressBookEntry[] = [],
+) =>
   renderWithProviders(
     <MemoryRouter initialEntries={[{ pathname: "/send" }]}>
       <Route path="/send" component={Send} />
     </MemoryRouter>,
     {
       preloadedState: {
+        addressBook: { entries: addressBookEntries },
         account: {
           accountsData: {
             evm: {
@@ -188,5 +198,81 @@ describe("Send recipient name resolution", () => {
     ).toBeInTheDocument()
     expect(mockResolveNameOnNetwork).toHaveBeenCalledTimes(1)
     expect(mockCheckControlCompatibility).not.toHaveBeenCalled()
+  })
+})
+
+describe("Send recipient picked from the address book", () => {
+  const BROTHER: AddressBookEntry = {
+    name: "Brother",
+    address: BROTHER_ADDRESS,
+    network: POLYGON,
+    additionalChainIDs: [],
+    createdAt: 1,
+    updatedAt: 1,
+  }
+
+  beforeEach(() => {
+    mockResolveNameOnNetwork.mockReset()
+  })
+
+  const pickBrother = async (ui: ReturnType<typeof renderSend>) => {
+    fireEvent.click(
+      ui.getByRole("button", { name: "Choose from address book" }),
+    )
+    fireEvent.click(await ui.findByText("Brother"))
+  }
+
+  it("fills in the name when it resolves to the chosen address here", async () => {
+    mockResolveNameOnNetwork.mockImplementation(
+      async ({ network }: { network: EVMNetwork }) => ({
+        address: BROTHER_ADDRESS,
+        network,
+      }),
+    )
+
+    const ui = renderSend(POLYGON, [BROTHER])
+    await pickBrother(ui)
+
+    await waitFor(() =>
+      expect(ui.container.querySelector("#send_address")).toHaveValue(
+        "Brother",
+      ),
+    )
+    expect(mockResolveNameOnNetwork).toHaveBeenCalledWith({
+      name: "Brother",
+      network: POLYGON,
+    })
+  })
+
+  it("fills in the address when the name is ambiguous", async () => {
+    // Another entry, account, or name called Brother wins the resolution.
+    mockResolveNameOnNetwork.mockImplementation(
+      async ({ network }: { network: EVMNetwork }) => ({
+        address: RESOLVED_ADDRESS,
+        network,
+      }),
+    )
+
+    const ui = renderSend(POLYGON, [BROTHER])
+    await pickBrother(ui)
+
+    await waitFor(() =>
+      expect(ui.container.querySelector("#send_address")).toHaveValue(
+        BROTHER_ADDRESS,
+      ),
+    )
+  })
+
+  it("fills in the address when the name does not resolve", async () => {
+    mockResolveNameOnNetwork.mockResolvedValue(undefined)
+
+    const ui = renderSend(POLYGON, [BROTHER])
+    await pickBrother(ui)
+
+    await waitFor(() =>
+      expect(ui.container.querySelector("#send_address")).toHaveValue(
+        BROTHER_ADDRESS,
+      ),
+    )
   })
 })

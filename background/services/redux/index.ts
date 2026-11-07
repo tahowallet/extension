@@ -27,6 +27,7 @@ import {
   NFTsService,
   AnalyticsService,
 } from ".."
+import type { AddressBookUpdateResult } from "../name"
 
 import { HexString, NormalizedEVMAddress } from "../../types"
 import {
@@ -40,6 +41,7 @@ import { Eligible, ReferrerStats } from "../island/types"
 
 import {
   AccountType,
+  clearAccountName,
   deleteAccount,
   loadAccount,
   setControlCompatibility,
@@ -47,6 +49,7 @@ import {
   updateAccountName,
   updateENSAvatar,
 } from "../../redux-slices/accounts"
+import { setAddressBook } from "../../redux-slices/address-book"
 import {
   assetsLoaded,
   refreshAsset,
@@ -513,17 +516,24 @@ export default class ReduxService extends BaseService<never> {
     await this.chainService.addAccountToTrack(addressNetwork)
   }
 
-  addOrEditAddressName({
-    address,
-    network,
-    name,
-  }: AddressOnNetwork & { name: string }): void {
-    this.preferenceService.addOrEditNameInAddressBook({
-      address,
-      network,
-      name,
-    })
-    this.analyticsService.sendAnalyticsEvent(AnalyticsEvent.ACCOUNT_NAME_EDITED)
+  async addOrEditAddressName(
+    update: AddressOnNetwork & {
+      name: string
+      additionalChainIDs?: string[]
+      previousNetwork?: EVMNetwork
+    },
+  ): Promise<AddressBookUpdateResult> {
+    const result = await this.nameService.addOrEditAddressBookEntry(update)
+    if (result.success) {
+      this.analyticsService.sendAnalyticsEvent(
+        AnalyticsEvent.ACCOUNT_NAME_EDITED,
+      )
+    }
+    return result
+  }
+
+  async removeAddressName(addressOnNetwork: AddressOnNetwork): Promise<void> {
+    await this.nameService.removeAddressBookEntry(addressOnNetwork)
   }
 
   async removeAccount(
@@ -886,6 +896,21 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async connectNameService(): Promise<void> {
+    // The signing service depends on the name service, so the name service is
+    // handed its control compatibility check rather than depending on it back.
+    this.nameService.setAddressControlCompatibilityCheck(
+      (addressOnNetwork, otherNetwork) =>
+        this.signingService.isControlCompatible(addressOnNetwork, otherNetwork),
+    )
+
+    this.nameService.emitter.on("addressBook", (entries) => {
+      this.store.dispatch(setAddressBook(entries))
+    })
+
+    this.nameService.emitter.on("clearedName", (addressOnNetwork) => {
+      this.store.dispatch(clearAccountName(addressOnNetwork))
+    })
+
     this.nameService.emitter.on(
       "resolvedName",
       async ({
@@ -1014,6 +1039,9 @@ export default class ReduxService extends BaseService<never> {
 
     this.signingService.emitter.on("controlCompatibility", (compatibility) => {
       this.store.dispatch(setControlCompatibility(compatibility))
+      // Which networks an address book entry applies on follows control
+      // compatibility, so names may need to change with it.
+      void this.nameService.refreshAddressBookNames()
     })
   }
 

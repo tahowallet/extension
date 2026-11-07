@@ -50,9 +50,9 @@ export type SignatureResponse =
   | ErrorResponse
 
 /**
- * For each of the user's addresses, and each chain ID it's tracked on, the
- * other chain IDs it's tracked on that it's known to be control-compatible
- * with. See RFB 5.
+ * For each of the user's addresses, and each chain ID the wallet knows about,
+ * the other known chain IDs it's known to be control-compatible with there.
+ * See RFB 5.
  */
 export type ControlCompatibility = {
   [address: NormalizedEVMAddress]: { [chainID: string]: string[] }
@@ -229,15 +229,21 @@ export default class SigningService extends BaseService<Events> {
 
   /**
    * Computes control compatibility for every tracked address, checking each
-   * pair of networks that address is tracked on. Only signer-based conditions
+   * pair of networks the wallet knows about. Only signer-based conditions
    * apply, so this makes no network calls. See RFB 5.
    */
   async getControlCompatibility(): Promise<ControlCompatibility> {
+    // Every known network, not just the ones an address is tracked on: an
+    // address is only tracked on networks the user has visited, but a name
+    // given to it should apply wherever the same signer controls it.
+    const supportedNetworks = this.chainService.getSupportedNetworks()
     const networksByAddress = new Map<NormalizedEVMAddress, EVMNetwork[]>()
     const accounts = await this.chainService.getAccountsToTrack()
     accounts.forEach(({ address, network }) => {
       const normalizedAddress = normalizeEVMAddress(address)
-      const networks = networksByAddress.get(normalizedAddress) ?? []
+      const networks = networksByAddress.get(normalizedAddress) ?? [
+        ...supportedNetworks,
+      ]
       if (!networks.some(({ chainID }) => chainID === network.chainID)) {
         networks.push(network)
       }

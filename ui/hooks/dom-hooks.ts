@@ -168,3 +168,69 @@ export function useIntersectionObserver<T extends HTMLElement>(
 
   return ref
 }
+
+/**
+ * Keyboard navigation for a list driven from a search box: arrow keys and
+ * Ctrl+N/Ctrl+P move the highlight, Enter chooses the highlighted item. The
+ * highlight resets to the top whenever `resetKey`, e.g. the search term,
+ * changes.
+ */
+export function useListKeyboardNavigation<T>(
+  items: T[],
+  onChoose: (item: T) => void,
+  resetKey: unknown,
+): {
+  highlightedIndex: number
+  setHighlightedIndex: (index: number) => void
+  handleKeyDown: (event: React.KeyboardEvent) => void
+} {
+  const [highlightedIndex, setHighlightedIndex] = useState(0)
+
+  useEffect(() => {
+    setHighlightedIndex(0)
+  }, [resetKey])
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const maxIndex = items.length - 1
+      const moveDown = () =>
+        setHighlightedIndex((previous) => Math.min(previous + 1, maxIndex))
+      const moveUp = () =>
+        setHighlightedIndex((previous) => Math.max(previous - 1, 0))
+
+      switch (event.key) {
+        case "ArrowDown":
+          event.preventDefault()
+          moveDown()
+          break
+        case "ArrowUp":
+          event.preventDefault()
+          moveUp()
+          break
+        case "n":
+          if (event.ctrlKey) {
+            event.preventDefault()
+            moveDown()
+          }
+          break
+        case "p":
+          if (event.ctrlKey) {
+            event.preventDefault()
+            moveUp()
+          }
+          break
+        case "Enter":
+          event.preventDefault()
+          if (items[highlightedIndex] !== undefined) {
+            onChoose(items[highlightedIndex])
+          }
+          break
+        default:
+          break
+      }
+    },
+    [items, highlightedIndex, onChoose],
+  )
+
+  return { highlightedIndex, setHighlightedIndex, handleKeyDown }
+}
