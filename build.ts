@@ -25,6 +25,79 @@ if (process.env.SUPPORT_BROWSER === "firefox") {
 }
 
 // ---------------------------------------------------------------------------
+// Output formatting
+// ---------------------------------------------------------------------------
+
+// Color only for a terminal, never in CI logs or piped output. NO_COLOR turns
+// it off, and FORCE_COLOR turns it on (or off, with 0 or false) regardless.
+const forceColor = process.env.FORCE_COLOR
+const useColor =
+  forceColor !== undefined
+    ? !["0", "false"].includes(forceColor)
+    : !process.env.NO_COLOR && process.stdout.isTTY
+
+const ansi =
+  (open: number, close: number) =>
+  (text: string): string =>
+    useColor ? `\x1b[${open}m${text}\x1b[${close}m` : text
+const bold = ansi(1, 22)
+const dim = ansi(2, 22)
+const red = ansi(31, 39)
+const green = ansi(32, 39)
+const cyan = ansi(36, 39)
+
+/** Formats a duration in milliseconds as `850ms`, `1.2s` or `1m 5s`. */
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`
+  const seconds = Math.round(ms / 1000)
+  return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+}
+
+/** The time since `start`, from `performance.now()`, formatted. */
+const sinceStart = (start: number) => formatDuration(performance.now() - start)
+
+/** A dimmed "in 1.2s" for the end of a stage's log line. */
+const elapsed = (start: number) => dim(`in ${sinceStart(start)}`)
+
+const byteFormats = (signDisplay: "auto" | "exceptZero") => ({
+  // Long style reads "413 bytes", where short would read "413 byte"
+  byte: new Intl.NumberFormat("en-US", {
+    style: "unit",
+    unit: "byte",
+    unitDisplay: "long",
+    signDisplay,
+  }),
+  kilobyte: new Intl.NumberFormat("en-US", {
+    style: "unit",
+    unit: "kilobyte",
+    unitDisplay: "short",
+    signDisplay,
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }),
+  megabyte: new Intl.NumberFormat("en-US", {
+    style: "unit",
+    unit: "megabyte",
+    unitDisplay: "short",
+    signDisplay,
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }),
+})
+const sizeFormats = byteFormats("auto")
+const changeFormats = byteFormats("exceptZero")
+
+/** Formats a byte count in bytes under 1 kB, then in kB, then in MB. */
+function formatBytes(bytes: number, formats = sizeFormats): string {
+  const magnitude = Math.abs(bytes)
+  if (magnitude < 1000) return formats.byte.format(bytes)
+  // Move up a unit where rounding would otherwise print "1,000.0 kB"
+  if (magnitude < 999_950) return formats.kilobyte.format(bytes / 1000)
+  return formats.megabyte.format(bytes / 1_000_000)
+}
+
+// ---------------------------------------------------------------------------
 // Git branch info (used for dev build badges and version strings)
 // ---------------------------------------------------------------------------
 let gitBranch = ""
@@ -318,12 +391,26 @@ function trackBundleSizes(outdir: string) {
 
   files.sort((a, b) => a.filename.localeCompare(b.filename))
 
-  // Log size changes
-  console.log("\nBundle sizes:")
-  for (const f of files) {
-    const diffStr = f.diff > 0 ? `+${f.diff}` : `${f.diff}`
-    const sizeKb = (f.size / 1024).toFixed(1)
-    console.log(`  ${f.filename}: ${sizeKb} kB (${diffStr} bytes)`)
+  // Log sizes and changes in aligned columns. Widths are measured before
+  // coloring, since escape codes take up no space on screen.
+  const rows = files.map((f) => ({
+    name: f.filename,
+    size: formatBytes(f.size),
+    change: formatBytes(f.diff, changeFormats),
+    diff: f.diff,
+  }))
+  const nameWidth = Math.max(...rows.map((r) => r.name.length))
+  const sizeWidth = Math.max(...rows.map((r) => r.size.length))
+  const changeWidth = Math.max(...rows.map((r) => r.change.length))
+
+  console.log(`\n${bold(cyan("Bundle sizes:"))}`)
+  for (const r of rows) {
+    let changeColor = dim
+    if (r.diff > 0) changeColor = red
+    else if (r.diff < 0) changeColor = green
+    console.log(
+      `  ${dim(r.name.padEnd(nameWidth))}  ${r.size.padStart(sizeWidth)}  ${changeColor(r.change.padStart(changeWidth))}`,
+    )
   }
 
   // Prepend new entry
@@ -354,7 +441,8 @@ async function buildForBrowser(browser: string) {
       ? ("none" as const)
       : ("external" as const)
 
-  console.log(`\nBuilding for ${browser} (${mode})...`)
+  console.log(`\n${bold(cyan(`Building for ${browser} (${mode})...`))}`)
+  const buildStart = performance.now()
 
   const result = await Bun.build({
     entrypoints: [
@@ -387,9 +475,12 @@ async function buildForBrowser(browser: string) {
     process.exit(1)
   }
 
-  console.log(`  ${result.outputs.length} output files`)
+  console.log(
+    `  Bundled ${result.outputs.length} output files ${elapsed(buildStart)}`,
+  )
 
   // Copy static assets
+  const assetsStart = performance.now()
   copyStaticAssets(browser, outdir)
 
   // Overlay a badge on the icon for dev and release channel builds
@@ -411,6 +502,7 @@ async function buildForBrowser(browser: string) {
     path.join(outdir, "manifest.json"),
     JSON.stringify(manifestObj, null, 2),
   )
+  console.log(`  Copied assets and wrote manifest ${elapsed(assetsStart)}`)
 
   // Track bundle sizes (only for first browser to avoid duplicates)
   if (browser === "chrome") {
@@ -419,9 +511,21 @@ async function buildForBrowser(browser: string) {
 
   // Create archive in production
   if (isProduction) {
+    const archiveStart = performance.now()
     await createArchive(browser, outdir)
-    console.log(`  Created ${browser}.zip`)
+    console.log(`  Created ${browser}.zip ${elapsed(archiveStart)}`)
   }
+
+  console.log(`  ${bold(`Built ${browser} in ${sinceStart(buildStart)}`)}`)
+}
+
+/** Builds every supported browser, then logs how long they took. */
+async function buildAll(done: string) {
+  const start = performance.now()
+  for (const browser of supportedBrowsers) {
+    await buildForBrowser(browser)
+  }
+  console.log(`\n${bold(green(`${done} in ${sinceStart(start)}`))}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -429,10 +533,8 @@ async function buildForBrowser(browser: string) {
 // ---------------------------------------------------------------------------
 async function watchMode() {
   // Initial build
-  for (const browser of supportedBrowsers) {
-    await buildForBrowser(browser)
-  }
-  console.log("\nWatching for changes...")
+  await buildAll("Build complete")
+  console.log(cyan("Watching for changes..."))
 
   const watchDirs = [
     "src",
@@ -453,13 +555,10 @@ async function watchMode() {
       if (!/\.(ts|tsx|js|jsx|json|css|html)$/.test(filename)) return
 
       console.log(
-        `\n[${new Date().toLocaleTimeString()}] ${filename} changed, rebuilding...`,
+        `\n${dim(`[${new Date().toLocaleTimeString()}]`)} ${filename} changed, rebuilding...`,
       )
       try {
-        for (const browser of supportedBrowsers) {
-          await buildForBrowser(browser)
-        }
-        console.log("Rebuild complete.")
+        await buildAll("Rebuild complete")
       } catch (err) {
         console.error("Rebuild failed:", err)
       }
@@ -474,15 +573,13 @@ async function watchMode() {
 // Entry point
 // ---------------------------------------------------------------------------
 async function main() {
-  console.log(`Mode: ${mode}`)
-  console.log(`Browsers: ${supportedBrowsers.join(", ")}`)
+  console.log(`${dim("Mode:")} ${mode}`)
+  console.log(`${dim("Browsers:")} ${supportedBrowsers.join(", ")}`)
 
   if (isWatch) {
     await watchMode()
   } else {
-    for (const browser of supportedBrowsers) {
-      await buildForBrowser(browser)
-    }
+    await buildAll("Build complete")
   }
 }
 
