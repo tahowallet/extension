@@ -382,8 +382,6 @@ export default function Send(): ReactElement {
       </div>
       <SharedSlideUpMenu
         isOpen={isAddressBookOpen}
-        isScrollable
-        style={{ display: "flex", flexDirection: "column" }}
         testid="select_address_slide_up"
         close={() => setIsAddressBookOpen(false)}
       >
