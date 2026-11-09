@@ -152,7 +152,11 @@ export function parseToFixedPointNumber(
     return undefined
   }
 
-  const noThousandsSeparatorWhole = whole.replace(",", "")
+  if (whole.includes(",") && !/^\s*[+-]?\d{1,3}(?:,\d{3})+$/.test(whole)) {
+    return undefined
+  }
+
+  const noThousandsSeparatorWhole = whole.replace(/,/g, "")
   const setDecimals = decimals ?? ""
 
   try {
