@@ -3,6 +3,7 @@ import {
   checkRecoveryPhrase,
   findUnknownWordNumbers,
   getRecoveryWordSuggestions,
+  getWordNumberAt,
   isRecoveryWord,
   normalizeRecoveryPhrase,
   splitRecoveryPhrase,
@@ -78,24 +79,33 @@ describe("normalizeRecoveryPhrase", () => {
   })
 })
 
+describe("getWordNumberAt", () => {
+  it("finds the word that ends at the caret", () => {
+    expect(getWordNumberAt("abandon abo", 11)).toBe(2)
+    expect(getWordNumberAt("abandon abo", 7)).toBe(1)
+    expect(getWordNumberAt("abandon abo", 3)).toBe(1)
+    expect(getWordNumberAt("  abandon\n\tabo", 14)).toBe(2)
+  })
+
+  it("finds no word when the caret follows whitespace", () => {
+    expect(getWordNumberAt("abandon ", 8)).toBeUndefined()
+    expect(getWordNumberAt("abandon abo", 8)).toBeUndefined()
+    expect(getWordNumberAt("", 0)).toBeUndefined()
+  })
+})
+
 describe("findUnknownWordNumbers", () => {
   it("returns 1-based numbers of unknown words", () => {
     const phrase = withWordAt(withWordAt(VALID_12, 3, "abndon"), 7, "abandom")
 
-    expect(findUnknownWordNumbers(phrase, { includeLastWord: true })).toEqual([
-      3, 7,
-    ])
+    expect(findUnknownWordNumbers(phrase)).toEqual([3, 7])
   })
 
-  it("can leave out the last word", () => {
-    const phrase = withWordAt(VALID_12, 12, "abo")
+  it("can leave out the word being typed", () => {
+    const phrase = withWordAt(withWordAt(VALID_12, 3, "abndon"), 12, "abo")
 
-    expect(findUnknownWordNumbers(phrase, { includeLastWord: false })).toEqual(
-      [],
-    )
-    expect(findUnknownWordNumbers(phrase, { includeLastWord: true })).toEqual([
-      12,
-    ])
+    expect(findUnknownWordNumbers(phrase, 12)).toEqual([3])
+    expect(findUnknownWordNumbers(phrase, 3)).toEqual([12])
   })
 })
 

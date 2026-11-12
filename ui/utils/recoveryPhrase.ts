@@ -50,27 +50,36 @@ export function getRecoveryWordSuggestions(
 }
 
 /**
- * Returns 1-based positions of words not in the list. Leave out the last word
- * while it may still be being typed.
+ * Returns the 1-based number of the word that ends at the caret, which is the
+ * word being typed, or `undefined` when the caret follows whitespace.
+ */
+export function getWordNumberAt(
+  text: string,
+  caret: number,
+): number | undefined {
+  const textBeforeCaret = text.slice(0, caret)
+  if (!/\S$/.test(textBeforeCaret)) return undefined
+
+  return splitRecoveryPhrase(textBeforeCaret).length
+}
+
+/**
+ * Returns 1-based numbers of words not in the list, leaving out
+ * `skipWordNumber` so a word isn't marked while it's being typed.
  */
 export function findUnknownWordNumbers(
   text: string,
-  { includeLastWord }: { includeLastWord: boolean },
+  skipWordNumber?: number,
 ): number[] {
-  const words = splitRecoveryPhrase(text)
-  const checkedWords = includeLastWord ? words : words.slice(0, -1)
-
-  return checkedWords.flatMap((word, index) =>
-    isRecoveryWord(word) ? [] : [index + 1],
+  return splitRecoveryPhrase(text).flatMap((word, index) =>
+    index + 1 === skipWordNumber || isRecoveryWord(word) ? [] : [index + 1],
   )
 }
 
 export function checkRecoveryPhrase(text: string): RecoveryPhraseCheck {
   const words = splitRecoveryPhrase(text)
   const wordCount = words.length
-  const unknownWordNumbers = findUnknownWordNumbers(text, {
-    includeLastWord: true,
-  })
+  const unknownWordNumbers = findUnknownWordNumbers(text)
 
   if (unknownWordNumbers.length > 0) {
     return { result: "unknownWords", unknownWordNumbers, wordCount }
