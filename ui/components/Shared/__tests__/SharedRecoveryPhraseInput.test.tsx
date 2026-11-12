@@ -1,5 +1,5 @@
 import React from "react"
-import { cleanup, render, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import SharedRecoveryPhraseInput from "../SharedRecoveryPhraseInput"
 
@@ -17,13 +17,19 @@ const renderInput = (errorMessage?: string) => {
     />,
   )
 
+  // Other test files sharing this process may leave their DOM behind.
+  const view = within(ui.container)
+
   return {
-    // Other test files sharing this process may leave their DOM behind.
-    input: within(ui.container).getByRole("textbox", { name: label }),
+    ...view,
+    input: view.getByRole("textbox", { name: label }),
     onChange,
     onUnknownWordsChange,
   }
 }
+
+const getSuggestions = (view: ReturnType<typeof renderInput>) =>
+  view.queryAllByRole("option").map((option) => option.textContent)
 
 describe("SharedRecoveryPhraseInput", () => {
   afterEach(() => {
@@ -108,6 +114,100 @@ describe("SharedRecoveryPhraseInput", () => {
 
     expect(input).toHaveAttribute("aria-invalid", "true")
     expect(input).toHaveAccessibleDescription(errorMessage)
+  })
+
+  describe("suggestions", () => {
+    test("should list matching words once two letters are typed", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "a")
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+
+      await userEvent.type(view.input, "b")
+      expect(view.getByRole("listbox", { name: "Suggested words" })).toBe(
+        view.getByRole("listbox"),
+      )
+      expect(getSuggestions(view)).toEqual([
+        "abandon",
+        "ability",
+        "able",
+        "about",
+        "above",
+        "absent",
+      ])
+      expect(view.input).toHaveAttribute("aria-autocomplete", "list")
+      expect(view.input).toHaveAttribute(
+        "aria-controls",
+        view.getByRole("listbox").id,
+      )
+      expect(view.getByText("6 suggestions")).toBeInTheDocument()
+    })
+
+    test("should replace the typed word with a clicked suggestion", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "abandon abo")
+      await userEvent.click(view.getByRole("option", { name: "about" }))
+
+      expect(view.input).toHaveValue("abandon about ")
+      expect(view.input).toHaveFocus()
+      expect(view.onChange).toHaveBeenLastCalledWith("abandon about")
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+    })
+
+    test("should never change a word without a pick", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "abo ")
+
+      expect(view.input).toHaveValue("abo ")
+      expect(view.onUnknownWordsChange).toHaveBeenLastCalledWith([1])
+    })
+
+    test("should not list a finished word on its own", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "zoo")
+
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+    })
+
+    test("should close on Escape and on blur", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{Escape}")
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+
+      await userEvent.type(view.input, "o")
+      expect(view.getByRole("listbox")).toBeInTheDocument()
+
+      await userEvent.tab()
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+    })
+
+    test("should not list words for pasted text", async () => {
+      const view = renderInput()
+
+      await userEvent.click(view.input)
+      await userEvent.paste("abandon ab")
+
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+    })
+
+    test("should not list words for text filled in at once", () => {
+      const view = renderInput()
+      const phrase = "abandon ab"
+
+      fireEvent.input(view.input, {
+        target: { value: phrase },
+        inputType: "insertText",
+        data: phrase,
+      })
+
+      expect(view.input).toHaveValue(phrase)
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+      expect(view.onUnknownWordsChange).toHaveBeenLastCalledWith([2])
+    })
   })
 
   test("should turn off browser spellcheck and autofill", () => {

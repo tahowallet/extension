@@ -1,8 +1,23 @@
-import React, { ReactElement, useEffect, useMemo, useState } from "react"
+import React, {
+  ReactElement,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import { useTranslation } from "react-i18next"
 import {
+  WordAtCaret,
   findUnknownWordNumbers,
-  getWordNumberAt,
+  getRecoveryWordSuggestions,
+  getWordAt,
+  replaceWord,
 } from "../../utils/recoveryPhrase"
+
+const SUGGESTION_MIN_LETTERS = 2
+const SUGGESTION_LIMIT = 6
+const SUGGESTIONS_ID = "recovery_phrase_suggestions"
 
 type Props = {
   onChange: (text: string) => void
@@ -18,60 +33,144 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
     label = "",
     errorMessage = null,
   } = props
+  const { t } = useTranslation("translation", {
+    keyPrefix: "shared.recoveryWordSuggestions",
+  })
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const caretAfterPickRef = useRef<number>()
   const [phrase, setPhrase] = useState("")
-  const [typedWordNumber, setTypedWordNumber] = useState<number>()
+  const [typedWord, setTypedWord] = useState<WordAtCaret>()
+  const [isListDismissed, setIsListDismissed] = useState(false)
 
   const unknownWordNumbers = useMemo(
-    () => findUnknownWordNumbers(phrase, typedWordNumber),
-    [phrase, typedWordNumber],
+    () => findUnknownWordNumbers(phrase, typedWord?.number),
+    [phrase, typedWord?.number],
   )
+
+  const suggestions = useMemo(() => {
+    if (!typedWord || typedWord.prefix.length < SUGGESTION_MIN_LETTERS) {
+      return []
+    }
+    const words = getRecoveryWordSuggestions(typedWord.prefix, SUGGESTION_LIMIT)
+    const isOnlyTheTypedWord =
+      words.length === 1 && words[0] === typedWord.prefix.toLowerCase()
+
+    return isOnlyTheTypedWord ? [] : words
+  }, [typedWord])
+
+  const isListOpen = suggestions.length > 0 && !isListDismissed
 
   useEffect(() => {
     onUnknownWordsChange(unknownWordNumbers)
   }, [unknownWordNumbers, onUnknownWordsChange])
 
+  useLayoutEffect(() => {
+    const caret = caretAfterPickRef.current
+    if (caret === undefined) return
+
+    textareaRef.current?.setSelectionRange(caret, caret)
+    caretAfterPickRef.current = undefined
+  }, [phrase])
+
+  const updatePhrase = (value: string, word: WordAtCaret | undefined) => {
+    setPhrase(value)
+    setTypedWord(word)
+    setIsListDismissed(false)
+    onChange(value.trim())
+  }
+
+  const pickSuggestion = (suggestion: string) => {
+    if (!typedWord) return
+
+    const replaced = replaceWord(phrase, typedWord, suggestion)
+    caretAfterPickRef.current = replaced.caret
+    updatePhrase(replaced.text, undefined)
+  }
+
   return (
     <>
       <div className="input_wrap">
-        <textarea
-          id="recovery_phrase"
-          value={phrase}
-          data-empty={phrase.length < 1}
-          spellCheck={false}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          aria-invalid={unknownWordNumbers.length > 0 || Boolean(errorMessage)}
-          aria-describedby={errorMessage ? "recovery_phrase_error" : undefined}
-          onChange={(event) => {
-            const { value, selectionStart } = event.currentTarget
-            const { nativeEvent } = event
-            // Pasted and dropped words are complete, so check them all now.
-            const isInsertedWhole =
-              nativeEvent instanceof InputEvent &&
-              nativeEvent.inputType.startsWith("insertFrom")
+        <div className="field">
+          <textarea
+            ref={textareaRef}
+            id="recovery_phrase"
+            value={phrase}
+            data-empty={phrase.length < 1}
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            aria-autocomplete="list"
+            aria-controls={isListOpen ? SUGGESTIONS_ID : undefined}
+            aria-invalid={
+              unknownWordNumbers.length > 0 || Boolean(errorMessage)
+            }
+            aria-describedby={
+              errorMessage ? "recovery_phrase_error" : undefined
+            }
+            onChange={(event) => {
+              const { value, selectionStart } = event.currentTarget
+              const { nativeEvent } = event
+              // Pasted, dropped or filled-in text holds whole words, so check
+              // them all now instead of waiting for the last one.
+              const isInsertedWhole =
+                nativeEvent instanceof InputEvent &&
+                (nativeEvent.inputType.startsWith("insertFrom") ||
+                  /\s/.test(nativeEvent.data ?? ""))
 
-            setPhrase(value)
-            setTypedWordNumber(
-              isInsertedWhole
-                ? undefined
-                : getWordNumberAt(value, selectionStart),
-            )
-            onChange(value.trim())
-          }}
-          onSelect={(event) => {
-            const { value, selectionStart } = event.currentTarget
-            setTypedWordNumber((current) =>
-              getWordNumberAt(value, selectionStart) === current
-                ? current
-                : undefined,
-            )
-          }}
-          onBlur={() => setTypedWordNumber(undefined)}
-        />
-        <label htmlFor="recovery_phrase" className="recovery_label">
-          {label}
-        </label>
+              updatePhrase(
+                value,
+                isInsertedWhole ? undefined : getWordAt(value, selectionStart),
+              )
+            }}
+            onSelect={(event) => {
+              const { value, selectionStart } = event.currentTarget
+              setTypedWord((current) => {
+                const word = getWordAt(value, selectionStart)
+                return word && word.number === current?.number
+                  ? word
+                  : undefined
+              })
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && isListOpen) {
+                event.preventDefault()
+                setIsListDismissed(true)
+              }
+            }}
+            onBlur={() => setTypedWord(undefined)}
+          />
+          <label htmlFor="recovery_phrase" className="recovery_label">
+            {label}
+          </label>
+          {isListOpen && (
+            <ul
+              id={SUGGESTIONS_ID}
+              role="listbox"
+              aria-label={t("label")}
+              className="suggestions"
+            >
+              {suggestions.map((suggestion) => (
+                // Keyboard picks go through the textarea, which keeps focus.
+                // oxlint-disable-next-line jsx-a11y/click-events-have-key-events
+                <li
+                  key={suggestion}
+                  role="option"
+                  aria-selected={false}
+                  className="suggestion"
+                  // Keeps focus in the textarea so the list stays open.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => pickSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <p className="visually_hidden" aria-live="polite">
+          {isListOpen ? t("count", { count: suggestions.length }) : ""}
+        </p>
         <p id="recovery_phrase_error" className="error" aria-live="polite">
           {errorMessage}
         </p>
@@ -79,6 +178,11 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
       <style jsx>{`
         .input_wrap {
           position: relative;
+        }
+
+        .field {
+          position: relative;
+          width: fit-content;
         }
 
         .recovery_label {
@@ -143,6 +247,43 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
 
         #recovery_phrase[aria-invalid="true"] {
           border-color: var(--error);
+        }
+
+        .suggestions {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          box-sizing: border-box;
+          width: 100%;
+          margin: 0;
+          padding: 4px 0;
+          overflow-y: auto;
+          background-color: var(--green-95);
+          border-radius: 4px;
+          box-shadow: var(--shadow-menu);
+          z-index: var(--z-dropdown);
+        }
+
+        .suggestion {
+          list-style-type: none;
+          padding: 4px 16px;
+          line-height: 24px;
+          color: var(--green-20);
+          cursor: pointer;
+          transition: color var(--fade);
+        }
+
+        .suggestion:hover {
+          color: var(--trophy-gold);
+        }
+
+        .visually_hidden {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
+          clip-path: inset(50%);
+          white-space: nowrap;
         }
 
         .error {

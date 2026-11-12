@@ -3,9 +3,10 @@ import {
   checkRecoveryPhrase,
   findUnknownWordNumbers,
   getRecoveryWordSuggestions,
-  getWordNumberAt,
+  getWordAt,
   isRecoveryWord,
   normalizeRecoveryPhrase,
+  replaceWord,
   splitRecoveryPhrase,
 } from "../recoveryPhrase"
 
@@ -79,18 +80,53 @@ describe("normalizeRecoveryPhrase", () => {
   })
 })
 
-describe("getWordNumberAt", () => {
+describe("getWordAt", () => {
   it("finds the word that ends at the caret", () => {
-    expect(getWordNumberAt("abandon abo", 11)).toBe(2)
-    expect(getWordNumberAt("abandon abo", 7)).toBe(1)
-    expect(getWordNumberAt("abandon abo", 3)).toBe(1)
-    expect(getWordNumberAt("  abandon\n\tabo", 14)).toBe(2)
+    expect(getWordAt("abandon abo", 11)).toEqual({
+      number: 2,
+      start: 8,
+      end: 11,
+      prefix: "abo",
+    })
+    expect(getWordAt("abandon abo", 7)?.number).toBe(1)
+    expect(getWordAt("  abandon\n\tabo", 14)?.number).toBe(2)
+  })
+
+  it("covers the whole word when the caret is inside it", () => {
+    expect(getWordAt("abandon abo", 3)).toEqual({
+      number: 1,
+      start: 0,
+      end: 7,
+      prefix: "aba",
+    })
   })
 
   it("finds no word when the caret follows whitespace", () => {
-    expect(getWordNumberAt("abandon ", 8)).toBeUndefined()
-    expect(getWordNumberAt("abandon abo", 8)).toBeUndefined()
-    expect(getWordNumberAt("", 0)).toBeUndefined()
+    expect(getWordAt("abandon ", 8)).toBeUndefined()
+    expect(getWordAt("abandon abo", 8)).toBeUndefined()
+    expect(getWordAt("", 0)).toBeUndefined()
+  })
+})
+
+describe("replaceWord", () => {
+  it("replaces the last word and adds a space", () => {
+    const text = "abandon abo"
+    const word = getWordAt(text, 11)!
+
+    expect(replaceWord(text, word, "about")).toEqual({
+      text: "abandon about ",
+      caret: 14,
+    })
+  })
+
+  it("replaces a whole word in the middle", () => {
+    const text = "abandon abxyz about"
+    const word = getWordAt(text, 10)!
+
+    expect(replaceWord(text, word, "ability")).toEqual({
+      text: "abandon ability about",
+      caret: 16,
+    })
   })
 })
 

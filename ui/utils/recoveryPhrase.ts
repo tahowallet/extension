@@ -49,18 +49,51 @@ export function getRecoveryWordSuggestions(
     .slice(0, limit)
 }
 
+export type WordAtCaret = {
+  number: number
+  start: number
+  end: number
+  prefix: string
+}
+
 /**
- * Returns the 1-based number of the word that ends at the caret, which is the
- * word being typed, or `undefined` when the caret follows whitespace.
+ * Returns the word that ends at the caret, which is the word being typed, or
+ * `undefined` when the caret follows whitespace. `number` is 1-based and
+ * `prefix` is the part of the word before the caret.
  */
-export function getWordNumberAt(
+export function getWordAt(
   text: string,
   caret: number,
-): number | undefined {
+): WordAtCaret | undefined {
   const textBeforeCaret = text.slice(0, caret)
-  if (!/\S$/.test(textBeforeCaret)) return undefined
+  const prefix = textBeforeCaret.match(/\S+$/)?.[0]
+  if (!prefix) return undefined
 
-  return splitRecoveryPhrase(textBeforeCaret).length
+  const restOfWord = text.slice(caret).match(/^\S*/)?.[0] ?? ""
+
+  return {
+    number: splitRecoveryPhrase(textBeforeCaret).length,
+    start: caret - prefix.length,
+    end: caret + restOfWord.length,
+    prefix,
+  }
+}
+
+/**
+ * Puts `replacement` and a single space in place of `word`, returning the new
+ * text and the caret position after that space.
+ */
+export function replaceWord(
+  text: string,
+  word: WordAtCaret,
+  replacement: string,
+): { text: string; caret: number } {
+  const textAfterWord = text.slice(word.end).replace(/^\s*/, "")
+
+  return {
+    text: `${text.slice(0, word.start)}${replacement} ${textAfterWord}`,
+    caret: word.start + replacement.length + 1,
+  }
 }
 
 /**

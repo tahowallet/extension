@@ -756,6 +756,11 @@
     "accountItemSummary": {
       "connectedStatus": "Connected"
     },
+    "recoveryWordSuggestions": {
+      "label": "Suggested words",
+      "count_one": "{{count}} suggestion",
+      "count_other": "{{count}} suggestions"
+    },
     "mouseOverToShow": "Mouse over to show",
     "selectToken": "Select token",
     "backButtonText": "Back",
