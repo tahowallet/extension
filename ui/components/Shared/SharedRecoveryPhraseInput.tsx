@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react"
+import classNames from "classnames"
 import { useTranslation } from "react-i18next"
 import {
   WordAtCaret,
@@ -18,6 +19,8 @@ import {
 const SUGGESTION_MIN_LETTERS = 2
 const SUGGESTION_LIMIT = 6
 const SUGGESTIONS_ID = "recovery_phrase_suggestions"
+
+const getSuggestionId = (index: number) => `${SUGGESTIONS_ID}_${index}`
 
 type Props = {
   onChange: (text: string) => void
@@ -41,6 +44,7 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
   const [phrase, setPhrase] = useState("")
   const [typedWord, setTypedWord] = useState<WordAtCaret>()
   const [isListDismissed, setIsListDismissed] = useState(false)
+  const [highlightedWord, setHighlightedWord] = useState<string>()
 
   const unknownWordNumbers = useMemo(
     () => findUnknownWordNumbers(phrase, typedWord?.number),
@@ -59,6 +63,9 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
   }, [typedWord])
 
   const isListOpen = suggestions.length > 0 && !isListDismissed
+  const highlightedIndex = highlightedWord
+    ? suggestions.indexOf(highlightedWord)
+    : -1
 
   useEffect(() => {
     onUnknownWordsChange(unknownWordNumbers)
@@ -76,6 +83,7 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
     setPhrase(value)
     setTypedWord(word)
     setIsListDismissed(false)
+    setHighlightedWord(undefined)
     onChange(value.trim())
   }
 
@@ -85,6 +93,15 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
     const replaced = replaceWord(phrase, typedWord, suggestion)
     caretAfterPickRef.current = replaced.caret
     updatePhrase(replaced.text, undefined)
+  }
+
+  const moveHighlight = (step: 1 | -1) => {
+    const count = suggestions.length
+    // With nothing highlighted, Down starts at the first word and Up at the last.
+    const from =
+      highlightedIndex === -1 && step === -1 ? count : highlightedIndex
+
+    setHighlightedWord(suggestions[(from + step + count) % count])
   }
 
   return (
@@ -102,6 +119,11 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
             autoCapitalize="off"
             aria-autocomplete="list"
             aria-controls={isListOpen ? SUGGESTIONS_ID : undefined}
+            aria-activedescendant={
+              isListOpen && highlightedIndex !== -1
+                ? getSuggestionId(highlightedIndex)
+                : undefined
+            }
             aria-invalid={
               unknownWordNumbers.length > 0 || Boolean(errorMessage)
             }
@@ -133,9 +155,29 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
               })
             }}
             onKeyDown={(event) => {
-              if (event.key === "Escape" && isListOpen) {
-                event.preventDefault()
-                setIsListDismissed(true)
+              if (!isListOpen || event.nativeEvent.isComposing) return
+
+              switch (event.key) {
+                case "ArrowDown":
+                case "ArrowUp":
+                  event.preventDefault()
+                  moveHighlight(event.key === "ArrowDown" ? 1 : -1)
+                  break
+                case "Enter":
+                case "Tab":
+                  // With nothing highlighted, Tab leaves the field as usual.
+                  if (highlightedIndex !== -1) {
+                    event.preventDefault()
+                    pickSuggestion(suggestions[highlightedIndex])
+                  }
+                  break
+                case "Escape":
+                  event.preventDefault()
+                  setIsListDismissed(true)
+                  setHighlightedWord(undefined)
+                  break
+                default:
+                  break
               }
             }}
             onBlur={() => setTypedWord(undefined)}
@@ -150,14 +192,17 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
               aria-label={t("label")}
               className="suggestions"
             >
-              {suggestions.map((suggestion) => (
+              {suggestions.map((suggestion, index) => (
                 // Keyboard picks go through the textarea, which keeps focus.
                 // oxlint-disable-next-line jsx-a11y/click-events-have-key-events
                 <li
                   key={suggestion}
+                  id={getSuggestionId(index)}
                   role="option"
-                  aria-selected={false}
-                  className="suggestion"
+                  aria-selected={index === highlightedIndex}
+                  className={classNames("suggestion", {
+                    highlighted: index === highlightedIndex,
+                  })}
                   // Keeps focus in the textarea so the list stays open.
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => pickSuggestion(suggestion)}
@@ -277,6 +322,11 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
 
         .suggestion:hover {
           color: var(--trophy-gold);
+        }
+
+        .suggestion.highlighted {
+          color: var(--trophy-gold);
+          background-color: var(--green-80);
         }
 
         .visually_hidden {

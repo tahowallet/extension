@@ -210,6 +210,103 @@ describe("SharedRecoveryPhraseInput", () => {
     })
   })
 
+  describe("keyboard", () => {
+    const getHighlighted = (view: ReturnType<typeof renderInput>) =>
+      view
+        .queryAllByRole("option", { selected: true })
+        .map((option) => option.textContent)
+
+    test("should highlight words with the arrow keys", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab")
+      expect(view.input).not.toHaveAttribute("aria-activedescendant")
+
+      await userEvent.keyboard("{ArrowDown}")
+      expect(getHighlighted(view)).toEqual(["abandon"])
+      expect(view.input).toHaveAttribute(
+        "aria-activedescendant",
+        view.getByRole("option", { name: "abandon" }).id,
+      )
+
+      await userEvent.keyboard("{ArrowDown}{ArrowDown}")
+      expect(getHighlighted(view)).toEqual(["able"])
+
+      await userEvent.keyboard("{ArrowUp}")
+      expect(getHighlighted(view)).toEqual(["ability"])
+      expect(view.input).toHaveValue("ab")
+    })
+
+    test("should wrap around the list", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{ArrowUp}")
+      expect(getHighlighted(view)).toEqual(["absent"])
+
+      await userEvent.keyboard("{ArrowDown}")
+      expect(getHighlighted(view)).toEqual(["abandon"])
+    })
+
+    test("should pick the highlighted word with Enter", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "abandon ab{ArrowDown}{ArrowDown}")
+      await userEvent.keyboard("{Enter}")
+
+      expect(view.input).toHaveValue("abandon ability ")
+      expect(view.onChange).toHaveBeenLastCalledWith("abandon ability")
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+    })
+
+    test("should pick the highlighted word with Tab and keep focus", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{ArrowUp}")
+      await userEvent.tab()
+
+      expect(view.input).toHaveValue("absent ")
+      expect(view.input).toHaveFocus()
+    })
+
+    test("should leave the field on Tab with nothing highlighted", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab")
+      await userEvent.tab()
+
+      expect(view.input).toHaveValue("ab")
+      expect(view.input).not.toHaveFocus()
+    })
+
+    test("should not pick on Enter with nothing highlighted", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{Enter}")
+
+      expect(view.input).toHaveValue("ab\n")
+    })
+
+    test("should drop the highlight when typing on", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{ArrowDown}o")
+
+      expect(getSuggestions(view)).toEqual(["about", "above"])
+      expect(getHighlighted(view)).toEqual([])
+    })
+
+    test("should drop the highlight on Escape", async () => {
+      const view = renderInput()
+
+      await userEvent.type(view.input, "ab{ArrowDown}{Escape}")
+      expect(view.queryByRole("listbox")).not.toBeInTheDocument()
+      expect(view.input).not.toHaveAttribute("aria-activedescendant")
+
+      await userEvent.keyboard("o")
+      expect(getHighlighted(view)).toEqual([])
+    })
+  })
+
   test("should turn off browser spellcheck and autofill", () => {
     const { input } = renderInput()
 

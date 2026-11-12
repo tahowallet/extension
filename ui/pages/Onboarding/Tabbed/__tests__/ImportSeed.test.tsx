@@ -48,7 +48,8 @@ describe("ImportSeed", () => {
     test("should name an unknown word and block submit", async () => {
       const ui = renderImportSeed()
 
-      await userEvent.type(ui.input, "abandon abandom ")
+      await userEvent.click(ui.input)
+      await userEvent.paste("abandon abandom")
 
       expect(
         ui.getByText("Word 2 isn't in the recovery word list"),
@@ -70,9 +71,10 @@ describe("ImportSeed", () => {
     test("should allow submit again once the word is fixed", async () => {
       const ui = renderImportSeed()
 
-      await userEvent.type(ui.input, "abandon abandom ")
+      await userEvent.click(ui.input)
+      await userEvent.paste("abandon abandom")
       await userEvent.clear(ui.input)
-      await userEvent.type(ui.input, "abandon about ")
+      await userEvent.paste("abandon about")
 
       expect(ui.submit).not.toHaveClass("disabled")
       expect(
@@ -108,6 +110,7 @@ describe("ImportSeed", () => {
   })
 
   test("should keep the current input with word suggestions off", () => {
+    featureStorage.set(FeatureFlags.SUPPORT_SEED_WORD_SUGGESTIONS, "false")
     const ui = renderImportSeed()
 
     expect(ui.input.tagName).toBe("DIV")
