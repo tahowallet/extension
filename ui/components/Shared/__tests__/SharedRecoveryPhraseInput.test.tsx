@@ -1,5 +1,5 @@
 import React from "react"
-import { render } from "@testing-library/react"
+import { cleanup, render, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import SharedRecoveryPhraseInput from "../SharedRecoveryPhraseInput"
 
@@ -18,13 +18,18 @@ const renderInput = (errorMessage?: string) => {
   )
 
   return {
-    input: ui.getByRole("textbox", { name: label }),
+    // Other test files sharing this process may leave their DOM behind.
+    input: within(ui.container).getByRole("textbox", { name: label }),
     onChange,
     onUnknownWordsChange,
   }
 }
 
 describe("SharedRecoveryPhraseInput", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   test("should pass typed text on, trimmed", async () => {
     const { input, onChange } = renderInput()
 
