@@ -250,6 +250,7 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
         }
 
         .suggestions {
+          display: block;
           position: absolute;
           top: calc(100% + 4px);
           left: 0;
@@ -265,6 +266,7 @@ export default function SharedRecoveryPhraseInput(props: Props): ReactElement {
         }
 
         .suggestion {
+          display: block;
           list-style-type: none;
           padding: 4px 16px;
           line-height: 24px;
