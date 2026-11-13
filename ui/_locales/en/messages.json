@@ -419,7 +419,12 @@
           "errors": {
             "pasteRecoveryPhrase": "Paste recovery phrase",
             "phraseLengthError": "Must be a 12 or 24 word recovery phrase",
-            "invalidPhraseError": "Invalid recovery phrase"
+            "invalidPhraseError": "Invalid recovery phrase",
+            "unknownWords_one": "Word {{words}} isn't in the recovery word list",
+            "unknownWords_other": "Words {{words}} aren't in the recovery word list",
+            "wordCountError_one": "You entered {{count}} word. A recovery phrase has 12 or 24.",
+            "wordCountError_other": "You entered {{count}} words. A recovery phrase has 12 or 24.",
+            "checksumError": "All words are valid, but the phrase doesn't check out. Check the order and spelling."
           }
         },
         "importPrivateKey": {
@@ -750,6 +755,11 @@
     "modalClose": "Background close",
     "accountItemSummary": {
       "connectedStatus": "Connected"
+    },
+    "recoveryWordSuggestions": {
+      "label": "Suggested words",
+      "count_one": "{{count}} suggestion",
+      "count_other": "{{count}} suggestions"
     },
     "mouseOverToShow": "Mouse over to show",
     "selectToken": "Select token",
