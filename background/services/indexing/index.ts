@@ -14,7 +14,6 @@ import {
 } from "../../assets"
 import {
   FIAT_CURRENCIES,
-  HOUR,
   MINUTE,
   NETWORK_BY_CHAIN_ID,
   SECOND,
@@ -58,20 +57,21 @@ const ACCELERATED_TOKEN_REFRESH_TIMEOUT = 300
 
 /**
  * How often the service should update token lists, token lists are also
- * retrieved and updated at extension startup.
+ * retrieved and updated at extension startup. In minutes, for alarms.
  */
-const TOKEN_LIST_UPDATE_INTERVAL = 12 * HOUR
+const TOKEN_LIST_UPDATE_MINS = 12 * 60
 
 /**
  * How often the service queries balances for accounts that have recently
- * interacted with the wallet
+ * interacted with the wallet. In minutes, for alarms.
  */
-const BALANCE_REFRESH_ACTIVE_ACCOUNTS_INTERVAL = 1 * MINUTE
+const BALANCE_REFRESH_ACTIVE_ACCOUNTS_MINS = 1
 
 /**
- * How often the service queries balances for all accounts
+ * How often the service queries balances for all accounts. In minutes, for
+ * alarms.
  */
-const BALANCE_REFRESH_ALL_ACCOUNTS_INTERVAL = 60 * MINUTE
+const BALANCE_REFRESH_ALL_ACCOUNTS_MINS = 60
 
 interface Events extends ServiceLifecycleEvents {
   accountsWithBalances: {
@@ -173,19 +173,19 @@ export default class IndexingService extends BaseService<Events> {
     super({
       balanceActiveAccounts: {
         schedule: {
-          periodInMinutes: BALANCE_REFRESH_ACTIVE_ACCOUNTS_INTERVAL,
+          periodInMinutes: BALANCE_REFRESH_ACTIVE_ACCOUNTS_MINS,
         },
         handler: () => this.refreshAccountBalances(true),
       },
       balanceAllAccounts: {
         schedule: {
-          periodInMinutes: BALANCE_REFRESH_ALL_ACCOUNTS_INTERVAL,
+          periodInMinutes: BALANCE_REFRESH_ALL_ACCOUNTS_MINS,
         },
         handler: () => this.refreshAccountBalances(false),
       },
       tokenLists: {
         schedule: {
-          periodInMinutes: TOKEN_LIST_UPDATE_INTERVAL,
+          periodInMinutes: TOKEN_LIST_UPDATE_MINS,
         },
         handler: () => this.fetchAndCacheTokenLists(),
       },
