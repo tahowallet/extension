@@ -155,19 +155,17 @@ export default class NetworkWatcher {
     this.lastActivityOnAddress[address] = this.#now()
   }
 
-  /** Whether activity on the network has lapsed; never-used ones haven't. */
+  /**
+   * Whether the network isn't in use. Activity is kept in memory, so after a
+   * service worker restart every network counts as idle until marked.
+   */
   isNetworkIdle(chainID: string): boolean {
-    return (
-      this.#now() - ACTIVITY_TIMEOUT_MS >
-      this.lastActivityOnNetwork[toDecimalChainID(chainID)]
-    )
+    return !this.isNetworkActive(chainID)
   }
 
-  /** Whether activity on the address has lapsed; never-used ones haven't. */
+  /** Whether the address isn't in use; see {@link isNetworkIdle}. */
   isAddressIdle(address: string): boolean {
-    return (
-      this.#now() - ACTIVITY_TIMEOUT_MS > this.lastActivityOnAddress[address]
-    )
+    return !this.isAddressActive(address)
   }
 
   isNetworkActive(chainID: string): boolean {

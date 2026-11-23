@@ -170,14 +170,18 @@ describe("NetworkWatcher", () => {
     expect(watcher.watchStateOf(ETHEREUM.chainID)).toBe("Idle")
   })
 
-  it("tells idle from never used", () => {
+  it("counts what was never marked as idle, as after a restart", () => {
     const { watcher, advance } = harness()
+
+    expect(watcher.isNetworkIdle(ETHEREUM.chainID)).toBe(true)
+    expect(watcher.isAddressIdle("0xabc")).toBe(true)
+
+    watcher.markNetworkActivity(ETHEREUM.chainID)
+    watcher.markAddressActivity("0xabc")
 
     expect(watcher.isNetworkIdle(ETHEREUM.chainID)).toBe(false)
     expect(watcher.isAddressIdle("0xabc")).toBe(false)
 
-    watcher.markNetworkActivity(ETHEREUM.chainID)
-    watcher.markAddressActivity("0xabc")
     advance(ACTIVITY_TIMEOUT_MS + 1)
 
     expect(watcher.isNetworkIdle(ETHEREUM.chainID)).toBe(true)

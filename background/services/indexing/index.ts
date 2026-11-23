@@ -529,6 +529,13 @@ export default class IndexingService extends BaseService<Events> {
       },
     )
 
+    // An idle account's balances may have changed while it wasn't refreshed.
+    this.chainService.emitter.on("accountReactivated", (addressOnNetwork) => {
+      this.loadAccountBalancesFor(addressOnNetwork, false).catch((error) =>
+        logger.error("Error refreshing balances of reactivated account", error),
+      )
+    })
+
     this.chainService.emitter.on(
       "transaction",
       async ({ transaction, forAccounts }) => {

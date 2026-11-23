@@ -74,6 +74,8 @@ interface Events extends ServiceLifecycleEvents {
     account: AddressOnNetwork
   }
   newAccountToTrack: AddressOnNetwork
+  /** A tracked account that had gone idle is in use again. */
+  accountReactivated: AddressOnNetwork
   supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
@@ -970,6 +972,7 @@ export default class ChainService extends BaseService<Events> {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
+      this.emitter.emit("accountReactivated", { address, network })
     }
   }
 

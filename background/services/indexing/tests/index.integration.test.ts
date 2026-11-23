@@ -384,7 +384,6 @@ describe("IndexingService", () => {
     })
 
     it("should check only tracked assets when sweeping active accounts", async () => {
-      const indexingDb = await getIndexingDB()
       const account = createAddressOnNetwork()
       const tracked = createSmartContractAsset()
       const trackedElsewhere = createSmartContractAsset({
@@ -392,8 +391,8 @@ describe("IndexingService", () => {
       })
       const listed = createSmartContractAsset()
 
-      await indexingDb.addAssetToTrack(tracked)
-      await indexingDb.addAssetToTrack(trackedElsewhere)
+      await indexingService.addAssetToTrack(tracked)
+      await indexingService.addAssetToTrack(trackedElsewhere)
       indexingService["cachedAssets"][ETHEREUM.chainID] = [tracked, listed]
 
       jest
@@ -421,6 +420,38 @@ describe("IndexingService", () => {
         tracked,
         listed,
       ])
+    })
+
+    it("should check tracked assets when an account becomes active again", async () => {
+      const account = createAddressOnNetwork()
+      const tracked = createSmartContractAsset()
+      const listed = createSmartContractAsset()
+
+      await indexingService.addAssetToTrack(tracked)
+      indexingService["cachedAssets"][ETHEREUM.chainID] = [tracked, listed]
+
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        Promise.resolve([]),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["connectChainServiceEvents"]()
+      await chainService.emitter.emit("accountReactivated", account)
+      while (tokenBalanceSpy.mock.calls.length < 1) {
+        // oxlint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, 1)
+        })
+      }
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(1)
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [tracked])
     })
 
     it("should query erc20 balances specifying token addresses", async () => {
