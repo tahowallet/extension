@@ -18,6 +18,7 @@ mock.module("@ethersproject/web", () => {
 })
 
 import IndexingService from ".."
+import type { AccountBalance } from "../../../accounts"
 import { ETHEREUM, OPTIMISM, USD } from "../../../constants"
 import logger from "../../../lib/logger"
 import * as priceOracle from "../../../lib/priceOracle"
@@ -481,6 +482,64 @@ describe("IndexingService", () => {
           expect.objectContaining({ symbol: smartContractAsset.symbol }),
         ]),
       )
+    })
+  })
+
+  describe("recording token balances", () => {
+    const account = createAddressOnNetwork()
+    const held = createSmartContractAsset()
+    const notHeld = createSmartContractAsset()
+    const funded = createSmartContractAsset()
+
+    const lookUpBalances = async () => {
+      jest.spyOn(chainService.assetData, "getTokenBalances").mockResolvedValue({
+        balances: [held, notHeld, funded].map((asset) => ({
+          smartContract: {
+            contractAddress: asset.contractAddress,
+            homeNetwork: ETHEREUM,
+          },
+          amount: asset === funded ? 5n : 0n,
+        })),
+        dataSource: "generic-rpc",
+      })
+      const emitted: AccountBalance[][] = []
+      indexingService.emitter.on("accountsWithBalances", ({ balances }) => {
+        emitted.push(balances)
+      })
+
+      await indexingService.retrieveTokenBalances(account, [
+        held,
+        notHeld,
+        funded,
+      ])
+      // Let the emitter's async delivery finish.
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1)
+      })
+
+      return emitted.flat().map(({ assetAmount }) => assetAmount.asset.symbol)
+    }
+
+    it("keeps a zero balance only when the account held some", async () => {
+      indexingService.setBalanceHeldCheck(
+        (_, asset) => asset.symbol === held.symbol,
+      )
+
+      const recorded = await lookUpBalances()
+
+      expect(recorded.sort()).toEqual([held.symbol, funded.symbol].sort())
+      const indexingDb = await getIndexingDB()
+      expect(
+        await indexingDb.getLatestAccountBalance(
+          account.address,
+          ETHEREUM,
+          notHeld,
+        ),
+      ).toBeNull()
+    })
+
+    it("keeps zero balances when nothing says what was held", async () => {
+      expect((await lookUpBalances()).length).toBe(3)
     })
   })
 

@@ -143,6 +143,13 @@ export default class IndexingService extends BaseService<Events> {
    */
   #assetsReady = Promise.withResolvers<void>()
 
+  #holdsBalance:
+    | ((
+        addressOnNetwork: AddressOnNetwork,
+        asset: SmartContractFungibleAsset,
+      ) => boolean)
+    | undefined
+
   /** Balance loads in flight, keyed by chain ID and address. */
   #balanceLoadsInFlight = new Map<
     string,
@@ -239,6 +246,21 @@ export default class IndexingService extends BaseService<Events> {
         .catch((error) => logger.error("Error loading token lists", error))
         .finally(() => this.#assetsReady.resolve())
     })
+  }
+
+  /**
+   * Installs a check for whether an account currently holds a nonzero amount
+   * of an asset. Zero balances are recorded and emitted only when this says
+   * the account held some, so the zero replaces the old amount once. Without
+   * a check, zero balances are always kept.
+   */
+  setBalanceHeldCheck(
+    holdsBalance: (
+      addressOnNetwork: AddressOnNetwork,
+      asset: SmartContractFungibleAsset,
+    ) => boolean,
+  ): void {
+    this.#holdsBalance = holdsBalance
   }
 
   /**
@@ -606,7 +628,13 @@ export default class IndexingService extends BaseService<Events> {
           current.value &&
           !removedCustomAssets.some((asset) =>
             isSameAsset(asset, current.value?.assetAmount.asset),
-          )
+          ) &&
+          (current.value.assetAmount.amount > 0n ||
+            (this.#holdsBalance?.(
+              addressNetwork,
+              current.value.assetAmount.asset,
+            ) ??
+              true))
         ) {
           return [...acc, current.value]
         }
