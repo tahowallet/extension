@@ -359,6 +359,69 @@ describe("IndexingService", () => {
       expect(tokenBalanceSpy).toHaveBeenCalledTimes(2)
     })
 
+    it("should sweep active accounts right away, one sweep at a time", async () => {
+      let finish = () => {}
+      const loadSpy = getPrivateMethodSpy<
+        IndexingService["loadAccountBalances"]
+      >(indexingService, "loadAccountBalances").mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve
+          }),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      const first = indexingService["refreshAccountBalances"](true)
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["refreshAccountBalances"](true)
+
+      expect(loadSpy).toHaveBeenCalledTimes(1)
+      expect(loadSpy).toHaveBeenCalledWith(true)
+
+      finish()
+      await first
+    })
+
+    it("should check only tracked assets when sweeping active accounts", async () => {
+      const indexingDb = await getIndexingDB()
+      const account = createAddressOnNetwork()
+      const tracked = createSmartContractAsset()
+      const trackedElsewhere = createSmartContractAsset({
+        homeNetwork: OPTIMISM,
+      })
+      const listed = createSmartContractAsset()
+
+      await indexingDb.addAssetToTrack(tracked)
+      await indexingDb.addAssetToTrack(trackedElsewhere)
+      indexingService["cachedAssets"][ETHEREUM.chainID] = [tracked, listed]
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        Promise.resolve([]),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"](true)
+
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [tracked])
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"](false)
+
+      expect(tokenBalanceSpy).toHaveBeenLastCalledWith(account, [
+        tracked,
+        listed,
+      ])
+    })
+
     it("should query erc20 balances specifying token addresses", async () => {
       const indexingDb = await getIndexingDB()
 

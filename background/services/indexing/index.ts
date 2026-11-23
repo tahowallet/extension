@@ -14,7 +14,6 @@ import {
 } from "../../assets"
 import {
   FIAT_CURRENCIES,
-  MINUTE,
   NETWORK_BY_CHAIN_ID,
   SECOND,
   USD,
@@ -128,7 +127,10 @@ function allowVerifyAssetByManualImport(
  * token metadata. Relevant prices and balances are emitted as events.
  */
 export default class IndexingService extends BaseService<Events> {
+  /** A pending accelerated active sweep. */
   #activeAccountBalanceAlarm: NodeJS.Timer | null = null
+
+  #activeSweepRunning = false
 
   #allAccountBalanceAlarm: NodeJS.Timer | null = null
 
@@ -1068,10 +1070,7 @@ export default class IndexingService extends BaseService<Events> {
         return
       }
 
-      this.#activeAccountBalanceAlarm = setTimeout(() => {
-        this.#activeAccountBalanceAlarm = null
-        this.loadAccountBalances(true)
-      }, 1 * MINUTE)
+      await this.sweepActiveAccounts()
     } else {
       if (this.#activeAccountBalanceAlarm) {
         clearTimeout(this.#activeAccountBalanceAlarm)
@@ -1091,6 +1090,25 @@ export default class IndexingService extends BaseService<Events> {
   }
 
   /**
+   * Loads balances for active accounts unless a sweep is already running.
+   */
+  private async sweepActiveAccounts(): Promise<void> {
+    if (this.#activeSweepRunning) {
+      return
+    }
+
+    this.#activeSweepRunning = true
+    try {
+      await this.loadAccountBalances(true)
+    } catch (err) {
+      // TODO: Track last successful balance lookups
+      logger.error("Active account balance refresh failed", err)
+    } finally {
+      this.#activeSweepRunning = false
+    }
+  }
+
+  /**
    * Schedules a quick balance refresh for active accounts.
    *
    * Used when an off-cycle token refresh was scheduled, typically when a
@@ -1105,42 +1123,50 @@ export default class IndexingService extends BaseService<Events> {
       clearTimeout(this.#activeAccountBalanceAlarm)
     }
 
-    this.#activeAccountBalanceAlarm = setTimeout(async () => {
-      try {
-        await this.loadAccountBalances(true)
-      } catch (err) {
-        // TODO: Track last successful balance lookups
-        logger.error("Accelerated token refresh failed", err)
-      }
+    this.#activeAccountBalanceAlarm = setTimeout(() => {
+      this.#activeAccountBalanceAlarm = null
+      this.sweepActiveAccounts()
     }, 16 * SECOND)
   }
 
   /**
    * Loads an account's balances on one chain, joining a load for the same
    * account and chain that is already in flight.
+   *
+   * By default this checks every asset in the network's token lists, which
+   * finds tokens that Transfer-log discovery missed. With `fullScan` off, only
+   * tracked assets are checked.
    */
   private loadAccountBalancesFor(
     addressOnNetwork: AddressOnNetwork,
+    fullScan = true,
   ): Promise<[AccountBalance, SmartContractAmount[]]> {
     const key = `${addressOnNetwork.network.chainID}:${normalizeEVMAddress(
       addressOnNetwork.address,
     )}`
+    const fullKey = `${key}:full`
+    const loadKey = fullScan ? fullKey : key
 
-    const inFlight = this.#balanceLoadsInFlight.get(key)
+    // A full scan covers everything a tracked-only load would.
+    const inFlight =
+      this.#balanceLoadsInFlight.get(fullKey) ??
+      this.#balanceLoadsInFlight.get(loadKey)
     if (inFlight !== undefined) {
       return inFlight
     }
 
-    const load = this.fetchAccountBalancesFor(addressOnNetwork).finally(() =>
-      this.#balanceLoadsInFlight.delete(key),
-    )
-    this.#balanceLoadsInFlight.set(key, load)
+    const load = this.fetchAccountBalancesFor(
+      addressOnNetwork,
+      fullScan,
+    ).finally(() => this.#balanceLoadsInFlight.delete(loadKey))
+    this.#balanceLoadsInFlight.set(loadKey, load)
 
     return load
   }
 
   private async fetchAccountBalancesFor(
     addressOnNetwork: AddressOnNetwork,
+    fullScan: boolean,
   ): Promise<[AccountBalance, SmartContractAmount[]]> {
     const { network } = addressOnNetwork
 
@@ -1150,15 +1176,16 @@ export default class IndexingService extends BaseService<Events> {
     /**
      * When the provider supports Boar we can use alchemy_getTokenBalances
      * to query all erc20 token balances without specifying which assets we
-     * need to check. If it fails, we try checking balances for every asset
-     * we've seen in the network through multicall.
+     * need to check. If it fails, we check balances for the assets below
+     * through multicall.
      */
-
-    // This doesn't pass assetsToTrack stored in the db as
-    // it assumes they've already been cached
-    const assetsToCheck = this.getCachedAssets(network).filter(
-      isSmartContractFungibleAsset,
-    )
+    const assetsToCheck = fullScan
+      ? // This doesn't pass assetsToTrack stored in the db as
+        // it assumes they've already been cached
+        this.getCachedAssets(network).filter(isSmartContractFungibleAsset)
+      : (await this.db.getAssetsToTrack()).filter((asset) =>
+          sameNetwork(asset.homeNetwork, network),
+        )
 
     const loadTokenBalances = this.retrieveTokenBalances(
       addressOnNetwork,
@@ -1168,6 +1195,10 @@ export default class IndexingService extends BaseService<Events> {
     return Promise.all([loadBaseAccountBalance, loadTokenBalances])
   }
 
+  /**
+   * Loads balances for tracked accounts. Sweeping only active accounts checks
+   * tracked assets alone; sweeping all accounts scans the token lists too.
+   */
   private async loadAccountBalances(onlyActiveAccounts = false): Promise<void> {
     // TODO doesn't support multi-network assets
     // like USDC or CREATE2-based contracts on L1/L2
@@ -1179,7 +1210,7 @@ export default class IndexingService extends BaseService<Events> {
 
     const balanceLoadResults = await Promise.allSettled(
       accounts.map((addressOnNetwork) =>
-        this.loadAccountBalancesFor(addressOnNetwork),
+        this.loadAccountBalancesFor(addressOnNetwork, !onlyActiveAccounts),
       ),
     )
 
