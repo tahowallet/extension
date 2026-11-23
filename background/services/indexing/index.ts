@@ -134,6 +134,13 @@ export default class IndexingService extends BaseService<Events> {
 
   #pricesUpdateTimer: NodeJS.Timer | null = null
 
+  /**
+   * Resolves once token lists are loaded and assets are cached, which a full
+   * balance sweep needs. A field rather than a start-up local because the
+   * sweep can run from the base class's start, before this class's.
+   */
+  #assetsReady = Promise.withResolvers<void>()
+
   /** Balance loads in flight, keyed by chain ID and address. */
   #balanceLoadsInFlight = new Map<
     string,
@@ -181,7 +188,11 @@ export default class IndexingService extends BaseService<Events> {
         schedule: {
           periodInMinutes: BALANCE_REFRESH_ALL_ACCOUNTS_MINS,
         },
-        handler: () => this.refreshAccountBalances(false),
+        handler: async () => {
+          await this.#assetsReady.promise
+          await this.refreshAccountBalances(false)
+        },
+        runAtStart: true,
       },
       tokenLists: {
         schedule: {
@@ -221,9 +232,10 @@ export default class IndexingService extends BaseService<Events> {
             loadingScope: "network",
           })
         }),
-        // Load balances after token lists load and after assets are cached, otherwise
-        // we will not load balances on initial balance query
-      ).then(() => tokenListLoad.then(() => this.refreshAccountBalances(false)))
+      )
+        .then(() => tokenListLoad)
+        .catch((error) => logger.error("Error loading token lists", error))
+        .finally(() => this.#assetsReady.resolve())
     })
   }
 
