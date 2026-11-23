@@ -1,5 +1,6 @@
 import Emittery from "emittery"
 import browser, { Alarms } from "webextension-polyfill"
+import logger from "../lib/logger"
 import type { Service, ServiceLifecycleEvents } from "./types"
 
 /**
@@ -30,9 +31,10 @@ type AlarmSchedule =
  * {@link AlarmHandlerScheduleMap}, which allows for disambiguating between
  * different alarms.
  *
- * Also provides an optional `runAtStart` property that will immediately fire
- * the handler at service start for the first time instead of waiting for the
- * first scheduled run to execute.
+ * Also provides an optional `runAtStart` property that fires the handler
+ * immediately when the alarm is created, instead of waiting for its first
+ * scheduled run. An alarm is created when it doesn't exist yet or its period
+ * changed, so this doesn't run on every service start.
  */
 export type AlarmHandlerSchedule = {
   schedule: AlarmSchedule
@@ -47,6 +49,35 @@ export type AlarmHandlerSchedule = {
  */
 export type AlarmHandlerScheduleMap = {
   [alarmName: string]: AlarmHandlerSchedule
+}
+
+/**
+ * Alarm names owned by started services, whose own listeners handle them.
+ */
+const ownedAlarmNames = new Set<string>()
+
+/**
+ * Alarms that fired before a service owning them started, by name.
+ */
+const earlyAlarms = new Map<string, Alarms.Alarm>()
+
+// An alarm that wakes a sleeping MV3 service worker is only delivered to
+// listeners added while the script first evaluates, which is before any
+// service has started. Record those for services to run once they start.
+browser.alarms.onAlarm.addListener((alarm) => {
+  if (!ownedAlarmNames.has(alarm.name)) {
+    earlyAlarms.set(alarm.name, alarm)
+  }
+})
+
+function runHandler(name: string, run: () => unknown): void {
+  try {
+    Promise.resolve(run()).catch((error) =>
+      logger.error(`Error in handler for alarm ${name}`, error),
+    )
+  } catch (error) {
+    logger.error(`Error in handler for alarm ${name}`, error)
+  }
 }
 
 /**
@@ -79,8 +110,10 @@ export type AlarmHandlerScheduleMap = {
  *
  * The constructor for `BaseService` takes a set of {@link AlarmHandlerSchedule},
  * indexed by name in an object. When `startService` is called, those alarms
- * are added to the browser alarm list, and the `handleAlarm` method is bound
- * as a listener. It automatically invokes the associated handlers.
+ * are added to the browser alarm list unless a matching one already exists
+ * (alarms persist across service worker restarts), and the `handleAlarm`
+ * method is bound as a listener. It automatically invokes the associated
+ * handlers.
  *
  * ### Extending the start and stop processes
  *
@@ -119,17 +152,37 @@ export default abstract class BaseService<
   protected async internalStartService(): Promise<void> {
     const scheduleEntries = Object.entries(this.alarmSchedules)
 
-    scheduleEntries.forEach(([name, { schedule, runAtStart, handler }]) => {
-      browser.alarms.create(name, schedule)
+    await Promise.all(
+      scheduleEntries.map(async ([name, { schedule, runAtStart, handler }]) => {
+        const existing = await browser.alarms.get(name)
 
-      if (runAtStart) {
-        handler()
-      }
-    })
+        // Re-creating an alarm resets its period, so alarms that outlive the
+        // service worker are left alone unless their period changed.
+        if (existing?.periodInMinutes === schedule.periodInMinutes) {
+          return
+        }
+
+        browser.alarms.create(name, schedule)
+
+        if (runAtStart) {
+          runHandler(name, () => handler())
+        }
+      }),
+    )
 
     if (scheduleEntries.length > 0) {
       browser.alarms.onAlarm.addListener(this.boundAlarmHandler)
     }
+
+    scheduleEntries.forEach(([name, { handler }]) => {
+      ownedAlarmNames.add(name)
+
+      const missed = earlyAlarms.get(name)
+      if (missed !== undefined) {
+        earlyAlarms.delete(name)
+        runHandler(name, () => handler(missed))
+      }
+    })
   }
 
   /**
@@ -140,7 +193,10 @@ export default abstract class BaseService<
   protected async internalStopService(): Promise<void> {
     const scheduleNames = Object.keys(this.alarmSchedules)
 
-    scheduleNames.forEach((alarmName) => browser.alarms.clear(alarmName))
+    scheduleNames.forEach((alarmName) => {
+      ownedAlarmNames.delete(alarmName)
+      browser.alarms.clear(alarmName)
+    })
 
     if (scheduleNames.length > 0) {
       browser.alarms.onAlarm.removeListener(this.boundAlarmHandler)
