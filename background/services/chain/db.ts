@@ -923,34 +923,39 @@ export class ChainDatabase extends Dexie {
     )
   }
 
-  async getNewestAccountAssetTransferLookup(
-    addressNetwork: AddressOnNetwork,
-  ): Promise<bigint | null> {
-    // TODO this is inefficient, make proper use of indexing
-    const lookups = await this.accountAssetTransferLookups
-      .where("[addressNetwork.address+addressNetwork.network.name]")
-      .equals([addressNetwork.address, addressNetwork.network.name])
-
-      .toArray()
-    return lookups.reduce(
-      (newestBlock: bigint | null, lookup) =>
-        newestBlock === null || lookup.endBlock > newestBlock
-          ? lookup.endBlock
-          : newestBlock,
-      null,
-    )
-  }
-
+  /**
+   * Records a block range an account's transfers were looked up in. Only the
+   * oldest block looked up is read back, so each account and network keeps a
+   * single row spanning every range recorded for it; rows older builds stored
+   * one per range fold into it on the next record.
+   */
   async recordAccountAssetTransferLookup(
     addressNetwork: AddressOnNetwork,
     startBlock: bigint,
     endBlock: bigint,
   ): Promise<void> {
-    await this.accountAssetTransferLookups.add({
-      addressNetwork,
-      startBlock,
-      endBlock,
-      retrievedAt: Date.now(),
+    const recorded = () =>
+      this.accountAssetTransferLookups
+        .where("[addressNetwork.address+addressNetwork.network.name]")
+        .equals([addressNetwork.address, addressNetwork.network.name])
+
+    await this.transaction("rw", this.accountAssetTransferLookups, async () => {
+      const lookups = await recorded().toArray()
+      await recorded().delete()
+      await this.accountAssetTransferLookups.add({
+        addressNetwork,
+        startBlock: lookups.reduce(
+          (oldest, lookup) =>
+            lookup.startBlock < oldest ? lookup.startBlock : oldest,
+          startBlock,
+        ),
+        endBlock: lookups.reduce(
+          (newest, lookup) =>
+            lookup.endBlock > newest ? lookup.endBlock : newest,
+          endBlock,
+        ),
+        retrievedAt: Date.now(),
+      })
     })
   }
 

@@ -302,15 +302,6 @@ describe("Chain Database", () => {
       ).toEqual([])
     })
   })
-  describe("getNewestAccountAssetTransferLookup", () => {
-    it("should correctly return the most recent asset transfer for a given addressNetwork", async () => {
-      await db.recordAccountAssetTransferLookup(account1, 1n, 100n)
-      await db.recordAccountAssetTransferLookup(account1, 101n, 200n)
-      await db.recordAccountAssetTransferLookup(account1, 201n, 300n)
-      const newest = await db.getNewestAccountAssetTransferLookup(account1)
-      expect(newest?.toString()).toBe("300")
-    })
-  })
   describe("getOldestAccountAssetTransferLookup", () => {
     it("should correctly return the oldest asset transfer for a given addressNetwork", async () => {
       await db.recordAccountAssetTransferLookup(account2, 1n, 100n)
@@ -347,6 +338,49 @@ describe("Chain Database", () => {
       expect(assetTransferLookups[0].addressNetwork).toEqual(addressNetwork)
       expect(assetTransferLookups[0].startBlock).toEqual(0n)
       expect(assetTransferLookups[0].endBlock).toEqual(1n)
+    })
+
+    it("keeps one row per account and network spanning every recorded range", async () => {
+      await db.recordAccountAssetTransferLookup(account1, 101n, 200n)
+      await db.recordAccountAssetTransferLookup(account1, 1n, 100n)
+      await db.recordAccountAssetTransferLookup(account1, 201n, 300n)
+      await db.recordAccountAssetTransferLookup(account2, 50n, 60n)
+
+      const lookups = await db.table("accountAssetTransferLookups").toArray()
+      expect(
+        lookups.map(({ addressNetwork, startBlock, endBlock }) => [
+          addressNetwork.network.name,
+          startBlock,
+          endBlock,
+        ]),
+      ).toEqual(
+        expect.arrayContaining([
+          [account1.network.name, 1n, 300n],
+          [account2.network.name, 50n, 60n],
+        ]),
+      )
+      expect(lookups).toHaveLength(2)
+    })
+
+    it("folds rows older builds stored per range into one", async () => {
+      await db.table("accountAssetTransferLookups").bulkAdd(
+        [
+          [10n, 20n],
+          [5n, 9n],
+        ].map(([startBlock, endBlock]) => ({
+          addressNetwork: account1,
+          startBlock,
+          endBlock,
+          retrievedAt: 0,
+        })),
+      )
+
+      await db.recordAccountAssetTransferLookup(account1, 21n, 30n)
+
+      const lookups = await db.table("accountAssetTransferLookups").toArray()
+      expect(lookups).toHaveLength(1)
+      expect([lookups[0].startBlock, lookups[0].endBlock]).toEqual([5n, 30n])
+      expect(await db.getOldestAccountAssetTransferLookup(account1)).toEqual(5n)
     })
   })
 
@@ -539,12 +573,6 @@ describe("Chain Database", () => {
           network: renamedNetwork,
         }),
       ).toEqual(0n)
-      expect(
-        await db.getNewestAccountAssetTransferLookup({
-          address: addressNetwork.address,
-          network: renamedNetwork,
-        }),
-      ).toEqual(100n)
 
       // Re-derivable caches keyed by the old name are dropped rather than
       // duplicated under the new one.
