@@ -12,6 +12,7 @@ import { convertFixedPoint } from "../lib/fixed-point"
 import {
   FullAssetID,
   getFullAssetID,
+  isNetworkBaseAsset,
   isSameAsset,
   isTrustedAsset,
 } from "./utils/asset-utils"
@@ -94,6 +95,12 @@ const selectPairedAssetSymbol = (
  * guarantees that the returned price point will have the pair in the specified
  * order, so even if the store price point has amounts in the order [USD, ETH],
  * the selector will return them in the order [ETH, USD].
+ *
+ * Network base assets and smart contract tokens are priced by their own price
+ * point first, such as `42161/base` for Arbitrum ETH. Trusted assets without
+ * one fall back to the first price point for an asset with the same symbol.
+ * Note that untrusted tokens never fall back, since a token that borrows
+ * another's symbol would otherwise be valued as if it were the real thing.
  */
 export const selectAssetPricePoint = createSelector(
   [selectPricesState, selectAsset, selectPairedAssetSymbol],
@@ -106,6 +113,17 @@ export const selectAssetPricePoint = createSelector(
     ): boolean => !!assetPriceData?.[pairedAssetSymbol]
 
     let pricedAsset: AssetPricesMap | undefined
+
+    // A base asset's own price comes first, so Arbitrum ETH (42161/base) uses
+    // its own price rather than whichever ETH price was stored first, such as
+    // mainnet's 1/base.
+    if (isNetworkBaseAsset(assetToFind)) {
+      const assetID = getFullAssetID(assetToFind)
+
+      if (hasRecentPriceData(prices[assetID])) {
+        pricedAsset = prices[assetID]
+      }
+    }
 
     /* If we're looking for a smart contract, try to find an exact price point */
     if (isSmartContractFungibleAsset(assetToFind)) {

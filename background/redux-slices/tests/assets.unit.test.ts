@@ -3,7 +3,7 @@ import {
   SmartContractFungibleAsset,
   unitPricePointForPricePoint,
 } from "../../assets"
-import { ETH, POLYGON } from "../../constants"
+import { ARBITRUM_ONE_ETH, ETH, POLYGON } from "../../constants"
 import {
   createPricePoint,
   createSmartContractAsset,
@@ -115,6 +115,48 @@ describe("Assets selectors", () => {
         // 6 decimals
         amounts: [1_000_000n, pricePoint.amounts[1]],
       })
+    })
+
+    test("should price a network base asset by its own price point first", () => {
+      // Mainnet ETH is stored first, so a lookup by symbol alone would find
+      // its price before Arbitrum ETH's.
+      const mainnetPricePoint = createPricePoint(ETH, 2000)
+      const arbitrumPricePoint = createPricePoint(ARBITRUM_ONE_ETH, 2001)
+      const state: PricesState = {
+        [getFullAssetID(ETH)]: { USD: mainnetPricePoint },
+        [getFullAssetID(ARBITRUM_ONE_ETH)]: { USD: arbitrumPricePoint },
+      }
+
+      expect(getFullAssetID(ARBITRUM_ONE_ETH)).toBe("42161/base")
+      expect(selectAssetPricePoint(state, ARBITRUM_ONE_ETH, "USD")).toEqual(
+        arbitrumPricePoint,
+      )
+      expect(selectAssetPricePoint(state, ETH, "USD")).toEqual(
+        mainnetPricePoint,
+      )
+    })
+
+    test("should price a network base asset without its own price point by symbol", () => {
+      const mainnetPricePoint = createPricePoint(ETH, 2000)
+      const state: PricesState = {
+        [getFullAssetID(ETH)]: { USD: mainnetPricePoint },
+      }
+
+      expect(selectAssetPricePoint(state, ARBITRUM_ONE_ETH, "USD")).toEqual(
+        mainnetPricePoint,
+      )
+    })
+
+    test("should not price an untrusted token by another asset's symbol", () => {
+      // A token on no token list that borrows a priced token's symbol.
+      const untrustedAsset = createSmartContractAsset({
+        symbol: asset.symbol,
+        metadata: { tokenLists: [] },
+      })
+
+      expect(
+        selectAssetPricePoint(pricesState, untrustedAsset, "USD"),
+      ).toBeUndefined()
     })
   })
 })
