@@ -34,6 +34,7 @@
     "test:integration": "echo \"> Running Integration Tests\" && bun test --check --parallel --randomize \"integration.test\"",
     "test:unit": "echo \"> Running Unit Tests\" && bun test --check --parallel --randomize \"unit.test\"",
     "test:ui": "echo \"> Running UI Tests\" && bun test --check --parallel --randomize \".test.tsx\"",
+    "bench:history": "bun scripts/benchmarks/history.ts",
     "test:e2e": "echo \"> Running e2e Tests\" && run-s e2e:*",
     "e2e:regular": "echo \"> Running base e2e Tests\" && bun playwright test --grep-invert '@testnet|@fork'",
     "e2e:testnet": "echo \"> Running testnet e2e Tests\" && bun playwright test --grep @testnet",
