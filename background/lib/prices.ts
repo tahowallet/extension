@@ -154,7 +154,9 @@ export async function getTokenPrices(
             asset: fiatCurrency,
             amount: BigInt(Math.trunc(price * 10 ** fiatCurrency.decimals)),
           },
-          time: priceDetails.last_updated_at,
+          // CoinGecko answers in seconds, while price points carry
+          // milliseconds.
+          time: priceDetails.last_updated_at * 1000,
         }
       } else {
         logger.warn(

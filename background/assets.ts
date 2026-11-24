@@ -181,6 +181,11 @@ export type AnyAssetAmount<T extends AnyAsset = AnyAsset> = {
 export type PricePoint = {
   pair: [AnyAsset, AnyAsset]
   amounts: [bigint, bigint]
+  /**
+   * When the price was measured, in milliseconds since the UNIX epoch. Note
+   * that, despite its UNIXTime type, which is documented as seconds, every
+   * price source stamps price points with `Date.now()`.
+   */
   time: UNIXTime
 }
 
@@ -194,6 +199,7 @@ export type PricePoint = {
  */
 export type UnitPricePoint<T extends AnyAsset> = {
   unitPrice: AnyAssetAmount<T>
+  /** When the price was measured, in milliseconds, as for PricePoint. */
   time: UNIXTime
 }
 
