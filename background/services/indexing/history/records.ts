@@ -1,5 +1,7 @@
 import { HOUR, MINUTE } from "../../../constants"
 import type { AccountBalance } from "../../../accounts"
+import { AnyAsset, isSmartContractFungibleAsset } from "../../../assets"
+import type { EVMNetwork } from "../../../networks"
 import {
   FullAssetID,
   getFullAssetID,
@@ -396,6 +398,39 @@ export const balanceSeriesInfoOf = ({
   symbol,
   trusted,
 })
+
+/**
+ * Returns a function that says whether a balance series' asset is trusted
+ * right now, the way the wallet decides it: base assets, assets on token
+ * lists, and assets the user has verified. The answer comes from the given
+ * networks' current asset data rather than from the series, whose copies of
+ * an asset can lack the metadata that makes it trusted, such as a
+ * verification made after the balance was recorded. Series on networks whose
+ * assets aren't loaded yet fall back to what was recorded.
+ *
+ * @param cachedAssetsFor Returns a network's currently known assets.
+ */
+export function trustResolverFor(
+  networks: EVMNetwork[],
+  cachedAssetsFor: (network: EVMNetwork) => AnyAsset[],
+): (series: BalanceSeriesInfo) => boolean {
+  const trustedIDs = new Set<string>()
+  const loadedChains = new Set<string>()
+  networks.forEach((network) => {
+    const assets = cachedAssetsFor(network)
+    if (assets.length > 0) loadedChains.add(network.chainID)
+    assets.forEach((asset) => {
+      if (isSmartContractFungibleAsset(asset) && isTrustedAsset(asset)) {
+        trustedIDs.add(getFullAssetID(asset).toLowerCase())
+      }
+    })
+  })
+  return (series) =>
+    series.assetID.endsWith("/base") ||
+    (loadedChains.has(series.chainID)
+      ? trustedIDs.has(series.assetID.toLowerCase())
+      : series.trusted)
+}
 
 /**
  * Returns the live balance measurement for an account balance the wallet

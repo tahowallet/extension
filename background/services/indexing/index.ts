@@ -1,5 +1,6 @@
 import logger from "../../lib/logger"
 import isUserIdle from "../../lib/idle"
+import { FeatureFlags, isEnabled } from "../../features"
 import type { HexString } from "../../types"
 import { EVMNetwork, sameNetwork } from "../../networks"
 import type { AccountBalance, AddressOnNetwork } from "../../accounts"
@@ -37,7 +38,12 @@ import ChainService from "../chain"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
 import { getOrCreateDb, IndexingDatabase } from "./db"
 import { livePriceMeasurement } from "./history/live"
-import { LIVE_PRICE_SPACING } from "./history/records"
+import {
+  BalanceSeriesInfo,
+  LIVE_PRICE_SPACING,
+  trustResolverFor,
+} from "./history/records"
+import { HistoryBackfill } from "./history/backfill"
 import { deleteLegacyIndexingWhenIdle } from "./legacy-db"
 import BaseService from "../base"
 import type { EnrichedEVMTransaction } from "../enrichment/types"
@@ -134,7 +140,8 @@ function allowVerifyAssetByManualImport(
  *
  * It also keeps chartable history of those prices and balances, along with
  * the base asset balances the chain service reports. History is thinned as it
- * ages.
+ * ages, and what the wallet missed is slowly backfilled, newest first, out to
+ * two years; see {@link HistoryBackfill}.
  */
 export default class IndexingService extends BaseService<Events> {
   #activeAccountBalanceAlarm: NodeJS.Timer | null = null
@@ -211,6 +218,18 @@ export default class IndexingService extends BaseService<Events> {
           void this.compactHistory()
         },
       },
+      // Backfill is the only part of history that calls out to RPCs, so it
+      // waits until history is shown.
+      ...(isEnabled(FeatureFlags.SUPPORT_VALUE_HISTORY)
+        ? {
+            historyBackfill: {
+              schedule: { delayInMinutes: 2, periodInMinutes: 1 },
+              handler: () => {
+                void this.historyBackfill.tick()
+              },
+            },
+          }
+        : {}),
       legacyIndexingCleanup: {
         schedule: { delayInMinutes: 5, periodInMinutes: 10 },
         handler: () => {
@@ -220,7 +239,19 @@ export default class IndexingService extends BaseService<Events> {
         },
       },
     })
+    this.historyBackfill = new HistoryBackfill({
+      db,
+      chainService,
+      trustResolver: () => this.trustResolver(),
+      getAssetsToTrack: () => this.getAssetsToTrack(),
+    })
   }
+
+  /**
+   * Backfills the price and balance history the wallet didn't record live;
+   * see {@link HistoryBackfill}.
+   */
+  private historyBackfill: HistoryBackfill
 
   override async internalStartService(): Promise<void> {
     await super.internalStartService()
@@ -290,6 +321,20 @@ export default class IndexingService extends BaseService<Events> {
   ): Promise<void> {
     await this.db.addOrUpdateCustomAsset(asset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
+  }
+
+  /**
+   * Returns a function that says whether a balance series' asset is trusted
+   * right now, judged from the assets this service currently knows on each
+   * tracked network; see {@link trustResolverFor}.
+   */
+  private async trustResolver(): Promise<
+    (series: BalanceSeriesInfo) => boolean
+  > {
+    return trustResolverFor(
+      await this.chainService.getTrackedNetworks(),
+      (network) => this.getCachedAssets(network),
+    )
   }
 
   /**

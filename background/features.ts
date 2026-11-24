@@ -37,6 +37,7 @@ export const RuntimeFlag = {
   SUPPORT_THE_ISLAND_ON_TENDERLY:
     process.env.SUPPORT_THE_ISLAND_ON_TENDERLY === "true",
   SUPPORT_MEZO_NETWORK: process.env.SUPPORT_MEZO_NETWORK === "true",
+  SUPPORT_VALUE_HISTORY: process.env.SUPPORT_VALUE_HISTORY === "true",
   USE_CAMPAIGN_NFT_CONTRACT: process.env.USE_CAMPAIGN_NFT_CONTRACT,
 } as const
 
