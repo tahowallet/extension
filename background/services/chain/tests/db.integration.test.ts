@@ -1,7 +1,7 @@
 import Dexie from "dexie"
 import { IDBFactory } from "fake-indexeddb"
 import * as sinon from "sinon"
-import { ETHEREUM, OPTIMISM, POLYGON, ETH } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import {
   createAccountBalance,
   createAddressOnNetwork,
@@ -43,14 +43,17 @@ describe("Chain Database", () => {
       expect(await db.getAccountsToTrack()).toEqual([account1])
     })
   })
-  describe("addBalance", () => {
-    it("should correctly persist balances to indexedDB", async () => {
-      expect((await db.table("balances").toArray()).length).toEqual(0)
-      const accountBalance = createAccountBalance()
-      await db.addBalance(accountBalance)
-      const accountBalances = await db.table("balances").toArray()
-      expect(accountBalances.length).toEqual(1)
-      expect(accountBalances[0].address).toEqual(accountBalance.address)
+  describe("deleteStoredBalances", () => {
+    it("deletes stored balances a batch at a time", async () => {
+      await db
+        .table("balances")
+        .bulkAdd(Array.from({ length: 5 }, () => createAccountBalance()))
+
+      expect(await db.deleteStoredBalances(3)).toEqual(3)
+      expect(await db.table("balances").count()).toEqual(2)
+      expect(await db.deleteStoredBalances(3)).toEqual(2)
+      expect(await db.deleteStoredBalances(3)).toEqual(0)
+      expect(await db.table("balances").count()).toEqual(0)
     })
   })
   describe("addBlock", () => {
@@ -210,42 +213,6 @@ describe("Chain Database", () => {
     })
     it("should disallow duplicate chain ids", async () => {
       expect((await db.getChainIDsToTrack()) instanceof Set).toEqual(true)
-    })
-  })
-  describe("getLatestAccountBalance", () => {
-    it("should retrieve the most recent account balance corresponding to a given address, network, & asset persisted in indexedDB", async () => {
-      const accountBalance = createAccountBalance({
-        assetAmount: {
-          asset: ETH,
-          amount: 4n,
-        },
-      })
-
-      const accountBalance2 = createAccountBalance({
-        assetAmount: {
-          asset: ETH,
-          amount: 10n,
-        },
-        retrievedAt: Date.now() - 10_000,
-      })
-      await db.addBalance(accountBalance)
-      await db.addBalance(accountBalance2)
-      const latest = await db.getLatestAccountBalance(
-        accountBalance.address,
-        accountBalance.network,
-        ETH,
-      )
-      expect(latest?.assetAmount.amount).toEqual(4n)
-    })
-    it("should return null if no account balances are found", async () => {
-      const accountBalance = createAccountBalance()
-      // Explicitly don't save to DB
-      const latest = await db.getLatestAccountBalance(
-        accountBalance.address,
-        accountBalance.network,
-        ETH,
-      )
-      expect(latest).toBeNull()
     })
   })
   describe("getLatestBlock", () => {
@@ -522,12 +489,6 @@ describe("Chain Database", () => {
 
       await db.addAccountToTrack(addressNetwork)
       await db.recordAccountAssetTransferLookup(addressNetwork, 0n, 100n)
-      await db.addBalance(
-        createAccountBalance({
-          address: addressNetwork.address,
-          network: originalNetwork,
-        }),
-      )
       await db.addOrUpdateTransaction(
         createAnyEVMTransaction({ network: originalNetwork }),
         "local",
@@ -584,11 +545,6 @@ describe("Chain Database", () => {
           network: renamedNetwork,
         }),
       ).toEqual(100n)
-
-      // The balance cache moves over rather than being orphaned.
-      const balances = await db.table("balances").toArray()
-      expect(balances).toHaveLength(1)
-      expect(balances[0].network.name).toEqual("Foo Renamed")
 
       // Re-derivable caches keyed by the old name are dropped rather than
       // duplicated under the new one.

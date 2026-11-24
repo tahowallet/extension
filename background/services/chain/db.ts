@@ -15,7 +15,6 @@ import {
   NetworkBaseAsset,
   RpcEndpoint,
 } from "../../networks"
-import { FungibleAsset } from "../../assets"
 import {
   BASE_ASSETS,
   CHAIN_ID_TO_COINGECKO_PLATFORM_ID,
@@ -191,8 +190,10 @@ export class ChainDatabase extends Dexie {
    */
   private chainTransactions!: Dexie.Table<Transaction, [string, string]>
 
-  /*
-   * Historic account balances.
+  /**
+   * Base asset balances older builds stored on every fetch and never read
+   * back. The chain service empties it while the user is idle; drop it from
+   * the schema once that has had time to run.
    */
   private balances!: Dexie.Table<AccountBalance, number>
 
@@ -526,7 +527,6 @@ export class ChainDatabase extends Dexie {
         this.baseAssets,
         this.accountsToTrack,
         this.accountAssetTransferLookups,
-        this.balances,
         this.chainTransactions,
         this.blocks,
       ],
@@ -556,9 +556,6 @@ export class ChainDatabase extends Dexie {
    *   secondary indices, so the stored network is rewritten in place; Dexie
    *   reindexes. Losing these would restart transfer discovery from scratch and
    *   re-scan the whole chain.
-   * - `balances`: auto-increment primary key, name only in a secondary index,
-   *   so it is rewritten in place too — cheap, and it keeps the recent-balance
-   *   cache readable instead of forcing a refetch.
    * - `chainTransactions` and `blocks`: the compound primary keys embed
    *   `network.name`, and both are re-derivable caches. Old-name rows are
    *   deleted rather than re-keyed, which avoids writing a second copy of the
@@ -594,14 +591,6 @@ export class ChainDatabase extends Dexie {
       )
       .modify((lookup) => {
         Object.assign(lookup.addressNetwork, { network })
-      })
-
-    await this.balances
-      .where("network.name")
-      .equals(previousName)
-      .filter((balance) => balance.network.chainID === chainID)
-      .modify((balance) => {
-        Object.assign(balance, { network })
       })
 
     await this.chainTransactions
@@ -908,26 +897,6 @@ export class ChainDatabase extends Dexie {
     })
   }
 
-  async getLatestAccountBalance(
-    address: string,
-    network: Network,
-    asset: FungibleAsset,
-  ): Promise<AccountBalance | null> {
-    // TODO this needs to be tightened up, both for performance and specificity
-    const balanceCandidates = await this.balances
-      .where("retrievedAt")
-      .above(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      .filter(
-        (balance) =>
-          balance.address === address &&
-          balance.assetAmount.asset.symbol === asset.symbol &&
-          balance.network.name === network.name,
-      )
-      .reverse()
-      .sortBy("retrievedAt")
-    return balanceCandidates.length > 0 ? balanceCandidates[0] : null
-  }
-
   async addAccountToTrack(addressNetwork: AddressOnNetwork): Promise<void> {
     await this.accountsToTrack.put(addressNetwork)
   }
@@ -999,8 +968,14 @@ export class ChainDatabase extends Dexie {
     await this.blocks.put(block)
   }
 
-  async addBalance(accountBalance: AccountBalance): Promise<void> {
-    await this.balances.add(accountBalance)
+  /**
+   * Deletes up to `limit` of the balances older builds stored, and resolves to
+   * how many it deleted.
+   */
+  async deleteStoredBalances(limit: number): Promise<number> {
+    const ids = await this.balances.limit(limit).primaryKeys()
+    await this.balances.bulkDelete(ids)
+    return ids.length
   }
 
   async updateBaseAssets(baseAssets: NetworkBaseAsset[]): Promise<void> {

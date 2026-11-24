@@ -63,6 +63,12 @@ import TransactionTracker, {
   PriorityQueuedTxToRetrieve,
   QueuedTxToRetrieve,
 } from "./transaction-tracker"
+import isUserIdle from "../../lib/idle"
+
+/** Stored balances deleted per transaction while clearing them out. */
+const STORED_BALANCE_DELETE_BATCH = 2_000
+/** How long one alarm keeps deleting stored balances. */
+const STORED_BALANCE_DELETE_BUDGET_MS = 10_000
 
 interface Events extends ServiceLifecycleEvents {
   initializeActivities: {
@@ -306,6 +312,18 @@ export default class ChainService extends BaseService<Events> {
         // Only wakes the service worker; the network watches poll gas on
         // their own timers.
         handler: () => {},
+      },
+      storedBalanceCleanup: {
+        runAtStart: false,
+        schedule: {
+          delayInMinutes: 5,
+          periodInMinutes: 1,
+        },
+        handler: () => {
+          this.deleteStoredBalancesWhileIdle().catch((error) =>
+            logger.warn("Couldn't delete stored balances", error),
+          )
+        },
       },
     })
 
@@ -782,8 +800,6 @@ export default class ChainService extends BaseService<Events> {
           network,
         },
       })
-
-      await this.db.addBalance(accountBalance)
     }
 
     return accountBalance
@@ -819,6 +835,21 @@ export default class ChainService extends BaseService<Events> {
     if (source !== SignerImportSource.internal) {
       // Logs its own failures.
       void this.assetTransferScanner.scanHistoricTransfersFor(addressNetwork)
+    }
+  }
+
+  /**
+   * Deletes the base asset balances older builds stored, in small batches and
+   * only while the user is idle, since a wallet that has run for years can
+   * hold millions of them.
+   */
+  private async deleteStoredBalancesWhileIdle(): Promise<void> {
+    const deadline = Date.now() + STORED_BALANCE_DELETE_BUDGET_MS
+    while (Date.now() < deadline && (await isUserIdle())) {
+      const deleted = await this.db.deleteStoredBalances(
+        STORED_BALANCE_DELETE_BATCH,
+      )
+      if (deleted < STORED_BALANCE_DELETE_BATCH) return
     }
   }
 
