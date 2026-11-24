@@ -214,6 +214,7 @@ import {
 import NotificationsService from "../notifications"
 import { ReduxStoreType, initializeStore, readAndMigrateState } from "./store"
 import CampaignService from "../campaign"
+import type { ValueHistory, ValueHistoryQuery } from "../indexing"
 import { DAPP_BASE_URL } from "../campaign/matsnet-nft"
 
 export default class ReduxService extends BaseService<never> {
@@ -1869,6 +1870,10 @@ export default class ReduxService extends BaseService<never> {
     metadata: AnyAssetMetadata,
   ): Promise<void> {
     await this.indexingService.updateAssetMetadata(asset, metadata)
+  }
+
+  async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
+    return this.indexingService.getValueHistory(query)
   }
 
   async hideAsset(asset: SmartContractFungibleAsset): Promise<void> {

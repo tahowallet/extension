@@ -1165,6 +1165,24 @@
     "networkFilter": {
       "summary_one": "{{network}} and 1 more",
       "summary_other": "{{network}} and {{count}} more"
+    },
+    "chart": {
+      "ranges": {
+        "day": "1D",
+        "week": "1W",
+        "month": "1M",
+        "quarter": "3M",
+        "year": "1Y",
+        "all": "All"
+      },
+      "historyBegins": "History begins {{date}}",
+      "backfilling": "Filling in earlier history…",
+      "estimated": "Estimated while balance history fills in",
+      "estimatedUnavailable": "Estimated, since some balance history isn't available before {{date}}",
+      "reconstructed": "Rebuilt from token transfers",
+      "unrecorded": "Nothing was recorded at this time",
+      "unrecordedFilling": "Not recorded yet, still filling in",
+      "empty": "No history yet"
     }
   }
 }

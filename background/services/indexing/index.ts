@@ -45,6 +45,11 @@ import {
 } from "./history/records"
 import { HistoryBackfill } from "./history/backfill"
 import { deleteLegacyIndexingWhenIdle } from "./legacy-db"
+import {
+  ValueHistory,
+  ValueHistoryQuery,
+  valueHistory,
+} from "./history/value-history"
 import BaseService from "../base"
 import type { EnrichedEVMTransaction } from "../enrichment/types"
 import {
@@ -59,6 +64,8 @@ import {
   isSameAsset,
   FullAssetID,
 } from "../../redux-slices/utils/asset-utils"
+
+export type { ValueHistory, ValueHistoryQuery }
 
 // Transactions seen within this many blocks of the chain tip will schedule a
 // token refresh sooner than the standard rate.
@@ -321,6 +328,19 @@ export default class IndexingService extends BaseService<Events> {
   ): Promise<void> {
     await this.db.addOrUpdateCustomAsset(asset)
     await this.cacheAssetsForNetwork(asset.homeNetwork)
+  }
+
+  /**
+   * Returns the value over time of the queried accounts' balances, sampled at
+   * `samples` points across the queried span, along with when coverage starts
+   * and whether backfill is still filling in the queried series.
+   */
+  async getValueHistory(query: ValueHistoryQuery): Promise<ValueHistory> {
+    return valueHistory(query, {
+      db: this.db,
+      trustResolver: () => this.trustResolver(),
+      isBackfillPending: (key) => this.historyBackfill.isPending(key),
+    })
   }
 
   /**

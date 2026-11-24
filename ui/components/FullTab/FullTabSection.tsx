@@ -43,6 +43,12 @@ export default function FullTabSection({
             padding: 32px 32px 48px;
           }
         }
+        /* Space between a section's blocks, such as a chart and a table. */
+        .content {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
         header {
           display: flex;
           justify-content: space-between;
