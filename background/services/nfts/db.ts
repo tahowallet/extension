@@ -2,6 +2,7 @@ import Dexie from "dexie"
 import type { AddressOnNetwork } from "../../accounts"
 import { normalizeEVMAddress, sameEVMAddress } from "../../lib/utils"
 import { NFT, NFTCollection } from "../../nfts"
+import { deleteInBatches, findPrimaryKeys } from "../../lib/dexie-batches"
 
 export type FreshCollectionsMap = {
   [collectionID: string]: { [address: string]: boolean }
@@ -194,6 +195,94 @@ export class NFTsDatabase extends Dexie {
       )
 
       .toArray()
+  }
+
+  /**
+   * Returns the chain IDs this database holds NFTs, collections or indexed
+   * ERC-721 data for.
+   *
+   * Note that NFTs and collections are found by reading every row, as their
+   * keys end with the chain rather than start with it. Both tables are small,
+   * as only POAPs, campaign NFTs and indexed tokens are kept.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    const chainIDs = new Set<string>()
+    const add = (chainID: unknown) => {
+      if (typeof chainID === "string") chainIDs.add(chainID)
+    }
+    await findPrimaryKeys(this.collections, ({ network }) => {
+      add(network.chainID)
+      return false
+    })
+    await findPrimaryKeys(this.nfts, ({ network }) => {
+      add(network.chainID)
+      return false
+    })
+    ;(await this.erc721Transfers.orderBy("[chainID+account]").uniqueKeys())
+      .concat(
+        await this.erc721Ownership.orderBy("[chainID+account]").uniqueKeys(),
+      )
+      .forEach((key) => add(Array.isArray(key) ? key[0] : undefined))
+    ;[
+      ...(await this.erc721Metadata.toCollection().primaryKeys()),
+      ...(await this.erc721Contracts.toCollection().primaryKeys()),
+    ].forEach((id) => add(id.split(":")[0]))
+    return chainIDs
+  }
+
+  /**
+   * Removes a chain's NFTs, collections, and indexed ERC-721 transfers,
+   * ownership, metadata and contracts, in bounded batches, and returns the
+   * number of rows deleted.
+   *
+   * The service loads every stored collection into the wallet at startup,
+   * whatever its chain, so a removed network's NFTs would otherwise come
+   * back with each restart.
+   *
+   * @param chainID The chain whose NFT data to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    const idPrefix = `${chainID}:`
+    const onChain = ({ network }: { network: { chainID?: string } }) =>
+      network.chainID === chainID
+    const byChain = (
+      table: typeof this.erc721Transfers | typeof this.erc721Ownership,
+    ) =>
+      table
+        .where("[chainID+account]")
+        .between([chainID, Dexie.minKey], [chainID, Dexie.maxKey])
+        .primaryKeys()
+    const byIDPrefix = (
+      table: typeof this.erc721Metadata | typeof this.erc721Contracts,
+    ) => table.where(":id").startsWith(idPrefix).primaryKeys()
+
+    // One table at a time, so each holds the background up only briefly.
+    let deleted = 0
+    deleted += await deleteInBatches(
+      this.nfts,
+      await findPrimaryKeys(this.nfts, onChain),
+    )
+    deleted += await deleteInBatches(
+      this.collections,
+      await findPrimaryKeys(this.collections, onChain),
+    )
+    deleted += await deleteInBatches(
+      this.erc721Transfers,
+      await byChain(this.erc721Transfers),
+    )
+    deleted += await deleteInBatches(
+      this.erc721Ownership,
+      await byChain(this.erc721Ownership),
+    )
+    deleted += await deleteInBatches(
+      this.erc721Metadata,
+      await byIDPrefix(this.erc721Metadata),
+    )
+    deleted += await deleteInBatches(
+      this.erc721Contracts,
+      await byIDPrefix(this.erc721Contracts),
+    )
+    return deleted
   }
 
   async removeNFTsForAddress(address: string): Promise<void> {

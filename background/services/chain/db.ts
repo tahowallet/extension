@@ -30,6 +30,7 @@ import {
   POLYGON,
 } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
+import { deleteInBatches } from "../../lib/dexie-batches"
 
 export type Transaction = AnyEVMTransaction & {
   dataSource: "boar" | "generic-rpc" | "local"
@@ -641,6 +642,148 @@ export class ChainDatabase extends Dexie {
         return accountsToTrack.delete()
       },
     )
+  }
+
+  /**
+   * Returns the network names that rows in the name-keyed tables carry but
+   * that no stored network has, i.e. the names of networks that have been
+   * removed, or renamed by an older version that left the old rows behind.
+   */
+  private async orphanedNetworkNames(): Promise<
+    { table: "balances" | "chainTransactions" | "blocks"; name: string }[]
+  > {
+    const knownNames = new Set(
+      (await this.networks.toArray()).map(({ name }) => name),
+    )
+    const tables = ["balances", "chainTransactions", "blocks"] as const
+    const namesByTable = await Promise.all(
+      tables.map(async (table) => ({
+        table,
+        names: await this[table].orderBy("network.name").uniqueKeys(),
+      })),
+    )
+    return namesByTable.flatMap(({ table, names }) =>
+      names
+        .filter(
+          (name): name is string =>
+            typeof name === "string" && !knownNames.has(name),
+        )
+        .map((name) => ({ table, name })),
+    )
+  }
+
+  /**
+   * Returns the chain IDs that rows in this database belong to, read from
+   * indexes and key ranges rather than by reading every row.
+   *
+   * Tables that only index the network's name, like blocks and transactions,
+   * are covered through the names no stored network has: the first row under
+   * each such name says which chain it was.
+   *
+   * Note that rows of a removed network that shared its name with a network
+   * that still exists aren't found here, as they can't be told apart from
+   * that network's rows without reading every one of them.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    const [tracked, lookups, cursorIDs, orphans] = await Promise.all([
+      this.accountsToTrack.orderBy("network.chainID").uniqueKeys(),
+      this.accountAssetTransferLookups
+        .orderBy("addressNetwork.network.chainID")
+        .uniqueKeys(),
+      this.nftLogScanCursors.toCollection().primaryKeys(),
+      this.orphanedNetworkNames(),
+    ])
+    const orphanChainIDs = await Promise.all(
+      orphans.map(
+        async ({ table, name }) =>
+          (await this[table].where("network.name").equals(name).first())
+            ?.network.chainID,
+      ),
+    )
+
+    return new Set(
+      [
+        ...tracked,
+        ...lookups,
+        ...cursorIDs.map((id) => id.split(":")[0]),
+        ...orphanChainIDs,
+      ].filter((chainID): chainID is string => typeof chainID === "string"),
+    )
+  }
+
+  /**
+   * Removes every row kept for a chain's accounts and activity: tracked
+   * accounts, transfer lookups, NFT log scan cursors, and the balances,
+   * transactions and blocks seen on it. Rows are deleted in bounded batches,
+   * yielding between them, and the number deleted is returned.
+   *
+   * Removing a network through {@link removeEVMNetwork} deletes only its
+   * settings and tracked accounts, leaving the rest to pile up. A busy
+   * mainnet fork can leave thousands of blocks and transactions behind.
+   *
+   * Note that the network's own settings, such as its stored network and
+   * RPC endpoints, are left to {@link removeEVMNetwork}. Note also that
+   * blocks, transactions and balances are only found under names no stored
+   * network has, as {@link getChainIDsWithData} explains.
+   *
+   * @param chainID The chain whose rows to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    const onChain = (row: { network: { chainID?: string } }) =>
+      row.network.chainID === chainID
+
+    let deleted = 0
+    deleted += await deleteInBatches(
+      this.accountsToTrack,
+      await this.accountsToTrack
+        .where("network.chainID")
+        .equals(chainID)
+        .primaryKeys(),
+    )
+    deleted += await deleteInBatches(
+      this.accountAssetTransferLookups,
+      await this.accountAssetTransferLookups
+        .where("addressNetwork.network.chainID")
+        .equals(chainID)
+        .primaryKeys(),
+    )
+    deleted += await deleteInBatches(
+      this.nftLogScanCursors,
+      await this.nftLogScanCursors
+        .where(":id")
+        .startsWith(`${chainID}:`)
+        .primaryKeys(),
+    )
+
+    // One table and name at a time, so that each read of keys stays small.
+    // oxlint-disable no-await-in-loop
+    for (const { table, name } of await this.orphanedNetworkNames()) {
+      if (table === "balances") {
+        deleted += await deleteInBatches(
+          this.balances,
+          await this.balances.where("network.name").equals(name).primaryKeys(),
+          onChain,
+        )
+      } else if (table === "chainTransactions") {
+        deleted += await deleteInBatches(
+          this.chainTransactions,
+          await this.chainTransactions
+            .where("network.name")
+            .equals(name)
+            .primaryKeys(),
+          onChain,
+        )
+      } else {
+        deleted += await deleteInBatches(
+          this.blocks,
+          await this.blocks.where("network.name").equals(name).primaryKeys(),
+          onChain,
+        )
+      }
+    }
+    // oxlint-enable no-await-in-loop
+
+    return deleted
   }
 
   async getAllEVMNetworks(): Promise<EVMNetwork[]> {

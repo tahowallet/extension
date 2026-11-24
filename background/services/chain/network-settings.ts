@@ -10,6 +10,7 @@ import {
   EVMNetwork,
   RpcEndpoint,
   sameChainID,
+  toDecimalChainID,
 } from "../../networks"
 import type { ValidatedAddEthereumChainParameter } from "../provider-bridge/utils"
 import type { ChainDatabase, RpcConfig } from "./db"
@@ -136,6 +137,10 @@ export default class NetworkSettings {
 
   async removeCustomChain(chainID: string): Promise<void> {
     await this.providerRegistry().removeProvider(chainID)
+    // The database row went with the chain, so a network re-added under the
+    // same chain ID shouldn't pick up the old endpoints from memory.
+    this.#methodSpecificRpcConfigs.delete(chainID)
+    this.#methodSpecificRpcConfigs.delete(toDecimalChainID(chainID))
     await this.refreshSupportedNetworks()
   }
 
