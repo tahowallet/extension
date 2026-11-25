@@ -256,6 +256,41 @@ describe("Chain Database", () => {
       await db.addBlock(block)
       expect(await db.getLatestBlock(OPTIMISM)).toBeTruthy()
     })
+
+    it("returns the network's newest block, not another network's", async () => {
+      const now = Math.floor(Date.now() / 1000)
+      const older = createAnyEVMBlock({
+        network: OPTIMISM,
+        blockHeight: 1,
+        timestamp: now - 30,
+      })
+      const newer = createAnyEVMBlock({
+        network: OPTIMISM,
+        blockHeight: 2,
+        timestamp: now - 10,
+      })
+      const otherNetwork = createAnyEVMBlock({
+        network: POLYGON,
+        blockHeight: 3,
+        timestamp: now,
+      })
+      await db.addBlock(older)
+      await db.addBlock(newer)
+      await db.addBlock(otherNetwork)
+
+      expect((await db.getLatestBlock(OPTIMISM))?.hash).toBe(newer.hash)
+    })
+
+    it("ignores blocks more than 90 seconds old", async () => {
+      await db.addBlock(
+        createAnyEVMBlock({
+          network: OPTIMISM,
+          timestamp: Math.floor(Date.now() / 1000) - 120,
+        }),
+      )
+
+      expect(await db.getLatestBlock(OPTIMISM)).toBeNull()
+    })
   })
   describe("getNetworkPendingTransactions", () => {
     it("should return all pending transactions", async () => {
