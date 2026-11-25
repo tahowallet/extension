@@ -158,7 +158,10 @@ export default abstract class BaseService<
 
         // Re-creating an alarm resets its period, so alarms that outlive the
         // service worker are left alone unless their period changed.
-        if (existing?.periodInMinutes === schedule.periodInMinutes) {
+        if (
+          existing !== undefined &&
+          existing.periodInMinutes === schedule.periodInMinutes
+        ) {
           return
         }
 

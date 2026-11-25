@@ -95,6 +95,16 @@ describe("BaseService alarms", () => {
     expect(handler.callCount).toBe(0)
   })
 
+  it("creates a missing one-shot alarm", async () => {
+    get.resolves(undefined)
+
+    await new TestService({
+      once: { schedule: { delayInMinutes: 1 }, handler },
+    }).startService()
+
+    expect(create.calledOnceWith("once", { delayInMinutes: 1 })).toBe(true)
+  })
+
   describe("alarms that fire around start", () => {
     const alarm = { name: "refresh", scheduledTime: 0, periodInMinutes: 60 }
     let addListener: sinon.SinonStub

@@ -90,6 +90,8 @@ const CHAIN_ID_BY_RPC_HOST: { [host: string]: number } = {
   "rpc.test.mezo.org": 31611,
   "mezo-testnet.drpc.org": 31611,
   "rpc-http.mezo.boar.network": 31612,
+  // CI's Boar URL for Mezo.
+  "mezo-mainnet.boar.network": 31612,
   "mainnet.mezo.public.validationcloud.io": 31612,
   "mezo.drpc.org": 31612,
   "avalanche.drpc.org": 43114,
