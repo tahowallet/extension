@@ -316,6 +316,21 @@ const accountSlice = createSlice({
         ens: { ...baseAccountData.ens, name },
       }
     },
+    clearAccountName: (
+      immerState,
+      { payload: { address, network } }: { payload: AddressOnNetwork },
+    ) => {
+      const accountData =
+        immerState.accountsData.evm[network.chainID]?.[
+          normalizeEVMAddress(address)
+        ]
+
+      if (accountData === undefined || accountData === "loading") {
+        return
+      }
+
+      delete accountData.ens.name
+    },
     updateENSAvatar: (
       immerState,
       {
@@ -381,6 +396,7 @@ export const {
   loadAccount,
   updateAccountBalance,
   updateAccountName,
+  clearAccountName,
   updateENSAvatar,
   removeAssetReferences,
   removeChainBalances,
@@ -442,9 +458,8 @@ export const addAddressNetwork = createBackgroundAsyncThunk(
 
 export const addOrEditAddressName = createBackgroundAsyncThunk(
   "account/addOrEditAddressName",
-  async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) => {
-    await main.addOrEditAddressName(payload)
-  },
+  async (payload: AddressOnNetwork & { name: string }, { extra: { main } }) =>
+    main.addOrEditAddressName(payload),
 )
 
 export const removeAccount = createBackgroundAsyncThunk(

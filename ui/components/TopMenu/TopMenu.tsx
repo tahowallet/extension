@@ -34,8 +34,6 @@ export default function TopMenu(): ReactElement {
       />
       <SharedSlideUpMenu
         isOpen={isProtocolListOpen}
-        isScrollable
-        style={{ display: "flex", flexDirection: "column" }}
         close={() => {
           setIsProtocolListOpen(false)
         }}
@@ -95,7 +93,15 @@ export default function TopMenu(): ReactElement {
           .profile_group {
             display: flex;
             align-items: center;
-            min-width: 0; // Allow the account address/name to collapse to an ellipsis.
+            /*
+             * The network name gives way before the account name does, so
+             * the account side doesn't shrink until its name is past about
+             * 200px (the rest is the avatar); past that it collapses to an
+             * ellipsis.
+             */
+            flex-shrink: 0;
+            max-width: 240px;
+            min-width: 0;
           }
           button {
             border-radius: 12px;

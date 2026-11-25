@@ -292,6 +292,17 @@ export default function Settings(): ReactElement {
     ),
   }
 
+  const addressBookSettings = {
+    title: "",
+    component: () => (
+      <SettingButton
+        link="/settings/address-book"
+        label={t("settings.addressBook")}
+        icon="continue"
+      />
+    ),
+  }
+
   const dAppsSettings = {
     title: "",
     component: () => (
@@ -446,6 +457,7 @@ export default function Settings(): ReactElement {
     general: {
       title: t("settings.group.general"),
       items: [
+        addressBookSettings,
         dAppsSettings,
         analytics,
         appearance,

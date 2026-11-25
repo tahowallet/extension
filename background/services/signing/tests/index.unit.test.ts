@@ -9,7 +9,7 @@ import {
   createRandomAddress,
   createSigningService,
 } from "../../../tests/factories"
-import { ETHEREUM, OPTIMISM } from "../../../constants"
+import { ETHEREUM, OPTIMISM, POLYGON } from "../../../constants"
 import type { AddressOnNetwork, NameOnNetwork } from "../../../accounts"
 import type { EVMNetwork } from "../../../networks"
 import type { HexString } from "../../../types"
@@ -235,6 +235,7 @@ describe("Signing Service Unit", () => {
     let internalSignerService: InternalSignerService
     let chainService: ChainService
     let trackedAccounts: AddressOnNetwork[]
+    let supportedNetworks: EVMNetwork[]
 
     const keyringAddress = createRandomAddress()
     const otherAddress = createRandomAddress()
@@ -247,7 +248,8 @@ describe("Signing Service Unit", () => {
     }
 
     // Keyring-controlled on both networks; the other address has no signer;
-    // the single-network address is tracked on Ethereum only.
+    // the single-network address is tracked on Ethereum only, but still
+    // mapped on every known network.
     const expectedMap: ControlCompatibility = {
       [keyringAddress]: {
         [ETHEREUM.chainID]: [OPTIMISM.chainID],
@@ -259,6 +261,7 @@ describe("Signing Service Unit", () => {
       },
       [singleNetworkAddress]: {
         [ETHEREUM.chainID]: [],
+        [OPTIMISM.chainID]: [],
       },
     }
 
@@ -284,6 +287,10 @@ describe("Signing Service Unit", () => {
       sandbox
         .stub(chainService, "getAccountsToTrack")
         .callsFake(async () => trackedAccounts)
+      supportedNetworks = [ETHEREUM, OPTIMISM]
+      sandbox
+        .stub(chainService, "getSupportedNetworks")
+        .callsFake(() => supportedNetworks)
 
       signingService = await createTrackingService()
       await internalSignerService.emitter.emit("internalSigners", {
@@ -303,6 +310,19 @@ describe("Signing Service Unit", () => {
       expect(await signingService.getControlCompatibility()).toEqual(
         expectedMap,
       )
+    })
+
+    it("covers known networks an address isn't tracked on yet", async () => {
+      supportedNetworks = [ETHEREUM, OPTIMISM, POLYGON]
+      trackedAccounts = [{ address: keyringAddress, network: ETHEREUM }]
+
+      expect(await signingService.getControlCompatibility()).toEqual({
+        [keyringAddress]: {
+          [ETHEREUM.chainID]: [OPTIMISM.chainID, POLYGON.chainID],
+          [OPTIMISM.chainID]: [ETHEREUM.chainID, POLYGON.chainID],
+          [POLYGON.chainID]: [ETHEREUM.chainID, OPTIMISM.chainID],
+        },
+      })
     })
 
     it("groups tracked networks by address regardless of checksum casing", async () => {

@@ -17,6 +17,7 @@ import Eligible from "../pages/Claiming/Eligible"
 import SettingsExportLogs from "../pages/Settings/SettingsExportLogs"
 import SettingsAnalytics from "../pages/Settings/SettingsAnalytics"
 import SettingsConnectedWebsites from "../pages/Settings/SettingsConnectedWebsites"
+import SettingsAddressBook from "../pages/Settings/SettingsAddressBook"
 import HiddenDevPanel from "../components/HiddenDevPanel/HiddenDevPanel"
 import FeatureFlagsPanel from "../components/HiddenDevPanel/FeatureFlagsPanel"
 import NFTs from "../pages/NFTs"
@@ -107,6 +108,11 @@ const pageList: PageList[] = [
   {
     path: "/settings/export-logs",
     Component: SettingsExportLogs,
+    persistOnClose: true,
+  },
+  {
+    path: "/settings/address-book",
+    Component: SettingsAddressBook,
     persistOnClose: true,
   },
   {
