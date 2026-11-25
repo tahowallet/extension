@@ -381,6 +381,24 @@ export default class NFTsService extends BaseService<Events> {
     this.#freshCollections[collectionID][normalizeEVMAddress(address)] = isFresh
   }
 
+  /**
+   * Returns the chain IDs that the NFT database holds data for. See
+   * {@link NFTsDatabase.getChainIDsWithData}.
+   */
+  async getChainIDsWithData(): Promise<Set<string>> {
+    return this.db.getChainIDsWithData()
+  }
+
+  /**
+   * Removes the NFT data kept for a chain that has left the network list,
+   * and returns the number of rows deleted.
+   *
+   * @param chainID The chain whose NFT data to remove.
+   */
+  async removeChainData(chainID: string): Promise<number> {
+    return this.db.removeChainData(chainID)
+  }
+
   async removeNFTsForAddress(address: string): Promise<void> {
     Object.keys(this.#freshCollections).forEach((collectionID) => {
       if (this.#freshCollections[collectionID][normalizeEVMAddress(address)]) {

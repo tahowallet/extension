@@ -6,6 +6,7 @@ import {
   PermissionRequest,
 } from "@tallyho/provider-bridge-shared"
 import { createBackgroundAsyncThunk } from "./utils"
+import { chainIsDroppedBy, setEVMNetworks } from "./utils/network-list"
 import { keyPermissionsByChainIdAddressOrigin } from "../services/provider-bridge/utils"
 import {
   ARBITRUM_NOVA,
@@ -228,6 +229,24 @@ const dappSlice = createSlice({
           })
         },
       )
+      // Drops permissions and per-origin network choices on chains that have
+      // left the network list. The provider bridge keeps its own copy of
+      // both and clears it when a network is removed.
+      .addCase(setEVMNetworks, (immerState, { payload }) => {
+        const isDropped = chainIsDroppedBy(payload)
+        Object.keys(immerState.allowed.evm)
+          .filter(isDropped)
+          .forEach((chainID) => {
+            delete immerState.allowed.evm[chainID]
+          })
+        Object.entries(immerState.currentNetworkByOrigin ?? {}).forEach(
+          ([origin, network]) => {
+            if (isDropped(network.chainID)) {
+              delete immerState.currentNetworkByOrigin[origin]
+            }
+          },
+        )
+      })
   },
 })
 
