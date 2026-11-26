@@ -23,6 +23,11 @@ import {
 } from "../../../hooks"
 import OnboardingRoutes from "./Routes"
 import SharedSeedInput from "../../../components/Shared/SharedSeedInput"
+import SharedRecoveryPhraseInput from "../../../components/Shared/SharedRecoveryPhraseInput"
+import {
+  checkRecoveryPhrase,
+  normalizeRecoveryPhrase,
+} from "../../../utils/recoveryPhrase"
 import ImportForm from "./ImportForm"
 
 type Props = {
@@ -36,12 +41,13 @@ export default function ImportSeed(props: Props): ReactElement {
 
   const [recoveryPhrase, setRecoveryPhrase] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const [unknownWordNumbers, setUnknownWordNumbers] = useState<number[]>([])
   const [path, setPath] = useState<string>(
     selectedNetwork.derivationPath ?? "m/44'/60'/0'/0",
   )
   const [isImporting, setIsImporting] = useState(false)
 
-  const { t } = useTranslation("translation", {
+  const { t, i18n } = useTranslation("translation", {
     keyPrefix: "onboarding.tabbed.addWallet.importSeed",
   })
 
@@ -53,18 +59,53 @@ export default function ImportSeed(props: Props): ReactElement {
     setErrorMessage("")
   }, [])
 
+  const getUnknownWordsMessage = useCallback(
+    (wordNumbers: number[]) =>
+      t("errors.unknownWords", {
+        count: wordNumbers.length,
+        words: new Intl.ListFormat(i18n.language).format(
+          wordNumbers.map(String),
+        ),
+      }),
+    [t, i18n.language],
+  )
+
+  const getPhraseError = useCallback(
+    (phrase: string): string | undefined => {
+      if (isEnabled(FeatureFlags.SUPPORT_SEED_WORD_SUGGESTIONS)) {
+        const check = checkRecoveryPhrase(phrase)
+
+        switch (check.result) {
+          case "unknownWords":
+            return getUnknownWordsMessage(check.unknownWordNumbers)
+          case "wordCount":
+            return t("errors.wordCountError", { count: check.wordCount })
+          case "checksum":
+            return t("errors.checksumError")
+          default:
+            return undefined
+        }
+      }
+
+      const wordCount = phrase.split(" ").length
+      if (wordCount !== 12 && wordCount !== 24) {
+        return t("errors.phraseLengthError")
+      }
+      if (!isValidMnemonic(phrase)) {
+        return t("errors.invalidPhraseError")
+      }
+      return undefined
+    },
+    [t, getUnknownWordsMessage],
+  )
+
   const importWallet = useCallback(async () => {
-    const plainRecoveryPhrase = recoveryPhrase
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim()
-    const splitTrimmedRecoveryPhrase = plainRecoveryPhrase.split(" ")
-    if (
-      splitTrimmedRecoveryPhrase.length !== 12 &&
-      splitTrimmedRecoveryPhrase.length !== 24
-    ) {
-      setErrorMessage(t("errors.phraseLengthError"))
-    } else if (isValidMnemonic(plainRecoveryPhrase)) {
+    const plainRecoveryPhrase = normalizeRecoveryPhrase(recoveryPhrase)
+    const phraseError = getPhraseError(plainRecoveryPhrase)
+
+    if (phraseError) {
+      setErrorMessage(phraseError)
+    } else {
       setIsImporting(true)
 
       const { success } = (await dispatch(
@@ -82,10 +123,8 @@ export default function ImportSeed(props: Props): ReactElement {
       } else {
         setIsImporting(false)
       }
-    } else {
-      setErrorMessage(t("errors.invalidPhraseError"))
     }
-  }, [dispatch, recoveryPhrase, path, t, history, nextPage])
+  }, [dispatch, recoveryPhrase, getPhraseError, path, history, nextPage])
 
   if (!areInternalSignersUnlocked)
     return (
@@ -113,11 +152,25 @@ export default function ImportSeed(props: Props): ReactElement {
               />
             </div>
           )}
-          <SharedSeedInput
-            onChange={onInputChange}
-            label={t("inputLabel")}
-            errorMessage={errorMessage}
-          />
+          {isEnabled(FeatureFlags.SUPPORT_SEED_WORD_SUGGESTIONS) ? (
+            <SharedRecoveryPhraseInput
+              onChange={onInputChange}
+              onUnknownWordsChange={setUnknownWordNumbers}
+              label={t("inputLabel")}
+              errorMessage={
+                errorMessage ||
+                (unknownWordNumbers.length > 0
+                  ? getUnknownWordsMessage(unknownWordNumbers)
+                  : "")
+              }
+            />
+          ) : (
+            <SharedSeedInput
+              onChange={onInputChange}
+              label={t("inputLabel")}
+              errorMessage={errorMessage}
+            />
+          )}
           <div className="bottom">
             <SharedButton
               id="import"
@@ -131,7 +184,9 @@ export default function ImportSeed(props: Props): ReactElement {
                   : "medium"
               }
               type="primary"
-              isDisabled={!recoveryPhrase || isImporting}
+              isDisabled={
+                !recoveryPhrase || isImporting || unknownWordNumbers.length > 0
+              }
               onClick={importWallet}
               center
             >
