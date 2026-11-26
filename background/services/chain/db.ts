@@ -397,17 +397,15 @@ export class ChainDatabase extends Dexie {
     await this.initializeEVMNetworks()
   }
 
+  /** The network's newest block, if one was stored in the last 90 seconds. */
   async getLatestBlock(network: Network): Promise<AnyEVMBlock | null> {
+    // Block timestamps are in seconds.
+    const since = Math.floor(Date.now() / 1000) - 90
     return (
-      (
-        await this.blocks
-          .where("[network.name+timestamp]")
-          // Only query blocks from the last 86 seconds
-          .aboveOrEqual([network.name, Date.now() - 60 * 60 * 24])
-          .and((block) => block.network.name === network.name)
-          .reverse()
-          .sortBy("timestamp")
-      )[0] || null
+      (await this.blocks
+        .where("[network.name+timestamp]")
+        .between([network.name, since], [network.name, Dexie.maxKey])
+        .last()) ?? null
     )
   }
 

@@ -368,7 +368,7 @@ export const createAnyEVMBlock = (
   parentHash: createRandom0xHash(),
   difficulty: 1000000000000n,
   blockHeight: 15547463,
-  timestamp: Date.now(),
+  timestamp: Math.floor(Date.now() / 1000),
   network: OPTIMISM,
   ...overrides,
 })
