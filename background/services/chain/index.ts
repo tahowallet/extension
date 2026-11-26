@@ -23,7 +23,7 @@ import {
   SmartContractFungibleAsset,
 } from "../../assets"
 import type { ERC721Transfer } from "../../nfts"
-import { HOUR, ETHEREUM, NETWORK_BY_CHAIN_ID, MINUTE } from "../../constants"
+import { ETHEREUM, NETWORK_BY_CHAIN_ID } from "../../constants"
 import { FeatureFlags, isEnabled } from "../../features"
 import PreferenceService from "../preferences"
 import type { ServiceCreatorFunction, ServiceLifecycleEvents } from "../types"
@@ -75,6 +75,8 @@ interface Events extends ServiceLifecycleEvents {
     account: AddressOnNetwork
   }
   newAccountToTrack: AddressOnNetwork
+  /** A tracked account that had gone idle is in use again. */
+  accountReactivated: AddressOnNetwork
   supportedNetworks: EVMNetwork[]
   accountsWithBalances: {
     /**
@@ -303,7 +305,7 @@ export default class ChainService extends BaseService<Events> {
       },
       forceRecentAssetTransfers: {
         schedule: {
-          periodInMinutes: (12 * HOUR) / MINUTE,
+          periodInMinutes: 12 * 60,
         },
         handler: () => {
           this.scanRecentTransfers()
@@ -1014,6 +1016,7 @@ export default class ChainService extends BaseService<Events> {
       // Reactivating a potentially deactivated address
       this.loadRecentAssetTransfers({ address, network })
       this.getLatestBaseAccountBalance({ address, network })
+      this.emitter.emit("accountReactivated", { address, network })
     }
   }
 

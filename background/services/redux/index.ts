@@ -204,6 +204,7 @@ import {
   OneTimeAnalyticsEvent,
 } from "../../lib/posthog"
 import {
+  getFullAssetID,
   isBaseAssetForNetwork,
   isSameAsset,
 } from "../../redux-slices/utils/asset-utils"
@@ -1003,6 +1004,20 @@ export default class ReduxService extends BaseService<never> {
   }
 
   async connectIndexingService(): Promise<void> {
+    // The store is the persisted record of what each account holds.
+    this.indexingService.setBalanceHeldCheck(({ address, network }, asset) => {
+      const accountData =
+        this.store.getState().account.accountsData.evm[network.chainID]?.[
+          normalizeEVMAddress(address)
+        ]
+
+      return (
+        accountData !== undefined &&
+        accountData !== "loading" &&
+        (accountData.balances[getFullAssetID(asset)]?.amount ?? 0n) > 0n
+      )
+    })
+
     this.indexingService.emitter.on(
       "accountsWithBalances",
       async ({ balances, addressOnNetwork }) => {

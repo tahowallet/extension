@@ -18,6 +18,7 @@ mock.module("@ethersproject/web", () => {
 })
 
 import IndexingService from ".."
+import type { AccountBalance } from "../../../accounts"
 import { ETHEREUM, OPTIMISM, USD } from "../../../constants"
 import logger from "../../../lib/logger"
 import * as priceOracle from "../../../lib/priceOracle"
@@ -359,6 +360,100 @@ describe("IndexingService", () => {
       expect(tokenBalanceSpy).toHaveBeenCalledTimes(2)
     })
 
+    it("should sweep active accounts right away, one sweep at a time", async () => {
+      let finish = () => {}
+      const loadSpy = getPrivateMethodSpy<
+        IndexingService["loadAccountBalances"]
+      >(indexingService, "loadAccountBalances").mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve
+          }),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      const first = indexingService["refreshAccountBalances"](true)
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["refreshAccountBalances"](true)
+
+      expect(loadSpy).toHaveBeenCalledTimes(1)
+      expect(loadSpy).toHaveBeenCalledWith(true)
+
+      finish()
+      await first
+    })
+
+    it("should check only tracked assets when sweeping active accounts", async () => {
+      const account = createAddressOnNetwork()
+      const tracked = createSmartContractAsset()
+      const trackedElsewhere = createSmartContractAsset({
+        homeNetwork: OPTIMISM,
+      })
+      const listed = createSmartContractAsset()
+
+      await indexingService.addAssetToTrack(tracked)
+      await indexingService.addAssetToTrack(trackedElsewhere)
+      indexingService["cachedAssets"][ETHEREUM.chainID] = [tracked, listed]
+
+      jest
+        .spyOn(chainService, "getAccountsToTrack")
+        .mockResolvedValue([account])
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        Promise.resolve([]),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"](true)
+
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [tracked])
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["loadAccountBalances"](false)
+
+      expect(tokenBalanceSpy).toHaveBeenLastCalledWith(account, [
+        tracked,
+        listed,
+      ])
+    })
+
+    it("should check tracked assets when an account becomes active again", async () => {
+      const account = createAddressOnNetwork()
+      const tracked = createSmartContractAsset()
+      const listed = createSmartContractAsset()
+
+      await indexingService.addAssetToTrack(tracked)
+      indexingService["cachedAssets"][ETHEREUM.chainID] = [tracked, listed]
+
+      jest
+        .spyOn(chainService, "getLatestBaseAccountBalance")
+        // oxlint-disable-next-line typescript/no-explicit-any
+        .mockImplementation(() => Promise.resolve({} as any))
+      const tokenBalanceSpy = getPrivateMethodSpy<
+        IndexingService["retrieveTokenBalances"]
+      >(indexingService, "retrieveTokenBalances").mockImplementation(() =>
+        Promise.resolve([]),
+      )
+
+      // oxlint-disable-next-line typescript/dot-notation
+      await indexingService["connectChainServiceEvents"]()
+      await chainService.emitter.emit("accountReactivated", account)
+      while (tokenBalanceSpy.mock.calls.length < 1) {
+        // oxlint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, 1)
+        })
+      }
+
+      expect(tokenBalanceSpy).toHaveBeenCalledTimes(1)
+      expect(tokenBalanceSpy).toHaveBeenCalledWith(account, [tracked])
+    })
+
     it("should query erc20 balances specifying token addresses", async () => {
       const indexingDb = await getIndexingDB()
 
@@ -418,6 +513,64 @@ describe("IndexingService", () => {
           expect.objectContaining({ symbol: smartContractAsset.symbol }),
         ]),
       )
+    })
+  })
+
+  describe("recording token balances", () => {
+    const account = createAddressOnNetwork()
+    const held = createSmartContractAsset()
+    const notHeld = createSmartContractAsset()
+    const funded = createSmartContractAsset()
+
+    const lookUpBalances = async () => {
+      jest.spyOn(chainService.assetData, "getTokenBalances").mockResolvedValue({
+        balances: [held, notHeld, funded].map((asset) => ({
+          smartContract: {
+            contractAddress: asset.contractAddress,
+            homeNetwork: ETHEREUM,
+          },
+          amount: asset === funded ? 5n : 0n,
+        })),
+        dataSource: "generic-rpc",
+      })
+      const emitted: AccountBalance[][] = []
+      indexingService.emitter.on("accountsWithBalances", ({ balances }) => {
+        emitted.push(balances)
+      })
+
+      await indexingService.retrieveTokenBalances(account, [
+        held,
+        notHeld,
+        funded,
+      ])
+      // Let the emitter's async delivery finish.
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1)
+      })
+
+      return emitted.flat().map(({ assetAmount }) => assetAmount.asset.symbol)
+    }
+
+    it("keeps a zero balance only when the account held some", async () => {
+      indexingService.setBalanceHeldCheck(
+        (_, asset) => asset.symbol === held.symbol,
+      )
+
+      const recorded = await lookUpBalances()
+
+      expect(recorded.sort()).toEqual([held.symbol, funded.symbol].sort())
+      const indexingDb = await getIndexingDB()
+      expect(
+        await indexingDb.getLatestAccountBalance(
+          account.address,
+          ETHEREUM,
+          notHeld,
+        ),
+      ).toBeNull()
+    })
+
+    it("keeps zero balances when nothing says what was held", async () => {
+      expect((await lookUpBalances()).length).toBe(3)
     })
   })
 

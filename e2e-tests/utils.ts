@@ -35,13 +35,21 @@ export const test = base.extend<WalletTestFixtures>({
       // CI points this at a Chrome for Testing build newer than Playwright's
       // own; see .github/actions/install-playwright.
       executablePath: process.env.E2E_CHROME_EXECUTABLE || undefined,
-      // set to some path in order to store browser session data
-      headless: false,
+      // E2E_HEADLESS=1 runs without a window, using Chrome's new headless
+      // mode, which supports extensions. Headed otherwise.
+      ...(process.env.E2E_HEADLESS
+        ? process.env.E2E_CHROME_EXECUTABLE
+          ? { headless: false }
+          : { channel: "chromium" as const, headless: true }
+        : { headless: false }),
       // Pages swap at once instead of sliding, so clicks don't wait them out.
       reducedMotion: "reduce",
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
+        ...(process.env.E2E_HEADLESS && process.env.E2E_CHROME_EXECUTABLE
+          ? ["--headless=new"]
+          : []),
       ],
       permissions: ["clipboard-read", "clipboard-write"],
     })
